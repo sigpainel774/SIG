@@ -1,14 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Home, Users, BookOpen, UserCog, MapPin, FileBarChart, LogOut } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
+import { 
+  Home, 
+  Pin, 
+  Users, 
+  GraduationCap, 
+  ShieldCheck, 
+  FileBarChart, 
+  HelpCircle, 
+  User, 
+  RefreshCw, 
+  LogOut 
+} from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export function Sidebar() {
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
   const limparSessao = useAuthStore((state) => state.limparSessao)
 
@@ -24,43 +37,62 @@ export function Sidebar() {
     }
   }
 
+  const menuItems = [
+    { href: '/home', label: 'Início', icon: Home },
+    { href: '/mural', label: 'Mural', icon: Pin },
+    { href: '/funcionarios', label: 'Funcionários', icon: Users },
+    { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+    { href: '/permissoes', label: 'Permissões', icon: ShieldCheck },
+    { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+    { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
+    { href: '/perfil', label: 'Perfil', icon: User },
+  ]
+
   return (
-    <aside className="w-64 flex flex-col border-r border-borderCustom bg-card">
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-white tracking-tight">SIG Educação</h2>
+    <aside className="w-64 flex flex-col border-r border-borderCustom bg-[#0c0c0c] text-foregroundCustom h-screen sticky top-0">
+      {/* Brand Header */}
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center font-bold text-white text-lg shadow-md">
+          S
+        </div>
+        <h2 className="text-xl font-bold text-white tracking-tight">Painel Escolar</h2>
       </div>
-      
-      <nav className="flex-1 px-4 space-y-2">
-        <Link href="/home" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <Home className="w-5 h-5 text-highlight" />
-          <span>Início</span>
-        </Link>
-        <Link href="/alunos" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <Users className="w-5 h-5 text-highlight" />
-          <span>Alunos</span>
-        </Link>
-        <Link href="/turmas" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <BookOpen className="w-5 h-5 text-highlight" />
-          <span>Turmas</span>
-        </Link>
-        <Link href="/funcionarios" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <UserCog className="w-5 h-5 text-highlight" />
-          <span>Funcionários</span>
-        </Link>
-        <Link href="/ponto-mobile" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <MapPin className="w-5 h-5 text-highlight" />
-          <span>Bater Ponto</span>
-        </Link>
-        <Link href="/relatorios" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hoverCustom transition-colors">
-          <FileBarChart className="w-5 h-5 text-highlight" />
-          <span>Relatórios</span>
-        </Link>
+
+      {/* Main Nav */}
+      <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
+        {menuItems.map((item) => {
+          const Icon = item.icon
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm",
+                isActive 
+                  ? "bg-card text-highlight border border-borderCustom shadow-sm" 
+                  : "text-foregroundCustom/80 hover:bg-hoverCustom hover:text-white"
+              )}
+            >
+              <Icon className={cn("w-5 h-5", isActive ? "text-highlight" : "text-foregroundCustom/70")} />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="p-4 border-t border-borderCustom">
+      {/* Footer Nav */}
+      <div className="p-3 border-t border-borderCustom space-y-1">
+        <button 
+          onClick={() => router.refresh()} 
+          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-foregroundCustom/80 hover:bg-hoverCustom hover:text-white rounded-xl transition-colors text-left"
+        >
+          <RefreshCw className="w-5 h-5 text-foregroundCustom/70" />
+          <span>Atualizar</span>
+        </button>
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center gap-3 px-3 py-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors text-left"
+          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-xl transition-colors text-left"
         >
           <LogOut className="w-5 h-5" />
           <span>Sair</span>
