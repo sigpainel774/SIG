@@ -41,12 +41,7 @@ export default function FuncionariosPage() {
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2">
-              <Plus className="w-4 h-4" />
-              Novo Funcionário
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger render={<Button className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"><Plus className="w-4 h-4" /> Novo Funcionário</Button>} />
           <DialogContent className="sm:max-w-[425px] bg-card border-borderCustom">
             <form onSubmit={handleSavePermissao}>
               <DialogHeader>
@@ -66,7 +61,7 @@ export default function FuncionariosPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foregroundCustom">Lotação (Vínculo)</Label>
-                  <Select value={selectedLotacao} onValueChange={setSelectedLotacao}>
+                  <Select value={selectedLotacao} onValueChange={(val) => val && setSelectedLotacao(val)}>
                     <SelectTrigger className="bg-input border-borderCustom text-foregroundCustom">
                       <SelectValue placeholder="Selecione a escola" />
                     </SelectTrigger>
@@ -83,7 +78,7 @@ export default function FuncionariosPage() {
                   </Label>
                   <div className="mt-2 space-y-2">
                     <Label className="text-muted-foreground text-xs">Escola de Acesso (Nível 3/4)</Label>
-                    <Select value={selectedPermissaoEscola} onValueChange={setSelectedPermissaoEscola}>
+                    <Select value={selectedPermissaoEscola} onValueChange={(val) => val && setSelectedPermissaoEscola(val)}>
                       <SelectTrigger className="bg-input border-borderCustom text-foregroundCustom">
                         <SelectValue placeholder="Selecione a escola permitida" />
                       </SelectTrigger>
