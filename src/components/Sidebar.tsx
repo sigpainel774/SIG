@@ -46,9 +46,7 @@ export function Sidebar() {
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
     { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
-    ...(funcionario?.is_superadmin || pathname.startsWith('/admin') || pathname === '/root'
-      ? [{ href: '/admin', label: 'Painel Root', icon: ShieldCheck }] 
-      : []),
+    { href: '/admin', label: 'Painel Root', icon: ShieldCheck },
   ]
 
   return (
