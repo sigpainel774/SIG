@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { 
   Home, 
@@ -11,7 +12,8 @@ import {
   HelpCircle, 
   FileBarChart, 
   RefreshCw, 
-  LogOut
+  LogOut,
+  ShieldCheck
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -22,7 +24,7 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const limparSessao = useAuthStore((state) => state.limparSessao)
+  const { funcionario, limparSessao } = useAuthStore()
 
   const handleLogout = async () => {
     try {
@@ -44,14 +46,17 @@ export function Sidebar() {
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
     { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+    ...(funcionario?.is_superadmin || pathname.startsWith('/admin') || pathname === '/root'
+      ? [{ href: '/admin', label: 'Painel Root', icon: ShieldCheck }] 
+      : []),
   ]
 
   return (
-    <aside className="w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200">
+    <aside className="w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none">
       {/* Brand Header */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center font-bold text-white text-lg shadow-md">
-          S
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+          <Image src="/icon-512.png" alt="Logo" width={40} height={40} className="object-cover" />
         </div>
         <h2 className="text-xl font-bold tracking-tight text-sidebar-foreground">Painel Escolar</h2>
       </div>
@@ -60,7 +65,10 @@ export function Sidebar() {
       <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || (item.href === '/configuracoes' && (pathname === '/perfil' || pathname === '/permissoes'))
+          const isActive = pathname === item.href || 
+            (item.href === '/configuracoes' && (pathname === '/perfil' || pathname === '/permissoes')) ||
+            (item.href === '/admin' && (pathname.startsWith('/admin') || pathname === '/root'))
+
           return (
             <Link
               key={item.href}
