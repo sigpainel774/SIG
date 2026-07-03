@@ -13,7 +13,9 @@ import {
   Bell, 
   X, 
   Building2,
-  ChevronRight
+  ChevronRight,
+  Smartphone,
+  UserCheck
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,6 +48,8 @@ export default function HomePage() {
     { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
     { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias' },
     { label: 'Atestados', icon: FileCheck, href: '/atestados' },
+    { label: 'Ponto Mobile', icon: Smartphone, href: '/ponto-mobile' },
+    { label: 'Painel Liderança', icon: UserCheck, href: '/painel-chefe' },
   ]
 
   return (

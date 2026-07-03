@@ -12,7 +12,13 @@ import {
   HelpCircle, 
   User, 
   RefreshCw, 
-  LogOut 
+  LogOut,
+  BookOpen,
+  FileText,
+  AlertTriangle,
+  FileCheck,
+  Smartphone,
+  UserCheck
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -41,8 +47,14 @@ export function Sidebar() {
     { href: '/admin', label: 'Painel Admin ROOT', icon: ShieldCheck },
     { href: '/home', label: 'Início Escolar', icon: Home },
     { href: '/mural', label: 'Mural', icon: Pin },
+    { href: '/turmas', label: 'Turmas', icon: BookOpen },
     { href: '/funcionarios', label: 'Funcionários', icon: Users },
     { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+    { href: '/matriculas', label: 'Matrículas', icon: FileText },
+    { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+    { href: '/atestados', label: 'Atestados', icon: FileCheck },
+    { href: '/ponto-mobile', label: 'Ponto Mobile GPS', icon: Smartphone },
+    { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
     { href: '/permissoes', label: 'Permissões', icon: ShieldCheck },
     { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
