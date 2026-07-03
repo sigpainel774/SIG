@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   description: 'Sistema Municipal de Gestão Educacional de Sapeaçu',
   manifest: '/manifest.json',
   icons: {
-    icon: '/img/icon-192.png',
-    apple: '/img/icon-512.png',
+    icon: '/icon-192.png',
+    apple: '/icon-512.png',
   },
   appleWebApp: {
     capable: true,
