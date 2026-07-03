@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <header className="h-16 border-b border-borderCustom bg-card flex items-center px-6 shadow-sm">
           <div className="flex-1"></div>
           <div className="flex items-center gap-4">
-            <span className="text-sm">Escola Ativa: <strong className="text-white">Escola Modelo</strong></span>
+            <span className="text-sm text-muted-foreground">Escola Ativa: <strong className="text-foregroundCustom font-bold">Escola Modelo</strong></span>
           </div>
         </header>
         <div className="p-8">
