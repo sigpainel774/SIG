@@ -1,0 +1,447 @@
+/* ===========================
+   GRID DE TURMAS
+   =========================== */
+.turmas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.turma-card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+.turma-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  border-color: #3ea6ff;
+}
+.turma-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.turma-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+.turma-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #3ea6ff22;
+  color: #3ea6ff;
+}
+.turma-details {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.5;
+  background: #222;
+  padding: 10px;
+  border-radius: 8px;
+}
+.professores-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.prof-tag {
+  background: #333;
+  color: #ddd;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prof-tag-remove {
+  cursor: pointer;
+  color: #ff5b5b;
+  font-weight: bold;
+}
+
+/* ===========================
+   MODAL DE FREQUÊNCIA
+   =========================== */
+.freq-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  transition: border-color 0.2s;
+}
+.freq-item:hover {
+  border-color: #3ea6ff44;
+}
+.freq-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.freq-nome {
+  flex: 1;
+  font-size: 14px;
+  color: #fff;
+  font-weight: 500;
+}
+.freq-toggle-group {
+  display: flex;
+  gap: 6px;
+}
+.freq-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: #1e1e1e;
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.freq-btn:hover:not(:disabled) {
+  border-color: #3a3a3a;
+  color: #aaa;
+}
+.freq-btn-presente {
+  background: #22c55e22 !important;
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+}
+.freq-btn-falta {
+  background: #ef444422 !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+.freq-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.aviso-permissao-freq {
+  background: #f59e0b18;
+  border: 1px solid #f59e0b44;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #f59e0b;
+  margin-bottom: 16px;
+}
+
+/* ===========================
+   RELATÓRIOS
+   =========================== */
+.relatorio-turma-card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  transition: box-shadow 0.2s;
+}
+.relatorio-turma-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.relatorio-turma-header {
+  background: #1f1f1f;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.relatorio-turma-header strong {
+  color: #fff;
+  font-size: 16px;
+}
+.relatorio-alunos-lista {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.relatorio-aluno-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.relatorio-aluno-nome {
+  flex: 1;
+  font-size: 13px;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.relatorio-barra-container {
+  width: 160px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  height: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.relatorio-barra {
+  height: 8px;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+.relatorio-pct {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+.relatorio-filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+}
+
+/* ===========================
+   HUB DE TURMA
+   =========================== */
+.hub-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.hub-overlay.aberto { display: flex; }
+.hub-panel {
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 860px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: auto;
+}
+.hub-topo {
+  background: #181818;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 16px 20px 0;
+}
+.hub-topo-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.hub-topo-row h2 { margin: 0; font-size: 20px; color: #fff; }
+.hub-topo-row p { margin: 4px 0 0; font-size: 13px; color: #aaa; }
+.hub-abas {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+}
+.hub-aba-btn {
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #888;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.hub-aba-btn:hover { color: #ccc; }
+.hub-aba-btn.ativa { color: #3ea6ff; border-bottom-color: #3ea6ff; }
+.hub-corpo { padding: 20px; flex: 1; }
+.hub-empty { text-align: center; color: #555; font-size: 14px; padding: 40px 0; }
+
+/* Matérias */
+.materia-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.materia-item:hover { border-color: #3a3a3a; }
+.materia-nome { flex: 1; font-size: 14px; color: #fff; font-weight: 500; }
+.materia-prof { font-size: 12px; color: #aaa; }
+.materia-form {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.materia-form-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3ea6ff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Alunos do hub */
+.hub-aluno-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.hub-aluno-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.hub-aluno-nome { flex: 1; font-size: 14px; color: #fff; font-weight: 500; }
+.hub-aluno-serie { font-size: 12px; color: #aaa; }
+
+/* Notas */
+.notas-materia-bloco {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.notas-materia-header {
+  background: #1f1f1f;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.notas-materia-header span:first-child { font-size: 14px; font-weight: 600; color: #fff; flex: 1; }
+.notas-unidade-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 10px 16px 0;
+  background: #181818;
+  overflow-x: auto;
+}
+.notas-unidade-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.notas-unidade-btn.ativa { background: #3ea6ff22; border-color: #3ea6ff; color: #3ea6ff; }
+.notas-tabela-container { overflow-x: auto; }
+.notas-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
+.notas-tabela th {
+  background: #1a1a1a;
+  color: #aaa;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #2a2a2a;
+  white-space: nowrap;
+}
+.notas-tabela td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #1e1e1e;
+  color: #ccc;
+  vertical-align: middle;
+}
+.notas-tabela tr:last-child td { border-bottom: none; }
+.nota-input {
+  width: 60px;
+  padding: 5px 8px;
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.nota-input:focus { outline: none; border-color: #3ea6ff; }
+.nota-media { font-weight: 700; min-width: 50px; }
+.nota-aprovado { color: #22c55e; }
+.nota-reprovado { color: #ff5b5b; }
+.nota-pendente { color: #888; }
+
+/* Botão de imprimir boletim individual por aluno */
+.btn-imprimir-boletim {
+  background: transparent;
+  border: 1px solid #3ea6ff44;
+  color: #3ea6ff;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  font-family: inherit;
+}
+.btn-imprimir-boletim:hover {
+  background: #3ea6ff18;
+  border-color: #3ea6ff;
+  color: #fff;
+}
+
