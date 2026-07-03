@@ -1,11 +1,11 @@
-const CACHE_NAME = 'sig-sapeacu-v1';
+const CACHE_NAME = 'sig-sapeacu-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/home',
   '/ponto-mobile',
   '/manifest.json',
-  '/img/icon-192.png',
-  '/img/icon-512.png'
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
