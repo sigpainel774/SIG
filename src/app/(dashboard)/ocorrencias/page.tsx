@@ -1,69 +1,149 @@
-import { AlertTriangle, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+'use client'
 
-const rows = [
-  { date: '03/07/2026', student: 'Joao Silva', classroom: '1 Ano A', severity: 'Media', description: 'Registro pedagogico em acompanhamento.', author: 'Coordenacao', status: 'Pendente' },
-  { date: '02/07/2026', student: 'Maria Santos', classroom: '1 Ano B', severity: 'Baixa', description: 'Orientacao registrada para ciencia da familia.', author: 'Secretaria', status: 'Comunicado' },
+import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+
+const mockOcorrencias = [
+  {
+    id: 1,
+    data: '15/10/2026',
+    aluno: 'João Pedro Silva',
+    turma: '9º Ano A',
+    gravidade: 'Média',
+    tipo: 'Indisciplina',
+    descricao: 'Uso de celular durante a explicação do professor, ignorando advertências.',
+    registroPor: 'Prof. Marcos',
+    statusPais: 'Cientes',
+  },
+  {
+    id: 2,
+    data: '14/10/2026',
+    aluno: 'Maria Eduarda',
+    turma: '7º Ano B',
+    gravidade: 'Baixa',
+    tipo: 'Atraso',
+    descricao: 'Chegou 20 minutos atrasada para a primeira aula.',
+    registroPor: 'Portaria',
+    statusPais: 'Pendente',
+  },
+  {
+    id: 3,
+    data: '10/10/2026',
+    aluno: 'Carlos Eduardo',
+    turma: '8º Ano C',
+    gravidade: 'Alta',
+    tipo: 'Briga',
+    descricao: 'Envolvimento em discussão agressiva no pátio durante o intervalo.',
+    registroPor: 'Coordenação',
+    statusPais: 'Reunião Agendada',
+  }
 ]
 
 export default function OcorrenciasPage() {
+  const [dataFiltro, setDataFiltro] = useState('')
+  const [gravidadeFiltro, setGravidadeFiltro] = useState('todas')
+
+  const getGravidadeColor = (gravidade: string) => {
+    switch (gravidade) {
+      case 'Alta': return 'bg-red-500/20 text-red-500 border-red-500/30'
+      case 'Média': return 'bg-amber-500/20 text-amber-500 border-amber-500/30'
+      case 'Baixa': return 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    }
+  }
+
+  const getStatusPaisColor = (status: string) => {
+    switch (status) {
+      case 'Cientes': return 'text-emerald-500'
+      case 'Reunião Agendada': return 'text-amber-500'
+      default: return 'text-[#aaa]'
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#3f3f46]">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-white">
-            <AlertTriangle className="h-7 w-7 text-amber-500" />
-            Gestao de Ocorrencias
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Monitoramento disciplinar e pedagogico da escola.</p>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <AlertTriangle className="w-6 h-6 text-[#ff9800]" /> 
+            Gestão de Ocorrências
+          </h2>
+          <p className="text-[#aaa] text-sm mt-1">Monitoramento disciplinar e pedagógico da escola.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Input type="date" className="w-auto bg-input" />
-          <select className="rounded-md border border-borderCustom bg-input px-3 py-2 text-sm text-foregroundCustom outline-none">
-            <option>Todas as Gravidades</option>
-            <option>Baixa</option>
-            <option>Media</option>
-            <option>Alta</option>
-          </select>
-          <Button variant="outline" className="border-borderCustom bg-hoverCustom">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar
+
+        <div className="flex items-center gap-3">
+          <Input 
+            type="date"
+            value={dataFiltro}
+            onChange={(e) => setDataFiltro(e.target.value)}
+            className="bg-[#121212] border-[#3f3f46] text-white w-auto"
+          />
+          
+          <Select value={gravidadeFiltro} onValueChange={(val) => val && setGravidadeFiltro(val)}>
+            <SelectTrigger className="w-[180px] bg-[#121212] border-[#3f3f46] text-white">
+              <SelectValue placeholder="Gravidade" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectItem value="todas">Todas as Gravidades</SelectItem>
+              <SelectItem value="Baixa">Baixa</SelectItem>
+              <SelectItem value="Média">Média</SelectItem>
+              <SelectItem value="Alta">Alta</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button variant="outline" className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]">
+            <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      <Card className="overflow-hidden border-borderCustom bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-borderCustom bg-background/60 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="p-4">Data</th>
-                <th className="p-4">Aluno</th>
-                <th className="p-4">Turma</th>
-                <th className="p-4">Tipo / Gravidade</th>
-                <th className="p-4">Descricao</th>
-                <th className="p-4">Registro por</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderCustom">
-              {rows.map((row) => (
-                <tr key={`${row.date}-${row.student}`} className="hover:bg-hoverCustom">
-                  <td className="p-4 text-muted-foreground">{row.date}</td>
-                  <td className="p-4 font-medium text-white">{row.student}</td>
-                  <td className="p-4 text-muted-foreground">{row.classroom}</td>
-                  <td className="p-4"><span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs text-amber-400">{row.severity}</span></td>
-                  <td className="p-4 text-muted-foreground">{row.description}</td>
-                  <td className="p-4 text-muted-foreground">{row.author}</td>
-                  <td className="p-4 text-muted-foreground">{row.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
+        <Table>
+          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
+            <TableRow className="border-none hover:bg-transparent">
+              <TableHead className="text-[#ccc] font-semibold">Data</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Aluno</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Turma</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Tipo / Gravidade</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Descrição</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Registro por</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Status (Pais)</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {mockOcorrencias.map((oco) => (
+              <TableRow key={oco.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors">
+                <TableCell className="text-[#aaa] whitespace-nowrap">{oco.data}</TableCell>
+                <TableCell className="text-white font-medium">{oco.aluno}</TableCell>
+                <TableCell className="text-[#aaa]">{oco.turma}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className="text-sm text-white">{oco.tipo}</span>
+                    <Badge variant="outline" className={`text-xs font-semibold ${getGravidadeColor(oco.gravidade)}`}>
+                      {oco.gravidade}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="text-[#aaa] max-w-[250px] truncate" title={oco.descricao}>
+                  {oco.descricao}
+                </TableCell>
+                <TableCell className="text-[#aaa]">{oco.registroPor}</TableCell>
+                <TableCell>
+                  <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.statusPais)}`}>
+                    {oco.statusPais === 'Cientes' && <CheckCircle2 className="w-4 h-4" />}
+                    {oco.statusPais}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

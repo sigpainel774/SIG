@@ -1,206 +1,295 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import {
-  AlertTriangle,
-  ArrowLeftRight,
-  BookOpen,
-  CalendarCheck,
-  ChevronDown,
-  Edit3,
-  HelpCircle,
-  Map,
-  MessageSquareWarning,
-  ScanLine,
-  Shield,
-  ShieldCheck,
-  UserCog,
-  UserPlus,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { 
+  Shield, 
+  UserCog, 
+  UserPlus, 
+  Edit3, 
+  CalendarCheck, 
+  Map, 
+  ShieldCheck, 
+  ScanLine, 
+  BookOpen, 
+  ArrowLeftRight, 
+  MessageSquareWarning,
+  ChevronDown
+} from 'lucide-react'
+import { ModalReport } from '@/components/modals/modal-report'
 
-const helpItems = [
+const diretrizes = [
   {
-    title: 'Niveis de Acesso',
-    tags: 'acesso permissao nivel hierarquia admin secretaria diretor professor chefe operacional',
+    id: 'd1',
     icon: Shield,
-    body: [
-      'Nivel 1: administrador global com acesso total a todas as escolas e modulos.',
-      'Nivel 2: diretor escolar com gestao completa da escola onde esta vinculado.',
-      'Nivel 3: secretario ou coordenador com permissoes especificas concedidas pela direcao.',
-      'Nivel 4: professor com acesso restrito as turmas e disciplinas vinculadas.',
-      'Nivel 5: chefe de equipe com visao ABAC focada nos cargos que gerencia.',
-      'Nivel 6: operacional com acesso reduzido ao app mobile de ponto e ronda.',
-    ],
+    titulo: 'Níveis de Acesso',
+    conteudo: (
+      <div className="space-y-4">
+        <p>O sistema possui 4 níveis hierárquicos de acesso:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Nível 1 (Administrador Global):</strong> Acesso total a todas as escolas e módulos do sistema. Permite controle irrestrito.</li>
+          <li><strong>Nível 2 (Diretor Escolar):</strong> Acesso de gestão total apenas na escola onde o funcionário está vinculado. Pode realizar qualquer alteração na sua unidade.</li>
+          <li><strong>Nível 3 (Secretário Escolar / Coordenador):</strong> Precisa de permissões específicas concedidas pelo Diretor (ex: permissão para editar turmas, alunos, mural).</li>
+          <li><strong>Nível 4 (Professor):</strong> Acesso restrito e inteligente. O professor só consegue visualizar e lançar notas/frequência das disciplinas e turmas nas quais está diretamente vinculado.</li>
+          <li><strong>Nível 5 (Chefe de Equipe):</strong> Visão de gestão (ABAC) focada apenas nas profissões/cargos que gerencia. Consegue visualizar seus operacionais, definir escalas de trabalho e acompanhar o ponto eletrônico.</li>
+          <li><strong>Nível 6 (Operacional):</strong> Acesso estritamente voltado para o App Mobile. A interface é reduzida para uma tela de leitura de QR Code para bater o Ponto/Ronda utilizando GPS do dispositivo.</li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Fluxo de Alocacao de Diretores',
-    tags: 'diretor gestor alocacao contratacao escola email lotacao permissao senha',
+    id: 'd9',
     icon: UserCog,
-    body: [
-      'Cadastre a escola antes de liberar o acesso do diretor.',
-      'Cadastre o funcionario com e-mail institucional e vincule-o a escola correta.',
-      'Atribua permissao de Nivel 2 usando a mesma escola da lotacao fisica.',
-      'No primeiro acesso, o diretor deve trocar a senha temporaria por uma senha pessoal.',
-    ],
+    titulo: 'Fluxo de Alocação de Diretores',
+    conteudo: (
+      <div className="space-y-4">
+        <p>Para realizar a contratação e liberação de acesso de um novo Diretor Escolar, siga o fluxo padronizado e sequencial abaixo:</p>
+        <ol className="list-decimal pl-5 space-y-2">
+          <li><strong>Etapa 1 - Criação da Escola:</strong> A unidade de ensino deve estar cadastrada no sistema. O cadastro pode ser realizado por um usuário de Nível 1 (Administrador Global) ou solicitado diretamente ao Administrador do Sistema.</li>
+          <li><strong>Etapa 2 - Cadastro e E-mail Institucional:</strong> Cadastre o novo diretor no módulo de "Funcionários". Defina o e-mail cadastrado no padrão obrigatório <code>nomecompleto@sapeacu.gov.br</code> e solicite ao administrador a criação da conta correspondente com este mesmo e-mail.</li>
+          <li><strong>Etapa 3 - Lotação de Funcionário:</strong> Acesse as configurações de vínculos do funcionário (no painel de Funcionários) e lote o diretor na escola para a qual foi designado.</li>
+          <li><strong>Etapa 4 - Permissão de Acesso (Nível 2):</strong> Acesse o módulo de "Permissões", ative o <strong>Modo Edição</strong> e atribua ao usuário a permissão de <strong>Nível 2 - Diretor Escolar</strong>, vinculando-o exatamente à mesma escola de sua lotação física.</li>
+          <li><strong>Etapa 5 - Primeiro Acesso e Nova Senha:</strong> O diretor efetuará o primeiro acesso usando o e-mail cadastrado e a senha temporária configurada pelo administrador. Ao entrar no sistema, o painel exigirá a definição de uma nova senha pessoal definitiva. Concluída essa etapa, o acesso estará totalmente liberado.</li>
+        </ol>
+      </div>
+    )
   },
   {
-    title: 'Cadastro e Acesso de Professores',
-    tags: 'professor docente cadastro email permissao diario primeiro acesso',
+    id: 'd4',
     icon: UserPlus,
-    body: [
-      'O diretor cadastra os dados do professor e cria o vinculo com a escola.',
-      'Depois concede Nivel 4 em Permissoes, usando a mesma escola da lotacao.',
-      'Se a escola da permissao for diferente da lotacao, o painel de turmas pode ficar vazio.',
-    ],
-    warning: 'Confira sempre se Escola / Orgao e lotacao fisica apontam para a mesma unidade.',
+    titulo: 'Cadastro e Acesso de Professores',
+    conteudo: (
+      <div className="space-y-4">
+        <p>Para garantir a segurança, o professor não cria a própria conta do zero. O fluxo oficial é:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Passo 1 (Cadastro):</strong> O Diretor acessa o menu "Funcionários", cadastra os dados do Professor incluindo o seu <strong>E-mail</strong>, e cria o vínculo na escola.</li>
+          <li>
+            <strong>Passo 2 (Permissão):</strong> O Diretor acessa o menu "Permissões", seleciona o funcionário e concede a ele o acesso de <strong>Nível 4 - Professor</strong>.
+            <div className="bg-[#3f1818] text-[#fecaca] p-4 border-l-4 border-red-500 rounded-md text-sm mt-3 leading-relaxed">
+              <strong className="text-red-300 flex items-center gap-2 mb-1">
+                ⚠️ ATENÇÃO À ESCOLA SELECIONADA
+              </strong> 
+              Você DEVE certificar-se de que a escola selecionada no campo <strong>"Escola / Órgão"</strong> do formulário de permissão é EXATAMENTE a mesma escola em que a ficha do professor foi lotada no Passo 1.<br />
+              <em>Se os nomes forem diferentes, o professor conseguirá fazer o login, mas seu painel de turmas ficará completamente vazio (pois o sistema tentará buscar turmas na escola errada).</em>
+            </div>
+          </li>
+          <li><strong>Passo 3 (Primeiro Acesso):</strong> Quando o Professor fizer o login pela primeira vez usando aquele mesmo e-mail, o sistema fará o vínculo automático e seguro, liberando o Diário Eletrônico.</li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Modo de Edicao',
-    tags: 'edicao visualizacao alterar senha interruptor salvar',
+    id: 'd2',
     icon: Edit3,
-    body: [
-      'Usuarios administrativos entram em modo visualizacao por padrao para evitar alteracoes acidentais.',
-      'Para editar dados sensiveis, ative o modo edicao e confirme com sua senha.',
-      'Professores nao precisam ativar esse modo para lancar notas e frequencia das suas turmas.',
-    ],
+    titulo: 'Modo de Edição',
+    conteudo: (
+      <div className="space-y-4">
+        <p>Por padrão, usuários administrativos (Níveis 1 a 3) acessam o sistema no <strong>Modo Visualização</strong> para evitar edições acidentais de dados críticos. Para modificar dados gerais:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Ative o interruptor do <strong>Modo Edição</strong> no painel superior.</li>
+          <li>Confirme a ação digitando a sua <strong>senha pessoal</strong> de acesso.</li>
+          <li><em>Exceção: O Professor (Nível 4) não precisa ativar o Modo Edição para lançar suas próprias notas e faltas no seu Diário.</em></li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Lancamentos Diarios',
-    tags: 'notas faltas frequencia diario salvar registros diarios',
+    id: 'd3',
     icon: CalendarCheck,
-    body: [
-      'Lancamentos de gestores e secretaria exigem modo edicao.',
-      'Professores lancam apenas nas disciplinas e turmas vinculadas.',
-      'Todo salvamento deve manter rastreabilidade de quem registrou a informacao.',
-    ],
+    titulo: 'Lançamentos Diários (Frequência e Notas)',
+    conteudo: (
+      <div className="space-y-4">
+        <p>A manipulação de registros essenciais do aluno exige segurança e rastreabilidade:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Lançamentos por Gestores/Secretaria exigem o Modo de Edição ativo.</li>
+          <li>Professores têm permissão nativa para lançar apenas na aba de Notas das disciplinas que ensinam e na Frequência das suas turmas.</li>
+          <li>Todos os salvamentos gravam no banco de dados qual funcionário realizou a ação.</li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Navegacao do Professor',
-    tags: 'professor docente navegacao turmas menu lateral diario',
+    id: 'd5',
     icon: Map,
-    body: [
-      'O professor deve usar o menu Turmas para chegar diretamente ao diario.',
-      'Modulos administrativos podem aparecer bloqueados, conforme o nivel de acesso.',
-    ],
+    titulo: 'Navegação do Professor',
+    conteudo: (
+      <div className="space-y-4">
+        <p>O fluxo de navegação do professor foi otimizado para ir direto ao que interessa:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Módulos Administrativos:</strong> Ao clicar na escola na tela inicial, o professor verá que não tem acesso aos módulos gerais; isso é esperado, pois ele não é secretário ou gestor.</li>
+          <li><strong>Menu Lateral Direto:</strong> Professores devem utilizar o menu <strong>"Turmas"</strong> na barra lateral esquerda (sidebar) para acessar diretamente suas disciplinas, frequência e alunos.</li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Modulo ABAC: Gestao de Equipes',
-    tags: 'chefe equipe abac vigia porteiro gari operacional lotacao',
+    id: 'd6',
     icon: ShieldCheck,
-    body: [
-      'Chefes de equipe gerenciam cargos especificos, como vigias ou porteiros.',
-      'Os cargos gerenciados definem quais funcionarios aparecem no painel do chefe.',
-      'A atribuicao e feita em Permissoes ao selecionar Nivel 5.',
-    ],
+    titulo: 'Módulo ABAC: Gestão de Equipes (Chefe)',
+    conteudo: (
+      <div className="space-y-4">
+        <p>A atribuição de um <strong>Chefe de Equipe (Nível 5)</strong> funciona baseada nas profissões que ele coordena (ABAC):</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Centralização de Cargos:</strong> A lista de cargos do sistema é gerenciada exclusivamente pela equipe do <strong>Super Painel Administrativo</strong>. Apenas os Super Admins podem cadastrar, editar ou remover um cargo do banco de dados global.</li>
+          <li><strong>Atribuição:</strong> Ao conceder permissão de Nível 5 para um funcionário no menu "Permissões", o gestor deverá marcar nas caixinhas de seleção quais profissões oficiais ele poderá gerenciar (ex: Vigias, Garis, Inspetores).</li>
+          <li>No <em>Painel do Chefe</em>, o sistema listará apenas os funcionários subordinados àquele chefe (ou seja, funcionários cujos vínculos na escola possuam os mesmos cargos que o chefe foi designado a controlar).</li>
+          <li>O Chefe poderá acompanhar as informações da equipe, definir as escalas e consultar os logs de rondas ou ponto eletrônico de sua respectiva equipe, sem ter acesso aos módulos globais de secretaria.</li>
+        </ul>
+        <div className="bg-[#2a2a2a] p-4 border-l-4 border-highlight rounded-md mt-4">
+          <h4 className="text-white font-bold text-sm mb-2">Passo a Passo: Como atribuir um Chefe de Equipe</h4>
+          <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
+            <li>Acesse <strong>Permissões</strong> e clique em <strong>+ Nova Permissão</strong>.</li>
+            <li>Selecione o funcionário e escolha <strong>Nível 5 - Chefe de Equipe</strong>.</li>
+            <li><em>Nota:</em> O campo Escola/Órgão sumirá automaticamente, pois a chefia é global.</li>
+            <li>Marque as caixas dos cargos subordinados (ex: Vigia, Porteiro) e clique em <strong>Salvar</strong>.</li>
+          </ol>
+          
+          <h4 className="text-white font-bold text-sm mb-2">Passo a Passo: Como incluir um funcionário na equipe</h4>
+          <ol className="list-decimal pl-5 space-y-1 text-sm">
+            <li>Acesse <strong>Funcionários</strong> e crie/edite um cadastro.</li>
+            <li>Em <strong>Escola / Lotação</strong>, defina a escola física (para o Diretor poder vê-lo).</li>
+            <li>Em <strong>Cargo / Função</strong>, escolha exatamente o mesmo cargo gerenciado pelo chefe (ex: Vigia).</li>
+            <li>Clique em <strong>Salvar</strong>. O cruzamento é automático!</li>
+          </ol>
+        </div>
+      </div>
+    )
   },
   {
-    title: 'Ponto Eletronico e GPS',
-    tags: 'ponto gps geolocation geolocalizacao qr code operacional mobile',
+    id: 'd7',
     icon: ScanLine,
-    body: [
-      'Usuarios operacionais acessam a tela de ponto mobile.',
-      'A permissao de GPS e obrigatoria para validar o local.',
-      'O registro deve conferir posicao e ponto de ronda antes de salvar.',
-    ],
+    titulo: 'Ponto Eletrônico e GPS (Operacional)',
+    conteudo: (
+      <div className="space-y-4">
+        <p>Para usuários <strong>Nível 6 (Operacional)</strong> o foco é realizar as verificações de ronda e o ponto através de um dispositivo móvel:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>O sistema abrirá automaticamente a tela do App Mobile <strong>"Bater Ponto"</strong> na inicialização.</li>
+          <li>O navegador obrigatoriamente solicitará permissão de Geolocalização (GPS). Se a permissão for negada, o sistema não autoriza a ativação do leitor de QR Code.</li>
+          <li>Ao aceitar o GPS e escanear o Código QR (colado nas escolas ou postos de trabalho), a posição exata é conferida para atestar que o operacional está presencialmente no local e a rota é registrada no banco de logs.</li>
+        </ul>
+      </div>
+    )
   },
   {
-    title: 'Roteiro de Vigias e Rondas',
-    tags: 'roteiro vigia ronda super painel chefe operacional qr code',
+    id: 'd8',
     icon: BookOpen,
-    body: [
-      'Crie pontos de ronda no painel administrativo com escola, raio e coordenadas.',
-      'Cadastre o chefe com Nivel 5 e marque os cargos subordinados.',
-      'Cadastre o operacional com Nivel 6 e vincule-o a escola correta.',
-    ],
+    titulo: 'Roteiro Completo: Criação de Vigias e Rondas',
+    conteudo: (
+      <div className="space-y-4">
+        <div className="bg-[#2a2a2a] p-4 border-l-4 border-highlight rounded-md mt-4">
+          <h4 className="text-white font-bold text-sm mb-2">1. Criando Pontos de Ronda (Super Administrador)</h4>
+          <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
+            <li>Acesse o <strong>Super Painel</strong> Administrativo na aba lateral.</li>
+            <li>Clique em <strong>Controle de Rondas</strong>.</li>
+            <li>Preencha o formulário informando: nome do ponto, escola na qual ele fica, raio de tolerância (em metros), e Latitude/Longitude exatas.</li>
+          </ol>
+
+          <h4 className="text-white font-bold text-sm mb-2">2. Criando o Chefe de Vigias (Acesso: Diretor)</h4>
+          <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
+            <li>Em <strong>Funcionários</strong>, crie a ficha do chefe da segurança.</li>
+            <li>Em <strong>Permissões</strong>, selecione <strong>Nível 5 - Chefe de Equipe</strong>.</li>
+            <li>Nas caixas de cargos subordinados, marque ou escreva <strong>Vigia</strong>. Isso habilitará a aba 'Meu Setor' no painel dele exclusivamente para controlar os vigias.</li>
+          </ol>
+
+          <h4 className="text-white font-bold text-sm mb-2">3. Criando o Vigia Operacional</h4>
+          <ol className="list-decimal pl-5 space-y-1 text-sm">
+            <li>Em <strong>Funcionários</strong>, cadastre o vigia escrevendo <strong>Vigia</strong> exatamente no campo Cargo/Função.</li>
+            <li>Em <strong>Permissões</strong>, atribua <strong>Nível 6 - Operacional Mobile</strong>, garantindo que a escola selecionada é a mesma escola da sua lotação física.</li>
+            <li>Ao fazer login, este usuário enxergará somente a tela de Ponto/QR Code. O chefe dele poderá ver seus logs em tempo real na aba Meu Setor.</li>
+          </ol>
+        </div>
+      </div>
+    )
   },
   {
-    title: 'Transferencia de Funcionarios',
-    tags: 'transferencia lotacao funcionario movimentacao mover escola auxiliar secretario nivel 1',
+    id: 'd10',
     icon: ArrowLeftRight,
-    body: [
-      'Use a gestao de lotacoes para mover funcionarios entre escolas.',
-      'Selecione origem e destino, confirme a transferencia e mantenha o historico da lotacao anterior.',
-    ],
-  },
+    titulo: 'Transferência de Funcionários (Lotação)',
+    conteudo: (
+      <div className="space-y-4">
+        <p>Para transferir ou mover um funcionário (como um Auxiliar de Classe, Secretário ou Vigia) de uma escola para outra na rede municipal, utilize a funcionalidade de <strong>Gestão de Lotações</strong>:</p>
+        <ol className="list-decimal pl-5 space-y-2">
+          <li><strong>Acesse o módulo de Funcionários:</strong> No menu lateral esquerdo do Painel Escolar, clique em <strong>Funcionários</strong>.</li>
+          <li><strong>Abra a Gestão de Lotações:</strong> No canto superior direito, clique no botão <strong>"Gestão de Lotações"</strong> (identificado com um ícone de rede/conexões). <em>Nota: Esta funcionalidade exige nível administrativo (Nível 1 - Administrador Global).</em></li>
+          <li><strong>Selecione o Funcionário:</strong> Na lista à esquerda, procure e clique no nome do funcionário que deseja mover (você pode utilizar a barra de pesquisa para filtrar pelo nome).</li>
+          <li><strong>Indique Origem e Destino:</strong> Na seção à direita <strong>"Mover Lotação Existente (Transferir)"</strong>, selecione a <strong>Lotação de Origem</strong> (o vínculo da escola atual do funcionário) e a <strong>Escola de Destino</strong> (a nova escola para a qual ele será alocado).</li>
+          <li><strong>Confirme a Transferência:</strong> Clique no botão correspondente para salvar a mudança. O sistema arquivará a lotação anterior e criará o novo registro ativo para a nova escola automaticamente com o mesmo cargo.</li>
+        </ol>
+      </div>
+    )
+  }
 ]
 
 export default function AjudaPage() {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(helpItems[0].title)
+  const [busca, setBusca] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [reportModalOpen, setReportModalOpen] = useState(false)
 
-  const filteredItems = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    if (!normalized) return helpItems
-    return helpItems.filter((item) => `${item.title} ${item.tags}`.toLowerCase().includes(normalized))
-  }, [query])
+  const toggleDiretriz = (id: string) => {
+    setExpandedId(prev => (prev === id ? null : id))
+  }
+
+  const diretrizesFiltradas = diretrizes.filter(d => 
+    d.titulo.toLowerCase().includes(busca.toLowerCase())
+  )
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-white">
-          <HelpCircle className="h-7 w-7 text-highlight" />
-          Central de Ajuda
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Guias rapidos para acesso, permissoes, professores, chefias e ponto mobile.</p>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <ModalReport open={reportModalOpen} onOpenChange={setReportModalOpen} />
+
+      <div className="pb-4 border-b border-[#3f3f46]">
+        <h2 className="text-2xl font-bold text-white">Central de Ajuda</h2>
       </div>
 
-      <Input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Buscar conteudos de ajuda..."
-        className="border-borderCustom bg-input"
-      />
+      <div className="mb-6">
+        <Input 
+          type="text"
+          placeholder="Buscar conteúdos de ajuda..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="bg-[#1a1a1a] border-[#333] text-white focus-visible:ring-highlight h-12 text-base"
+        />
+      </div>
 
       <div className="space-y-3">
-        {filteredItems.map((item) => {
-          const Icon = item.icon
-          const isOpen = open === item.title
+        {diretrizesFiltradas.map((diretriz) => {
+          const isExpanded = expandedId === diretriz.id
+          const Icon = diretriz.icon
 
           return (
-            <Card key={item.title} className="overflow-hidden border-borderCustom bg-card">
-              <button
-                type="button"
-                onClick={() => setOpen(isOpen ? '' : item.title)}
-                className="flex w-full items-center justify-between gap-4 p-4 text-left"
+            <div key={diretriz.id} className="bg-[#1f1f1f] border border-[#333] rounded-lg overflow-hidden">
+              <button 
+                onClick={() => toggleDiretriz(diretriz.id)}
+                className="w-full bg-transparent border-none text-white p-4 text-left flex justify-between items-center cursor-pointer font-medium hover:bg-[#252525] transition-colors"
               >
-                <span className="flex items-center gap-2 font-medium text-white">
-                  <Icon className="h-5 w-5 text-highlight" />
-                  {item.title}
+                <span className="flex items-center gap-2">
+                  <Icon className="w-5 h-5 text-highlight" />
+                  {diretriz.titulo}
                 </span>
-                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-[#aaa] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
-
-              {isOpen && (
-                <div className="border-t border-borderCustom px-5 pb-5 pt-4 text-sm leading-6 text-muted-foreground">
-                  <ul className="space-y-2">
-                    {item.body.map((line) => (
-                      <li key={line} className="flex gap-2">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-highlight" />
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {item.warning && (
-                    <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive">
-                      <div className="flex gap-2">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span>{item.warning}</span>
-                      </div>
-                    </div>
-                  )}
+              
+              {isExpanded && (
+                <div className="p-4 pt-0 text-[#aaa] text-sm leading-relaxed border-t border-[#333]">
+                  {diretriz.conteudo}
                 </div>
               )}
-            </Card>
+            </div>
           )
         })}
+        {diretrizesFiltradas.length === 0 && (
+          <div className="text-center text-[#aaa] py-8">Nenhum resultado encontrado.</div>
+        )}
       </div>
 
-      <div className="border-t border-dashed border-borderCustom pt-6 text-center">
-        <Button variant="outline" className="border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20">
-          <MessageSquareWarning className="mr-2 h-4 w-4" />
+      <div className="mt-8 text-center pt-8 border-t border-dashed border-[#333]">
+        <Button 
+          onClick={() => setReportModalOpen(true)}
+          variant="outline" 
+          className="bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20 hover:text-red-500 font-semibold h-12 px-6"
+        >
+          <MessageSquareWarning className="w-5 h-5 mr-2" />
           Reportar um Problema ou Bug
         </Button>
       </div>

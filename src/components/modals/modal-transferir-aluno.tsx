@@ -1,0 +1,138 @@
+'use client'
+
+import { useState } from 'react'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowRightLeft } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
+
+interface ModalTransferirAlunoProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  trigger?: React.ReactNode
+  alunoNome?: string
+  alunoId?: string
+  escolaOrigemId?: string
+}
+
+export function ModalTransferirAluno({ 
+  open, 
+  onOpenChange, 
+  trigger, 
+  alunoNome = 'Aluno', 
+  alunoId,
+  escolaOrigemId 
+}: ModalTransferirAlunoProps) {
+  
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [escolaDestino, setEscolaDestino] = useState('')
+  const [observacoes, setObservacoes] = useState('')
+  const [arquivos, setArquivos] = useState<FileList | null>(null)
+
+  const activeOpen = open !== undefined ? open : isOpen
+  const handleOpenChange = (val: boolean) => {
+    if (onOpenChange) onOpenChange(val)
+    setIsOpen(val)
+  }
+
+  const handleSalvarTransferencia = async () => {
+    if (!escolaDestino) {
+      toast.error('Selecione uma escola de destino.')
+      return
+    }
+
+    setLoading(true)
+    // Simulação do request ao banco para registrar a transferência
+    setTimeout(() => {
+      setLoading(false)
+      toast.success(`Solicitação enviada! A escola de destino precisará aprovar.`)
+      handleOpenChange(false)
+    }, 1000)
+  }
+
+  return (
+    <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
+      {trigger && <DialogTrigger render={trigger as any} />}
+      
+      <DialogContent className="sm:max-w-[450px] bg-[#18181b] border-[#3f3f46] text-white">
+        <DialogHeader>
+          <DialogTitle className="text-white flex items-center gap-2 m-0 mt-0">
+            <ArrowRightLeft className="w-5 h-5 text-highlight" />
+            Solicitar Transferência
+          </DialogTitle>
+        </DialogHeader>
+        
+        <p className="text-[#aaa] text-sm mb-4">
+          Você está solicitando a transferência de <strong className="text-white">{alunoNome}</strong> para outra escola. A escola de destino precisará aprovar.
+        </p>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-[#ccc] text-[13px]">Escola de Destino</Label>
+            <Select value={escolaDestino} onValueChange={(val) => val && setEscolaDestino(val)}>
+              <SelectTrigger className="w-full bg-[#121212] border-[#3f3f46] text-white">
+                <SelectValue placeholder="Selecione a escola de destino..." />
+              </SelectTrigger>
+              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+                <SelectItem value="escola_1">Escola Municipal Eraldo Tinoco</SelectItem>
+                <SelectItem value="escola_2">Centro Educacional de Sapeaçu</SelectItem>
+                <SelectItem value="escola_3">Escola Rural Boa Vista</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[#ccc] text-[13px]">Observações (Opcional)</Label>
+            <Textarea 
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              className="w-full bg-[#121212] border-[#3f3f46] text-white" 
+              rows={3} 
+              placeholder="Motivo da transferência, histórico relevante..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[#ccc] text-[13px]">Anexar Documentos (Opcional)</Label>
+            <Input 
+              type="file" 
+              multiple 
+              onChange={(e) => setArquivos(e.target.files)}
+              className="w-full bg-[#121212] border-[#3f3f46] text-white file:text-white" 
+            />
+            <span className="text-[11px] text-[#666]">Formatos aceitos: PDF, JPG, PNG.</span>
+          </div>
+        </div>
+
+        <DialogFooter className="mt-6 flex justify-end gap-3 sm:justify-end">
+          <Button 
+            variant="ghost" 
+            onClick={() => handleOpenChange(false)}
+            className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSalvarTransferencia}
+            disabled={loading}
+            className="bg-highlight text-black hover:bg-highlight/90"
+          >
+            {loading ? 'Enviando...' : 'Solicitar Transferência'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
