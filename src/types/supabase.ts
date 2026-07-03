@@ -51,6 +51,7 @@ export type Database = {
           created_at: string
           funcionario_id: string | null
           id: string
+          is_superadmin: boolean | null
           nivel: number
           orgao_id: string | null
           pode_alunos: boolean | null
@@ -67,6 +68,7 @@ export type Database = {
           created_at?: string
           funcionario_id?: string | null
           id?: string
+          is_superadmin?: boolean | null
           nivel: number
           orgao_id?: string | null
           pode_alunos?: boolean | null
@@ -83,6 +85,7 @@ export type Database = {
           created_at?: string
           funcionario_id?: string | null
           id?: string
+          is_superadmin?: boolean | null
           nivel?: number
           orgao_id?: string | null
           pode_alunos?: boolean | null
