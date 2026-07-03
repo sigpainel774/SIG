@@ -20,24 +20,10 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-interface Escola {
-  id: string
-  nome: string
-  logo?: string
-  color: string
-}
-
-const mockEscolas: Escola[] = [
-  { id: '1', nome: 'Colégio Dr Eraldo Tinoco', color: 'bg-blue-600' },
-  { id: '2', nome: 'Colégio Moisés Alves', color: 'bg-indigo-600' },
-  { id: '3', nome: 'Escola Castelo Branco', color: 'bg-amber-600' },
-  { id: '4', nome: 'Escola Frei Urbano', color: 'bg-emerald-600' },
-  { id: '5', nome: 'Escola Jovino Souza Lima', color: 'bg-cyan-600' },
-  { id: '6', nome: 'Escolhinha PIU-PIU', color: 'bg-rose-600' },
-]
+import { useSchoolStore, mockEscolas } from '@/store/useSchoolStore'
 
 export default function HomePage() {
-  const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null)
+  const { selectedEscola, setSelectedEscola } = useSchoolStore()
   const [modoVisualizacao, setModoVisualizacao] = useState(false)
 
   const modulosEscolares = [
@@ -54,50 +40,28 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 -mt-2">
-      {/* Top Header Bar */}
-      <div className="bg-[#141414] border border-borderCustom rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-white text-lg">Sapeaçu Painel Escolar</span>
-          
-          {selectedEscola && (
-            <div className="flex items-center gap-2 bg-[#1f2937]/80 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium animate-in fade-in zoom-in-95">
-              <div className={`w-5 h-5 rounded-full ${selectedEscola.color} flex items-center justify-center text-white text-xs font-bold`}>
+      {/* Indicador de Escola Selecionada caso exista */}
+      {selectedEscola && (
+        <div className="bg-[#141414] border border-borderCustom rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola Selecionada:</span>
+            <div className="flex items-center gap-2 bg-[#1f2937]/80 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
+              <div className={`w-5 h-5 rounded-full ${selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
                 {selectedEscola.nome[0]}
               </div>
               <span>{selectedEscola.nome}</span>
-              <button 
-                onClick={() => setSelectedEscola(null)}
-                className="hover:bg-highlight/20 rounded-full p-0.5 transition-colors ml-1"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-6">
-          {/* Notifications */}
-          <div className="relative">
-            <Bell className="w-5 h-5 text-foregroundCustom/80 cursor-pointer hover:text-white transition-colors" />
-            <span className="absolute -top-1.5 -right-1.5 bg-destructive text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              2
-            </span>
           </div>
-
-          {/* Toggle Modo Visualização */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-foregroundCustom/80">Modo Visualização</span>
-            <button
-              onClick={() => setModoVisualizacao(!modoVisualizacao)}
-              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${
-                modoVisualizacao ? 'bg-highlight justify-end' : 'bg-input justify-start'
-              }`}
-            >
-              <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
-            </button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedEscola(null)}
+            className="text-muted-foreground hover:text-white gap-1"
+          >
+            <X className="w-4 h-4" /> Limpar Seleção (Visão Geral)
+          </Button>
         </div>
-      </div>
+      )}
 
       {/* Visão 1: Seleção de Escolas */}
       {!selectedEscola ? (
