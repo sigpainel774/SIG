@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { PermissoesView } from '@/components/PermissoesView'
 
 export default function PermissoesPage() {
-  redirect('/configuracoes')
+  return <PermissoesView />
 }

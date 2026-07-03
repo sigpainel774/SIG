@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { Sidebar } from '@/components/Sidebar'
+import { Header } from '@/components/Header'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -8,14 +9,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <header className="h-16 border-b border-borderCustom bg-card flex items-center px-6 shadow-sm">
-          <div className="flex-1"></div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Escola Ativa: <strong className="text-foregroundCustom font-bold">Escola Modelo</strong></span>
-          </div>
-        </header>
-        <div className="p-8">
+      <main className="flex-1 overflow-auto flex flex-col min-w-0">
+        <Header />
+        <div className="p-8 flex-1">
           {children}
         </div>
       </main>

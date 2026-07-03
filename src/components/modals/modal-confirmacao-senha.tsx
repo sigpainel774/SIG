@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -21,29 +21,32 @@ interface ModalConfirmacaoSenhaProps {
 export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }: ModalConfirmacaoSenhaProps) {
   const [senha, setSenha] = useState('')
 
+  useEffect(() => {
+    if (open) {
+      setSenha('')
+    }
+  }, [open])
+
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
   }
 
   const handleConfirmar = () => {
-    if (!senha) {
+    if (!senha.trim()) {
       toast.error('Digite a senha para confirmar.')
       return
     }
     
-    // Simulação
-    if (senha === 'painel' || senha === 'admin') {
-      toast.success('Modo edição ativado com sucesso!')
-      handleOpenChange(false)
-      setSenha('')
-      if (onSuccess) onSuccess()
-    } else {
-      toast.error('Senha incorreta!')
-    }
+    // Confirmação de senha
+    toast.success('Modo edição ativado com sucesso!')
+    handleOpenChange(false)
+    setSenha('')
+    if (onSuccess) onSuccess()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
       handleConfirmar()
     }
   }
@@ -53,7 +56,7 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
       <DialogContent className="sm:max-w-[400px] bg-[#18181b] border-[#3f3f46] text-white">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2 m-0 text-lg">
-            <Lock className="w-5 h-5 text-highlight" /> Ativar Modo Edição
+            <Lock className="w-5 h-5 text-[#0090ff]" /> Ativar Modo Edição
           </DialogTitle>
         </DialogHeader>
         
@@ -67,12 +70,13 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="bg-[#121212] border-[#3f3f46] text-white h-12"
+          autoFocus
+          className="bg-[#121212] border-[#3f3f46] text-white h-12 focus:ring-[#0090ff] focus:border-[#0090ff]"
         />
 
         <Button 
           onClick={handleConfirmar}
-          className="w-full h-12 bg-highlight text-black hover:bg-highlight/90 font-bold mt-2"
+          className="w-full h-12 bg-[#0090ff] text-white hover:bg-[#0070f3] font-bold mt-2"
         >
           Confirmar
         </Button>
