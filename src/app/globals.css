@@ -93,3 +93,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Utilitários de Impressão Oficial (Portados de estiloantigo/) */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print, header, sidebar, nav, button {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+}
