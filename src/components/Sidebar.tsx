@@ -55,8 +55,12 @@ export function Sidebar() {
     <aside className="w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none">
       {/* Brand Header */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
-          <Image src="/icon-512.png" alt="Logo" width={40} height={40} className="object-cover" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-[#18181b] border border-[#27272a] p-1 shrink-0">
+          <img 
+            src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
+            alt="Logo" 
+            className="w-full h-full object-contain rounded-lg" 
+          />
         </div>
         <h2 className="text-xl font-bold tracking-tight text-sidebar-foreground">Painel Escolar</h2>
       </div>
