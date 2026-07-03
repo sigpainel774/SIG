@@ -219,71 +219,78 @@ export default function AlunosPage() {
         </div>
       </div>
 
-      {/* Tabela Grid de Alunos */}
-      <div className="rounded-2xl border border-borderCustom bg-[#121212] overflow-hidden shadow-md">
-        <Table>
-          <TableHeader className="bg-[#0d0d0d]">
-            <TableRow className="border-borderCustom hover:bg-transparent">
-              <TableHead className="text-foregroundCustom font-semibold">Foto</TableHead>
-              <TableHead className="text-foregroundCustom font-semibold">Nome Completo</TableHead>
-              <TableHead className="text-foregroundCustom font-semibold">CPF</TableHead>
-              <TableHead className="text-foregroundCustom font-semibold">Código INEP (Censo)</TableHead>
-              <TableHead className="text-foregroundCustom font-semibold">Série / Ano</TableHead>
-              <TableHead className="text-right text-foregroundCustom font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {alunosFiltrados.map((aluno) => (
-              <TableRow key={aluno.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
-                <TableCell>
-                  <div className="w-9 h-9 rounded-full bg-slate-800 border border-highlight/40 overflow-hidden flex items-center justify-center text-xs font-bold text-white">
-                    {aluno.foto_url ? (
-                      <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-                    ) : (
-                      aluno.nome[0]
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="font-semibold text-white">
-                  <div>{aluno.nome}</div>
-                  {aluno.nome_mae && <div className="text-[11px] text-muted-foreground">Mãe: {aluno.nome_mae}</div>}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-xs">{aluno.cpf || 'Não informado'}</TableCell>
-                <TableCell className="text-muted-foreground font-mono text-xs">{aluno.inep || 'Sem INEP'}</TableCell>
-                <TableCell className="text-muted-foreground text-xs font-medium">{aluno.serie || aluno.dados_matricula?.serieAluno || '-'}</TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button 
-                    onClick={() => handleImprimirAluno(aluno)} 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-[#3ea6ff] hover:text-[#3ea6ff] hover:bg-[#3ea6ff]/10 gap-1 text-xs font-semibold"
-                    title="Imprimir Ficha de Matrícula Individual"
-                  >
-                    <Printer className="w-3.5 h-3.5" /> Ficha
-                  </Button>
-                  <Button 
-                    onClick={() => handleEditarAluno(aluno)} 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-gray-300 hover:text-white hover:bg-white/10 gap-1 text-xs"
-                    title="Editar Ficha"
-                  >
-                    <Edit className="w-3.5 h-3.5" /> Editar
-                  </Button>
-                  <Button 
-                    onClick={() => handleDeletar(aluno.id)} 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 gap-1 text-xs"
-                    title="Excluir Aluno"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {/* Lista de Alunos em Cards */}
+      <div className="flex flex-col gap-4">
+        {alunosFiltrados.map((aluno) => (
+          <div key={aluno.id} className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-6 flex items-center gap-6 shadow-sm hover:border-[#3ea6ff]/30 transition-colors">
+            {/* Foto / Iniciais */}
+            <div className="w-16 h-16 rounded-full border-2 border-[#3ea6ff] flex-shrink-0 flex items-center justify-center bg-[#3ea6ff]/10 text-white text-xl font-bold overflow-hidden">
+              {aluno.foto_url ? (
+                <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
+              ) : (
+                aluno.nome.substring(0, 2).toUpperCase()
+              )}
+            </div>
+
+            {/* Informações */}
+            <div className="flex-1 flex flex-col justify-center">
+              <h3 className="text-[1.15rem] font-bold text-white mb-2">{aluno.nome}</h3>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-[0.9rem]">
+                  <span className="text-gray-400 font-semibold">Telefone:</span>
+                  <span className="text-gray-300">{aluno.telefone || '-'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[0.9rem]">
+                  <span className="text-gray-400 font-semibold">Email:</span>
+                  <span className="text-gray-300">{aluno.dados_matricula?.emailAluno || '-'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[0.9rem]">
+                  <span className="text-gray-400 font-semibold">Endereço:</span>
+                  <span className="text-gray-300">{aluno.endereco || aluno.dados_matricula?.ruaAluno || '-'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[0.9rem]">
+                  <span className="text-gray-400 font-semibold">Série:</span>
+                  <span className="text-gray-300">{aluno.serie || aluno.dados_matricula?.serieAluno || '-'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[0.9rem]">
+                  <span className="text-gray-400 font-semibold">Escola:</span>
+                  <span className="text-gray-300">{aluno.escola_nome || aluno.dados_matricula?.escolaNome || '-'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => handleEditarAluno(aluno)}
+                className="w-12 h-12 rounded-full border border-gray-600/40 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Editar Aluno"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => handleDeletar(aluno.id)}
+                className="w-12 h-12 rounded-full border border-rose-500/30 flex items-center justify-center text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                title="Excluir Aluno"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => handleImprimirAluno(aluno)}
+                className="w-12 h-12 rounded-full border border-[#3ea6ff]/40 flex items-center justify-center text-[#3ea6ff] hover:bg-[#3ea6ff]/10 transition-colors"
+                title="Imprimir Ficha de Matrícula"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {alunosFiltrados.length === 0 && (
+          <div className="text-center py-12 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground">
+            Nenhum aluno encontrado.
+          </div>
+        )}
       </div>
     </div>
   )
