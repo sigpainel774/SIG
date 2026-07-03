@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
