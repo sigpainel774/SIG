@@ -26,6 +26,11 @@ export function Header() {
       <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-6 shadow-sm sticky top-0 z-30">
         {/* Title / Logo */}
         <div className="flex items-center gap-3">
+          <img 
+            src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
+            alt="Painel Escolar Logo" 
+            className="w-7 h-7 object-contain rounded-md" 
+          />
           <h1 className="font-bold text-lg text-white tracking-tight">
             Sapeaçu Painel Escolar
           </h1>
