@@ -21,6 +21,16 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Sapeaçu Painel Escolar | SIG',
   description: 'Sistema Municipal de Gestão Educacional de Sapeaçu',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
   manifest: '/manifest.json',
   icons: {
     icon: '/icon-192.png',
