@@ -1,10 +1,17 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
+import { toast } from 'sonner'
 import { 
+  ShieldCheck,
+  RefreshCw,
+  LogOut,
+  User,
   LayoutGrid,
   Building2, 
-  Users, 
+  UserCheck, 
   KeyRound, 
   Briefcase, 
   Activity, 
@@ -14,7 +21,7 @@ import {
   Database, 
   BarChart3, 
   SlidersHorizontal, 
-  UserCheck, 
+  UserPlus, 
   ScanLine, 
   Bell, 
   Flag, 
@@ -32,6 +39,25 @@ interface QuickShortcut {
 
 export default function AdminHubPage() {
   const router = useRouter()
+  const supabase = createClient()
+  const { funcionario, limparSessao } = useAuthStore()
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      limparSessao()
+      toast.success('Sessão encerrada com sucesso!')
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      toast.error('Erro ao encerrar sessão')
+    }
+  }
+
+  const handleRefreshCache = () => {
+    toast.success('Cache do sistema atualizado com sucesso!')
+    router.refresh()
+  }
 
   const shortcuts: QuickShortcut[] = [
     // Row 1
@@ -45,7 +71,7 @@ export default function AdminHubPage() {
     {
       title: 'Usuários',
       subtitle: 'Contas de login',
-      icon: Users,
+      icon: UserCheck,
       iconColor: 'text-sky-400',
       path: '/funcionarios',
     },
@@ -82,7 +108,7 @@ export default function AdminHubPage() {
       title: 'Lixeira Global',
       subtitle: 'Restaurar deletados',
       icon: Trash2,
-      iconColor: 'text-red-500',
+      iconColor: 'text-rose-500',
       path: '/admin/lixeira',
     },
     {
@@ -110,13 +136,13 @@ export default function AdminHubPage() {
       title: 'Configurações',
       subtitle: 'Parâmetros do sistema',
       icon: SlidersHorizontal,
-      iconColor: 'text-slate-400',
+      iconColor: 'text-sky-400',
       path: '/configuracoes',
     },
     {
       title: 'Solicitações',
       subtitle: 'Lotação e escalas',
-      icon: UserCheck,
+      icon: UserPlus,
       iconColor: 'text-amber-400',
       path: '/admin/solicitacoes',
     },
@@ -125,14 +151,14 @@ export default function AdminHubPage() {
       title: 'Controle de Rondas',
       subtitle: 'Escalas e rotas',
       icon: ScanLine,
-      iconColor: 'text-fuchsia-400',
+      iconColor: 'text-cyan-400',
       path: '/admin/rondas',
     },
     {
       title: 'Notificações',
       subtitle: 'Avisos da rede',
       icon: Bell,
-      iconColor: 'text-red-500',
+      iconColor: 'text-rose-500',
       path: '/historico-notificacoes',
     },
     {
@@ -158,38 +184,81 @@ export default function AdminHubPage() {
     },
   ]
 
+  const userEmail = funcionario?.email || 'adm@super.com'
+
   return (
-    <div className="space-y-6 select-none p-1 sm:p-2">
-      {/* Title */}
-      <div className="flex items-center gap-2.5">
-        <LayoutGrid className="w-5 h-5 text-white" />
-        <h1 className="text-lg font-bold text-white tracking-wide">
-          Atalhos de Acesso Rápido
-        </h1>
+    <div className="space-y-6 select-none -mt-3">
+      {/* Top Header Bar matching user reference screenshot */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#232328] pb-4">
+        {/* Title and ROOT Badge */}
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="w-7 h-7 text-white stroke-[2.2]" />
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            Sapeaçu — Administração do Sistema
+            <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
+              ROOT
+            </span>
+          </h1>
+        </div>
+
+        {/* User Status & Actions */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-[#17171a] px-3 py-1.5 rounded-xl border border-[#27272a]">
+            <User className="w-4 h-4 text-slate-400" />
+            <span>Logado como: <strong className="text-white">{userEmail}</strong></span>
+          </div>
+
+          <button
+            onClick={handleRefreshCache}
+            className="bg-[#052e16]/70 border border-[#166534] hover:bg-[#052e16] text-[#4ade80] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Atualizar Cache</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="bg-[#450a0a]/70 border border-[#991b1b] hover:bg-[#450a0a] text-[#f87171] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sair</span>
+          </button>
+        </div>
       </div>
 
-      {/* Shortcuts Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-        {shortcuts.map((item, i) => {
-          const Icon = item.icon
-          return (
-            <div
-              key={i}
-              onClick={() => router.push(item.path)}
-              className="bg-[#141416] hover:bg-[#1c1c20] border border-[#26262a] hover:border-white/20 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.98] shadow-sm"
-            >
-              <div className="mb-3 flex items-center justify-center">
-                <Icon className={`w-8 h-8 ${item.iconColor} transition-transform duration-200 group-hover:scale-110`} strokeWidth={1.8} />
+      {/* Shortcuts Container Box matching user reference screenshot */}
+      <div className="bg-[#121214] border border-[#232326] rounded-2xl p-6 shadow-xl space-y-5">
+        {/* Section Header */}
+        <div className="flex items-center gap-2.5 pb-2">
+          <LayoutGrid className="w-5 h-5 text-white" />
+          <h2 className="text-base md:text-lg font-bold text-white tracking-wide">
+            Atalhos de Acesso Rápido
+          </h2>
+        </div>
+
+        {/* 17 Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {shortcuts.map((item, i) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={i}
+                onClick={() => router.push(item.path)}
+                className="bg-[#17171a] hover:bg-[#202024] border border-[#27272a] hover:border-white/20 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.98] shadow-sm min-h-[140px]"
+              >
+                <div className="mb-3 flex items-center justify-center">
+                  <Icon className={`w-9 h-9 ${item.iconColor} transition-transform duration-200 group-hover:scale-110`} strokeWidth={1.8} />
+                </div>
+                <h3 className="font-bold text-white text-base leading-snug">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-[#8e8e93] font-normal mt-1 leading-tight">
+                  {item.subtitle}
+                </p>
               </div>
-              <h2 className="font-bold text-white text-base leading-snug">
-                {item.title}
-              </h2>
-              <p className="text-xs text-[#8e8e93] font-normal mt-1 leading-tight">
-                {item.subtitle}
-              </p>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )
