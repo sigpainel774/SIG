@@ -53,6 +53,7 @@ CREATE TABLE acessos_usuarios (
   nivel INTEGER NOT NULL CHECK (nivel BETWEEN 1 AND 6),
   ativo BOOLEAN DEFAULT true,
   cargos_gerenciados TEXT[], -- Nível 5
+  is_superadmin BOOLEAN DEFAULT false,
   pode_mural BOOLEAN DEFAULT false,
   pode_turmas BOOLEAN DEFAULT false,
   pode_funcionarios BOOLEAN DEFAULT false,
