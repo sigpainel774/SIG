@@ -38,7 +38,8 @@ export function Sidebar() {
   }
 
   const menuItems = [
-    { href: '/home', label: 'Início', icon: Home },
+    { href: '/admin', label: 'Painel Admin ROOT', icon: ShieldCheck },
+    { href: '/home', label: 'Início Escolar', icon: Home },
     { href: '/mural', label: 'Mural', icon: Pin },
     { href: '/funcionarios', label: 'Funcionários', icon: Users },
     { href: '/alunos', label: 'Alunos', icon: GraduationCap },
