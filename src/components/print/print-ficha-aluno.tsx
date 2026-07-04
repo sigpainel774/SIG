@@ -62,17 +62,19 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
       </div>
 
       {/* Conteúdo Impresso (A4) */}
-      <div className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto">
+      <div 
+        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto"
+        style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+      >
         <div>
           {/* Cabeçalho Oficial */}
           <div className="flex items-center justify-between pb-3 border-b-2 border-black mb-2">
             <div className="flex items-center gap-2 max-w-[200px]">
-              {/* Brasão Sapeaçu */}
-              <div className="w-12 h-14 border border-blue-900/40 p-0.5 flex flex-col items-center justify-center text-[8px] text-center font-bold text-blue-950 bg-blue-50/50">
-                <span className="text-[9px] uppercase text-blue-800 font-black">PREFEITURA DE</span>
-                <span className="text-[12px] font-black tracking-tighter text-blue-900">SAPE AÇU</span>
-                <span className="text-[6px] font-semibold text-amber-600 tracking-widest uppercase">IGUALDADE E JUSTIÇA</span>
-              </div>
+              <img 
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`} 
+                alt="Prefeitura de Sapeaçu" 
+                className="h-16 w-auto object-contain"
+              />
             </div>
 
             <div className="text-center flex-1 px-2">
@@ -81,8 +83,11 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
             </div>
 
             <div className="text-right max-w-[220px]">
-              <div className="text-[10px] font-black leading-none text-amber-600 uppercase tracking-tight">SECRETARIA MUNICIPAL DE</div>
-              <div className="text-[18px] font-black leading-none text-blue-900 uppercase tracking-tighter">EDUCAÇÃO</div>
+              <img 
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`} 
+                alt="Secretaria Municipal de Educação" 
+                className="h-16 w-auto object-contain"
+              />
             </div>
           </div>
 
