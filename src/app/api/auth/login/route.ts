@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const { data: funcionario } = await supabaseAdmin
       .from('funcionarios')
       .select('*')
-      .eq('auth_user_id', userId)
+      .ilike('email', email)
       .maybeSingle()
 
     if (!funcionario) {

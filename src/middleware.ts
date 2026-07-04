@@ -33,6 +33,11 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Permitir requisições para a API passarem direto
+  if (pathname.startsWith('/api')) {
+    return supabaseResponse
+  }
+
   // Se não estiver logado e tentando acessar rota protegida, envia pro login
   if (!user && !pathname.startsWith('/login') && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
