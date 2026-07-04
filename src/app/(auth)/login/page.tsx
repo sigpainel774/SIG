@@ -27,8 +27,20 @@ export default function LoginPage() {
       return
     }
 
+    // Verificar se o usuário é superadmin para redirecionamento correto
+    const { data: funcData } = await supabase
+      .from('funcionarios')
+      .select('is_superadmin')
+      .ilike('email', email)
+      .maybeSingle()
+
     toast.success('Login bem sucedido!')
-    router.push('/home')
+    
+    if (funcData?.is_superadmin) {
+      router.push('/admin')
+    } else {
+      router.push('/home')
+    }
     router.refresh()
   }
 

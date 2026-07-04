@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Pin, 
@@ -21,10 +22,31 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 import { useSchoolStore, mockEscolas } from '@/store/useSchoolStore'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function HomePage() {
+  const router = useRouter()
+  const supabase = createClient()
   const { selectedEscola, setSelectedEscola } = useSchoolStore()
   const [modoVisualizacao, setModoVisualizacao] = useState(false)
+
+  useEffect(() => {
+    async function checkSuperAdmin() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) {
+        const { data } = await supabase
+          .from('funcionarios')
+          .select('is_superadmin')
+          .ilike('email', user.email)
+          .maybeSingle()
+
+        if (data?.is_superadmin) {
+          router.replace('/admin')
+        }
+      }
+    }
+    checkSuperAdmin()
+  }, [router, supabase])
 
   const modulosEscolares = [
     { label: 'Mural', icon: Pin, href: '/mural' },

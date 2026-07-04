@@ -44,9 +44,17 @@ export async function proxy(request: NextRequest) {
   // Em um cenário real, se as custom claims não estiverem habilitadas, 
   // será preciso buscar o nível no banco e rotear.
   if (user) {
-    if (pathname.startsWith('/login')) {
+    if (pathname === '/' || pathname.startsWith('/login')) {
+      const { data } = await supabase
+        .from('funcionarios')
+        .select('is_superadmin')
+        .ilike('email', user.email || '')
+        .maybeSingle()
+
+      const isSuperAdmin = data?.is_superadmin || false
+
       const url = request.nextUrl.clone()
-      url.pathname = '/home' // ou /ponto-mobile dependendo do nível
+      url.pathname = isSuperAdmin ? '/admin' : '/home'
       return NextResponse.redirect(url)
     }
   }
