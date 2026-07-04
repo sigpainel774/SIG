@@ -1,11 +1,12 @@
 import { ReactNode } from 'react'
 import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
+import { RootAdminHeader } from '@/components/RootAdminHeader'
 import { createClient } from '@/lib/supabaseServer'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { redirect } from 'next/navigation'
 
-export default async function EscolaLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -26,9 +27,16 @@ export default async function EscolaLayout({ children }: { children: ReactNode }
     isSuperAdmin = data?.is_superadmin || false
   }
 
-  // Se o super admin tentar acessar a rota escolar, redireciona ele para o admin
+  // Layout exclusivo para Super Admin (Root)
   if (isSuperAdmin) {
-    redirect('/admin')
+    return (
+      <div className="flex flex-col min-h-screen bg-[#0a0a0a] text-foregroundCustom">
+        <RootAdminHeader />
+        <main className="flex-1 overflow-auto p-4 sm:p-8">
+          {children}
+        </main>
+      </div>
+    )
   }
 
   // Layout tradicional para Escolas (Níveis 1 a 6)

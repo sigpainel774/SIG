@@ -56,9 +56,3 @@ Ao converter recursos do projeto antigo (Vanilla HTML/CSS/JS) para este reposit�
 - **Projeto Supabase**: https://nijjizpcodnjhvqwjuso.supabase.co
 <!-- END:sig-project-urls -->
 
-<!-- BEGIN:user-workflow-rules -->
-# Regras de Fluxo de Trabalho do Usuário
-
-- **Ambiente**: O usuário está utilizando o **Antigravity** (não o VS Code) e o **GitHub Desktop** para controle de versão.
-- **Commits e Push**: Não dar instruções ou presumir o uso do terminal integrado do VS Code para comandos do Git. O usuário fará o commit e o push manualmente usando a interface do GitHub Desktop quando for solicitado.
-<!-- END:user-workflow-rules -->
