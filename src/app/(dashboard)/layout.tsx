@@ -40,9 +40,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto flex flex-col min-w-0">
+      <main className="flex-1 overflow-auto flex flex-col min-w-0 print:overflow-visible print:block">
         <Header />
-        <div className="p-8 flex-1">
+        <div className="p-8 flex-1 print:p-0 print:block">
           {children}
         </div>
       </main>

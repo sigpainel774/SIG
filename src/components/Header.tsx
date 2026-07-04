@@ -23,7 +23,7 @@ export function Header() {
 
   return (
     <>
-      <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-6 shadow-sm sticky top-0 z-30">
+      <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-6 shadow-sm sticky top-0 z-30 print:hidden">
         {/* Title / Logo */}
         <div className="flex items-center gap-3">
           <img 
