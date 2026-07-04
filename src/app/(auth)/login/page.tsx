@@ -2,34 +2,45 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const { setAuth } = useAuthStore()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      })
 
-    if (error) {
-      toast.error('Erro ao fazer login. Verifique as credenciais.')
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Erro ao fazer login. Verifique as credenciais.')
+        setLoading(false)
+        return
+      }
+
+      setAuth(data.funcionario, data.acessos)
+      toast.success('Login bem sucedido!')
+      router.push(data.redirect)
+      router.refresh()
+    } catch (error) {
+      toast.error('Ocorreu um erro inesperado.')
       setLoading(false)
-      return
     }
-
-    toast.success('Login bem sucedido!')
-    router.push('/home')
-    router.refresh()
   }
 
   return (
