@@ -392,7 +392,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   return (
     <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger render={trigger as any} />}
-      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] bg-[#181818] border border-[#2a2a2a] text-[#f1f1f1] p-0 overflow-hidden flex flex-col rounded-xl shadow-2xl">
+      <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] bg-[#181818] border border-[#2a2a2a] text-[#f1f1f1] p-0 overflow-hidden flex flex-col rounded-xl shadow-2xl">
         
         {/* Cabeçalho Fixo (Sticky) */}
         <DialogHeader className="sticky top-0 z-10 bg-[#181818] border-b border-[#2a2a2a] px-6 py-4 flex flex-row items-center justify-between">
