@@ -145,6 +145,27 @@ export type Database = {
           },
         ]
       }
+      cargos: {
+        Row: {
+          id: string
+          nome: string
+          nivel_acesso: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          nivel_acesso?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          nivel_acesso?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       blocked_ips: {
         Row: {
           blocked_until: string
