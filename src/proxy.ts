@@ -33,8 +33,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Se não estiver logado e tentando acessar rota protegida, envia pro login
-  if (!user && !pathname.startsWith('/login') && pathname.startsWith('/')) {
+  // Se não estiver logado e tentando acessar rota protegida (que não seja login nem API), envia pro login
+  if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/api') && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
