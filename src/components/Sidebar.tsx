@@ -46,7 +46,6 @@ export function Sidebar() {
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
     { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
-    { href: '/admin', label: 'Painel Root', icon: ShieldCheck },
   ]
 
   return (

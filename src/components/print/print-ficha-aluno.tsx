@@ -42,6 +42,21 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 6mm 8mm;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
       {/* Botões de Ação na tela (escondidos na impressão) */}
       <div className="fixed top-4 right-4 z-50 flex gap-2 print:hidden">
         <button
@@ -63,7 +78,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
 
       {/* Conteúdo Impresso (A4) */}
       <div 
-        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto print:block print:min-h-0 print:h-auto print:m-0"
+        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto print:flex print:flex-col print:justify-between print:min-h-[275mm] print:m-0"
         style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
       >
         <div>
@@ -435,12 +450,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <div className="h-12 flex items-center justify-center">
                 {dm.assinatura_responsavel_url ? (
                   <img src={dm.assinatura_responsavel_url} alt="Assinatura Responsável" className="max-h-12 object-contain" />
-                ) : (
-                  /* Espaço reservado para futura captura de assinatura digital */
-                  <div className="text-[9px] text-gray-400 italic font-mono mb-1">
-                    [Espaço para Assinatura Digital do Responsável]
-                  </div>
-                )}
+                ) : null}
               </div>
               <div className="border-t border-black w-full pt-1 text-[10px] font-semibold text-gray-800">
                 Assinatura do Pai/Mãe/Responsável pelo(a) Aluno(a)

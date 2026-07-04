@@ -3,6 +3,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
 import { createClient } from '@/lib/supabaseServer'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
@@ -11,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   let isSuperAdmin = false
 
   if (user && user.email) {
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('funcionarios')
       .select('is_superadmin')
       .eq('email', user.email)

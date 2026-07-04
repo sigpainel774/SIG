@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { PermissoesView } from '@/components/PermissoesView'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const modulesList = [
   { label: 'Mural', icon: Pin, enabled: true },
@@ -50,6 +51,7 @@ export default function ConfiguracoesPage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [modules, setModules] = useState(modulesList)
+  const { funcionario } = useAuthStore()
 
   useEffect(() => {
     setMounted(true)
@@ -193,10 +195,10 @@ export default function ConfiguracoesPage() {
                 <User className="h-10 w-10 text-muted-foreground" />
               </div>
               <div className="grid flex-1 gap-4 sm:grid-cols-2">
-                <ProfileField label="Nome Completo" value="Usuário do Sistema" strong />
-                <ProfileField label="E-mail" value="usuario@sapeacu.gov.br" />
-                <ProfileField label="Cargo" value="Servidor" badge />
-                <ProfileField label="Telefone" value="(75) 99999-0000" />
+                <ProfileField label="Nome Completo" value={funcionario?.nome || "Usuário"} strong />
+                <ProfileField label="E-mail" value={funcionario?.email || "-"} />
+                <ProfileField label="Cargo" value={funcionario?.cargo || "Servidor"} badge />
+                <ProfileField label="Status" value={funcionario?.status || "Ativo"} />
               </div>
             </div>
           </Card>
