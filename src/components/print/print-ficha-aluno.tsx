@@ -41,7 +41,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
       {/* Botões de Ação na tela (escondidos na impressão) */}
       <div className="fixed top-4 right-4 z-50 flex gap-2 print:hidden">
         <button
@@ -63,7 +63,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
 
       {/* Conteúdo Impresso (A4) */}
       <div 
-        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto"
+        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-tight font-sans border border-gray-300 print:border-none flex flex-col justify-between my-auto print:block print:min-h-0 print:h-auto print:m-0"
         style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
       >
         <div>
