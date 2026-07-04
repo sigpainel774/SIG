@@ -4,10 +4,15 @@ import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
 import { createClient } from '@/lib/supabaseServer'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { redirect } from 'next/navigation'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
 
   let isSuperAdmin = false
 
