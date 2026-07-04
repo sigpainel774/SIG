@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
@@ -13,7 +14,8 @@ import {
   FileBarChart, 
   RefreshCw, 
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -26,8 +28,11 @@ export function Sidebar() {
   const supabase = createClient()
   const { funcionario, limparSessao } = useAuthStore()
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true)
       await supabase.auth.signOut()
       limparSessao()
       toast.success('Sessão encerrada com sucesso!')
@@ -35,6 +40,7 @@ export function Sidebar() {
       router.refresh()
     } catch (error) {
       toast.error('Erro ao encerrar sessão')
+      setIsLoggingOut(false)
     }
   }
 
@@ -99,10 +105,15 @@ export function Sidebar() {
         </button>
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-xl transition-colors text-left cursor-pointer"
+          disabled={isLoggingOut}
+          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/20 hover:text-red-400 active:scale-[0.98] rounded-xl transition-all duration-200 text-left cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <LogOut className="w-5 h-5 text-destructive" />
-          <span>Sair</span>
+          {isLoggingOut ? (
+            <Loader2 className="w-5 h-5 text-destructive animate-spin" />
+          ) : (
+            <LogOut className="w-5 h-5 text-destructive" />
+          )}
+          <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
         </button>
       </div>
     </aside>
