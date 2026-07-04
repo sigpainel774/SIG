@@ -44,8 +44,9 @@ export async function proxy(request: NextRequest) {
   // Em um cenário real, se as custom claims não estiverem habilitadas, 
   // será preciso buscar o nível no banco e rotear.
   if (user) {
-    if (pathname === '/' || pathname.startsWith('/login')) {
-      const { data } = await supabase
+    if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
+      const { supabaseAdmin } = await import('@/lib/supabaseAdmin')
+      const { data } = await supabaseAdmin
         .from('funcionarios')
         .select('is_superadmin')
         .ilike('email', user.email || '')
@@ -53,9 +54,18 @@ export async function proxy(request: NextRequest) {
 
       const isSuperAdmin = data?.is_superadmin || false
 
-      const url = request.nextUrl.clone()
-      url.pathname = isSuperAdmin ? '/admin' : '/home'
-      return NextResponse.redirect(url)
+      // Se for superadmin e não estiver no admin, joga pro admin
+      if (isSuperAdmin && pathname !== '/admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin'
+        return NextResponse.redirect(url)
+      } 
+      // Se NÃO for superadmin e estiver na raiz ou no login, joga pro home
+      else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/home'
+        return NextResponse.redirect(url)
+      }
     }
   }
 
