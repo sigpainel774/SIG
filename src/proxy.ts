@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -40,15 +40,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Lógica simplificada de níveis baseada em JWT Custom Claims.
-  // Em um cenário real, se as custom claims não estiverem habilitadas, 
-  // será preciso buscar o nível no banco e rotear.
-  if (user) {
-    if (pathname.startsWith('/login')) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/home' // ou /ponto-mobile dependendo do nível
-      return NextResponse.redirect(url)
-    }
+  // Se logado e tentar acessar o login, redireciona para a home
+  if (user && pathname.startsWith('/login')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/home'
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
