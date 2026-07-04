@@ -49,7 +49,7 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none">
+    <aside className="w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none print:hidden">
       {/* Brand Header */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-[#18181b] border border-[#27272a] p-1 shrink-0">

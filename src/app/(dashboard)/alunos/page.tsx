@@ -186,7 +186,8 @@ export default function AlunosPage() {
       )}
 
       {/* Topo / Título */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
+      <div className="print:hidden space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
             <GraduationCap className="w-8 h-8 text-highlight" />
@@ -291,6 +292,7 @@ export default function AlunosPage() {
             Nenhum aluno encontrado.
           </div>
         )}
+      </div>
       </div>
     </div>
   )
