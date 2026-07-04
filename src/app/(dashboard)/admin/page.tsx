@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
   RefreshCw,
   LogOut,
+  Loader2,
   User,
   LayoutGrid,
   Building2, 
@@ -42,8 +44,11 @@ export default function AdminHubPage() {
   const supabase = createClient()
   const { funcionario, limparSessao } = useAuthStore()
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true)
       await supabase.auth.signOut()
       limparSessao()
       toast.success('Sessão encerrada com sucesso!')
@@ -51,6 +56,7 @@ export default function AdminHubPage() {
       router.refresh()
     } catch (error) {
       toast.error('Erro ao encerrar sessão')
+      setIsLoggingOut(false)
     }
   }
 
@@ -218,10 +224,15 @@ export default function AdminHubPage() {
 
           <button
             onClick={handleLogout}
-            className="bg-[#450a0a]/70 border border-[#991b1b] hover:bg-[#450a0a] text-[#f87171] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+            disabled={isLoggingOut}
+            className="bg-[#450a0a]/70 border border-[#991b1b] hover:bg-[#7f1d1d] hover:text-white text-[#f87171] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sair</span>
+            {isLoggingOut ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <LogOut className="w-3.5 h-3.5" />
+            )}
+            <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
           </button>
         </div>
       </div>
