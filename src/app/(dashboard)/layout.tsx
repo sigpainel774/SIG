@@ -15,8 +15,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     const { data } = await supabaseAdmin
       .from('funcionarios')
       .select('is_superadmin')
-      .eq('email', user.email)
-      .single()
+      .ilike('email', user.email)
+      .limit(1)
+      .maybeSingle()
     
     isSuperAdmin = data?.is_superadmin || false
   }
