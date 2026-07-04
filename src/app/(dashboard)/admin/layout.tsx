@@ -10,11 +10,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/login')
   }
 
-  const { data } = await supabaseAdmin
-    .from('funcionarios')
-    .select('is_superadmin')
-    .eq('auth_user_id', user.id)
-    .maybeSingle()
+  let data = null
+  if (user.email) {
+    const result = await supabaseAdmin
+      .from('funcionarios')
+      .select('is_superadmin')
+      .ilike('email', user.email)
+      .maybeSingle()
+    data = result.data
+  }
     
   if (!data?.is_superadmin) {
     redirect('/home')
