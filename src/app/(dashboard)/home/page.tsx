@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Pin, 
@@ -20,10 +20,14 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-import { useSchoolStore, mockEscolas } from '@/store/useSchoolStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export default function HomePage() {
-  const { selectedEscola, setSelectedEscola } = useSchoolStore()
+  const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
+
+  useEffect(() => {
+    loadEscolas()
+  }, [loadEscolas])
   const [modoVisualizacao, setModoVisualizacao] = useState(false)
 
   const modulosEscolares = [
@@ -69,7 +73,7 @@ export default function HomePage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Escolas</h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-            {mockEscolas.map((escola) => (
+            {escolas.map((escola) => (
               <Card
                 key={escola.id}
                 onClick={() => setSelectedEscola(escola)}

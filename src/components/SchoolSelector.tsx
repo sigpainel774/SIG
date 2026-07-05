@@ -1,13 +1,17 @@
 'use client'
 
-import { useSchoolStore, mockEscolas } from '@/store/useSchoolStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { Building2, ChevronDown, Check, Globe } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
 export function SchoolSelector() {
-  const { selectedEscola, setSelectedEscola } = useSchoolStore()
+  const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    loadEscolas()
+  }, [loadEscolas])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -66,7 +70,7 @@ export function SchoolSelector() {
           </button>
 
           <div className="pt-1 border-t border-[#222b3d]/60 space-y-1 max-h-60 overflow-y-auto">
-            {mockEscolas.map((escola) => {
+            {escolas.map((escola) => {
               const isSelected = selectedEscola?.id === escola.id
               return (
                 <button
