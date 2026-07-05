@@ -7,13 +7,13 @@ export async function logAudit(params: {
   entityId: string
   oldData?: object | null
   newData?: object | null
-  performedBy: { id: string; name: string; email: string; cargo?: string }
+  performedBy: { id: string | null; name: string; email: string; cargo?: string }
   tenantId?: string
 }) {
   try {
     const { error } = await params.supabase.from('audit_logs').insert({
       tenant_id: params.tenantId || null,
-      user_id: params.performedBy.id,
+      user_id: params.performedBy.id || null,
       user_name: params.performedBy.name,
       user_email: params.performedBy.email,
       user_cargo: params.performedBy.cargo || null,
@@ -39,7 +39,7 @@ export async function softDeleteToTrash(params: {
   recordId: string
   recordSummary: string
   recordPayload: object
-  performedBy: { id: string; name: string; email: string }
+  performedBy: { id: string | null; name: string; email: string }
   tenantId?: string
 }) {
   try {
@@ -61,7 +61,7 @@ export async function softDeleteToTrash(params: {
       record_id: params.recordId,
       record_summary: params.recordSummary,
       record_payload: params.recordPayload,
-      deleted_by_id: params.performedBy.id,
+      deleted_by_id: params.performedBy.id || null,
       deleted_by_name: params.performedBy.name,
       deleted_by_email: params.performedBy.email,
       status: 'PENDING',

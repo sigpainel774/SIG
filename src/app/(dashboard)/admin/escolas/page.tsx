@@ -61,7 +61,7 @@ export default function AdminEscolasPage() {
       recordSummary: escola.nome,
       recordPayload: escola,
       performedBy: {
-        id: funcionario?.id || 'sys-admin',
+        id: funcionario?.id ?? null,
         name: funcionario?.nome || 'Administrador',
         email: funcionario?.email || 'admin@super.com'
       }

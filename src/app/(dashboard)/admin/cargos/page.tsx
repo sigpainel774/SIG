@@ -61,7 +61,7 @@ export default function AdminCargosPage() {
       recordSummary: cargo.nome,
       recordPayload: cargo,
       performedBy: {
-        id: funcionario?.id || 'sys-admin',
+        id: funcionario?.id ?? null,
         name: funcionario?.nome || 'Administrador',
         email: funcionario?.email || 'admin@super.com'
       }
