@@ -11,3 +11,10 @@
 
 - **Tridente TecnolÛgico**: O agente possui acesso total e direto ‡s trÍs camadas do sistema: 1) O CÛdigo (Next.js/Front/Back), 2) O Banco de Dados (Supabase via MCP), 3) A Infraestrutura (Vercel via CLI autenticado).
 - **PrevenÁ„o de Falhas (Vercel)**: A qualquer momento que for necess·rio checar se um deploy vai falhar antes do usu·rio subir pro GitHub, o agente DEVE oferecer ou rodar um build simulado da Vercel (`npx vercel build`). O agente tambÈm pode puxar logs de erro ou gerenciar vari·veis de ambiente diretamente.
+
+<!-- BEGIN:supabase-planning-rule -->
+# Planejamento de Implementa√ß√£o & Supabase
+
+- **Verifica√ß√£o de Banco de Dados**: Sempre que elaborar um plano de implementa√ß√£o, verifique ativamente a necessidade de criar ou alterar tabelas no Supabase.
+- **Comandos SQL no Plano**: Planeje e inclua no documento do plano os comandos SQL exatos e/ou os passos de migration necess√°rios (CREATE TABLE, ALTER TABLE, etc.) para que o plano n√£o "quebre" durante a execu√ß√£o devido a tabelas inexistentes.
+<!-- END:supabase-planning-rule -->
