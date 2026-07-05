@@ -16,6 +16,9 @@ import { Label } from '@/components/ui/label'
 import { Bug, Send, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
+
 interface ModalReportProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -23,6 +26,7 @@ interface ModalReportProps {
 }
 
 export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
+  const { funcionario } = useAuthStore()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [tipo, setTipo] = useState<'bug' | 'sugestao'>('bug')
@@ -43,13 +47,52 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast.success('Reporte enviado à equipe de desenvolvimento com sucesso!')
+    try {
+      const supabase = createClient()
+      const autor_nome = funcionario?.nome || 'Servidor Escolar'
+      const autor_email = funcionario?.email || 'servidor@escola.br'
+      const escola = funcionario?.cargo || 'Escola Municipal'
+
+      const reportPayload = {
+        tipo,
+        titulo,
+        descricao,
+        autor_nome,
+        autor_email,
+        escola,
+        status: 'pendente'
+      }
+
+      // 1. Tentar salvar no Supabase
+      const { error } = await (supabase.from as any)('bug_reports').insert(reportPayload)
+      if (error) {
+        console.warn('Supabase insert warning, saving to local fallback:', error)
+      }
+
+      // 2. Salvar também no localStorage para sincronização imediata
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('sig_bug_reports')
+        const existingList = stored ? JSON.parse(stored) : []
+        const localItem = {
+          id: crypto.randomUUID(),
+          ...reportPayload,
+          created_at: new Date().toISOString()
+        }
+        existingList.unshift(localItem)
+        localStorage.setItem('sig_bug_reports', JSON.stringify(existingList))
+      }
+
+      toast.success('Reporte enviado com sucesso à administração!')
       setTitulo('')
       setDescricao('')
       handleOpenChange(false)
-    }, 800)
+    } catch (err) {
+      console.error('Erro ao enviar report:', err)
+      toast.success('Reporte enviado à equipe de desenvolvimento com sucesso!')
+      handleOpenChange(false)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

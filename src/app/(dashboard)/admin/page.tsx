@@ -180,7 +180,7 @@ export default function AdminHubPage() {
       subtitle: 'Feedbacks de erros',
       icon: Flag,
       iconColor: 'text-slate-200',
-      path: '/ajuda',
+      path: '/admin/reports',
     },
     {
       title: 'Ocorrências',
