@@ -1,19 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Search } from 'lucide-react'
 
-// Dados mocados temporários para visualização
-const mockTurmas = [
-  { id: '1', nome: '1º Ano A', ano_letivo: 2023, alunos: 35 },
-  { id: '2', nome: '1º Ano B', ano_letivo: 2023, alunos: 32 },
-]
-
 export default function TurmasPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [turmas, setTurmas] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      const { data, error } = await supabase
+        .from('turmas')
+        .select('*, alunos(id)')
+        .order('nome', { ascending: true })
+      
+      if (data) {
+        const formatadas = data.map((t: any) => ({
+          ...t,
+          alunos_count: t.alunos?.length || 0
+        }))
+        setTurmas(formatadas)
+      }
+      setLoading(false)
+    }
+    fetchTurmas()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -52,11 +69,18 @@ export default function TurmasPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockTurmas.map((turma) => (
+            {turmas.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                  Nenhuma turma encontrada.
+                </TableCell>
+              </TableRow>
+            )}
+            {turmas.map((turma) => (
               <TableRow key={turma.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
                 <TableCell className="font-medium text-white">{turma.nome}</TableCell>
                 <TableCell className="text-muted-foreground">{turma.ano_letivo}</TableCell>
-                <TableCell className="text-muted-foreground">{turma.alunos}</TableCell>
+                <TableCell className="text-muted-foreground">{turma.alunos_count}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" className="text-highlight hover:text-highlight/80 hover:bg-highlight/10">
                     Editar

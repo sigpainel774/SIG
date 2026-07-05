@@ -1,19 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { FilePlus, Search, CheckCircle2, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-const mockAtestados = [
-  { id: 1, servidor: 'Maria Souza', cargo: 'Merendeira', dataInclusao: '15/10/2026', diasAfasta: 3, cid: 'J00 - Resfriado comum', status: 'Aprovado' },
-  { id: 2, servidor: 'Carlos Silva', cargo: 'Vigia', dataInclusao: '14/10/2026', diasAfasta: 1, cid: 'M54 - Dorsalgia', status: 'Em Análise' },
-]
-
 export default function AtestadosPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [atestados, setAtestados] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchAtestados = async () => {
+      const { data, error } = await (supabase.from as any)('atestados')
+        .select('*, funcionarios(nome, cargo)')
+        .order('data_inclusao', { ascending: false })
+      
+      if (data) setAtestados(data)
+      setLoading(false)
+    }
+    fetchAtestados()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -58,12 +69,19 @@ export default function AtestadosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockAtestados.map((item) => (
+            {atestados.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  Nenhum atestado registrado.
+                </TableCell>
+              </TableRow>
+            )}
+            {atestados.map((item) => (
               <TableRow key={item.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                <TableCell className="text-[#aaa]">{item.dataInclusao}</TableCell>
-                <TableCell className="text-white font-medium">{item.servidor}</TableCell>
-                <TableCell className="text-[#aaa]">{item.cargo}</TableCell>
-                <TableCell className="text-white font-bold">{item.diasAfasta} dias</TableCell>
+                <TableCell className="text-[#aaa]">{new Date(item.data_inclusao).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell className="text-white font-medium">{item.funcionarios?.nome}</TableCell>
+                <TableCell className="text-[#aaa]">{item.funcionarios?.cargo || '-'}</TableCell>
+                <TableCell className="text-white font-bold">{item.dias_afastamento} dias</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="bg-[#18181b] text-[#ccc] border-[#3f3f46]">
                     {item.cid}

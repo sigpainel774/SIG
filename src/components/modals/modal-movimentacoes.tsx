@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { 
   Dialog, 
   DialogContent, 
@@ -47,34 +49,46 @@ export function ModalMovimentacoes({
     if (onOpenChange) onOpenChange(val)
   }
 
+  const getIconForType = (tipo: string) => {
+    switch(tipo) {
+      case 'Lotação / Transferência': return <ArrowRightLeft className="w-5 h-5" />
+      case 'Admissão / Posse': return <Building className="w-5 h-5" />
+      case 'Progressão Funcional': return <ShieldCheck className="w-5 h-5" />
+      default: return <Calendar className="w-5 h-5" />
+    }
+  }
+
   const nome = funcionario?.nome || nomeServidor || 'Servidor'
 
-  // Standard mock movements if none provided
-  const listMovimentacoes: Movimentacao[] = (movimentacoes && movimentacoes.length > 0) ? movimentacoes : [
-    {
-      id: '1',
-      data: '15/01/2026',
-      tipo: 'Lotação / Transferência',
-      descricao: `Alocação efetuada para o ${funcionario?.orgao || 'Colégio Moisés Alves'} conforme Portaria nº 048/2026.`,
-      orgao_origem: 'Secretaria Municipal de Educação',
-      orgao_destino: funcionario?.orgao || 'Colégio Moisés Alves',
-      portaria: 'Portaria 048/2026'
-    },
-    {
-      id: '2',
-      data: '10/08/2025',
-      tipo: 'Progressão Funcional',
-      descricao: `Enquadramento de nível na carreira: ${funcionario?.cargo || 'Professor Nível I'}. Processo aprovado.`,
-      portaria: 'Portaria 112/2025'
-    },
-    {
-      id: '3',
-      data: '02/02/2024',
-      tipo: 'Admissão / Posse',
-      descricao: 'Posse no concurso público municipal da educação e início de exercício funcional.',
-      portaria: 'Decreto 015/2024'
+  const [listMovimentacoes, setListMovimentacoes] = useState<Movimentacao[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!open) return
+    const fetchMovimentacoes = async () => {
+      setLoading(true)
+      if (movimentacoes && movimentacoes.length > 0) {
+        setListMovimentacoes(movimentacoes)
+        setLoading(false)
+        return
+      }
+
+      if (funcionario?.id) {
+        const supabase = createClient()
+        const { data, error } = await (supabase.from as any)('movimentacoes_funcionarios')
+          .select('*')
+          .eq('funcionario_id', funcionario.id)
+          .order('data', { ascending: false })
+
+        if (data) {
+          setListMovimentacoes(data as Movimentacao[])
+        }
+      }
+      setLoading(false)
     }
-  ]
+
+    fetchMovimentacoes()
+  }, [open, funcionario?.id, movimentacoes])
 
   const handlePrint = () => {
     window.print()
@@ -150,37 +164,73 @@ export function ModalMovimentacoes({
               Registros Funcionais
             </h4>
 
-            {listMovimentacoes.map((mov) => (
-              <div key={mov.id} className="p-4 border border-[#27272a] rounded-xl bg-[#1c1c1e] hover:border-zinc-700 transition-colors">
-                <div className="flex flex-wrap justify-between items-center gap-2 mb-2 pb-2 border-b border-[#27272a]">
-                  <span className="text-[#38bdf8] text-sm font-semibold flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-[#38bdf8]" />
-                    {mov.tipo}
-                  </span>
-                  <span className="text-zinc-400 text-xs font-mono bg-[#141416] px-2 py-0.5 rounded border border-[#27272a]">
-                    {mov.data}
-                  </span>
-                </div>
-                
-                <p className="text-sm text-zinc-200 leading-relaxed mb-2">{mov.descricao}</p>
-
-                {(mov.orgao_origem || mov.portaria) && (
-                  <div className="flex flex-wrap gap-3 mt-2 text-xs text-zinc-400 pt-2 border-t border-[#27272a]/60">
-                    {mov.orgao_origem && (
-                      <span className="flex items-center gap-1">
-                        <Building className="w-3.5 h-3.5 text-zinc-500" />
-                        De: <strong className="text-zinc-300">{mov.orgao_origem}</strong> → Para: <strong className="text-zinc-300">{mov.orgao_destino}</strong>
-                      </span>
-                    )}
-                    {mov.portaria && (
-                      <span className="font-mono text-zinc-400">
-                        {mov.portaria}
-                      </span>
-                    )}
-                  </div>
-                )}
+            {loading ? (
+              <div className="p-8 text-center text-zinc-500">
+                Carregando movimentações...
               </div>
-            ))}
+            ) : listMovimentacoes.length === 0 ? (
+              <div className="p-8 text-center text-zinc-500 flex flex-col items-center">
+                <ArrowRightLeft className="w-8 h-8 text-zinc-700 mb-3" />
+                <p>Nenhuma movimentação funcional encontrada para este servidor.</p>
+              </div>
+            ) : (
+              listMovimentacoes.map((mov, index) => (
+                <div 
+                  key={mov.id} 
+                  className={`relative flex gap-6 ${index !== listMovimentacoes.length - 1 ? 'pb-10' : ''}`}
+                >
+                  {/* Linha do tempo */}
+                  {index !== listMovimentacoes.length - 1 && (
+                    <div className="absolute left-6 top-10 bottom-0 w-px bg-gradient-to-b from-[#3ea6ff]/40 to-transparent"></div>
+                  )}
+                  
+                  {/* Ícone da timeline */}
+                  <div className="relative z-10 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-[#1e293b] border-2 border-[#3ea6ff]/50 flex items-center justify-center text-[#38bdf8] shadow-[0_0_15px_rgba(56,189,248,0.15)]">
+                      {getIconForType(mov.tipo)}
+                    </div>
+                  </div>
+                  
+                  {/* Conteúdo da movimentação */}
+                  <div className="flex-1 bg-[#1a1a1c] border border-[#27272a] rounded-xl p-5 hover:border-[#3f3f46] transition-colors shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                      <h4 className="text-white font-bold text-base flex items-center gap-2">
+                        {mov.tipo}
+                      </h4>
+                      <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-[#27272a] text-zinc-300 whitespace-nowrap">
+                        {new Date(mov.data).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                    
+                    <p className="text-sm text-zinc-400 mb-4 leading-relaxed">
+                      {mov.descricao}
+                    </p>
+                    
+                    {/* Tags de detalhes extras */}
+                    <div className="flex flex-wrap gap-2 mt-auto">
+                      {mov.orgao_origem && (
+                        <span className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                          <span className="font-semibold">Origem:</span> {mov.orgao_origem}
+                        </span>
+                      )}
+                      
+                      {mov.orgao_destino && (
+                        <span className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="font-semibold">Destino:</span> {mov.orgao_destino}
+                        </span>
+                      )}
+                      
+                      {mov.portaria && (
+                        <span className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md bg-[#3ea6ff]/10 text-[#3ea6ff] border border-[#3ea6ff]/20">
+                          <ShieldCheck className="w-3 h-3" />
+                          {mov.portaria}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </DialogContent>

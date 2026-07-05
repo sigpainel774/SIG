@@ -20,21 +20,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { toast } from 'sonner'
 
-interface FuncionarioItem {
-  id: string
-  nome: string
-  email: string
-  nivel: string
-  escola: string
-  status: string
-}
 
-const funcionariosMock: FuncionarioItem[] = [
-  { id: '1', nome: 'kaique@painel.com', email: 'kaique@painel.com', nivel: 'Nível 2 - Diretor', escola: 'Escola Modelo', status: 'Ativo' },
-  { id: '2', nome: 'Ana Souza', email: 'ana@escola.br', nivel: 'Nível 2 - Diretor', escola: 'Escola Modelo', status: 'Ativo' },
-  { id: '3', nome: 'Carlos Lima', email: 'carlos@escola.br', nivel: 'Nível 4 - Professor', escola: 'Colégio Dr Eraldo Tinoco', status: 'Ativo' },
-  { id: '4', nome: 'Marina Alves', email: 'marina@escola.br', nivel: 'Nível 5 - Chefe de Equipe', escola: 'Global', status: 'Ativo' },
-]
 
 export function PermissoesView() {
   const { isEditMode, setEditMode } = useEditModeStore()
@@ -53,8 +39,43 @@ export function PermissoesView() {
   const [buscaLista, setBuscaLista] = useState('')
   const [filtroNivel, setFiltroNivel] = useState('')
   const [filtroEscola, setFiltroEscola] = useState('')
+  
+  const [funcionariosList, setFuncionariosList] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   const isRootPanel = !!funcionario?.is_superadmin || (typeof pathname === 'string' && (pathname.startsWith('/admin') || pathname === '/root'))
+
+  useEffect(() => {
+    const fetchPermissoes = async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('funcionarios')
+        .select('*, acessos_usuarios(nivel)')
+      
+      if (data) {
+        const formatados = data.map(f => {
+          let nomeNivel = 'Nível 1 - Funcionário Base'
+          if (f.acessos_usuarios?.[0]?.nivel === 2) nomeNivel = 'Nível 2 - Diretor'
+          if (f.acessos_usuarios?.[0]?.nivel === 3) nomeNivel = 'Nível 3 - Secretário'
+          if (f.acessos_usuarios?.[0]?.nivel === 4) nomeNivel = 'Nível 4 - Professor'
+          if (f.acessos_usuarios?.[0]?.nivel === 5) nomeNivel = 'Nível 5 - Chefe de Equipe'
+          if (f.is_superadmin) nomeNivel = 'ROOT'
+
+          return {
+            id: f.id,
+            nome: f.nome,
+            email: f.email || f.nome,
+            nivel: nomeNivel,
+            escola: 'Sem Lotação',
+            status: f.status || 'ATIVO'
+          }
+        })
+        setFuncionariosList(formatados)
+      }
+      setLoading(false)
+    }
+    fetchPermissoes()
+  }, [])
 
   useEffect(() => {
     if (isRootPanel) {
@@ -109,10 +130,10 @@ export function PermissoesView() {
     setFiltroEscola('')
   }
 
-  const funcionariosFiltrados = funcionariosMock.filter((item) => {
+  const funcionariosFiltrados = funcionariosList.filter((item) => {
     const matchBusca = item.nome.toLowerCase().includes(buscaLista.toLowerCase()) || 
                        item.email.toLowerCase().includes(buscaLista.toLowerCase())
-    const matchNivel = !filtroNivel || item.nivel === filtroNivel
+    const matchNivel = !filtroNivel || item.nivel.includes(filtroNivel)
     const matchEscola = !filtroEscola || item.escola === filtroEscola
     return matchBusca && matchNivel && matchEscola
   })

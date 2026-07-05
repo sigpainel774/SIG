@@ -49,66 +49,6 @@ export interface BugReport {
   created_at: string
 }
 
-const mockReports: BugReport[] = [
-  {
-    id: 'rep-001',
-    tipo: 'bug',
-    titulo: 'Erro ao gerar relatório PDF no Diário de Classe',
-    descricao: 'Ao clicar no botão "Imprimir Diário em PDF" na turma do 9º Ano A, o sistema apresenta tela branca com erro no console.',
-    autor_nome: 'Carlos Lima',
-    autor_email: 'carlos.lima@escola.br',
-    escola: 'Colégio Dr Eraldo Tinoco',
-    status: 'pendente',
-    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    id: 'rep-002',
-    tipo: 'sugestao',
-    titulo: 'Adicionar filtro por ano letivo no módulo de matrículas',
-    descricao: 'Seria muito útil para a coordenação poder filtrar matrículas de anos anteriores sem precisar pesquisar aluno por aluno.',
-    autor_nome: 'Ana Souza',
-    autor_email: 'ana.souza@escola.br',
-    escola: 'Escola Modelo',
-    status: 'pendente',
-    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-  },
-  {
-    id: 'rep-003',
-    tipo: 'bug',
-    titulo: 'Botão de encerramento de turma não responde no iOS/Safari',
-    descricao: 'Professores usando iPad não estão conseguindo salvar o fechamento do 2º bimestre no formulário mobile.',
-    autor_nome: 'Marina Alves',
-    autor_email: 'marina.alves@escola.br',
-    escola: 'Rede Municipal Sapeaçu',
-    status: 'em_analise',
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    id: 'rep-004',
-    tipo: 'bug',
-    titulo: 'Falha na impressão de boletins individuais',
-    descricao: 'As notas do componente curricular de Matemática estão sobrepondo as notas de História no cabeçalho impresso.',
-    autor_nome: 'Roberto Santos',
-    autor_email: 'roberto.santos@escola.br',
-    escola: 'E.M. Cecília Meireles',
-    status: 'resolvido',
-    resposta_root: 'Correção de CSS aplicada e implantada na versão 2.4.1.',
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-  {
-    id: 'rep-005',
-    tipo: 'sugestao',
-    titulo: 'Alteração na ordem das disciplinas do boletim impresso',
-    descricao: 'Solicitamos reordenar para colocar Português antes de Matemática na folha oficial.',
-    autor_nome: 'Fernanda Costa',
-    autor_email: 'fernanda.costa@escola.br',
-    escola: 'E.M. Sapeaçu',
-    status: 'rejeitado',
-    resposta_root: 'Mantida a ordem padrão conforme diretriz da Secretaria de Educação.',
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-  },
-]
-
 export default function AdminReportsPage() {
   const supabase = createClient()
 
@@ -128,9 +68,7 @@ export default function AdminReportsPage() {
   const [salvandoStatus, setSalvandoStatus] = useState(false)
 
   const loadReports = async () => {
-    setLoading(true)
     setBuscando(true)
-
     let supabaseData: BugReport[] = []
 
     try {
@@ -138,41 +76,14 @@ export default function AdminReportsPage() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (!error && data && data.length > 0) {
-        supabaseData = data as unknown as BugReport[]
+      if (data && !error) {
+        supabaseData = data as BugReport[]
       }
     } catch (err) {
-      console.warn('Erro ao buscar do Supabase, usando fallback local:', err)
+      console.warn('Erro ao carregar reports do banco:', err)
     }
 
-    // Carregar do localStorage se houver
-    let localData: BugReport[] = []
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sig_bug_reports')
-      if (stored) {
-        try {
-          localData = JSON.parse(stored)
-        } catch (e) {
-          console.error(e)
-        }
-      }
-    }
-
-    // Combinar Supabase + LocalStorage + Mock Data (evitando duplicatas por ID)
-    const combinedMap = new Map<string, BugReport>()
-
-    // Mock data primeiro
-    mockReports.forEach(item => combinedMap.set(item.id, item))
-    // Supabase data em seguida
-    supabaseData.forEach(item => combinedMap.set(item.id, item))
-    // Local data por último (sobrescreve se mais recente)
-    localData.forEach(item => combinedMap.set(item.id, item))
-
-    const finalArray = Array.from(combinedMap.values()).sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-
-    setReports(finalArray)
+    setReports(supabaseData)
     setLoading(false)
     setBuscando(false)
   }
@@ -181,7 +92,7 @@ export default function AdminReportsPage() {
     loadReports()
   }, [])
 
-  // Atualizar status no Supabase + state + localStorage
+  // Atualizar status no Supabase + state
   const handleUpdateStatus = async (
     id: string, 
     novoStatus: 'pendente' | 'em_analise' | 'resolvido' | 'rejeitado',
@@ -213,23 +124,6 @@ export default function AdminReportsPage() {
       }
       return r
     }))
-
-    // Atualizar localStorage
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sig_bug_reports')
-      let list: BugReport[] = stored ? JSON.parse(stored) : []
-      const index = list.findIndex(r => r.id === id)
-      if (index >= 0) {
-        list[index].status = novoStatus
-        if (resposta !== undefined) list[index].resposta_root = resposta
-      } else {
-        const itemToUpdate = reports.find(r => r.id === id)
-        if (itemToUpdate) {
-          list.unshift({ ...itemToUpdate, status: novoStatus, resposta_root: resposta })
-        }
-      }
-      localStorage.setItem('sig_bug_reports', JSON.stringify(list))
-    }
 
     setSalvandoStatus(false)
 

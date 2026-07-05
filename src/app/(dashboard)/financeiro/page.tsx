@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -8,15 +9,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 
-const mockTransacoes = [
-  { id: 1, data: '15/10/2026', tipo: 'Receita', descricao: 'Repasse Municipal', categoria: 'Verba Pública', conta: 'Conta do Brasil', valor: 5400.00, comprovante: true },
-  { id: 2, data: '16/10/2026', tipo: 'Despesa', descricao: 'Tintas e Cartolinas', categoria: 'Material Escolar', conta: 'Caixa Escolar', valor: 250.50, comprovante: true },
-  { id: 3, data: '18/10/2026', tipo: 'Despesa', descricao: 'Manutenção do Ar Condicionado', categoria: 'Manutenção', conta: 'Conta do Brasil', valor: 450.00, comprovante: false },
-]
-
 export default function FinanceiroPage() {
   const [contaFiltro, setContaFiltro] = useState('todas')
   const [mesFiltro, setMesFiltro] = useState('2026-10')
+  const [transacoes, setTransacoes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchTransacoes = async () => {
+      const { data, error } = await (supabase.from as any)('transacoes_financeiras')
+        .select('*')
+        .order('data', { ascending: false })
+      
+      if (data) setTransacoes(data)
+      setLoading(false)
+    }
+    fetchTransacoes()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -101,9 +111,16 @@ export default function FinanceiroPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockTransacoes.map((t) => (
+            {transacoes.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  Nenhuma transação financeira registrada.
+                </TableCell>
+              </TableRow>
+            )}
+            {transacoes.map((t) => (
               <TableRow key={t.id} className="border-[#222] hover:bg-[#1f1f1f]">
-                <TableCell className="text-[#eee]">{t.data}</TableCell>
+                <TableCell className="text-[#eee]">{new Date(t.data).toLocaleDateString('pt-BR')}</TableCell>
                 <TableCell>
                   {t.tipo === 'Receita' ? (
                     <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded-md text-[11px] font-bold">RECEITA</span>
@@ -115,10 +132,10 @@ export default function FinanceiroPage() {
                 <TableCell className="text-[#aaa]">{t.categoria}</TableCell>
                 <TableCell className="text-[#aaa]">{t.conta}</TableCell>
                 <TableCell className={`text-right font-semibold ${t.tipo === 'Receita' ? 'text-green-400' : 'text-red-400'}`}>
-                  {t.tipo === 'Receita' ? '+' : '-'} R$ {t.valor.toFixed(2).replace('.', ',')}
+                  {t.tipo === 'Receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2).replace('.', ',')}
                 </TableCell>
                 <TableCell className="text-center">
-                  {t.comprovante ? (
+                  {t.comprovante_url ? (
                     <Button variant="ghost" size="sm" className="h-7 border border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 text-xs">
                       Ver Anexo
                     </Button>

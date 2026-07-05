@@ -37,64 +37,14 @@ export interface Funcionario {
   created_at?: string
 }
 
-const mockFuncionariosInicial: Funcionario[] = [
-  {
-    id: 'usr-1',
-    nome: 'adm@super.com',
-    email: 'adm@super.com',
-    cargo: 'ROOT',
-    status: 'ATIVO',
-    orgao: 'Administração Central',
-    is_superadmin: true
-  },
-  {
-    id: 'usr-2',
-    nome: 'Ciro II',
-    email: 'ciro2026@gmail.com',
-    cargo: 'PROFESSOR',
-    status: 'ATIVO',
-    orgao: 'Colégio Dr Eraldo Tinoco'
-  },
-  {
-    id: 'usr-3',
-    nome: 'dharmasecretario@gmail.com',
-    email: 'dharmasecretario@gmail.com',
-    cargo: 'DIRETOR / COORDENADOR',
-    status: 'ATIVO',
-    orgao: 'Escola Jovino Souza Lima, Colégio Moisés Alves'
-  },
-  {
-    id: 'usr-4',
-    nome: 'dharmdiretor@gmail.com',
-    email: 'dharmdiretor@gmail.com',
-    cargo: null,
-    status: 'SEM ACESSO',
-    orgao: null
-  },
-  {
-    id: 'usr-5',
-    nome: 'diretor frei',
-    email: 'diretorfrei@gmail.com',
-    cargo: 'DIRETOR',
-    status: 'ATIVO',
-    orgao: 'Escola Frei Urbano'
-  },
-  {
-    id: 'usr-6',
-    nome: 'Edires Pereira da Silva',
-    email: 'edires@gmail.com',
-    cargo: 'PROFESSOR',
-    status: 'ATIVO',
-    orgao: 'Escola Modelo'
-  }
-]
+
 
 export default function FuncionariosPage() {
   const supabase = createClient()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>(mockFuncionariosInicial)
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
 
   // Modais de ações dos 3 botões
   const [selectedUser, setSelectedUser] = useState<Funcionario | null>(null)
@@ -132,31 +82,12 @@ export default function FuncionariosPage() {
             is_superadmin: f.is_superadmin || false
           }
         })
-
-        // Mesclar com a lista inicial mockada se não existir no banco
-        const combinedMap = new Map<string, Funcionario>()
-        mockFuncionariosInicial.forEach(m => {
-          const isSusp = localSuspended.includes((m.email || '').toLowerCase())
-          combinedMap.set(m.email.toLowerCase(), {
-            ...m,
-            status: isSusp ? 'SUSPENSO' : m.status
-          })
-        })
-
-        formatados.forEach(dbItem => {
-          combinedMap.set(dbItem.email.toLowerCase(), dbItem)
-        })
-
-        setFuncionarios(Array.from(combinedMap.values()))
+        setFuncionarios(formatados)
       } else {
-        // Atualizar mock com suspensos locais se houver
-        setFuncionarios(prev => prev.map(m => ({
-          ...m,
-          status: localSuspended.includes((m.email || '').toLowerCase()) ? 'SUSPENSO' : m.status
-        })))
+        setFuncionarios([])
       }
     } catch (err) {
-      console.warn('Erro ao carregar funcionários do banco, usando fallback:', err)
+      console.warn('Erro ao carregar funcionários do banco:', err)
     }
   }
 
