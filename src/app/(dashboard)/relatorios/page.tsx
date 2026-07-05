@@ -185,10 +185,10 @@ export default function RelatoriosPage() {
               <div className="flex items-center justify-between mb-4 border-b border-[#26304d] pb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-sky-400">Relatório Macro da Rede</span>
-                  <h3 className="text-xl font-bold text-white mt-0.5">Consolidado Geral — Sapeaçu</h3>
+                  <h3 className="text-xl font-bold text-white mt-0.5">Consolidado Geral — Rede</h3>
                 </div>
                 <div className="bg-sky-500/10 text-sky-300 border border-sky-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
-                  6 Escolas Integradas
+                  {escolas.length} Escolas Integradas
                 </div>
               </div>
 
@@ -196,23 +196,23 @@ export default function RelatoriosPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#141a27] p-4 rounded-xl border border-[#232d42]">
                   <p className="text-xs text-slate-400">Total de Alunos</p>
-                  <p className="text-2xl font-black text-white mt-1">3.600</p>
-                  <span className="text-[10px] text-emerald-400 font-semibold">100% Matriculados</span>
+                  <p className="text-2xl font-black text-white mt-1">-</p>
+                  <span className="text-[10px] text-emerald-400 font-semibold">Em breve</span>
                 </div>
                 <div className="bg-[#141a27] p-4 rounded-xl border border-[#232d42]">
                   <p className="text-xs text-slate-400">Média Geral da Rede</p>
-                  <p className="text-2xl font-black text-sky-400 mt-1">7.9 / 10</p>
+                  <p className="text-2xl font-black text-sky-400 mt-1">- / 10</p>
                   <span className="text-[10px] text-slate-400">Todas as disciplinas</span>
                 </div>
                 <div className="bg-[#141a27] p-4 rounded-xl border border-[#232d42]">
                   <p className="text-xs text-slate-400">Frequência Média</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-1">93.4%</p>
-                  <span className="text-[10px] text-emerald-400">Acima da meta (90%)</span>
+                  <p className="text-2xl font-black text-emerald-400 mt-1">-%</p>
+                  <span className="text-[10px] text-emerald-400">Módulo em dev</span>
                 </div>
                 <div className="bg-[#141a27] p-4 rounded-xl border border-[#232d42]">
                   <p className="text-xs text-slate-400">Alertas Disciplinares</p>
-                  <p className="text-2xl font-black text-rose-400 mt-1">18</p>
-                  <span className="text-[10px] text-rose-400">Necessitam atenção</span>
+                  <p className="text-2xl font-black text-rose-400 mt-1">-</p>
+                  <span className="text-[10px] text-rose-400">Aguardando dados</span>
                 </div>
               </div>
 
@@ -233,16 +233,16 @@ export default function RelatoriosPage() {
                     {escolas.map((escola) => (
                       <tr key={escola.id} className="hover:bg-[#1f283b] transition-colors">
                         <td className="p-3 font-semibold text-white flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${escola.color}`} />
+                          <div className={`w-2.5 h-2.5 rounded-full ${escola.color || 'bg-slate-500'}`} />
                           {escola.nome}
                         </td>
-                        <td className="p-3 font-mono">{escola.totalAlunos}</td>
-                        <td className="p-3 font-mono font-bold text-sky-300">8.1</td>
-                        <td className="p-3 font-mono text-emerald-400">94.2%</td>
-                        <td className="p-3 font-mono text-rose-400 font-semibold">12 alunos</td>
+                        <td className="p-3 font-mono">{escola.totalAlunos || '-'}</td>
+                        <td className="p-3 font-mono font-bold text-sky-300">-</td>
+                        <td className="p-3 font-mono text-emerald-400">-%</td>
+                        <td className="p-3 font-mono text-rose-400 font-semibold">-</td>
                         <td className="p-3 text-right">
-                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            Regular
+                          <span className="bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                            N/D
                           </span>
                         </td>
                       </tr>
