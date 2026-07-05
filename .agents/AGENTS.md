@@ -1,27 +1,71 @@
 # Regras do Projeto (Git & Workflow)
 
-- **Git Workflow**: O Antigravity deve APENAS alterar os arquivos na pasta local do projeto. O fluxo de deploy e versionamento (commit e push para o GitHub) deve ser feito ESTRITAMENTE e MANUALMENTE pelo usuário através do GitHub Desktop. A Vercel puxará os arquivos diretamente do GitHub.
-- **Git Push**: Não executar o comando `git push` automaticamente em segundo plano ou no terminal. O usuário fará o `git push` manualmente quando desejar.
+- **Git Workflow**: O Antigravity deve APENAS alterar os arquivos na pasta local do projeto. O fluxo de deploy e versionamento (commit e push para o GitHub) deve ser feito ESTRITAMENTE e MANUALMENTE pelo usuÃ¡rio atravÃ©s do GitHub Desktop. A Vercel puxarÃ¡ os arquivos diretamente do GitHub.
+- **Git Push**: NÃ£o executar o comando `git push` automaticamente em segundo plano ou no terminal. O usuÃ¡rio farÃ¡ o `git push` manualmente quando desejar.
 
 # Next.js 16 Convention (Proxy vs Middleware)
 
-- **Proxy.ts**: No Next.js 16, a conven��o mudou. O arquivo de prote��o de rotas deve obrigatoriamente se chamar `proxy.ts` (em vez de middleware.ts), e a fun��o exportada deve se chamar `proxy`. NUNCA renomeie o proxy.ts de volta para middleware.ts.
+- **Proxy.ts**: No Next.js 16, a convenção mudou. O arquivo de proteção de rotas deve obrigatoriamente se chamar `proxy.ts` (em vez de middleware.ts), e a função exportada deve se chamar `proxy`. NUNCA renomeie o proxy.ts de volta para middleware.ts.
 
 # Capacidades do Agente no Projeto
 
-- **Tridente Tecnol�gico**: O agente possui acesso total e direto �s tr�s camadas do sistema: 1) O C�digo (Next.js/Front/Back), 2) O Banco de Dados (Supabase via MCP), 3) A Infraestrutura (Vercel via CLI autenticado).
-- **Preven��o de Falhas (Vercel)**: A qualquer momento que for necess�rio checar se um deploy vai falhar antes do usu�rio subir pro GitHub, o agente DEVE oferecer ou rodar um build simulado da Vercel (`npx vercel build`). O agente tamb�m pode puxar logs de erro ou gerenciar vari�veis de ambiente diretamente.
+- **Tridente Tecnológico**: O agente possui acesso total e direto às três camadas do sistema: 1) O Código (Next.js/Front/Back), 2) O Banco de Dados (Supabase via MCP), 3) A Infraestrutura (Vercel via CLI autenticado).
+- **Prevenção de Falhas (Vercel)**: A qualquer momento que for necessário checar se um deploy vai falhar antes do usuário subir pro GitHub, o agente DEVE oferecer ou rodar um build simulado da Vercel (`npx vercel build`). O agente também pode puxar logs de erro ou gerenciar variáveis de ambiente diretamente.
 
 <!-- BEGIN:supabase-planning-rule -->
-# Planejamento de Implementação & Supabase
+# Planejamento de ImplementaÃ§Ã£o & Supabase
 
-- **Verificação de Banco de Dados**: Sempre que elaborar um plano de implementação, verifique ativamente a necessidade de criar ou alterar tabelas no Supabase.
-- **Comandos SQL no Plano**: Planeje e inclua no documento do plano os comandos SQL exatos e/ou os passos de migration necessários (CREATE TABLE, ALTER TABLE, etc.) para que o plano não "quebre" durante a execução devido a tabelas inexistentes.
+- **VerificaÃ§Ã£o de Banco de Dados**: Sempre que elaborar um plano de implementaÃ§Ã£o, verifique ativamente a necessidade de criar ou alterar tabelas no Supabase.
+- **Comandos SQL no Plano**: Planeje e inclua no documento do plano os comandos SQL exatos e/ou os passos de migration necessÃ¡rios (CREATE TABLE, ALTER TABLE, etc.) para que o plano nÃ£o "quebre" durante a execuÃ§Ã£o devido a tabelas inexistentes.
 <!-- END:supabase-planning-rule -->
 
 <!-- BEGIN:supabase-rls-recursion-rule -->
-# Preven��o de Infinite Recursion em RLS (Supabase/Postgres)
+# Prevenção de Infinite Recursion em RLS (Supabase/Postgres)
 
-- **Cuidado com Pol�ticas Recursivas**: Ao criar ou modificar pol�ticas de Row Level Security (RLS) no Supabase (Postgres), sempre certifique-se de que a pol�tica n�o cause o erro de infinite recursion. Isso ocorre frequentemente quando a pol�tica consulta a pr�pria tabela na qual est� sendo aplicada.
-- **Uso de SECURITY DEFINER**: Se for necess�rio consultar a pr�pria tabela para validar uma permiss�o, isole a l�gica de consulta dentro de uma fun��o SECURITY DEFINER e chame essa fun��o na pol�tica. Isso garante que a RLS seja ignorada durante a verifica��o e evita o loop infinito.
+- **Cuidado com Políticas Recursivas**: Ao criar ou modificar políticas de Row Level Security (RLS) no Supabase (Postgres), sempre certifique-se de que a política não cause o erro de infinite recursion. Isso ocorre frequentemente quando a política consulta a própria tabela na qual está sendo aplicada.
+- **Uso de SECURITY DEFINER**: Se for necessário consultar a própria tabela para validar uma permissão, isole a lógica de consulta dentro de uma função SECURITY DEFINER e chame essa função na política. Isso garante que a RLS seja ignorada durante a verificação e evita o loop infinito.
 <!-- END:supabase-rls-recursion-rule -->
+
+<!-- BEGIN:mock-data-rule -->
+# Dados Falsos e Mocks de Imagens
+
+- **Não criar dados mockados de screenshots**: Nunca "embuta" ou crie dados falsos (hardcoded) no sistema a partir de textos ou registros visíveis em screenshots enviados pelo usuário. As imagens e screenshots servem apenas como referência visual de como os registros reais do banco de dados devem ser exibidos quando existirem. Sempre configure as interfaces para consumir os dados reais provenientes do backend ou banco de dados.
+<!-- END:mock-data-rule -->
+
+<!-- BEGIN:uuid-fallback-rule -->
+# Fallbacks em Colunas UUID
+
+- **Evitar strings inválidas como fallback**: Ao passar IDs para colunas do tipo UUID no banco de dados, nunca utilize strings de fallback descritivas como 'sys-admin', 'root' ou 'system' quando o ID original for indefinido ou o usuário não possuir um ID de registro (como pode ocorrer com o superadmin raiz). O Postgres rejeitará a inserção/atualização com erro de tipo (`invalid input syntax for type uuid`).
+- **Usar null**: Sempre utilize `null` como fallback seguro para UUIDs inexistentes (`id: funcionario?.id ?? null`), garantindo que o tipo da coluna no banco aceite valores nulos caso o registro não tenha dono específico.
+<!-- END:uuid-fallback-rule -->
+
+<!-- BEGIN:rls-cascade-rule -->
+# Exclusões em Cascata e RLS
+
+- **Verificar RLS em tabelas filhas**: Ao planejar ou executar a exclusão de registros que possuem relacionamentos `ON DELETE CASCADE`, sempre verifique se existem políticas de RLS ativas nas tabelas filhas. A exclusão em cascata aciona as políticas de exclusão (`DELETE` ou `ALL`) nas tabelas dependentes, e restrições nelas podem bloquear toda a transação ou causar erros inesperados (ex: infinite recursion).
+<!-- END:rls-cascade-rule -->
+
+<!-- BEGIN:rls-creation-rule -->
+# Criação de Tabelas e RLS (Supabase)
+
+- **Habilitar RLS e Criar Policies Iniciais**: Ao criar uma nova tabela no Supabase, sempre verifique a necessidade de habilitar o Row Level Security (RLS). Antes de testar qualquer operação na tabela, crie pelo menos a policy padrão para o superadmin (ex: `superadmin_all_...`) para garantir que os testes não falhem por bloqueio de segurança e que o banco permaneça seguro desde o primeiro momento.
+<!-- END:rls-creation-rule -->
+
+<!-- BEGIN:list-init-rule -->
+# Inicialização de Telas de Listagem
+
+- **Sempre usar arrays vazios**: Ao construir telas de listagem de dados, sempre inicie o estado com um array vazio (`useState([])`) e carregue os dados exclusivamente do Supabase. 
+- **Nunca pré-popular**: Jamais pré-popule o estado com dados estáticos "falsos", mesmo que seja para testar temporariamente o layout. Use os dados reais ou exiba o "Empty State" da tela (ex: "Nenhum registro encontrado").
+<!-- END:list-init-rule -->
+
+<!-- BEGIN:nullish-coalescing-rule -->
+# Exibição de Campos Opcionais (Nullish Coalescing)
+
+- **Sempre usar ?? ao invés de ||**: Ao exibir dados do banco que podem ser nulos (como nome, email, status), sempre utilize o operador de coalescência nula (`??`) acompanhado de um fallback legível (ex: `usuario.nome ?? 'Sem nome'`). O uso de `||` pode ocultar incorretamente valores `falsy` válidos (como `0`, `false` ou `""`), causando bugs visuais difíceis de rastrear.
+<!-- END:nullish-coalescing-rule -->
+
+<!-- BEGIN:optional-params-rule -->
+# Tipagem de Parâmetros (Funções Reutilizáveis)
+
+- **Aceitar null/undefined quando apropriado**: Ao criar ou modificar uma função utilitária que será chamada em múltiplos lugares do projeto, verifique sempre se os tipos dos parâmetros (ex: em TypeScript) devem aceitar `null` ou `undefined`. Isso previne que a função lance erros de *runtime* (como TypeError ao tentar ler propriedades de null) quando o contexto do usuário que a invocou estiver incompleto ou os dados do banco não possuírem valor para aquela coluna.
+<!-- END:optional-params-rule -->

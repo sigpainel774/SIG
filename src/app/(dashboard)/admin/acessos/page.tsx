@@ -25,69 +25,12 @@ export interface AcessoItem {
   status: 'ATIVO' | 'INATIVO' | 'PAUSADO' | string
 }
 
-const mockAcessosInicial: AcessoItem[] = [
-  {
-    id: 'acs-1',
-    funcionario: 'kaique@painel.com',
-    email: 'kaique@painel.com',
-    escola: 'Geral',
-    nivel: 'SECRETARIA',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-2',
-    funcionario: 'Edires Pereira da Silva',
-    email: 'eridesoo@gmail.com',
-    escola: 'Colégio Moisés Alves',
-    nivel: 'DIRETOR',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-3',
-    funcionario: 'diretor frei',
-    email: 'diretorfrei@gmail.com',
-    escola: 'Escola Frei Urbano',
-    nivel: 'DIRETOR',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-4',
-    funcionario: 'Satoshi Nakamoto',
-    email: 'satoshi29@gmail.com',
-    escola: 'Colégio Moisés Alves',
-    nivel: 'PROFESSOR',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-5',
-    funcionario: 'vigia 2',
-    email: 'vigia2@gmail.com',
-    escola: 'Colégio Moisés Alves',
-    nivel: 'N6',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-6',
-    funcionario: 'Ciro II',
-    email: 'ciro2026@gmail.com',
-    escola: 'Colégio Dr Eraldo Tinoco',
-    nivel: 'PROFESSOR',
-    status: 'ATIVO'
-  },
-  {
-    id: 'acs-7',
-    funcionario: 'matthewrrusk@gmail.com',
-    email: 'matthewrrusk@gmail.com',
-    escola: 'Colégio Moisés Alves',
-    nivel: 'COORDENADOR',
-    status: 'ATIVO'
-  }
-]
+
 
 export default function AdminAcessosPage() {
   const supabase = createClient()
 
-  const [acessos, setAcessos] = useState<AcessoItem[]>(mockAcessosInicial)
+  const [acessos, setAcessos] = useState<AcessoItem[]>([])
   const [loading, setLoading] = useState(false)
 
   // Filtros exatamente como no layout da imagem
@@ -117,12 +60,7 @@ export default function AdminAcessosPage() {
           status: f.status?.toUpperCase() || 'ATIVO'
         }))
 
-        // Mesclar dados mantendo a lista de referência idêntica à imagem
-        const map = new Map<string, AcessoItem>()
-        mockAcessosInicial.forEach(item => map.set(item.email.toLowerCase(), item))
-        dbItems.forEach(item => map.set(item.email.toLowerCase(), item))
-
-        setAcessos(Array.from(map.values()))
+        setAcessos(dbItems)
       }
     } catch (err) {
       console.warn('Erro ao carregar acessos do banco, usando fallback:', err)
