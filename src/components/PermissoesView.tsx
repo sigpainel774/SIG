@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { 
   Users, 
   School, 
@@ -14,6 +15,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { toast } from 'sonner'
 
@@ -35,6 +38,9 @@ const funcionariosMock: FuncionarioItem[] = [
 
 export function PermissoesView() {
   const { isEditMode, setEditMode } = useEditModeStore()
+  const { funcionario } = useAuthStore()
+  const pathname = usePathname()
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState(false)
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modoAtribuicao, setModoAtribuicao] = useState<'funcionario' | 'escola'>('funcionario')
   
@@ -48,9 +54,39 @@ export function PermissoesView() {
   const [filtroNivel, setFiltroNivel] = useState('')
   const [filtroEscola, setFiltroEscola] = useState('')
 
+  const isRootPanel = !!funcionario?.is_superadmin || (typeof pathname === 'string' && (pathname.startsWith('/admin') || pathname === '/root'))
+
+  useEffect(() => {
+    if (isRootPanel) {
+      setIsSuperAdminUser(true)
+      setEditMode(true)
+      return
+    }
+
+    const checkSuperAdmin = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) {
+        const { data } = await supabase
+          .from('funcionarios')
+          .select('is_superadmin')
+          .ilike('email', user.email)
+          .maybeSingle()
+        
+        if (data?.is_superadmin) {
+          setIsSuperAdminUser(true)
+          setEditMode(true)
+        }
+      }
+    }
+    checkSuperAdmin()
+  }, [funcionario, isRootPanel, setEditMode])
+
+  const isEditActive = isEditMode || isSuperAdminUser || isRootPanel
+
   const handleSalvarPermissao = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isEditMode) {
+    if (!isEditActive) {
       toast.warning('Ative o Modo Edição no topo para alterar permissões.')
       setModalSenhaOpen(true)
       return
@@ -273,7 +309,7 @@ export function PermissoesView() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (!isEditMode) {
+                        if (!isEditActive) {
                           toast.info('Ative o Modo Edição para gerenciar permissões.')
                           setModalSenhaOpen(true)
                         } else {
