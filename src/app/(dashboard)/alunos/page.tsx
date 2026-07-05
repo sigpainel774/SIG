@@ -9,6 +9,8 @@ import { ModalAluno } from '@/components/modals/modal-aluno'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { softDeleteToTrash } from '@/lib/audit/audit-agent'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface Aluno {
   id: string
@@ -33,6 +35,7 @@ interface Aluno {
 }
 
 export default function AlunosPage() {
+  const { funcionario, escolaAtivaId } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [alunos, setAlunos] = useState<Aluno[]>([
     {
@@ -154,14 +157,29 @@ export default function AlunosPage() {
     setAlunoImprimir(aluno)
   }
 
-  const handleDeletar = async (id: string) => {
+  const handleDeletar = async (id: string, nome: string) => {
     if (confirm('Tem certeza que deseja excluir a ficha deste aluno?')) {
       const supabase = createClient()
-      const { error } = await supabase.from('alunos').delete().eq('id', id)
-      if (error) {
-        toast.error(`Erro ao excluir: ${error.message}`)
+      const alunoParaDeletar = alunos.find(a => a.id === id) || {}
+      
+      const { success, error } = await softDeleteToTrash({
+        supabase,
+        tableName: 'alunos',
+        recordId: id,
+        recordSummary: `Aluno: ${nome}`,
+        recordPayload: alunoParaDeletar,
+        performedBy: {
+          id: funcionario?.id || '',
+          name: funcionario?.nome || 'Sistema',
+          email: funcionario?.email || ''
+        },
+        tenantId: escolaAtivaId || undefined
+      })
+
+      if (!success) {
+        toast.error(`Erro ao excluir: ${(error as any)?.message || 'Erro desconhecido'}`)
       } else {
-        toast.success('Aluno removido com sucesso!')
+        toast.success('Aluno movido para a Lixeira Global!')
         carregarAlunos()
       }
     }
@@ -270,7 +288,7 @@ export default function AlunosPage() {
                 <Edit className="w-5 h-5" />
               </button>
               <button 
-                onClick={() => handleDeletar(aluno.id)}
+                onClick={() => handleDeletar(aluno.id, aluno.nome)}
                 className="w-12 h-12 rounded-full border border-rose-500/30 flex items-center justify-center text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                 title="Excluir Aluno"
               >

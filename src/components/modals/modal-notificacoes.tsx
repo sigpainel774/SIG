@@ -1,6 +1,5 @@
 'use client'
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Dialog, 
   DialogContent,
@@ -8,8 +7,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Bell, History, Circle } from 'lucide-react'
+import { Bell, History, Circle, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
 
 interface ModalNotificacoesProps {
   open?: boolean
@@ -18,17 +19,42 @@ interface ModalNotificacoesProps {
 
 export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificacoesProps) {
   const router = useRouter()
+  const { funcionario } = useAuthStore()
   const [filtro, setFiltro] = useState('todas')
+  const [notificacoes, setNotificacoes] = useState<any[]>([])
+
+  const loadNotificacoes = async () => {
+    if (!funcionario?.auth_user_id) return
+    const supabase = createClient()
+    
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', funcionario.auth_user_id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (filtro === 'nao_lidas') query = query.eq('read', false)
+    if (filtro === 'transferencias') query = query.eq('type', 'transferencia')
+
+    const { data } = await query
+    if (data) setNotificacoes(data)
+  }
+
+  useEffect(() => {
+    if (open) loadNotificacoes()
+  }, [open, filtro, funcionario?.auth_user_id])
+
+  const markAsRead = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const supabase = createClient()
+    await supabase.from('notifications').update({ read: true }).eq('id', id)
+    loadNotificacoes()
+  }
 
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
   }
-
-  // Dados mocados simulando as notificações do painel antigo
-  const notificacoesMock = [
-    { id: 1, tipo: 'transferencia', titulo: 'Transferência Recebida', lida: false, tempo: '10 min atrás' },
-    { id: 2, tipo: 'sistema', titulo: 'Bem-vindo ao SIG', lida: true, tempo: '2 horas atrás' },
-  ]
 
   const irParaHistorico = () => {
     handleOpenChange(false)
@@ -61,20 +87,40 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
 
         {/* Lista */}
         <div className="flex-1 overflow-y-auto max-h-[400px] p-2 flex flex-col gap-2">
-          {notificacoesMock.map((notif) => (
+          {notificacoes.map((notif) => (
             <div 
               key={notif.id} 
-              className={`p-3 rounded-lg border flex gap-3 cursor-pointer transition-colors ${notif.lida ? 'bg-transparent border-transparent hover:bg-[#27272a]' : 'bg-[#27272a]/50 border-[#3ea6ff]/30 hover:bg-[#27272a]'}`}
+              className={`p-3 rounded-lg border flex gap-3 cursor-pointer transition-colors group ${notif.read ? 'bg-transparent border-transparent hover:bg-[#27272a]' : 'bg-[#27272a]/50 border-[#3ea6ff]/30 hover:bg-[#27272a]'}`}
+              onClick={() => {
+                if (notif.link) {
+                  router.push(notif.link)
+                  handleOpenChange(false)
+                }
+              }}
             >
               <div className="pt-1">
-                {!notif.lida && <Circle className="w-2 h-2 fill-[#3ea6ff] text-[#3ea6ff]" />}
+                {!notif.read && <Circle className="w-2 h-2 fill-[#3ea6ff] text-[#3ea6ff]" />}
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-white mb-1">{notif.titulo}</p>
-                <p className="text-xs text-[#aaa]">{notif.tempo}</p>
+                <div className="flex justify-between items-start">
+                  <p className="text-sm font-medium text-white mb-1">{notif.title}</p>
+                  {!notif.read && (
+                    <button 
+                      onClick={(e) => markAsRead(notif.id, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-[#aaa] hover:text-white"
+                      title="Marcar como lida"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-[#aaa] mt-1">{new Date(notif.created_at).toLocaleString('pt-BR')}</p>
               </div>
             </div>
           ))}
+          {notificacoes.length === 0 && (
+            <div className="text-center py-6 text-sm text-[#aaa]">Nenhuma notificação encontrada.</div>
+          )}
         </div>
 
         {/* Footer Link Histórico */}

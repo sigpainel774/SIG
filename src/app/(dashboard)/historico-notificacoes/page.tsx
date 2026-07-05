@@ -1,25 +1,53 @@
-'use client'
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { History, Home, RefreshCw, ArrowLeft, Bell, Circle } from 'lucide-react'
-
-const mockHistorico = [
-  { id: 1, titulo: 'Transferência Recebida', mensagem: 'O aluno João Pedro foi transferido para sua escola.', data: '15/10/2026 14:30', tipo: 'transferencia', lida: false },
-  { id: 2, titulo: 'Bem-vindo ao SIG', mensagem: 'Seu primeiro acesso foi realizado com sucesso.', data: '15/10/2026 10:00', tipo: 'sistema', lida: true },
-  { id: 3, titulo: 'Atualização do Sistema', mensagem: 'Novas funcionalidades de ocorrências foram adicionadas.', data: '10/10/2026 08:00', tipo: 'sistema', lida: true },
-]
+import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function HistoricoNotificacoesPage() {
   const router = useRouter()
+  const { funcionario } = useAuthStore()
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [status, setStatus] = useState('todas')
   const [busca, setBusca] = useState('')
+  const [notificacoes, setNotificacoes] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const loadNotificacoes = async () => {
+    if (!funcionario?.auth_user_id) return
+    setLoading(true)
+    const supabase = createClient()
+    
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', funcionario.auth_user_id)
+      .order('created_at', { ascending: false })
+
+    if (status === 'nao_lidas') query = query.eq('read', false)
+    if (status === 'lidas') query = query.eq('read', true)
+    if (status === 'transferencias') query = query.eq('type', 'transferencia')
+
+    if (dataInicio) query = query.gte('created_at', `${dataInicio}T00:00:00`)
+    if (dataFim) query = query.lte('created_at', `${dataFim}T23:59:59`)
+
+    if (busca) {
+      query = query.or(`title.ilike.%${busca}%,message.ilike.%${busca}%`)
+    }
+
+    const { data } = await query
+    if (data) setNotificacoes(data)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadNotificacoes()
+  }, [funcionario?.auth_user_id, status, dataInicio, dataFim, busca])
 
   const limparFiltros = () => {
     setDataInicio('')
@@ -102,13 +130,14 @@ export default function HistoricoNotificacoesPage() {
 
       {/* Lista */}
       <div className="flex flex-col gap-3 min-h-[200px]">
-        {mockHistorico.map((notif) => (
+        {loading && <div className="text-center py-6 text-sm text-[#aaa]">Carregando...</div>}
+        {!loading && notificacoes.map((notif) => (
           <div 
             key={notif.id} 
-            className={`p-4 rounded-xl border flex gap-4 ${notif.lida ? 'bg-[#181818] border-[#2f2f33]' : 'bg-[#1f1f23] border-[#3ea6ff]/30'}`}
+            className={`p-4 rounded-xl border flex gap-4 ${notif.read ? 'bg-[#181818] border-[#2f2f33]' : 'bg-[#1f1f23] border-[#3ea6ff]/30'}`}
           >
             <div className="pt-1">
-              {notif.lida ? (
+              {notif.read ? (
                 <Bell className="w-5 h-5 text-[#aaa]" />
               ) : (
                 <Circle className="w-4 h-4 fill-[#3ea6ff] text-[#3ea6ff] mt-0.5" />
@@ -116,13 +145,18 @@ export default function HistoricoNotificacoesPage() {
             </div>
             <div className="flex-1">
               <div className="flex justify-between items-start mb-1">
-                <h4 className="text-white font-medium">{notif.titulo}</h4>
-                <span className="text-xs text-[#aaa] whitespace-nowrap ml-4">{notif.data}</span>
+                <h4 className="text-white font-medium">{notif.title}</h4>
+                <span className="text-xs text-[#aaa] whitespace-nowrap ml-4">
+                  {new Date(notif.created_at).toLocaleString('pt-BR')}
+                </span>
               </div>
-              <p className="text-[#ccc] text-sm leading-relaxed">{notif.mensagem}</p>
+              <p className="text-[#ccc] text-sm leading-relaxed">{notif.message}</p>
             </div>
           </div>
         ))}
+        {!loading && notificacoes.length === 0 && (
+          <div className="text-center py-6 text-sm text-[#aaa]">Nenhuma notificação encontrada com os filtros selecionados.</div>
+        )}
       </div>
 
       {/* Botão flutuante para voltar */}
