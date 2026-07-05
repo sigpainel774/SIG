@@ -1,42 +1,65 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
-const notices = [
-  {
-    id: '1',
-    title: 'Reuniao pedagogica',
-    body: 'Encontro com coordenacao e professores para alinhamento do planejamento semanal.',
-    date: '2026-07-03',
-    target: 'Todas as escolas',
-  },
-  {
-    id: '2',
-    title: 'Atualizacao cadastral',
-    body: 'Secretarias devem conferir os dados dos alunos e servidores ate o fim do expediente.',
-    date: '2026-07-04',
-    target: 'Secretaria escolar',
-  },
-]
 
-const birthdays = [
-  { day: 3, name: 'Ana Souza', role: 'Professora' },
-  { day: 12, name: 'Carlos Lima', role: 'Aluno' },
-  { day: 21, name: 'Mariana Alves', role: 'Coordenadora' },
-]
 
 export default function MuralPage() {
   const [selectedDate, setSelectedDate] = useState('')
   const [showComposer, setShowComposer] = useState(false)
+  const [notices, setNotices] = useState<any[]>([])
+  const [birthdays, setBirthdays] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient()
+      
+      const [comunicadosRes, funcRes, alunosRes] = await Promise.all([
+        (supabase.from as any)('comunicados').select('*').order('date', { ascending: false }),
+        supabase.from('funcionarios').select('nome, cargo, data_nascimento').not('data_nascimento', 'is', null),
+        supabase.from('alunos').select('nome, data_nascimento').not('data_nascimento', 'is', null)
+      ])
+
+      if (comunicadosRes.data) {
+        setNotices(comunicadosRes.data)
+      }
+
+      const allBirthdays: any[] = []
+      if (funcRes.data) {
+        funcRes.data.forEach(f => {
+          const date = new Date(f.data_nascimento + 'T00:00:00')
+          // Only current month
+          if (date.getMonth() === new Date().getMonth()) {
+            allBirthdays.push({ day: date.getDate(), name: f.nome, role: f.cargo || 'Funcionário' })
+          }
+        })
+      }
+      if (alunosRes.data) {
+        alunosRes.data.forEach(a => {
+          const date = new Date(a.data_nascimento + 'T00:00:00')
+          if (date.getMonth() === new Date().getMonth()) {
+            allBirthdays.push({ day: date.getDate(), name: a.nome, role: 'Aluno' })
+          }
+        })
+      }
+
+      setBirthdays(allBirthdays)
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
 
   const filteredNotices = useMemo(() => {
     if (!selectedDate) return notices
     return notices.filter((notice) => notice.date === selectedDate)
-  }, [selectedDate])
+  }, [selectedDate, notices])
 
   return (
     <div className="space-y-6">
@@ -74,25 +97,35 @@ export default function MuralPage() {
             </Card>
           )}
 
-          {filteredNotices.map((notice) => (
-            <Card key={notice.id} className="border-borderCustom bg-card p-5">
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-highlight/10 p-2 text-highlight">
-                  <Bell className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="font-semibold text-white">{notice.title}</h2>
-                    <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
-                      {new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{notice.body}</p>
-                  <p className="mt-3 text-xs font-medium text-highlight">{notice.target}</p>
-                </div>
-              </div>
+          {loading ? (
+            <Card className="border-borderCustom bg-card p-5 text-center text-muted-foreground">
+              Carregando comunicados...
             </Card>
-          ))}
+          ) : filteredNotices.length === 0 ? (
+            <Card className="border-borderCustom bg-card p-5 text-center text-muted-foreground">
+              Nenhum comunicado encontrado.
+            </Card>
+          ) : (
+            filteredNotices.map((notice) => (
+              <Card key={notice.id} className="border-borderCustom bg-card p-5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-highlight/10 p-2 text-highlight">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="font-semibold text-white">{notice.title}</h2>
+                      <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
+                        {new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{notice.body}</p>
+                    <p className="mt-3 text-xs font-medium text-highlight">{notice.target}</p>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -136,12 +169,18 @@ export default function MuralPage() {
               })}
             </div>
             <div className="mt-5 space-y-2 border-t border-borderCustom pt-4">
-              {birthdays.map((birthday) => (
-                <div key={birthday.name} className="rounded-lg bg-input p-3 text-sm">
-                  <p className="font-medium text-white">{birthday.name}</p>
-                  <p className="text-xs text-muted-foreground">Dia {birthday.day} - {birthday.role}</p>
-                </div>
-              ))}
+              {loading ? (
+                <p className="text-center text-xs text-muted-foreground">Carregando...</p>
+              ) : birthdays.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground">Nenhum aniversariante neste mês ainda.</p>
+              ) : (
+                birthdays.map((birthday, idx) => (
+                  <div key={idx} className="rounded-lg bg-input p-3 text-sm">
+                    <p className="font-medium text-white">{birthday.name}</p>
+                    <p className="text-xs text-muted-foreground">Dia {birthday.day} - {birthday.role}</p>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
         </aside>
