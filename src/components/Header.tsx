@@ -1,16 +1,60 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell } from 'lucide-react'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
+  const { funcionario } = useAuthStore()
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!funcionario?.auth_user_id) return
+    const supabase = createClient()
+
+    const fetchUnreadCount = async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', funcionario.auth_user_id as string)
+        .eq('read', false)
+      
+      if (!error && count !== null) {
+        setUnreadCount(count)
+      }
+    }
+
+    fetchUnreadCount()
+
+    const channel = supabase
+      .channel('realtime_notifications')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications', 
+          filter: `user_id=eq.${funcionario.auth_user_id as string}` 
+        },
+        (payload: any) => {
+          setUnreadCount((prev) => prev + 1)
+          toast.info(payload.new.title || 'Nova notificação')
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [funcionario?.auth_user_id])
 
   const handleToggleClick = () => {
     if (!isEditMode) {
@@ -45,9 +89,11 @@ export function Header() {
             title="Notificações"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-[#121214]">
-              2
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-[#121214]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Modo Edição Switch */}
