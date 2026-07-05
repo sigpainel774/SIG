@@ -87,7 +87,7 @@ export default function AdminHubPage() {
       subtitle: 'Níveis e permissões',
       icon: KeyRound,
       iconColor: 'text-emerald-400',
-      path: '/permissoes',
+      path: '/admin/acessos',
     },
     {
       title: 'Cargos',
