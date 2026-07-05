@@ -54,8 +54,8 @@ export async function proxy(request: NextRequest) {
 
       const isSuperAdmin = data?.is_superadmin || false
 
-      // Se for superadmin e não estiver no admin, joga pro admin
-      if (isSuperAdmin && pathname !== '/admin') {
+      // Se for superadmin de sistema, a navegação fica trancada no painel root /admin
+      if (isSuperAdmin && !pathname.startsWith('/admin')) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin'
         return NextResponse.redirect(url)
