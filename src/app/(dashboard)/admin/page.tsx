@@ -28,7 +28,8 @@ import {
   Bell, 
   Flag, 
   AlertTriangle, 
-  Bus 
+  Bus,
+  ArchiveRestore
 } from 'lucide-react'
 
 interface QuickShortcut {
@@ -116,6 +117,13 @@ export default function AdminHubPage() {
       icon: Trash2,
       iconColor: 'text-rose-500',
       path: '/admin/lixeira',
+    },
+    {
+      title: 'Arquivados',
+      subtitle: 'Fora da rede / Arquivo morto',
+      icon: ArchiveRestore,
+      iconColor: 'text-indigo-500',
+      path: '/admin/arquivados',
     },
     {
       title: 'Dispositivos',
