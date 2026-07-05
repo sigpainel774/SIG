@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useSchoolStore, mockEscolas, Escola } from '@/store/useSchoolStore'
+import { useState, useEffect } from 'react'
+import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { PrintBoletim } from '@/components/print/print-boletim'
 import { PrintFicha } from '@/components/print/print-ficha'
@@ -32,7 +32,11 @@ import { Button } from '@/components/ui/button'
 type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | null
 
 export default function RelatoriosPage() {
-  const { selectedEscola } = useSchoolStore()
+  const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
+
+  useEffect(() => {
+    loadEscolas()
+  }, [loadEscolas])
   const [activeReport, setActiveReport] = useState<ReportType>(null)
   const [printableSubView, setPrintableSubView] = useState<'boletim' | 'ficha' | 'diario' | null>(null)
 
@@ -226,7 +230,7 @@ export default function RelatoriosPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#20293d]">
-                    {mockEscolas.map((escola) => (
+                    {escolas.map((escola) => (
                       <tr key={escola.id} className="hover:bg-[#1f283b] transition-colors">
                         <td className="p-3 font-semibold text-white flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 rounded-full ${escola.color}`} />
