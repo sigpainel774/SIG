@@ -1,11 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowLeft, Home } from 'lucide-react'
+import { useEditModeStore } from '@/store/useEditModeStore'
 
 export function RootAdminHeader() {
   const pathname = usePathname()
   const router = useRouter()
+  const { setEditMode } = useEditModeStore()
+
+  useEffect(() => {
+    setEditMode(true)
+  }, [setEditMode])
 
   // Não mostrar na página inicial do painel root
   if (pathname === '/admin' || pathname === '/root') {
@@ -17,7 +24,7 @@ export function RootAdminHeader() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-slate-[#cbd5e1] hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Voltar</span>
@@ -35,3 +42,4 @@ export function RootAdminHeader() {
     </div>
   )
 }
+
