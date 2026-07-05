@@ -152,6 +152,136 @@ export type Database = {
           },
         ]
       }
+      alunos_transporte: {
+        Row: {
+          aluno_id: string | null
+          created_at: string | null
+          id: string
+          ponto_embarque: string | null
+          rota_id: string | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          created_at?: string | null
+          id?: string
+          ponto_embarque?: string | null
+          rota_id?: string | null
+        }
+        Update: {
+          aluno_id?: string | null
+          created_at?: string | null
+          id?: string
+          ponto_embarque?: string | null
+          rota_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alunos_transporte_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_transporte_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_transporte_rota_id_fkey"
+            columns: ["rota_id"]
+            isOneToOne: false
+            referencedRelation: "rotas_transporte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arquivados: {
+        Row: {
+          arquivado_por: string | null
+          arquivos_anexos: Json | null
+          created_at: string | null
+          escola_origem_id: string | null
+          id: string
+          motivo: string
+          payload_completo: Json
+          referencia_id: string
+          revertido_em: string | null
+          revertido_por: string | null
+          status: string | null
+          tabela_origem: string
+          tipo: string
+        }
+        Insert: {
+          arquivado_por?: string | null
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_origem_id?: string | null
+          id?: string
+          motivo: string
+          payload_completo: Json
+          referencia_id: string
+          revertido_em?: string | null
+          revertido_por?: string | null
+          status?: string | null
+          tabela_origem: string
+          tipo: string
+        }
+        Update: {
+          arquivado_por?: string | null
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_origem_id?: string | null
+          id?: string
+          motivo?: string
+          payload_completo?: Json
+          referencia_id?: string
+          revertido_em?: string | null
+          revertido_por?: string | null
+          status?: string | null
+          tabela_origem?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arquivados_arquivado_por_fkey"
+            columns: ["arquivado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_arquivado_por_fkey"
+            columns: ["arquivado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_escola_origem_id_fkey"
+            columns: ["escola_origem_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_revertido_por_fkey"
+            columns: ["revertido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_revertido_por_fkey"
+            columns: ["revertido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -226,35 +356,156 @@ export type Database = {
         }
         Relationships: []
       }
+      cargos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nivel: number | null
+          nome: string
+          salario_base: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nivel?: number | null
+          nome: string
+          salario_base?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nivel?: number | null
+          nome?: string
+          salario_base?: number | null
+        }
+        Relationships: []
+      }
+      dispositivos: {
+        Row: {
+          created_at: string | null
+          escola_id: string | null
+          funcionario_id: string | null
+          id: string
+          identificador: string | null
+          nome: string
+          status: string | null
+          tipo: string
+          ultima_conexao: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          identificador?: string | null
+          nome: string
+          status?: string | null
+          tipo: string
+          ultima_conexao?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          identificador?: string | null
+          nome?: string
+          status?: string | null
+          tipo?: string
+          ultima_conexao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispositivos_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispositivos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispositivos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escolas: {
         Row: {
+          ativo: boolean | null
           created_at: string
           deleted_at: string | null
+          diretor_id: string | null
+          endereco: string | null
           id: string
+          inep: string | null
           logo_url: string | null
           modulos_ativos: string[] | null
           nome: string
           plano: string | null
+          telefone: string | null
+          tipo: string | null
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string
           deleted_at?: string | null
+          diretor_id?: string | null
+          endereco?: string | null
           id?: string
+          inep?: string | null
           logo_url?: string | null
           modulos_ativos?: string[] | null
           nome: string
           plano?: string | null
+          telefone?: string | null
+          tipo?: string | null
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string
           deleted_at?: string | null
+          diretor_id?: string | null
+          endereco?: string | null
           id?: string
+          inep?: string | null
           logo_url?: string | null
           modulos_ativos?: string[] | null
           nome?: string
           plano?: string | null
+          telefone?: string | null
+          tipo?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "escolas_diretor_id_fkey"
+            columns: ["diretor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escolas_diretor_id_fkey"
+            columns: ["diretor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       funcionarios: {
         Row: {
@@ -420,6 +671,275 @@ export type Database = {
           },
         ]
       }
+      registros_ronda: {
+        Row: {
+          foto_url: string | null
+          funcionario_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          observacao: string | null
+          ponto_nome: string | null
+          registrado_em: string | null
+          rota_id: string | null
+        }
+        Insert: {
+          foto_url?: string | null
+          funcionario_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          ponto_nome?: string | null
+          registrado_em?: string | null
+          rota_id?: string | null
+        }
+        Update: {
+          foto_url?: string | null
+          funcionario_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          ponto_nome?: string | null
+          registrado_em?: string | null
+          rota_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_ronda_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_ronda_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_ronda_rota_id_fkey"
+            columns: ["rota_id"]
+            isOneToOne: false
+            referencedRelation: "rotas_ronda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rotas_ronda: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          escola_id: string | null
+          funcionario_id: string | null
+          id: string
+          nome: string
+          pontos_ronda: Json | null
+          turno: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          nome: string
+          pontos_ronda?: Json | null
+          turno?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          nome?: string
+          pontos_ronda?: Json | null
+          turno?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotas_ronda_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_ronda_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_ronda_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rotas_transporte: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          escola_id: string | null
+          id: string
+          nome: string
+          pontos_parada: Json | null
+          turno: string | null
+          veiculo_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          escola_id?: string | null
+          id?: string
+          nome: string
+          pontos_parada?: Json | null
+          turno?: string | null
+          veiculo_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          escola_id?: string | null
+          id?: string
+          nome?: string
+          pontos_parada?: Json | null
+          turno?: string | null
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotas_transporte_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_transporte_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transferencias_alunos: {
+        Row: {
+          aluno_id: string
+          arquivos_anexos: Json | null
+          created_at: string | null
+          escola_destino_id: string | null
+          escola_origem_id: string | null
+          ficha_snapshot: Json | null
+          fora_da_rede: boolean | null
+          id: string
+          motivo: string | null
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta_texto: string | null
+          solicitante_id: string | null
+          status: string | null
+        }
+        Insert: {
+          aluno_id: string
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_destino_id?: string | null
+          escola_origem_id?: string | null
+          ficha_snapshot?: Json | null
+          fora_da_rede?: boolean | null
+          id?: string
+          motivo?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_texto?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_destino_id?: string | null
+          escola_origem_id?: string | null
+          ficha_snapshot?: Json | null
+          fora_da_rede?: boolean | null
+          id?: string
+          motivo?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_texto?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_escola_destino_id_fkey"
+            columns: ["escola_destino_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_escola_origem_id_fkey"
+            columns: ["escola_origem_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_alunos_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trash_bin: {
         Row: {
           deleted_at: string | null
@@ -513,6 +1033,51 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos: {
+        Row: {
+          capacidade: number | null
+          created_at: string | null
+          id: string
+          modelo: string
+          motorista_id: string | null
+          placa: string
+          status: string | null
+        }
+        Insert: {
+          capacidade?: number | null
+          created_at?: string | null
+          id?: string
+          modelo: string
+          motorista_id?: string | null
+          placa: string
+          status?: string | null
+        }
+        Update: {
+          capacidade?: number | null
+          created_at?: string | null
+          id?: string
+          modelo?: string
+          motorista_id?: string | null
+          placa?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veiculos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
         ]
