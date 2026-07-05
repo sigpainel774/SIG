@@ -48,33 +48,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
       if (!error && data && data.length > 0) {
         setLogs(data as AccessLog[])
       } else {
-        // Fallback logs mockados para exibição
-        setLogs([
-          {
-            id: '1',
-            created_at: new Date().toISOString(),
-            evento: 'LOGIN',
-            email: userEmail,
-            ip_address: '177.105.42.12',
-            user_agent: 'Chrome 124 (Windows NT 10.0)'
-          },
-          {
-            id: '2',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            evento: 'LOGIN',
-            email: userEmail,
-            ip_address: '177.105.42.12',
-            user_agent: 'Chrome 124 (Windows NT 10.0)'
-          },
-          {
-            id: '3',
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            evento: 'LOGOUT',
-            email: userEmail,
-            ip_address: '177.105.42.12',
-            user_agent: 'Chrome 124 (Windows NT 10.0)'
-          }
-        ])
+        setLogs([])
       }
     } catch (err) {
       console.error(err)

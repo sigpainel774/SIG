@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -8,45 +9,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-const mockOcorrencias = [
-  {
-    id: 1,
-    data: '15/10/2026',
-    aluno: 'João Pedro Silva',
-    turma: '9º Ano A',
-    gravidade: 'Média',
-    tipo: 'Indisciplina',
-    descricao: 'Uso de celular durante a explicação do professor, ignorando advertências.',
-    registroPor: 'Prof. Marcos',
-    statusPais: 'Cientes',
-  },
-  {
-    id: 2,
-    data: '14/10/2026',
-    aluno: 'Maria Eduarda',
-    turma: '7º Ano B',
-    gravidade: 'Baixa',
-    tipo: 'Atraso',
-    descricao: 'Chegou 20 minutos atrasada para a primeira aula.',
-    registroPor: 'Portaria',
-    statusPais: 'Pendente',
-  },
-  {
-    id: 3,
-    data: '10/10/2026',
-    aluno: 'Carlos Eduardo',
-    turma: '8º Ano C',
-    gravidade: 'Alta',
-    tipo: 'Briga',
-    descricao: 'Envolvimento em discussão agressiva no pátio durante o intervalo.',
-    registroPor: 'Coordenação',
-    statusPais: 'Reunião Agendada',
-  }
-]
-
 export default function OcorrenciasPage() {
   const [dataFiltro, setDataFiltro] = useState('')
   const [gravidadeFiltro, setGravidadeFiltro] = useState('todas')
+  const [ocorrencias, setOcorrencias] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchOcorrencias = async () => {
+      const { data, error } = await (supabase.from as any)('ocorrencias')
+        .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
+        .order('data', { ascending: false })
+      
+      if (data) setOcorrencias(data)
+      setLoading(false)
+    }
+    fetchOcorrencias()
+  }, [])
 
   const getGravidadeColor = (gravidade: string) => {
     switch (gravidade) {
@@ -116,11 +96,18 @@ export default function OcorrenciasPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockOcorrencias.map((oco) => (
+            {ocorrencias.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  Nenhuma ocorrência disciplinar registrada.
+                </TableCell>
+              </TableRow>
+            )}
+            {ocorrencias.map((oco) => (
               <TableRow key={oco.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors">
-                <TableCell className="text-[#aaa] whitespace-nowrap">{oco.data}</TableCell>
-                <TableCell className="text-white font-medium">{oco.aluno}</TableCell>
-                <TableCell className="text-[#aaa]">{oco.turma}</TableCell>
+                <TableCell className="text-[#aaa] whitespace-nowrap">{new Date(oco.data).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell className="text-white font-medium">{oco.alunos?.nome}</TableCell>
+                <TableCell className="text-[#aaa]">{oco.turmas?.nome}</TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1 items-start">
                     <span className="text-sm text-white">{oco.tipo}</span>
@@ -132,11 +119,11 @@ export default function OcorrenciasPage() {
                 <TableCell className="text-[#aaa] max-w-[250px] truncate" title={oco.descricao}>
                   {oco.descricao}
                 </TableCell>
-                <TableCell className="text-[#aaa]">{oco.registroPor}</TableCell>
+                <TableCell className="text-[#aaa]">{oco.funcionarios?.nome || '-'}</TableCell>
                 <TableCell>
-                  <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.statusPais)}`}>
-                    {oco.statusPais === 'Cientes' && <CheckCircle2 className="w-4 h-4" />}
-                    {oco.statusPais}
+                  <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.status_pais)}`}>
+                    {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4" />}
+                    {oco.status_pais}
                   </span>
                 </TableCell>
               </TableRow>
