@@ -10,12 +10,16 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
 
 export default function MuralPage() {
-  const { funcionario } = useAuthStore()
+  const { funcionario, acessos } = useAuthStore()
   const [selectedDate, setSelectedDate] = useState('')
   const [showComposer, setShowComposer] = useState(false)
   const [notices, setNotices] = useState<any[]>([])
   const [birthdays, setBirthdays] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  const podePublicar = useMemo(() => {
+    return funcionario?.is_superadmin === true || acessos.some((a) => a.pode_mural === true)
+  }, [funcionario, acessos])
 
   // Form states
   const [titulo, setTitulo] = useState('')
@@ -27,11 +31,13 @@ export default function MuralPage() {
 
   const fetchNotices = async () => {
     const supabase = createClient()
-    const { data } = await (supabase.from as any)('comunicados')
-      .select('*')
+    const { data, error } = await supabase.from('comunicados')
+      .select('*, criado_por:funcionarios(nome)')
       .order('date', { ascending: false })
 
-    if (data) {
+    if (error) {
+      toast.error('Erro ao recarregar comunicados: ' + error.message)
+    } else if (data) {
       setNotices(data)
     }
   }
@@ -41,40 +47,33 @@ export default function MuralPage() {
       const supabase = createClient()
       setLoading(true)
 
-      const [comunicadosRes, funcRes, alunosRes] = await Promise.all([
-        (supabase.from as any)('comunicados').select('*').order('date', { ascending: false }),
-        supabase.from('funcionarios').select('nome, cargo, data_nascimento').not('data_nascimento', 'is', null),
-        supabase.from('alunos').select('nome, data_nascimento').not('data_nascimento', 'is', null)
-      ])
+      try {
+        const currentMonth = new Date().getMonth() + 1 // 1-based for PG
 
-      if (comunicadosRes.data) {
-        setNotices(comunicadosRes.data)
+        const [comunicadosRes, birthdayRes] = await Promise.all([
+          supabase.from('comunicados')
+            .select('*, criado_por:funcionarios(nome)')
+            .order('date', { ascending: false }),
+          (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth })
+        ])
+
+        if (comunicadosRes.error) {
+          toast.error('Erro ao carregar comunicados: ' + comunicadosRes.error.message)
+        } else if (comunicadosRes.data) {
+          setNotices(comunicadosRes.data)
+        }
+
+        if (birthdayRes.error) {
+          toast.error('Erro ao carregar aniversariantes: ' + birthdayRes.error.message)
+        } else if (birthdayRes.data) {
+          setBirthdays(birthdayRes.data)
+        }
+      } catch (err: any) {
+        console.error('Erro ao carregar mural:', err)
+        toast.error('Ocorreu uma falha ao obter os dados do mural.')
+      } finally {
+        setLoading(false)
       }
-
-      const allBirthdays: any[] = []
-      const currentMonth = new Date().getMonth()
-
-      if (funcRes.data) {
-        funcRes.data.forEach((f: any) => {
-          if (!f.data_nascimento) return
-          const date = new Date(f.data_nascimento + 'T00:00:00')
-          if (date.getMonth() === currentMonth) {
-            allBirthdays.push({ day: date.getDate(), name: f.nome, role: f.cargo || 'Funcionário' })
-          }
-        })
-      }
-      if (alunosRes.data) {
-        alunosRes.data.forEach((a: any) => {
-          if (!a.data_nascimento) return
-          const date = new Date(a.data_nascimento + 'T00:00:00')
-          if (date.getMonth() === currentMonth) {
-            allBirthdays.push({ day: date.getDate(), name: a.nome, role: 'Aluno' })
-          }
-        })
-      }
-
-      setBirthdays(allBirthdays)
-      setLoading(false)
     }
 
     fetchData()
@@ -85,8 +84,28 @@ export default function MuralPage() {
     return notices.filter((notice) => notice.date === selectedDate)
   }, [selectedDate, notices])
 
+  const calendarData = useMemo(() => {
+    const today = new Date()
+    const currentYear = today.getFullYear()
+    const currentMonth = today.getMonth() // 0-indexed
+
+    const firstDayDate = new Date(currentYear, currentMonth, 1)
+    const firstDayOfWeek = firstDayDate.getDay() // 0 = Sunday, 1 = Monday, etc.
+
+    const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate()
+
+    const blanks = Array.from({ length: firstDayOfWeek })
+    const days = Array.from({ length: totalDays }, (_, i) => i + 1)
+
+    return { blanks, days }
+  }, [])
+
   const handlePublicarComunicado = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!podePublicar) {
+      toast.error('Você não tem permissão para publicar comunicados.')
+      return
+    }
     if (!titulo.trim()) {
       toast.error('Informe o título do comunicado.')
       return
@@ -166,15 +185,17 @@ export default function MuralPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Mural</h1>
           <p className="mt-1 text-sm text-muted-foreground">Comunicados, avisos e aniversariantes da rede.</p>
         </div>
-        <Button onClick={() => setShowComposer((value) => !value)} className="bg-highlight text-background hover:bg-highlight/90 font-semibold cursor-pointer">
-          <Pin className="mr-2 h-4 w-4" />
-          {showComposer ? 'Cancelar' : 'Novo Comunicado'}
-        </Button>
+        {podePublicar && (
+          <Button onClick={() => setShowComposer((value) => !value)} className="bg-highlight text-background hover:bg-highlight/90 font-semibold cursor-pointer">
+            <Pin className="mr-2 h-4 w-4" />
+            {showComposer ? 'Cancelar' : 'Novo Comunicado'}
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-4">
-          {showComposer && (
+          {showComposer && podePublicar && (
             <Card className="border-borderCustom bg-card p-5 shadow-lg">
               <h2 className="mb-4 text-lg font-semibold text-white">Criar Novo Comunicado</h2>
               <form onSubmit={handlePublicarComunicado} className="space-y-4">
@@ -321,11 +342,18 @@ export default function MuralPage() {
                       </div>
                     )}
 
-                    {notice.target && (
-                      <p className="mt-3 text-xs font-semibold text-highlight inline-block bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20 mr-2">
-                        {notice.target}
-                      </p>
-                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {notice.target && (
+                        <span className="text-xs font-semibold text-highlight bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
+                          {notice.target}
+                        </span>
+                      )}
+                      {notice.criado_por?.nome && (
+                        <span className="text-xs text-muted-foreground">
+                          Publicado por: {notice.criado_por.nome}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -357,7 +385,10 @@ export default function MuralPage() {
               ))}
             </div>
             <div className="mt-3 grid grid-cols-7 gap-2 text-center text-sm">
-              {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => {
+              {calendarData.blanks.map((_, idx) => (
+                <span key={`blank-${idx}`} className="py-1" />
+              ))}
+              {calendarData.days.map((day) => {
                 const hasBirthday = birthdays.some((birthday) => birthday.day === day)
                 return (
                   <span
