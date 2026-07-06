@@ -48,7 +48,14 @@
 <!-- BEGIN:rls-creation-rule -->
 # Criação de Tabelas e RLS (Supabase)
 
-- **Habilitar RLS e Criar Policies Iniciais**: Ao criar uma nova tabela no Supabase, sempre verifique a necessidade de habilitar o Row Level Security (RLS). Antes de testar qualquer operação na tabela, crie pelo menos a policy padrão para o superadmin (ex: `superadmin_all_...`) para garantir que os testes não falhem por bloqueio de segurança e que o banco permaneça seguro desde o primeiro momento.
+- **Habilitar RLS e Criar Policy de Desenvolvimento**: Ao criar uma nova tabela no Supabase durante o período de desenvolvimento, sempre habilite o RLS e crie imediatamente a policy `dev_all_authenticated` que libera leitura e escrita para todos os usuários autenticados. Isso previne bloqueios inesperados de RLS durante os testes.
+- **SQL padrão para novas tabelas**:
+  ```sql
+  ALTER TABLE public.<nome_da_tabela> ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "dev_all_authenticated" ON public.<nome_da_tabela>
+    FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+  ```
+- **Atenção para produção**: Antes de lançar em produção, as políticas `dev_all_authenticated` devem ser substituídas pelas políticas ABAC/RLS específicas do recurso (por escola, por cargo, por superadmin, etc.).
 <!-- END:rls-creation-rule -->
 
 <!-- BEGIN:list-init-rule -->

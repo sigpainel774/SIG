@@ -234,7 +234,12 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     const { data: tData } = await supabase.from('turmas').select('id, nome, ano_letivo')
     if (tData) setTurmas(tData)
 
-    const { data: eData } = await supabase.from('escolas').select('id, nome')
+    const { data: eData } = await supabase
+      .from('escolas')
+      .select('id, nome')
+      .is('deleted_at', null)
+      .eq('ativo', true)
+      .order('nome', { ascending: true })
     if (eData) setEscolas(eData)
   }
 
