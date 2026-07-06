@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, MoreVertical } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -69,9 +69,9 @@ export function Header() {
 
   return (
     <>
-      <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-6 shadow-sm sticky top-0 z-30 print:hidden">
+      <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-4 sm:px-6 shadow-sm sticky top-0 z-30 print:hidden min-w-0">
         {/* Title / Logo & Mobile Menu Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={toggleMobile}
@@ -79,23 +79,23 @@ export function Header() {
             title="Menu Principal"
             aria-label="Alternar Menu Lateral"
           >
-            <MoreVertical className="w-6 h-6 text-[#3ea6ff]" />
+            <Menu className="w-6 h-6 text-[#3ea6ff]" />
           </button>
           <img 
             src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
             alt="Painel Escolar Logo" 
-            className="w-7 h-7 object-contain rounded-md" 
+            className="w-7 h-7 object-contain rounded-md shrink-0" 
           />
-          <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block">
+          <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block truncate">
             Sapeaçu Painel Escolar
           </h1>
-          <h1 className="font-bold text-base text-white tracking-tight sm:hidden">
+          <h1 className="font-bold text-sm text-white tracking-tight sm:hidden truncate">
             Painel Escolar
           </h1>
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0">
           {/* Notification Bell */}
           <button
             onClick={() => setModalNotifOpen(true)}
@@ -112,7 +112,7 @@ export function Header() {
 
           {/* Modo Edição Switch */}
           <div className="flex items-center gap-2 md:gap-3">
-            <span className={`text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-zinc-400'}`}>
+            <span className={`text-xs sm:text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-zinc-400'}`}>
               Modo Edição
             </span>
             

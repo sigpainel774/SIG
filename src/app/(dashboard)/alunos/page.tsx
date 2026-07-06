@@ -3,8 +3,22 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Search, GraduationCap, ArrowLeftRight, Printer, Edit, Trash2 } from 'lucide-react'
+import { 
+  Plus, 
+  Search, 
+  GraduationCap, 
+  Printer, 
+  Edit, 
+  Trash2, 
+  Phone, 
+  MapPin, 
+  School, 
+  BookOpen, 
+  User, 
+  FileText,
+  BadgeInfo,
+  Building2
+} from 'lucide-react'
 import { ModalAluno } from '@/components/modals/modal-aluno'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { createClient } from '@/lib/supabaseClient'
@@ -37,87 +51,8 @@ interface Aluno {
 export default function AlunosPage() {
   const { funcionario, escolaAtivaId } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
-  const [alunos, setAlunos] = useState<Aluno[]>([
-    {
-      id: '1',
-      nome: 'Alessandra Passos Silveira',
-      cpf: '09087765291',
-      inep: '87426482',
-      telefone: '75998239643',
-      data_nascimento: '2003-08-27',
-      rg: '0908272363',
-      nis: '817873766358',
-      cartao_sus: '43287492838',
-      certidao_nascimento: '82882728929824415',
-      nome_mae: 'Jarlene Ferreira',
-      nome_pai: 'Marcos Vinicius',
-      endereco: 'Rua do Brito, 78',
-      serie: '2º ANO',
-      escola_nome: 'Colégio Moisés Alves',
-      foto_url: '',
-      created_at: '2026-07-03',
-      dados_matricula: {
-        anoLetivo: '2026',
-        localizacaoUE: 'Zona Urbana',
-        tipoMatricula: 'Renovação',
-        dataMatricula: '2026-05-31',
-        estadoCivilAluno: 'Solteiro',
-        corRacaAluno: 'Parda',
-        sexoAluno: 'Feminino',
-        nacionalidadeAluno: 'BRASILEIRA',
-        cidadeNascAluno: 'Salvador',
-        ufNascAluno: 'BA',
-        telMaeAluno: '75982374736',
-        telPaiAluno: '75988827645',
-        turnoAluno: 'Vespertino',
-        turmaAluno: '1',
-        transporteAluno: false,
-        ruaAluno: 'Rua do Brito',
-        numeroAluno: '78',
-        cepAluno: '44540000',
-        bairroAluno: 'Brito',
-        cidadeEndAluno: 'SAPE AÇU',
-        ufEndAluno: 'BA',
-        areaLocalizacaoAluno: 'Rural',
-        areaDiferenciadaAluno: 'Não está em área diferenciada',
-        recursosEspeciaisAluno: 'Não',
-        diabeteAluno: 'Não',
-        convulsoesAluno: 'Não',
-        asmaAluno: 'Não',
-        infeccoesAluno: 'Não',
-        restricaoExercicioAluno: 'Não',
-        covidAluno: 'Não',
-        alergiaMedAluno: 'Não',
-        restricaoAlimentarAluno: 'Não',
-        neeAluno: 'Sim, indique qual(is)',
-        neeSelecionadas: [
-          'Desenvolvimento de funções cognitivas',
-          'Desenvolvimento de vida autônoma',
-          'Enriquecimento curricular',
-          'Ensino de informática acessível',
-          'Ensino do Sistema Braille',
-          'Língua Portuguesa como Segunda Língua',
-          'Técnicas de cálculo no Soroban',
-          'Orientação e mobilidade',
-          'Comunicação Alternativa e Aumentativa',
-          'Transtorno do Espectro Autista',
-          'Altas habilidades/Superdotação'
-        ],
-        deficienciaAluno: 'Sim, indique qual(is)',
-        deficienciasSelecionadas: [
-          'Baixa visão',
-          'Surdez',
-          'Deficiência Intelectual',
-          'Cegueira',
-          'Surdocegueira',
-          'Deficiência múltipla',
-          'Deficiência auditiva',
-          'Deficiência Física'
-        ]
-      }
-    }
-  ])
-  const [loading, setLoading] = useState(false)
+  const [alunos, setAlunos] = useState<Aluno[]>([])
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [alunoSelecionadoEditar, setAlunoSelecionadoEditar] = useState<Aluno | null>(null)
   const [alunoImprimir, setAlunoImprimir] = useState<Aluno | null>(null)
@@ -125,8 +60,8 @@ export default function AlunosPage() {
   const carregarAlunos = async () => {
     const supabase = createClient()
     setLoading(true)
-    const { data, error } = await supabase.from('alunos').select('*').order('nome', { ascending: true })
-    if (data && data.length > 0) {
+    const { data } = await supabase.from('alunos').select('*').order('nome', { ascending: true })
+    if (data) {
       setAlunos(data as any)
     }
     setLoading(false)
@@ -158,7 +93,7 @@ export default function AlunosPage() {
   }
 
   const handleDeletar = async (id: string, nome: string) => {
-    if (confirm('Tem certeza que deseja excluir a ficha deste aluno?')) {
+    if (confirm(`Tem certeza que deseja excluir a ficha do aluno "${nome}"?`)) {
       const supabase = createClient()
       const alunoParaDeletar = alunos.find(a => a.id === id) || {}
       
@@ -186,7 +121,7 @@ export default function AlunosPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto min-w-0">
       {/* Modal de Cadastro / Edição */}
       <ModalAluno 
         open={modalOpen} 
@@ -206,111 +141,165 @@ export default function AlunosPage() {
       {/* Topo / Título */}
       <div className="print:hidden space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-            <GraduationCap className="w-8 h-8 text-highlight" />
-            Gestão de Alunos
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
-          </p>
-        </div>
-        <Button 
-          onClick={handleNovoAluno}
-          className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Aluno
-        </Button>
-      </div>
-
-      {/* Busca */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por Nome, CPF ou Código INEP (Censo)..."
-            className="pl-9 bg-[#121212] border-borderCustom text-white focus-visible:ring-highlight"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Lista de Alunos em Cards */}
-      <div className="flex flex-col gap-4">
-        {alunosFiltrados.map((aluno) => (
-          <div key={aluno.id} className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-6 flex items-center gap-6 shadow-sm hover:border-[#3ea6ff]/30 transition-colors">
-            {/* Foto / Iniciais */}
-            <div className="w-16 h-16 rounded-full border-2 border-[#3ea6ff] flex-shrink-0 flex items-center justify-center bg-[#3ea6ff]/10 text-white text-xl font-bold overflow-hidden">
-              {aluno.foto_url ? (
-                <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-              ) : (
-                aluno.nome.substring(0, 2).toUpperCase()
-              )}
-            </div>
-
-            {/* Informações */}
-            <div className="flex-1 flex flex-col justify-center">
-              <h3 className="text-[1.15rem] font-bold text-white mb-2">{aluno.nome}</h3>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-[0.9rem]">
-                  <span className="text-gray-400 font-semibold">Telefone:</span>
-                  <span className="text-gray-300">{aluno.telefone || '-'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[0.9rem]">
-                  <span className="text-gray-400 font-semibold">Email:</span>
-                  <span className="text-gray-300">{aluno.dados_matricula?.emailAluno || '-'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[0.9rem]">
-                  <span className="text-gray-400 font-semibold">Endereço:</span>
-                  <span className="text-gray-300">{aluno.endereco || aluno.dados_matricula?.ruaAluno || '-'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[0.9rem]">
-                  <span className="text-gray-400 font-semibold">Série:</span>
-                  <span className="text-gray-300">{aluno.serie || aluno.dados_matricula?.serieAluno || '-'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[0.9rem]">
-                  <span className="text-gray-400 font-semibold">Escola:</span>
-                  <span className="text-gray-300">{aluno.escola_nome || aluno.dados_matricula?.escolaNome || '-'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => handleEditarAluno(aluno)}
-                className="w-12 h-12 rounded-full border border-gray-600/40 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Editar Aluno"
-              >
-                <Edit className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => handleDeletar(aluno.id, aluno.nome)}
-                className="w-12 h-12 rounded-full border border-rose-500/30 flex items-center justify-center text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                title="Excluir Aluno"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => handleImprimirAluno(aluno)}
-                className="w-12 h-12 rounded-full border border-[#3ea6ff]/40 flex items-center justify-center text-[#3ea6ff] hover:bg-[#3ea6ff]/10 transition-colors"
-                title="Imprimir Ficha de Matrícula"
-              >
-                <Printer className="w-5 h-5" />
-              </button>
-            </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2.5">
+              <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-highlight shrink-0" />
+              <span>Gestão de Alunos</span>
+            </h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+              Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
+            </p>
           </div>
-        ))}
+          <Button 
+            onClick={handleNovoAluno}
+            className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Aluno</span>
+          </Button>
+        </div>
 
-        {alunosFiltrados.length === 0 && (
-          <div className="text-center py-12 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground">
-            Nenhum aluno encontrado.
+        {/* Busca e Estatísticas */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              placeholder="Buscar por Nome, CPF ou Código INEP..."
+              className="pl-9 bg-[#121212] border-borderCustom text-white focus-visible:ring-highlight w-full h-11 text-sm rounded-xl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        )}
-      </div>
+          <div className="text-xs text-muted-foreground font-medium self-end sm:self-center shrink-0">
+            Total: <span className="text-white font-bold">{alunosFiltrados.length}</span> aluno{alunosFiltrados.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        {/* Lista de Alunos em Cards Responsivos */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-16 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground text-sm">
+              Carregando alunos...
+            </div>
+          ) : alunosFiltrados.length === 0 ? (
+            <div className="text-center py-16 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground text-sm">
+              Nenhum aluno encontrado.
+            </div>
+          ) : (
+            alunosFiltrados.map((aluno) => {
+              const escolaNome = aluno.escola_nome || aluno.dados_matricula?.escolaNome || 'Sem Escola'
+              const serieNome = aluno.serie || aluno.dados_matricula?.serieAluno || 'Sem Série'
+              const telefone = aluno.telefone || aluno.dados_matricula?.telMaeAluno || '-'
+              const endereco = aluno.endereco || aluno.dados_matricula?.ruaAluno || '-'
+              const nomeMae = aluno.nome_mae || aluno.dados_matricula?.nomeMaeAluno || null
+
+              return (
+                <div 
+                  key={aluno.id} 
+                  className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-2xl p-4 sm:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  {/* Avatar + Nome + Informações Principais */}
+                  <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
+                    {/* Foto / Iniciais */}
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-[#3ea6ff]/40 flex-shrink-0 flex items-center justify-center bg-[#3ea6ff]/10 text-[#3ea6ff] text-base sm:text-lg font-bold overflow-hidden shadow-inner">
+                      {aluno.foto_url ? (
+                        <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        aluno.nome.substring(0, 2).toUpperCase()
+                      )}
+                    </div>
+
+                    {/* Informações Funcionais */}
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight truncate max-w-full">
+                          {aluno.nome}
+                        </h3>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0090ff]/10 text-[#0090ff] border border-[#0090ff]/20 shrink-0">
+                          {serieNome}
+                        </span>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-xs text-zinc-400">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                          <span className="truncate">{escolaNome}</span>
+                        </div>
+
+                        {telefone !== '-' && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Phone className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate">{telefone}</span>
+                          </div>
+                        )}
+
+                        {aluno.cpf && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <FileText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate">CPF: {aluno.cpf}</span>
+                          </div>
+                        )}
+
+                        {aluno.inep && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <BadgeInfo className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate">INEP: {aluno.inep}</span>
+                          </div>
+                        )}
+
+                        {nomeMae && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate">Mãe: {nomeMae}</span>
+                          </div>
+                        )}
+
+                        {endereco !== '-' && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate">{endereco}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#26262a]">
+                    <button 
+                      onClick={() => handleEditarAluno(aluno)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-zinc-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer border border-[#3f3f46]"
+                      title="Editar Aluno"
+                    >
+                      <Edit className="w-3.5 h-3.5 text-[#0090ff]" />
+                      <span className="hidden sm:inline">Editar</span>
+                    </button>
+
+                    <button 
+                      onClick={() => handleImprimirAluno(aluno)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0090ff]/10 hover:bg-[#0090ff]/20 text-[#0090ff] text-xs font-semibold transition-colors cursor-pointer border border-[#0090ff]/30"
+                      title="Imprimir Ficha de Matrícula"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Imprimir Ficha</span>
+                    </button>
+
+                    <button 
+                      onClick={() => handleDeletar(aluno.id, aluno.nome)}
+                      className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
+                      title="Excluir Aluno"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Excluir</span>
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )
