@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,8 @@ export default function MuralPage() {
   const [mensagem, setMensagem] = useState('')
   const [alvo, setAlvo] = useState('Geral / Toda a Rede')
   const [salvando, setSalvando] = useState(false)
+  const [arquivo, setArquivo] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchNotices = async () => {
     const supabase = createClient()
@@ -98,12 +100,46 @@ export default function MuralPage() {
     const supabase = createClient()
     const hojeStr = new Date().toISOString().split('T')[0]
 
+    let anexoUrl = null
+    let anexoNome = null
+
+    if (arquivo) {
+      try {
+        const fileExt = arquivo.name.split('.').pop()
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+        const filePath = `comunicados/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('anexos')
+          .upload(filePath, arquivo)
+
+        if (uploadError) {
+          toast.error('Erro ao fazer upload do arquivo: ' + uploadError.message)
+          setSalvando(false)
+          return
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('anexos')
+          .getPublicUrl(filePath)
+
+        anexoUrl = publicUrl
+        anexoNome = arquivo.name
+      } catch (err: any) {
+        toast.error('Falha ao processar anexo: ' + err.message)
+        setSalvando(false)
+        return
+      }
+    }
+
     const { error } = await (supabase.from as any)('comunicados').insert({
       title: titulo.trim(),
       body: mensagem.trim(),
       date: hojeStr,
       target: alvo,
-      criado_por: funcionario?.id ?? null
+      criado_por: funcionario?.id ?? null,
+      anexo_url: anexoUrl,
+      anexo_nome: anexoNome
     })
 
     if (error) {
@@ -113,6 +149,10 @@ export default function MuralPage() {
       setTitulo('')
       setMensagem('')
       setAlvo('Geral / Toda a Rede')
+      setArquivo(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
       setShowComposer(false)
       fetchNotices()
     }
@@ -175,24 +215,68 @@ export default function MuralPage() {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-borderCustom">
-                  <Button type="button" variant="outline" onClick={() => toast.info('Anexo selecionado')} className="border-borderCustom bg-hoverCustom text-foregroundCustom cursor-pointer">
-                    <Paperclip className="mr-2 h-4 w-4" />
-                    Anexar Arquivo
-                  </Button>
-                  <Button type="submit" disabled={salvando} className="bg-highlight text-background hover:bg-highlight/90 font-bold cursor-pointer disabled:opacity-60">
-                    {salvando ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Publicando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <Send className="mr-1 h-4 w-4" />
-                        Publicar Comunicado
-                      </span>
-                    )}
-                  </Button>
+                 <div className="flex flex-col gap-3 pt-2 border-t border-borderCustom">
+                  {/* Input de arquivo invisível */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0]
+                        if (file.size > 10 * 1024 * 1024) {
+                          toast.error('O arquivo deve ter no máximo 10MB.')
+                          return
+                        }
+                        setArquivo(file)
+                        toast.success(`Arquivo "${file.name}" selecionado.`)
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  {arquivo && (
+                    <div className="flex items-center gap-2 text-xs bg-highlight/10 text-highlight px-3 py-1.5 rounded-lg border border-highlight/20 max-w-xs truncate">
+                      <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{arquivo.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setArquivo(null)
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                          }
+                        }}
+                        className="ml-auto p-0.5 rounded-full hover:bg-highlight/20 text-highlight cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => fileInputRef.current?.click()} 
+                      className="border-borderCustom bg-hoverCustom text-foregroundCustom cursor-pointer"
+                    >
+                      <Paperclip className="mr-2 h-4 w-4" />
+                      Anexar Arquivo
+                    </Button>
+                    <Button type="submit" disabled={salvando} className="bg-highlight text-background hover:bg-highlight/90 font-bold cursor-pointer disabled:opacity-60">
+                      {salvando ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Publicando...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <Send className="mr-1 h-4 w-4" />
+                          Publicar Comunicado
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </Card>
@@ -222,8 +306,23 @@ export default function MuralPage() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground whitespace-pre-line">{notice.body}</p>
+                    
+                    {notice.anexo_url && (
+                      <div className="mt-3">
+                        <a
+                          href={notice.anexo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-medium text-highlight hover:underline bg-highlight/5 border border-highlight/10 px-3 py-1.5 rounded-lg"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          <span>Anexo: {notice.anexo_nome || 'Visualizar arquivo'}</span>
+                        </a>
+                      </div>
+                    )}
+
                     {notice.target && (
-                      <p className="mt-3 text-xs font-semibold text-highlight inline-block bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
+                      <p className="mt-3 text-xs font-semibold text-highlight inline-block bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20 mr-2">
                         {notice.target}
                       </p>
                     )}
