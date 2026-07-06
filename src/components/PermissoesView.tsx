@@ -52,11 +52,11 @@ interface RegistroPermissao {
 
 const nivelLabel = (n: number | null | undefined): string => {
   if (n === 2) return 'Nível 2 - Diretor'
-  if (n === 3) return 'Nível 3 - Secretário'
+  if (n === 3) return 'Nível 3 - Coord. / Secretário'
   if (n === 4) return 'Nível 4 - Professor'
   if (n === 5) return 'Nível 5 - Chefe de Equipe'
   if (n === 6) return 'Nível 6 - Operacional'
-  return 'Nível 1 - Funcionário Base'
+  return 'Nível 1 - Administrador Global'
 }
 
 const nivelColor = (nivel: string) => {
@@ -135,7 +135,7 @@ export function PermissoesView() {
       // 3. Registros de permissão com escola vinculada
       const { data: permData } = await supabase
         .from('funcionarios')
-        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, orgao_id, escolas(nome))')
+        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
 
       if (permData) {
         const formatados: RegistroPermissao[] = permData.map((f: any) => {
@@ -145,7 +145,7 @@ export function PermissoesView() {
           if (f.is_superadmin) nomeNivel = 'ROOT'
 
           const escolaNome: string = acesso?.escolas?.nome ?? 'Sem Lotação'
-          const escolaId: string | null = acesso?.orgao_id ?? null
+          const escolaId: string | null = acesso?.escola_id ?? null
 
           return {
             id: f.id,
@@ -233,14 +233,14 @@ export function PermissoesView() {
     setSalvando(true)
     const supabase = createClient()
     const nivelNum = parseInt(nivelSel, 10)
-    const orgaoId = escolaSel || null
+    const escolaIdToSave = escolaSel || null
 
     // Verificar se já existe acesso para este funcionário + escola
     const { data: existente } = await supabase
       .from('acessos_usuarios')
       .select('id')
       .eq('funcionario_id', funcSelecionado.id)
-      .eq('orgao_id', orgaoId as string)
+      .eq('escola_id', escolaIdToSave as string)
       .maybeSingle()
 
     let error
@@ -257,7 +257,7 @@ export function PermissoesView() {
         .from('acessos_usuarios')
         .insert({
           funcionario_id: funcSelecionado.id,
-          orgao_id: orgaoId,
+          escola_id: escolaIdToSave,
           nivel: nivelNum,
           ativo: true,
         })
@@ -276,7 +276,7 @@ export function PermissoesView() {
       // Recarregar lista
       const { data: permData } = await supabase
         .from('funcionarios')
-        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, orgao_id, escolas(nome))')
+        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
       if (permData) {
         const formatados: RegistroPermissao[] = (permData as any[]).map((f) => {
           const acesso = f.acessos_usuarios?.[0]
@@ -290,7 +290,7 @@ export function PermissoesView() {
             nivel: nomeNivel,
             nivelNum: nivelNum2,
             escola: acesso?.escolas?.nome ?? 'Sem Lotação',
-            escolaId: acesso?.orgao_id ?? null,
+            escolaId: acesso?.escola_id ?? null,
             status: f.status || 'ativo',
           }
         })
@@ -463,9 +463,9 @@ export function PermissoesView() {
                 className="w-full bg-[#121212] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
               >
                 <option value="">Selecione o nível</option>
-                <option value="1">Nível 1 - Funcionário Base</option>
+                <option value="1">Nível 1 - Administrador Global</option>
                 <option value="2">Nível 2 - Diretor</option>
-                <option value="3">Nível 3 - Secretário</option>
+                <option value="3">Nível 3 - Coord. / Secretário</option>
                 <option value="4">Nível 4 - Professor</option>
                 <option value="5">Nível 5 - Chefe de Equipe</option>
                 <option value="6">Nível 6 - Operacional Mobile</option>
@@ -519,11 +519,11 @@ export function PermissoesView() {
             <option value="">Todos os Níveis</option>
             <option value="ROOT">ROOT</option>
             <option value="Nível 2">Nível 2 - Diretor</option>
-            <option value="Nível 3">Nível 3 - Secretário</option>
+            <option value="Nível 3">Nível 3 - Coord. / Secretário</option>
             <option value="Nível 4">Nível 4 - Professor</option>
             <option value="Nível 5">Nível 5 - Chefe de Equipe</option>
             <option value="Nível 6">Nível 6 - Operacional</option>
-            <option value="Nível 1">Nível 1 - Funcionário Base</option>
+            <option value="Nível 1">Nível 1 - Administrador Global</option>
           </select>
 
           {/* Filtro Escola — populado do banco */}
