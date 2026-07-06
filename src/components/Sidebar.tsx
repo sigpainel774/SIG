@@ -94,13 +94,13 @@ export function Sidebar() {
               href={item.href}
               onClick={closeMobile}
               className={cn(
-                "flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm",
+                "flex items-center gap-3.5 px-4 py-3 md:py-2.5 rounded-xl font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
                 isActive 
                   ? "bg-sidebar-accent text-highlight font-semibold border border-sidebar-border shadow-sm" 
                   : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
             >
-              <Icon className={cn("w-5 h-5", isActive ? "text-highlight" : "text-sidebar-foreground/60")} />
+              <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-highlight" : "text-sidebar-foreground/60")} />
               <span>{item.label}</span>
             </Link>
           )
@@ -114,20 +114,20 @@ export function Sidebar() {
             closeMobile()
             router.refresh()
           }} 
-          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer"
+          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0"
         >
-          <RefreshCw className="w-5 h-5 text-sidebar-foreground/60" />
+          <RefreshCw className="w-6 h-6 md:w-5 md:h-5 text-sidebar-foreground/60" />
           <span>Atualizar</span>
         </button>
         <button 
           onClick={handleLogout} 
           disabled={isLoggingOut}
-          className="w-full flex items-center gap-3.5 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/20 hover:text-red-400 active:scale-[0.98] rounded-xl transition-all duration-200 text-left cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-destructive hover:bg-destructive/20 hover:text-red-400 active:scale-[0.98] rounded-xl transition-all duration-200 text-left cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed min-h-[48px] md:min-h-0"
         >
           {isLoggingOut ? (
-            <Loader2 className="w-5 h-5 text-destructive animate-spin" />
+            <Loader2 className="w-6 h-6 md:w-5 md:h-5 text-destructive animate-spin" />
           ) : (
-            <LogOut className="w-5 h-5 text-destructive" />
+            <LogOut className="w-6 h-6 md:w-5 md:h-5 text-destructive" />
           )}
           <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
         </button>

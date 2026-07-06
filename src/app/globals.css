@@ -134,9 +134,33 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Remove 300ms tap delay em todos elementos interativos */
+    touch-action: manipulation;
   }
   body {
     @apply bg-background text-foreground;
+    /* 16px mínimo no body evita zoom automático do iOS ao focar inputs */
+    font-size: 16px;
+  }
+  /* Safe area para dispositivos com notch (iPhone, Android recente) */
+  html {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scrollbar customizada para mobile (fina e discreta) */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3ea6ff40;
+    border-radius: 999px;
   }
 }
 

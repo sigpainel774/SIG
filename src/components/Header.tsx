@@ -86,8 +86,11 @@ export function Header() {
             alt="Painel Escolar Logo" 
             className="w-7 h-7 object-contain rounded-md" 
           />
-          <h1 className="font-bold text-lg text-white tracking-tight">
+          <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block">
             Sapeaçu Painel Escolar
+          </h1>
+          <h1 className="font-bold text-base text-white tracking-tight sm:hidden">
+            Painel Escolar
           </h1>
         </div>
 
@@ -108,8 +111,8 @@ export function Header() {
           </button>
 
           {/* Modo Edição Switch */}
-          <div className="flex items-center gap-3">
-            <span className={`text-sm font-semibold transition-colors ${isEditMode ? 'text-[#0090ff]' : 'text-zinc-400'}`}>
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className={`text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-zinc-400'}`}>
               Modo Edição
             </span>
             
