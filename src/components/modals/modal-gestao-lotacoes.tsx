@@ -366,7 +366,7 @@ export function ModalGestaoLotacoes({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl w-full bg-[#141414] border-[#26262a] text-white p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-5xl w-[95vw] bg-[#141414] border-[#26262a] text-white p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-[#26262a] shrink-0">
           <DialogTitle className="text-lg font-bold flex items-center gap-2">
             <Network className="w-5 h-5 text-[#3ea6ff]" />

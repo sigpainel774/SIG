@@ -15,7 +15,8 @@ import {
   BookOpen, 
   ArrowLeftRight, 
   MessageSquareWarning,
-  ChevronDown
+  ChevronDown,
+  Pin
 } from 'lucide-react'
 import { ModalReport } from '@/components/modals/modal-report'
 
@@ -26,13 +27,14 @@ const diretrizes = [
     titulo: 'Níveis de Acesso',
     conteudo: (
       <div className="space-y-4">
-        <p>O sistema possui 4 níveis hierárquicos de acesso:</p>
+        <p>O sistema possui 6 níveis hierárquicos de acesso, além do perfil de Super Admin:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Nível 1 (Administrador Global):</strong> Acesso total a todas as escolas e módulos do sistema. Permite controle irrestrito.</li>
-          <li><strong>Nível 2 (Diretor Escolar):</strong> Acesso de gestão total apenas na escola onde o funcionário está vinculado. Pode realizar qualquer alteração na sua unidade.</li>
-          <li><strong>Nível 3 (Secretário Escolar / Coordenador):</strong> Precisa de permissões específicas concedidas pelo Diretor (ex: permissão para editar turmas, alunos, mural).</li>
+          <li><strong>ROOT (Super Admin):</strong> Acesso global irrestrito a todas as escolas, configurações e módulos do sistema.</li>
+          <li><strong>Nível 1 (Funcionário Base):</strong> Acesso restrito básico de leitura/escrita na escola à qual está alocado.</li>
+          <li><strong>Nível 2 (Diretor Escolar):</strong> Acesso de gestão total apenas na escola onde o funcionário está alocado. Pode realizar qualquer alteração na sua unidade.</li>
+          <li><strong>Nível 3 (Secretário Escolar / Coordenador):</strong> Acesso administrativo para controle de secretaria e matrículas na escola em que está alocado.</li>
           <li><strong>Nível 4 (Professor):</strong> Acesso restrito e inteligente. O professor só consegue visualizar e lançar notas/frequência das disciplinas e turmas nas quais está diretamente vinculado.</li>
-          <li><strong>Nível 5 (Chefe de Equipe):</strong> Visão de gestão (ABAC) focada apenas nas profissões/cargos que gerencia. Consegue visualizar seus operacionais, definir escalas de trabalho e acompanhar o ponto eletrônico.</li>
+          <li><strong>Nível 5 (Chefe de Equipe):</strong> Visão de gestão (ABAC) focada apenas nas profissões/cargos que gerencia de forma global (ronda, escalas e ponto da sua equipe).</li>
           <li><strong>Nível 6 (Operacional):</strong> Acesso estritamente voltado para o App Mobile. A interface é reduzida para uma tela de leitura de QR Code para bater o Ponto/Ronda utilizando GPS do dispositivo.</li>
         </ul>
       </div>
@@ -216,6 +218,21 @@ const diretrizes = [
           <li><strong>Indique Origem e Destino:</strong> Na seção à direita <strong>"Mover Lotação Existente (Transferir)"</strong>, selecione a <strong>Lotação de Origem</strong> (o vínculo da escola atual do funcionário) e a <strong>Escola de Destino</strong> (a nova escola para a qual ele será alocado).</li>
           <li><strong>Confirme a Transferência:</strong> Clique no botão correspondente para salvar a mudança. O sistema arquivará a lotação anterior e criará o novo registro ativo para a nova escola automaticamente com o mesmo cargo.</li>
         </ol>
+      </div>
+    )
+  },
+  {
+    id: 'd11',
+    icon: Pin,
+    titulo: 'Mural de Comunicados (Quem pode postar?)',
+    conteudo: (
+      <div className="space-y-4">
+        <p>A publicação de comunicados e avisos no mural é regulada de acordo com as seguintes permissões:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Superadmins (ROOT / <code>is_superadmin = true</code>):</strong> Possuem permissão irrestrita e automática para postar, editar e visualizar todos os comunicados.</li>
+          <li><strong>Outros Níveis (1 a 6):</strong> Podem postar no mural apenas se a flag <strong>pode_mural</strong> estiver ativada como <code>true</code> no seu registro de permissão (na tabela <code>acessos_usuarios</code>). Caso contrário, a interface de publicação é oculta por segurança.</li>
+        </ul>
+        <p><em>Nota:</em> Os comunicados podem ser direcionados para públicos-alvo específicos (Geral / Toda a Rede, Professores, Alunos e Pais, Equipe Administrativa ou Equipe de Cozinha / Limpeza).</p>
       </div>
     )
   }
