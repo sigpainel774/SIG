@@ -78,7 +78,7 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
         <div className="grid gap-4 py-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-zinc-300">Funcionário</label>
-            <Select value={funcionarioId} onValueChange={setFuncionarioId}>
+            <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)}>
               <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
                 <SelectValue placeholder="Selecione um membro da equipe" />
               </SelectTrigger>
@@ -104,7 +104,7 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-zinc-300">Turno</label>
-            <Select value={turno} onValueChange={setTurno}>
+            <Select value={turno} onValueChange={(val) => val && setTurno(val)}>
               <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
                 <SelectValue placeholder="Selecione o turno" />
               </SelectTrigger>
