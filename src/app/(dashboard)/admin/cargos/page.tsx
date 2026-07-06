@@ -31,7 +31,12 @@ export default function AdminCargosPage() {
       .is('deleted_at', null)
       .order('nivel', { ascending: true })
 
-    if (data) setCargos(data)
+    if (error) {
+      console.error('Erro ao carregar cargos:', error)
+      toast.error('Erro ao carregar lista de cargos.')
+    } else if (data) {
+      setCargos(data)
+    }
     setLoading(false)
   }
 
