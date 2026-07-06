@@ -91,6 +91,14 @@ export default function RootLayout({
                     .catch(function(err) {
                       console.log('Falha ao registrar ServiceWorker: ', err);
                     });
+                    
+                  // Reload automático quando um novo service worker assume o controle
+                  let refreshing = false;
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                  });
                 });
               }
             `,

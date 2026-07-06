@@ -44,5 +44,19 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/img/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/img/screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
   ]
 }
