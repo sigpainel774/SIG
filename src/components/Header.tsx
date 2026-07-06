@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell } from 'lucide-react'
+import { Bell, MoreVertical } from 'lucide-react'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSidebarStore } from '@/store/useSidebarStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario } = useAuthStore()
+  const { toggleMobile } = useSidebarStore()
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -68,8 +70,17 @@ export function Header() {
   return (
     <>
       <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-6 shadow-sm sticky top-0 z-30 print:hidden">
-        {/* Title / Logo */}
+        {/* Title / Logo & Mobile Menu Button */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleMobile}
+            className="md:hidden p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer shrink-0"
+            title="Menu Principal"
+            aria-label="Alternar Menu Lateral"
+          >
+            <MoreVertical className="w-6 h-6 text-[#3ea6ff]" />
+          </button>
           <img 
             src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
             alt="Painel Escolar Logo" 
