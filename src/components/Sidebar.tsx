@@ -112,7 +112,7 @@ export function Sidebar() {
         <button 
           onClick={() => {
             closeMobile()
-            router.refresh()
+            window.location.reload()
           }} 
           className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0"
         >
