@@ -723,10 +723,13 @@ export type Database = {
         Row: {
           auth_user_id: string | null
           cargo: string | null
+          cpf: string | null
           created_at: string
           data_nascimento: string | null
           deleted_at: string | null
           email: string
+          formacao: string | null
+          foto_url: string | null
           id: string
           is_superadmin: boolean | null
           nome: string
@@ -736,10 +739,13 @@ export type Database = {
         Insert: {
           auth_user_id?: string | null
           cargo?: string | null
+          cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           deleted_at?: string | null
           email: string
+          formacao?: string | null
+          foto_url?: string | null
           id?: string
           is_superadmin?: boolean | null
           nome: string
@@ -749,10 +755,13 @@ export type Database = {
         Update: {
           auth_user_id?: string | null
           cargo?: string | null
+          cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           deleted_at?: string | null
           email?: string
+          formacao?: string | null
+          foto_url?: string | null
           id?: string
           is_superadmin?: boolean | null
           nome?: string
@@ -1534,19 +1543,31 @@ export type Database = {
       }
       vinculos_funcionarios: {
         Row: {
+          ativo: boolean
+          cargo: string | null
           created_at: string
+          data_fim: string | null
+          data_inicio: string | null
           escola_id: string | null
           funcionario_id: string | null
           id: string
         }
         Insert: {
+          ativo?: boolean
+          cargo?: string | null
           created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
         }
         Update: {
+          ativo?: boolean
+          cargo?: string | null
           created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
