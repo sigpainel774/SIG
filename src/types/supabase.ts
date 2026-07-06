@@ -287,6 +287,8 @@ export type Database = {
       }
       atestados: {
         Row: {
+          anexo_nome: string | null
+          anexo_url: string | null
           cid: string
           created_at: string | null
           data_inclusao: string | null
@@ -297,6 +299,8 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
           cid: string
           created_at?: string | null
           data_inclusao?: string | null
@@ -307,6 +311,8 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
           cid?: string
           created_at?: string | null
           data_inclusao?: string | null

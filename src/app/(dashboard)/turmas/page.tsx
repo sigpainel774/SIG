@@ -6,31 +6,42 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Search } from 'lucide-react'
+import { ModalTurma } from '@/components/ModalTurma'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export default function TurmasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [turmas, setTurmas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedTurma, setSelectedTurma] = useState<any>(null)
+  
   const supabase = createClient()
+  const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+
+  const fetchTurmas = async () => {
+    if (!escolaAtivaId) return
+
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('turmas')
+      .select('*, alunos(id)')
+      .eq('escola_id', escolaAtivaId)
+      .order('nome', { ascending: true })
+    
+    if (data) {
+      const formatadas = data.map((t: any) => ({
+        ...t,
+        alunos_count: t.alunos?.length || 0
+      }))
+      setTurmas(formatadas)
+    }
+    setLoading(false)
+  }
 
   useEffect(() => {
-    const fetchTurmas = async () => {
-      const { data, error } = await supabase
-        .from('turmas')
-        .select('*, alunos(id)')
-        .order('nome', { ascending: true })
-      
-      if (data) {
-        const formatadas = data.map((t: any) => ({
-          ...t,
-          alunos_count: t.alunos?.length || 0
-        }))
-        setTurmas(formatadas)
-      }
-      setLoading(false)
-    }
     fetchTurmas()
-  }, [])
+  }, [escolaAtivaId])
 
   return (
     <div className="space-y-6">
@@ -39,7 +50,13 @@ export default function TurmasPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Turmas</h1>
           <p className="text-muted-foreground mt-1">Gerencie as turmas e anos letivos.</p>
         </div>
-        <Button className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2">
+        <Button 
+          className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"
+          onClick={() => {
+            setSelectedTurma(null)
+            setIsModalOpen(true)
+          }}
+        >
           <Plus className="w-4 h-4" />
           Nova Turma
         </Button>
@@ -82,7 +99,15 @@ export default function TurmasPage() {
                 <TableCell className="text-muted-foreground">{turma.ano_letivo}</TableCell>
                 <TableCell className="text-muted-foreground">{turma.alunos_count}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" className="text-highlight hover:text-highlight/80 hover:bg-highlight/10">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-highlight hover:text-highlight/80 hover:bg-highlight/10"
+                    onClick={() => {
+                      setSelectedTurma(turma)
+                      setIsModalOpen(true)
+                    }}
+                  >
                     Editar
                   </Button>
                 </TableCell>
@@ -91,6 +116,13 @@ export default function TurmasPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ModalTurma 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        turma={selectedTurma}
+        onSuccess={fetchTurmas}
+      />
     </div>
   )
 }

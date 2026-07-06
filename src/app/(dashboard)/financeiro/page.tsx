@@ -7,24 +7,27 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet, Loader2 } from 'lucide-react'
+import { ModalLancamentoFinanceiro } from '@/components/ModalLancamentoFinanceiro'
 
 export default function FinanceiroPage() {
   const [contaFiltro, setContaFiltro] = useState('todas')
   const [mesFiltro, setMesFiltro] = useState('')
   const [transacoes, setTransacoes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalLancamentoOpen, setIsModalLancamentoOpen] = useState(false)
   const supabase = createClient()
 
+  const fetchTransacoes = async () => {
+    setLoading(true)
+    const { data } = await (supabase.from as any)('transacoes_financeiras')
+      .select('*')
+      .order('data', { ascending: false })
+    
+    if (data) setTransacoes(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchTransacoes = async () => {
-      setLoading(true)
-      const { data } = await (supabase.from as any)('transacoes_financeiras')
-        .select('*')
-        .order('data', { ascending: false })
-      
-      if (data) setTransacoes(data)
-      setLoading(false)
-    }
     fetchTransacoes()
   }, [])
 
@@ -71,7 +74,10 @@ export default function FinanceiroPage() {
           <Button variant="outline" className="bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white cursor-pointer">
             <Settings2 className="w-4 h-4 mr-2" /> Categorias
           </Button>
-          <Button className="bg-highlight text-black hover:bg-highlight/90 font-bold cursor-pointer">
+          <Button 
+            className="bg-highlight text-black hover:bg-highlight/90 font-bold cursor-pointer"
+            onClick={() => setIsModalLancamentoOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" /> Lançamento
           </Button>
         </div>
@@ -177,9 +183,11 @@ export default function FinanceiroPage() {
                   </TableCell>
                   <TableCell className="text-center">
                     {t.comprovante_url ? (
-                      <Button variant="ghost" size="sm" className="h-7 border border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 text-xs cursor-pointer">
-                        Ver Anexo
-                      </Button>
+                      <a href={t.comprovante_url} target="_blank" rel="noreferrer">
+                        <Button variant="ghost" size="sm" className="h-7 border border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 text-xs cursor-pointer">
+                          Ver Anexo
+                        </Button>
+                      </a>
                     ) : (
                       <span className="text-[#555] text-xs">Sem anexo</span>
                     )}
@@ -195,6 +203,12 @@ export default function FinanceiroPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ModalLancamentoFinanceiro 
+        open={isModalLancamentoOpen} 
+        onOpenChange={setIsModalLancamentoOpen} 
+        onSuccess={fetchTransacoes} 
+      />
     </div>
   )
 }

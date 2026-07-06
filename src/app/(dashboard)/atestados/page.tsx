@@ -5,24 +5,28 @@ import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FilePlus, Search, CheckCircle2, Clock } from 'lucide-react'
+import { FilePlus, Search, CheckCircle2, Clock, Paperclip } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { ModalAtestado } from '@/components/ModalAtestado'
 
 export default function AtestadosPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [atestados, setAtestados] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const supabase = createClient()
 
+  const fetchAtestados = async () => {
+    setLoading(true)
+    const { data, error } = await (supabase.from as any)('atestados')
+      .select('*, funcionarios(nome, cargo)')
+      .order('data_inclusao', { ascending: false })
+    
+    if (data) setAtestados(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchAtestados = async () => {
-      const { data, error } = await (supabase.from as any)('atestados')
-        .select('*, funcionarios(nome, cargo)')
-        .order('data_inclusao', { ascending: false })
-      
-      if (data) setAtestados(data)
-      setLoading(false)
-    }
     fetchAtestados()
   }, [])
 
@@ -37,7 +41,10 @@ export default function AtestadosPage() {
           <p className="text-[#aaa] text-sm mt-1">Controle de faltas justificadas e afastamentos de saúde.</p>
         </div>
         
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2">
+        <Button 
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+          onClick={() => setIsModalOpen(true)}
+        >
           <FilePlus className="w-4 h-4" />
           Registrar Atestado
         </Button>
@@ -65,13 +72,14 @@ export default function AtestadosPage() {
               <TableHead className="text-[#ccc] font-semibold">Cargo</TableHead>
               <TableHead className="text-[#ccc] font-semibold">Dias</TableHead>
               <TableHead className="text-[#ccc] font-semibold">CID</TableHead>
+              <TableHead className="text-[#ccc] font-semibold">Anexo</TableHead>
               <TableHead className="text-[#ccc] font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {atestados.length === 0 && !loading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Nenhum atestado registrado.
                 </TableCell>
               </TableRow>
@@ -88,6 +96,21 @@ export default function AtestadosPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  {item.anexo_url ? (
+                    <a 
+                      href={item.anexo_url} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="flex items-center justify-center w-8 h-8 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                      title={item.anexo_nome || 'Ver Anexo'}
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </a>
+                  ) : (
+                    <span className="text-[#555]">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <span className={`flex items-center gap-1.5 text-sm font-medium ${item.status === 'Aprovado' ? 'text-emerald-500' : 'text-amber-500'}`}>
                     {item.status === 'Aprovado' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                     {item.status}
@@ -98,6 +121,12 @@ export default function AtestadosPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ModalAtestado 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSuccess={fetchAtestados}
+      />
     </div>
   )
 }
