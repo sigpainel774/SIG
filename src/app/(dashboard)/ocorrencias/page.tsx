@@ -16,15 +16,17 @@ export default function OcorrenciasPage() {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
+  const fetchOcorrencias = async () => {
+    setLoading(true)
+    const { data, error } = await (supabase.from as any)('ocorrencias')
+      .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
+      .order('data', { ascending: false })
+    
+    if (data) setOcorrencias(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchOcorrencias = async () => {
-      const { data, error } = await (supabase.from as any)('ocorrencias')
-        .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
-        .order('data', { ascending: false })
-      
-      if (data) setOcorrencias(data)
-      setLoading(false)
-    }
     fetchOcorrencias()
   }, [])
 
@@ -76,8 +78,13 @@ export default function OcorrenciasPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]">
-            <RefreshCw className="w-4 h-4" />
+          <Button 
+            variant="outline" 
+            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            onClick={fetchOcorrencias}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>

@@ -14,18 +14,17 @@ import {
   Search, 
   CheckCircle, 
   XCircle, 
-  UserCheck,
-  Plus,
-  Loader2
-} from 'lucide-react'
+import { UserCheck, Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { ModalEscala } from '@/components/ModalEscala'
 
 export default function PainelChefePage() {
   const { funcionario } = useAuthStore()
   const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas'>('equipe')
   const [busca, setBusca] = useState('')
   const [cargosGerenciados, setCargosGerenciados] = useState<string[]>([])
+  const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
 
   const supabase = createClient()
   const [equipe, setEquipe] = useState<any[]>([])
@@ -142,7 +141,7 @@ export default function PainelChefePage() {
           </p>
         </div>
 
-        <Button onClick={() => toast.info('Funcionalidade de criação de escalas')} className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer">
+        <Button onClick={() => setIsModalEscalaOpen(true)} className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer">
           <Plus className="w-4 h-4" /> Criar Escala de Trabalho
         </Button>
       </div>
@@ -413,6 +412,13 @@ export default function PainelChefePage() {
           </div>
         </div>
       )}
+
+      <ModalEscala 
+        open={isModalEscalaOpen} 
+        onOpenChange={setIsModalEscalaOpen} 
+        equipe={equipe} 
+        onSuccess={fetchPainelData} 
+      />
     </div>
   )
 }
