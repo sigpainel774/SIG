@@ -488,6 +488,8 @@ export type Database = {
       }
       comunicados: {
         Row: {
+          anexo_nome: string | null
+          anexo_url: string | null
           body: string
           created_at: string
           criado_por: string | null
@@ -497,6 +499,8 @@ export type Database = {
           title: string
         }
         Insert: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
           body: string
           created_at?: string
           criado_por?: string | null
@@ -506,6 +510,8 @@ export type Database = {
           title: string
         }
         Update: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
           body?: string
           created_at?: string
           criado_por?: string | null
