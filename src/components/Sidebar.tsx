@@ -30,6 +30,7 @@ export function Sidebar() {
   const { isMobileOpen, closeMobile } = useSidebarStore()
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -42,8 +43,21 @@ export function Sidebar() {
       router.refresh()
     } catch (error) {
       toast.error('Erro ao encerrar sessão')
+    } finally {
       setIsLoggingOut(false)
     }
+  }
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return
+    setIsRefreshing(true)
+    
+    toast.success('Atualizando sistema...')
+    
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    closeMobile()
+    window.location.reload()
   }
 
   const menuItems = [
@@ -110,14 +124,12 @@ export function Sidebar() {
       {/* Footer Nav */}
       <div className="p-3 border-t border-sidebar-border space-y-1">
         <button 
-          onClick={() => {
-            closeMobile()
-            window.location.reload()
-          }} 
-          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <RefreshCw className="w-6 h-6 md:w-5 md:h-5 text-sidebar-foreground/60" />
-          <span>Atualizar</span>
+          <RefreshCw className={cn("w-6 h-6 md:w-5 md:h-5 text-sidebar-foreground/60", isRefreshing && "animate-spin text-highlight")} />
+          <span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
         </button>
         <button 
           onClick={handleLogout} 
