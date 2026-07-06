@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { MapPin, Clock, AlertTriangle, CheckCircle2, RefreshCw, LogIn, LogOut, Coffee } from 'lucide-react'
+import { MapPin, Clock, AlertTriangle, CheckCircle2, RefreshCw, LogIn, LogOut, Coffee, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface RegistroPonto {
   id: string
@@ -17,21 +18,14 @@ interface RegistroPonto {
 }
 
 export default function PontoMobilePage() {
+  const { funcionario } = useAuthStore()
   const [location, setLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null)
   const [loadingLocation, setLoadingLocation] = useState(true)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [tipoPonto, setTipoPonto] = useState<'Entrada' | 'Intervalo' | 'Retorno' | 'Saída'>('Entrada')
-  const [registros, setRegistros] = useState<RegistroPonto[]>([
-    {
-      id: '1',
-      horario: '07:30:12 - 03/07/2026',
-      tipo: 'Entrada',
-      latitude: -12.7534,
-      longitude: -39.1021,
-      status: 'Confirmado por GPS'
-    }
-  ])
+  const [registros, setRegistros] = useState<RegistroPonto[]>([])
+  const [loadingRegistros, setLoadingRegistros] = useState(true)
 
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -39,6 +33,46 @@ export default function PontoMobilePage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // Carregar registros reais do usuário do Supabase
+  const loadRegistros = async () => {
+    if (!funcionario?.id) {
+      setLoadingRegistros(false)
+      return
+    }
+
+    const supabase = createClient()
+    setLoadingRegistros(true)
+
+    const { data } = await (supabase.from as any)('pontos_ronda')
+      .select('*')
+      .eq('funcionario_id', funcionario.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (data) {
+      const parsed: RegistroPonto[] = data.map((item: any) => {
+        const loc = item.localizacao || {}
+        const dateObj = new Date(item.created_at)
+        const horarioStr = `${dateObj.toLocaleTimeString('pt-BR')} - ${dateObj.toLocaleDateString('pt-BR')}`
+
+        return {
+          id: item.id,
+          horario: loc.horario || horarioStr,
+          tipo: loc.tipo || 'Entrada',
+          latitude: loc.latitude || 0,
+          longitude: loc.longitude || 0,
+          status: loc.status || 'Confirmado por GPS'
+        }
+      })
+      setRegistros(parsed)
+    }
+    setLoadingRegistros(false)
+  }
+
+  useEffect(() => {
+    loadRegistros()
+  }, [funcionario?.id])
 
   const obterLocalizacao = () => {
     setLoadingLocation(true)
@@ -79,23 +113,30 @@ export default function PontoMobilePage() {
     }
 
     setSaving(true)
+    const supabase = createClient()
     const agora = new Date()
     const dataHoraStr = `${agora.toLocaleTimeString('pt-BR')} - ${agora.toLocaleDateString('pt-BR')}`
 
-    setTimeout(() => {
-      const novoRegistro: RegistroPonto = {
-        id: Date.now().toString(),
-        horario: dataHoraStr,
-        tipo: tipoPonto,
-        latitude: location.lat,
-        longitude: location.lng,
-        status: 'Confirmado por GPS'
-      }
+    const localizacaoData = {
+      tipo: tipoPonto,
+      latitude: location.lat,
+      longitude: location.lng,
+      horario: dataHoraStr,
+      status: 'Confirmado por GPS'
+    }
 
-      setRegistros([novoRegistro, ...registros])
+    const { error } = await (supabase.from as any)('pontos_ronda').insert({
+      funcionario_id: funcionario?.id ?? null,
+      localizacao: localizacaoData
+    })
+
+    if (error) {
+      toast.error('Erro ao registrar ponto: ' + error.message)
+    } else {
       toast.success(`Ponto de ${tipoPonto} registrado com sucesso!`)
-      setSaving(false)
-    }, 1200)
+      loadRegistros()
+    }
+    setSaving(false)
   }
 
   return (
@@ -112,7 +153,7 @@ export default function PontoMobilePage() {
           <CardTitle className="text-5xl font-mono text-white tracking-wider">
             {currentTime.toLocaleTimeString('pt-BR')}
           </CardTitle>
-          <CardDescription className="text-highlight font-medium mt-2 text-base">
+          <CardDescription className="text-highlight font-medium mt-2 text-base capitalize">
             {currentTime.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </CardDescription>
         </CardHeader>
@@ -137,7 +178,7 @@ export default function PontoMobilePage() {
                     key={item.label}
                     type="button"
                     onClick={() => setTipoPonto(item.label as any)}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all ${
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
                       isSelected 
                         ? item.color + ' ring-2 ring-white/20 shadow-md' 
                         : 'bg-[#181818] border-borderCustom text-foregroundCustom/70 hover:bg-hoverCustom'
@@ -162,7 +203,7 @@ export default function PontoMobilePage() {
                 onClick={obterLocalizacao}
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-white gap-1 h-7 px-2"
+                className="text-xs text-muted-foreground hover:text-white gap-1 h-7 px-2 cursor-pointer"
               >
                 <RefreshCw className="w-3 h-3" /> Atualizar GPS
               </Button>
@@ -194,47 +235,65 @@ export default function PontoMobilePage() {
           <Button
             onClick={handleBaterPonto}
             disabled={!location || saving}
-            className="w-full h-14 text-lg bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 shadow-lg"
+            className="w-full h-14 text-lg bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 shadow-lg cursor-pointer disabled:opacity-60"
           >
-            <Clock className="w-6 h-6" />
-            {saving ? 'Registrando Ponto...' : `Bater Ponto (${tipoPonto})`}
+            {saving ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" /> Registrando Ponto...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Clock className="w-6 h-6" /> Bater Ponto ({tipoPonto})
+              </span>
+            )}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Histórico Recente */}
+      {/* Histórico Recente do Banco */}
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Clock className="w-5 h-5 text-highlight" />
-          Registros Recentes de Hoje
+          Registros Recentes
         </h2>
 
         <div className="bg-[#121212] border border-borderCustom rounded-2xl overflow-hidden shadow-md">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-borderCustom text-xs text-muted-foreground uppercase tracking-wider bg-[#0d0d0d]">
-                <th className="p-3.5 font-semibold">Horário e Data</th>
-                <th className="p-3.5 font-semibold">Tipo</th>
-                <th className="p-3.5 font-semibold">Status GPS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderCustom text-sm">
-              {registros.map((reg) => (
-                <tr key={reg.id} className="hover:bg-hoverCustom/50 transition-colors">
-                  <td className="p-3.5 font-mono text-white text-xs">{reg.horario}</td>
-                  <td className="p-3.5">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-highlight/10 text-highlight border border-highlight/20">
-                      {reg.tipo}
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-xs text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{reg.status}</span>
-                  </td>
+          {loadingRegistros ? (
+            <div className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-highlight" />
+              <span>Carregando seus registros...</span>
+            </div>
+          ) : registros.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              Nenhuma batida de ponto registrada até o momento.
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-borderCustom text-xs text-muted-foreground uppercase tracking-wider bg-[#0d0d0d]">
+                  <th className="p-3.5 font-semibold">Horário e Data</th>
+                  <th className="p-3.5 font-semibold">Tipo</th>
+                  <th className="p-3.5 font-semibold">Status GPS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borderCustom text-sm">
+                {registros.map((reg) => (
+                  <tr key={reg.id} className="hover:bg-hoverCustom/50 transition-colors">
+                    <td className="p-3.5 font-mono text-white text-xs">{reg.horario}</td>
+                    <td className="p-3.5">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-highlight/10 text-highlight border border-highlight/20">
+                        {reg.tipo}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-xs text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{reg.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
