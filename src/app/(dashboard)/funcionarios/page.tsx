@@ -1,350 +1,540 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
-import { 
-  Plus, 
-  Search, 
-  Users, 
-  Activity, 
-  KeyRound, 
-  Ban, 
-  UserCheck, 
-  ShieldCheck, 
-  RefreshCw,
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Network,
   Printer,
-  ChevronRight
+  Pencil,
+  Trash2,
+  Plus,
+  Loader2,
 } from 'lucide-react'
 import { ModalFuncionario } from '@/components/modals/modal-funcionario'
-import { ModalLogsAcessoUser } from '@/components/modals/modal-logs-acesso-user'
-import { ModalResetSenhaUser } from '@/components/modals/modal-reset-senha-user'
+import { ModalGestaoLotacoes } from '@/components/modals/modal-gestao-lotacoes'
 import { createClient } from '@/lib/supabaseClient'
+import { softDeleteToTrash } from '@/lib/audit/audit-agent'
+import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
+
+/* ─── Tipo Funcionário ─────────────────────────────────────── */
 
 export interface Funcionario {
   id: string
   nome: string
   email: string
+  cpf?: string | null
   cargo?: string | null
   status: string
   orgao?: string | null
   data_nascimento?: string | null
   formacao?: string | null
   foto_url?: string | null
-  inicial?: string | null
   is_superadmin?: boolean | null
-  created_at?: string
 }
 
+/* ─── Helpers ────────────────────────────────────────────────── */
 
+function getInitials(nome: string): string {
+  const parts = nome.trim().split(' ').filter(Boolean)
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+const AVATAR_PALETTES: { bg: string; text: string }[] = [
+  { bg: 'bg-[#1a3a5c]', text: 'text-[#60a5fa]' },
+  { bg: 'bg-[#1a2e1a]', text: 'text-[#4ade80]' },
+  { bg: 'bg-[#3a1a1a]', text: 'text-[#f87171]' },
+  { bg: 'bg-[#2e1a3a]', text: 'text-[#c084fc]' },
+  { bg: 'bg-[#3a2e1a]', text: 'text-[#fbbf24]' },
+  { bg: 'bg-[#1a3a3a]', text: 'text-[#34d399]' },
+]
+
+function avatarPalette(nome: string) {
+  let hash = 0
+  for (let i = 0; i < nome.length; i++) hash = nome.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length]
+}
+
+function formatarData(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const [y, m, d] = iso.split('-')
+  if (!y || !m || !d) return iso
+  return `${d}/${m}/${y}`
+}
+
+/* ─── Componente Principal ────────────────────────────────────── */
 
 export default function FuncionariosPage() {
   const supabase = createClient()
+  const { funcionario: authFuncionario, acessos } = useAuthStore()
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [modalNovoOpen, setModalNovoOpen] = useState(false)
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
+  const [carregando, setCarregando] = useState(true)
 
-  // Modais de ações dos 3 botões
-  const [selectedUser, setSelectedUser] = useState<Funcionario | null>(null)
-  const [modalLogsOpen, setModalLogsOpen] = useState(false)
-  const [modalResetOpen, setModalResetOpen] = useState(false)
+  /* Filtros */
+  const [busca, setBusca] = useState('')
+  const [filtroCargo, setFiltroCargo] = useState('todos')
+  const [filtroStatus, setFiltroStatus] = useState('todos')
+
+  /* Modais */
+  const [modalNovoOpen, setModalNovoOpen] = useState(false)
+  const [modalEditando, setModalEditando] = useState<Funcionario | null>(null)
+  const [modalLotacoesOpen, setModalLotacoesOpen] = useState(false)
+  const [funcLotacaoInicial, setFuncLotacaoInicial] = useState<{ id: string } | null>(null)
+
+  /* ── Carregar funcionários ───────────────────────────────── */
 
   const carregarFuncionarios = async () => {
+    setCarregando(true)
     try {
-      const { data } = await supabase
-        .from('funcionarios')
-        .select('*')
-        .order('nome', { ascending: true })
+      const isSuperadmin = authFuncionario?.is_superadmin === true
+      const nivel2Escola = !isSuperadmin
+        ? acessos.find((a) => a.nivel === 2 || a.nivel === 1)
+        : null
 
-      let localSuspended: string[] = []
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('sig_suspended_emails')
-        if (stored) {
-          try { localSuspended = JSON.parse(stored) } catch (e) {}
+      let query = supabase
+        .from('funcionarios')
+        .select(`
+          id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome))
+        `)
+        .is('deleted_at', null)
+        .order('nome')
+
+      // Nível 2 (diretores): filtra pelos funcionários da própria escola
+      if (!isSuperadmin && nivel2Escola) {
+        // Busca os vinculos da escola alocada ao diretor
+        const { data: vincs } = await supabase
+          .from('vinculos_funcionarios')
+          .select('funcionario_id')
+          .eq('escola_id', nivel2Escola.orgao_id ?? '')
+          .eq('ativo', true)
+
+        const ids = (vincs ?? []).map((v: Record<string, unknown>) => v.funcionario_id as string)
+        if (ids.length > 0) {
+          query = query.in('id', ids) as typeof query
+        } else {
+          setFuncionarios([])
+          return
         }
       }
 
-      if (data && data.length > 0) {
-        const formatados: Funcionario[] = data.map((f: any) => {
-          const isSusp = localSuspended.includes((f.email || '').toLowerCase())
-          let currentStatus = f.status || 'ATIVO'
-          if (isSusp) currentStatus = 'SUSPENSO'
+      const { data, error } = await query
+      if (error) throw error
 
-          return {
-            id: f.id,
-            nome: f.nome,
-            email: f.email || f.nome,
-            cargo: f.cargo || null,
-            status: currentStatus,
-            orgao: f.orgao || null,
-            is_superadmin: f.is_superadmin || false
-          }
-        })
-        setFuncionarios(formatados)
-      } else {
-        setFuncionarios([])
-      }
+      const formatados: Funcionario[] = (data ?? []).map((f: Record<string, unknown>) => {
+        // Pegar o primeiro vínculo ativo como órgão principal
+        const vincs = (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
+        const vinculoAtivo = vincs.find((v) => v.ativo)
+        const escola = vinculoAtivo?.escolas as { nome: string } | null
+
+        return {
+          id: f.id as string,
+          nome: f.nome as string,
+          email: f.email as string,
+          cpf: f.cpf as string | null,
+          cargo: f.cargo as string | null,
+          status: (f.status as string) ?? 'ativo',
+          formacao: f.formacao as string | null,
+          foto_url: f.foto_url as string | null,
+          data_nascimento: f.data_nascimento as string | null,
+          is_superadmin: f.is_superadmin as boolean | null,
+          orgao: escola?.nome ?? null,
+        }
+      })
+
+      setFuncionarios(formatados)
     } catch (err) {
-      console.warn('Erro ao carregar funcionários do banco:', err)
+      console.error('Erro ao carregar funcionários:', err)
+      toast.error('Erro ao carregar lista de funcionários.')
+    } finally {
+      setCarregando(false)
     }
   }
 
   useEffect(() => {
     carregarFuncionarios()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Ação 1: Ver Logs de Acesso
-  const handleOpenLogs = (func: Funcionario) => {
-    setSelectedUser(func)
-    setModalLogsOpen(true)
+  /* ── Listas para dropdowns ─────────────────────────────────── */
+
+  const cargosUnicos = useMemo(() => {
+    const set = new Set(funcionarios.map((f) => f.cargo).filter(Boolean) as string[])
+    return Array.from(set).sort()
+  }, [funcionarios])
+
+  /* ── Filtro ─────────────────────────────────────────────────── */
+
+  const funcsFiltrados = useMemo(() => {
+    return funcionarios.filter((f) => {
+      const matchBusca =
+        f.nome.toLowerCase().includes(busca.toLowerCase()) ||
+        f.email.toLowerCase().includes(busca.toLowerCase()) ||
+        (f.cpf ?? '').includes(busca) ||
+        (f.orgao ?? '').toLowerCase().includes(busca.toLowerCase())
+
+      const matchCargo =
+        filtroCargo === 'todos' || f.cargo === filtroCargo
+
+      const matchStatus =
+        filtroStatus === 'todos' ||
+        (f.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
+
+      return matchBusca && matchCargo && matchStatus
+    })
+  }, [funcionarios, busca, filtroCargo, filtroStatus])
+
+  /* ── Ações dos cards ────────────────────────────────────────── */
+
+  const handleAbrirLotacoes = (func: Funcionario) => {
+    setFuncLotacaoInicial({ id: func.id })
+    setModalLotacoesOpen(true)
   }
 
-  // Ação 2: Resetar Senha
-  const handleOpenReset = (func: Funcionario) => {
-    setSelectedUser(func)
-    setModalResetOpen(true)
+  const handleEditar = (func: Funcionario) => {
+    setModalEditando(func)
   }
 
-  // Ação 3: Suspender / Reativar Usuário
-  const handleToggleSuspender = async (func: Funcionario) => {
-    const emailKey = func.email.toLowerCase()
-    const isCurrentlySuspended = func.status === 'SUSPENSO' || func.status === 'SEM ACESSO'
-    const novoStatus = isCurrentlySuspended ? 'ATIVO' : 'SUSPENSO'
+  const handleExcluir = async (func: Funcionario) => {
+    if (!confirm(`Deseja excluir o funcionário "${func.nome}"? Esta ação pode ser desfeita pela lixeira.`)) return
 
-    // 1. Atualizar banco de dados Supabase
     try {
-      await supabase
-        .from('funcionarios')
-        .update({ status: novoStatus })
-        .eq('id', func.id)
+      await softDeleteToTrash({
+        supabase,
+        tableName: 'funcionarios',
+        recordId: func.id,
+        recordSummary: `${func.nome} (${func.email})`,
+        recordPayload: func,
+        performedBy: {
+          id: authFuncionario?.id ?? null,
+          name: authFuncionario?.nome ?? 'Sistema',
+          email: authFuncionario?.email ?? '',
+        },
+      })
+      toast.success(`Funcionário "${func.nome}" movido para a lixeira.`)
+      await carregarFuncionarios()
     } catch (err) {
-      console.warn('Bypass atualização banco:', err)
-    }
-
-    // 2. Atualizar estado local
-    setFuncionarios(prev => prev.map(item => {
-      if (item.id === func.id || item.email.toLowerCase() === emailKey) {
-        return { ...item, status: novoStatus }
-      }
-      return item
-    }))
-
-    // 3. Atualizar localStorage de e-mails suspensos para verificação instantânea no Login
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sig_suspended_emails')
-      let suspendedList: string[] = stored ? JSON.parse(stored) : []
-      if (!isCurrentlySuspended) {
-        if (!suspendedList.includes(emailKey)) suspendedList.push(emailKey)
-      } else {
-        suspendedList = suspendedList.filter(e => e !== emailKey)
-      }
-      localStorage.setItem('sig_suspended_emails', JSON.stringify(suspendedList))
-    }
-
-    if (isCurrentlySuspended) {
-      toast.success(`Usuário ${func.nome} reativado com sucesso!`)
-    } else {
-      toast.error(`Usuário ${func.nome} marcado como SUSPENSO!`)
+      toast.error('Erro ao excluir funcionário.')
+      console.error(err)
     }
   }
 
-  const getInitials = (nome: string): string => {
-    if (!nome) return 'U'
-    const parts = nome.trim().split(' ').filter(Boolean)
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  const handleImprimir = (func: Funcionario) => {
+    const win = window.open('', '_blank', 'width=800,height=600')
+    if (!win) return
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha - ${func.nome}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
+            h1 { font-size: 20px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+            .field { margin: 8px 0; font-size: 14px; }
+            .label { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>Ficha do Funcionário</h1>
+          <div class="field"><span class="label">Nome:</span> ${func.nome}</div>
+          <div class="field"><span class="label">E-mail:</span> ${func.email}</div>
+          <div class="field"><span class="label">CPF:</span> ${func.cpf ?? '—'}</div>
+          <div class="field"><span class="label">Cargo:</span> ${func.cargo ?? '—'}</div>
+          <div class="field"><span class="label">Status:</span> ${func.status}</div>
+          <div class="field"><span class="label">Órgão:</span> ${func.orgao ?? '—'}</div>
+          <div class="field"><span class="label">Nascimento:</span> ${formatarData(func.data_nascimento)}</div>
+          <div class="field"><span class="label">Formação:</span> ${func.formacao ?? '—'}</div>
+        </body>
+      </html>
+    `)
+    win.document.close()
+    win.print()
   }
 
-  const funcionariosFiltrados = funcionarios.filter(f =>
-    f.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (f.cargo && f.cargo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (f.orgao && f.orgao.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const handleImprimirLista = () => {
+    const linhas = funcsFiltrados
+      .map(
+        (f) =>
+          `<tr>
+            <td>${f.nome}</td>
+            <td>${f.cargo ?? '—'}</td>
+            <td>${f.status}</td>
+            <td>${f.orgao ?? '—'}</td>
+            <td>${formatarData(f.data_nascimento)}</td>
+          </tr>`
+      )
+      .join('')
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Lista de Funcionários</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; }
+            h1 { font-size: 18px; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+            th { background: #f0f0f0; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>Lista de Funcionários</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th><th>Cargo</th><th>Status</th><th>Órgão</th><th>Nascimento</th>
+              </tr>
+            </thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </body>
+      </html>
+    `)
+    win.document.close()
+    win.print()
+  }
+
+  /* ── Render ─────────────────────────────────────────────────── */
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Modal Cadastro */}
-      <ModalFuncionario 
-        open={modalNovoOpen} 
-        onOpenChange={setModalNovoOpen} 
-        onSuccess={carregarFuncionarios} 
+    <div className="space-y-5 pb-12">
+      {/* Modal Novo Funcionário */}
+      <ModalFuncionario
+        open={modalNovoOpen}
+        onOpenChange={setModalNovoOpen}
+        onSuccess={carregarFuncionarios}
       />
 
-      {/* Modal 1: Logs de Acesso */}
-      <ModalLogsAcessoUser
-        open={modalLogsOpen}
-        onOpenChange={setModalLogsOpen}
-        userEmail={selectedUser?.email}
-        userName={selectedUser?.nome}
+      {/* Modal Editar Funcionário */}
+      <ModalFuncionario
+        open={!!modalEditando}
+        onOpenChange={(v) => { if (!v) setModalEditando(null) }}
+        funcionario={modalEditando}
+        onSuccess={carregarFuncionarios}
       />
 
-      {/* Modal 2: Resetar Senha */}
-      <ModalResetSenhaUser
-        open={modalResetOpen}
-        onOpenChange={setModalResetOpen}
-        userEmail={selectedUser?.email}
-        userName={selectedUser?.nome}
+      {/* Modal Gestão de Lotações */}
+      <ModalGestaoLotacoes
+        open={modalLotacoesOpen}
+        onOpenChange={setModalLotacoesOpen}
+        funcionarioInicial={funcLotacaoInicial}
       />
 
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#232328]">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-            <Users className="w-8 h-8 text-sky-400" />
-            Gerenciamento de Usuários
-          </h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            Contas de acesso, níveis de permissão, auditoria de logs e suspensão de usuários da rede.
-          </p>
-        </div>
+      {/* ── Barra de ferramentas ─────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Busca */}
+        <Input
+          placeholder="Buscar funcionário por nome..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-9 w-56 text-sm"
+        />
 
-        <Button 
-          onClick={() => setModalNovoOpen(true)}
-          className="bg-[#0090ff] hover:bg-[#0070f3] text-white font-bold gap-2 rounded-xl shadow-md cursor-pointer shrink-0"
+        {/* Filtro Cargo */}
+        <Select value={filtroCargo} onValueChange={(v) => setFiltroCargo(v ?? 'todos')}>
+          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-9 text-sm w-44">
+            <SelectValue placeholder="Todos os Cargos" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+            <SelectItem value="todos">Todos os Cargos</SelectItem>
+            {cargosUnicos.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filtro Status */}
+        <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v ?? 'todos')}>
+          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-9 text-sm w-40">
+            <SelectValue placeholder="Todos os Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+            <SelectItem value="todos">Todos os Status</SelectItem>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="afastado">Afastado</SelectItem>
+            <SelectItem value="desligado">Desligado</SelectItem>
+            <SelectItem value="suspenso">Suspenso</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Gestão de Lotações */}
+        <Button
+          onClick={() => {
+            setFuncLotacaoInicial(null)
+            setModalLotacoesOpen(true)
+          }}
+          className="bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-white font-semibold gap-2 h-9 text-sm cursor-pointer"
+          variant="outline"
         >
-          <Plus className="w-4 h-4" />
-          Novo Usuário
+          <Network className="w-4 h-4 text-[#3ea6ff]" />
+          Gestão de Lotações
         </Button>
-      </div>
 
-      {/* Barra de Pesquisa */}
-      <div className="flex items-center gap-3 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
-          <Input
-            type="search"
-            placeholder="Buscar por nome, e-mail, cargo ou escola..."
-            className="pl-10 bg-[#121214] border-[#27272a] text-white placeholder:text-zinc-500 h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        {/* Imprimir Lista */}
+        <Button
+          onClick={handleImprimirLista}
+          className="bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-white font-semibold gap-2 h-9 text-sm cursor-pointer"
+          variant="outline"
+        >
+          <Printer className="w-4 h-4" />
+          Imprimir Lista
+        </Button>
+
+        {/* Espaçador + Novo Funcionário */}
+        <div className="ml-auto">
+          <Button
+            onClick={() => setModalNovoOpen(true)}
+            className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9 text-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Funcionário
+          </Button>
         </div>
       </div>
 
-      {/* Lista Estilo Exato da Imagem de Referência */}
-      <div className="space-y-3">
-        {funcionariosFiltrados.length === 0 ? (
-          <div className="bg-[#121214] border border-dashed border-[#3f3f46] rounded-2xl p-12 text-center text-zinc-400 text-sm">
-            Nenhum usuário encontrado com os termos pesquisados.
-          </div>
-        ) : (
-          funcionariosFiltrados.map((func) => {
-            const isRoot = func.is_superadmin || func.cargo === 'ROOT'
-            const isSuspended = func.status === 'SUSPENSO' || func.status === 'SEM ACESSO'
-
-            // Extrair papéis (ex: "DIRETOR / COORDENADOR" -> ["DIRETOR", "COORDENADOR"])
-            const rolesList = func.cargo ? func.cargo.split('/').map(r => r.trim()).filter(Boolean) : []
+      {/* ── Grade de Cards ─────────────────────────────────────── */}
+      {carregando ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-[#3ea6ff]" />
+        </div>
+      ) : funcsFiltrados.length === 0 ? (
+        <div className="bg-[#141416] border border-dashed border-[#3f3f46] rounded-2xl p-12 text-center text-zinc-500 text-sm">
+          Nenhum funcionário encontrado com os filtros aplicados.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {funcsFiltrados.map((func) => {
+            const palette = avatarPalette(func.nome)
+            const isAtivo = (func.status ?? '').toLowerCase() === 'ativo'
 
             return (
-              <div 
+              <div
                 key={func.id}
-                className="bg-[#131316] border border-[#232328] hover:border-[#383842] rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-md"
+                className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-2xl p-4 flex flex-col gap-3 transition-all shadow-md"
               >
-                {/* Lado Esquerdo: Avatar + Informações + Badges (Conforme Imagem) */}
-                <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">
-                  {/* Avatar Quadrado Roxo Suave */}
-                  <div className="w-11 h-11 rounded-xl bg-[#2e1065]/70 border border-[#6b21a8]/60 text-[#c084fc] font-bold text-base flex items-center justify-center shrink-0 uppercase shadow-inner">
-                    {func.nome.charAt(0).toUpperCase()}
+                {/* ── Topo do card: Avatar + Nome + Badges ── */}
+                <div className="flex items-start gap-3">
+                  {/* Avatar circular */}
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
+                  >
+                    {func.foto_url ? (
+                      <img
+                        src={func.foto_url}
+                        alt={func.nome}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      getInitials(func.nome)
+                    )}
                   </div>
 
-                  {/* Detalhes do Usuário */}
-                  <div className="min-w-0 space-y-1">
-                    {/* Linha 1: Nome + Badge ROOT (se for superadmin) */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-extrabold text-white text-base leading-tight">
-                        {func.nome}
-                      </h3>
-                      {isRoot && (
-                        <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider uppercase">
-                          ROOT
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Linha 2: E-mail em tom neutro */}
-                    <p className="text-xs text-[#8e8e93] font-normal leading-tight">
-                      {func.email}
+                  {/* Nome + badges */}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-white text-sm leading-tight truncate">
+                      {func.nome}
                     </p>
-
-                    {/* Linha 3: Badges de Status (ATIVO / SEM ACESSO / SUSPENSO) + Cargos + Órgão */}
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {/* Badge de Status */}
-                      {isSuspended ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-[10px] font-extrabold tracking-wide uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#71717a]" />
-                          {func.status.toUpperCase()}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#052e16] border border-[#166534] text-[#4ade80] text-[10px] font-extrabold tracking-wide uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
-                          ATIVO
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {/* Badge Cargo */}
+                      {func.cargo && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#0c2340] border border-[#1e4a7a] text-[#60a5fa] text-[10px] font-semibold tracking-wide truncate max-w-[130px]">
+                          {func.cargo}
                         </span>
                       )}
-
-                      {/* Badges de Cargos (Azul) */}
-                      {rolesList.map((role) => (
-                        <span 
-                          key={role} 
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#0369a1]/30 border border-[#0284c7]/40 text-[#38bdf8] text-[10px] font-extrabold tracking-wide uppercase"
-                        >
-                          {role}
-                        </span>
-                      ))}
-
-                      {/* Nome da Escola / Órgão em tom sutil */}
-                      {func.orgao && (
-                        <span className="text-xs text-[#8e8e93] font-normal ml-1 truncate max-w-md">
-                          {func.orgao}
-                        </span>
-                      )}
+                      {/* Badge Status */}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
+                          isAtivo
+                            ? 'bg-emerald-950/60 border border-emerald-700/50 text-emerald-400'
+                            : 'bg-zinc-800/60 border border-zinc-600/50 text-zinc-400'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${isAtivo ? 'bg-emerald-400' : 'bg-zinc-500'}`}
+                        />
+                        {isAtivo ? 'Ativo' : func.status.charAt(0).toUpperCase() + func.status.slice(1)}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Lado Direito: Os 3 Botões de Ação Solicitados */}
-                <div className="flex items-center gap-2 shrink-0 self-end md:self-center pt-2 md:pt-0">
-                  {/* Botão 1: Ver Logs de Acesso (Azul Slate) */}
+                {/* ── 4 Botões de Ação ──────────────────────── */}
+                <div className="flex items-center gap-2">
+                  {/* M — Gestão de Lotações */}
                   <button
-                    type="button"
-                    onClick={() => handleOpenLogs(func)}
-                    className="w-10 h-10 rounded-xl bg-[#0369a1]/20 hover:bg-[#0369a1]/40 border border-[#0284c7]/40 text-[#38bdf8] flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                    title="Ver logs de acesso"
+                    onClick={() => handleAbrirLotacoes(func)}
+                    title="Gestão de Lotações"
+                    className="w-9 h-9 rounded-full bg-[#1a2940] hover:bg-[#1e3a5f] border border-[#1e4a7a] text-[#60a5fa] font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
                   >
-                    <Activity className="w-4.5 h-4.5" />
+                    M
                   </button>
+                  {/* Imprimir ficha */}
+                  <button
+                    onClick={() => handleImprimir(func)}
+                    title="Imprimir ficha"
+                    className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                  </button>
+                  {/* Editar */}
+                  <button
+                    onClick={() => handleEditar(func)}
+                    title="Editar funcionário"
+                    className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  {/* Excluir */}
+                  <button
+                    onClick={() => handleExcluir(func)}
+                    title="Excluir funcionário"
+                    className="w-9 h-9 rounded-full bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-400 flex items-center justify-center transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
 
-                  {/* Botão 2: Resetar Senha (Amber) */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenReset(func)}
-                    className="w-10 h-10 rounded-xl bg-[#78350f]/20 hover:bg-[#78350f]/40 border border-[#d97706]/40 text-[#fbbf24] flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                    title="Resetar senha"
-                  >
-                    <KeyRound className="w-4.5 h-4.5" />
-                  </button>
-
-                  {/* Botão 3: Suspender Usuário / Reativar (Rose / Green) */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleSuspender(func)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm ${
-                      isSuspended
-                        ? 'bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-400'
-                        : 'bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-400 hover:text-white'
-                    }`}
-                    title={isSuspended ? 'Reativar usuário' : 'Suspender usuário'}
-                  >
-                    {isSuspended ? <UserCheck className="w-4.5 h-4.5" /> : <Ban className="w-4.5 h-4.5" />}
-                  </button>
+                {/* ── Informações Adicionais ────────────────── */}
+                <div className="space-y-1.5 border-t border-[#26262a] pt-3 text-xs text-zinc-400">
+                  {func.orgao && (
+                    <p>
+                      <span className="font-semibold text-zinc-300">Órgão:</span>{' '}
+                      {func.orgao}
+                    </p>
+                  )}
+                  {func.data_nascimento && (
+                    <p>
+                      <span className="font-semibold text-zinc-300">Nascimento:</span>{' '}
+                      {formatarData(func.data_nascimento)}
+                    </p>
+                  )}
+                  {func.formacao && (
+                    <p>
+                      <span className="font-semibold text-zinc-300">Formação:</span>{' '}
+                      {func.formacao}
+                    </p>
+                  )}
                 </div>
               </div>
             )
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   )
 }
