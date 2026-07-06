@@ -49,6 +49,7 @@ export type Database = {
           ativo: boolean | null
           cargos_gerenciados: string[] | null
           created_at: string
+          escola_id: string | null
           funcionario_id: string | null
           id: string
           nivel: number
@@ -65,6 +66,7 @@ export type Database = {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
           created_at?: string
+          escola_id?: string | null
           funcionario_id?: string | null
           id?: string
           nivel: number
@@ -81,6 +83,7 @@ export type Database = {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
           created_at?: string
+          escola_id?: string | null
           funcionario_id?: string | null
           id?: string
           nivel?: number
@@ -94,6 +97,13 @@ export type Database = {
           pode_turmas?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "acessos_usuarios_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "acessos_usuarios_funcionario_id_fkey"
             columns: ["funcionario_id"]
@@ -119,31 +129,70 @@ export type Database = {
       }
       alunos: {
         Row: {
+          cartao_sus: string | null
+          certidao_nascimento: string | null
+          cpf: string | null
           created_at: string
+          dados_matricula: Json | null
           data_nascimento: string | null
           deleted_at: string | null
+          endereco: string | null
           escola_id: string | null
           foto_url: string | null
           id: string
+          inep: string | null
+          nis: string | null
           nome: string
+          nome_mae: string | null
+          nome_pai: string | null
+          rg: string | null
+          serie: string | null
+          telefone: string | null
+          turma_id: string | null
         }
         Insert: {
+          cartao_sus?: string | null
+          certidao_nascimento?: string | null
+          cpf?: string | null
           created_at?: string
+          dados_matricula?: Json | null
           data_nascimento?: string | null
           deleted_at?: string | null
+          endereco?: string | null
           escola_id?: string | null
           foto_url?: string | null
           id?: string
+          inep?: string | null
+          nis?: string | null
           nome: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          rg?: string | null
+          serie?: string | null
+          telefone?: string | null
+          turma_id?: string | null
         }
         Update: {
+          cartao_sus?: string | null
+          certidao_nascimento?: string | null
+          cpf?: string | null
           created_at?: string
+          dados_matricula?: Json | null
           data_nascimento?: string | null
           deleted_at?: string | null
+          endereco?: string | null
           escola_id?: string | null
           foto_url?: string | null
           id?: string
+          inep?: string | null
+          nis?: string | null
           nome?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          rg?: string | null
+          serie?: string | null
+          telefone?: string | null
+          turma_id?: string | null
         }
         Relationships: [
           {
@@ -151,6 +200,20 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
             referencedColumns: ["id"]
           },
         ]
@@ -466,6 +529,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           created_at: string | null
+          deleted_at: string | null
           descricao: string | null
           id: string
           nivel: number | null
@@ -475,6 +539,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           created_at?: string | null
+          deleted_at?: string | null
           descricao?: string | null
           id?: string
           nivel?: number | null
@@ -484,6 +549,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           created_at?: string | null
+          deleted_at?: string | null
           descricao?: string | null
           id?: string
           nivel?: number | null
@@ -1596,6 +1662,69 @@ export type Database = {
           },
         ]
       }
+      vinculos_turmas: {
+        Row: {
+          created_at: string
+          escola_id: string
+          funcionario_id: string
+          id: string
+          tipo: string
+          turma_id: string
+        }
+        Insert: {
+          created_at?: string
+          escola_id: string
+          funcionario_id: string
+          id?: string
+          tipo: string
+          turma_id: string
+        }
+        Update: {
+          created_at?: string
+          escola_id?: string
+          funcionario_id?: string
+          id?: string
+          tipo?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinculos_turmas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_turmas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_turmas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_turmas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_turmas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       alunos_ativos: {
@@ -1721,7 +1850,16 @@ export type Database = {
         Args: { escola_id_param: string }
         Returns: boolean
       }
+      get_birthdays_of_month: {
+        Args: { month_num: number }
+        Returns: {
+          day: number
+          name: string
+          role: string
+        }[]
+      }
       get_funcionario_id_from_auth: { Args: never; Returns: string }
+      is_admin_global: { Args: never; Returns: boolean }
       is_superadmin_by_uid: { Args: never; Returns: boolean }
       is_superadmin_email: { Args: { user_email: string }; Returns: boolean }
       tem_acesso_a_escola: { Args: { escola_alvo: string }; Returns: boolean }

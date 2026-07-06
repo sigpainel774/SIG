@@ -47,7 +47,8 @@ export default function ConfiguracoesPage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [modules, setModules] = useState(modulesList)
-  const { funcionario } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const isAdmin = isAdminGlobalOrRoot()
 
   useEffect(() => {
     setMounted(true)
@@ -93,26 +94,28 @@ export default function ConfiguracoesPage() {
           </div>
         </button>
 
-        <button
-          onClick={() => setActiveTab('permissoes')}
-          className={cn(
-            "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
-            activeTab === 'permissoes'
-              ? "bg-card border-highlight ring-1 ring-highlight/50"
-              : "bg-card border-borderCustom hover:bg-hoverCustom"
-          )}
-        >
-          <div className={cn(
-            "p-3 rounded-xl",
-            activeTab === 'permissoes' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
-          )}>
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foregroundCustom text-base">Permissões de Acesso</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Gestão de níveis, escolas e módulos por funcionário</p>
-          </div>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('permissoes')}
+            className={cn(
+              "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
+              activeTab === 'permissoes'
+                ? "bg-card border-highlight ring-1 ring-highlight/50"
+                : "bg-card border-borderCustom hover:bg-hoverCustom"
+            )}
+          >
+            <div className={cn(
+              "p-3 rounded-xl",
+              activeTab === 'permissoes' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
+            )}>
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Permissões de Acesso</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Gestão de níveis, escolas e módulos por funcionário</p>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Main Content Sections */}

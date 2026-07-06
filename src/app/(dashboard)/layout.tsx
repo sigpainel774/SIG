@@ -13,6 +13,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   let isSuperAdmin = false
   let funcionario = null
   let acessos: any[] = []
+  let vinculos: any[] = []
 
   if (user && user.email) {
     const { data: funcData } = await supabaseAdmin
@@ -31,6 +32,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         .eq('funcionario_id', funcData.id)
       
       acessos = acessosData || []
+
+      const { data: vinculosData } = await supabaseAdmin
+        .from('vinculos_funcionarios')
+        .select('id, escola_id, cargo, ativo, escolas(nome)')
+        .eq('funcionario_id', funcData.id)
+      
+      vinculos = (vinculosData || []).map(v => ({
+        id: v.id,
+        escola_id: v.escola_id,
+        escolaNome: v.escolas?.nome,
+        cargo: v.cargo,
+        ativo: v.ativo
+      }))
     }
   }
 
@@ -38,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   if (isSuperAdmin) {
     return (
       <div className="flex flex-col min-h-screen bg-[#0a0a0a] text-foregroundCustom">
-        <AuthInitializer funcionario={funcionario} acessos={acessos} />
+        <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
         <RootAdminHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-8">
           {children}
@@ -50,7 +64,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // Layout tradicional para Escolas (Níveis 1 a 6)
   return (
     <div className="flex min-h-screen bg-background text-foregroundCustom">
-      <AuthInitializer funcionario={funcionario} acessos={acessos} />
+      <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
       {/* Sidebar Component */}
       <Sidebar />
 

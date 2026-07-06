@@ -60,7 +60,14 @@ export default function AlunosPage() {
   const carregarAlunos = async () => {
     const supabase = createClient()
     setLoading(true)
-    const { data } = await supabase.from('alunos').select('*').order('nome', { ascending: true })
+    
+    let query = supabase.from('alunos').select('*')
+    
+    if (!useAuthStore.getState().isAdminGlobalOrRoot() && escolaAtivaId) {
+      query = query.eq('escola_id', escolaAtivaId)
+    }
+    
+    const { data } = await query.order('nome', { ascending: true })
     if (data) {
       setAlunos(data as any)
     }
@@ -69,7 +76,8 @@ export default function AlunosPage() {
 
   useEffect(() => {
     carregarAlunos()
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [escolaAtivaId])
 
   const alunosFiltrados = alunos.filter(
     (aluno) =>

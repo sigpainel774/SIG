@@ -4,20 +4,36 @@ import { Database } from '@/types/supabase';
 type Funcionario = Database['public']['Tables']['funcionarios']['Row'];
 type AcessoUsuario = Database['public']['Tables']['acessos_usuarios']['Row'];
 
+export type VinculoFuncionario = {
+  id: string
+  escola_id: string
+  escolaNome?: string
+  cargo: string | null
+  ativo: boolean
+}
+
 interface AuthState {
   funcionario: Funcionario | null;
   acessos: AcessoUsuario[];
+  vinculos: VinculoFuncionario[];
   escolaAtivaId: string | null;
-  setAuth: (func: Funcionario, acessos: AcessoUsuario[]) => void;
+  setAuth: (func: Funcionario, acessos: AcessoUsuario[], vinculos?: VinculoFuncionario[]) => void;
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
+  isAdminGlobalOrRoot: () => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   funcionario: null,
   acessos: [],
+  vinculos: [],
   escolaAtivaId: null,
-  setAuth: (funcionario, acessos) => set({ funcionario, acessos }),
+  setAuth: (funcionario, acessos, vinculos = []) => set({ funcionario, acessos, vinculos }),
   setEscolaAtivaId: (escolaAtivaId) => set({ escolaAtivaId }),
-  limparSessao: () => set({ funcionario: null, acessos: [], escolaAtivaId: null }),
+  limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
+  isAdminGlobalOrRoot: () => {
+    const state = get();
+    if (state.funcionario?.is_superadmin) return true;
+    return state.acessos.some(a => a.nivel === 1);
+  },
 }));

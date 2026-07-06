@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuthStore, VinculoFuncionario } from '@/store/useAuthStore'
 import { Database } from '@/types/supabase'
 
 type Funcionario = Database['public']['Tables']['funcionarios']['Row']
@@ -10,21 +10,22 @@ type AcessoUsuario = Database['public']['Tables']['acessos_usuarios']['Row']
 interface AuthInitializerProps {
   funcionario: Funcionario | null
   acessos: AcessoUsuario[]
+  vinculos?: VinculoFuncionario[]
 }
 
-export function AuthInitializer({ funcionario, acessos }: AuthInitializerProps) {
+export function AuthInitializer({ funcionario, acessos, vinculos = [] }: AuthInitializerProps) {
   const initialized = useRef(false)
 
   // Inicializa a store no ciclo de renderização inicial (SSR/Hydration seguro)
   if (!initialized.current && funcionario) {
-    useAuthStore.getState().setAuth(funcionario, acessos)
+    useAuthStore.getState().setAuth(funcionario, acessos, vinculos)
     
-    // Se não há uma escola/órgão ativo configurado e temos acessos, define o primeiro como ativo
-    if (acessos.length > 0 && !useAuthStore.getState().escolaAtivaId) {
-      // Prioriza orgao_id se houver
-      const primeiroAcesso = acessos[0]
-      if (primeiroAcesso.orgao_id) {
-        useAuthStore.getState().setEscolaAtivaId(primeiroAcesso.orgao_id)
+    const state = useAuthStore.getState()
+    if (!state.escolaAtivaId && !state.isAdminGlobalOrRoot()) {
+      // Prioriza a primeira lotação (escola) ativa do funcionário
+      const primeiroVinculo = vinculos.find(v => v.ativo)
+      if (primeiroVinculo?.escola_id) {
+        state.setEscolaAtivaId(primeiroVinculo.escola_id)
       }
     }
     initialized.current = true
@@ -33,9 +34,9 @@ export function AuthInitializer({ funcionario, acessos }: AuthInitializerProps) 
   // Mantém a store em sincronia caso os dados do funcionário ou acessos mudem
   useEffect(() => {
     if (funcionario) {
-      useAuthStore.getState().setAuth(funcionario, acessos)
+      useAuthStore.getState().setAuth(funcionario, acessos, vinculos)
     }
-  }, [funcionario, acessos])
+  }, [funcionario, acessos, vinculos])
 
   return null
 }

@@ -31,6 +31,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { TurmasCoordenadorSection } from '@/components/TurmasCoordenadorSection'
 
 /* ─── Tipos locais ─────────────────────────────────────────── */
 
@@ -662,6 +663,14 @@ export function ModalGestaoLotacoes({
                       Todas as ações de lotação são registradas no histórico funcional e na auditoria do sistema.
                     </p>
                   </div>
+
+                  {/* Turmas do Coordenador */}
+                  {selecionado.cargo?.toLowerCase().includes('coordenador') && selecionado.lotacoes.find(l => l.ativo) && (
+                    <TurmasCoordenadorSection 
+                      funcionarioId={selecionado.id} 
+                      escolaId={selecionado.lotacoes.find(l => l.ativo)!.escola_id} 
+                    />
+                  )}
                 </div>
               )}
             </div>
