@@ -96,10 +96,7 @@ export default function FuncionariosPage() {
   const carregarFuncionarios = async () => {
     setCarregando(true)
     try {
-      const isSuperadmin = authFuncionario?.is_superadmin === true
-      const nivel2Escola = !isSuperadmin
-        ? acessos.find((a) => a.nivel === 2 || a.nivel === 1)
-        : null
+      const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
 
       let query = supabase
         .from('funcionarios')
@@ -110,16 +107,21 @@ export default function FuncionariosPage() {
         .is('deleted_at', null)
         .order('nome')
 
-      // Nível 2 (diretores): filtra pelos funcionários da própria escola
-      if (!isSuperadmin && nivel2Escola) {
-        // Busca os vinculos da escola alocada ao diretor
+      // Se não for admin global, filtra apenas pelos funcionários vinculados à escola ativa
+      if (!isAdmin) {
+        const escolaId = useAuthStore.getState().escolaAtivaId
+        if (!escolaId) {
+          setFuncionarios([])
+          return
+        }
+
         const { data: vincs } = await supabase
           .from('vinculos_funcionarios')
           .select('funcionario_id')
-          .eq('escola_id', nivel2Escola.orgao_id ?? '')
+          .eq('escola_id', escolaId)
           .eq('ativo', true)
 
-        const ids = (vincs ?? []).map((v: Record<string, unknown>) => v.funcionario_id as string)
+        const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
         if (ids.length > 0) {
           query = query.in('id', ids) as typeof query
         } else {
