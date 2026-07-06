@@ -50,8 +50,8 @@ Ao converter recursos do projeto antigo (Vanilla HTML/CSS/JS) para este reposit�
 <!-- BEGIN:sig-project-urls -->
 # URLs do Projeto SIG
 
-- **Produção (Vercel)**: https://sig-beqvvydm1-sig4.vercel.app
-- **Login de Produção**: https://sig-beqvvydm1-sig4.vercel.app/login
+- **Produção (Vercel)**: https://sig-six-kappa.vercel.app
+- **Login de Produção**: https://sig-six-kappa.vercel.app/login
 - **Repositório GitHub**: github.com/sigpainel774/SIG (branch: main)
 - **Projeto Supabase**: https://nijjizpcodnjhvqwjuso.supabase.co
 <!-- END:sig-project-urls -->
