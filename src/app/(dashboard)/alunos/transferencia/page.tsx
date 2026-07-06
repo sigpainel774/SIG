@@ -27,7 +27,12 @@ export default function TransferenciaAlunoPage() {
   useEffect(() => {
     // Carrega escolas ativas para o select de destino (exceto a escola atual)
     const loadEscolas = async () => {
-      const { data } = await supabase.from('escolas').select('id, nome').eq('ativo', true)
+      const { data } = await supabase
+        .from('escolas')
+        .select('id, nome')
+        .is('deleted_at', null)
+        .eq('ativo', true)
+        .order('nome', { ascending: true })
       if (data) {
         setEscolas(data.filter(e => e.id !== escolaAtivaId))
       }

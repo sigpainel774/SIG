@@ -50,7 +50,7 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
   useEffect(() => {
     const fetchSelectData = async () => {
       const [{ data: escolasData }, { data: funcionariosData }] = await Promise.all([
-        supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
+        supabase.from('escolas').select('id, nome').is('deleted_at', null).eq('ativo', true).order('nome'),
         supabase.from('funcionarios').select('id, nome').is('deleted_at', null).order('nome')
       ])
       
