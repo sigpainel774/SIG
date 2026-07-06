@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="108" fill="#0e1828"/>
+  <g fill="none" stroke="#ff7300" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Letter S -->
+    <path d="M 205 175 L 110 175 A 35 35 0 0 0 75 210 L 75 221 A 35 35 0 0 0 110 256 L 170 256 A 35 35 0 0 1 205 291 L 205 302 A 35 35 0 0 1 170 337 L 75 337"/>
+    <!-- Letter P -->
+    <path d="M 218 175 L 218 337"/>
+    <path d="M 218 175 L 295 175 A 40.5 40.5 0 0 1 335.5 215.5 A 40.5 40.5 0 0 1 295 256 L 218 256"/>
+    <!-- Letter E -->
+    <path d="M 343 175 L 343 337"/>
+    <path d="M 343 175 L 437 175"/>
+    <path d="M 343 256 L 415 256"/>
+    <path d="M 343 337 L 437 337"/>
+  </g>
+</svg>
