@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Lock } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabaseClient'
 
 interface ModalConfirmacaoSenhaProps {
   open?: boolean
@@ -31,13 +33,33 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
     if (onOpenChange) onOpenChange(val)
   }
 
-  const handleConfirmar = () => {
+  const [loading, setLoading] = useState(false)
+  const { funcionario } = useAuthStore()
+
+  const handleConfirmar = async () => {
     if (!senha.trim()) {
       toast.error('Digite a senha para confirmar.')
       return
     }
     
-    // Confirmação de senha
+    if (!funcionario?.email) {
+      toast.error('Usuário não identificado.')
+      return
+    }
+
+    setLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email: funcionario.email,
+      password: senha
+    })
+    setLoading(false)
+
+    if (error) {
+      toast.error('Senha incorreta.')
+      return
+    }
+
     toast.success('Modo edição ativado com sucesso!')
     handleOpenChange(false)
     setSenha('')
@@ -76,9 +98,10 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
 
         <Button 
           onClick={handleConfirmar}
+          disabled={loading}
           className="w-full h-12 bg-[#0090ff] text-white hover:bg-[#0070f3] font-bold mt-2"
         >
-          Confirmar
+          {loading ? 'Confirmando...' : 'Confirmar'}
         </Button>
       </DialogContent>
     </Dialog>

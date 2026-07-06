@@ -76,3 +76,11 @@
 
 - **Aceitar null/undefined quando apropriado**: Ao criar ou modificar uma função utilitária que será chamada em múltiplos lugares do projeto, verifique sempre se os tipos dos parâmetros (ex: em TypeScript) devem aceitar `null` ou `undefined`. Isso previne que a função lance erros de *runtime* (como TypeError ao tentar ler propriedades de null) quando o contexto do usuário que a invocou estiver incompleto ou os dados do banco não possuírem valor para aquela coluna.
 <!-- END:optional-params-rule -->
+
+<!-- BEGIN:silent-errors-rule -->
+# Varredura de Erros Silenciosos
+
+- **Auditoria após Grandes Mudanças**: Ao implementar mudanças estruturais ou de larga escala (ex: configurações de PWA, refatorações de layout raiz, mudanças de roteamento), o agente DEVE proativamente realizar uma varredura (análise técnica) em busca de "erros silenciosos".
+- **O que são Erros Silenciosos**: Casos extremos de UX (edge cases), rejeições não tratadas (unhandled rejections), ausência de meta tags importantes (ex: `theme-color`), problemas de ciclo de vida (ex: service workers presos em cache antigo) ou problemas de responsividade que não geram erro no console, mas degradam a experiência do usuário.
+- **Ação Proativa**: Caso detecte potenciais erros silenciosos, o agente deve sugerir ou aplicar as correções (ex: adicionar evento `controllerchange` para SW, adicionar propriedades ausentes no `manifest.json`, ajustar bloqueios de zoom em `maximumScale`, etc) para garantir 100% de conformidade com as melhores práticas (ex: Google Lighthouse).
+<!-- END:silent-errors-rule -->

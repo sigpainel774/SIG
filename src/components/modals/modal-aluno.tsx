@@ -80,6 +80,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   // 6. Saúde e Transporte Rápido
   const [transporte, setTransporte] = useState(false)
   const [rotaTransporte, setRotaTransporte] = useState('')
+  const [situacaoVacinal, setSituacaoVacinal] = useState('Em dia')
+  const [restricoesSaude, setRestricoesSaude] = useState('')
 
   // 7. Endereço Residencial Detalhado
   const [rua, setRua] = useState('')
@@ -222,6 +224,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       setMotivoNaoVacinacao(dm.motivoNaoVacinacaoAluno || '')
       setRestricaoAlimentar(dm.restricaoAlimentarAluno || 'Não')
       setRestricaoAlimentarQuais(dm.restricaoAlimentarQuaisAluno || '')
+      setSituacaoVacinal(dm.situacaoVacinalGeral || 'Em dia')
+      setRestricoesSaude(dm.restricoesSaudeAluno || '')
       setNee(dm.neeAluno || 'Não')
       setNeeSelecionadas(dm.neeSelecionadas || [])
       setDeficiencia(dm.deficienciaAluno || 'Não')
@@ -343,6 +347,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       motivoNaoVacinacaoAluno: motivoNaoVacinacao,
       restricaoAlimentarAluno: restricaoAlimentar,
       restricaoAlimentarQuais: restricaoAlimentarQuais,
+      situacaoVacinalGeral: situacaoVacinal,
+      restricoesSaudeAluno: restricoesSaude,
       neeAluno: nee,
       neeSelecionadas,
       deficienciaAluno: deficiencia,
@@ -701,6 +707,16 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                   />
                 </div>
               </div>
+
+              <div>
+                <Label className="text-xs text-gray-300">Endereço Completo (Rua, Nº, Bairro)</Label>
+                <Input 
+                  value={endereco} 
+                  onChange={(e) => setEndereco(e.target.value)} 
+                  placeholder="Endereço Completo" 
+                  className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+                />
+              </div>
             </div>
           </div>
 
@@ -721,6 +737,16 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                     <SelectItem value="Renovação">Renovação</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs text-gray-300">Data da Matrícula</Label>
+                <Input 
+                  type="date" 
+                  value={dataMatricula} 
+                  onChange={(e) => setDataMatricula(e.target.value)} 
+                  className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+                />
               </div>
 
               <div>
@@ -780,6 +806,44 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                   />
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 items-start">
+              <div>
+                <Label className="text-xs text-gray-300">Situação Vacinal Geral</Label>
+                <Select value={situacaoVacinal} onValueChange={(val) => setSituacaoVacinal(val || 'Em dia')}>
+                  <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+                    <SelectItem value="Em dia">Em dia</SelectItem>
+                    <SelectItem value="Atrasada">Atrasada</SelectItem>
+                    <SelectItem value="Não Vacinado">Não Vacinado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {situacaoVacinal !== 'Em dia' && (
+                <div>
+                  <Label className="text-xs text-gray-300">Motivo de não vacinação / atraso</Label>
+                  <Input 
+                    value={motivoNaoVacinacao} 
+                    onChange={(e) => setMotivoNaoVacinacao(e.target.value)} 
+                    placeholder="Opção da família / Recomendação" 
+                    className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3">
+              <Label className="text-xs text-gray-300">Outras observações de saúde</Label>
+              <Input 
+                value={restricoesSaude} 
+                onChange={(e) => setRestricoesSaude(e.target.value)} 
+                placeholder="Alergias, cuidados especiais, etc." 
+                className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              />
             </div>
           </div>
 
@@ -1031,6 +1095,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                       <SelectItem value="D2">D2 (2ª Dose)</SelectItem>
                       <SelectItem value="Reforço">Reforço</SelectItem>
                       <SelectItem value="Não foi vacinado">Não foi vacinado</SelectItem>
+                      <SelectItem value="Não informado">Não informado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
