@@ -3,7 +3,7 @@
   "name": "Sapeaçu Painel Escolar",
   "short_name": "SIG Sapeaçu",
   "description": "Sistema Municipal de Gestão Educacional de Sapeaçu",
-  "start_url": "/home",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
