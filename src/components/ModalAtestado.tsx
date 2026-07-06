@@ -118,7 +118,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
         <div className="grid gap-4 py-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-zinc-300">Servidor</label>
-            <Select value={funcionarioId} onValueChange={setFuncionarioId} disabled={loadingFuncs}>
+            <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)} disabled={loadingFuncs}>
               <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
                 <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"} />
               </SelectTrigger>

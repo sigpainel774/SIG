@@ -14,7 +14,10 @@ import {
   Search, 
   CheckCircle, 
   XCircle, 
-import { UserCheck, Plus, Loader2 } from 'lucide-react'
+  UserCheck, 
+  Plus, 
+  Loader2 
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalEscala } from '@/components/ModalEscala'

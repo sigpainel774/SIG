@@ -174,7 +174,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-300">Categoria</label>
-              <Select value={categoria} onValueChange={setCategoria}>
+              <Select value={categoria} onValueChange={(val) => val && setCategoria(val)}>
                 <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -198,7 +198,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-zinc-300">Conta / Verba</label>
-              <Select value={conta} onValueChange={setConta}>
+              <Select value={conta} onValueChange={(val) => val && setConta(val)}>
                 <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
