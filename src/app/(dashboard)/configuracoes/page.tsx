@@ -39,11 +39,7 @@ const modulesList = [
   { label: 'Ocorrências', icon: ShieldCheck, enabled: true },
 ]
 
-const initialPermissions = [
-  { name: 'Ana Souza', email: 'ana@escola.br', level: 'Nível 2 - Diretor', school: 'Escola Modelo', status: 'Ativo' },
-  { name: 'Carlos Lima', email: 'carlos@escola.br', level: 'Nível 4 - Professor', school: 'Colégio Dr Eraldo Tinoco', status: 'Ativo' },
-  { name: 'Marina Alves', email: 'marina@escola.br', level: 'Nível 5 - Chefe de Equipe', school: 'Global', status: 'Ativo' },
-]
+
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes'>('perfil')
