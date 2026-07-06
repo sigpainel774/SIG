@@ -7,13 +7,30 @@ import { useState, useRef, useEffect } from 'react'
 
 export function SchoolSelector() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
-  const isAdmin = useAuthStore(state => state.isAdminGlobalOrRoot())
+  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const isAdmin = isAdminGlobalOrRoot()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadEscolas()
   }, [loadEscolas])
+
+  // Sincroniza a store de escola com a store de autenticação no carregamento
+  useEffect(() => {
+    if (escolas.length > 0) {
+      if (escolaAtivaId && !selectedEscola) {
+        const escola = escolas.find(e => e.id === escolaAtivaId)
+        if (escola) setSelectedEscola(escola)
+      } else if (!escolaAtivaId && selectedEscola) {
+        setEscolaAtivaId(selectedEscola.id)
+      } else if (!escolaAtivaId && !selectedEscola && !isAdmin) {
+        // Se for usuário comum sem escola ativa (fallback de segurança)
+        setSelectedEscola(escolas[0])
+        setEscolaAtivaId(escolas[0].id)
+      }
+    }
+  }, [escolas, escolaAtivaId, selectedEscola, isAdmin, setSelectedEscola, setEscolaAtivaId])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -56,6 +73,7 @@ export function SchoolSelector() {
             <button
               onClick={() => {
                 setSelectedEscola(null)
+                useAuthStore.getState().setEscolaAtivaId(null)
                 setIsOpen(false)
               }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
@@ -81,6 +99,7 @@ export function SchoolSelector() {
                   key={escola.id}
                   onClick={() => {
                     setSelectedEscola(escola)
+                    useAuthStore.getState().setEscolaAtivaId(escola.id)
                     setIsOpen(false)
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
