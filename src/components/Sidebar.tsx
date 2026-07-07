@@ -52,11 +52,33 @@ export function Sidebar() {
     if (isRefreshing) return
     setIsRefreshing(true)
     
-    toast.success('Atualizando sistema...')
+    toast.success('Atualizando e limpando cache...')
     
-    await new Promise(resolve => setTimeout(resolve, 800))
+    try {
+      // 1. Limpa o Cache Storage da API de Caches do navegador (onde o PWA guarda arquivos)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(
+          cacheNames.map(name => caches.delete(name))
+        )
+      }
+      
+      // 2. Força a verificação de novas versões do Service Worker no servidor
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        for (const registration of registrations) {
+          await registration.update()
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar cache do sistema:', error)
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
     
     closeMobile()
+    
+    // 3. Recarrega a página forçando o navegador a descartar o cache HTTP
     window.location.reload()
   }
 
