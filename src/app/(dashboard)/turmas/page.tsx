@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search } from 'lucide-react'
 import { ModalTurma } from '@/components/ModalTurma'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useEditModeStore } from '@/store/useEditModeStore'
 
 export default function TurmasPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,6 +19,7 @@ export default function TurmasPage() {
   
   const supabase = createClient()
   const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const { isEditMode } = useEditModeStore()
 
   const fetchTurmas = async () => {
     if (!escolaAtivaId) return
@@ -76,16 +78,18 @@ export default function TurmasPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Turmas</h1>
           <p className="text-muted-foreground mt-1">Gerencie as turmas e anos letivos.</p>
         </div>
-        <Button 
-          className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"
-          onClick={() => {
-            setSelectedTurma(null)
-            setIsModalOpen(true)
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          Nova Turma
-        </Button>
+        {isEditMode && (
+          <Button 
+            className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"
+            onClick={() => {
+              setSelectedTurma(null)
+              setIsModalOpen(true)
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Nova Turma
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-2 max-w-sm">
@@ -125,17 +129,19 @@ export default function TurmasPage() {
                 <TableCell className="text-muted-foreground">{turma.ano_letivo}</TableCell>
                 <TableCell className="text-muted-foreground">{turma.alunos_count}</TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-highlight hover:text-highlight/80 hover:bg-highlight/10"
-                    onClick={() => {
-                      setSelectedTurma(turma)
-                      setIsModalOpen(true)
-                    }}
-                  >
-                    Editar
-                  </Button>
+                  {isEditMode && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-highlight hover:text-highlight/80 hover:bg-highlight/10"
+                      onClick={() => {
+                        setSelectedTurma(turma)
+                        setIsModalOpen(true)
+                      }}
+                    >
+                      Editar
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

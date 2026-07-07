@@ -47,12 +47,34 @@ export default function ConfiguracoesPage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [modules, setModules] = useState(modulesList)
-  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, vinculos, isAdminGlobalOrRoot } = useAuthStore()
   const isAdmin = isAdminGlobalOrRoot()
+  const [localFuncionario, setLocalFuncionario] = useState<any>(null)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (funcionario) {
+      setLocalFuncionario(funcionario)
+    } else {
+      const fetchLocal = async () => {
+        const { createClient } = await import('@/lib/supabaseClient')
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && user.email) {
+          const { data } = await supabase
+            .from('funcionarios')
+            .select('*')
+            .ilike('email', user.email)
+            .maybeSingle()
+          if (data) setLocalFuncionario(data)
+        }
+      }
+      fetchLocal()
+    }
+  }, [funcionario])
 
   const toggleModule = (index: number) => {
     setModules(prev => prev.map((m, i) => i === index ? { ...m, enabled: !m.enabled } : m))
@@ -194,10 +216,10 @@ export default function ConfiguracoesPage() {
                 <User className="h-10 w-10 text-muted-foreground" />
               </div>
               <div className="grid flex-1 gap-4 sm:grid-cols-2">
-                <ProfileField label="Nome Completo" value={funcionario?.nome || "Usuário"} strong />
-                <ProfileField label="E-mail" value={funcionario?.email || "-"} />
-                <ProfileField label="Cargo" value={funcionario?.cargo || "Servidor"} badge />
-                <ProfileField label="Status" value={funcionario?.status || "Ativo"} />
+                <ProfileField label="Nome Completo" value={mounted ? (localFuncionario?.nome || "Usuário") : "Carregando..."} strong />
+                <ProfileField label="E-mail" value={mounted ? (localFuncionario?.email || "-") : "Carregando..."} />
+                <ProfileField label="Cargo" value={mounted ? (localFuncionario?.cargo || vinculos.find(v => v.ativo)?.cargo || "Servidor") : "Carregando..."} badge />
+                <ProfileField label="Status" value={mounted ? (localFuncionario?.status || "Ativo") : "Carregando..."} />
               </div>
             </div>
           </Card>

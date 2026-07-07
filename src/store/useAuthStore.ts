@@ -29,7 +29,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   vinculos: [],
   escolaAtivaId: null,
   setAuth: (funcionario, acessos, vinculos = []) => set({ funcionario, acessos, vinculos }),
-  setEscolaAtivaId: (escolaAtivaId) => set({ escolaAtivaId }),
+  setEscolaAtivaId: (escolaAtivaId) => {
+    if (get().escolaAtivaId === escolaAtivaId) return
+    set({ escolaAtivaId })
+    const { useSchoolStore } = require('./useSchoolStore')
+    useSchoolStore.getState().selectEscolaById(escolaAtivaId)
+  },
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
   isAdminGlobalOrRoot: () => {
     const state = get();
