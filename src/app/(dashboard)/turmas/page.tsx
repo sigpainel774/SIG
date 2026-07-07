@@ -93,7 +93,6 @@ export default function TurmasPage() {
             className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"
             onClick={(e) => {
               e.preventDefault()
-              toast.info('Botão Nova Turma clicado. Abrindo modal...')
               setSelectedTurma(null)
               setIsModalOpen(true)
             }}
