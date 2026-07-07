@@ -1,15 +1,117 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <rect width="512" height="512" rx="108" fill="#0e1828"/>
-  <g fill="none" stroke="#ff7300" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Letter S -->
-    <path d="M 205 175 L 110 175 A 35 35 0 0 0 75 210 L 75 221 A 35 35 0 0 0 110 256 L 170 256 A 35 35 0 0 1 205 291 L 205 302 A 35 35 0 0 1 170 337 L 75 337"/>
-    <!-- Letter P -->
-    <path d="M 218 175 L 218 337"/>
-    <path d="M 218 175 L 295 175 A 40.5 40.5 0 0 1 335.5 215.5 A 40.5 40.5 0 0 1 295 256 L 218 256"/>
-    <!-- Letter E -->
-    <path d="M 343 175 L 343 337"/>
-    <path d="M 343 175 L 437 175"/>
-    <path d="M 343 256 L 415 256"/>
-    <path d="M 343 337 L 437 337"/>
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117" />
+      <stop offset="50%" stop-color="#121824" />
+      <stop offset="100%" stop-color="#1a2336" />
+    </linearGradient>
+
+    <!-- Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3ea6ff" />
+      <stop offset="50%" stop-color="#8c52ff" />
+      <stop offset="100%" stop-color="#ff7300" />
+    </linearGradient>
+
+    <!-- Primary Gradient (Electric Blue) -->
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3ea6ff" />
+      <stop offset="100%" stop-color="#00d2ff" />
+    </linearGradient>
+
+    <!-- Accent Gradient (Orange/Gold) -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9f43" />
+      <stop offset="100%" stop-color="#ff5a00" />
+    </linearGradient>
+
+    <!-- Glow Filter for tech feel -->
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer Container (Squircle) -->
+  <rect
+    x="12"
+    y="12"
+    width="488"
+    height="488"
+    rx="124"
+    fill="url(#bgGrad)"
+    stroke="url(#borderGrad)"
+    stroke-width="14"
+  />
+
+  <!-- Outer Glow Inner Border -->
+  <rect
+    x="26"
+    y="26"
+    width="460"
+    height="460"
+    rx="110"
+    fill="none"
+    stroke="#ffffff"
+    stroke-opacity="0.04"
+    stroke-width="2"
+  />
+
+  <!-- --- Graphic Emblem (Graduation Cap + Book) --- -->
+  <g filter="url(#glow)">
+    <!-- Graduation Cap (Mortarboard Top) -->
+    <path
+      d="M256 100 L400 170 L256 240 L112 170 Z"
+      fill="url(#primaryGrad)"
+      opacity="0.95"
+    />
+
+    <!-- Cap Underneath Shadow/Depth -->
+    <path
+      d="M176 201 V240 C176 280 336 280 336 240 V201"
+      stroke="url(#primaryGrad)"
+      stroke-width="16"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Golden Tassel -->
+    <path
+      d="M256 170 L370 220 V300"
+      stroke="url(#accentGrad)"
+      stroke-width="10"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <circle cx="370" cy="308" r="8" fill="url(#accentGrad)" />
+
+    <!-- Open Book Pages at the base -->
+    <!-- Left Page -->
+    <path
+      d="M256 285 C200 255 140 260 90 280 V370 C140 350 200 345 256 375 Z"
+      fill="url(#accentGrad)"
+      opacity="0.85"
+    />
+
+    <!-- Right Page -->
+    <path
+      d="M256 285 C312 255 372 260 422 280 V370 C372 350 312 345 256 375 Z"
+      fill="url(#accentGrad)"
+      opacity="0.85"
+    />
+  </g>
+
+  <!-- --- Monogram SPE --- -->
+  <g fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+    <!-- Letter S (Stylized) -->
+    <path d="M 185 410 H 145 C 130 410 120 420 120 432.5 C 120 445 130 455 145 455 H 175 C 190 455 200 465 200 477.5 C 200 490 190 500 175 500 H 135" stroke="url(#primaryGrad)" stroke-width="16" />
+    
+    <!-- Letter P (Stylized) -->
+    <path d="M 235 410 V 500 M 235 410 H 270 C 285 410 295 420 295 432.5 C 295 445 285 455 270 455 H 235" stroke="#ffffff" stroke-width="16" />
+    
+    <!-- Letter E (Stylized) -->
+    <path d="M 330 410 V 500 M 330 410 H 380 M 330 455 H 370 M 330 500 H 380" stroke="url(#accentGrad)" stroke-width="16" />
   </g>
 </svg>
