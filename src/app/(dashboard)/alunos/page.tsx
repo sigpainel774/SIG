@@ -17,8 +17,10 @@ import {
   User, 
   FileText,
   BadgeInfo,
-  Building2
+  Building2,
+  ArrowLeft
 } from 'lucide-react'
+import Link from 'next/link'
 import { ModalAluno } from '@/components/modals/modal-aluno'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { createClient } from '@/lib/supabaseClient'
@@ -178,10 +180,17 @@ export default function AlunosPage() {
       <div className="print:hidden space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-highlight shrink-0" />
-              <span>Gestão de Alunos</span>
-            </h1>
+            <div className="flex items-center gap-3">
+              <Link href="/home">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-highlight shrink-0" />
+                <span>Gestão de Alunos</span>
+              </h1>
+            </div>
             <p className="text-muted-foreground text-xs sm:text-sm mt-1">
               Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
             </p>

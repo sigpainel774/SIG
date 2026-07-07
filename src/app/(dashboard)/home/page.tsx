@@ -38,7 +38,7 @@ export default function HomePage() {
     { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
     { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias' },
     { label: 'Atestados', icon: FileCheck, href: '/atestados' },
-    { label: 'Ponto Mobile', icon: Smartphone, href: '/ponto-mobile' },
+    // { label: 'Ponto Mobile', icon: Smartphone, href: '/ponto-mobile' },
     { label: 'Painel Liderança', icon: UserCheck, href: '/painel-chefe' },
   ]
 

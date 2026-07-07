@@ -1,15 +1,24 @@
 'use client'
 
-import { FileText } from 'lucide-react'
+import { FileText, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 export default function MatriculasPage() {
   return (
     <div className="space-y-6 flex flex-col h-[80vh]">
       <div className="pb-4 border-b border-[#3f3f46]">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <FileText className="w-6 h-6 text-highlight" /> 
-          Matrículas
-        </h2>
+        <div className="flex items-center gap-3">
+          <Link href="/home">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <FileText className="w-6 h-6 text-highlight" /> 
+            Matrículas
+          </h2>
+        </div>
         <p className="text-[#aaa] text-sm mt-1">Gestão de novas matrículas e renovações.</p>
       </div>
 

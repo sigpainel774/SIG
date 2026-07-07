@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2 } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -182,7 +183,14 @@ export default function MuralPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Mural</h1>
+          <div className="flex items-center gap-3">
+            <Link href="/home">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Mural</h1>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">Comunicados, avisos e aniversariantes da rede.</p>
         </div>
         {podePublicar && (

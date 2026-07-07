@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -75,7 +76,14 @@ export default function TurmasPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Turmas</h1>
+          <div className="flex items-center gap-3">
+            <Link href="/home">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Turmas</h1>
+          </div>
           <p className="text-muted-foreground mt-1">Gerencie as turmas e anos letivos.</p>
         </div>
         {isEditMode && (
