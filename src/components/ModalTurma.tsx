@@ -25,6 +25,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
 
   useEffect(() => {
     if (open) {
+      toast.info(`ModalTurma renderizado com open=true. escolaAtivaId: ${escolaAtivaId}`)
       if (turma) {
         setNome(turma.nome)
         setAnoLetivo(turma.ano_letivo)
@@ -33,7 +34,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         setAnoLetivo(new Date().getFullYear())
       }
     }
-  }, [open, turma])
+  }, [open, turma, escolaAtivaId])
 
   const handleSave = async () => {
     if (!nome.trim()) {
@@ -63,15 +64,29 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         toast.success('Turma atualizada com sucesso')
       } else {
         // Criar
-        const { error } = await supabase
+        const { data: newTurma, error } = await supabase
           .from('turmas')
           .insert({
             nome: nome.trim(),
             ano_letivo: anoLetivo,
             escola_id: escolaAtivaId
           })
+          .select()
+          .single()
 
         if (error) throw error
+        
+        // Auto-vincular o funcionário criador à turma (caso seja coordenador/professor, para não perder o acesso)
+        const funcionarioId = useAuthStore.getState().funcionario?.id
+        if (funcionarioId && newTurma?.id) {
+          await supabase.from('vinculos_turmas').insert({
+            funcionario_id: funcionarioId,
+            escola_id: escolaAtivaId,
+            turma_id: newTurma.id,
+            tipo: 'coordenador' // Padrão seguro para garantir visualização
+          })
+        }
+
         toast.success('Turma criada com sucesso')
       }
 
