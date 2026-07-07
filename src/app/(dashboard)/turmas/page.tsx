@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { toast } from 'sonner'
 
 export default function TurmasPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -88,8 +89,11 @@ export default function TurmasPage() {
         </div>
         {isEditMode && (
           <Button 
+            type="button"
             className="bg-highlight text-background hover:bg-highlight/90 font-semibold gap-2"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault()
+              toast.info('Botão Nova Turma clicado. Abrindo modal...')
               setSelectedTurma(null)
               setIsModalOpen(true)
             }}
