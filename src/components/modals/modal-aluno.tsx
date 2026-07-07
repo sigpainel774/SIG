@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Camera, UserPlus, Save, X, PenTool, CheckSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
+import { MiniMapa } from '@/components/map/MapWrapper'
 
 interface ModalAlunoProps {
   open?: boolean
@@ -90,6 +91,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   const [bairro, setBairro] = useState('')
   const [cidadeEnd, setCidadeEnd] = useState('SAPE AÇU')
   const [ufEnd, setUfEnd] = useState('BA')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
   const [areaLocalizacao, setAreaLocalizacao] = useState('Urbana')
   const [areaDiferenciada, setAreaDiferenciada] = useState('Não está em área diferenciada')
 
@@ -230,6 +233,11 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       setNeeSelecionadas(dm.neeSelecionadas || [])
       setDeficiencia(dm.deficienciaAluno || 'Não')
       setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
+      setLatitude(alunoEditar.latitude ? Number(alunoEditar.latitude) : null)
+      setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
+    } else {
+      setLatitude(null)
+      setLongitude(null)
     }
   }, [alunoEditar])
 
@@ -374,6 +382,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         nome_mae: mae || null,
         nome_pai: pai || null,
         endereco: endereco || rua || null,
+        latitude: latitude ?? null,
+        longitude: longitude ?? null,
         serie: serie || null,
         dados_matricula: dadosMatriculaObj
       }
@@ -941,6 +951,25 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                       <SelectItem value="Área de assentamento">Área de assentamento</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Seleção de GPS por Mapa - print:hidden */}
+              <div className="print:hidden mt-4">
+                <Label className="text-xs text-gray-400 font-medium">Coordenadas de GPS (Arraste o pin ou clique no mapa para selecionar)</Label>
+                <div className="mt-2 h-[260px] w-full rounded-xl overflow-hidden border border-[#2a2a2a] relative z-10">
+                  <MiniMapa
+                    initialLat={latitude ?? undefined}
+                    initialLng={longitude ?? undefined}
+                    onCoordinatesChange={(lat, lng) => {
+                      setLatitude(lat)
+                      setLongitude(lng)
+                    }}
+                    address={rua ? `${rua}, ${numero || ''}, ${bairro || ''}, ${cidadeEnd || ''} - ${ufEnd || ''}` : endereco}
+                    onAddressChange={(val) => {
+                      setEndereco(val)
+                    }}
+                  />
                 </div>
               </div>
             </div>

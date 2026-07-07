@@ -22,6 +22,7 @@ import {
 import { UserPlus, Save, Camera, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
+import { MiniMapa } from '@/components/map/MapWrapper'
 
 interface FuncionarioBasico {
   id: string
@@ -33,6 +34,9 @@ interface FuncionarioBasico {
   formacao?: string | null
   foto_url?: string | null
   data_nascimento?: string | null
+  endereco?: string | null
+  latitude?: number | null
+  longitude?: number | null
 }
 
 interface ModalFuncionarioProps {
@@ -83,6 +87,9 @@ export function ModalFuncionario({
   const [cargo, setCargo] = useState('')
   const [status, setStatus] = useState('ativo')
   const [formacao, setFormacao] = useState('')
+  const [endereco, setEndereco] = useState('')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
 
   // Pré-preencher ao abrir em modo edição
   useEffect(() => {
@@ -96,6 +103,9 @@ export function ModalFuncionario({
         setStatus(funcionario.status ?? 'ativo')
         setFormacao(funcionario.formacao ?? '')
         setFotoPreview(funcionario.foto_url ?? null)
+        setEndereco(funcionario.endereco ?? '')
+        setLatitude(funcionario.latitude ? Number(funcionario.latitude) : null)
+        setLongitude(funcionario.longitude ? Number(funcionario.longitude) : null)
       } else {
         setNome('')
         setEmail('')
@@ -106,6 +116,9 @@ export function ModalFuncionario({
         setFormacao('')
         setFotoPreview(null)
         setFotoFile(null)
+        setEndereco('')
+        setLatitude(null)
+        setLongitude(null)
       }
     }
   }, [activeOpen, funcionario])
@@ -169,6 +182,9 @@ export function ModalFuncionario({
         formacao: formacao || null,
         foto_url,
         data_nascimento: nascimento || null,
+        endereco: endereco || null,
+        latitude: latitude ?? null,
+        longitude: longitude ?? null,
       }
 
       if (isEditing && funcionario) {
@@ -334,6 +350,36 @@ export function ModalFuncionario({
                 placeholder="Ex: Licenciatura em Pedagogia"
                 className="bg-[#181818] border-borderCustom text-white mt-1"
               />
+            </div>
+          </div>
+
+          {/* Localização e Endereço - print:hidden */}
+          <div className="space-y-4 pt-2 border-t border-borderCustom print:hidden">
+            <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Localização & Endereço</h3>
+            <div>
+              <Label>Endereço Residencial</Label>
+              <Input
+                value={endereco}
+                onChange={(e) => setEndereco(e.target.value)}
+                placeholder="Rua, número, bairro, cidade..."
+                className="bg-[#181818] border-borderCustom text-white mt-1"
+              />
+            </div>
+            
+            <div className="mt-2">
+              <Label className="text-xs text-zinc-400">Arraste o pin ou clique no mapa para definir as coordenadas de GPS</Label>
+              <div className="mt-2 h-[260px] w-full rounded-xl overflow-hidden border border-borderCustom relative z-10">
+                <MiniMapa
+                  initialLat={latitude ?? undefined}
+                  initialLng={longitude ?? undefined}
+                  onCoordinatesChange={(lat, lng) => {
+                    setLatitude(lat)
+                    setLongitude(lng)
+                  }}
+                  address={endereco}
+                  onAddressChange={setEndereco}
+                />
+              </div>
             </div>
           </div>
 

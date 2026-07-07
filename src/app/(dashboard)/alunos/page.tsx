@@ -43,6 +43,8 @@ interface Aluno {
   nome_mae?: string | null
   nome_pai?: string | null
   endereco?: string | null
+  latitude?: number | null
+  longitude?: number | null
   serie?: string | null
   escola_id?: string | null
   escola_nome?: string

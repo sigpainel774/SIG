@@ -42,6 +42,9 @@ export interface Funcionario {
   formacao?: string | null
   foto_url?: string | null
   is_superadmin?: boolean | null
+  endereco?: string | null
+  latitude?: number | null
+  longitude?: number | null
 }
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -106,6 +109,7 @@ export default function FuncionariosPage() {
         .from('funcionarios')
         .select(`
           id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          endereco, latitude, longitude,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome))
         `)
         .is('deleted_at', null)
@@ -137,7 +141,7 @@ export default function FuncionariosPage() {
       const { data, error } = await query
       if (error) throw error
 
-      const formatados: Funcionario[] = (data ?? []).map((f: Record<string, unknown>) => {
+      const formatados: Funcionario[] = (data ?? []).map((f: Record<string, any>) => {
         // Pegar o primeiro vínculo ativo como órgão principal
         const vincs = (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
         const vinculoAtivo = vincs.find((v) => v.ativo)
@@ -155,6 +159,9 @@ export default function FuncionariosPage() {
           data_nascimento: f.data_nascimento as string | null,
           is_superadmin: f.is_superadmin as boolean | null,
           orgao: escola?.nome ?? null,
+          endereco: f.endereco as string | null,
+          latitude: f.latitude ? Number(f.latitude) : null,
+          longitude: f.longitude ? Number(f.longitude) : null,
         }
       })
 
