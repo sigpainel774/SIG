@@ -5,6 +5,8 @@ import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { PrintBoletim } from '@/components/print/print-boletim'
 import { PrintFicha } from '@/components/print/print-ficha'
+import { MapaGlobal } from '@/components/map/MapWrapper'
+import { createClient } from '@/lib/supabaseClient'
 import { 
   BarChart3, 
   Printer, 
@@ -12,7 +14,7 @@ import {
   CalendarCheck, 
   PieChart, 
   AlertTriangle, 
-  Map, 
+  Map as MapIcon, 
   Scan,
   ArrowLeft,
   Building2,
@@ -39,6 +41,69 @@ export default function RelatoriosPage() {
   }, [loadEscolas])
   const [activeReport, setActiveReport] = useState<ReportType>(null)
   const [printableSubView, setPrintableSubView] = useState<'boletim' | 'ficha' | 'diario' | null>(null)
+  const [mapData, setMapData] = useState<any[]>([])
+  const [isLoadingMap, setIsLoadingMap] = useState(false)
+
+  // Fetch data for the Mapa Logístico
+  useEffect(() => {
+    if (activeReport === 'mapa') {
+      const fetchMapData = async () => {
+        setIsLoadingMap(true)
+        const supabase = createClient()
+        try {
+          let query = supabase
+            .from('vinculos_funcionarios')
+            .select(`
+              id,
+              cargo,
+              escola_id,
+              escolas (nome),
+              funcionarios!inner (
+                id,
+                nome,
+                foto_url,
+                latitude,
+                longitude
+              )
+            `)
+            .eq('ativo', true)
+
+          if (selectedEscola) {
+            query = query.eq('escola_id', selectedEscola.id)
+          }
+
+          const { data, error } = await query
+
+          if (error) throw error
+
+          if (data) {
+            const anyData = data as any[]
+            const mapped = anyData
+              .filter(v => v.funcionarios?.latitude != null && v.funcionarios?.longitude != null)
+              .map(v => ({
+                id: v.funcionarios.id,
+                nome: v.funcionarios.nome,
+                cargo: v.cargo || 'Funcionário',
+                escola: v.escolas?.nome || 'Escola Não Informada',
+                foto_url: v.funcionarios.foto_url,
+                latitude: Number(v.funcionarios.latitude),
+                longitude: Number(v.funcionarios.longitude)
+              }))
+            
+            // Deduplicate by Funcionario ID
+            const uniqueMap = new Map<string, any>()
+            mapped.forEach(item => uniqueMap.set(item.id, item))
+            setMapData(Array.from(uniqueMap.values()))
+          }
+        } catch (err) {
+          console.error("Erro ao buscar dados do mapa:", err)
+        } finally {
+          setIsLoadingMap(false)
+        }
+      }
+      fetchMapData()
+    }
+  }, [activeReport, selectedEscola])
 
   // Report cards definition matching user screenshot
   const reportCards = [
@@ -74,7 +139,7 @@ export default function RelatoriosPage() {
       id: 'mapa' as const,
       title: 'Mapa Logístico',
       description: 'Geolocalização de funcionários.',
-      icon: Map,
+      icon: MapIcon,
       iconColor: 'text-[#c084fc]',
     },
     {
@@ -313,6 +378,27 @@ export default function RelatoriosPage() {
             </div>
           </div>
           )
+        ) : activeReport === 'mapa' ? (
+          <div className="space-y-6">
+            <div className="bg-[#182030] border border-[#26304d] rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4 border-b border-[#26304d] pb-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Relatório Logístico</span>
+                  <h3 className="text-xl font-bold text-white mt-0.5">Geolocalização de Funcionários</h3>
+                </div>
+                <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
+                  {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
+                </div>
+              </div>
+              {isLoadingMap ? (
+                <div className="w-full h-[520px] rounded-2xl bg-[#141a27] border border-[#232d42] flex items-center justify-center text-slate-400 animate-pulse">
+                  <span className="text-sm font-semibold">Buscando dados geográficos...</span>
+                </div>
+              ) : (
+                <MapaGlobal funcionarios={mapData} />
+              )}
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-[#26304d] rounded-2xl bg-[#182030]/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-white mb-3">

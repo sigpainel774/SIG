@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Importação do CSS do Leaflet para os mapas renderizarem corretamente */
+@import 'leaflet/dist/leaflet.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -180,4 +182,32 @@
     margin: 10mm;
     size: auto;
   }
+}
+
+/* Fix do tamanho dos containers do mapa */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Fix do Popup do Leaflet para não ficar branco no Dark Mode */
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: #182030 !important;
+  color: #f1f1f1 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .leaflet-popup-content {
+  margin: 0 !important;
+  border-radius: 0.75rem !important;
+}
+
+.dark .leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 4px 4px 0 0 !important;
+}
+.dark .leaflet-popup-close-button:hover {
+  color: #f87171 !important;
 }
