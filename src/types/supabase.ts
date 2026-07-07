@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1073,6 +1073,73 @@ export type Database = {
           },
         ]
       }
+      performance_metrics: {
+        Row: {
+          connection_type: string | null
+          created_at: string
+          device_memory: number | null
+          escola_id: string | null
+          funcionario_id: string | null
+          hardware_concurrency: number | null
+          id: string
+          metric_name: string
+          metric_value: number
+          pathname: string
+          rating: string
+          user_agent: string | null
+        }
+        Insert: {
+          connection_type?: string | null
+          created_at?: string
+          device_memory?: number | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          hardware_concurrency?: number | null
+          id?: string
+          metric_name: string
+          metric_value: number
+          pathname: string
+          rating: string
+          user_agent?: string | null
+        }
+        Update: {
+          connection_type?: string | null
+          created_at?: string
+          device_memory?: number | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          hardware_concurrency?: number | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          pathname?: string
+          rating?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_metrics_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_metrics_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_metrics_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pontos_ronda: {
         Row: {
           created_at: string
@@ -1816,6 +1883,22 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics_by_route: {
+        Row: {
+          avg_value: number | null
+          pathname: string | null
+          sample_count: number | null
+        }
+        Relationships: []
+      }
+      performance_metrics_summary: {
+        Row: {
+          avg_value: number | null
+          metric_name: string | null
+          sample_count: number | null
+        }
+        Relationships: []
+      }
       turmas_ativas: {
         Row: {
           ano_letivo: number | null
@@ -1865,6 +1948,7 @@ export type Database = {
         Args: { escola_id_param: string }
         Returns: boolean
       }
+      cleanup_performance_metrics: { Args: never; Returns: undefined }
       get_auth_funcionario_id: { Args: never; Returns: string }
       get_birthdays_of_month: {
         Args: { month_num: number }
@@ -2011,3 +2095,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

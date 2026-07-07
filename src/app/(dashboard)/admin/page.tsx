@@ -29,7 +29,8 @@ import {
   Flag, 
   AlertTriangle, 
   Bus,
-  ArchiveRestore
+  ArchiveRestore,
+  Gauge
 } from 'lucide-react'
 
 interface QuickShortcut {
@@ -102,6 +103,13 @@ export default function AdminHubPage() {
       icon: Activity,
       iconColor: 'text-purple-400',
       path: '/admin/logs',
+    },
+    {
+      title: 'Desempenho',
+      subtitle: 'Métricas e gargalos',
+      icon: Gauge,
+      iconColor: 'text-violet-400',
+      path: '/admin/desempenho',
     },
     {
       title: 'Auditoria',
