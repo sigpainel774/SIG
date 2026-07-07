@@ -5,6 +5,7 @@ import { RootAdminHeader } from '@/components/RootAdminHeader'
 import { createClient } from '@/lib/supabaseServer'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { AuthInitializer } from '@/components/AuthInitializer'
+import { PerformanceTracker } from '@/components/PerformanceTracker'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
@@ -53,6 +54,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     return (
       <div className="flex flex-col min-h-screen bg-[#0a0a0a] text-foregroundCustom">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+        <PerformanceTracker />
         <RootAdminHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-8">
           {children}
@@ -65,6 +67,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="flex min-h-screen bg-background text-foregroundCustom">
       <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+      <PerformanceTracker />
       {/* Sidebar Component */}
       <Sidebar />
 
