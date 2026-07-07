@@ -13,6 +13,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -109,9 +110,12 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a] p-4 font-sans">
       <div className="w-full max-w-[420px] p-8 sm:p-10 bg-[#161616] border border-[#242424] rounded-[24px] shadow-2xl space-y-6">
-        <h1 className="text-2xl sm:text-[26px] font-bold text-white text-center tracking-tight pt-1">
-          Sapeaçu Painel Escolar
-        </h1>
+        <div className="flex flex-col items-center justify-center gap-3">
+          <Logo variant="icon" className="w-14 h-14" />
+          <h1 className="text-2xl sm:text-[26px] font-bold text-white text-center tracking-tight">
+            Sapeaçu Painel Escolar
+          </h1>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-4 pt-2">
           <div>

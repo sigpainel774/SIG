@@ -21,6 +21,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Logo } from './Logo'
 
 export function Sidebar() {
   const router = useRouter()
@@ -97,13 +98,7 @@ export function Sidebar() {
       {/* Brand Header */}
       <div className="p-5 flex items-center justify-between border-b border-sidebar-border/50 md:border-b-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-[#18181b] border border-[#27272a] p-1 shrink-0">
-            <img 
-              src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
-              alt="Logo" 
-              className="w-full h-full object-contain rounded-lg" 
-            />
-          </div>
+          <Logo variant="icon" className="w-10 h-10 shrink-0" />
           <h2 className="text-xl font-bold tracking-tight text-sidebar-foreground">Painel Escolar</h2>
         </div>
         <button 

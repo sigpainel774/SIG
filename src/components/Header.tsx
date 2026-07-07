@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { Logo } from './Logo'
 
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
@@ -81,11 +82,7 @@ export function Header() {
           >
             <Menu className="w-6 h-6 text-[#3ea6ff]" />
           </button>
-          <img 
-            src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/icon-192.png" 
-            alt="Painel Escolar Logo" 
-            className="w-7 h-7 object-contain rounded-md shrink-0" 
-          />
+          <Logo variant="icon" className="w-7 h-7 shrink-0" />
           <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block truncate">
             Sapeaçu Painel Escolar
           </h1>
