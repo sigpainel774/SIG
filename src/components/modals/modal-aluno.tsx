@@ -235,7 +235,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
 
   const carregarDadosIniciais = async () => {
     const supabase = createClient()
-    const { data: tData } = await supabase.from('turmas').select('id, nome, ano_letivo')
+    const { data: tData } = await supabase.from('turmas').select('id, nome, ano_letivo, escola_id').is('deleted_at', null)
     if (tData) setTurmas(tData)
 
     const { data: eData } = await supabase
@@ -574,7 +574,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                   <SelectValue placeholder="Selecione uma turma ativa" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
-                  {turmas.map((t) => (
+                  {turmas.filter(t => t.escola_id === escolaId).map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.nome} ({t.ano_letivo})</SelectItem>
                   ))}
                 </SelectContent>

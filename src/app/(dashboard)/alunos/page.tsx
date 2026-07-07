@@ -49,7 +49,7 @@ interface Aluno {
 }
 
 export default function AlunosPage() {
-  const { funcionario, escolaAtivaId } = useAuthStore()
+  const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,9 +61,35 @@ export default function AlunosPage() {
     const supabase = createClient()
     setLoading(true)
     
-    let query = supabase.from('alunos').select('*')
+    const isAdmin = isAdminGlobalOrRoot()
+    const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
+    const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
+      !funcionario?.cargo?.toLowerCase().includes('coordenador')
+
+    let query = supabase.from('alunos').select('*').is('deleted_at', null)
     
-    if (!useAuthStore.getState().isAdminGlobalOrRoot() && escolaAtivaId) {
+    if (!isAdmin && escolaAtivaId) {
+      if (isDiretor || isSecretario) {
+        query = query.eq('escola_id', escolaAtivaId)
+      } else {
+        // Professor ou Coordenador: só vê alunos das suas turmas
+        const { data: vTurmas } = await supabase
+          .from('vinculos_turmas')
+          .select('turma_id')
+          .eq('funcionario_id', funcionario?.id || '')
+          .eq('escola_id', escolaAtivaId)
+
+        const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)
+        if (ids.length > 0) {
+          query = query.eq('escola_id', escolaAtivaId).in('turma_id', ids) as typeof query
+        } else {
+          setAlunos([])
+          setLoading(false)
+          return
+        }
+      }
+    } else if (isAdmin && escolaAtivaId) {
+      // Se for admin global e tiver escola selecionada, filtra por ela
       query = query.eq('escola_id', escolaAtivaId)
     }
     
