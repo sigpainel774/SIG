@@ -141,6 +141,8 @@ export type Database = {
           foto_url: string | null
           id: string
           inep: string | null
+          latitude: number | null
+          longitude: number | null
           nis: string | null
           nome: string
           nome_mae: string | null
@@ -163,6 +165,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           inep?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nis?: string | null
           nome: string
           nome_mae?: string | null
@@ -185,6 +189,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           inep?: string | null
+          latitude?: number | null
+          longitude?: number | null
           nis?: string | null
           nome?: string
           nome_mae?: string | null
@@ -794,10 +800,13 @@ export type Database = {
           data_nascimento: string | null
           deleted_at: string | null
           email: string
+          endereco: string | null
           formacao: string | null
           foto_url: string | null
           id: string
           is_superadmin: boolean | null
+          latitude: number | null
+          longitude: number | null
           nome: string
           primeiro_acesso: boolean | null
           status: string | null
@@ -810,10 +819,13 @@ export type Database = {
           data_nascimento?: string | null
           deleted_at?: string | null
           email: string
+          endereco?: string | null
           formacao?: string | null
           foto_url?: string | null
           id?: string
           is_superadmin?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           nome: string
           primeiro_acesso?: boolean | null
           status?: string | null
@@ -826,10 +838,13 @@ export type Database = {
           data_nascimento?: string | null
           deleted_at?: string | null
           email?: string
+          endereco?: string | null
           formacao?: string | null
           foto_url?: string | null
           id?: string
           is_superadmin?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           nome?: string
           primeiro_acesso?: boolean | null
           status?: string | null
@@ -1850,6 +1865,7 @@ export type Database = {
         Args: { escola_id_param: string }
         Returns: boolean
       }
+      get_auth_funcionario_id: { Args: never; Returns: string }
       get_birthdays_of_month: {
         Args: { month_num: number }
         Returns: {
