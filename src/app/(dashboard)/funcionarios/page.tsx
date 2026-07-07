@@ -23,6 +23,7 @@ import { ModalGestaoLotacoes } from '@/components/modals/modal-gestao-lotacoes'
 import { createClient } from '@/lib/supabaseClient'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
 
 /* ─── Tipo Funcionário ─────────────────────────────────────── */
@@ -76,6 +77,7 @@ function formatarData(iso: string | null | undefined): string {
 export default function FuncionariosPage() {
   const supabase = createClient()
   const { funcionario: authFuncionario, acessos } = useAuthStore()
+  const { isEditMode } = useEditModeStore()
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -398,15 +400,17 @@ export default function FuncionariosPage() {
         </Button>
 
         {/* Espaçador + Novo Funcionário */}
-        <div className="ml-auto">
-          <Button
-            onClick={() => setModalNovoOpen(true)}
-            className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9 text-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Novo Funcionário
-          </Button>
-        </div>
+        {isEditMode && (
+          <div className="ml-auto">
+            <Button
+              onClick={() => setModalNovoOpen(true)}
+              className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9 text-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Funcionário
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ── Grade de Cards ─────────────────────────────────────── */}
@@ -475,16 +479,18 @@ export default function FuncionariosPage() {
                   </div>
                 </div>
 
-                {/* ── 4 Botões de Ação ──────────────────────── */}
+                {/* ── Botões de Ação ──────────────────────── */}
                 <div className="flex items-center gap-2">
                   {/* M — Gestão de Lotações */}
-                  <button
-                    onClick={() => handleAbrirLotacoes(func)}
-                    title="Gestão de Lotações"
-                    className="w-9 h-9 rounded-full bg-[#1a2940] hover:bg-[#1e3a5f] border border-[#1e4a7a] text-[#60a5fa] font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-                  >
-                    M
-                  </button>
+                  {isEditMode && (
+                    <button
+                      onClick={() => handleAbrirLotacoes(func)}
+                      title="Gestão de Lotações"
+                      className="w-9 h-9 rounded-full bg-[#1a2940] hover:bg-[#1e3a5f] border border-[#1e4a7a] text-[#60a5fa] font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      M
+                    </button>
+                  )}
                   {/* Imprimir ficha */}
                   <button
                     onClick={() => handleImprimir(func)}
@@ -494,21 +500,25 @@ export default function FuncionariosPage() {
                     <Printer className="w-4 h-4" />
                   </button>
                   {/* Editar */}
-                  <button
-                    onClick={() => handleEditar(func)}
-                    title="Editar funcionário"
-                    className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
+                  {isEditMode && (
+                    <button
+                      onClick={() => handleEditar(func)}
+                      title="Editar funcionário"
+                      className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
                   {/* Excluir */}
-                  <button
-                    onClick={() => handleExcluir(func)}
-                    title="Excluir funcionário"
-                    className="w-9 h-9 rounded-full bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-400 flex items-center justify-center transition-all cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {isEditMode && (
+                    <button
+                      onClick={() => handleExcluir(func)}
+                      title="Excluir funcionário"
+                      className="w-9 h-9 rounded-full bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-400 flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* ── Informações Adicionais ────────────────── */}

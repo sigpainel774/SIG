@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabaseClient'
+import { useAuthStore } from './useAuthStore'
 
 export interface Escola {
   id: string
@@ -23,14 +24,21 @@ interface SchoolState {
 export const useSchoolStore = create<SchoolState>((set, get) => ({
   escolas: [],
   selectedEscola: null,
-  setSelectedEscola: (escola) => set({ selectedEscola: escola }),
+  setSelectedEscola: (escola) => {
+    if (get().selectedEscola?.id === (escola?.id ?? null)) return
+    set({ selectedEscola: escola })
+    useAuthStore.getState().setEscolaAtivaId(escola ? escola.id : null)
+  },
   selectEscolaById: (id) => {
+    if (get().selectedEscola?.id === id) return
     if (!id) {
       set({ selectedEscola: null })
+      useAuthStore.getState().setEscolaAtivaId(null)
       return
     }
     const found = get().escolas.find((e) => e.id === id) || null
     set({ selectedEscola: found })
+    useAuthStore.getState().setEscolaAtivaId(id)
   },
   loadEscolas: async () => {
     const supabase = createClient()

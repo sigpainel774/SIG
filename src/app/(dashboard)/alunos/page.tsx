@@ -25,6 +25,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useEditModeStore } from '@/store/useEditModeStore'
 
 interface Aluno {
   id: string
@@ -50,6 +51,7 @@ interface Aluno {
 
 export default function AlunosPage() {
   const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
+  const { isEditMode } = useEditModeStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
@@ -184,13 +186,15 @@ export default function AlunosPage() {
               Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
             </p>
           </div>
-          <Button 
-            onClick={handleNovoAluno}
-            className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Novo Aluno</span>
-          </Button>
+          {isEditMode && (
+            <Button 
+              onClick={handleNovoAluno}
+              className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Novo Aluno</span>
+            </Button>
+          )}
         </div>
 
         {/* Busca e Estatísticas */}
@@ -302,14 +306,16 @@ export default function AlunosPage() {
 
                   {/* Botões de Ação */}
                   <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#26262a]">
-                    <button 
-                      onClick={() => handleEditarAluno(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-zinc-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer border border-[#3f3f46]"
-                      title="Editar Aluno"
-                    >
-                      <Edit className="w-3.5 h-3.5 text-[#0090ff]" />
-                      <span className="hidden sm:inline">Editar</span>
-                    </button>
+                    {isEditMode && (
+                      <button 
+                        onClick={() => handleEditarAluno(aluno)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-zinc-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer border border-[#3f3f46]"
+                        title="Editar Aluno"
+                      >
+                        <Edit className="w-3.5 h-3.5 text-[#0090ff]" />
+                        <span className="hidden sm:inline">Editar</span>
+                      </button>
+                    )}
 
                     <button 
                       onClick={() => handleImprimirAluno(aluno)}
@@ -320,14 +326,16 @@ export default function AlunosPage() {
                       <span className="hidden sm:inline">Imprimir Ficha</span>
                     </button>
 
-                    <button 
-                      onClick={() => handleDeletar(aluno.id, aluno.nome)}
-                      className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
-                      title="Excluir Aluno"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Excluir</span>
-                    </button>
+                    {isEditMode && (
+                      <button 
+                        onClick={() => handleDeletar(aluno.id, aluno.nome)}
+                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
+                        title="Excluir Aluno"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Excluir</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )
