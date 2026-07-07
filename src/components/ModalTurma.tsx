@@ -25,7 +25,6 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
 
   useEffect(() => {
     if (open) {
-      toast.info(`ModalTurma renderizado com open=true. escolaAtivaId: ${escolaAtivaId}`)
       if (turma) {
         setNome(turma.nome)
         setAnoLetivo(turma.ano_letivo)
