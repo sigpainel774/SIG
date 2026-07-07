@@ -17,17 +17,43 @@ export default function TurmasPage() {
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
   
   const supabase = createClient()
-  const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot } = useAuthStore()
 
   const fetchTurmas = async () => {
     if (!escolaAtivaId) return
 
     setLoading(true)
-    const { data, error } = await supabase
+    const isAdmin = isAdminGlobalOrRoot()
+    const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
+    const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
+      !funcionario?.cargo?.toLowerCase().includes('coordenador')
+
+    let query = supabase
       .from('turmas')
       .select('*, alunos(id)')
       .eq('escola_id', escolaAtivaId)
+      .is('deleted_at', null)
       .order('nome', { ascending: true })
+
+    if (!isAdmin && !isDiretor && !isSecretario) {
+      // Coordenador, Professor ou outros níveis: filtra por vínculos diretos na tabela vinculos_turmas
+      const { data: vTurmas } = await supabase
+        .from('vinculos_turmas')
+        .select('turma_id')
+        .eq('funcionario_id', funcionario?.id || '')
+        .eq('escola_id', escolaAtivaId)
+
+      const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)
+      if (ids.length > 0) {
+        query = query.in('id', ids) as typeof query
+      } else {
+        setTurmas([])
+        setLoading(false)
+        return
+      }
+    }
+
+    const { data } = await query
     
     if (data) {
       const formatadas = data.map((t: any) => ({
