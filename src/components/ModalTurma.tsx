@@ -1,12 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Users,
+  BookOpen,
+  Trash2,
+  Plus,
+  User
+} from 'lucide-react'
 
 interface ModalTurmaProps {
   open: boolean
@@ -18,26 +32,122 @@ interface ModalTurmaProps {
 export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaProps) {
   const [nome, setNome] = useState('')
   const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear())
+  const [turno, setTurno] = useState('')
+  const [capacidade, setCapacidade] = useState(30)
   const [loading, setLoading] = useState(false)
-  
-  const supabase = createClient()
+
+  // Allocation States
+  const [professoresEscola, setProfessoresEscola] = useState<any[]>([])
+  const [vinculosProfessores, setVinculosProfessores] = useState<any[]>([])
+  const [materias, setMaterias] = useState<any[]>([])
+
+  const [selectedProfId, setSelectedProfId] = useState('')
+  const [novaMateriaNome, setNovaMateriaNome] = useState('')
+  const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
+
+  const supabase = createClient() as any
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+
+  const fetchProfessoresEscola = async () => {
+    if (!escolaAtivaId) return
+    try {
+      const { data, error } = await supabase
+        .from('vinculos_funcionarios')
+        .select('id, cargo, ativo, funcionarios(id, nome)')
+        .eq('escola_id', escolaAtivaId)
+        .eq('ativo', true)
+
+      if (error) throw error
+
+      const profs = (data || [])
+        .filter((v: any) => v.cargo?.toLowerCase().includes('professor'))
+        .map((v: any) => {
+          const func = v.funcionarios
+          if (Array.isArray(func)) return func[0]
+          return func
+        })
+        .filter(Boolean)
+
+      // Remover duplicados (por ID) se houver
+      const uniqueProfs = profs.filter((value: any, index: number, self: any[]) =>
+        self.findIndex((v: any) => v.id === value.id) === index
+      )
+
+      setProfessoresEscola(uniqueProfs)
+    } catch (err: any) {
+      console.error('Erro ao carregar professores da escola:', err)
+    }
+  }
+
+  const fetchVinculosProfessores = async () => {
+    if (!turma?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('vinculos_turmas')
+        .select('id, funcionario_id, funcionarios(id, nome)')
+        .eq('turma_id', turma.id)
+        .eq('tipo', 'professor')
+
+      if (error) throw error
+      setVinculosProfessores(data || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar professores da turma:', err)
+    }
+  }
+
+  const fetchMaterias = async () => {
+    if (!turma?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('materias')
+        .select('id, nome, professor_id, funcionarios:funcionarios(id, nome)')
+        .eq('turma_id', turma.id)
+        .order('nome', { ascending: true })
+
+      if (error) throw error
+      setMaterias(data || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar matérias:', err)
+    }
+  }
 
   useEffect(() => {
     if (open) {
       if (turma) {
         setNome(turma.nome)
         setAnoLetivo(turma.ano_letivo)
+        setTurno(turma.turno ?? '')
+        setCapacidade(turma.capacidade ?? 30)
+        fetchVinculosProfessores()
+        fetchMaterias()
       } else {
         setNome('')
         setAnoLetivo(new Date().getFullYear())
+        setTurno('')
+        setCapacidade(30)
+        setVinculosProfessores([])
+        setMaterias([])
       }
+      fetchProfessoresEscola()
+      setSelectedProfId('')
+      setNovaMateriaNome('')
+      setNovaMateriaProfId('')
     }
   }, [open, turma, escolaAtivaId])
 
   const handleSave = async () => {
     if (!nome.trim()) {
       toast.error('O nome da turma é obrigatório')
+      return
+    }
+
+    if (!anoLetivo) {
+      toast.error('O ano letivo é obrigatório')
+      return
+    }
+
+    if (!turno) {
+      toast.error('Selecione um turno')
       return
     }
 
@@ -56,6 +166,8 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           .update({
             nome: nome.trim(),
             ano_letivo: anoLetivo,
+            turno: turno,
+            capacidade: capacidade,
           })
           .eq('id', turma.id)
 
@@ -68,21 +180,23 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           .insert({
             nome: nome.trim(),
             ano_letivo: anoLetivo,
+            turno: turno,
+            capacidade: capacidade,
             escola_id: escolaAtivaId
           })
           .select()
           .single()
 
         if (error) throw error
-        
-        // Auto-vincular o funcionário criador à turma (caso seja coordenador/professor, para não perder o acesso)
+
+        // Auto-vincular o funcionário criador à turma como coordenador (padrão de acesso)
         const funcionarioId = useAuthStore.getState().funcionario?.id
         if (funcionarioId && newTurma?.id) {
           await supabase.from('vinculos_turmas').insert({
             funcionario_id: funcionarioId,
             escola_id: escolaAtivaId,
             turma_id: newTurma.id,
-            tipo: 'coordenador' // Padrão seguro para garantir visualização
+            tipo: 'coordenador'
           })
         }
 
@@ -98,58 +212,295 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
     }
   }
 
+  const handleAddProfessor = async () => {
+    if (!selectedProfId) {
+      toast.error('Selecione um professor')
+      return
+    }
+
+    if (vinculosProfessores.some(vp => vp.funcionario_id === selectedProfId)) {
+      toast.error('Este professor já está vinculado a esta turma')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vinculos_turmas')
+        .insert({
+          funcionario_id: selectedProfId,
+          turma_id: turma.id,
+          escola_id: escolaAtivaId,
+          tipo: 'professor'
+        })
+
+      if (error) throw error
+      toast.success('Professor adicionado com sucesso')
+      setSelectedProfId('')
+      fetchVinculosProfessores()
+    } catch (err: any) {
+      toast.error('Erro ao adicionar professor: ' + err.message)
+    }
+  }
+
+  const handleRemoveProfessor = async (vinculoId: string, funcionarioId: string) => {
+    try {
+      // Validar se o professor ministra alguma matéria na turma
+      const hasSubject = materias.some(m => m.professor_id === funcionarioId)
+      if (hasSubject) {
+        toast.error('Não é possível remover este professor, pois ele está alocado em uma ou mais matérias desta turma.')
+        return
+      }
+
+      const { error } = await supabase
+        .from('vinculos_turmas')
+        .delete()
+        .eq('id', vinculoId)
+
+      if (error) throw error
+      toast.success('Professor removido com sucesso')
+      fetchVinculosProfessores()
+    } catch (err: any) {
+      toast.error('Erro ao remover professor: ' + err.message)
+    }
+  }
+
+  const handleAddMateria = async () => {
+    if (!novaMateriaNome.trim()) {
+      toast.error('Digite o nome da matéria')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .insert({
+          nome: novaMateriaNome.trim(),
+          turma_id: turma.id,
+          escola_id: escolaAtivaId,
+          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId
+        })
+
+      if (error) throw error
+      toast.success('Matéria adicionada com sucesso')
+      setNovaMateriaNome('')
+      setNovaMateriaProfId('')
+      fetchMaterias()
+    } catch (err: any) {
+      toast.error('Erro ao adicionar matéria: ' + err.message)
+    }
+  }
+
+  const handleRemoveMateria = async (materiaId: string) => {
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .delete()
+        .eq('id', materiaId)
+
+      if (error) throw error
+      toast.success('Matéria removida com sucesso')
+      fetchMaterias()
+    } catch (err: any) {
+      toast.error('Erro ao remover matéria: ' + err.message)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#121212] border-[#27272a] text-white">
+      <DialogContent className="sm:max-w-[550px] bg-[#121214] border-[#26262a] text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{turma ? 'Editar Turma' : 'Nova Turma'}</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Preencha os dados abaixo para {turma ? 'atualizar a' : 'cadastrar uma nova'} turma.
+          <DialogTitle className="text-xl font-bold">{turma ? 'Editar Turma' : 'Nova Turma'}</DialogTitle>
+          <DialogDescription className="text-zinc-400 text-sm">
+            Preencha os dados abaixo para {turma ? 'editar a' : 'cadastrar uma nova'} turma.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="nome" className="text-sm font-medium text-zinc-300">
-              Nome da Turma
-            </label>
-            <Input
-              id="nome"
-              placeholder="Ex: 1º Ano A"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
-            />
+
+        <div className="grid gap-4 py-2">
+          {/* Primeira Linha: Nome e Ano Letivo */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Nome da Turma *</label>
+              <Input
+                placeholder="Ex: 1 - B"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Ano Letivo *</label>
+              <Input
+                type="number"
+                value={anoLetivo}
+                onChange={(e) => setAnoLetivo(parseInt(e.target.value) || 0)}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="anoLetivo" className="text-sm font-medium text-zinc-300">
-              Ano Letivo
-            </label>
-            <Input
-              id="anoLetivo"
-              type="number"
-              value={anoLetivo}
-              onChange={(e) => setAnoLetivo(parseInt(e.target.value))}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
-            />
+
+          {/* Segunda Linha: Turno e Capacidade */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Turno *</label>
+              <Select value={turno} onValueChange={(val) => setTurno(val ?? '')}>
+                <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                  <SelectItem value="Matutino">Matutino</SelectItem>
+                  <SelectItem value="Vespertino">Vespertino</SelectItem>
+                  <SelectItem value="Integral">Integral</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Capacidade de Alunos</label>
+              <Input
+                type="number"
+                value={capacidade}
+                onChange={(e) => setCapacidade(parseInt(e.target.value) || 0)}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+              />
+            </div>
           </div>
+
+          {/* Áreas de Alocação (Apenas no Modo Edição) */}
+          {turma && (
+            <div className="space-y-5 mt-2">
+              {/* Professores da Turma */}
+              <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
+                  <Users className="w-4 h-4 text-zinc-400" />
+                  Professores da Turma
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Select value={selectedProfId} onValueChange={(val) => setSelectedProfId(val ?? '')}>
+                      <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                        <SelectValue placeholder="-- Selecione um Professor --" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
+                        {professoresEscola
+                          .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
+                          .map((prof) => (
+                            <SelectItem key={prof.id} value={prof.id}>
+                              {prof.nome}
+                            </SelectItem>
+                          ))}
+                        {professoresEscola.filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id)).length === 0 && (
+                          <div className="p-2 text-xs text-zinc-500 text-center">Nenhum professor disponível</div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleAddProfessor}
+                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold px-4 h-10"
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+
+                {/* Lista de Professores Adicionados */}
+                {vinculosProfessores.length > 0 && (
+                  <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
+                    {vinculosProfessores.map((vp) => (
+                      <div key={vp.id} className="flex items-center justify-between bg-[#121214] p-2 rounded-lg border border-[#202022]">
+                        <span className="text-sm font-medium text-zinc-200 pl-1">{vp.funcionarios?.nome || 'Sem nome'}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
+                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Matérias da Turma */}
+              <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
+                  <BookOpen className="w-4 h-4 text-zinc-400" />
+                  Matérias da Turma
+                </div>
+
+                {/* Formulário de Adição (Dashed Container) */}
+                <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Nome da Matéria (Ex: Português...)"
+                      value={novaMateriaNome}
+                      onChange={(e) => setNovaMateriaNome(e.target.value)}
+                      className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+                    />
+                    <Select value={novaMateriaProfId} onValueChange={(val) => setNovaMateriaProfId(val ?? '')}>
+                      <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                        <SelectValue placeholder="-- Selecione o Professor --" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                        <SelectItem value="sem_professor">-- Selecione o Professor --</SelectItem>
+                        {vinculosProfessores.map((vp) => (
+                          <SelectItem key={vp.funcionario_id} value={vp.funcionario_id}>
+                            {vp.funcionarios?.nome || 'Sem nome'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleAddMateria}
+                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar Matéria
+                  </Button>
+                </div>
+
+                {/* Lista de Matérias */}
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {materias.length === 0 ? (
+                    <div className="text-xs text-zinc-500 text-center py-2">Nenhuma matéria cadastrada.</div>
+                  ) : (
+                    materias.map((mat) => (
+                      <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022]">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">{mat.nome}</span>
+                          <span className="flex items-center gap-1.5 text-xs text-zinc-400 mt-1">
+                            <User className="w-3.5 h-3.5 text-zinc-500" />
+                            {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveMateria(mat.id)}
+                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="bg-transparent border-[#3f3f46] text-white hover:bg-[#27272a]"
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
+
+        {/* Botão de Salvar da Turma */}
+        <div className="pt-2 border-t border-[#26262a] mt-2">
           <Button
             onClick={handleSave}
-            className="bg-highlight text-background hover:bg-highlight/90"
             disabled={loading}
+            className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold h-11 rounded-lg transition-colors"
           >
-            {loading ? 'Salvando...' : 'Salvar'}
+            {loading ? 'Salvando...' : 'Salvar Turma'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
