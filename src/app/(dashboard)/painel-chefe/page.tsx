@@ -16,8 +16,10 @@ import {
   XCircle, 
   UserCheck, 
   Plus, 
-  Loader2 
+  Loader2,
+  ArrowLeft
 } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalEscala } from '@/components/ModalEscala'
@@ -135,10 +137,17 @@ export default function PainelChefePage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-            <UserCheck className="w-8 h-8 text-highlight" />
-            Painel da Liderança (Chefia de Equipe)
-          </h1>
+          <div className="flex items-center gap-3">
+            <Link href="/home">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
+              <UserCheck className="w-8 h-8 text-highlight" />
+              Painel da Liderança (Chefia de Equipe)
+            </h1>
+          </div>
           <p className="text-muted-foreground mt-1">
             Gestão operacional de subordinados pelos cargos autorizados no seu perfil (ABAC - Nível 5).
           </p>

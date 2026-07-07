@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FilePlus, Search, CheckCircle2, Clock, Paperclip } from 'lucide-react'
+import { FilePlus, Search, CheckCircle2, Clock, Paperclip, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { ModalAtestado } from '@/components/ModalAtestado'
 
@@ -34,10 +35,17 @@ export default function AtestadosPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FilePlus className="w-6 h-6 text-emerald-500" /> 
-            Atestados Médicos
-          </h2>
+          <div className="flex items-center gap-3">
+            <Link href="/home">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <FilePlus className="w-6 h-6 text-emerald-500" /> 
+              Atestados Médicos
+            </h2>
+          </div>
           <p className="text-[#aaa] text-sm mt-1">Controle de faltas justificadas e afastamentos de saúde.</p>
         </div>
         

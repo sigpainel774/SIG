@@ -178,7 +178,8 @@ export default function RelatoriosPage() {
         </div>
 
         {/* Dynamic Content based on Macro vs School Specific */}
-        {!selectedEscola ? (
+        {activeReport === 'desempenho' ? (
+          !selectedEscola ? (
           /* ==================== MACRO REDE REPORT DETAILS ==================== */
           <div className="space-y-6">
             <div className="bg-[#182030] border border-[#26304d] rounded-2xl p-6">
@@ -310,6 +311,17 @@ export default function RelatoriosPage() {
                 ))}
               </div>
             </div>
+          </div>
+          )
+        ) : (
+          <div className="flex flex-col items-center justify-center border border-dashed border-[#26304d] rounded-2xl bg-[#182030]/50 py-16 px-6 text-center shadow-inner mt-6">
+            <h3 className="text-xl font-bold text-white mb-3">
+              Módulo de Relatório em Construção
+            </h3>
+            <p className="text-slate-400 max-w-md text-sm">
+              Os dados e gráficos para o relatório de <strong className="text-sky-400">{reportCards.find(r => r.id === activeReport)?.title}</strong> estão sendo estruturados.
+              Eles serão disponibilizados nas próximas etapas do projeto.
+            </p>
           </div>
         )}
       </div>
