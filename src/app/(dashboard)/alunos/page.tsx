@@ -23,6 +23,7 @@ import {
 import Link from 'next/link'
 import { ModalAluno } from '@/components/modals/modal-aluno'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
+import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
@@ -62,6 +63,7 @@ export default function AlunosPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [alunoSelecionadoEditar, setAlunoSelecionadoEditar] = useState<Aluno | null>(null)
   const [alunoImprimir, setAlunoImprimir] = useState<Aluno | null>(null)
+  const [alunoComprovanteImprimir, setAlunoComprovanteImprimir] = useState<Aluno | null>(null)
 
   const carregarAlunos = async () => {
     const supabase = createClient()
@@ -175,6 +177,14 @@ export default function AlunosPage() {
         <PrintFichaAluno 
           aluno={alunoImprimir}
           onClose={() => setAlunoImprimir(null)}
+        />
+      )}
+
+      {/* Tela / Modal de Impressão do Comprovante de Matrícula */}
+      {alunoComprovanteImprimir && (
+        <PrintComprovanteMatricula 
+          aluno={alunoComprovanteImprimir}
+          onClose={() => setAlunoComprovanteImprimir(null)}
         />
       )}
 
@@ -335,6 +345,15 @@ export default function AlunosPage() {
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Imprimir Ficha</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setAlunoComprovanteImprimir(aluno)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold transition-colors cursor-pointer border border-emerald-500/30"
+                      title="Imprimir Comprovante de Matrícula"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Comprovante</span>
                     </button>
 
                     {isEditMode && (

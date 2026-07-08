@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { Ban, AlertTriangle } from 'lucide-react'
+import { Ban, AlertTriangle, PenTool } from 'lucide-react'
 import { 
   Dialog, 
   DialogContent, 
@@ -121,7 +121,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a] p-4 font-sans">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] p-4 font-sans relative">
+      {/* Botão de Assinatura na parte superior */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <Button
+          type="button"
+          onClick={() => router.push('/assinar')}
+          className="bg-[#1f1f23] hover:bg-[#2e2e33] text-[#3ea6ff] border border-[#3ea6ff]/20 font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <PenTool className="w-3.5 h-3.5" />
+          <span>Assinatura</span>
+        </Button>
+      </div>
+
       <div className="w-full max-w-[420px] p-8 sm:p-10 bg-[#161616] border border-[#242424] rounded-[24px] shadow-2xl space-y-6">
         <div className="flex flex-col items-center justify-center gap-3">
           <Logo variant="icon" className="w-14 h-14" />
