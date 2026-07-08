@@ -344,7 +344,7 @@ export function ModalDetalhesTurma({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[700px] w-full bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[92vh] overflow-y-auto relative">
+        <DialogContent className="sm:max-w-[700px] w-full bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
           
           {/* Botão de fechar */}
           <button
