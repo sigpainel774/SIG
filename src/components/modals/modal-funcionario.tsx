@@ -630,9 +630,10 @@ export function ModalFuncionario({
         if (error) throw error
         toast.success('Funcionário atualizado com sucesso!')
       } else {
+        const cleanEmail = email.trim().toLowerCase()
         const { error } = await supabase
           .from('funcionarios')
-          .insert({ ...basePayload, email, is_superadmin: false })
+          .insert({ ...basePayload, email: cleanEmail, is_superadmin: false })
         if (error) throw error
 
         // Criar vínculo de funcionário na escola logada automaticamente
@@ -754,7 +755,7 @@ export function ModalFuncionario({
             {/* Aba 1: Dados Pessoais / Identificação */}
             {activeTab === 'pessoais' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-2">
                     <Label>Nome Completo *</Label>
                     <Input
@@ -772,6 +773,18 @@ export function ModalFuncionario({
                       onChange={(e) => setCenso(e.target.value)}
                       placeholder="Código INEP do Professor"
                       className="bg-[#181818] border-borderCustom text-white mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>E-mail de Login *</Label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="maria@escola.com"
+                      className="bg-[#181818] border-borderCustom text-white mt-1"
+                      required
+                      disabled={isEditing}
                     />
                   </div>
                 </div>
@@ -1135,20 +1148,6 @@ export function ModalFuncionario({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>E-mail de Login *</Label>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="maria@escola.com"
-                      className="bg-[#181818] border-borderCustom text-white mt-1"
-                      required
-                      disabled={isEditing}
-                    />
-                  </div>
-                </div>
               </div>
             )}
 

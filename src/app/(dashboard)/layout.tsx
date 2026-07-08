@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
@@ -24,6 +25,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       .maybeSingle()
     
     if (funcData) {
+      // Reconciliação on-the-fly
+      if (!funcData.auth_user_id) {
+        try {
+          await supabaseAdmin.from('funcionarios').update({ auth_user_id: user.id }).eq('id', funcData.id)
+          funcData.auth_user_id = user.id
+        } catch (err) {
+          console.error('Erro na reconciliação do auth_user_id no layout:', err)
+        }
+      }
+
       funcionario = funcData
       isSuperAdmin = funcData.is_superadmin || false
 
@@ -31,6 +42,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         .from('acessos_usuarios')
         .select('*')
         .eq('funcionario_id', funcData.id)
+        .eq('ativo', true)
       
       acessos = acessosData || []
 
@@ -46,6 +58,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         cargo: v.cargo,
         ativo: v.ativo
       }))
+    } else {
+      // Usuário órfão: logado mas sem cadastro na tabela funcionarios
+      redirect('/login?error=orphan')
     }
   }
 

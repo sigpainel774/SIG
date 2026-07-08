@@ -43,6 +43,11 @@ export async function proxy(request: NextRequest) {
   // Lógica simplificada de níveis baseada em JWT Custom Claims.
   // Em um cenário real, se as custom claims não estiverem habilitadas, 
   // será preciso buscar o nível no banco e rotear.
+  // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
+  if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
+    return supabaseResponse
+  }
+
   if (user) {
     if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
       const { supabaseAdmin } = await import('@/lib/supabaseAdmin')
