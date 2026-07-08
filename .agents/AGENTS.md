@@ -116,3 +116,19 @@
   </SelectValue>
   ```
 <!-- END:base-ui-select-rules -->
+
+<!-- BEGIN:print-view-best-practices -->
+# Diretrizes para Telas e Modais de Impressão (Print Views)
+
+- **Ocultação de Layout durante Impressão (Páginas em Branco)**: Ao criar ou editar qualquer tela/modal de impressão (documentos, fichas, comprovantes), sempre garanta que o container do portal de impressão possua uma classe identificadora (ex: `.print-portal-container`) e que a folha de estilo `@media print` oculte todos os elementos irmãos sob o body:
+  ```css
+  @media print {
+    body > *:not(.print-portal-container) {
+      display: none !important;
+    }
+  }
+  ```
+  Isso evita que o layout de fundo da aplicação (sidebar, dashboards, etc) gere páginas em branco extras ou desalinhe a impressão.
+- **Resolução de Informações do Banco em Impressões**: Nunca confie apenas nas informações estáticas salvas no registro principal (como dados de alunos ou funcionários) para campos de relacionamento (escola, cargo, turma). Se estiverem ausentes no registro, realize uma busca ativa direta no Supabase usando o `escola_id`, `turma_id` ou `funcionario_id` no componente de impressão para exibir o nome correto.
+- **Parsing de Padrões de Turma**: Na rede municipal, as turmas são cadastradas sob o padrão `"Ano - Letra"` ou `"Ano° Letra"` (ex: `"6 - A"`, `"6° A"`). Ao exibir em campos que separam "Ano" e "Turma", utilize expressões regulares para extrair o Ano (primeira parte formatada como ordinal, ex: `"6º ANO"`) e a Letra da Turma (segunda parte, ex: `"A"`).
+<!-- END:print-view-best-practices -->
