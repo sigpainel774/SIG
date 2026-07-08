@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Plus, Search, GraduationCap, Users } from 'lucide-react'
 import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
+import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import {
@@ -24,6 +25,7 @@ export default function TurmasPage() {
   const [turmas, setTurmas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
 
   const supabase = createClient() as any
@@ -191,7 +193,7 @@ export default function TurmasPage() {
               key={turma.id}
               onClick={() => {
                 setSelectedTurma(turma)
-                setIsModalOpen(true)
+                setIsDetailsModalOpen(true)
               }}
               className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-xl p-5 flex flex-col space-y-4 relative cursor-pointer transition-all duration-200"
             >
@@ -261,6 +263,13 @@ export default function TurmasPage() {
         onOpenChange={setIsModalOpen}
         turma={selectedTurma}
         onSuccess={fetchTurmas}
+      />
+
+      {/* Modal de Detalhes e Diário da Turma */}
+      <ModalDetalhesTurma
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        turma={selectedTurma}
       />
     </div>
   )
