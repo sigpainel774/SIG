@@ -737,6 +737,7 @@ export type Database = {
           endereco: string | null
           id: string
           inep: string | null
+          localizacao: string | null
           logo_url: string | null
           modulos_ativos: string[] | null
           nome: string
@@ -752,6 +753,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          localizacao?: string | null
           logo_url?: string | null
           modulos_ativos?: string[] | null
           nome: string
@@ -767,6 +769,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          localizacao?: string | null
           logo_url?: string | null
           modulos_ativos?: string[] | null
           nome?: string
@@ -876,6 +879,64 @@ export type Database = {
           nome: string
           primeiro_acesso: boolean | null
           status: string | null
+          censo: string | null
+          estado_civil: string | null
+          cor_raca: string | null
+          sexo: string | null
+          nome_mae: string | null
+          nome_pai: string | null
+          nacionalidade: string | null
+          nacionalidade_especificacao: string | null
+          municipio_nascimento: string | null
+          uf_nascimento: string | null
+          rg: string | null
+          nis: string | null
+          logradouro: string | null
+          numero: string | null
+          cep: string | null
+          bairro: string | null
+          cidade: string | null
+          uf_residencia: string | null
+          area_residencia: string | null
+          area_diferenciada: string | null
+          funcao_especifica: string | null
+          tipo_vinculo: string | null
+          tipo_vinculo_especificacao: string | null
+          possui_deficiencia: boolean | null
+          deficiencias: string[] | null
+          tea: boolean | null
+          altas_habilidades: boolean | null
+          doenca_diabetes: boolean | null
+          doenca_convulsoes: boolean | null
+          doenca_asma_bronquite: boolean | null
+          doenca_infeccoes: boolean | null
+          doenca_cardiopatias: boolean | null
+          doenca_alergias: boolean | null
+          doenca_covid19: boolean | null
+          doenca_articulares: boolean | null
+          doenca_outra: string | null
+          escolaridade_nivel: string | null
+          ensino_medio_tipo: string | null
+          superior_area: string | null
+          superior_codigo: string | null
+          superior_ano_conclusao: number | null
+          superior_tipo_instituicao: string | null
+          superior_grau: string | null
+          superior_instituicao: string | null
+          complementacao_pedagogica: string | null
+          pos_graduacoes: Json | null
+          outros_cursos: string[] | null
+          doc_identidade_url: string | null
+          doc_cpf_url: string | null
+          doc_comprovante_residencia_url: string | null
+          doc_ensino_fundamental_url: string | null
+          doc_ensino_medio_url: string | null
+          doc_curso_superior_url: string | null
+          doc_pos_graduacao_url: string | null
+          doc_mestrado_url: string | null
+          doc_doutorado_url: string | null
+          observacoes: string | null
+          data_preenchimento: string | null
         }
         Insert: {
           auth_user_id?: string | null
@@ -895,6 +956,64 @@ export type Database = {
           nome: string
           primeiro_acesso?: boolean | null
           status?: string | null
+          censo?: string | null
+          estado_civil?: string | null
+          cor_raca?: string | null
+          sexo?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          nacionalidade?: string | null
+          nacionalidade_especificacao?: string | null
+          municipio_nascimento?: string | null
+          uf_nascimento?: string | null
+          rg?: string | null
+          nis?: string | null
+          logradouro?: string | null
+          numero?: string | null
+          cep?: string | null
+          bairro?: string | null
+          cidade?: string | null
+          uf_residencia?: string | null
+          area_residencia?: string | null
+          area_diferenciada?: string | null
+          funcao_especifica?: string | null
+          tipo_vinculo?: string | null
+          tipo_vinculo_especificacao?: string | null
+          possui_deficiencia?: boolean | null
+          deficiencias?: string[] | null
+          tea?: boolean | null
+          altas_habilidades?: boolean | null
+          doenca_diabetes?: boolean | null
+          doenca_convulsoes?: boolean | null
+          doenca_asma_bronquite?: boolean | null
+          doenca_infeccoes?: boolean | null
+          doenca_cardiopatias?: boolean | null
+          doenca_alergias?: boolean | null
+          doenca_covid19?: boolean | null
+          doenca_articulares?: boolean | null
+          doenca_outra?: string | null
+          escolaridade_nivel?: string | null
+          ensino_medio_tipo?: string | null
+          superior_area?: string | null
+          superior_codigo?: string | null
+          superior_ano_conclusao?: number | null
+          superior_tipo_instituicao?: string | null
+          superior_grau?: string | null
+          superior_instituicao?: string | null
+          complementacao_pedagogica?: string | null
+          pos_graduacoes?: Json | null
+          outros_cursos?: string[] | null
+          doc_identidade_url?: string | null
+          doc_cpf_url?: string | null
+          doc_comprovante_residencia_url?: string | null
+          doc_ensino_fundamental_url?: string | null
+          doc_ensino_medio_url?: string | null
+          doc_curso_superior_url?: string | null
+          doc_pos_graduacao_url?: string | null
+          doc_mestrado_url?: string | null
+          doc_doutorado_url?: string | null
+          observacoes?: string | null
+          data_preenchimento?: string | null
         }
         Update: {
           auth_user_id?: string | null
@@ -914,6 +1033,64 @@ export type Database = {
           nome?: string
           primeiro_acesso?: boolean | null
           status?: string | null
+          censo?: string | null
+          estado_civil?: string | null
+          cor_raca?: string | null
+          sexo?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          nacionalidade?: string | null
+          nacionalidade_especificacao?: string | null
+          municipio_nascimento?: string | null
+          uf_nascimento?: string | null
+          rg?: string | null
+          nis?: string | null
+          logradouro?: string | null
+          numero?: string | null
+          cep?: string | null
+          bairro?: string | null
+          cidade?: string | null
+          uf_residencia?: string | null
+          area_residencia?: string | null
+          area_diferenciada?: string | null
+          funcao_especifica?: string | null
+          tipo_vinculo?: string | null
+          tipo_vinculo_especificacao?: string | null
+          possui_deficiencia?: boolean | null
+          deficiencias?: string[] | null
+          tea?: boolean | null
+          altas_habilidades?: boolean | null
+          doenca_diabetes?: boolean | null
+          doenca_convulsoes?: boolean | null
+          doenca_asma_bronquite?: boolean | null
+          doenca_infeccoes?: boolean | null
+          doenca_cardiopatias?: boolean | null
+          doenca_alergias?: boolean | null
+          doenca_covid19?: boolean | null
+          doenca_articulares?: boolean | null
+          doenca_outra?: string | null
+          escolaridade_nivel?: string | null
+          ensino_medio_tipo?: string | null
+          superior_area?: string | null
+          superior_codigo?: string | null
+          superior_ano_conclusao?: number | null
+          superior_tipo_instituicao?: string | null
+          superior_grau?: string | null
+          superior_instituicao?: string | null
+          complementacao_pedagogica?: string | null
+          pos_graduacoes?: Json | null
+          outros_cursos?: string[] | null
+          doc_identidade_url?: string | null
+          doc_cpf_url?: string | null
+          doc_comprovante_residencia_url?: string | null
+          doc_ensino_fundamental_url?: string | null
+          doc_ensino_medio_url?: string | null
+          doc_curso_superior_url?: string | null
+          doc_pos_graduacao_url?: string | null
+          doc_mestrado_url?: string | null
+          doc_doutorado_url?: string | null
+          observacoes?: string | null
+          data_preenchimento?: string | null
         }
         Relationships: []
       }
