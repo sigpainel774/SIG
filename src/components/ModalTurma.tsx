@@ -21,6 +21,7 @@ import {
   Plus,
   User
 } from 'lucide-react'
+import { useEditModeStore } from '@/store/useEditModeStore'
 
 interface ModalTurmaProps {
   open: boolean
@@ -47,6 +48,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
 
   const supabase = createClient() as any
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+  const { isEditMode } = useEditModeStore()
 
   const fetchProfessoresEscola = async () => {
     if (!escolaAtivaId) return
@@ -309,9 +311,14 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] bg-[#121214] border-[#26262a] text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{turma ? 'Editar Turma' : 'Nova Turma'}</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {isEditMode ? (turma ? 'Editar Turma' : 'Nova Turma') : 'Detalhes da Turma'}
+          </DialogTitle>
           <DialogDescription className="text-zinc-400 text-sm">
-            Preencha os dados abaixo para {turma ? 'editar a' : 'cadastrar uma nova'} turma.
+            {isEditMode 
+              ? `Preencha os dados abaixo para ${turma ? 'editar a' : 'cadastrar uma nova'} turma.`
+              : 'Visualize as informações, professores e matérias alocadas a esta turma.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -324,7 +331,8 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 placeholder="Ex: 1 - B"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+                disabled={!isEditMode || loading}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -333,7 +341,8 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 type="number"
                 value={anoLetivo}
                 onChange={(e) => setAnoLetivo(parseInt(e.target.value) || 0)}
-                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+                disabled={!isEditMode || loading}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -342,8 +351,8 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-zinc-300">Turno *</label>
-              <Select value={turno} onValueChange={(val) => setTurno(val ?? '')}>
-                <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+              <Select value={turno} onValueChange={(val) => setTurno(val ?? '')} disabled={!isEditMode || loading}>
+                <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
@@ -359,12 +368,13 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 type="number"
                 value={capacidade}
                 onChange={(e) => setCapacidade(parseInt(e.target.value) || 0)}
-                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+                disabled={!isEditMode || loading}
+                className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
-          {/* Áreas de Alocação (Apenas no Modo Edição) */}
+          {/* Áreas de Alocação */}
           {turma && (
             <div className="space-y-5 mt-2">
               {/* Professores da Turma */}
@@ -373,51 +383,57 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                   <Users className="w-4 h-4 text-zinc-400" />
                   Professores da Turma
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Select value={selectedProfId} onValueChange={(val) => setSelectedProfId(val ?? '')}>
-                      <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
-                        <SelectValue placeholder="-- Selecione um Professor --" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
-                        {professoresEscola
-                          .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
-                          .map((prof) => (
-                            <SelectItem key={prof.id} value={prof.id}>
-                              {prof.nome}
-                            </SelectItem>
-                          ))}
-                        {professoresEscola.filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id)).length === 0 && (
-                          <div className="p-2 text-xs text-zinc-500 text-center">Nenhum professor disponível</div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                {isEditMode && (
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select value={selectedProfId} onValueChange={(val) => setSelectedProfId(val ?? '')}>
+                        <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                          <SelectValue placeholder="-- Selecione um Professor --" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
+                          {professoresEscola
+                            .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
+                            .map((prof) => (
+                              <SelectItem key={prof.id} value={prof.id}>
+                                {prof.nome}
+                              </SelectItem>
+                            ))}
+                          {professoresEscola.filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id)).length === 0 && (
+                            <div className="p-2 text-xs text-zinc-500 text-center">Nenhum professor disponível</div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleAddProfessor}
+                      className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold px-4 h-10"
+                    >
+                      Adicionar
+                    </Button>
                   </div>
-                  <Button
-                    onClick={handleAddProfessor}
-                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold px-4 h-10"
-                  >
-                    Adicionar
-                  </Button>
-                </div>
+                )}
 
                 {/* Lista de Professores Adicionados */}
-                {vinculosProfessores.length > 0 && (
+                {vinculosProfessores.length > 0 ? (
                   <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
                     {vinculosProfessores.map((vp) => (
                       <div key={vp.id} className="flex items-center justify-between bg-[#121214] p-2 rounded-lg border border-[#202022]">
                         <span className="text-sm font-medium text-zinc-200 pl-1">{vp.funcionarios?.nome || 'Sem nome'}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
-                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {isEditMode && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
+                            className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="text-xs text-zinc-500 text-center py-1">Nenhum professor alocado.</div>
                 )}
               </div>
 
@@ -429,36 +445,38 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 </div>
 
                 {/* Formulário de Adição (Dashed Container) */}
-                <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      placeholder="Nome da Matéria (Ex: Português...)"
-                      value={novaMateriaNome}
-                      onChange={(e) => setNovaMateriaNome(e.target.value)}
-                      className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
-                    />
-                    <Select value={novaMateriaProfId} onValueChange={(val) => setNovaMateriaProfId(val ?? '')}>
-                      <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
-                        <SelectValue placeholder="-- Selecione o Professor --" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
-                        <SelectItem value="sem_professor">-- Selecione o Professor --</SelectItem>
-                        {vinculosProfessores.map((vp) => (
-                          <SelectItem key={vp.funcionario_id} value={vp.funcionario_id}>
-                            {vp.funcionarios?.nome || 'Sem nome'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {isEditMode && (
+                  <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Nome da Matéria (Ex: Português...)"
+                        value={novaMateriaNome}
+                        onChange={(e) => setNovaMateriaNome(e.target.value)}
+                        className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
+                      />
+                      <Select value={novaMateriaProfId} onValueChange={(val) => setNovaMateriaProfId(val ?? '')}>
+                        <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                          <SelectValue placeholder="-- Selecione o Professor --" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                          <SelectItem value="sem_professor">-- Selecione o Professor --</SelectItem>
+                          {vinculosProfessores.map((vp) => (
+                            <SelectItem key={vp.funcionario_id} value={vp.funcionario_id}>
+                              {vp.funcionarios?.nome || 'Sem nome'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleAddMateria}
+                      className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Adicionar Matéria
+                    </Button>
                   </div>
-                  <Button
-                    onClick={handleAddMateria}
-                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Adicionar Matéria
-                  </Button>
-                </div>
+                )}
 
                 {/* Lista de Matérias */}
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -474,14 +492,16 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                             {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
                           </span>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMateria(mat.id)}
-                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {isEditMode && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMateria(mat.id)}
+                            className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     ))
                   )}
@@ -491,15 +511,24 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           )}
         </div>
 
-        {/* Botão de Salvar da Turma */}
+        {/* Botão de Ação Inferior */}
         <div className="pt-2 border-t border-[#26262a] mt-2">
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold h-11 rounded-lg transition-colors"
-          >
-            {loading ? 'Salvando...' : 'Salvar Turma'}
-          </Button>
+          {isEditMode ? (
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold h-11 rounded-lg transition-colors"
+            >
+              {loading ? 'Salvando...' : 'Salvar Turma'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="w-full bg-[#27272a] hover:bg-[#3f3f46] text-white font-bold h-11 rounded-lg transition-colors"
+            >
+              Fechar
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

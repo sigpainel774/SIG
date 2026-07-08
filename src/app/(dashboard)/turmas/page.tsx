@@ -189,14 +189,19 @@ export default function TurmasPage() {
           {filteredTurmas.map((turma) => (
             <div
               key={turma.id}
-              className="bg-[#141416] border border-[#26262a] rounded-xl p-5 flex flex-col space-y-4 relative"
+              onClick={() => {
+                setSelectedTurma(turma)
+                setIsModalOpen(true)
+              }}
+              className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-xl p-5 flex flex-col space-y-4 relative cursor-pointer transition-all duration-200"
             >
               {/* Opção de Editar no Card */}
               {isEditMode && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation() // impede de disparar o onClick do card de forma duplicada
                     setSelectedTurma(turma)
                     setIsModalOpen(true)
                   }}
