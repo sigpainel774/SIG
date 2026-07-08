@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface AlunoPrintData {
   id?: string
@@ -28,6 +29,13 @@ interface PrintFichaAlunoProps {
 }
 
 export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
   const dm = aluno.dados_matricula || {}
 
   // Helpers for checkboxes formatting
@@ -40,8 +48,10 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
     window.print()
   }
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+  if (!mounted) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
       <style>{`
         @media print {
           @page {
@@ -58,7 +68,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
         }
       `}</style>
       {/* Botões de Ação na tela (escondidos na impressão) */}
-      <div className="fixed top-4 right-4 z-50 flex gap-2 print:hidden">
+      <div className="fixed top-4 right-4 z-[100] flex gap-2 print:hidden">
         <button
           onClick={handlePrint}
           className="px-4 py-2 bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-black font-bold rounded-lg shadow flex items-center gap-2 text-sm"
@@ -459,6 +469,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
