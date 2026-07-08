@@ -128,22 +128,22 @@ export default function TurmasPage() {
       </div>
 
       {/* Barra de Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 w-full items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-3 h-4.5 w-4.5 text-zinc-500" />
+      <div className="flex gap-4 w-full items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
           <Input
             type="search"
             placeholder="Buscar turma por nome..."
-            className="pl-10 bg-[#121212] border-[#26262a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-11 rounded-lg"
+            className="pl-9 bg-transparent border-[#26262a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 rounded-lg w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         {/* Dropdown de Turnos */}
-        <div className="w-full sm:w-[200px]">
+        <div className="w-[200px]">
           <Select value={filterTurno} onValueChange={(val) => setFilterTurno(val ?? 'all')}>
-            <SelectTrigger className="bg-[#121212] border-[#26262a] text-white focus:ring-[#3ea6ff] h-11 rounded-lg">
+            <SelectTrigger className="bg-transparent border-[#26262a] text-white focus:ring-[#3ea6ff] h-10 rounded-lg">
               <SelectValue placeholder="Todos os Turnos" />
             </SelectTrigger>
             <SelectContent className="bg-[#121212] border-[#26262a] text-white">
@@ -156,10 +156,10 @@ export default function TurmasPage() {
         </div>
 
         {/* Dropdown de Anos Letivos */}
-        <div className="w-full sm:w-[150px]">
+        <div className="w-[120px]">
           <Select value={filterAno} onValueChange={(val) => setFilterAno(val ?? 'all')}>
-            <SelectTrigger className="bg-[#121212] border-[#26262a] text-white focus:ring-[#3ea6ff] h-11 rounded-lg">
-              <SelectValue placeholder="Ano" />
+            <SelectTrigger className="bg-transparent border-[#26262a] text-white focus:ring-[#3ea6ff] h-10 rounded-lg">
+              <SelectValue placeholder="" />
             </SelectTrigger>
             <SelectContent className="bg-[#121212] border-[#26262a] text-white">
               <SelectItem value="all">Todos os Anos</SelectItem>
@@ -177,11 +177,11 @@ export default function TurmasPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-[#18181b] border border-[#26262a] rounded-2xl p-5 space-y-4 animate-pulse h-48" />
+            <div key={n} className="bg-[#141416] border border-[#26262a] rounded-xl p-5 space-y-4 animate-pulse h-48" />
           ))}
         </div>
       ) : filteredTurmas.length === 0 ? (
-        <div className="text-center py-12 text-zinc-500 border border-dashed border-[#26262a] rounded-2xl bg-[#141416]/50">
+        <div className="text-center py-12 text-zinc-500 border border-dashed border-[#26262a] rounded-xl bg-[#141416]/50">
           Nenhuma turma encontrada.
         </div>
       ) : (
@@ -189,7 +189,7 @@ export default function TurmasPage() {
           {filteredTurmas.map((turma) => (
             <div
               key={turma.id}
-              className="bg-[#18181b] border border-[#26262a] rounded-2xl p-5 flex flex-col space-y-4 hover:border-zinc-700 transition-all duration-200 relative"
+              className="bg-[#141416] border border-[#26262a] rounded-xl p-5 flex flex-col space-y-4 relative"
             >
               {/* Opção de Editar no Card */}
               {isEditMode && (
@@ -207,20 +207,20 @@ export default function TurmasPage() {
               )}
 
               {/* Cabeçalho do Card */}
-              <div className="space-y-1.5 pr-14">
+              <div className="space-y-2 pr-14">
                 <h3 className="text-lg font-bold text-white tracking-tight">
-                  {turma.nome} <span className="text-zinc-500 font-normal">({turma.ano_letivo})</span>
+                  {turma.nome} <span className="text-zinc-500 font-normal text-sm">({turma.ano_letivo})</span>
                 </h3>
 
                 {/* Badge de Turno */}
                 {turma.turno && (
                   <div
-                    className={`px-3 py-0.5 rounded-full text-xs font-semibold w-fit border ${
+                    className={`px-3 py-0.5 rounded-full text-[11px] font-medium w-fit ${
                       turma.turno === 'Matutino'
-                        ? 'bg-[#0c4a6e]/30 text-[#3ea6ff] border-[#0284c7]/40'
+                        ? 'bg-[#0c4a6e]/50 text-[#3ea6ff]'
                         : turma.turno === 'Integral'
-                        ? 'bg-zinc-800/80 text-zinc-300 border-zinc-700'
-                        : 'bg-amber-950/30 text-amber-400 border-amber-800/40' // Vespertino
+                        ? 'bg-[#1c3a5e]/50 text-[#5ea6ff]' // Uma cor custom para integral (tentativa visual baseada no padrão SIG)
+                        : 'bg-amber-950/50 text-amber-400'
                     }`}
                   >
                     {turma.turno}
@@ -229,25 +229,19 @@ export default function TurmasPage() {
               </div>
 
               {/* Conteúdo de Alocação e Lotação */}
-              <div className="bg-[#121214] rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2.5 text-zinc-400 text-sm">
-                  <GraduationCap className="w-4.5 h-4.5 text-zinc-500" />
+              <div className="bg-[#1c1c1e]/50 rounded-lg p-3 space-y-2.5 mt-2">
+                <div className="flex items-center gap-2 text-zinc-400 text-sm">
+                  <GraduationCap className="w-4 h-4" />
                   <span>
-                    Lotação:{' '}
-                    <strong className="text-zinc-200 font-semibold">
-                      {turma.alunos_count}/{turma.capacidade || 30} Alunos
-                    </strong>
+                    Lotação: {turma.alunos_count}/{turma.capacidade || 30} Alunos
                   </span>
                 </div>
-                <div className="flex items-start gap-2.5 text-zinc-400 text-sm">
-                  <Users className="w-4.5 h-4.5 text-zinc-500 mt-0.5" />
+                <div className="flex items-start gap-2 text-zinc-400 text-sm">
+                  <Users className="w-4 h-4 mt-0.5" />
                   <span>
-                    Corpo Docente:{' '}
-                    <strong className="text-zinc-200 font-semibold">
-                      {turma.professores_count === 0
+                    Corpo Docente: {turma.professores_count === 0
                         ? 'Sem professor definido'
                         : `${turma.professores_count} Professor${turma.professores_count > 1 ? 'es' : ''}`}
-                    </strong>
                   </span>
                 </div>
               </div>
