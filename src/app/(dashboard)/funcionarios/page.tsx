@@ -322,6 +322,7 @@ export default function FuncionariosPage() {
       if (f.doc_doutorado_url) docsAnexadosList.push('Comp. Escolaridade: Doutorado')
       const docsAnexadosStr = docsAnexadosList.length > 0 ? docsAnexadosList.join(', ') : 'Nenhum'
 
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
       const win = window.open('', '_blank', 'width=900,height=900')
       if (!win) return
 
@@ -517,6 +518,14 @@ export default function FuncionariosPage() {
                 background: #fff;
               }
             </style>
+            <script>
+              window.onload = function() {
+                // Pequeno delay para garantir a renderização completa das imagens
+                setTimeout(function() {
+                  window.print();
+                }, 350);
+              };
+            </script>
           </head>
           <body>
             
@@ -533,7 +542,7 @@ export default function FuncionariosPage() {
                     <h2 class="header-title">CADASTRO DE FUNCIONÁRIO</h2>
                   </div>
                   <div class="logo-box">
-                    <img src="${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'}/storage/v1/object/public/logos/logo_moises.svg" class="logo-img" onerror="this.src='${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'}/storage/v1/object/public/logos/logo_moises.sgv' || ''" />
+                    <img src="${supabaseUrl}/storage/v1/object/public/logos/logo_moises.svg" class="logo-img" onerror="this.onerror=null; this.src='${supabaseUrl}/storage/v1/object/public/logos/logo_moises.sgv';" />
                   </div>
                 </div>
               </div>
@@ -847,11 +856,6 @@ export default function FuncionariosPage() {
         </html>
       `)
       win.document.close()
-      
-      // Esperar imagens carregarem antes do print
-      setTimeout(() => {
-        win.print()
-      }, 700)
 
     } catch (err: any) {
       toast.error('Erro ao gerar a ficha de impressão: ' + err.message)
