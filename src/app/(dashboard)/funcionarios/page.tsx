@@ -333,7 +333,7 @@ export default function FuncionariosPage() {
             <style>
               @page {
                 size: A4;
-                margin: 15mm 15mm 20mm 15mm;
+                margin: 6mm 10mm 8mm 10mm;
               }
               body {
                 font-family: Arial, sans-serif;
@@ -350,8 +350,8 @@ export default function FuncionariosPage() {
                 display: flex;
                 align-items: center;
                 border-bottom: 2px solid #000;
-                padding-bottom: 8px;
-                margin-bottom: 10px;
+                padding-bottom: 4px;
+                margin-bottom: 6px;
               }
               .header-logo {
                 width: 70px;
@@ -370,30 +370,30 @@ export default function FuncionariosPage() {
                 flex-grow: 1;
               }
               .header-pref {
-                font-size: 11px;
+                font-size: 10px;
                 font-weight: bold;
                 letter-spacing: 0.5px;
                 margin: 0;
               }
               .header-sub {
-                font-size: 9px;
+                font-size: 8.5px;
                 color: #555;
                 margin: 0;
               }
               .header-title {
-                font-size: 15px;
+                font-size: 13px;
                 font-weight: 800;
-                margin: 2px 0 0 0;
+                margin: 1px 0 0 0;
                 text-transform: uppercase;
               }
               .photo-box {
-                width: 80px;
-                height: 100px;
+                width: 60px;
+                height: 80px;
                 border: 1px solid #000;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 9px;
+                font-size: 8px;
                 text-align: center;
                 font-weight: bold;
                 background: #fcfcfc;
@@ -412,15 +412,15 @@ export default function FuncionariosPage() {
               }
               .section-box {
                 border: 1px solid #000;
-                margin-bottom: 8px;
+                margin-bottom: 5px;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
               .section-title {
                 background-color: #eaeaea;
-                font-size: 9px;
+                font-size: 8.5px;
                 font-weight: bold;
-                padding: 3px 6px;
+                padding: 2px 5px;
                 border-bottom: 1px solid #000;
                 text-transform: uppercase;
               }
@@ -432,7 +432,7 @@ export default function FuncionariosPage() {
                 border-bottom: none;
               }
               .grid-cell {
-                padding: 4px 6px;
+                padding: 3px 5px;
                 border-right: 1px solid #000;
                 flex: 1;
                 display: flex;
@@ -443,18 +443,18 @@ export default function FuncionariosPage() {
                 border-right: none;
               }
               .cell-label {
-                font-size: 7px;
+                font-size: 6.5px;
                 font-weight: bold;
                 color: #444;
                 text-transform: uppercase;
-                margin-bottom: 2px;
+                margin-bottom: 1px;
               }
               .cell-value {
-                font-size: 10px;
+                font-size: 9px;
                 font-weight: normal;
               }
               .footer-signature {
-                margin-top: 30px;
+                margin-top: 15px;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
@@ -466,12 +466,12 @@ export default function FuncionariosPage() {
               }
               .signature-line {
                 border-bottom: 1px solid #000;
-                margin-top: 25px;
+                margin-top: 15px;
                 text-align: center;
                 padding-bottom: 2px;
               }
               .pos-item {
-                font-size: 9.5px;
+                font-size: 9px;
                 margin-bottom: 2px;
                 border-bottom: 1px dashed #ddd;
                 padding-bottom: 2px;
@@ -481,7 +481,7 @@ export default function FuncionariosPage() {
               }
               .print-footer {
                 position: fixed;
-                bottom: -15mm;
+                bottom: -6mm;
                 left: 0;
                 right: 0;
                 height: 15px;
@@ -520,13 +520,11 @@ export default function FuncionariosPage() {
                     <span class="cell-label">1. Unidade Escolar</span>
                     <span class="cell-value">${escolaNome}</span>
                   </div>
-                  <div class="grid-cell">
+                  <div class="grid-cell" style="flex: 1;">
                     <span class="cell-label">2. Código INEP</span>
                     <span class="cell-value">${escolaInep}</span>
                   </div>
-                </div>
-                <div class="grid-row">
-                  <div class="grid-cell">
+                  <div class="grid-cell" style="flex: 1.2;">
                     <span class="cell-label">3. Localização da UE</span>
                     <span class="cell-value">${escolaLocalizacao}</span>
                   </div>
@@ -793,7 +791,7 @@ export default function FuncionariosPage() {
               <!-- Observações -->
               <div class="section-box">
                 <div class="section-title">Observações</div>
-                <div style="padding: 6px; min-height: 60px; font-size: 9.5px; line-height: 1.3;">
+                <div style="padding: 4px; min-height: 25px; font-size: 9px; line-height: 1.3;">
                   ${f.observacoes ?? 'Nenhuma observação cadastrada.'}
                 </div>
               </div>
