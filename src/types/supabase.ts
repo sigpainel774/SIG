@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -791,6 +791,72 @@ export type Database = {
           },
         ]
       }
+      frequencias: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          data: string
+          escola_id: string
+          id: string
+          presenca: boolean
+          turma_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          data: string
+          escola_id: string
+          id?: string
+          presenca: boolean
+          turma_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          data?: string
+          escola_id?: string
+          id?: string
+          presenca?: boolean
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frequencias_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencias_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencias_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencias_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencias_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funcionarios: {
         Row: {
           auth_user_id: string | null
@@ -851,6 +917,69 @@ export type Database = {
         }
         Relationships: []
       }
+      materias: {
+        Row: {
+          created_at: string
+          escola_id: string | null
+          id: string
+          nome: string
+          professor_id: string | null
+          turma_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          escola_id?: string | null
+          id?: string
+          nome: string
+          professor_id?: string | null
+          turma_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          escola_id?: string | null
+          id?: string
+          nome?: string
+          professor_id?: string | null
+          turma_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materias_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materias_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materias_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materias_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materias_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_funcionarios: {
         Row: {
           created_at: string | null
@@ -898,6 +1027,88 @@ export type Database = {
             columns: ["funcionario_id"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          escola_id: string
+          id: string
+          materia_id: string
+          nota1: number | null
+          nota2: number | null
+          nota3: number | null
+          turma_id: string
+          unidade: number
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          escola_id: string
+          id?: string
+          materia_id: string
+          nota1?: number | null
+          nota2?: number | null
+          nota3?: number | null
+          turma_id: string
+          unidade: number
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          escola_id?: string
+          id?: string
+          materia_id?: string
+          nota1?: number | null
+          nota2?: number | null
+          nota3?: number | null
+          turma_id?: string
+          unidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
             referencedColumns: ["id"]
           },
         ]
@@ -1612,27 +1823,33 @@ export type Database = {
       turmas: {
         Row: {
           ano_letivo: number
+          capacidade: number | null
           created_at: string
           deleted_at: string | null
           escola_id: string | null
           id: string
           nome: string
+          turno: string | null
         }
         Insert: {
           ano_letivo: number
+          capacidade?: number | null
           created_at?: string
           deleted_at?: string | null
           escola_id?: string | null
           id?: string
           nome: string
+          turno?: string | null
         }
         Update: {
           ano_letivo?: number
+          capacidade?: number | null
           created_at?: string
           deleted_at?: string | null
           escola_id?: string | null
           id?: string
           nome?: string
+          turno?: string | null
         }
         Relationships: [
           {
@@ -2095,4 +2312,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
