@@ -333,25 +333,34 @@ export default function FuncionariosPage() {
             <style>
               @page {
                 size: A4;
-                margin: 6mm 10mm 8mm 10mm;
+                margin: 5mm 10mm 10mm 10mm;
+              }
+              html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
               }
               body {
                 font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
                 color: #000;
                 background-color: #fff;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
               .print-container {
                 width: 100%;
+                height: 100%;
                 box-sizing: border-box;
+                position: relative;
+                padding-bottom: 35px;
               }
               .header {
                 display: flex;
                 align-items: center;
                 border-bottom: 2px solid #000;
                 padding-bottom: 4px;
-                margin-bottom: 6px;
+                margin-bottom: 12px;
               }
               .header-logo {
                 width: 70px;
@@ -397,12 +406,23 @@ export default function FuncionariosPage() {
                 text-align: center;
                 font-weight: bold;
                 background: #fcfcfc;
-                margin-right: 15px;
               }
               .photo-img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+              }
+              .logo-box {
+                width: 60px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .logo-img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
               }
               .school-info-grid {
                 flex-grow: 1;
@@ -412,15 +432,16 @@ export default function FuncionariosPage() {
               }
               .section-box {
                 border: 1px solid #000;
-                margin-bottom: 5px;
+                margin-bottom: 4px;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
               .section-title {
-                background-color: #eaeaea;
+                background-color: #000;
+                color: #fff;
                 font-size: 8.5px;
                 font-weight: bold;
-                padding: 2px 5px;
+                padding: 2.5px 5px;
                 border-bottom: 1px solid #000;
                 text-transform: uppercase;
               }
@@ -432,7 +453,7 @@ export default function FuncionariosPage() {
                 border-bottom: none;
               }
               .grid-cell {
-                padding: 3px 5px;
+                padding: 2.5px 4px;
                 border-right: 1px solid #000;
                 flex: 1;
                 display: flex;
@@ -450,23 +471,25 @@ export default function FuncionariosPage() {
                 margin-bottom: 1px;
               }
               .cell-value {
-                font-size: 9px;
+                font-size: 8.5px;
                 font-weight: normal;
               }
               .footer-signature {
-                margin-top: 15px;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
               .signature-grid {
-                display: grid;
-                grid-template-columns: 1fr 2fr;
-                gap: 20px;
-                font-size: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                font-size: 9px;
               }
               .signature-line {
                 border-bottom: 1px solid #000;
-                margin-top: 15px;
                 text-align: center;
                 padding-bottom: 2px;
               }
@@ -481,7 +504,7 @@ export default function FuncionariosPage() {
               }
               .print-footer {
                 position: fixed;
-                bottom: -6mm;
+                bottom: -8mm;
                 left: 0;
                 right: 0;
                 height: 15px;
@@ -500,14 +523,17 @@ export default function FuncionariosPage() {
             <div class="print-container">
               <!-- Header -->
               <div class="header">
-                <div style="display: flex; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div class="photo-box">
                     ${f.foto_url ? `<img src="${f.foto_url}" class="photo-img" />` : 'FOTO 3X4'}
                   </div>
-                  <div class="header-title-box">
+                  <div class="header-title-box" style="text-align: center; flex-grow: 1;">
                     <h4 class="header-pref">PREFEITURA MUNICIPAL DE SAPEAÇU</h4>
                     <p class="header-sub">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
                     <h2 class="header-title">CADASTRO DE FUNCIONÁRIO</h2>
+                  </div>
+                  <div class="logo-box">
+                    <img src="${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'}/storage/v1/object/public/logos/logo_moises.svg" class="logo-img" onerror="this.src='${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'}/storage/v1/object/public/logos/logo_moises.sgv' || ''" />
                   </div>
                 </div>
               </div>
@@ -796,15 +822,15 @@ export default function FuncionariosPage() {
                 </div>
               </div>
 
-              <!-- Assinatura e Data -->
+              <!-- Assinatura e Data (Rodapé) -->
               <div class="footer-signature">
                 <div class="signature-grid">
-                  <div>
+                  <div style="display: flex; align-items: flex-end; padding-bottom: 2px;">
                     <span>Sapeaçu, ${f.data_preenchimento ? formatarData(f.data_preenchimento) : '___/___/_____'}</span>
                   </div>
-                  <div>
-                    <div class="signature-line"></div>
-                    <div style="text-align: center; font-size: 9px; margin-top: 3px; font-weight: bold;">Assinatura do Funcionário / Servidor</div>
+                  <div style="width: 250px; text-align: center;">
+                    <div class="signature-line" style="margin-bottom: 2px;"></div>
+                    <div style="font-size: 8px; font-weight: bold;">Assinatura do Funcionário / Servidor</div>
                   </div>
                 </div>
               </div>
