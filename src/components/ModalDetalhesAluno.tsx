@@ -160,7 +160,7 @@ export function ModalDetalhesAluno({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[450px] bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl relative max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[450px] bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
           {/* Botão de fechar custom */}
           <button
             onClick={() => onOpenChange(false)}
