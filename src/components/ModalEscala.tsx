@@ -80,7 +80,14 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
             <label className="text-sm font-medium text-zinc-300">Funcionário</label>
             <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)}>
               <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectValue placeholder="Selecione um membro da equipe" />
+                <SelectValue placeholder="Selecione um membro da equipe">
+                  {funcionarioId 
+                    ? (() => {
+                        const f = equipe.find((x) => x.id === funcionarioId);
+                        return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (equipe.length === 0 ? 'Carregando...' : funcionarioId);
+                      })()
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
                 {equipe.map((membro) => (

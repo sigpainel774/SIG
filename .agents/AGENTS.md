@@ -83,6 +83,7 @@
 - **Auditoria após Grandes Mudanças**: Ao implementar mudanças estruturais ou de larga escala (ex: configurações de PWA, refatorações de layout raiz, mudanças de roteamento), o agente DEVE proativamente realizar uma varredura (análise técnica) em busca de "erros silenciosos".
 - **O que são Erros Silenciosos**: Casos extremos de UX (edge cases), rejeições não tratadas (unhandled rejections), ausência de meta tags importantes (ex: `theme-color`), problemas de ciclo de vida (ex: service workers presos em cache antigo) ou problemas de responsividade que não geram erro no console, mas degradam a experiência do usuário.
 - **Ação Proativa**: Caso detecte potenciais erros silenciosos, o agente deve sugerir ou aplicar as correções (ex: adicionar evento `controllerchange` para SW, adicionar propriedades ausentes no `manifest.json`, ajustar bloqueios de zoom em `maximumScale`, etc) para garantir 100% de conformidade com as melhores práticas (ex: Google Lighthouse).
+- **Etapa de Planejamento**: Ao elaborar um plano de implementação (`implementation_plan.md`), a última etapa obrigatória de elaboração e redação do documento deve ser a busca, identificação e mapeamento de potenciais "erros silenciosos" (erros lógicos, concorrência, UX, RLS Postgres, caches) e suas respectivas ações de mitigação antes de submeter o plano para aprovação do usuário.
 <!-- END:silent-errors-rule -->
 
 <!-- BEGIN:shadcn-dialog-rules -->
@@ -101,3 +102,17 @@
 - **Digitação de Decimais em Inputs Controlados**: Ao criar inputs controlados para valores numéricos decimais (como notas), nunca converta o valor para número (`Number`) no estado local em tempo real durante a digitação. Isso remove o ponto/vírgula decimal (ex: `8.` vira `8`) impedindo decimais. Em vez disso, armazene o valor como string no estado local, use validação por expressão regular (ex: `/^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/`) e converta para número apenas no momento de salvar no banco ou calcular médias.
 - **Evitar Reset de Navegação/Abas em useEffect**: Ao usar `useEffect` para carregar dados de tabelas ou sincronizar dados baseados em estados externos (como `isEditMode` ou IDs globais), garanta que a aba ativa (`activeTab`) ou a navegação do usuário não seja resetada forçadamente. Separe o reset da aba (que deve ocorrer apenas na abertura inicial da tela/modal) da lógica de atualização e sincronização dos dados.
 <!-- END:ux-controlled-inputs-tabs-rules -->
+
+<!-- BEGIN:base-ui-select-rules -->
+# Resolução de IDs/UUIDs em Selects (Base UI)
+
+- **Problema de Renderização Preguiçosa**: O componente `@base-ui/react/select` (ou semelhantes) renderiza suas opções de forma lazy (apenas quando o menu está aberto). Se o valor inicial selecionado for um ID/UUID vindo de banco de dados assíncrono, o componente exibirá o UUID cru na tela inicial se o menu nunca tiver sido aberto.
+- **Solução de Lookup Dinâmico**: Ao lidar com valores dinâmicos de banco de dados (ex: escolaId, turmaId, funcionarioId), sempre implemente uma lógica de busca (lookup) diretamente no corpo de `<SelectValue>` buscando na lista correspondente. Trate também o estado de carregamento inicial (exibindo "Carregando..." enquanto a lista estiver vazia):
+  ```tsx
+  <SelectValue placeholder="Selecione a Escola">
+    {escolaId 
+      ? (escolas.find((esc) => esc.id === escolaId)?.nome || (escolas.length === 0 ? 'Carregando...' : escolaId))
+      : undefined}
+  </SelectValue>
+  ```
+<!-- END:base-ui-select-rules -->
