@@ -56,7 +56,7 @@ export function ModalDetalhesTurma({
   const [loadingFreq, setLoadingFreq] = useState(false)
 
   // Notas
-  const [notasState, setNotasState] = useState<Record<string, { nota1: number | null; nota2: number | null; nota3: number | null }>>({}) // alunoId_materiaId_unidade -> notas
+  const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null }>>({}) // alunoId_materiaId_unidade -> notas
   const [unidadesAtivas, setUnidadesAtivas] = useState<Record<string, number>>({}) // materiaId -> unidade ativa (1, 2 ou 3)
   const [savingNotas, setSavingNotas] = useState<Record<string, boolean>>({}) // materiaId -> loading de salvar
   const [materiaAberta, setMateriaAberta] = useState<string | null>(null) // Controlar Accordion manual
@@ -150,7 +150,13 @@ export function ModalDetalhesTurma({
         .eq('escola_id', escolaAtivaId)
         .order('nome', { ascending: true })
 
-      setMaterias(MateriasData || [])
+      const mats = MateriasData || []
+      setMaterias(mats)
+
+      // Expandir a primeira matéria por padrão se nenhuma estiver aberta
+      if (mats.length > 0 && !materiaAberta) {
+        setMateriaAberta(mats[0].id)
+      }
     } catch (err) {
       console.error('Erro ao buscar dados do modal de turma:', err)
       toast.error('Erro ao carregar dados da turma')
@@ -198,9 +204,9 @@ export function ModalDetalhesTurma({
         data.forEach((n: any) => {
           const key = `${n.aluno_id}_${n.materia_id}_${n.unidade}`
           map[key] = {
-            nota1: n.nota1 !== null ? Number(n.nota1) : null,
-            nota2: n.nota2 !== null ? Number(n.nota2) : null,
-            nota3: n.nota3 !== null ? Number(n.nota3) : null
+            nota1: n.nota1 !== null ? String(n.nota1) : null,
+            nota2: n.nota2 !== null ? String(n.nota2) : null,
+            nota3: n.nota3 !== null ? String(n.nota3) : null
           }
         })
       }
@@ -210,6 +216,7 @@ export function ModalDetalhesTurma({
     }
   }
 
+  // Carregar dados principais
   useEffect(() => {
     if (open && turma?.id) {
       fetchData()
@@ -220,10 +227,15 @@ export function ModalDetalhesTurma({
         fetchProfessoresEscola()
         fetchVinculosProfessores()
       }
-      
+    }
+  }, [open, turma?.id, escolaAtivaId, isEditMode])
+
+  // Resetar a aba ativa somente quando o modal abrir pela primeira vez
+  useEffect(() => {
+    if (open) {
       setActiveTab('materias')
     }
-  }, [open, turma, escolaAtivaId, isEditMode])
+  }, [open])
 
   useEffect(() => {
     if (open && turma?.id) {
@@ -299,18 +311,17 @@ export function ModalDetalhesTurma({
       return
     }
 
-    const num = Number(rawVal)
-    if (isNaN(num) || num < 0 || num > 10) return // Validação de 0 a 10 silenciosa
-
-    // Arredondar para 1 casa decimal
-    const formattedNum = parseFloat(num.toFixed(1))
+    // Validar se o formato é um número de 0 a 10 com no máximo 1 casa decimal (aceitando decimais parciais temporariamente)
+    if (!/^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/.test(rawVal)) {
+      return // ignorar valores inválidos
+    }
     
     const key = `${alunoId}_${materiaId}_${unidade}`
     setNotasState(prev => ({
       ...prev,
       [key]: {
         ...(prev[key] || { nota1: null, nota2: null, nota3: null }),
-        [campo]: formattedNum
+        [campo]: rawVal
       }
     }))
   }
@@ -332,9 +343,9 @@ export function ModalDetalhesTurma({
           materia_id: materiaId,
           escola_id: escolaAtivaId ?? '',
           unidade: unidade,
-          nota1: n.nota1,
-          nota2: n.nota2,
-          nota3: n.nota3
+          nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
+          nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
+          nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
         }
       })
 
@@ -456,13 +467,17 @@ export function ModalDetalhesTurma({
 
   const calcularMediaUnidade = (alunoId: string, materiaId: string, unidade: number) => {
     const n = obterNotas(alunoId, materiaId, unidade)
-    const validas = [n.nota1, n.nota2, n.nota3].filter((v): v is number => v !== null)
+    const n1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
+    const n2 = n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null
+    const n3 = n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+
+    const validas = [n1, n2, n3].filter((v): v is number => v !== null && !isNaN(v))
     if (validas.length === 0) return null
     // Contamos avaliações pendentes como 0 para fins de composição da média final
-    const n1 = n.nota1 ?? 0
-    const n2 = n.nota2 ?? 0
-    const n3 = n.nota3 ?? 0
-    return parseFloat(((n1 + n2 + n3) / 3).toFixed(1))
+    const val1 = n1 ?? 0
+    const val2 = n2 ?? 0
+    const val3 = n3 ?? 0
+    return parseFloat(((val1 + val2 + val3) / 3).toFixed(1))
   }
 
   const calcularMediaFinal = (alunoId: string, materiaId: string) => {
@@ -487,9 +502,9 @@ export function ModalDetalhesTurma({
           formatadas.push({
             materia_id: mat.id,
             unidade: unid,
-            nota1: n.nota1,
-            nota2: n.nota2,
-            nota3: n.nota3
+            nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
+            nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
+            nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
           })
         }
       })
@@ -844,168 +859,186 @@ export function ModalDetalhesTurma({
             {activeTab === 'notas' && (
               <div className="space-y-4 mt-5">
                 <div className="space-y-3 w-full">
-                  {materias.map((mat) => {
-                    const isOpen = materiaAberta === mat.id
-                    const unidAtiva = unidadesAtivas[mat.id] || 1
-                    const isSaving = savingNotas[mat.id] || false
+                  {loading ? (
+                    <div className="text-center py-10 text-xs text-zinc-500 font-medium bg-[#18181b] border border-[#26262a] rounded-xl">
+                      Carregando notas...
+                    </div>
+                  ) : materias.length === 0 ? (
+                    <div className="text-center py-10 text-xs text-zinc-500 font-medium bg-[#18181b] border border-[#26262a] rounded-xl p-4">
+                      Nenhuma matéria vinculada a esta turma. Cadastre as matérias na aba "Matérias" para poder lançar notas.
+                    </div>
+                  ) : (
+                    materias.map((mat) => {
+                      const isOpen = materiaAberta === mat.id
+                      const unidAtiva = unidadesAtivas[mat.id] || 1
+                      const isSaving = savingNotas[mat.id] || false
 
-                    return (
-                      <div
-                        key={mat.id}
-                        className="border border-[#26262a] bg-[#18181b] rounded-xl overflow-hidden"
-                      >
-                        <button
-                          onClick={() => setMateriaAberta(isOpen ? null : mat.id)}
-                          className="w-full text-left px-4 py-3 text-sm font-bold text-white border-b border-[#26262a] bg-[#18181b] flex items-center justify-between"
+                      return (
+                        <div
+                          key={mat.id}
+                          className="border border-[#26262a] bg-[#18181b] rounded-xl overflow-hidden"
                         >
-                          <span className="flex items-center gap-2">
-                            <BookOpen className="w-4.5 h-4.5 text-zinc-400" />
-                            {mat.nome}
-                          </span>
-                          <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {isOpen && (
-                          <div className="p-4 bg-[#121214] space-y-4">
-                            {/* Controles de Lançamento por Unidade e Botões de Ação */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#26262a] pb-3.5">
-                              {/* Tabs de Unidade */}
-                              <div className="flex gap-1.5 bg-[#18181b] border border-[#26262a] p-1 rounded-lg">
-                                {[1, 2, 3].map(u => (
-                                  <button
-                                    key={u}
-                                    onClick={() => setUnidadesAtivas(prev => ({ ...prev, [mat.id]: u }))}
-                                    className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                                      unidAtiva === u
-                                        ? 'bg-[#3ea6ff] text-black'
-                                        : 'text-zinc-400 hover:text-white'
-                                    }`}
+                          <button
+                            onClick={() => setMateriaAberta(isOpen ? null : mat.id)}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-white border-b border-[#26262a] bg-[#18181b] flex items-center justify-between"
+                          >
+                            <span className="flex items-center gap-2">
+                              <BookOpen className="w-4.5 h-4.5 text-zinc-400" />
+                              {mat.nome}
+                            </span>
+                            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          
+                          {isOpen && (
+                            <div className="p-4 bg-[#121214] space-y-4">
+                              {/* Controles de Lançamento por Unidade e Botões de Ação */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#26262a] pb-3.5">
+                                {/* Tabs de Unidade */}
+                                <div className="flex gap-1.5 bg-[#18181b] border border-[#26262a] p-1 rounded-lg">
+                                  {[1, 2, 3].map(u => (
+                                    <button
+                                      key={u}
+                                      onClick={() => setUnidadesAtivas(prev => ({ ...prev, [mat.id]: u }))}
+                                      className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                                        unidAtiva === u
+                                          ? 'bg-[#3ea6ff] text-black'
+                                          : 'text-zinc-400 hover:text-white'
+                                      }`}
+                                    >
+                                      {u}ª Unidade
+                                    </button>
+                                  ))}
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={fetchNotas}
+                                    className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg h-9 gap-1 text-xs font-semibold"
                                   >
-                                    {u}ª Unidade
-                                  </button>
-                                ))}
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    Atualizar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    disabled={isSaving}
+                                    onClick={() => handleSalvarNotas(mat.id)}
+                                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold h-9 gap-1 text-xs"
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {isSaving ? 'Salvando...' : 'Salvar Notas'}
+                                  </Button>
+                                </div>
                               </div>
 
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={fetchNotas}
-                                  className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg h-9 gap-1 text-xs font-semibold"
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5" />
-                                  Atualizar
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  disabled={isSaving}
-                                  onClick={() => handleSalvarNotas(mat.id)}
-                                  className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold h-9 gap-1 text-xs"
-                                >
-                                  <Save className="w-3.5 h-3.5" />
-                                  {isSaving ? 'Salvando...' : 'Salvar Notas'}
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Tabela de Notas */}
-                            <div className="overflow-x-auto border border-[#26262a] rounded-xl bg-[#141416]/50">
-                              <table className="w-full text-left border-collapse min-w-[500px]">
-                                <thead>
-                                  <tr className="border-b border-[#26262a] text-[10.5px] text-zinc-400 font-semibold uppercase bg-[#18181b]/30">
-                                    <th className="p-3">Aluno</th>
-                                    <th className="p-3 w-16 text-center">Nota 1</th>
-                                    <th className="p-3 w-16 text-center">Nota 2</th>
-                                    <th className="p-3 w-16 text-center">Nota 3</th>
-                                    <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/40">Média Unid.</th>
-                                    <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
-                                    <th className="p-3 w-24 text-right">Ação</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {alunos.map(aluno => {
-                                    const n = obterNotas(aluno.id, mat.id, unidAtiva)
-                                    const mediaUnid = calcularMediaUnidade(aluno.id, mat.id, unidAtiva)
-                                    const mediaFinal = calcularMediaFinal(aluno.id, mat.id)
-
-                                    return (
-                                      <tr key={aluno.id} className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
-                                        <td className="p-3 font-semibold text-zinc-100">{aluno.nome}</td>
-                                        
-                                        {/* Nota 1 */}
-                                        <td className="p-2 text-center">
-                                          <input
-                                            type="text"
-                                            value={n.nota1 ?? ''}
-                                            onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota1', e.target.value)}
-                                            placeholder="-"
-                                            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                          />
-                                        </td>
-
-                                        {/* Nota 2 */}
-                                        <td className="p-2 text-center">
-                                          <input
-                                            type="text"
-                                            value={n.nota2 ?? ''}
-                                            onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota2', e.target.value)}
-                                            placeholder="-"
-                                            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                          />
-                                        </td>
-
-                                        {/* Nota 3 */}
-                                        <td className="p-2 text-center">
-                                          <input
-                                            type="text"
-                                            value={n.nota3 ?? ''}
-                                            onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota3', e.target.value)}
-                                            placeholder="-"
-                                            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                          />
-                                        </td>
-
-                                        {/* Média Unidade */}
-                                        <td className="p-3 text-center bg-[#1c1c1e]/20 font-bold">
-                                          {mediaUnid !== null ? (
-                                            <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
-                                              {mediaUnid}
-                                            </span>
-                                          ) : '-'}
-                                        </td>
-
-                                        {/* Média Final */}
-                                        <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
-                                          {mediaFinal !== null ? (
-                                            <span className={mediaFinal < 6 ? 'text-red-500' : 'text-green-500'}>
-                                              {mediaFinal}
-                                            </span>
-                                          ) : '-'}
-                                        </td>
-
-                                        {/* Boletim */}
-                                        <td className="p-2 text-right">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setAlunoImprimir({ aluno, notes: processarNotasParaImpressao(aluno.id) })}
-                                            className="h-8 bg-[#1c1c1e] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg text-[10.5px] px-2.5 gap-1 font-semibold"
-                                          >
-                                            <Printer className="w-3 h-3" />
-                                            Boletim
-                                          </Button>
+                              {/* Tabela de Notas */}
+                              <div className="overflow-x-auto border border-[#26262a] rounded-xl bg-[#141416]/50">
+                                <table className="w-full text-left border-collapse min-w-[500px]">
+                                  <thead>
+                                    <tr className="border-b border-[#26262a] text-[10.5px] text-zinc-400 font-semibold uppercase bg-[#18181b]/30">
+                                      <th className="p-3">Aluno</th>
+                                      <th className="p-3 w-16 text-center">Nota 1</th>
+                                      <th className="p-3 w-16 text-center">Nota 2</th>
+                                      <th className="p-3 w-16 text-center">Nota 3</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/40">Média Unid.</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
+                                      <th className="p-3 w-24 text-right">Ação</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {alunos.length === 0 ? (
+                                      <tr>
+                                        <td colSpan={7} className="p-8 text-center text-xs text-zinc-500 font-medium">
+                                          Nenhum aluno matriculado nesta turma.
                                         </td>
                                       </tr>
-                                    )
-                                  })}
-                                </tbody>
-                              </table>
+                                    ) : (
+                                      alunos.map(aluno => {
+                                        const n = obterNotas(aluno.id, mat.id, unidAtiva)
+                                        const mediaUnid = calcularMediaUnidade(aluno.id, mat.id, unidAtiva)
+                                        const mediaFinal = calcularMediaFinal(aluno.id, mat.id)
+
+                                        return (
+                                          <tr key={aluno.id} className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
+                                            <td className="p-3 font-semibold text-zinc-100">{aluno.nome}</td>
+                                            
+                                            {/* Nota 1 */}
+                                            <td className="p-2 text-center">
+                                              <input
+                                                type="text"
+                                                value={n.nota1 ?? ''}
+                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota1', e.target.value)}
+                                                placeholder="-"
+                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+                                              />
+                                            </td>
+
+                                            {/* Nota 2 */}
+                                            <td className="p-2 text-center">
+                                              <input
+                                                type="text"
+                                                value={n.nota2 ?? ''}
+                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota2', e.target.value)}
+                                                placeholder="-"
+                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+                                              />
+                                            </td>
+
+                                            {/* Nota 3 */}
+                                            <td className="p-2 text-center">
+                                              <input
+                                                type="text"
+                                                value={n.nota3 ?? ''}
+                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota3', e.target.value)}
+                                                placeholder="-"
+                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+                                              />
+                                            </td>
+
+                                            {/* Média Unidade */}
+                                            <td className="p-3 text-center bg-[#1c1c1e]/20 font-bold">
+                                              {mediaUnid !== null ? (
+                                                <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
+                                                  {mediaUnid}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+
+                                            {/* Média Final */}
+                                            <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
+                                              {mediaFinal !== null ? (
+                                                <span className={mediaFinal < 6 ? 'text-red-500' : 'text-green-500'}>
+                                                  {mediaFinal}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+
+                                            {/* Boletim */}
+                                            <td className="p-2 text-right">
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setAlunoImprimir({ aluno, notes: processarNotasParaImpressao(aluno.id) })}
+                                                className="h-8 bg-[#1c1c1e] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg text-[10.5px] px-2.5 gap-1 font-semibold"
+                                              >
+                                                <Printer className="w-3 h-3" />
+                                                Boletim
+                                              </Button>
+                                            </td>
+                                          </tr>
+                                        )
+                                      })
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
               </div>
             )}
