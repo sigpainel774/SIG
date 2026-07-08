@@ -333,7 +333,7 @@ export default function FuncionariosPage() {
             <style>
               @page {
                 size: A4;
-                margin: 0;
+                margin: 15mm 15mm 20mm 15mm;
               }
               body {
                 font-family: Arial, sans-serif;
@@ -342,16 +342,9 @@ export default function FuncionariosPage() {
                 color: #000;
                 background-color: #fff;
               }
-              .page {
-                width: 210mm;
-                height: 297mm;
-                padding: 15mm;
+              .print-container {
+                width: 100%;
                 box-sizing: border-box;
-                page-break-after: always;
-                position: relative;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
               }
               .header {
                 display: flex;
@@ -420,6 +413,8 @@ export default function FuncionariosPage() {
               .section-box {
                 border: 1px solid #000;
                 margin-bottom: 8px;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               .section-title {
                 background-color: #eaeaea;
@@ -459,9 +454,9 @@ export default function FuncionariosPage() {
                 font-weight: normal;
               }
               .footer-signature {
-                margin-top: auto;
-                border-top: 1px solid #000;
-                padding-top: 15px;
+                margin-top: 30px;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               .signature-grid {
                 display: grid;
@@ -484,327 +479,322 @@ export default function FuncionariosPage() {
               .pos-item:last-child {
                 border-bottom: none;
               }
+              .print-footer {
+                position: fixed;
+                bottom: -15mm;
+                left: 0;
+                right: 0;
+                height: 15px;
+                font-size: 8px;
+                color: #888;
+                display: flex;
+                justify-content: space-between;
+                border-top: 1px solid #ddd;
+                padding-top: 5px;
+                background: #fff;
+              }
             </style>
           </head>
           <body>
             
-            <!-- PAGINA 1 -->
-            <div class="page">
-              <div>
-                <!-- Header -->
-                <div class="header">
-                  <div style="display: flex; align-items: center; width: 100%;">
-                    <div class="photo-box">
-                      ${f.foto_url ? `<img src="${f.foto_url}" class="photo-img" />` : 'FOTO 3X4'}
-                    </div>
-                    <div class="header-title-box">
-                      <h4 class="header-pref">PREFEITURA MUNICIPAL DE SAPEAÇU</h4>
-                      <p class="header-sub">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
-                      <h2 class="header-title">CADASTRO DE FUNCIONÁRIO</h2>
-                    </div>
+            <div class="print-container">
+              <!-- Header -->
+              <div class="header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                  <div class="photo-box">
+                    ${f.foto_url ? `<img src="${f.foto_url}" class="photo-img" />` : 'FOTO 3X4'}
                   </div>
-                </div>
-
-                <!-- 1-3. Unidade Escolar -->
-                <div class="section-box">
-                  <div class="section-title">Dados da Unidade Escolar</div>
-                  <div class="grid-row">
-                    <div class="grid-cell" style="flex: 2;">
-                      <span class="cell-label">1. Unidade Escolar</span>
-                      <span class="cell-value">${escolaNome}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">2. Código INEP</span>
-                      <span class="cell-value">${escolaInep}</span>
-                    </div>
-                  </div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">3. Localização da UE</span>
-                      <span class="cell-value">${escolaLocalizacao}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Identificação do Funcionário -->
-                <div class="section-box">
-                  <div class="section-title">Identificação do Funcionário</div>
-                  <div class="grid-row">
-                    <div class="grid-cell" style="flex: 2.5;">
-                      <span class="cell-label">4. Nome Completo do Funcionário</span>
-                      <span class="cell-value" style="font-weight: bold; font-size: 11px;">${f.nome}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 1.5;">
-                      <span class="cell-label">5. Identificação CENSO (INEP)</span>
-                      <span class="cell-value">${f.censo ?? '—'}</span>
-                    </div>
-                  </div>
-                  
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">6. Estado Civil</span>
-                      <span class="cell-value">${f.estado_civil ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">7. Cor / Raça</span>
-                      <span class="cell-value">${f.cor_raca ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">8. Sexo</span>
-                      <span class="cell-value">${f.sexo ?? '—'}</span>
-                    </div>
-                  </div>
-
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">9. Filiação (Mãe)</span>
-                      <span class="cell-value">${f.nome_mae ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">Filiação (Pai)</span>
-                      <span class="cell-value">${f.nome_pai ?? '—'}</span>
-                    </div>
-                  </div>
-
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">10. Nacionalidade</span>
-                      <span class="cell-value">
-                        ${f.nacionalidade ?? '—'} 
-                        ${f.nacionalidade === 'Estrangeira' && f.nacionalidade_especificacao ? `(${f.nacionalidade_especificacao})` : ''}
-                      </span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">11. Data de Nascimento</span>
-                      <span class="cell-value">${formatarData(f.data_nascimento)}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 1.5;">
-                      <span class="cell-label">12. Município de Nascimento</span>
-                      <span class="cell-value">${f.municipio_nascimento ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 0.5;">
-                      <span class="cell-label">13. UF</span>
-                      <span class="cell-value">${f.uf_nascimento ?? '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Documentos -->
-                <div class="section-box">
-                  <div class="section-title">Documentos</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">14. Número da Identidade (RG)</span>
-                      <span class="cell-value">${f.rg ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">15. Número do NIS (PIS/PASEP)</span>
-                      <span class="cell-value">${f.nis ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">16. Número do CPF</span>
-                      <span class="cell-value">${f.cpf ?? '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Endereço -->
-                <div class="section-box">
-                  <div class="section-title">Endereço</div>
-                  <div class="grid-row">
-                    <div class="grid-cell" style="flex: 2.5;">
-                      <span class="cell-label">17. Avenida / Rua / Travessa</span>
-                      <span class="cell-value">${f.logradouro ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 0.7;">
-                      <span class="cell-label">18. Número</span>
-                      <span class="cell-value">${f.numero ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 1;">
-                      <span class="cell-label">19. CEP</span>
-                      <span class="cell-value">${f.cep ?? '—'}</span>
-                    </div>
-                  </div>
-
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">20. Bairro / Localidade</span>
-                      <span class="cell-value">${f.bairro ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">21. Cidade de Residência</span>
-                      <span class="cell-value">${f.cidade ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell" style="flex: 0.4;">
-                      <span class="cell-label">22. UF</span>
-                      <span class="cell-value">${f.uf_residencia ?? 'BA'}</span>
-                    </div>
-                  </div>
-
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">23. Área de Localização da Residência</span>
-                      <span class="cell-value">${f.area_residencia ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">24. Área de Localização Diferenciada</span>
-                      <span class="cell-value">${f.area_diferenciada ?? '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Dados Empregatícios -->
-                <div class="section-box">
-                  <div class="section-title">Dados Empregatícios</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">25. Função que exerce na escola</span>
-                      <span class="cell-value">
-                        ${f.cargo ?? '—'}
-                        ${f.cargo === 'Outro' && f.funcao_especifica ? `(${f.funcao_especifica})` : ''}
-                      </span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">26. Tipo de Vínculo</span>
-                      <span class="cell-value">
-                        ${f.tipo_vinculo ?? '—'}
-                        ${f.tipo_vinculo === 'Outro' && f.tipo_vinculo_especificacao ? `(${f.tipo_vinculo_especificacao})` : ''}
-                      </span>
-                    </div>
+                  <div class="header-title-box">
+                    <h4 class="header-pref">PREFEITURA MUNICIPAL DE SAPEAÇU</h4>
+                    <p class="header-sub">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
+                    <h2 class="header-title">CADASTRO DE FUNCIONÁRIO</h2>
                   </div>
                 </div>
               </div>
 
-              <!-- Footer da Página 1 -->
-              <div style="font-size: 8px; color: #888; display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 5px;">
-                <span>SIG Sapeaçu · Secretaria de Educação</span>
-                <span>Página 1 de 2</span>
+              <!-- 1-3. Unidade Escolar -->
+              <div class="section-box">
+                <div class="section-title">Dados da Unidade Escolar</div>
+                <div class="grid-row">
+                  <div class="grid-cell" style="flex: 2;">
+                    <span class="cell-label">1. Unidade Escolar</span>
+                    <span class="cell-value">${escolaNome}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">2. Código INEP</span>
+                    <span class="cell-value">${escolaInep}</span>
+                  </div>
+                </div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">3. Localização da UE</span>
+                    <span class="cell-value">${escolaLocalizacao}</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <!-- PAGINA 2 -->
-            <div class="page">
-              <div>
-                <!-- Header Curto -->
-                <div class="header" style="border-bottom: 1px solid #000; margin-bottom: 15px; padding-bottom: 4px;">
-                  <h4 class="header-pref" style="font-size: 9px;">PREFEITURA MUNICIPAL DE SAPEAÇU · CADASTRO DE FUNCIONÁRIO</h4>
+              <!-- Identificação do Funcionário -->
+              <div class="section-box">
+                <div class="section-title">Identificação do Funcionário</div>
+                <div class="grid-row">
+                  <div class="grid-cell" style="flex: 2.5;">
+                    <span class="cell-label">4. Nome Completo do Funcionário</span>
+                    <span class="cell-value" style="font-weight: bold; font-size: 11px;">${f.nome}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 1.5;">
+                    <span class="cell-label">5. Identificação CENSO (INEP)</span>
+                    <span class="cell-value">${f.censo ?? '—'}</span>
+                  </div>
+                </div>
+                
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">6. Estado Civil</span>
+                    <span class="cell-value">${f.estado_civil ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">7. Cor / Raça</span>
+                    <span class="cell-value">${f.cor_raca ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">8. Sexo</span>
+                    <span class="cell-value">${f.sexo ?? '—'}</span>
+                  </div>
                 </div>
 
-                <!-- Saúde -->
-                <div class="section-box">
-                  <div class="section-title">Saúde</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">27. Profissional com Deficiência, TEA ou Altas Habilidades / Superdotação?</span>
-                      <span class="cell-value">${f.possui_deficiencia ? 'SIM' : 'NÃO'}</span>
-                    </div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">9. Filiação (Mãe)</span>
+                    <span class="cell-value">${f.nome_mae ?? '—'}</span>
                   </div>
-                  ${f.possui_deficiencia ? `
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">27.a Especificação detalhada</span>
-                      <span class="cell-value">${defsStr}</span>
-                    </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">Filiação (Pai)</span>
+                    <span class="cell-value">${f.nome_pai ?? '—'}</span>
+                  </div>
+                </div>
+
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">10. Nacionalidade</span>
+                    <span class="cell-value">
+                      ${f.nacionalidade ?? '—'} 
+                      ${f.nacionalidade === 'Estrangeira' && f.nacionalidade_especificacao ? `(${f.nacionalidade_especificacao})` : ''}
+                    </span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">11. Data de Nascimento</span>
+                    <span class="cell-value">${formatarData(f.data_nascimento)}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 1.5;">
+                    <span class="cell-label">12. Município de Nascimento</span>
+                    <span class="cell-value">${f.municipio_nascimento ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 0.5;">
+                    <span class="cell-label">13. UF</span>
+                    <span class="cell-value">${f.uf_nascimento ?? '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Documentos -->
+              <div class="section-box">
+                <div class="section-title">Documentos</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">14. Número da Identidade (RG)</span>
+                    <span class="cell-value">${f.rg ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">15. Número do NIS (PIS/PASEP)</span>
+                    <span class="cell-value">${f.nis ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">16. Número do CPF</span>
+                    <span class="cell-value">${f.cpf ?? '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Endereço -->
+              <div class="section-box">
+                <div class="section-title">Endereço</div>
+                <div class="grid-row">
+                  <div class="grid-cell" style="flex: 2.5;">
+                    <span class="cell-label">17. Avenida / Rua / Travessa</span>
+                    <span class="cell-value">${f.logradouro ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 0.7;">
+                    <span class="cell-label">18. Número</span>
+                    <span class="cell-value">${f.numero ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 1;">
+                    <span class="cell-label">19. CEP</span>
+                    <span class="cell-value">${f.cep ?? '—'}</span>
+                  </div>
+                </div>
+
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">20. Bairro / Localidade</span>
+                    <span class="cell-value">${f.bairro ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">21. Cidade de Residência</span>
+                    <span class="cell-value">${f.cidade ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell" style="flex: 0.4;">
+                    <span class="cell-label">22. UF</span>
+                    <span class="cell-value">${f.uf_residencia ?? 'BA'}</span>
+                  </div>
+                </div>
+
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">23. Área de Localização da Residência</span>
+                    <span class="cell-value">${f.area_residencia ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">24. Área de Localização Diferenciada</span>
+                    <span class="cell-value">${f.area_diferenciada ?? '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dados Empregatícios -->
+              <div class="section-box">
+                <div class="section-title">Dados Empregatícios</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">25. Função que exerce na escola</span>
+                    <span class="cell-value">
+                      ${f.cargo ?? '—'}
+                      ${f.cargo === 'Outro' && f.funcao_especifica ? `(${f.funcao_especifica})` : ''}
+                    </span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">26. Tipo de Vínculo</span>
+                    <span class="cell-value">
+                      ${f.tipo_vinculo ?? '—'}
+                      ${f.tipo_vinculo === 'Outro' && f.tipo_vinculo_especificacao ? `(${f.tipo_vinculo_especificacao})` : ''}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saúde -->
+              <div class="section-box">
+                <div class="section-title">Saúde</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">27. Profissional com Deficiência, TEA ou Altas Habilidades / Superdotação?</span>
+                    <span class="cell-value">${f.possui_deficiencia ? 'SIM' : 'NÃO'}</span>
+                  </div>
+                </div>
+                ${f.possui_deficiencia ? `
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">27.a Especificação detalhada</span>
+                    <span class="cell-value">${defsStr}</span>
+                  </div>
+                </div>
+                ` : ''}
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">28. Doenças Crônicas / Ativas</span>
+                    <span class="cell-value">${doencasStr}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Escolaridade -->
+              <div class="section-box">
+                <div class="section-title">Escolaridade</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">29. Maior nível de escolaridade concluído</span>
+                    <span class="cell-value" style="font-weight: bold;">${f.escolaridade_nivel ?? '—'}</span>
+                  </div>
+                  ${f.escolaridade_nivel === 'Ensino Médio' ? `
+                  <div class="grid-cell">
+                    <span class="cell-label">30. Tipo de Ensino Médio cursado</span>
+                    <span class="cell-value">${f.ensino_medio_tipo ?? '—'}</span>
                   </div>
                   ` : ''}
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">28. Doenças Crônicas / Ativas</span>
-                      <span class="cell-value">${doencasStr}</span>
-                    </div>
-                  </div>
                 </div>
 
-                <!-- Escolaridade -->
-                <div class="section-box">
-                  <div class="section-title">Escolaridade</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">29. Maior nível de escolaridade concluído</span>
-                      <span class="cell-value" style="font-weight: bold;">${f.escolaridade_nivel ?? '—'}</span>
-                    </div>
-                    ${f.escolaridade_nivel === 'Ensino Médio' ? `
-                    <div class="grid-cell">
-                      <span class="cell-label">30. Tipo de Ensino Médio cursado</span>
-                      <span class="cell-value">${f.ensino_medio_tipo ?? '—'}</span>
-                    </div>
-                    ` : ''}
+                ${f.escolaridade_nivel === 'Educação Superior' ? `
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">31. Dados do Curso Superior: Área do curso</span>
+                    <span class="cell-value">${f.superior_area ?? '—'}</span>
                   </div>
-
-                  ${f.escolaridade_nivel === 'Educação Superior' ? `
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">31. Dados do Curso Superior: Área do curso</span>
-                      <span class="cell-value">${f.superior_area ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">Código do Curso</span>
-                      <span class="cell-value">${f.superior_codigo ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">Ano de Conclusão</span>
-                      <span class="cell-value">${f.superior_ano_conclusao ?? '—'}</span>
-                    </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">Código do Curso</span>
+                    <span class="cell-value">${f.superior_codigo ?? '—'}</span>
                   </div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">Tipo de Instituição</span>
-                      <span class="cell-value">${f.superior_tipo_instituicao ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">Grau Acadêmico</span>
-                      <span class="cell-value">${f.superior_grau ?? '—'}</span>
-                    </div>
-                    <div class="grid-cell">
-                      <span class="cell-label">Instituição de Formação</span>
-                      <span class="cell-value">${f.superior_instituicao ?? '—'}</span>
-                    </div>
-                  </div>
-                  ` : ''}
-
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">32. Formação / Complementação Pedagógica</span>
-                      <span class="cell-value">${f.complementacao_pedagogica ?? '—'}</span>
-                    </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">Ano de Conclusão</span>
+                    <span class="cell-value">${f.superior_ano_conclusao ?? '—'}</span>
                   </div>
                 </div>
-
-                <!-- Pós-Graduações -->
-                <div class="section-box">
-                  <div class="section-title">33. Pós-Graduações Concluídas</div>
-                  <div style="padding: 6px; font-size: 10px;">
-                    ${posHtml}
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">Tipo de Instituição</span>
+                    <span class="cell-value">${f.superior_tipo_instituicao ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">Grau Acadêmico</span>
+                    <span class="cell-value">${f.superior_grau ?? '—'}</span>
+                  </div>
+                  <div class="grid-cell">
+                    <span class="cell-label">Instituição de Formação</span>
+                    <span class="cell-value">${f.superior_instituicao ?? '—'}</span>
                   </div>
                 </div>
+                ` : ''}
 
-                <!-- Outros Cursos -->
-                <div class="section-box">
-                  <div class="section-title">34. Outros Cursos Específicos (Formação Continuada mín. 80h)</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-value">${outrosCursosStr}</span>
-                    </div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">32. Formação / Complementação Pedagógica</span>
+                    <span class="cell-value">${f.complementacao_pedagogica ?? '—'}</span>
                   </div>
                 </div>
+              </div>
 
-                <!-- Documentação Anexa -->
-                <div class="section-box">
-                  <div class="section-title">35. Documentação Comprovatória Anexada</div>
-                  <div class="grid-row">
-                    <div class="grid-cell">
-                      <span class="cell-label">Cópias de documentos anexados</span>
-                      <span class="cell-value" style="font-weight: bold; color: #2e7d32;">${docsAnexadosStr}</span>
-                    </div>
+              <!-- Pós-Graduações -->
+              <div class="section-box">
+                <div class="section-title">33. Pós-Graduações Concluídas</div>
+                <div style="padding: 6px; font-size: 10px;">
+                  ${posHtml}
+                </div>
+              </div>
+
+              <!-- Outros Cursos -->
+              <div class="section-box">
+                <div class="section-title">34. Outros Cursos Específicos (Formação Continuada mín. 80h)</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-value">${outrosCursosStr}</span>
                   </div>
                 </div>
+              </div>
 
-                <!-- Observações -->
-                <div class="section-box">
-                  <div class="section-title">Observações</div>
-                  <div style="padding: 6px; min-height: 60px; font-size: 9.5px; line-height: 1.3;">
-                    ${f.observacoes ?? 'Nenhuma observação cadastrada.'}
+              <!-- Documentação Anexa -->
+              <div class="section-box">
+                <div class="section-title">35. Documentação Comprovatória Anexada</div>
+                <div class="grid-row">
+                  <div class="grid-cell">
+                    <span class="cell-label">Cópias de documentos anexados</span>
+                    <span class="cell-value" style="font-weight: bold; color: #2e7d32;">${docsAnexadosStr}</span>
                   </div>
+                </div>
+              </div>
+
+              <!-- Observações -->
+              <div class="section-box">
+                <div class="section-title">Observações</div>
+                <div style="padding: 6px; min-height: 60px; font-size: 9.5px; line-height: 1.3;">
+                  ${f.observacoes ?? 'Nenhuma observação cadastrada.'}
                 </div>
               </div>
 
@@ -819,12 +809,14 @@ export default function FuncionariosPage() {
                     <div style="text-align: center; font-size: 9px; margin-top: 3px; font-weight: bold;">Assinatura do Funcionário / Servidor</div>
                   </div>
                 </div>
-                
-                <div style="font-size: 8px; color: #888; display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 5px; margin-top: 15px;">
-                  <span>SIG Sapeaçu · Ficha de Cadastro</span>
-                  <span>Página 2 de 2</span>
-                </div>
               </div>
+
+            </div>
+
+            <!-- Footer Fixo -->
+            <div class="print-footer">
+              <span>SIG Sapeaçu · Secretaria Municipal de Educação</span>
+              <span>Ficha de Cadastro de Funcionário</span>
             </div>
 
           </body>

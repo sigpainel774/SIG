@@ -84,3 +84,12 @@
 - **O que são Erros Silenciosos**: Casos extremos de UX (edge cases), rejeições não tratadas (unhandled rejections), ausência de meta tags importantes (ex: `theme-color`), problemas de ciclo de vida (ex: service workers presos em cache antigo) ou problemas de responsividade que não geram erro no console, mas degradam a experiência do usuário.
 - **Ação Proativa**: Caso detecte potenciais erros silenciosos, o agente deve sugerir ou aplicar as correções (ex: adicionar evento `controllerchange` para SW, adicionar propriedades ausentes no `manifest.json`, ajustar bloqueios de zoom em `maximumScale`, etc) para garantir 100% de conformidade com as melhores práticas (ex: Google Lighthouse).
 <!-- END:silent-errors-rule -->
+
+<!-- BEGIN:shadcn-dialog-rules -->
+# Diretrizes para Modais Dialog (Shadcn/Radix)
+
+- **Sem Botões Customizados de Fechar**: Não inclua botões de fechar manuais com classe absoluta (como um botão `X` absoluto) dentro de `DialogContent`, pois o componente base já renderiza e gerencia o botão de fechar nativo automaticamente.
+- **Largura Máxima Responsiva**: Ao definir a largura máxima do modal, sempre use o mesmo breakpoint ou maior para sobrescrever o estilo padrão `sm:max-w-sm` (ex: use `sm:max-w-[700px]` ou `sm:max-w-4xl` em vez de apenas `max-w-[...]`).
+- **Evitar classe relative no Content**: Nunca adicione a classe `relative` no `DialogContent` raiz, pois ela sobrescreve o posicionamento `fixed` do Radix e quebra a centralização do modal na viewport.
+- **Ações de Escrita Condicionais**: Condicione a exibição de botões de edição, inserção e remoção (ex: `Plus`, `Trash2` e inputs de cadastro) ao estado `isEditMode` obtido de `@/store/useEditModeStore`.
+<!-- END:shadcn-dialog-rules -->
