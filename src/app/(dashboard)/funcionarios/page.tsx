@@ -334,7 +334,7 @@ export default function FuncionariosPage() {
             <style>
               @page {
                 size: A4;
-                margin: 5mm 10mm 10mm 10mm;
+                margin: 5mm 10mm 5mm 10mm;
               }
               html, body {
                 height: 100%;
@@ -352,6 +352,7 @@ export default function FuncionariosPage() {
               .print-container {
                 width: 100%;
                 height: 100%;
+                max-height: 282mm;
                 box-sizing: border-box;
                 position: relative;
                 padding-bottom: 35px;
@@ -360,7 +361,7 @@ export default function FuncionariosPage() {
                 display: flex;
                 align-items: center;
                 border-bottom: 2px solid #000;
-                padding-bottom: 4px;
+                padding-bottom: 6px;
                 margin-bottom: 12px;
               }
               .header-logo {
@@ -397,13 +398,13 @@ export default function FuncionariosPage() {
                 text-transform: uppercase;
               }
               .photo-box {
-                width: 60px;
-                height: 80px;
+                width: 80px;
+                height: 105px;
                 border: 1px solid #000;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 8px;
+                font-size: 9px;
                 text-align: center;
                 font-weight: bold;
                 background: #fcfcfc;
@@ -414,8 +415,8 @@ export default function FuncionariosPage() {
                 object-fit: cover;
               }
               .logo-box {
-                width: 60px;
-                height: 80px;
+                width: 80px;
+                height: 105px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -477,7 +478,7 @@ export default function FuncionariosPage() {
               }
               .footer-signature {
                 position: absolute;
-                bottom: 0;
+                bottom: 18px;
                 left: 0;
                 right: 0;
                 page-break-inside: avoid;
@@ -504,17 +505,17 @@ export default function FuncionariosPage() {
                 border-bottom: none;
               }
               .print-footer {
-                position: fixed;
-                bottom: -8mm;
+                position: absolute;
+                bottom: 0;
                 left: 0;
                 right: 0;
-                height: 15px;
+                height: 12px;
                 font-size: 8px;
                 color: #888;
                 display: flex;
                 justify-content: space-between;
                 border-top: 1px solid #ddd;
-                padding-top: 5px;
+                padding-top: 3px;
                 background: #fff;
               }
             </style>
