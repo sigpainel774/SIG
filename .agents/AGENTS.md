@@ -93,3 +93,11 @@
 - **Evitar classe relative no Content**: Nunca adicione a classe `relative` no `DialogContent` raiz, pois ela sobrescreve o posicionamento `fixed` do Radix e quebra a centralização do modal na viewport.
 - **Ações de Escrita Condicionais**: Condicione a exibição de botões de edição, inserção e remoção (ex: `Plus`, `Trash2` e inputs de cadastro) ao estado `isEditMode` obtido de `@/store/useEditModeStore`.
 <!-- END:shadcn-dialog-rules -->
+
+<!-- BEGIN:ux-controlled-inputs-tabs-rules -->
+# Regras de UX, Inputs Controlados e Abas
+
+- **Empty States Obrigatórios**: Ao renderizar qualquer listagem ou mapeamento de dados vindos do banco (ex: alunos, matérias, notas, frequências), sempre implemente uma mensagem de "Empty State" amigável caso o array esteja vazio (`length === 0`). Nunca deixe a tela ou aba em branco.
+- **Digitação de Decimais em Inputs Controlados**: Ao criar inputs controlados para valores numéricos decimais (como notas), nunca converta o valor para número (`Number`) no estado local em tempo real durante a digitação. Isso remove o ponto/vírgula decimal (ex: `8.` vira `8`) impedindo decimais. Em vez disso, armazene o valor como string no estado local, use validação por expressão regular (ex: `/^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/`) e converta para número apenas no momento de salvar no banco ou calcular médias.
+- **Evitar Reset de Navegação/Abas em useEffect**: Ao usar `useEffect` para carregar dados de tabelas ou sincronizar dados baseados em estados externos (como `isEditMode` ou IDs globais), garanta que a aba ativa (`activeTab`) ou a navegação do usuário não seja resetada forçadamente. Separe o reset da aba (que deve ocorrer apenas na abertura inicial da tela/modal) da lógica de atualização e sincronização dos dados.
+<!-- END:ux-controlled-inputs-tabs-rules -->
