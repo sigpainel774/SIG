@@ -41,6 +41,43 @@ const diretrizes = [
     )
   },
   {
+    id: 'd12',
+    icon: UserPlus,
+    titulo: 'Fluxo Oficial: Criação de Novas Contas e Autenticação',
+    conteudo: (
+      <div className="space-y-4">
+        <p>A criação de usuários e sua vinculação automática com a ficha de funcionários baseia-se em uma arquitetura de dupla conciliação (via Banco de Dados e via Frontend). O <strong>e-mail</strong> do funcionário funciona como a chave de unificação de todo o processo.</p>
+        
+        <h4 className="text-white font-bold text-sm mb-2 mt-4">Existem dois caminhos principais para liberar o acesso:</h4>
+        
+        <div className="bg-[#2a2a2a] p-4 border-l-4 border-blue-500 rounded-md space-y-3">
+          <h5 className="text-white font-bold text-sm">Caminho 1: Ficha criada ANTES da conta (Recomendado)</h5>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-[#aaa]">
+            <li>O Administrador ou Diretor cadastra a ficha do funcionário no menu <strong>Funcionários</strong>, preenchendo a aba "Identificação" com o <strong>E-mail de Login</strong>.</li>
+            <li>O administrador de TI acessa o Painel Oficial do Supabase (Dashboard) e cria a conta de autenticação (usuário e senha) preenchendo com este exato e-mail, gerando uma conta <strong>auto-confirmada</strong>.</li>
+            <li>No primeiro login, o sistema detectará o e-mail, fará a conciliação automática de segurança (reconciliação <em>on-the-fly</em>) e amarrará a ficha ao usuário permanentemente.</li>
+          </ol>
+        </div>
+
+        <div className="bg-[#2a2a2a] p-4 border-l-4 border-emerald-500 rounded-md space-y-3">
+          <h5 className="text-white font-bold text-sm">Caminho 2: Conta criada ANTES da ficha</h5>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-[#aaa]">
+            <li>O administrador de TI cria primeiro o acesso de autenticação (usuário e senha) no Painel Oficial do Supabase.</li>
+            <li>O banco de dados (através de uma trigger interna) detectará o novo usuário e criará uma "ficha vazia" de funcionário de forma 100% automática, contendo apenas aquele e-mail.</li>
+            <li>O Diretor/Administrador precisará entrar no sistema, ir no menu <strong>Funcionários</strong>, buscar o e-mail recém-criado na listagem, e clicar em editar para terminar de preencher os dados (Nome, CPF, etc).</li>
+          </ol>
+        </div>
+
+        <div className="bg-[#3f1818] text-[#fecaca] p-4 border-l-4 border-red-500 rounded-md mt-4 text-sm leading-relaxed">
+          <strong className="text-red-300 flex items-center gap-2 mb-1">
+            <ShieldCheck className="w-4 h-4" /> TRATAMENTO DE SEGURANÇA (ÓRFÃOS)
+          </strong>
+          Se um usuário tentar logar e seu e-mail não existir na base de funcionários, a sessão será imediatamente bloqueada e expurgada do navegador, redirecionando de volta ao login.
+        </div>
+      </div>
+    )
+  },
+  {
     id: 'd9',
     icon: UserCog,
     titulo: 'Fluxo de Alocação de Diretores',

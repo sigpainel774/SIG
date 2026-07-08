@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
@@ -22,6 +22,19 @@ export default function LoginPage() {
   const [suspendedModalOpen, setSuspendedModalOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('error') === 'orphan') {
+        supabase.auth.signOut().then(() => {
+          toast.error('Acesso negado. Seu e-mail não pertence a nenhum funcionário cadastrado.')
+          // Limpa o parâmetro da URL
+          window.history.replaceState({}, '', '/login')
+        })
+      }
+    }
+  }, [supabase])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
