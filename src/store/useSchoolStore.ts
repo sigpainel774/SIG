@@ -11,6 +11,7 @@ export interface Escola {
   totalProfessores?: number
   totalTurmas?: number
   ativo?: boolean
+  logo_url?: string | null
 }
 
 interface SchoolState {

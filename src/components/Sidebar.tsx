@@ -22,6 +22,7 @@ import { useSidebarStore } from '@/store/useSidebarStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export function Sidebar() {
   const router = useRouter()
@@ -29,6 +30,7 @@ export function Sidebar() {
   const supabase = createClient()
   const { funcionario, limparSessao } = useAuthStore()
   const { isMobileOpen, closeMobile } = useSidebarStore()
+  const { selectedEscola } = useSchoolStore()
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -96,10 +98,20 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       {/* Brand Header */}
-      <div className="p-5 flex items-center justify-between border-b border-sidebar-border/50 md:border-b-0">
-        <div className="flex items-center gap-3">
-          <Logo variant="icon" className="w-10 h-10 shrink-0" />
-          <h2 className="text-xl font-bold tracking-tight text-sidebar-foreground">Painel Escolar</h2>
+      <div className="p-5 flex items-center justify-between border-b border-sidebar-border/50 md:border-b-0 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
+          {selectedEscola?.logo_url ? (
+            <img
+              src={selectedEscola.logo_url}
+              alt={selectedEscola.nome}
+              className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-[#161616]"
+            />
+          ) : (
+            <Logo variant="icon" className="w-10 h-10 shrink-0" />
+          )}
+          <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground truncate">
+            {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
+          </h2>
         </div>
         <button 
           onClick={closeMobile}

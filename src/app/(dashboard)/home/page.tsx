@@ -50,8 +50,12 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola Selecionada:</span>
             <div className="flex items-center gap-2 bg-[#1f2937]/80 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
-              <div className={`w-5 h-5 rounded-full ${selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
-                {selectedEscola.nome[0]}
+              <div className={`w-5 h-5 rounded-full overflow-hidden ${selectedEscola.logo_url ? 'bg-transparent' : selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
+                {selectedEscola.logo_url ? (
+                  <img src={selectedEscola.logo_url} alt={selectedEscola.nome} className="w-full h-full object-cover" />
+                ) : (
+                  selectedEscola.nome[0]
+                )}
               </div>
               <span>{selectedEscola.nome}</span>
             </div>
@@ -79,8 +83,12 @@ export default function HomePage() {
                 onClick={() => setSelectedEscola(escola)}
                 className="bg-[#161616] hover:bg-[#202020] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md"
               >
-                <div className={`w-16 h-16 rounded-full ${escola.color} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                  <Building2 className="w-8 h-8" />
+                <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-blue-600'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                  {escola.logo_url ? (
+                    <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 className="w-8 h-8" />
+                  )}
                 </div>
                 <h3 className="font-semibold text-white group-hover:text-highlight transition-colors text-sm leading-snug">
                   {escola.nome}
@@ -92,8 +100,19 @@ export default function HomePage() {
       ) : (
         /* Visão 2: Módulos da Escola Selecionada */
         <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-white tracking-tight">{selectedEscola.nome}</h1>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            {selectedEscola.logo_url ? (
+              <div className="flex items-center gap-4">
+                <img
+                  src={selectedEscola.logo_url}
+                  alt={selectedEscola.nome}
+                  className="max-h-16 max-w-[280px] object-contain rounded-xl shadow-md border border-borderCustom p-1 bg-[#161616]"
+                />
+                <h1 className="sr-only">{selectedEscola.nome}</h1>
+              </div>
+            ) : (
+              <h1 className="text-3xl font-bold text-white tracking-tight">{selectedEscola.nome}</h1>
+            )}
             <Button
               variant="outline"
               onClick={() => setSelectedEscola(null)}

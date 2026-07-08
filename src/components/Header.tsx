@@ -10,11 +10,13 @@ import { useSidebarStore } from '@/store/useSidebarStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { Logo } from './Logo'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario } = useAuthStore()
   const { toggleMobile } = useSidebarStore()
+  const { selectedEscola } = useSchoolStore()
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -82,12 +84,20 @@ export function Header() {
           >
             <Menu className="w-6 h-6 text-[#3ea6ff]" />
           </button>
-          <Logo variant="icon" className="w-7 h-7 shrink-0" />
+          {selectedEscola?.logo_url ? (
+            <img
+              src={selectedEscola.logo_url}
+              alt={selectedEscola.nome}
+              className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-[#161616]"
+            />
+          ) : (
+            <Logo variant="icon" className="w-7 h-7 shrink-0" />
+          )}
           <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block truncate">
-            Sapeaçu Painel Escolar
+            {selectedEscola ? selectedEscola.nome : 'Sapeaçu Painel Escolar'}
           </h1>
           <h1 className="font-bold text-sm text-white tracking-tight sm:hidden truncate">
-            Painel Escolar
+            {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
           </h1>
         </div>
 
