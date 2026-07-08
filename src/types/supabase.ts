@@ -736,6 +736,7 @@ export type Database = {
       }
       escolas: {
         Row: {
+          assinatura_diretor_url: string | null
           ativo: boolean | null
           created_at: string
           deleted_at: string | null
@@ -752,6 +753,7 @@ export type Database = {
           tipo: string | null
         }
         Insert: {
+          assinatura_diretor_url?: string | null
           ativo?: boolean | null
           created_at?: string
           deleted_at?: string | null
@@ -768,6 +770,7 @@ export type Database = {
           tipo?: string | null
         }
         Update: {
+          assinatura_diretor_url?: string | null
           ativo?: boolean | null
           created_at?: string
           deleted_at?: string | null
@@ -2360,6 +2363,7 @@ export type Database = {
       }
       get_funcionario_id_from_auth: { Args: never; Returns: string }
       is_admin_global: { Args: never; Returns: boolean }
+      is_diretor_da_escola: { Args: { escola_alvo: string }; Returns: boolean }
       is_superadmin_by_uid: { Args: never; Returns: boolean }
       is_superadmin_email: { Args: { user_email: string }; Returns: boolean }
       tem_acesso_a_escola: { Args: { escola_alvo: string }; Returns: boolean }

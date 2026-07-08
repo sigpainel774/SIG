@@ -20,7 +20,10 @@ import {
   Pin, 
   School, 
   Users,
-  CheckCircle2
+  CheckCircle2,
+  Smartphone,
+  PenTool,
+  Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -29,6 +32,10 @@ import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { PermissoesView } from '@/components/PermissoesView'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
+import { SignaturePad } from '@/components/ui/SignaturePad'
+import { createClient } from '@/lib/supabaseClient'
+import { toast } from 'sonner'
 
 const modulesList = [
   { label: 'Mural', icon: Pin, enabled: true },
@@ -42,14 +49,20 @@ const modulesList = [
 
 
 export default function ConfiguracoesPage() {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local'>('perfil')
   const [showPassword, setShowPassword] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [modules, setModules] = useState(modulesList)
-  const { funcionario, vinculos, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, vinculos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
+  const { selectedEscola } = useSchoolStore()
   const isAdmin = isAdminGlobalOrRoot()
   const [localFuncionario, setLocalFuncionario] = useState<any>(null)
+
+  // Estados para a Assinatura Global do Diretor
+  const [assinaturaDiretorUrl, setAssinaturaDiretorUrl] = useState<string | null>(null)
+  const [newDiretorSignature, setNewDiretorSignature] = useState<string | null>(null)
+  const [loadingDiretorSig, setLoadingDiretorSig] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -76,6 +89,74 @@ export default function ConfiguracoesPage() {
     }
   }, [funcionario])
 
+  // Carrega assinatura do diretor se a escola ativa mudar ou se for carregada
+  useEffect(() => {
+    if (escolaAtivaId) {
+      const fetchEscolaSig = async () => {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('escolas')
+          .select('assinatura_diretor_url')
+          .eq('id', escolaAtivaId)
+          .maybeSingle()
+        if (data) {
+          setAssinaturaDiretorUrl(data.assinatura_diretor_url)
+        }
+      }
+      fetchEscolaSig()
+    }
+  }, [escolaAtivaId])
+
+  const handleSaveDiretorSignature = async () => {
+    if (!escolaAtivaId || !newDiretorSignature) return
+    setLoadingDiretorSig(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Converter base64 para blob
+      const parts = newDiretorSignature.split(';base64,')
+      const contentType = parts[0].split(':')[1]
+      const raw = window.atob(parts[1])
+      const rawLength = raw.length
+      const uInt8Array = new Uint8Array(rawLength)
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i)
+      }
+      const blob = new Blob([uInt8Array], { type: contentType })
+
+      // 2. Upload para storage
+      const fileName = `escola_${escolaAtivaId}_diretor.png`
+      const { error: uploadErr } = await supabase.storage
+        .from('assinaturas_alunos')
+        .upload(fileName, blob, { contentType: 'image/png', upsert: true })
+
+      if (uploadErr) throw uploadErr
+
+      // 3. Obter URL pública
+      const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+      const publicUrl = pData.publicUrl
+
+      // 4. Salvar na tabela escolas
+      const { error: dbErr } = await supabase
+        .from('escolas')
+        .update({ assinatura_diretor_url: publicUrl } as any)
+        .eq('id', escolaAtivaId)
+
+      if (dbErr) throw dbErr
+
+      setAssinaturaDiretorUrl(publicUrl)
+      setNewDiretorSignature(null)
+      toast.success('Assinatura global do diretor salva com sucesso!')
+    } catch (err: any) {
+      toast.error(`Erro ao salvar assinatura do diretor: ${err.message}`)
+    } finally {
+      setLoadingDiretorSig(false)
+    }
+  }
+
+  const isDiretor = selectedEscola?.diretor_id === localFuncionario?.id || 
+                    vinculos.some(v => v.escola_id === escolaAtivaId && v.cargo?.toUpperCase() === 'DIRETOR')
+
   const toggleModule = (index: number) => {
     setModules(prev => prev.map((m, i) => i === index ? { ...m, enabled: !m.enabled } : m))
   }
@@ -94,7 +175,7 @@ export default function ConfiguracoesPage() {
       </div>
 
       {/* Grid Quick Navigation Cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <button
           onClick={() => setActiveTab('perfil')}
           className={cn(
@@ -113,6 +194,27 @@ export default function ConfiguracoesPage() {
           <div>
             <h3 className="font-semibold text-foregroundCustom text-base">Meu Perfil & Aparência</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Ficha funcional, alterar senha e tema do sistema</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('coletor-local')}
+          className={cn(
+            "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
+            activeTab === 'coletor-local'
+              ? "bg-card border-highlight ring-1 ring-highlight/50"
+              : "bg-card border-borderCustom hover:bg-hoverCustom"
+          )}
+        >
+          <div className={cn(
+            "p-3 rounded-xl",
+            activeTab === 'coletor-local' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
+          )}>
+            <Smartphone className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foregroundCustom text-base">Coleta Local</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Assinar ficha de aluno na tela por código de 4 dígitos</p>
           </div>
         </button>
 
@@ -277,12 +379,72 @@ export default function ConfiguracoesPage() {
               </div>
             )}
           </Card>
+
+          {/* Card: Assinatura do Diretor */}
+          {isDiretor && (
+            <Card className="border-borderCustom bg-card p-6">
+              <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
+                <PenTool className="h-5 w-5 text-highlight" />
+                Assinatura Oficial do Diretor (Global)
+              </h2>
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Esta assinatura será impressa automaticamente em todos os comprovantes, boletins e documentos oficiais desta escola.
+                </p>
+                <div className="max-w-md">
+                  <SignaturePad
+                    label="Assinatura Digital"
+                    value={newDiretorSignature || assinaturaDiretorUrl}
+                    onChange={setNewDiretorSignature}
+                    isEditMode={true}
+                  />
+                </div>
+                {newDiretorSignature && (
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setNewDiretorSignature(null)}
+                      className="text-zinc-400 hover:text-white"
+                      disabled={loadingDiretorSig}
+                    >
+                      Descartar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSaveDiretorSignature}
+                      disabled={loadingDiretorSig}
+                      className="bg-highlight text-background hover:bg-highlight/90 font-bold"
+                    >
+                      {loadingDiretorSig ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Salvar Assinatura Oficial
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       )}
 
       {activeTab === 'permissoes' && (
         <div className="animate-in fade-in-50 duration-200">
           <PermissoesView />
+        </div>
+      )}
+
+      {activeTab === 'coletor-local' && (
+        <div className="animate-in fade-in-50 duration-200">
+          <ColetorLocalTab />
         </div>
       )}
     </div>
@@ -303,5 +465,239 @@ function ProfileField({ label, value, strong, badge }: { label: string; value: s
         </span>
       )}
     </div>
+  )
+}
+
+function ColetorLocalTab() {
+  const [token, setToken] = useState('')
+  const [aluno, setAluno] = useState<any | null>(null)
+  const [sigType, setSigType] = useState<'resp' | 'func' | null>(null)
+  const [newSignature, setNewSignature] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!token || token.length !== 4) {
+      toast.error('Por favor, insira um código de 4 dígitos.')
+      return
+    }
+
+    setLoading(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Busca por código de responsável
+      let { data: alunoResp } = await supabase
+        .from('alunos')
+        .select('*')
+        .eq('codigo_temp_resp', token)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (alunoResp) {
+        setAluno(alunoResp)
+        setSigType('resp')
+        setNewSignature(null)
+        toast.success('Código do responsável validado!')
+        return
+      }
+
+      // 2. Busca por código de funcionário
+      let { data: alunoFunc } = await supabase
+        .from('alunos')
+        .select('*')
+        .eq('codigo_temp_func', token)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (alunoFunc) {
+        setAluno(alunoFunc)
+        setSigType('func')
+        setNewSignature(null)
+        toast.success('Código do funcionário validado!')
+        return
+      }
+
+      toast.error('Código inválido, expirado ou já utilizado.')
+      setAluno(null)
+      setSigType(null)
+    } catch (err: any) {
+      toast.error(`Erro ao validar código: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveSignature = async () => {
+    if (!aluno || !sigType || !newSignature) return
+    setLoading(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Converter base64 para blob
+      const parts = newSignature.split(';base64,')
+      const contentType = parts[0].split(':')[1]
+      const raw = window.atob(parts[1])
+      const rawLength = raw.length
+      const uInt8Array = new Uint8Array(rawLength)
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i)
+      }
+      const blob = new Blob([uInt8Array], { type: contentType })
+
+      // 2. Upload para storage
+      const fileName = `aluno_${aluno.id}_${sigType === 'resp' ? 'responsavel' : 'funcionario'}.png`
+      const { error: uploadError } = await supabase.storage
+        .from('assinaturas_alunos')
+        .upload(fileName, blob, {
+          contentType: 'image/png',
+          upsert: true
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: publicData } = supabase.storage
+        .from('assinaturas_alunos')
+        .getPublicUrl(fileName)
+
+      const publicUrl = publicData.publicUrl
+
+      // 3. Atualizar dados_matricula e zerar token
+      const dadosMatriculaAtualizados = {
+        ...(aluno.dados_matricula || {}),
+        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl
+      }
+
+      const updatePayload: any = {
+        dados_matricula: dadosMatriculaAtualizados,
+        [sigType === 'resp' ? 'codigo_temp_resp' : 'codigo_temp_func']: null
+      }
+
+      const { error: updateError } = await supabase
+        .from('alunos')
+        .update(updatePayload)
+        .eq('id', aluno.id)
+
+      if (updateError) throw updateError
+
+      toast.success('Assinatura colhida e salva com sucesso!')
+      setToken('')
+      setAluno(null)
+      setSigType(null)
+      setNewSignature(null)
+    } catch (err: any) {
+      toast.error(`Erro ao salvar assinatura: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Card className="border-borderCustom bg-card p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foregroundCustom flex items-center gap-2">
+          <Smartphone className="h-5 w-5 text-highlight" />
+          Coletor Local de Assinaturas
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Use esta ferramenta caso o responsável não possua celular e queira assinar diretamente na tela da secretaria usando o mouse ou touchpad.
+        </p>
+      </div>
+
+      {!aluno ? (
+        <form onSubmit={handleVerifyCode} className="space-y-4 max-w-sm">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1.5 uppercase font-bold tracking-wider">
+              Insira o Código de Assinatura (4 dígitos)
+            </label>
+            <Input
+              type="text"
+              pattern="[0-9]{4}"
+              maxLength={4}
+              placeholder="Ex: 1234"
+              value={token}
+              onChange={(e) => setToken(e.target.value.replace(/\D/g, ''))}
+              className="bg-input h-11 text-center font-mono text-xl tracking-widest text-white border-borderCustom"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={loading || token.length !== 4}
+            className="w-full bg-highlight text-background hover:bg-highlight/90 font-bold"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Validando...
+              </>
+            ) : (
+              'Verificar Código'
+            )}
+          </Button>
+        </form>
+      ) : (
+        <div className="space-y-6">
+          <div className="p-4 bg-background rounded-xl border border-borderCustom space-y-2">
+            <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider">Dados da Matrícula Localizada</h3>
+            <div className="grid gap-2 sm:grid-cols-2 text-sm">
+              <div>
+                <span className="text-zinc-500 block text-xs">Aluno(a)</span>
+                <span className="font-semibold text-white uppercase">{aluno.nome}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 block text-xs">Tipo de Assinatura</span>
+                <span className="font-bold text-[#3ea6ff] uppercase">
+                  {sigType === 'resp' ? 'Pai/Mãe/Responsável' : 'Funcionário Responsável'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-md space-y-4">
+            <SignaturePad
+              label={`Assine aqui (${sigType === 'resp' ? 'Responsável' : 'Funcionário'})`}
+              value={newSignature}
+              onChange={setNewSignature}
+              isEditMode={true}
+            />
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setAluno(null)
+                  setSigType(null)
+                  setNewSignature(null)
+                }}
+                disabled={loading}
+                className="text-rose-400 hover:text-rose-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveSignature}
+                disabled={loading || !newSignature}
+                className="bg-highlight text-background hover:bg-highlight/90 font-bold"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Assinatura na Ficha
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   )
 }

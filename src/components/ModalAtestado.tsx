@@ -120,7 +120,14 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
             <label className="text-sm font-medium text-zinc-300">Servidor</label>
             <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)} disabled={loadingFuncs}>
               <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"} />
+                <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"}>
+                  {funcionarioId 
+                    ? (() => {
+                        const f = funcionarios.find((x) => x.id === funcionarioId);
+                        return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (funcionarios.length === 0 ? 'Carregando...' : funcionarioId);
+                      })()
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
                 {funcionarios.map((f) => (

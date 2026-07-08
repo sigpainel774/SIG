@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Loader2, Printer, X } from 'lucide-react'
+import { createClient } from '@/lib/supabaseClient'
 
 export interface AlunoPrintData {
   id?: string
@@ -21,6 +22,8 @@ export interface AlunoPrintData {
   serie?: string | null
   foto_url?: string | null
   escola_nome?: string
+  escola_id?: string | null
+  turma_id?: string | null
   dados_matricula?: Record<string, any>
 }
 
@@ -33,6 +36,11 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
   const [mounted, setMounted] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState(false)
 
+  const [escolaNome, setEscolaNome] = useState('')
+  const [turmaAno, setTurmaAno] = useState('')
+  const [turmaLetra, setTurmaLetra] = useState('')
+  const [turnoVal, setTurnoVal] = useState('')
+
   const dm = aluno.dados_matricula || {}
   const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
 
@@ -42,6 +50,59 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
     const separator = url.includes('?') ? '&' : '?'
     return `${url}${separator}t=${Date.now()}`
   }
+
+  useEffect(() => {
+    const fetchDados = async () => {
+      const supabase = createClient()
+      
+      // 1. Unidade Escolar
+      const targetEscolaId = aluno.escola_id || dm.escolaId
+      if (targetEscolaId) {
+        const { data: esc } = await supabase
+          .from('escolas')
+          .select('nome')
+          .eq('id', targetEscolaId)
+          .single()
+        if (esc) {
+          setEscolaNome(esc.nome)
+        }
+      }
+
+      // 2. Turma e Ano
+      const targetTurmaId = aluno.turma_id || dm.turmaIdAluno
+      if (targetTurmaId) {
+        const { data: tur } = await supabase
+          .from('turmas')
+          .select('nome, turno')
+          .eq('id', targetTurmaId)
+          .single()
+        if (tur) {
+          setTurnoVal(tur.turno || '')
+          
+          // Parse class name e.g. "6° A" or "6 - A"
+          const nomeTurma = tur.nome || ''
+          const regex = /^(\d+)(?:\s*[-°]?\s*)([a-zA-Z])$/i
+          const match = nomeTurma.trim().match(regex)
+          if (match) {
+            setTurmaAno(`${match[1]}º ANO`)
+            setTurmaLetra(match[2].toUpperCase())
+          } else {
+            // Fallback split
+            const parts = nomeTurma.split(/[\s-]+/)
+            if (parts.length >= 2) {
+              setTurmaAno(parts[0])
+              setTurmaLetra(parts[parts.length - 1].toUpperCase())
+            } else {
+              setTurmaAno(nomeTurma)
+              setTurmaLetra('')
+            }
+          }
+        }
+      }
+    }
+
+    fetchDados()
+  }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
 
   useEffect(() => {
     setMounted(true)
@@ -130,7 +191,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
               <tr>
                 <td className="border border-black p-1 w-3/4 font-semibold">
                   <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Unidade Escolar</span>
-                  <span className="text-[10px]">{aluno.escola_nome || dm.escolaNome || 'Sem Escola'}</span>
+                  <span className="text-[10px]">{escolaNome || aluno.escola_nome || dm.escolaNome || 'Sem Escola'}</span>
                 </td>
                 <td className="border border-black p-1 w-1/4">
                   <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Data</span>
@@ -150,15 +211,15 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
                       <tr>
                         <td className="border-r border-black p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Ano</span>
-                          <span>{aluno.serie || dm.serieAluno || '-'}</span>
+                          <span>{aluno.serie || dm.serieAluno || turmaAno || '-'}</span>
                         </td>
                         <td className="border-r border-black p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turma</span>
-                          <span>{dm.turmaAluno || '-'}</span>
+                          <span>{dm.turmaAluno || turmaLetra || '-'}</span>
                         </td>
                         <td className="p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turno</span>
-                          <span>{dm.turnoAluno || 'Matutino'}</span>
+                          <span>{dm.turnoAluno || turnoVal || 'Matutino'}</span>
                         </td>
                       </tr>
                     </tbody>
@@ -272,9 +333,23 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+    <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
       <style>{`
         @media print {
+          body > *:not(.print-portal-container) {
+            display: none !important;
+          }
+          .print-portal-container {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           @page {
             size: A4 portrait;
             margin: 8mm 10mm;

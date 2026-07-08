@@ -638,7 +638,11 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
               <Label className="text-xs text-gray-400 font-bold uppercase">Escola / Unidade Escolar</Label>
               <Select value={escolaId} onValueChange={(val) => setEscolaId(val || '')}>
                 <SelectTrigger className="bg-[#181818] border-[#2a2a2a] text-white mt-1">
-                  <SelectValue placeholder="Selecione a Escola" />
+                  <SelectValue placeholder="Selecione a Escola">
+                    {escolaId 
+                      ? (escolas.find((esc) => esc.id === escolaId)?.nome || (escolas.length === 0 ? 'Carregando...' : escolaId))
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
                   {escolas.map((esc) => (
@@ -787,7 +791,14 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
               <Label className="text-xs text-gray-300">Selecione a Turma no Sistema</Label>
               <Select value={turmaId} onValueChange={(val) => setTurmaId(val || '')}>
                 <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
-                  <SelectValue placeholder="Selecione uma turma ativa" />
+                  <SelectValue placeholder="Selecione uma turma ativa">
+                    {turmaId 
+                      ? (() => {
+                          const t = turmas.find((x) => x.id === turmaId);
+                          return t ? `${t.nome} (${t.ano_letivo})` : (turmas.length === 0 ? 'Carregando...' : turmaId);
+                        })()
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
                   {turmas.filter(t => t.escola_id === escolaId).map((t) => (
