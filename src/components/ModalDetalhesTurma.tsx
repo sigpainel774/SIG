@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { useEditModeStore } from '@/store/useEditModeStore'
 import {
   Users,
   BookOpen,
@@ -22,7 +23,8 @@ import {
   Printer,
   CheckCircle2,
   XCircle,
-  X
+  Plus,
+  Trash2
 } from 'lucide-react'
 import { ModalDetalhesAluno } from './ModalDetalhesAluno'
 import { PrintBoletimAluno } from './print/print-boletim-aluno'
@@ -58,6 +60,13 @@ export function ModalDetalhesTurma({
   const [unidadesAtivas, setUnidadesAtivas] = useState<Record<string, number>>({}) // materiaId -> unidade ativa (1, 2 ou 3)
   const [savingNotas, setSavingNotas] = useState<Record<string, boolean>>({}) // materiaId -> loading de salvar
   const [materiaAberta, setMateriaAberta] = useState<string | null>(null) // Controlar Accordion manual
+
+  // Estados Adicionais de Alocação Administrativa (quando isEditMode for true)
+  const [professoresEscola, setProfessoresEscola] = useState<any[]>([])
+  const [vinculosProfessores, setVinculosProfessores] = useState<any[]>([])
+  const [selectedProfId, setSelectedProfId] = useState('')
+  const [novaMateriaNome, setNovaMateriaNome] = useState('')
+  const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
   
   // Modais de detalhe e impressão
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
@@ -65,8 +74,57 @@ export function ModalDetalhesTurma({
 
   const supabase = createClient()
   const { escolaAtivaId } = useAuthStore()
+  const { isEditMode } = useEditModeStore()
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const escolaNome = selectedEscola?.nome ?? 'Sem Escola'
+
+  // Buscar professores ativos da escola
+  const fetchProfessoresEscola = async () => {
+    if (!escolaAtivaId) return
+    try {
+      const { data, error } = await supabase
+        .from('vinculos_funcionarios')
+        .select('id, cargo, ativo, funcionarios(id, nome)')
+        .eq('escola_id', escolaAtivaId)
+        .eq('ativo', true)
+
+      if (error) throw error
+
+      const profs = (data || [])
+        .filter((v: any) => v.cargo?.toLowerCase().includes('professor'))
+        .map((v: any) => {
+          const func = v.funcionarios
+          if (Array.isArray(func)) return func[0]
+          return func
+        })
+        .filter(Boolean)
+
+      const uniqueProfs = profs.filter((value: any, index: number, self: any[]) =>
+        self.findIndex((v: any) => v.id === value.id) === index
+      )
+
+      setProfessoresEscola(uniqueProfs)
+    } catch (err: any) {
+      console.error('Erro ao carregar professores da escola:', err)
+    }
+  }
+
+  // Buscar professores vinculados à turma
+  const fetchVinculosProfessores = async () => {
+    if (!turma?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('vinculos_turmas')
+        .select('id, funcionario_id, funcionarios(id, nome)')
+        .eq('turma_id', turma.id)
+        .eq('tipo', 'professor')
+
+      if (error) throw error
+      setVinculosProfessores(data || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar professores da turma:', err)
+    }
+  }
 
   // Buscar dados iniciais
   const fetchData = async () => {
@@ -157,9 +215,15 @@ export function ModalDetalhesTurma({
       fetchData()
       fetchFrequencias()
       fetchNotas()
+      
+      if (isEditMode) {
+        fetchProfessoresEscola()
+        fetchVinculosProfessores()
+      }
+      
       setActiveTab('materias')
     }
-  }, [open, turma, escolaAtivaId])
+  }, [open, turma, escolaAtivaId, isEditMode])
 
   useEffect(() => {
     if (open && turma?.id) {
@@ -193,7 +257,7 @@ export function ModalDetalhesTurma({
         .upsert({
           aluno_id: alunoId,
           turma_id: turma.id,
-          escola_id: escolaAtivaId,
+          escola_id: escolaAtivaId ?? '',
           data: dataFreq,
           presenca: presenca
         }, { onConflict: 'aluno_id, data' })
@@ -266,7 +330,7 @@ export function ModalDetalhesTurma({
           aluno_id: aluno.id,
           turma_id: turma.id,
           materia_id: materiaId,
-          escola_id: escolaAtivaId,
+          escola_id: escolaAtivaId ?? '',
           unidade: unidade,
           nota1: n.nota1,
           nota2: n.nota2,
@@ -287,6 +351,100 @@ export function ModalDetalhesTurma({
       toast.error('Erro ao salvar notas: ' + err.message)
     } finally {
       setSavingNotas(prev => ({ ...prev, [materiaId]: false }))
+    }
+  }
+
+  // Ações de Alocação Administrativa de Professores e Matérias
+  const handleAddProfessor = async () => {
+    if (!selectedProfId) {
+      toast.error('Selecione um professor')
+      return
+    }
+
+    if (vinculosProfessores.some(vp => vp.funcionario_id === selectedProfId)) {
+      toast.error('Este professor já está vinculado a esta turma')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vinculos_turmas')
+        .insert({
+          funcionario_id: selectedProfId,
+          turma_id: turma.id,
+          escola_id: escolaAtivaId ?? '',
+          tipo: 'professor'
+        })
+
+      if (error) throw error
+      toast.success('Professor adicionado com sucesso')
+      setSelectedProfId('')
+      fetchVinculosProfessores()
+    } catch (err: any) {
+      toast.error('Erro ao adicionar professor: ' + err.message)
+    }
+  }
+
+  const handleRemoveProfessor = async (vinculoId: string, funcionarioId: string) => {
+    try {
+      // Validar se o professor ministra alguma matéria na turma
+      const hasSubject = materias.some(m => m.professor_id === funcionarioId)
+      if (hasSubject) {
+        toast.error('Não é possível remover este professor, pois ele está alocado em uma ou mais matérias desta turma.')
+        return
+      }
+
+      const { error } = await supabase
+        .from('vinculos_turmas')
+        .delete()
+        .eq('id', vinculoId)
+
+      if (error) throw error
+      toast.success('Professor removido com sucesso')
+      fetchVinculosProfessores()
+    } catch (err: any) {
+      toast.error('Erro ao remover professor: ' + err.message)
+    }
+  }
+
+  const handleAddMateria = async () => {
+    if (!novaMateriaNome.trim()) {
+      toast.error('Digite o nome da matéria')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .insert({
+          nome: novaMateriaNome.trim(),
+          turma_id: turma.id,
+          escola_id: escolaAtivaId ?? '',
+          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId
+        })
+
+      if (error) throw error
+      toast.success('Matéria adicionada com sucesso')
+      setNovaMateriaNome('')
+      setNovaMateriaProfId('')
+      fetchData() // Recarregar matérias
+    } catch (err: any) {
+      toast.error('Erro ao adicionar matéria: ' + err.message)
+    }
+  }
+
+  const handleRemoveMateria = async (materiaId: string) => {
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .delete()
+        .eq('id', materiaId)
+
+      if (error) throw error
+      toast.success('Matéria removida com sucesso')
+      fetchData() // Recarregar matérias
+    } catch (err: any) {
+      toast.error('Erro ao remover matéria: ' + err.message)
     }
   }
 
@@ -345,15 +503,6 @@ export function ModalDetalhesTurma({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] w-full bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
-          
-          {/* Botão de fechar */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full bg-[#1c1c1e] p-1.5 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
           <DialogHeader className="pr-12">
             <DialogTitle className="text-2xl font-bold tracking-tight">{turma.nome}</DialogTitle>
             <DialogDescription className="text-zinc-400 text-sm mt-1">
@@ -404,24 +553,152 @@ export function ModalDetalhesTurma({
 
             {/* ABA: MATÉRIAS */}
             {activeTab === 'materias' && (
-              <div className="space-y-3 mt-5">
-                {loading ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Carregando matérias...</div>
-                ) : materias.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Nenhuma matéria vinculada a esta turma.</div>
-                ) : (
-                  materias.map((mat) => (
-                    <div
-                      key={mat.id}
-                      className="bg-[#18181b] border border-[#26262a] rounded-xl p-4 flex items-center justify-between h-13"
-                    >
-                      <span className="text-sm font-bold text-white">{mat.nome}</span>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        <UserIcon className="w-4 h-4 text-zinc-500" />
-                        <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>
+              <div className="space-y-4 mt-5">
+                {isEditMode ? (
+                  // PAINEL DE ALOCAÇÃO ADMINISTRATIVA (Exibido se o Modo de Edição estiver ativo)
+                  <div className="space-y-5">
+                    {/* Professores da Turma */}
+                    <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
+                        <Users className="w-4 h-4 text-zinc-400" />
+                        Professores da Turma
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <select
+                            value={selectedProfId}
+                            onChange={(e) => setSelectedProfId(e.target.value)}
+                            className="w-full bg-[#121214] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                          >
+                            <option value="">-- Selecione um Professor --</option>
+                            {professoresEscola
+                              .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
+                              .map((prof) => (
+                                <option key={prof.id} value={prof.id}>
+                                  {prof.nome}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <Button
+                          onClick={handleAddProfessor}
+                          className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold px-4 h-10 text-xs"
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+
+                      {/* Lista de Professores Adicionados */}
+                      {vinculosProfessores.length > 0 ? (
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
+                          {vinculosProfessores.map((vp) => (
+                            <div key={vp.id} className="flex items-center justify-between bg-[#121214] p-2 rounded-lg border border-[#202022]">
+                              <span className="text-xs font-semibold text-zinc-200 pl-1">{vp.funcionarios?.nome || 'Sem nome'}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
+                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-zinc-500 text-center py-1 font-medium">Nenhum professor alocado.</div>
+                      )}
+                    </div>
+
+                    {/* Matérias da Turma */}
+                    <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
+                        <BookOpen className="w-4 h-4 text-zinc-400" />
+                        Matérias da Turma
+                      </div>
+
+                      {/* Formulário de Adição (Dashed Container) */}
+                      <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Input
+                            placeholder="Nome da Matéria (Ex: Português...)"
+                            value={novaMateriaNome}
+                            onChange={(e) => setNovaMateriaNome(e.target.value)}
+                            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 text-xs"
+                          />
+                          <select
+                            value={novaMateriaProfId}
+                            onChange={(e) => setNovaMateriaProfId(e.target.value)}
+                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                          >
+                            <option value="">-- Selecione o Professor --</option>
+                            <option value="sem_professor">Sem professor</option>
+                            {vinculosProfessores.map((vp) => (
+                              <option key={vp.funcionario_id} value={vp.funcionario_id}>
+                                {vp.funcionarios?.nome || 'Sem nome'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <Button
+                          onClick={handleAddMateria}
+                          className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3 text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Adicionar Matéria
+                        </Button>
+                      </div>
+
+                      {/* Lista de Matérias */}
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {materias.length === 0 ? (
+                          <div className="text-xs text-zinc-500 text-center py-2 font-medium">Nenhuma matéria cadastrada.</div>
+                        ) : (
+                          materias.map((mat) => (
+                            <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022]">
+                              <div className="flex flex-col min-w-0 pr-2">
+                                <span className="text-xs font-bold text-white truncate">{mat.nome}</span>
+                                <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 mt-1 truncate">
+                                  <UserIcon className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+                                  {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveMateria(mat.id)}
+                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex-shrink-0"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
-                  ))
+                  </div>
+                ) : (
+                  // DIÁRIO SIMPLES (Exibido no modo de leitura comum)
+                  <div className="space-y-3">
+                    {loading ? (
+                      <div className="text-center py-10 text-xs text-zinc-500 font-medium">Carregando matérias...</div>
+                    ) : materias.length === 0 ? (
+                      <div className="text-center py-10 text-xs text-zinc-500 font-medium">Nenhuma matéria vinculada a esta turma.</div>
+                    ) : (
+                      materias.map((mat) => (
+                        <div
+                          key={mat.id}
+                          className="bg-[#18181b] border border-[#26262a] rounded-xl p-4 flex items-center justify-between h-13"
+                        >
+                          <span className="text-sm font-bold text-white">{mat.nome}</span>
+                          <div className="flex items-center gap-2 text-xs text-zinc-400">
+                            <UserIcon className="w-4 h-4 text-zinc-500" />
+                            <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 )}
               </div>
             )}

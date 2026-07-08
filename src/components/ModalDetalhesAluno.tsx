@@ -161,13 +161,6 @@ export function ModalDetalhesAluno({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[450px] bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
-          {/* Botão de fechar custom */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full bg-[#1c1c1e] p-1.5 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
 
           {/* Perfil e Avatar */}
           <div className="flex flex-col items-center text-center mt-4">
