@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Camera, UserPlus, Save, X, PenTool, CheckSquare } from 'lucide-react'
+import { Camera, UserPlus, Save, X, PenTool, CheckSquare, Smartphone, QrCode, Loader2, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { MiniMapa } from '@/components/map/MapWrapper'
+import { SignaturePad } from '@/components/ui/SignaturePad'
+import { useEditModeStore } from '@/store/useEditModeStore'
 
 interface ModalAlunoProps {
   open?: boolean
@@ -26,6 +28,7 @@ interface ModalAlunoProps {
 }
 
 export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess }: ModalAlunoProps) {
+  const { isEditMode } = useEditModeStore()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [turmas, setTurmas] = useState<any[]>([])
@@ -33,6 +36,14 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
 
   const activeOpen = open !== undefined ? open : isOpen
   const handleOpenChange = (val: boolean) => {
+    if (!val) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+      setCelularSigningCode(null)
+      setCelularSigningField(null)
+    }
     if (onOpenChange) onOpenChange(val)
     setIsOpen(val)
   }
@@ -123,6 +134,18 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   const [deficiencia, setDeficiencia] = useState('Não')
   const [deficienciasSelecionadas, setDeficienciasSelecionadas] = useState<string[]>([])
 
+  // 12. Assinatura e Autorização de Imagem e Voz
+  const [autorizaImagemVoz, setAutorizaImagemVoz] = useState('Não')
+  const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
+  const [assinaturaFuncionarioUrl, setAssinaturaFuncionarioUrl] = useState<string | null>(null)
+  const [newSignatureResponsavel, setNewSignatureResponsavel] = useState<string | null>(null)
+  const [newSignatureFuncionario, setNewSignatureFuncionario] = useState<string | null>(null)
+  
+  // Fluxo de celular
+  const [celularSigningField, setCelularSigningField] = useState<'resp' | 'func' | null>(null)
+  const [celularSigningCode, setCelularSigningCode] = useState<string | null>(null)
+  const pollingRef = useRef<any>(null)
+
   // Lista de Opções para Checkboxes
   const OPCOES_RECURSOS = [
     'Auxílio leitor',
@@ -168,6 +191,14 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       carregarDadosIniciais()
     }
   }, [activeOpen])
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (alunoEditar) {
@@ -235,10 +266,29 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
       setLatitude(alunoEditar.latitude ? Number(alunoEditar.latitude) : null)
       setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
+      
+      setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
+      setAssinaturaResponsavelUrl(dm.assinatura_responsavel_url || null)
+      setAssinaturaFuncionarioUrl(dm.assinatura_funcionario_url || null)
+      setNewSignatureResponsavel(null)
+      setNewSignatureFuncionario(null)
     } else {
       setLatitude(null)
       setLongitude(null)
+      setAutorizaImagemVoz('Não')
+      setAssinaturaResponsavelUrl(null)
+      setAssinaturaFuncionarioUrl(null)
+      setNewSignatureResponsavel(null)
+      setNewSignatureFuncionario(null)
     }
+
+    // Limpar qualquer polling rodando ao trocar ou recarregar
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+    setCelularSigningCode(null)
+    setCelularSigningField(null)
   }, [alunoEditar])
 
   const carregarDadosIniciais = async () => {
@@ -291,6 +341,91 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     }
   }
 
+  const iniciarAssinaturaCelular = async (tipo: 'resp' | 'func') => {
+    if (!alunoEditar?.id) {
+      toast.error('Por favor, salve a ficha do aluno primeiro para poder usar a assinatura pelo celular.')
+      return
+    }
+
+    const codeTemp = Math.floor(1000 + Math.random() * 9000).toString()
+    setCelularSigningField(tipo)
+    setCelularSigningCode(codeTemp)
+
+    const supabase = createClient()
+    const columnName = tipo === 'resp' ? 'codigo_temp_resp' : 'codigo_temp_func'
+
+    try {
+      const { error } = await supabase
+        .from('alunos')
+        .update({ [columnName]: codeTemp } as any)
+        .eq('id', alunoEditar.id)
+
+      if (error) throw error
+
+      toast.success('Código temporário gerado! Aponte o celular ou informe o código.')
+
+      // Cancelar polling anterior
+      if (pollingRef.current) clearInterval(pollingRef.current)
+
+      // Iniciar Polling
+      pollingRef.current = setInterval(async () => {
+        const { data, error: pollError } = await supabase
+          .from('alunos')
+          .select('dados_matricula, codigo_temp_resp, codigo_temp_func')
+          .eq('id', alunoEditar.id)
+          .single()
+
+        if (pollError) return
+
+        if (data) {
+          const dm = data.dados_matricula as Record<string, any> || {}
+          const codeValue = tipo === 'resp' ? data.codigo_temp_resp : data.codigo_temp_func
+          const sigUrl = tipo === 'resp' ? dm.assinatura_responsavel_url : dm.assinatura_funcionario_url
+
+          // Se o código sumiu e a URL foi setada no celular
+          if (!codeValue && sigUrl) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current)
+              pollingRef.current = null
+            }
+            if (tipo === 'resp') {
+              setAssinaturaResponsavelUrl(sigUrl)
+            } else {
+              setAssinaturaFuncionarioUrl(sigUrl)
+            }
+            setCelularSigningCode(null)
+            setCelularSigningField(null)
+            toast.success(`Assinatura do ${tipo === 'resp' ? 'Responsável' : 'Funcionário'} capturada com sucesso!`)
+          }
+        }
+      }, 3000)
+    } catch (err: any) {
+      toast.error(`Erro ao iniciar assinatura por celular: ${err.message}`)
+      setCelularSigningField(null)
+      setCelularSigningCode(null)
+    }
+  }
+
+  const cancelarAssinaturaCelular = async () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+
+    if (alunoEditar?.id && celularSigningField) {
+      const supabase = createClient()
+      const columnName = celularSigningField === 'resp' ? 'codigo_temp_resp' : 'codigo_temp_func'
+      await supabase
+        .from('alunos')
+        .update({ [columnName]: null } as any)
+        .eq('id', alunoEditar.id)
+    }
+
+    setCelularSigningCode(null)
+    setCelularSigningField(null)
+    toast.info('Assinatura pelo celular cancelada.')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!nome) {
@@ -301,7 +436,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     setLoading(true)
     const supabase = createClient()
 
-    const dadosMatriculaObj = {
+    const dadosMatriculaObj: any = {
       escolaId,
       nomeAluno: nome,
       nascimentoAluno: nascimento,
@@ -361,11 +496,50 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       neeSelecionadas,
       deficienciaAluno: deficiencia,
       deficienciasSelecionadas,
-      // Mantenha assinatura se já existir no editar
-      assinatura_responsavel_url: alunoEditar?.dados_matricula?.assinatura_responsavel_url || null
+      autoriza_imagem_voz: autorizaImagemVoz,
+      assinatura_responsavel_url: assinaturaResponsavelUrl || alunoEditar?.dados_matricula?.assinatura_responsavel_url || null,
+      assinatura_funcionario_url: assinaturaFuncionarioUrl || alunoEditar?.dados_matricula?.assinatura_funcionario_url || null
     }
 
     try {
+      let finalRespUrl = dadosMatriculaObj.assinatura_responsavel_url
+      let finalFuncUrl = dadosMatriculaObj.assinatura_funcionario_url
+
+      // Função auxiliar para converter base64 em blob
+      const base64ToBlob = (base64: string) => {
+        const parts = base64.split(';base64,')
+        const contentType = parts[0].split(':')[1]
+        const raw = window.atob(parts[1])
+        const rawLength = raw.length
+        const uInt8Array = new Uint8Array(rawLength)
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i)
+        }
+        return new Blob([uInt8Array], { type: contentType })
+      }
+
+      if (alunoEditar?.id) {
+        if (newSignatureResponsavel) {
+          const blob = base64ToBlob(newSignatureResponsavel)
+          const fileName = `aluno_${alunoEditar.id}_responsavel.png`
+          const { error: uploadErr } = await supabase.storage.from('assinaturas_alunos').upload(fileName, blob, { contentType: 'image/png', upsert: true })
+          if (uploadErr) throw uploadErr
+          const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+          finalRespUrl = pData.publicUrl
+        }
+        if (newSignatureFuncionario) {
+          const blob = base64ToBlob(newSignatureFuncionario)
+          const fileName = `aluno_${alunoEditar.id}_funcionario.png`
+          const { error: uploadErr } = await supabase.storage.from('assinaturas_alunos').upload(fileName, blob, { contentType: 'image/png', upsert: true })
+          if (uploadErr) throw uploadErr
+          const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+          finalFuncUrl = pData.publicUrl
+        }
+      }
+
+      dadosMatriculaObj.assinatura_responsavel_url = finalRespUrl
+      dadosMatriculaObj.assinatura_funcionario_url = finalFuncUrl
+
       const payload: any = {
         nome,
         cpf: cpf || null,
@@ -388,6 +562,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         dados_matricula: dadosMatriculaObj
       }
 
+      let savedAlunoId = alunoEditar?.id
+
       if (alunoEditar?.id) {
         const { error } = await (supabase.from('alunos') as any)
           .update(payload)
@@ -395,10 +571,40 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         if (error) throw error
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
-        const { error } = await (supabase.from('alunos') as any)
+        const { data: insertedData, error } = await (supabase.from('alunos') as any)
           .insert(payload)
+          .select('id')
+          .single()
         if (error) throw error
+        savedAlunoId = insertedData.id
         toast.success('Aluno cadastrado com sucesso!')
+
+        let hasNewSigs = false
+        if (newSignatureResponsavel) {
+          const blob = base64ToBlob(newSignatureResponsavel)
+          const fileName = `aluno_${savedAlunoId}_responsavel.png`
+          const { error: uploadErr } = await supabase.storage.from('assinaturas_alunos').upload(fileName, blob, { contentType: 'image/png', upsert: true })
+          if (uploadErr) throw uploadErr
+          const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+          dadosMatriculaObj.assinatura_responsavel_url = pData.publicUrl
+          hasNewSigs = true
+        }
+        if (newSignatureFuncionario) {
+          const blob = base64ToBlob(newSignatureFuncionario)
+          const fileName = `aluno_${savedAlunoId}_funcionario.png`
+          const { error: uploadErr } = await supabase.storage.from('assinaturas_alunos').upload(fileName, blob, { contentType: 'image/png', upsert: true })
+          if (uploadErr) throw uploadErr
+          const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+          dadosMatriculaObj.assinatura_funcionario_url = pData.publicUrl
+          hasNewSigs = true
+        }
+
+        if (hasNewSigs) {
+          await supabase
+            .from('alunos')
+            .update({ dados_matricula: dadosMatriculaObj })
+            .eq('id', savedAlunoId)
+        }
       }
 
       handleOpenChange(false)
@@ -1268,16 +1474,122 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
             </div>
           </div>
 
-          {/* Espaço Reservado para Captura de Assinatura Digital (Futuro) */}
-          <div className="bg-[#121212] p-4 border border-[#2a2a2a] rounded-xl space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-300 uppercase">
-              <PenTool className="w-4 h-4 text-[#3ea6ff]" />
-              Assinatura Digital do Responsável (Espaço Reservado)
+          {/* 12. Autorização de Imagem e Voz */}
+          <div>
+            <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+              12. Autorização de Imagem e Voz (Para Comprovante)
             </div>
-            <div className="border border-dashed border-[#3a3a3a] rounded-lg p-6 text-center text-xs text-gray-400 bg-[#181818]/50">
-              O módulo de captura e desenho de assinatura digital do responsável estará disponível aqui em breve. O espaço na Ficha de Matrícula impressa já está formatado.
+            <div className="w-64">
+              <Label className="text-xs text-gray-300">Autoriza o uso de imagem e voz do aluno?</Label>
+              <Select value={autorizaImagemVoz} onValueChange={(val) => setAutorizaImagemVoz(val || 'Não')}>
+                <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+                  <SelectItem value="Sim">Sim, autorizo</SelectItem>
+                  <SelectItem value="Não">Não, não autorizo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+
+          {/* 13. Assinaturas Digitais */}
+          <div>
+            <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+              13. Captura de Assinaturas Digitais
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#121212] p-4 rounded-xl border border-[#2a2a2a]">
+              {/* Assinatura do Responsável */}
+              <div className="space-y-3">
+                <SignaturePad
+                  label="Assinatura do Pai/Mãe/Responsável"
+                  value={newSignatureResponsavel || assinaturaResponsavelUrl}
+                  onChange={setNewSignatureResponsavel}
+                  isEditMode={isEditMode}
+                />
+                {isEditMode && alunoEditar?.id && !celularSigningCode && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => iniciarAssinaturaCelular('resp')}
+                    className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-9 rounded-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Colher Assinatura pelo Celular
+                  </Button>
+                )}
+              </div>
+
+              {/* Assinatura do Funcionário */}
+              <div className="space-y-3">
+                <SignaturePad
+                  label="Assinatura do Funcionário Responsável"
+                  value={newSignatureFuncionario || assinaturaFuncionarioUrl}
+                  onChange={setNewSignatureFuncionario}
+                  isEditMode={isEditMode}
+                />
+                {isEditMode && alunoEditar?.id && !celularSigningCode && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => iniciarAssinaturaCelular('func')}
+                    className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-9 rounded-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Colher Assinatura pelo Celular
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Modal / Overlay para Polling de Assinatura via Celular */}
+          {celularSigningCode && (
+            <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
+              <div className="bg-[#121214] border border-[#26262a] rounded-2xl p-6 max-w-sm w-full text-center space-y-5 shadow-2xl relative">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#3ea6ff]/40 to-transparent" />
+                
+                <div className="space-y-1.5">
+                  <Smartphone className="w-9 h-9 text-[#3ea6ff] mx-auto animate-pulse" />
+                  <h3 className="text-base font-bold text-white uppercase tracking-tight">Assinar pelo Celular</h3>
+                  <p className="text-[11px] text-zinc-400 max-w-[280px] mx-auto leading-normal">
+                    Aponte a câmera para o QR Code ou acesse a URL da Secretaria de Educação.
+                  </p>
+                </div>
+
+                <div className="bg-white p-2 rounded-xl inline-block mx-auto border border-zinc-200">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+                      `${window.location.origin}/assinar`
+                    )}`}
+                    alt="QR Code Assinatura"
+                    className="w-28 h-28"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Código de Assinatura</span>
+                  <div className="text-2xl font-mono font-black text-white bg-[#18181b] py-2 rounded-xl tracking-widest border border-[#27272a]">
+                    {celularSigningCode}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-1.5 text-xs text-[#3ea6ff]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="font-semibold">Aguardando desenho...</span>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={cancelarAssinaturaCelular}
+                  className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-9 rounded-xl text-xs font-bold transition-all"
+                >
+                  Cancelar Operação
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Botão Salvar Fixo/Inferior */}
           <div className="pt-4 border-t border-[#2a2a2a] flex items-center justify-end gap-3">

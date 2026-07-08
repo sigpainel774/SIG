@@ -1,0 +1,350 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { Loader2, Printer, X } from 'lucide-react'
+
+export interface AlunoPrintData {
+  id?: string
+  nome: string
+  cpf?: string | null
+  inep?: string | null
+  data_nascimento?: string | null
+  telefone?: string | null
+  rg?: string | null
+  nis?: string | null
+  cartao_sus?: string | null
+  certidao_nascimento?: string | null
+  nome_mae?: string | null
+  nome_pai?: string | null
+  endereco?: string | null
+  serie?: string | null
+  foto_url?: string | null
+  escola_nome?: string
+  dados_matricula?: Record<string, any>
+}
+
+interface PrintComprovanteProps {
+  aluno: AlunoPrintData
+  onClose?: () => void
+}
+
+export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovanteProps) {
+  const [mounted, setMounted] = useState(false)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
+
+  const dm = aluno.dados_matricula || {}
+  const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
+
+  // Prevenção de Cache com timestamp
+  const getCacheBustedUrl = (url: string) => {
+    if (!url) return ''
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}t=${Date.now()}`
+  }
+
+  useEffect(() => {
+    setMounted(true)
+
+    // Lista de imagens para pré-carregar
+    const logoPrefeitura = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`
+    const logoSecretaria = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`
+    
+    const imageUrls = [logoPrefeitura, logoSecretaria]
+    if (dm.assinatura_responsavel_url) imageUrls.push(dm.assinatura_responsavel_url)
+    if (dm.assinatura_funcionario_url) imageUrls.push(dm.assinatura_funcionario_url)
+
+    const preloadAll = async () => {
+      const promises = imageUrls.map((url) => {
+        return new Promise((resolve) => {
+          const img = new Image()
+          img.src = getCacheBustedUrl(url)
+          img.onload = () => resolve(true)
+          img.onerror = () => resolve(false) // Não trava a impressão se uma falhar
+        })
+      })
+      await Promise.all(promises)
+      setImagesLoaded(true)
+    }
+
+    preloadAll()
+
+    return () => setMounted(false)
+  }, [dm.assinatura_responsavel_url, dm.assinatura_funcionario_url])
+
+  // Abrir diálogo de impressão automaticamente após carregamento das imagens
+  useEffect(() => {
+    if (imagesLoaded) {
+      const timer = setTimeout(() => {
+        window.print()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [imagesLoaded])
+
+  if (!mounted) return null
+
+  const renderComprovanteVia = (isTopCopy: boolean) => {
+    const dataMatriculaFormatada = dm.dataMatricula 
+      ? new Date(dm.dataMatricula).toLocaleDateString('pt-BR') 
+      : new Date().toLocaleDateString('pt-BR')
+
+    return (
+      <div className="flex flex-col justify-between h-[130mm] border border-gray-400 p-5 rounded-lg bg-white print:border-none print:p-0 print:h-[130mm]">
+        <div>
+          {/* Cabeçalho */}
+          <div className="flex items-center justify-between pb-2 border-b border-black mb-3">
+            <div className="flex items-center gap-2 max-w-[130px]">
+              <img 
+                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)} 
+                alt="Prefeitura de Sapeaçu" 
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+
+            <div className="text-center flex-1 px-1">
+              <h2 className="text-[11px] font-extrabold tracking-wider text-gray-800 uppercase leading-none">ESTADO DA BAHIA</h2>
+              <h3 className="text-[12px] font-black text-gray-900 uppercase">PREFEITURA MUNICIPAL DE SAPEAÇU</h3>
+              <p className="text-[9px] font-bold text-gray-600">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
+            </div>
+
+            <div className="text-right max-w-[135px]">
+              <img 
+                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)} 
+                alt="Secretaria de Educação" 
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Título */}
+          <div className="text-center bg-gray-100 py-1 rounded border border-gray-300 mb-2.5">
+            <h1 className="text-[11px] font-black uppercase text-gray-900 tracking-wider">
+              COMPROVANTE DE MATRÍCULA - ANO LETIVO {dm.anoLetivo || '2026'}
+            </h1>
+          </div>
+
+          {/* Dados da Matrícula */}
+          <table className="w-full border-collapse border border-black mb-2 text-[9px] font-mono leading-tight">
+            <tbody>
+              <tr>
+                <td className="border border-black p-1 w-3/4 font-semibold">
+                  <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Unidade Escolar</span>
+                  <span className="text-[10px]">{aluno.escola_nome || dm.escolaNome || 'Sem Escola'}</span>
+                </td>
+                <td className="border border-black p-1 w-1/4">
+                  <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Data</span>
+                  <span className="text-[10px] font-bold">{dataMatriculaFormatada}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={2} className="border border-black p-1">
+                  <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Aluno(a)</span>
+                  <span className="text-[10px] font-bold uppercase">{aluno.nome}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={2} className="p-0">
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      <tr>
+                        <td className="border-r border-black p-1 w-1/3">
+                          <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Ano</span>
+                          <span>{aluno.serie || dm.serieAluno || '-'}</span>
+                        </td>
+                        <td className="border-r border-black p-1 w-1/3">
+                          <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turma</span>
+                          <span>{dm.turmaAluno || '-'}</span>
+                        </td>
+                        <td className="p-1 w-1/3">
+                          <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turno</span>
+                          <span>{dm.turnoAluno || 'Matutino'}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={2} className="p-0 border-t border-black">
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      <tr>
+                        <td className="border-r border-black p-1 w-1/2">
+                          <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Nº Identidade (RG)</span>
+                          <span>{aluno.rg || dm.rgAluno || '-'}</span>
+                        </td>
+                        <td className="p-1 w-1/2">
+                          <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">CPF</span>
+                          <span>{aluno.cpf || dm.cpfAluno || '-'}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Termo de Compromisso */}
+          <div className="mb-2">
+            <div className="bg-gray-200 text-black font-black px-1.5 py-0.5 text-[8px] uppercase border border-black border-b-0 tracking-wider">
+              TERMO DE COMPROMISSO DO RESPONSÁVEL LEGAL
+            </div>
+            <div className="border border-black p-1.5 text-[7.5px] leading-relaxed text-justify text-gray-800 bg-white/50 space-y-1">
+              <p>
+                Declaro, sob as penas da Lei, que as informações prestadas bem como documentos que apresento para a matrícula são verdadeiros e autênticos (fiéis à verdade e condizentes com a realidade).
+              </p>
+              <p>
+                Estou ciente de que as informações contidas nesta ficha são muito importantes para o registro do CENSO ESCOLAR e para que a escola possa tomar as providências necessárias em caso de acidentes ou doenças durante a permanência do aluno no período de aulas. Firmo acordo de informar a escola caso haja qualquer mudança nas informações aqui prestadas e a manter-las sempre atualizada.
+              </p>
+              <p>
+                Comprometo-me pelo zelo e preservação do patrimônio desta Escola e responsabilizo-me pelo ressarcimento de quaisquer danos e prejuízo causados pelo aluno sob nossa responsabilidade.
+              </p>
+            </div>
+          </div>
+
+          {/* Uso de Imagem e Voz */}
+          <div className="mb-3">
+            <div className="bg-gray-200 text-black font-black px-1.5 py-0.5 text-[8px] uppercase border border-black border-b-0 tracking-wider">
+              USO DE IMAGEM E VOZ
+            </div>
+            <div className="border border-black p-1.5 text-[7.5px] leading-snug text-justify text-gray-800 bg-white/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <p className="flex-1">
+                Neste ato, e para todos os fins de direito admitidos autorizo expressamente a utilização da imagem e voz do alunos acima discriminado, em caráter definitivo e gratuito, constante em fotos e filmagens decorrentes da sua participação em eventos da Secretaria Municipal de Educação de Sapeaçu-Bahia.
+              </p>
+              <div className="flex gap-4 font-bold shrink-0 text-[8px] pr-2">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 inline-flex items-center justify-center border border-black font-mono">
+                    {autorizaImagemVoz === 'Sim' ? 'X' : ' '}
+                  </span>
+                  Sim, autorizo.
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 inline-flex items-center justify-center border border-black font-mono">
+                    {autorizaImagemVoz === 'Não' ? 'X' : ' '}
+                  </span>
+                  Não, não autorizo.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assinaturas */}
+        <div className="pt-2">
+          <div className="grid grid-cols-2 gap-8 text-center text-[7.5px]">
+            {/* Responsável pela Matrícula (Funcionário) */}
+            <div className="flex flex-col items-center justify-end h-14">
+              <div className="h-8 flex items-center justify-center mb-0.5">
+                {dm.assinatura_funcionario_url ? (
+                  <img 
+                    src={getCacheBustedUrl(dm.assinatura_funcionario_url)} 
+                    alt="Assinatura Funcionário" 
+                    className="max-h-8 w-auto object-contain filter brightness-95" 
+                  />
+                ) : null}
+              </div>
+              <div className="border-t border-black w-full pt-0.5 font-bold uppercase text-gray-800">
+                {isTopCopy ? 'Assinatura do funcionário responsável pela matrícula' : 'Funcionário Responsável pela matrícula'}
+              </div>
+            </div>
+
+            {/* Pai/Mãe/Responsável */}
+            <div className="flex flex-col items-center justify-end h-14">
+              <div className="h-8 flex items-center justify-center mb-0.5">
+                {dm.assinatura_responsavel_url ? (
+                  <img 
+                    src={getCacheBustedUrl(dm.assinatura_responsavel_url)} 
+                    alt="Assinatura Responsável" 
+                    className="max-h-8 w-auto object-contain filter brightness-95" 
+                  />
+                ) : null}
+              </div>
+              <div className="border-t border-black w-full pt-0.5 font-bold uppercase text-gray-800">
+                Assinatura do Pai/Mãe/Responsável pelo aluno(a)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print-hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Botões de Ação na tela (Ocultos na Impressão) */}
+      <div className="fixed top-4 right-4 z-[100] flex gap-2 print-hidden">
+        <button
+          onClick={() => window.print()}
+          disabled={!imagesLoaded}
+          className="px-4 py-2.5 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 text-xs transition-all cursor-pointer disabled:opacity-50"
+        >
+          {imagesLoaded ? (
+            <>
+              <Printer className="w-4 h-4" />
+              <span>Imprimir Comprovante</span>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Carregando Imagens...</span>
+            </>
+          )}
+        </button>
+        <button
+          onClick={onClose}
+          className="px-4 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-lg text-xs font-semibold border border-[#3f3f46] transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+          <span>Fechar</span>
+        </button>
+      </div>
+
+      {/* Conteúdo do Comprovante em A4 */}
+      <div 
+        className="bg-white text-black w-full max-w-[800px] p-6 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none flex flex-col justify-between my-auto border border-gray-300 print:border-none print:m-0 space-y-6 print:space-y-8"
+        style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+      >
+        {/* Via Superior */}
+        {renderComprovanteVia(true)}
+
+        {/* Divisor das Vias */}
+        <div className="relative py-2 print-hidden">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-dashed border-gray-400"></div>
+          </div>
+          <div className="relative flex justify-center text-[10px] font-bold text-gray-500 uppercase">
+            <span className="bg-white px-3 border border-gray-300 rounded-full py-0.5">Destaque/Corte aqui</span>
+          </div>
+        </div>
+        
+        {/* Via do Divisor para impressão real */}
+        <div className="hidden print:block border-t-2 border-dashed border-black my-2"></div>
+
+        {/* Via Inferior */}
+        {renderComprovanteVia(false)}
+      </div>
+    </div>,
+    document.body
+  )
+}
