@@ -49,7 +49,7 @@ const modulesList = [
 
 
 export default function ConfiguracoesPage() {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local' | 'assinatura-diretor'>('perfil')
   const [showPassword, setShowPassword] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -155,7 +155,7 @@ export default function ConfiguracoesPage() {
   }
 
   const isDiretor = selectedEscola?.diretor_id === localFuncionario?.id || 
-                    vinculos.some(v => v.escola_id === escolaAtivaId && v.cargo?.toUpperCase() === 'DIRETOR')
+                    vinculos.some(v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR')))
 
   const toggleModule = (index: number) => {
     setModules(prev => prev.map((m, i) => i === index ? { ...m, enabled: !m.enabled } : m))
@@ -175,19 +175,19 @@ export default function ConfiguracoesPage() {
       </div>
 
       {/* Grid Quick Navigation Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         <button
           onClick={() => setActiveTab('perfil')}
           className={cn(
             "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
             activeTab === 'perfil'
-              ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
+              ? "bg-card border-highlight ring-1 ring-highlight/50"
               : "bg-card border-borderCustom hover:bg-hoverCustom"
           )}
         >
           <div className={cn(
             "p-3 rounded-xl",
-            activeTab === 'perfil' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
+            activeTab === 'perfil' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
           )}>
             <User className="h-6 w-6" />
           </div>
@@ -217,6 +217,29 @@ export default function ConfiguracoesPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Assinar ficha de aluno na tela por código de 4 dígitos</p>
           </div>
         </button>
+
+        {(isDiretor || isAdmin) && (
+          <button
+            onClick={() => setActiveTab('assinatura-diretor')}
+            className={cn(
+              "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
+              activeTab === 'assinatura-diretor'
+                ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
+                : "bg-card border-borderCustom hover:bg-hoverCustom"
+            )}
+          >
+            <div className={cn(
+              "p-3 rounded-xl",
+              activeTab === 'assinatura-diretor' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
+            )}>
+              <PenTool className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Assinatura do Diretor</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Cadastrar assinatura oficial do gestor para os documentos</p>
+            </div>
+          </button>
+        )}
 
         {isAdmin && (
           <button
@@ -379,60 +402,6 @@ export default function ConfiguracoesPage() {
               </div>
             )}
           </Card>
-
-          {/* Card: Assinatura do Diretor */}
-          {isDiretor && (
-            <Card className="border-borderCustom bg-card p-6">
-              <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
-                <PenTool className="h-5 w-5 text-highlight" />
-                Assinatura Oficial do Diretor (Global)
-              </h2>
-              <div className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Esta assinatura será impressa automaticamente em todos os comprovantes, boletins e documentos oficiais desta escola.
-                </p>
-                <div className="max-w-md">
-                  <SignaturePad
-                    label="Assinatura Digital"
-                    value={newDiretorSignature || assinaturaDiretorUrl}
-                    onChange={setNewDiretorSignature}
-                    isEditMode={true}
-                  />
-                </div>
-                {newDiretorSignature && (
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setNewDiretorSignature(null)}
-                      className="text-zinc-400 hover:text-white"
-                      disabled={loadingDiretorSig}
-                    >
-                      Descartar
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleSaveDiretorSignature}
-                      disabled={loadingDiretorSig}
-                      className="bg-highlight text-background hover:bg-highlight/90 font-bold"
-                    >
-                      {loadingDiretorSig ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Salvando...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Salvar Assinatura Oficial
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
         </div>
       )}
 
@@ -445,6 +414,61 @@ export default function ConfiguracoesPage() {
       {activeTab === 'coletor-local' && (
         <div className="animate-in fade-in-50 duration-200">
           <ColetorLocalTab />
+        </div>
+      )}
+
+      {activeTab === 'assinatura-diretor' && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <Card className="border-borderCustom bg-card p-6">
+            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
+              <PenTool className="h-5 w-5 text-highlight" />
+              Assinatura Oficial do Diretor (Global)
+            </h2>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Esta assinatura será impressa automaticamente em todos os comprovantes, boletins e documentos oficiais desta escola.
+              </p>
+              <div className="max-w-md">
+                <SignaturePad
+                  label="Assinatura Digital"
+                  value={newDiretorSignature || assinaturaDiretorUrl}
+                  onChange={setNewDiretorSignature}
+                  isEditMode={true}
+                />
+              </div>
+              {newDiretorSignature && (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setNewDiretorSignature(null)}
+                    className="text-zinc-400 hover:text-white"
+                    disabled={loadingDiretorSig}
+                  >
+                    Descartar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveDiretorSignature}
+                    disabled={loadingDiretorSig}
+                    className="bg-highlight text-background hover:bg-highlight/90 font-bold"
+                  >
+                    {loadingDiretorSig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Assinatura Oficial
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
       )}
     </div>
