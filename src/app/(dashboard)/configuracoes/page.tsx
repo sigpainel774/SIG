@@ -166,7 +166,7 @@ export default function ConfiguracoesPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foregroundCustom flex items-center gap-3">
-          <Settings className="h-8 w-8 text-highlight" />
+          <Settings className="h-8 w-8 text-[#185FA5] dark:text-[#3ea6ff]" />
           Configurações do Sistema
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -181,13 +181,13 @@ export default function ConfiguracoesPage() {
           className={cn(
             "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
             activeTab === 'perfil'
-              ? "bg-card border-highlight ring-1 ring-highlight/50"
+              ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
               : "bg-card border-borderCustom hover:bg-hoverCustom"
           )}
         >
           <div className={cn(
             "p-3 rounded-xl",
-            activeTab === 'perfil' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
+            activeTab === 'perfil' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
           )}>
             <User className="h-6 w-6" />
           </div>
@@ -202,13 +202,13 @@ export default function ConfiguracoesPage() {
           className={cn(
             "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
             activeTab === 'coletor-local'
-              ? "bg-card border-highlight ring-1 ring-highlight/50"
+              ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
               : "bg-card border-borderCustom hover:bg-hoverCustom"
           )}
         >
           <div className={cn(
             "p-3 rounded-xl",
-            activeTab === 'coletor-local' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
+            activeTab === 'coletor-local' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
           )}>
             <Smartphone className="h-6 w-6" />
           </div>
@@ -224,13 +224,13 @@ export default function ConfiguracoesPage() {
             className={cn(
               "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
               activeTab === 'permissoes'
-                ? "bg-card border-highlight ring-1 ring-highlight/50"
+                ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
                 : "bg-card border-borderCustom hover:bg-hoverCustom"
             )}
           >
             <div className={cn(
               "p-3 rounded-xl",
-              activeTab === 'permissoes' ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"
+              activeTab === 'permissoes' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
             )}>
               <ShieldCheck className="h-6 w-6" />
             </div>
@@ -246,9 +246,9 @@ export default function ConfiguracoesPage() {
       {activeTab === 'perfil' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           {/* Card: Aparência e Tema */}
-          <Card className="border-borderCustom bg-card p-6">
-            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
-              <Sun className="h-5 w-5 text-highlight" />
+          <Card className="border-[0.5px] border-borderCustom bg-card p-5">
+            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom/50 pb-4 text-lg font-semibold text-foregroundCustom">
+              <Sun className="h-5 w-5 text-[#185FA5] dark:text-[#3ea6ff]" />
               Personalização de Tema
             </h2>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -265,9 +265,9 @@ export default function ConfiguracoesPage() {
                     type="button"
                     onClick={() => setTheme('light')}
                     className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
                       theme === 'light'
-                        ? "bg-background text-foreground shadow-sm font-semibold"
+                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
                         : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
                     )}
                   >
@@ -279,9 +279,9 @@ export default function ConfiguracoesPage() {
                     type="button"
                     onClick={() => setTheme('dark')}
                     className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
                       theme === 'dark'
-                        ? "bg-background text-foreground shadow-sm font-semibold"
+                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
                         : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
                     )}
                   >
@@ -293,9 +293,9 @@ export default function ConfiguracoesPage() {
                     type="button"
                     onClick={() => setTheme('system')}
                     className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
                       theme === 'system'
-                        ? "bg-background text-foreground shadow-sm font-semibold"
+                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
                         : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
                     )}
                   >
@@ -308,9 +308,9 @@ export default function ConfiguracoesPage() {
           </Card>
 
           {/* Card: Dados da Ficha Funcional */}
-          <Card className="border-borderCustom bg-card p-6">
-            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
-              <User className="h-5 w-5 text-highlight" />
+          <Card className="border-[0.5px] border-borderCustom bg-card p-5">
+            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom/50 pb-4 text-lg font-semibold text-foregroundCustom">
+              <User className="h-5 w-5 text-[#185FA5] dark:text-[#3ea6ff]" />
               Dados da Ficha Funcional
             </h2>
             <div className="flex flex-col gap-5 sm:flex-row">
@@ -321,7 +321,7 @@ export default function ConfiguracoesPage() {
                 <ProfileField label="Nome Completo" value={mounted ? (localFuncionario?.nome || "Usuário") : "Carregando..."} strong />
                 <ProfileField label="E-mail" value={mounted ? (localFuncionario?.email || "-") : "Carregando..."} />
                 <ProfileField label="Cargo" value={mounted ? (localFuncionario?.cargo || vinculos.find(v => v.ativo)?.cargo || "Servidor") : "Carregando..."} badge />
-                <ProfileField label="Status" value={mounted ? (localFuncionario?.status || "Ativo") : "Carregando..."} />
+                <ProfileField label="Status" value={mounted ? (localFuncionario?.status || "Ativo") : "Carregando..."} isStatus />
               </div>
             </div>
           </Card>
@@ -451,12 +451,37 @@ export default function ConfiguracoesPage() {
   )
 }
 
-function ProfileField({ label, value, strong, badge }: { label: string; value: string; strong?: boolean; badge?: boolean }) {
+function ProfileField({ 
+  label, 
+  value, 
+  strong, 
+  badge,
+  isStatus
+}: { 
+  label: string; 
+  value: string; 
+  strong?: boolean; 
+  badge?: boolean;
+  isStatus?: boolean;
+}) {
   return (
     <div>
       <span className="mb-1 block text-xs text-muted-foreground">{label}</span>
-      {badge ? (
-        <span className="inline-flex rounded-md bg-input px-2.5 py-1 text-xs font-medium text-foregroundCustom border border-borderCustom">
+      {badge || isStatus ? (
+        <span className={cn(
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border tracking-wide",
+          isStatus
+            ? (value.toLowerCase() === 'ativo'
+                ? "bg-emerald-50 border-emerald-200/50 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800/50 dark:text-emerald-400"
+                : "bg-zinc-50 border-zinc-200/50 text-zinc-700 dark:bg-zinc-800/40 dark:border-zinc-700/50 dark:text-zinc-400")
+            : "bg-blue-50 border-blue-200/50 text-[#185FA5] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400"
+        )}>
+          {isStatus && (
+            <span className={cn(
+              "w-1.5 h-1.5 rounded-full mr-1.5",
+              value.toLowerCase() === 'ativo' ? "bg-emerald-500" : "bg-zinc-500"
+            )} />
+          )}
           {value}
         </span>
       ) : (

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, School } from 'lucide-react'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -82,7 +82,7 @@ export function Header() {
             title="Menu Principal"
             aria-label="Alternar Menu Lateral"
           >
-            <Menu className="w-6 h-6 text-[#3ea6ff]" />
+            <Menu className="w-6 h-6 text-[#185FA5] dark:text-[#3ea6ff]" />
           </button>
           {selectedEscola?.logo_url ? (
             <img
@@ -91,7 +91,7 @@ export function Header() {
               className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-surface-1"
             />
           ) : (
-            <Logo variant="icon" className="w-7 h-7 shrink-0" />
+            <School className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff] shrink-0" />
           )}
           <h1 className="font-bold text-base md:text-lg text-foreground tracking-tight hidden sm:block truncate">
             {selectedEscola ? selectedEscola.nome : 'Sapeaçu Painel Escolar'}
@@ -102,11 +102,11 @@ export function Header() {
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           {/* Notification Bell */}
           <button
             onClick={() => setModalNotifOpen(true)}
-            className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer"
+            className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer flex items-center justify-center"
             title="Notificações"
           >
             <Bell className="w-5 h-5" />
@@ -118,8 +118,8 @@ export function Header() {
           </button>
 
           {/* Modo Edição Switch */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className={`text-xs sm:text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-muted-foreground'}`}>
+          <div className="flex items-center gap-2 md:gap-3 h-9">
+            <span className={`text-xs sm:text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#185FA5] dark:text-[#3ea6ff]' : 'text-muted-foreground'}`}>
               Modo Edição
             </span>
             
@@ -129,7 +129,7 @@ export function Header() {
               aria-checked={isEditMode}
               onClick={handleToggleClick}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isEditMode ? 'bg-[#0090ff]' : 'bg-surface-3'
+                isEditMode ? 'bg-[#185FA5] dark:bg-primary' : 'bg-surface-3'
               }`}
             >
               <span

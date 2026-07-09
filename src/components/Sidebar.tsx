@@ -119,7 +119,7 @@ export function Sidebar() {
           title="Recolher Menu"
           aria-label="Recolher Menu"
         >
-          <X className="w-5 h-5 text-[#3ea6ff]" />
+          <X className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff]" />
         </button>
       </div>
 
@@ -137,13 +137,13 @@ export function Sidebar() {
               href={item.href}
               onClick={closeMobile}
               className={cn(
-                "flex items-center gap-3.5 px-4 py-3 md:py-2.5 rounded-xl font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
+                "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
                 isActive 
-                  ? "bg-sidebar-accent text-highlight font-semibold border border-sidebar-border shadow-sm" 
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  ? "bg-[#185FA5]/8 text-[#185FA5] font-semibold border-l-2 border-[#185FA5] rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]" 
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
               )}
             >
-              <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-highlight" : "text-sidebar-foreground/60")} />
+              <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-[#185FA5] dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
               <span>{item.label}</span>
             </Link>
           )
