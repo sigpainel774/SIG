@@ -268,8 +268,12 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
       
       setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
-      setAssinaturaResponsavelUrl(dm.assinatura_responsavel_url || null)
-      setAssinaturaFuncionarioUrl(dm.assinatura_funcionario_url || null)
+      const cacheBust = (url: string | null) => {
+        if (!url) return null
+        return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
+      }
+      setAssinaturaResponsavelUrl(cacheBust(dm.assinatura_responsavel_url))
+      setAssinaturaFuncionarioUrl(cacheBust(dm.assinatura_funcionario_url))
       setNewSignatureResponsavel(null)
       setNewSignatureFuncionario(null)
     } else {
@@ -388,10 +392,11 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
               clearInterval(pollingRef.current)
               pollingRef.current = null
             }
+            const cacheBustedUrl = `${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
             if (tipo === 'resp') {
-              setAssinaturaResponsavelUrl(sigUrl)
+              setAssinaturaResponsavelUrl(cacheBustedUrl)
             } else {
-              setAssinaturaFuncionarioUrl(sigUrl)
+              setAssinaturaFuncionarioUrl(cacheBustedUrl)
             }
             setCelularSigningCode(null)
             setCelularSigningField(null)
@@ -497,8 +502,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       deficienciaAluno: deficiencia,
       deficienciasSelecionadas,
       autoriza_imagem_voz: autorizaImagemVoz,
-      assinatura_responsavel_url: assinaturaResponsavelUrl || alunoEditar?.dados_matricula?.assinatura_responsavel_url || null,
-      assinatura_funcionario_url: assinaturaFuncionarioUrl || alunoEditar?.dados_matricula?.assinatura_funcionario_url || null
+      assinatura_responsavel_url: (assinaturaResponsavelUrl ? assinaturaResponsavelUrl.split('?')[0] : null) || (alunoEditar?.dados_matricula?.assinatura_responsavel_url ? alunoEditar.dados_matricula.assinatura_responsavel_url.split('?')[0] : null) || null,
+      assinatura_funcionario_url: (assinaturaFuncionarioUrl ? assinaturaFuncionarioUrl.split('?')[0] : null) || (alunoEditar?.dados_matricula?.assinatura_funcionario_url ? alunoEditar.dados_matricula.assinatura_funcionario_url.split('?')[0] : null) || null
     }
 
     try {

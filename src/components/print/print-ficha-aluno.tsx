@@ -522,7 +522,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
             <div className="flex flex-col items-center justify-end h-20">
               <div className="h-12 flex items-center justify-center">
                 {dm.assinatura_funcionario_url ? (
-                  <img src={dm.assinatura_funcionario_url} alt="Assinatura Funcionário" className="max-h-12 object-contain" />
+                  <img src={`${dm.assinatura_funcionario_url}${dm.assinatura_funcionario_url.includes('?') ? '&' : '?'}t=${Date.now()}`} alt="Assinatura Funcionário" className="max-h-12 object-contain" />
                 ) : null}
               </div>
               <div className="border-t border-black w-full pt-1 text-[10px] font-semibold text-gray-800">
@@ -533,7 +533,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
             <div className="flex flex-col items-center justify-end h-20">
               <div className="h-12 flex items-center justify-center">
                 {dm.assinatura_responsavel_url ? (
-                  <img src={dm.assinatura_responsavel_url} alt="Assinatura Responsável" className="max-h-12 object-contain" />
+                  <img src={`${dm.assinatura_responsavel_url}${dm.assinatura_responsavel_url.includes('?') ? '&' : '?'}t=${Date.now()}`} alt="Assinatura Responsável" className="max-h-12 object-contain" />
                 ) : null}
               </div>
               <div className="border-t border-black w-full pt-1 text-[10px] font-semibold text-gray-800">

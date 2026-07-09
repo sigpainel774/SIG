@@ -323,7 +323,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
         {value ? (
           <div className="p-3 w-full h-full flex flex-col items-center justify-center">
             <img
-              src={value}
+              src={value.startsWith('data:') ? value : `${value}${value.includes('?') ? '&' : '?'}t=${Date.now()}`}
               alt={`Assinatura ${label}`}
               className="max-h-[75px] w-auto object-contain select-none pointer-events-none filter brightness-90 invert-[0.1]"
             />
