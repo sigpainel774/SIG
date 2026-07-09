@@ -230,6 +230,68 @@ export type Database = {
           },
         ]
       }
+      alunos_anexos: {
+        Row: {
+          aluno_id: string
+          arquivado_por: string | null
+          arquivo_url: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          motivo_arquivamento: string | null
+          nome: string
+        }
+        Insert: {
+          aluno_id: string
+          arquivado_por?: string | null
+          arquivo_url: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          motivo_arquivamento?: string | null
+          nome: string
+        }
+        Update: {
+          aluno_id?: string
+          arquivado_por?: string | null
+          arquivo_url?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          motivo_arquivamento?: string | null
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alunos_anexos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_anexos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_anexos_arquivado_por_fkey"
+            columns: ["arquivado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_anexos_arquivado_por_fkey"
+            columns: ["arquivado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos_transporte: {
         Row: {
           aluno_id: string | null
@@ -282,6 +344,8 @@ export type Database = {
           arquivos_anexos: Json | null
           created_at: string | null
           escola_origem_id: string | null
+          excluido_em: string | null
+          excluido_por: string | null
           id: string
           motivo: string
           payload_completo: Json
@@ -297,6 +361,8 @@ export type Database = {
           arquivos_anexos?: Json | null
           created_at?: string | null
           escola_origem_id?: string | null
+          excluido_em?: string | null
+          excluido_por?: string | null
           id?: string
           motivo: string
           payload_completo: Json
@@ -312,6 +378,8 @@ export type Database = {
           arquivos_anexos?: Json | null
           created_at?: string | null
           escola_origem_id?: string | null
+          excluido_em?: string | null
+          excluido_por?: string | null
           id?: string
           motivo?: string
           payload_completo?: Json
@@ -342,6 +410,20 @@ export type Database = {
             columns: ["escola_origem_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_excluido_por_fkey"
+            columns: ["excluido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivados_excluido_por_fkey"
+            columns: ["excluido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
           {

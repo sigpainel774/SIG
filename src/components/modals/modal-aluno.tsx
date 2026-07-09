@@ -789,7 +789,18 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
             </div>
             <div>
               <Label className="text-xs text-gray-300">Selecione a Turma no Sistema</Label>
-              <Select value={turmaId} onValueChange={(val) => setTurmaId(val || '')}>
+              <Select 
+                value={turmaId} 
+                onValueChange={(val) => {
+                  setTurmaId(val || '')
+                  if (val) {
+                    const selectedTurma = turmas.find(t => t.id === val)
+                    if (selectedTurma) {
+                      setSerie(selectedTurma.nome)
+                    }
+                  }
+                }}
+              >
                 <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
                   <SelectValue placeholder="Selecione uma turma ativa">
                     {turmaId 
@@ -978,12 +989,32 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
 
               <div>
                 <Label className="text-xs text-gray-300">Ano / Série / Etapa</Label>
-                <Input 
+                <Select 
                   value={serie} 
-                  onChange={(e) => setSerie(e.target.value)} 
-                  placeholder="Ex: 3º ANO" 
-                  className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
-                />
+                  onValueChange={(val) => {
+                    setSerie(val || '')
+                    if (val) {
+                      const selectedTurma = turmas.find(t => t.nome === val && t.escola_id === escolaId)
+                      if (selectedTurma) {
+                        setTurmaId(selectedTurma.id)
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1 w-full">
+                    <SelectValue placeholder="Selecione o Ano / Série / Etapa">
+                      {serie || undefined}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+                    {turmas.filter(t => t.escola_id === escolaId).map((t) => (
+                      <SelectItem key={t.id} value={t.nome}>{t.nome} ({t.ano_letivo})</SelectItem>
+                    ))}
+                    {turmas.filter(t => t.escola_id === escolaId).length === 0 && (
+                      <div className="p-2 text-xs text-zinc-500 text-center">Nenhuma turma cadastrada</div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

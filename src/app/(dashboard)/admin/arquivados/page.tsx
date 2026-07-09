@@ -2,25 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { ArchiveRestore, RefreshCw, Undo2, Trash2 } from 'lucide-react'
+import { ArchiveRestore, RefreshCw, Undo2, Trash2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { reverterArquivado, excluirDefinitivamenteArquivado } from '@/lib/audit/archive-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { ModalDetalhesArquivado } from '@/components/modals/modal-detalhes-arquivado'
 
 export default function AdminArquivadosPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
   const [arquivados, setArquivados] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [selectedArq, setSelectedArq] = useState<any | null>(null)
 
   const loadArquivados = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('arquivados')
-      .select('*, funcionarios!arquivado_por(nome), escolas(nome)')
+      .select('*, funcionarios!arquivado_por(nome), revertido_por:funcionarios!revertido_por(nome), excluido_por:funcionarios!excluido_por(nome), escolas(nome)')
       .order('created_at', { ascending: false })
 
     if (data) setArquivados(data)
@@ -141,16 +143,27 @@ export default function AdminArquivadosPage() {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  {arq.status === 'ARQUIVADO' && (
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleReverter(arq)} className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" title="Reverter">
-                        <Undo2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handlePurge(arq)} className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir Definitivamente">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedArq(arq)} 
+                      className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10" 
+                      title="Ver Detalhes"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {arq.status === 'ARQUIVADO' && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => handleReverter(arq)} className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" title="Reverter">
+                          <Undo2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handlePurge(arq)} className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir Definitivamente">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -162,6 +175,14 @@ export default function AdminArquivadosPage() {
           </TableBody>
         </Table>
       </div>
+
+      {selectedArq && (
+        <ModalDetalhesArquivado
+          open={!!selectedArq}
+          onOpenChange={(open) => !open && setSelectedArq(null)}
+          arquivado={selectedArq}
+        />
+      )}
     </div>
   )
 }

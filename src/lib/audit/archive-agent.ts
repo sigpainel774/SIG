@@ -10,6 +10,8 @@ export async function arquivarAluno(params: {
   arquivosAnexos?: object[]
 }) {
   try {
+    const performedById = params.arquivadoPor.id && params.arquivadoPor.id !== '' ? params.arquivadoPor.id : null
+
     // 1. Gravar snapshot completo na tabela arquivados
     const { error: archiveError } = await params.supabase
       .from('arquivados')
@@ -19,7 +21,7 @@ export async function arquivarAluno(params: {
         tabela_origem: 'alunos',
         motivo: params.motivo,
         escola_origem_id: params.escolaOrigemId || params.aluno.escola_id || null,
-        arquivado_por: params.arquivadoPor.id,
+        arquivado_por: performedById,
         payload_completo: params.aluno,
         arquivos_anexos: params.arquivosAnexos || [],
         status: 'ARQUIVADO'
@@ -59,6 +61,8 @@ export async function reverterArquivado(params: {
   revertidoPor: { id: string; name: string; email: string }
 }) {
   try {
+    const performedById = params.revertidoPor.id && params.revertidoPor.id !== '' ? params.revertidoPor.id : null
+
     // 1. Obter registro arquivado
     const { data: arquivado, error: fetchError } = await params.supabaseAdmin
       .from('arquivados')
@@ -82,7 +86,7 @@ export async function reverterArquivado(params: {
       .update({
         status: 'REVERTIDO',
         revertido_em: new Date().toISOString(),
-        revertido_por: params.revertidoPor.id
+        revertido_por: performedById
       })
       .eq('id', params.arquivadoId)
 
@@ -112,6 +116,8 @@ export async function excluirDefinitivamenteArquivado(params: {
   excluidoPor: { id: string; name: string; email: string }
 }) {
   try {
+    const performedById = params.excluidoPor.id && params.excluidoPor.id !== '' ? params.excluidoPor.id : null
+
     const { data: arquivado, error: fetchError } = await params.supabaseAdmin
       .from('arquivados')
       .select('*')
@@ -132,7 +138,9 @@ export async function excluirDefinitivamenteArquivado(params: {
     const { error: updateError } = await params.supabaseAdmin
       .from('arquivados')
       .update({
-        status: 'EXCLUIDO'
+        status: 'EXCLUIDO',
+        excluido_em: new Date().toISOString(),
+        excluido_por: performedById
       })
       .eq('id', params.arquivadoId)
 
@@ -152,6 +160,62 @@ export async function excluirDefinitivamenteArquivado(params: {
     return { success: true }
   } catch (error: any) {
     console.error('Erro ao excluir arquivado definitivamente:', error)
+    return { success: false, error }
+  }
+}
+
+export async function arquivarAnexo(params: {
+  supabase: SupabaseClient
+  anexo: any
+  motivo: string
+  escolaId?: string
+  arquivadoPor: { id: string; name: string; email: string }
+}) {
+  try {
+    const performedById = params.arquivadoPor.id && params.arquivadoPor.id !== '' ? params.arquivadoPor.id : null
+
+    // 1. Gravar snapshot na tabela arquivados
+    const { error: archiveError } = await params.supabase
+      .from('arquivados')
+      .insert({
+        tipo: 'ANEXO_ALUNO',
+        referencia_id: params.anexo.id,
+        tabela_origem: 'alunos_anexos',
+        motivo: params.motivo,
+        escola_origem_id: params.escolaId || null,
+        arquivado_por: performedById,
+        payload_completo: params.anexo,
+        status: 'ARQUIVADO'
+      })
+
+    if (archiveError) throw archiveError
+
+    // 2. Soft delete na tabela original
+    const { error: deleteError } = await params.supabase
+      .from('alunos_anexos')
+      .update({
+        deleted_at: new Date().toISOString(),
+        arquivado_por: performedById,
+        motivo_arquivamento: params.motivo
+      })
+      .eq('id', params.anexo.id)
+
+    if (deleteError) throw deleteError
+
+    // 3. Registrar na trilha de auditoria
+    await logAudit({
+      supabase: params.supabase,
+      action: 'DELETE',
+      entity: 'alunos_anexos (ARQUIVAMENTO)',
+      entityId: params.anexo.id,
+      oldData: params.anexo,
+      performedBy: params.arquivadoPor,
+      tenantId: params.escolaId
+    })
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Erro ao arquivar anexo:', error)
     return { success: false, error }
   }
 }
