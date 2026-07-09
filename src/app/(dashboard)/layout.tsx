@@ -67,7 +67,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // Layout exclusivo para Super Admin (Root)
   if (isSuperAdmin) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] text-foregroundCustom">
+      <div className="flex flex-col min-h-screen bg-background text-foregroundCustom">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
         <PerformanceTracker />
         <RootAdminHeader />

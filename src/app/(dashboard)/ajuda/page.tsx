@@ -48,28 +48,28 @@ const diretrizes = [
       <div className="space-y-4">
         <p>A criação de usuários e sua vinculação automática com a ficha de funcionários baseia-se em uma arquitetura de dupla conciliação (via Banco de Dados e via Frontend). O <strong>e-mail</strong> do funcionário funciona como a chave de unificação de todo o processo.</p>
         
-        <h4 className="text-white font-bold text-sm mb-2 mt-4">Existem dois caminhos principais para liberar o acesso:</h4>
+        <h4 className="text-foreground font-bold text-sm mb-2 mt-4">Existem dois caminhos principais para liberar o acesso:</h4>
         
-        <div className="bg-[#2a2a2a] p-4 border-l-4 border-blue-500 rounded-md space-y-3">
-          <h5 className="text-white font-bold text-sm">Caminho 1: Ficha criada ANTES da conta (Recomendado)</h5>
-          <ol className="list-decimal pl-5 space-y-2 text-sm text-[#aaa]">
+        <div className="bg-surface-2 p-4 border-l-4 border-blue-500 rounded-md space-y-3">
+          <h5 className="text-foreground font-bold text-sm">Caminho 1: Ficha criada ANTES da conta (Recomendado)</h5>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
             <li>O Administrador ou Diretor cadastra a ficha do funcionário no menu <strong>Funcionários</strong>, preenchendo a aba "Identificação" com o <strong>E-mail de Login</strong>.</li>
             <li>O administrador de TI acessa o Painel Oficial do Supabase (Dashboard) e cria a conta de autenticação (usuário e senha) preenchendo com este exato e-mail, gerando uma conta <strong>auto-confirmada</strong>.</li>
             <li>No primeiro login, o sistema detectará o e-mail, fará a conciliação automática de segurança (reconciliação <em>on-the-fly</em>) e amarrará a ficha ao usuário permanentemente.</li>
           </ol>
         </div>
 
-        <div className="bg-[#2a2a2a] p-4 border-l-4 border-emerald-500 rounded-md space-y-3">
-          <h5 className="text-white font-bold text-sm">Caminho 2: Conta criada ANTES da ficha</h5>
-          <ol className="list-decimal pl-5 space-y-2 text-sm text-[#aaa]">
+        <div className="bg-surface-2 p-4 border-l-4 border-emerald-500 rounded-md space-y-3">
+          <h5 className="text-foreground font-bold text-sm">Caminho 2: Conta criada ANTES da ficha</h5>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
             <li>O administrador de TI cria primeiro o acesso de autenticação (usuário e senha) no Painel Oficial do Supabase.</li>
             <li>O banco de dados (através de uma trigger interna) detectará o novo usuário e criará uma "ficha vazia" de funcionário de forma 100% automática, contendo apenas aquele e-mail.</li>
             <li>O Diretor/Administrador precisará entrar no sistema, ir no menu <strong>Funcionários</strong>, buscar o e-mail recém-criado na listagem, e clicar em editar para terminar de preencher os dados (Nome, CPF, etc).</li>
           </ol>
         </div>
 
-        <div className="bg-[#3f1818] text-[#fecaca] p-4 border-l-4 border-red-500 rounded-md mt-4 text-sm leading-relaxed">
-          <strong className="text-red-300 flex items-center gap-2 mb-1">
+        <div className="bg-red-500/10 text-red-600 dark:text-red-200 p-4 border-l-4 border-red-500 rounded-md mt-4 text-sm leading-relaxed">
+          <strong className="text-red-600 dark:text-red-300 flex items-center gap-2 mb-1">
             <ShieldCheck className="w-4 h-4" /> TRATAMENTO DE SEGURANÇA (ÓRFÃOS)
           </strong>
           Se um usuário tentar logar e seu e-mail não existir na base de funcionários, a sessão será imediatamente bloqueada e expurgada do navegador, redirecionando de volta ao login.
@@ -105,8 +105,8 @@ const diretrizes = [
           <li><strong>Passo 1 (Cadastro):</strong> O Diretor acessa o menu "Funcionários", cadastra os dados do Professor incluindo o seu <strong>E-mail</strong>, e cria o vínculo na escola.</li>
           <li>
             <strong>Passo 2 (Permissão):</strong> O Diretor acessa o menu "Permissões", seleciona o funcionário e concede a ele o acesso de <strong>Nível 4 - Professor</strong>.
-            <div className="bg-[#3f1818] text-[#fecaca] p-4 border-l-4 border-red-500 rounded-md text-sm mt-3 leading-relaxed">
-              <strong className="text-red-300 flex items-center gap-2 mb-1">
+            <div className="bg-red-500/10 text-red-600 dark:text-red-200 p-4 border-l-4 border-red-500 rounded-md text-sm mt-3 leading-relaxed">
+              <strong className="text-red-600 dark:text-red-300 flex items-center gap-2 mb-1">
                 ⚠️ ATENÇÃO À ESCOLA SELECIONADA
               </strong> 
               Você DEVE certificar-se de que a escola selecionada no campo <strong>"Escola / Órgão"</strong> do formulário de permissão é EXATAMENTE a mesma escola em que a ficha do professor foi lotada no Passo 1.<br />
@@ -175,8 +175,8 @@ const diretrizes = [
           <li>No <em>Painel do Chefe</em>, o sistema listará apenas os funcionários subordinados àquele chefe (ou seja, funcionários cujos vínculos na escola possuam os mesmos cargos que o chefe foi designado a controlar).</li>
           <li>O Chefe poderá acompanhar as informações da equipe, definir as escalas e consultar os logs de rondas ou ponto eletrônico de sua respectiva equipe, sem ter acesso aos módulos globais de secretaria.</li>
         </ul>
-        <div className="bg-[#2a2a2a] p-4 border-l-4 border-highlight rounded-md mt-4">
-          <h4 className="text-white font-bold text-sm mb-2">Passo a Passo: Como atribuir um Chefe de Equipe</h4>
+        <div className="bg-surface-2 p-4 border-l-4 border-highlight rounded-md mt-4">
+          <h4 className="text-foreground font-bold text-sm mb-2">Passo a Passo: Como atribuir um Chefe de Equipe</h4>
           <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
             <li>Acesse <strong>Permissões</strong> e clique em <strong>+ Nova Permissão</strong>.</li>
             <li>Selecione o funcionário e escolha <strong>Nível 5 - Chefe de Equipe</strong>.</li>
@@ -184,7 +184,7 @@ const diretrizes = [
             <li>Marque as caixas dos cargos subordinados (ex: Vigia, Porteiro) e clique em <strong>Salvar</strong>.</li>
           </ol>
           
-          <h4 className="text-white font-bold text-sm mb-2">Passo a Passo: Como incluir um funcionário na equipe</h4>
+          <h4 className="text-foreground font-bold text-sm mb-2">Passo a Passo: Como incluir um funcionário na equipe</h4>
           <ol className="list-decimal pl-5 space-y-1 text-sm">
             <li>Acesse <strong>Funcionários</strong> e crie/edite um cadastro.</li>
             <li>Em <strong>Escola / Lotação</strong>, defina a escola física (para o Diretor poder vê-lo).</li>
@@ -216,22 +216,22 @@ const diretrizes = [
     titulo: 'Roteiro Completo: Criação de Vigias e Rondas',
     conteudo: (
       <div className="space-y-4">
-        <div className="bg-[#2a2a2a] p-4 border-l-4 border-highlight rounded-md mt-4">
-          <h4 className="text-white font-bold text-sm mb-2">1. Criando Pontos de Ronda (Super Administrador)</h4>
+        <div className="bg-surface-2 p-4 border-l-4 border-highlight rounded-md mt-4">
+          <h4 className="text-foreground font-bold text-sm mb-2">1. Criando Pontos de Ronda (Super Administrador)</h4>
           <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
             <li>Acesse o <strong>Super Painel</strong> Administrativo na aba lateral.</li>
             <li>Clique em <strong>Controle de Rondas</strong>.</li>
             <li>Preencha o formulário informando: nome do ponto, escola na qual ele fica, raio de tolerância (em metros), e Latitude/Longitude exatas.</li>
           </ol>
 
-          <h4 className="text-white font-bold text-sm mb-2">2. Criando o Chefe de Vigias (Acesso: Diretor)</h4>
+          <h4 className="text-foreground font-bold text-sm mb-2">2. Criando o Chefe de Vigias (Acesso: Diretor)</h4>
           <ol className="list-decimal pl-5 space-y-1 mb-4 text-sm">
             <li>Em <strong>Funcionários</strong>, crie a ficha do chefe da segurança.</li>
             <li>Em <strong>Permissões</strong>, selecione <strong>Nível 5 - Chefe de Equipe</strong>.</li>
             <li>Nas caixas de cargos subordinados, marque ou escreva <strong>Vigia</strong>. Isso habilitará a aba 'Meu Setor' no painel dele exclusivamente para controlar os vigias.</li>
           </ol>
 
-          <h4 className="text-white font-bold text-sm mb-2">3. Criando o Vigia Operacional</h4>
+          <h4 className="text-foreground font-bold text-sm mb-2">3. Criando o Vigia Operacional</h4>
           <ol className="list-decimal pl-5 space-y-1 text-sm">
             <li>Em <strong>Funcionários</strong>, cadastre o vigia escrevendo <strong>Vigia</strong> exatamente no campo Cargo/Função.</li>
             <li>Em <strong>Permissões</strong>, atribua <strong>Nível 6 - Operacional Mobile</strong>, garantindo que a escola selecionada é a mesma escola da sua lotação física.</li>
@@ -292,8 +292,8 @@ export default function AjudaPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <ModalReport open={reportModalOpen} onOpenChange={setReportModalOpen} />
 
-      <div className="pb-4 border-b border-[#3f3f46]">
-        <h2 className="text-2xl font-bold text-white">Central de Ajuda</h2>
+      <div className="pb-4 border-b border-borderCustom">
+        <h2 className="text-2xl font-bold text-foreground">Central de Ajuda</h2>
       </div>
 
       <div className="mb-6">
@@ -302,7 +302,7 @@ export default function AjudaPage() {
           placeholder="Buscar conteúdos de ajuda..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="bg-[#1a1a1a] border-[#333] text-white focus-visible:ring-highlight h-12 text-base"
+          className="bg-surface-1 border-borderCustom text-foreground focus-visible:ring-highlight h-12 text-base"
         />
       </div>
 
@@ -312,20 +312,20 @@ export default function AjudaPage() {
           const Icon = diretriz.icon
 
           return (
-            <div key={diretriz.id} className="bg-[#1f1f1f] border border-[#333] rounded-lg overflow-hidden">
+            <div key={diretriz.id} className="bg-surface-1 border border-borderCustom rounded-lg overflow-hidden">
               <button 
                 onClick={() => toggleDiretriz(diretriz.id)}
-                className="w-full bg-transparent border-none text-white p-4 text-left flex justify-between items-center cursor-pointer font-medium hover:bg-[#252525] transition-colors"
+                className="w-full bg-transparent border-none text-foreground p-4 text-left flex justify-between items-center cursor-pointer font-medium hover:bg-hoverCustom transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Icon className="w-5 h-5 text-highlight" />
                   {diretriz.titulo}
                 </span>
-                <ChevronDown className={`w-5 h-5 text-[#aaa] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
               
               {isExpanded && (
-                <div className="p-4 pt-0 text-[#aaa] text-sm leading-relaxed border-t border-[#333]">
+                <div className="p-4 pt-0 text-muted-foreground text-sm leading-relaxed border-t border-borderCustom">
                   {diretriz.conteudo}
                 </div>
               )}
@@ -333,11 +333,11 @@ export default function AjudaPage() {
           )
         })}
         {diretrizesFiltradas.length === 0 && (
-          <div className="text-center text-[#aaa] py-8">Nenhum resultado encontrado.</div>
+          <div className="text-center text-muted-foreground py-8">Nenhum resultado encontrado.</div>
         )}
       </div>
 
-      <div className="mt-8 text-center pt-8 border-t border-dashed border-[#333]">
+      <div className="mt-8 text-center pt-8 border-t border-dashed border-borderCustom">
         <Button 
           onClick={() => setReportModalOpen(true)}
           variant="outline" 

@@ -199,11 +199,11 @@ export default function AlunosPage() {
           <div>
             <div className="flex items-center gap-3">
               <Link href="/home">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
                 <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-highlight shrink-0" />
                 <span>Gestão de Alunos</span>
               </h1>
@@ -230,24 +230,24 @@ export default function AlunosPage() {
             <Input
               type="search"
               placeholder="Buscar por Nome, CPF ou Código INEP..."
-              className="pl-9 bg-[#121212] border-borderCustom text-white focus-visible:ring-highlight w-full h-11 text-sm rounded-xl"
+              className="pl-9 bg-surface-1 border-borderCustom text-foreground focus-visible:ring-highlight w-full h-11 text-sm rounded-xl"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="text-xs text-muted-foreground font-medium self-end sm:self-center shrink-0">
-            Total: <span className="text-white font-bold">{alunosFiltrados.length}</span> aluno{alunosFiltrados.length !== 1 ? 's' : ''}
+            Total: <span className="text-foreground font-bold">{alunosFiltrados.length}</span> aluno{alunosFiltrados.length !== 1 ? 's' : ''}
           </div>
         </div>
 
         {/* Lista de Alunos em Cards Responsivos */}
         <div className="space-y-4">
           {loading ? (
-            <div className="text-center py-16 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground text-sm">
+            <div className="text-center py-16 bg-surface-1 rounded-2xl border border-borderCustom text-muted-foreground text-sm">
               Carregando alunos...
             </div>
           ) : alunosFiltrados.length === 0 ? (
-            <div className="text-center py-16 bg-[#121212] rounded-2xl border border-borderCustom text-muted-foreground text-sm">
+            <div className="text-center py-16 bg-surface-1 rounded-2xl border border-borderCustom text-muted-foreground text-sm">
               Nenhum aluno encontrado.
             </div>
           ) : (
@@ -261,7 +261,7 @@ export default function AlunosPage() {
               return (
                 <div 
                   key={aluno.id} 
-                  className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-2xl p-4 sm:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="bg-surface-1 border border-borderCustom hover:border-[#3ea6ff]/40 rounded-2xl p-4 sm:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   {/* Avatar + Nome + Informações Principais */}
                   <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
@@ -277,7 +277,7 @@ export default function AlunosPage() {
                     {/* Informações Funcionais */}
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight truncate max-w-full">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate max-w-full">
                           {aluno.nome}
                         </h3>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0090ff]/10 text-[#0090ff] border border-[#0090ff]/20 shrink-0">
@@ -286,43 +286,43 @@ export default function AlunosPage() {
                       </div>
 
                       {/* Details Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-xs text-zinc-400">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5 truncate">
-                          <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                          <Building2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                           <span className="truncate">{escolaNome}</span>
                         </div>
 
                         {telefone !== '-' && (
                           <div className="flex items-center gap-1.5 truncate">
-                            <Phone className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <Phone className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="truncate">{telefone}</span>
                           </div>
                         )}
 
                         {aluno.cpf && (
                           <div className="flex items-center gap-1.5 truncate">
-                            <FileText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="truncate">CPF: {aluno.cpf}</span>
                           </div>
                         )}
 
                         {aluno.inep && (
                           <div className="flex items-center gap-1.5 truncate">
-                            <BadgeInfo className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <BadgeInfo className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="truncate">INEP: {aluno.inep}</span>
                           </div>
                         )}
 
                         {nomeMae && (
                           <div className="flex items-center gap-1.5 truncate">
-                            <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <User className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="truncate">Mãe: {nomeMae}</span>
                           </div>
                         )}
 
                         {endereco !== '-' && (
                           <div className="flex items-center gap-1.5 truncate">
-                            <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="truncate">{endereco}</span>
                           </div>
                         )}
@@ -331,7 +331,7 @@ export default function AlunosPage() {
                   </div>
 
                   {/* Botões de Ação */}
-                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#26262a]">
+                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-borderCustom">
                     <button 
                       onClick={() => setAlunoAnexos(aluno)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-semibold transition-colors cursor-pointer border border-indigo-500/30"
@@ -344,7 +344,7 @@ export default function AlunosPage() {
                     {isEditMode && (
                       <button 
                         onClick={() => handleEditarAluno(aluno)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-zinc-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer border border-[#3f3f46]"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-2 hover:bg-hoverCustom text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors cursor-pointer border border-borderCustom"
                         title="Editar Aluno"
                       >
                         <Edit className="w-3.5 h-3.5 text-[#0090ff]" />

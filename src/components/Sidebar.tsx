@@ -104,7 +104,7 @@ export function Sidebar() {
             <img
               src={selectedEscola.logo_url}
               alt={selectedEscola.nome}
-              className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-[#161616]"
+              className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-surface-1"
             />
           ) : (
             <Logo variant="icon" className="w-10 h-10 shrink-0" />
@@ -115,7 +115,7 @@ export function Sidebar() {
         </div>
         <button 
           onClick={closeMobile}
-          className="md:hidden p-2 text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent rounded-lg transition-colors"
+          className="md:hidden p-2 text-sidebar-foreground/70 hover:text-highlight hover:bg-sidebar-accent rounded-lg transition-colors"
           title="Recolher Menu"
           aria-label="Recolher Menu"
         >
