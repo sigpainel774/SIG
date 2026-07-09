@@ -142,6 +142,20 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
       ? new Date(dm.dataMatricula).toLocaleDateString('pt-BR') 
       : new Date().toLocaleDateString('pt-BR')
 
+    const rawSerie = aluno.serie || dm.serieAluno || ''
+    let exibidoAno = '-'
+    let exibidoTurma = '-'
+
+    // Tenta encontrar o ano e a turma combinando as informações
+    const match = rawSerie.trim().match(/^(\d+)(?:\s*[-°º]?\s*)([a-zA-Z])$/i)
+    if (match) {
+      exibidoAno = match[1]
+      exibidoTurma = match[2].toUpperCase()
+    } else {
+      exibidoAno = rawSerie || turmaAno || '-'
+      exibidoTurma = dm.turmaAluno || turmaLetra || '-'
+    }
+
     return (
       <div className="flex flex-col justify-between h-[130mm] border border-gray-400 p-5 rounded-lg bg-white print:border-none print:p-0 print:h-[130mm]">
         <div>
@@ -203,11 +217,11 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
                       <tr>
                         <td className="border-r border-black p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Ano</span>
-                          <span>{aluno.serie || dm.serieAluno || turmaAno || '-'}</span>
+                          <span>{exibidoAno}</span>
                         </td>
                         <td className="border-r border-black p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turma</span>
-                          <span>{dm.turmaAluno || turmaLetra || '-'}</span>
+                          <span>{exibidoTurma}</span>
                         </td>
                         <td className="p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turno</span>
