@@ -955,15 +955,15 @@ export default function FuncionariosPage() {
           placeholder="Buscar funcionário por nome..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-9 w-56 text-sm"
+          className="bg-surface-1 border-borderCustom text-foreground placeholder:text-muted-foreground h-9 w-56 text-sm"
         />
 
         {/* Filtro Cargo */}
         <Select value={filtroCargo} onValueChange={(v) => setFiltroCargo(v ?? 'todos')}>
-          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-9 text-sm w-44">
+          <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 text-sm w-44">
             <SelectValue placeholder="Todos os Cargos" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
             <SelectItem value="todos">Todos os Cargos</SelectItem>
             {cargosUnicos.map((c) => (
               <SelectItem key={c} value={c}>
@@ -975,10 +975,10 @@ export default function FuncionariosPage() {
 
         {/* Filtro Status */}
         <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v ?? 'todos')}>
-          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-9 text-sm w-40">
+          <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 text-sm w-40">
             <SelectValue placeholder="Todos os Status" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
             <SelectItem value="todos">Todos os Status</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="afastado">Afastado</SelectItem>
@@ -993,7 +993,7 @@ export default function FuncionariosPage() {
             setFuncLotacaoInicial(null)
             setModalLotacoesOpen(true)
           }}
-          className="bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-white font-semibold gap-2 h-9 text-sm cursor-pointer"
+          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer"
           variant="outline"
         >
           <Network className="w-4 h-4 text-[#3ea6ff]" />
@@ -1003,7 +1003,7 @@ export default function FuncionariosPage() {
         {/* Imprimir Lista */}
         <Button
           onClick={handleImprimirLista}
-          className="bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-white font-semibold gap-2 h-9 text-sm cursor-pointer"
+          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer"
           variant="outline"
         >
           <Printer className="w-4 h-4" />
@@ -1030,7 +1030,7 @@ export default function FuncionariosPage() {
           <Loader2 className="w-8 h-8 animate-spin text-[#3ea6ff]" />
         </div>
       ) : funcsFiltrados.length === 0 ? (
-        <div className="bg-[#141416] border border-dashed border-[#3f3f46] rounded-2xl p-12 text-center text-zinc-500 text-sm">
+        <div className="bg-surface-1 border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground text-sm">
           Nenhum funcionário encontrado com os filtros aplicados.
         </div>
       ) : (
@@ -1042,7 +1042,7 @@ export default function FuncionariosPage() {
             return (
               <div
                 key={func.id}
-                className="bg-[#141416] border border-[#26262a] hover:border-[#3ea6ff]/40 rounded-2xl p-4 flex flex-col gap-3 transition-all shadow-md"
+                className="bg-surface-1 border border-borderCustom hover:border-[#3ea6ff]/40 rounded-2xl p-4 flex flex-col gap-3 transition-all shadow-md"
               >
                 {/* ── Topo do card: Avatar + Nome + Badges ── */}
                 <div className="flex items-start gap-3">
@@ -1063,7 +1063,7 @@ export default function FuncionariosPage() {
 
                   {/* Nome + badges */}
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-white text-sm leading-tight truncate">
+                    <p className="font-bold text-foreground text-sm leading-tight truncate">
                       {func.nome}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -1106,7 +1106,7 @@ export default function FuncionariosPage() {
                   <button
                     onClick={() => handleImprimir(func.id)}
                     title="Imprimir ficha"
-                    className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-surface-2 hover:bg-hoverCustom border border-borderCustom text-muted-foreground flex items-center justify-center transition-all cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
                   </button>
@@ -1115,7 +1115,7 @@ export default function FuncionariosPage() {
                     <button
                       onClick={() => handleEditar(func)}
                       title="Editar funcionário"
-                      className="w-9 h-9 rounded-full bg-[#1a1a1e] hover:bg-[#252528] border border-[#2e2e33] text-zinc-300 flex items-center justify-center transition-all cursor-pointer"
+                      className="w-9 h-9 rounded-full bg-surface-2 hover:bg-hoverCustom border border-borderCustom text-muted-foreground flex items-center justify-center transition-all cursor-pointer"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -1133,22 +1133,22 @@ export default function FuncionariosPage() {
                 </div>
 
                 {/* ── Informações Adicionais ────────────────── */}
-                <div className="space-y-1.5 border-t border-[#26262a] pt-3 text-xs text-zinc-400">
+                <div className="space-y-1.5 border-t border-borderCustom pt-3 text-xs text-muted-foreground">
                   {func.orgao && (
                     <p>
-                      <span className="font-semibold text-zinc-300">Órgão:</span>{' '}
+                      <span className="font-semibold text-foreground">Órgão:</span>{' '}
                       {func.orgao}
                     </p>
                   )}
                   {func.data_nascimento && (
                     <p>
-                      <span className="font-semibold text-zinc-300">Nascimento:</span>{' '}
+                      <span className="font-semibold text-foreground">Nascimento:</span>{' '}
                       {formatarData(func.data_nascimento)}
                     </p>
                   )}
                   {func.formacao && (
                     <p>
-                      <span className="font-semibold text-zinc-300">Formação:</span>{' '}
+                      <span className="font-semibold text-foreground">Formação:</span>{' '}
                       {func.formacao}
                     </p>
                   )}

@@ -46,10 +46,10 @@ export default function HomePage() {
     <div className="space-y-8 -mt-2">
       {/* Indicador de Escola Selecionada caso exista */}
       {selectedEscola && (
-        <div className="bg-[#141414] border border-borderCustom rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-surface-2 border border-borderCustom rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola Selecionada:</span>
-            <div className="flex items-center gap-2 bg-[#1f2937]/80 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
+            <div className="flex items-center gap-2 bg-highlight/10 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
               <div className={`w-5 h-5 rounded-full overflow-hidden ${selectedEscola.logo_url ? 'bg-transparent' : selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
                 {selectedEscola.logo_url ? (
                   <img src={selectedEscola.logo_url} alt={selectedEscola.nome} className="w-full h-full object-cover" />
@@ -64,7 +64,7 @@ export default function HomePage() {
             variant="ghost"
             size="sm"
             onClick={() => setSelectedEscola(null)}
-            className="text-muted-foreground hover:text-white gap-1"
+            className="text-muted-foreground hover:text-foreground gap-1"
           >
             <X className="w-4 h-4" /> Limpar Seleção (Visão Geral)
           </Button>
@@ -74,14 +74,14 @@ export default function HomePage() {
       {/* Visão 1: Seleção de Escolas */}
       {!selectedEscola ? (
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Escolas</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Escolas</h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {escolas.map((escola) => (
               <Card
                 key={escola.id}
                 onClick={() => setSelectedEscola(escola)}
-                className="bg-[#161616] hover:bg-[#202020] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md"
+                className="bg-surface-1 hover:bg-surface-2 border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md"
               >
                 <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-blue-600'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
                   {escola.logo_url ? (
@@ -90,7 +90,7 @@ export default function HomePage() {
                     <Building2 className="w-8 h-8" />
                   )}
                 </div>
-                <h3 className="font-semibold text-white group-hover:text-highlight transition-colors text-sm leading-snug">
+                <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
                   {escola.nome}
                 </h3>
               </Card>
@@ -106,17 +106,17 @@ export default function HomePage() {
                 <img
                   src={selectedEscola.logo_url}
                   alt={selectedEscola.nome}
-                  className="max-h-16 max-w-[280px] object-contain rounded-xl shadow-md border border-borderCustom p-1 bg-[#161616]"
+                  className="max-h-16 max-w-[280px] object-contain rounded-xl shadow-md border border-borderCustom p-1 bg-surface-1"
                 />
                 <h1 className="sr-only">{selectedEscola.nome}</h1>
               </div>
             ) : (
-              <h1 className="text-3xl font-bold text-white tracking-tight">{selectedEscola.nome}</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">{selectedEscola.nome}</h1>
             )}
             <Button
               variant="outline"
               onClick={() => setSelectedEscola(null)}
-              className="bg-[#1f1f1f] border-borderCustom hover:bg-hoverCustom text-foregroundCustom hover:text-white"
+              className="bg-surface-1 border-borderCustom hover:bg-hoverCustom text-foregroundCustom hover:text-foreground"
             >
               Voltar
             </Button>
@@ -127,11 +127,11 @@ export default function HomePage() {
               const Icon = modulo.icon
               return (
                 <Link key={modulo.label} href={modulo.href}>
-                  <Card className="bg-[#161616] hover:bg-[#202020] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md">
-                    <div className="p-3 rounded-2xl bg-[#222222] group-hover:bg-highlight/10 text-foregroundCustom/80 group-hover:text-highlight transition-colors">
+                  <Card className="bg-surface-1 hover:bg-surface-2 border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md">
+                    <div className="p-3 rounded-2xl bg-surface-3 group-hover:bg-highlight/10 text-foregroundCustom/80 group-hover:text-highlight transition-colors">
                       <Icon className="w-10 h-10" />
                     </div>
-                    <h3 className="font-semibold text-white group-hover:text-highlight transition-colors text-base">
+                    <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-base">
                       {modulo.label}
                     </h3>
                   </Card>

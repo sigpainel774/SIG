@@ -72,13 +72,13 @@ export function Header() {
 
   return (
     <>
-      <header className="h-16 border-b border-borderCustom bg-[#121214] flex items-center justify-between px-4 sm:px-6 shadow-sm sticky top-0 z-30 print:hidden min-w-0">
+      <header className="h-16 border-b border-borderCustom bg-surface-1 flex items-center justify-between px-4 sm:px-6 shadow-sm sticky top-0 z-30 print:hidden min-w-0">
         {/* Title / Logo & Mobile Menu Button */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={toggleMobile}
-            className="md:hidden p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer shrink-0"
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer shrink-0"
             title="Menu Principal"
             aria-label="Alternar Menu Lateral"
           >
@@ -88,15 +88,15 @@ export function Header() {
             <img
               src={selectedEscola.logo_url}
               alt={selectedEscola.nome}
-              className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-[#161616]"
+              className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-surface-1"
             />
           ) : (
             <Logo variant="icon" className="w-7 h-7 shrink-0" />
           )}
-          <h1 className="font-bold text-base md:text-lg text-white tracking-tight hidden sm:block truncate">
+          <h1 className="font-bold text-base md:text-lg text-foreground tracking-tight hidden sm:block truncate">
             {selectedEscola ? selectedEscola.nome : 'Sapeaçu Painel Escolar'}
           </h1>
-          <h1 className="font-bold text-sm text-white tracking-tight sm:hidden truncate">
+          <h1 className="font-bold text-sm text-foreground tracking-tight sm:hidden truncate">
             {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
           </h1>
         </div>
@@ -106,12 +106,12 @@ export function Header() {
           {/* Notification Bell */}
           <button
             onClick={() => setModalNotifOpen(true)}
-            className="relative p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer"
+            className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer"
             title="Notificações"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-[#121214]">
+              <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-surface-1">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -119,7 +119,7 @@ export function Header() {
 
           {/* Modo Edição Switch */}
           <div className="flex items-center gap-2 md:gap-3">
-            <span className={`text-xs sm:text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-zinc-400'}`}>
+            <span className={`text-xs sm:text-sm font-semibold transition-colors hidden sm:block ${isEditMode ? 'text-[#0090ff]' : 'text-muted-foreground'}`}>
               Modo Edição
             </span>
             
@@ -129,7 +129,7 @@ export function Header() {
               aria-checked={isEditMode}
               onClick={handleToggleClick}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isEditMode ? 'bg-[#0090ff]' : 'bg-zinc-700'
+                isEditMode ? 'bg-[#0090ff]' : 'bg-surface-3'
               }`}
             >
               <span

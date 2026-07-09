@@ -46,6 +46,12 @@
   --color-hoverCustom: var(--hover-custom);
   --color-highlight: var(--primary);
   --color-foregroundCustom: var(--foreground-custom);
+  
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-text-primary-hard: var(--text-primary-hard);
+  --color-input-bg: var(--input-bg);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -61,6 +67,11 @@
   --color-hoverCustom: var(--hover-custom);
   --color-highlight: var(--primary);
   --color-foregroundCustom: var(--foreground-custom);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-text-primary-hard: var(--text-primary-hard);
+  --color-input-bg: var(--input-bg);
 }
 
 :root {
@@ -96,6 +107,12 @@
   --border-custom: #e4e4e7;
   --hover-custom: #f4f4f5;
   --foreground-custom: #09090b;
+  
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #e4e4e7;
+  --text-primary-hard: #09090b;
+  --input-bg: #ffffff;
 }
 
 .dark {
@@ -131,6 +148,12 @@
   --border-custom: #2a2a2a;
   --hover-custom: #272727;
   --foreground-custom: #f1f1f1;
+  
+  --surface-1: #161616;
+  --surface-2: #1f1f1f;
+  --surface-3: #2a2a2a;
+  --text-primary-hard: #ffffff;
+  --input-bg: #1a1a1a;
 }
 
 @layer base {

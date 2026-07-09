@@ -517,21 +517,21 @@ export function ModalDetalhesTurma({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] w-full bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] w-full bg-card border-borderCustom text-foreground p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader className="pr-12">
             <DialogTitle className="text-2xl font-bold tracking-tight">{turma.nome}</DialogTitle>
-            <DialogDescription className="text-zinc-400 text-sm mt-1">
+            <DialogDescription className="text-muted-foreground text-sm mt-1">
               {turma.turno} • Ano letivo {turma.ano_letivo}
             </DialogDescription>
           </DialogHeader>
 
           {/* Abas Nativas do SIG */}
           <div className="mt-6">
-            <div className="bg-[#18181b] border border-[#26262a] p-1 rounded-xl w-full grid grid-cols-4 h-11 text-zinc-400">
+            <div className="bg-surface-2 border border-borderCustom p-1 rounded-xl w-full grid grid-cols-4 h-11 text-muted-foreground">
               <button
                 onClick={() => setActiveTab('materias')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeTab === 'materias' ? 'bg-[#121214] text-white shadow' : 'hover:text-zinc-200'
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'materias' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -539,8 +539,8 @@ export function ModalDetalhesTurma({
               </button>
               <button
                 onClick={() => setActiveTab('alunos')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeTab === 'alunos' ? 'bg-[#121214] text-white shadow' : 'hover:text-zinc-200'
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'alunos' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -548,8 +548,8 @@ export function ModalDetalhesTurma({
               </button>
               <button
                 onClick={() => setActiveTab('frequencia')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeTab === 'frequencia' ? 'bg-[#121214] text-white shadow' : 'hover:text-zinc-200'
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'frequencia' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
                 }`}
               >
                 <CalendarDays className="w-4 h-4" />
@@ -557,8 +557,8 @@ export function ModalDetalhesTurma({
               </button>
               <button
                 onClick={() => setActiveTab('notas')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeTab === 'notas' ? 'bg-[#121214] text-white shadow' : 'hover:text-zinc-200'
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'notas' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />

@@ -185,11 +185,11 @@ export default function MuralPage() {
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Mural</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Mural</h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Comunicados, avisos e aniversariantes da rede.</p>
         </div>
@@ -205,7 +205,7 @@ export default function MuralPage() {
         <div className="space-y-4">
           {showComposer && podePublicar && (
             <Card className="border-borderCustom bg-card p-5 shadow-lg">
-              <h2 className="mb-4 text-lg font-semibold text-white">Criar Novo Comunicado</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Criar Novo Comunicado</h2>
               <form onSubmit={handlePublicarComunicado} className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Título</label>
@@ -214,7 +214,7 @@ export default function MuralPage() {
                     placeholder="Título do comunicado (ex: Reunião Geral de Professores)"
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
-                    className="bg-input border-borderCustom text-white placeholder:text-zinc-500"
+                    className="bg-input border-borderCustom text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
@@ -223,7 +223,7 @@ export default function MuralPage() {
                   <select
                     value={alvo}
                     onChange={(e) => setAlvo(e.target.value)}
-                    className="w-full bg-input border border-borderCustom text-white h-10 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+                    className="w-full bg-input border border-borderCustom text-foreground h-10 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
                   >
                     <option value="Geral / Toda a Rede">Geral / Toda a Rede</option>
                     <option value="Professores">Professores</option>
@@ -240,7 +240,7 @@ export default function MuralPage() {
                     value={mensagem}
                     onChange={(e) => setMensagem(e.target.value)}
                     placeholder="Escreva a mensagem do comunicado aqui..."
-                    className="w-full resize-none rounded-lg border border-borderCustom bg-input p-3 text-sm text-foregroundCustom outline-none focus:border-highlight placeholder:text-zinc-500"
+                    className="w-full resize-none rounded-lg border border-borderCustom bg-input p-3 text-sm text-foregroundCustom outline-none focus:border-highlight placeholder:text-muted-foreground"
                   />
                 </div>
 
@@ -329,7 +329,7 @@ export default function MuralPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="font-semibold text-white text-base">{notice.title}</h2>
+                      <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
                       <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
                         {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
                       </span>
@@ -371,11 +371,11 @@ export default function MuralPage() {
 
         <aside className="space-y-4">
           <Card className="border-borderCustom bg-card p-5">
-            <h2 className="mb-4 text-lg font-semibold text-white">Filtrar por Data</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">Filtrar por Data</h2>
             <div className="flex gap-2">
-              <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="bg-input border-borderCustom text-white" />
+              <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="bg-input border-borderCustom text-foreground" />
               {selectedDate && (
-                <Button variant="outline" size="icon" onClick={() => setSelectedDate('')} className="border-borderCustom bg-hoverCustom text-white shrink-0" title="Limpar filtro">
+                <Button variant="outline" size="icon" onClick={() => setSelectedDate('')} className="border-borderCustom bg-hoverCustom text-foreground shrink-0" title="Limpar filtro">
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -384,7 +384,7 @@ export default function MuralPage() {
 
           <Card className="border-borderCustom bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Aniversariantes do Mês</h2>
+              <h2 className="text-lg font-semibold text-foreground">Aniversariantes do Mês</h2>
               <CalendarDays className="h-5 w-5 text-highlight" />
             </div>
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground">
@@ -416,7 +416,7 @@ export default function MuralPage() {
               ) : (
                 birthdays.map((birthday, idx) => (
                   <div key={idx} className="rounded-lg bg-input p-3 text-sm border border-borderCustom/50">
-                    <p className="font-semibold text-white">{birthday.name}</p>
+                    <p className="font-semibold text-foreground">{birthday.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Dia {birthday.day} - {birthday.role}</p>
                   </div>
                 ))

@@ -344,14 +344,14 @@ export function PermissoesView() {
         </div>
 
         {/* Botões de alternância */}
-        <div className="flex items-center gap-2 bg-[#121212] border border-[#27272a] rounded-xl p-1">
+        <div className="flex items-center gap-2 bg-surface-2 border border-borderCustom rounded-xl p-1">
           <button
             type="button"
             onClick={() => setModoAtribuicao('funcionario')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
               modoAtribuicao === 'funcionario'
                 ? 'bg-[#0090ff] text-white shadow-md'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -363,7 +363,7 @@ export function PermissoesView() {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
               modoAtribuicao === 'escola'
                 ? 'bg-[#0090ff] text-white shadow-md'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <School className="w-4 h-4" />
@@ -373,10 +373,10 @@ export function PermissoesView() {
       </div>
 
       {/* ── Card: Atribuir Acesso ────────────────────────────────────────────── */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-6 shadow-md space-y-5">
+      <div className="bg-card border border-borderCustom rounded-2xl p-6 shadow-md space-y-5">
         <div className="flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-[#0090ff]" />
-          <h2 className="text-lg font-bold text-white">Atribuir / Atualizar Acesso</h2>
+          <h2 className="text-lg font-bold text-foreground">Atribuir / Atualizar Acesso</h2>
         </div>
 
         <form onSubmit={handleSalvarPermissao} className="space-y-5">
@@ -399,7 +399,7 @@ export function PermissoesView() {
                     setShowSugestoes(true)
                   }}
                   onFocus={() => setShowSugestoes(true)}
-                  className="pl-9 bg-[#121212] border-[#3f3f46] text-white placeholder:text-zinc-500 h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
+                  className="pl-9 bg-surface-1 border-borderCustom text-foreground placeholder:text-muted-foreground h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
                 />
                 {funcSelecionado && (
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
@@ -407,7 +407,7 @@ export function PermissoesView() {
 
                 {/* Dropdown de sugestões */}
                 {showSugestoes && sugestoesFiltradas.length > 0 && (
-                  <div className="absolute z-50 top-full mt-1 w-full bg-[#1a1a1f] border border-[#3f3f46] rounded-xl shadow-xl overflow-hidden">
+                  <div className="absolute z-50 top-full mt-1 w-full bg-surface-1 border border-borderCustom rounded-xl shadow-xl overflow-hidden">
                     {sugestoesFiltradas.map((f) => (
                       <button
                         key={f.id}
@@ -417,14 +417,14 @@ export function PermissoesView() {
                           setInputFunc(f.nome)
                           setShowSugestoes(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#27272a] transition-colors flex items-center gap-3 group"
+                        className="w-full text-left px-4 py-2.5 hover:bg-hoverCustom transition-colors flex items-center gap-3 group"
                       >
                         <div className="w-7 h-7 rounded-full bg-[#0070f3]/20 border border-[#0070f3]/40 flex items-center justify-center text-[#0090ff] font-bold text-xs shrink-0">
                           {f.nome.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white font-medium truncate">{f.nome}</p>
-                          <p className="text-xs text-zinc-500 truncate">{f.email ?? '—'}</p>
+                           <p className="text-sm text-foreground font-medium truncate">{f.nome}</p>
+                          <p className="text-xs text-muted-foreground truncate">{f.email ?? '—'}</p>
                         </div>
                       </button>
                     ))}
@@ -441,7 +441,7 @@ export function PermissoesView() {
               <select
                 value={escolaSel}
                 onChange={(e) => setEscolaSel(e.target.value)}
-                className="w-full bg-[#121212] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
+                className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
               >
                 <option value="">Global / Todas as Escolas</option>
                 {escolas.map((e) => (
@@ -460,7 +460,7 @@ export function PermissoesView() {
               <select
                 value={nivelSel}
                 onChange={(e) => setNivelSel(e.target.value)}
-                className="w-full bg-[#121212] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
+                className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
               >
                 <option value="">Selecione o nível</option>
                 <option value="1">Nível 1 - Administrador Global</option>
@@ -494,7 +494,7 @@ export function PermissoesView() {
       </div>
 
       {/* ── Card: Lista de Permissões ────────────────────────────────────────── */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-6 shadow-md space-y-4">
+      <div className="bg-card border border-borderCustom rounded-2xl p-6 shadow-md space-y-4">
 
         {/* Barra de Filtros */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -506,7 +506,7 @@ export function PermissoesView() {
               placeholder="Buscar funcionário..."
               value={buscaLista}
               onChange={(e) => setBuscaLista(e.target.value)}
-              className="pl-9 bg-[#121212] border-[#3f3f46] text-white placeholder:text-zinc-500 h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
+              className="pl-9 bg-surface-1 border-borderCustom text-foreground placeholder:text-muted-foreground h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
             />
           </div>
 
@@ -514,7 +514,7 @@ export function PermissoesView() {
           <select
             value={filtroNivel}
             onChange={(e) => setFiltroNivel(e.target.value)}
-            className="w-full bg-[#121212] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] cursor-pointer"
+            className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] cursor-pointer"
           >
             <option value="">Todos os Níveis</option>
             <option value="ROOT">ROOT</option>
@@ -530,7 +530,7 @@ export function PermissoesView() {
           <select
             value={filtroEscola}
             onChange={(e) => setFiltroEscola(e.target.value)}
-            className="w-full bg-[#121212] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] cursor-pointer"
+            className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] cursor-pointer"
           >
             <option value="">Todas as Escolas</option>
             <option value="Sem Lotação">Sem Lotação</option>
@@ -545,7 +545,7 @@ export function PermissoesView() {
           <button
             type="button"
             onClick={limparFiltros}
-            className="h-11 px-4 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors cursor-pointer"
+            className="h-11 px-4 bg-surface-2 hover:bg-hoverCustom text-foreground border border-borderCustom rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
             <span>Limpar</span>
@@ -616,10 +616,10 @@ export function PermissoesView() {
                       <Building2 className="w-4 h-4 text-[#0090ff] shrink-0" />
                       <span className="text-sm font-semibold text-[#0090ff]">{escolaNome}</span>
                     </div>
-                    <span className="text-xs text-zinc-500 bg-[#27272a] px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-muted-foreground bg-surface-3 px-2 py-0.5 rounded-full">
                       {membros.length} funcionário{membros.length !== 1 ? 's' : ''}
                     </span>
-                    <div className="flex-1 h-px bg-[#27272a]" />
+                    <div className="flex-1 h-px bg-borderCustom" />
                   </div>
 
                   {/* Membros */}
@@ -679,7 +679,7 @@ interface FuncionarioCardProps {
 function FuncionarioCard({ item, isEditActive, compact = false, onClickEdit }: FuncionarioCardProps) {
   const inicial = item.nome.charAt(0).toUpperCase()
   return (
-    <div className={`bg-[#121212] border border-[#27272a] hover:border-[#3f3f46] rounded-xl transition-colors flex items-center justify-between gap-3 ${compact ? 'p-3' : 'p-4'}`}>
+    <div className={`bg-surface-2 border border-borderCustom hover:border-highlight/50 rounded-xl transition-colors flex items-center justify-between gap-3 ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center gap-3 min-w-0">
         {/* Avatar */}
         <div className={`rounded-full bg-[#0070f3]/20 border border-[#0070f3]/50 flex items-center justify-center font-bold text-[#0090ff] shrink-0 ${compact ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-base'}`}>
@@ -688,10 +688,10 @@ function FuncionarioCard({ item, isEditActive, compact = false, onClickEdit }: F
 
         {/* Info */}
         <div className="min-w-0">
-          <h4 className={`font-bold text-white truncate ${compact ? 'text-xs' : 'text-sm'}`}>
+          <h4 className={`font-bold text-foreground truncate ${compact ? 'text-xs' : 'text-sm'}`}>
             {item.nome}
           </h4>
-          <p className="text-xs text-zinc-500 truncate">{item.email}</p>
+          <p className="text-xs text-muted-foreground truncate">{item.email}</p>
         </div>
       </div>
 
@@ -701,7 +701,7 @@ function FuncionarioCard({ item, isEditActive, compact = false, onClickEdit }: F
           {item.nivel}
         </span>
         {!compact && (
-          <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full text-xs border border-[#3f3f46] text-zinc-400 bg-[#1a1a1f] truncate max-w-[160px]">
+          <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full text-xs border border-borderCustom text-muted-foreground bg-surface-3 truncate max-w-[160px]">
             {item.escola}
           </span>
         )}
@@ -711,7 +711,7 @@ function FuncionarioCard({ item, isEditActive, compact = false, onClickEdit }: F
           className={`p-2 rounded-full transition-colors cursor-pointer ${
             isEditActive
               ? 'bg-[#0090ff]/10 hover:bg-[#0090ff]/20 text-[#0090ff]'
-              : 'bg-[#27272a] hover:bg-[#3f3f46] text-zinc-400 hover:text-white'
+              : 'bg-surface-3 hover:bg-hoverCustom text-muted-foreground hover:text-foreground'
           }`}
           title={isEditActive ? 'Editar Permissão' : 'Visualizar'}
         >

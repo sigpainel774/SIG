@@ -160,7 +160,7 @@ export function ModalDetalhesAluno({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[450px] bg-[#121214] border-[#26262a] text-white p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[450px] bg-card border-borderCustom text-foreground p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
 
           {/* Perfil e Avatar */}
           <div className="flex flex-col items-center text-center mt-4">
@@ -171,40 +171,40 @@ export function ModalDetalhesAluno({
                 aluno.nome.substring(0, 2).toUpperCase()
               )}
             </div>
-            <h3 className="text-lg font-bold text-white tracking-tight">{aluno.nome}</h3>
-            <p className="text-zinc-400 text-xs mt-1">{turma.nome} ({turma.ano_letivo})</p>
+            <h3 className="text-lg font-bold text-foreground tracking-tight">{aluno.nome}</h3>
+            <p className="text-muted-foreground text-xs mt-1">{turma.nome} ({turma.ano_letivo})</p>
           </div>
 
           {/* Estatísticas (Frequência e Média Global) */}
           <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="bg-[#1c1c1e] rounded-xl p-4 text-center border border-[#26262a]">
-              <p className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase">% Frequência</p>
-              <p className="text-xl font-bold text-white mt-1.5">{loadingStats ? '...' : frequenciaPct}</p>
+            <div className="bg-surface-2 rounded-xl p-4 text-center border border-borderCustom">
+              <p className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase">% Frequência</p>
+              <p className="text-xl font-bold text-foreground mt-1.5">{loadingStats ? '...' : frequenciaPct}</p>
             </div>
-            <div className="bg-[#1c1c1e] rounded-xl p-4 text-center border border-[#26262a]">
-              <p className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase">Média Global</p>
-              <p className="text-xl font-bold text-white mt-1.5">{loadingStats ? '...' : mediaGlobal}</p>
+            <div className="bg-surface-2 rounded-xl p-4 text-center border border-borderCustom">
+              <p className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase">Média Global</p>
+              <p className="text-xl font-bold text-foreground mt-1.5">{loadingStats ? '...' : mediaGlobal}</p>
             </div>
           </div>
 
           {/* Contatos Rápidos */}
           <div className="space-y-3 mt-6">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <Phone className="w-4 h-4 text-zinc-400" />
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Phone className="w-4 h-4 text-muted-foreground" />
               Contatos Rápidos
             </h4>
             
             {contatos.length === 0 ? (
-              <p className="text-xs text-zinc-500 italic py-1 pl-1">Nenhum telefone de contato cadastrado.</p>
+              <p className="text-xs text-muted-foreground italic py-1 pl-1">Nenhum telefone de contato cadastrado.</p>
             ) : (
               <div className="space-y-2">
                 {contatos.map((cont, index) => (
-                  <div key={index} className="bg-[#18181b] border border-[#26262a] p-3 rounded-xl flex items-center justify-between">
+                  <div key={index} className="bg-surface-2 border border-borderCustom p-3 rounded-xl flex items-center justify-between">
                     <div className="flex flex-col min-w-0 pr-2">
-                      <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider truncate">
+                      <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">
                         {cont.label}
                       </span>
-                      <span className="text-sm font-bold text-white mt-1">
+                      <span className="text-sm font-bold text-foreground mt-1">
                         {cont.numero}
                       </span>
                     </div>
@@ -224,17 +224,17 @@ export function ModalDetalhesAluno({
           </div>
 
           {/* Últimas Ocorrências */}
-          <div className="space-y-3 mt-6 border-t border-[#26262a] pt-5">
+          <div className="space-y-3 mt-6 border-t border-borderCustom pt-5">
             <div className="flex justify-between items-center">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-zinc-400" />
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-muted-foreground" />
                 Últimas Ocorrências
               </h4>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setNovaOcorrenciaOpen(true)}
-                className="bg-[#1c1c1e] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg px-2.5 h-8 gap-1 text-xs font-semibold"
+                className="bg-surface-2 text-muted-foreground border-borderCustom hover:bg-hoverCustom hover:text-foreground rounded-lg px-2.5 h-8 gap-1 text-xs font-semibold"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Registrar
@@ -242,15 +242,15 @@ export function ModalDetalhesAluno({
             </div>
 
             {loadingStats ? (
-              <p className="text-xs text-zinc-500 text-center py-4">Carregando ocorrências...</p>
+              <p className="text-xs text-muted-foreground text-center py-4">Carregando ocorrências...</p>
             ) : ocorrencias.length === 0 ? (
-              <div className="bg-[#18181b]/50 border border-dashed border-[#26262a] text-center text-xs text-zinc-500 py-6 rounded-xl">
+              <div className="bg-surface-2/50 border border-dashed border-borderCustom text-center text-xs text-muted-foreground py-6 rounded-xl">
                 Nenhuma ocorrência disciplinar recente.
               </div>
             ) : (
               <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                 {ocorrencias.map((oco) => (
-                  <div key={oco.id} className="bg-[#18181b] border border-[#26262a] p-3 rounded-xl space-y-2">
+                  <div key={oco.id} className="bg-surface-2 border border-borderCustom p-3 rounded-xl space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                         oco.gravidade === 'Leve' 
@@ -261,13 +261,13 @@ export function ModalDetalhesAluno({
                       }`}>
                         {oco.tipo} ({oco.gravidade})
                       </span>
-                      <span className="text-zinc-500 flex items-center gap-1">
+                      <span className="text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {oco.data ? new Date(oco.data).toLocaleDateString('pt-BR') : '-'}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-300 leading-relaxed pl-0.5">{oco.descricao}</p>
-                    <div className="text-[10px] text-zinc-500 text-right">
+                    <p className="text-xs text-foreground leading-relaxed pl-0.5">{oco.descricao}</p>
+                    <div className="text-[10px] text-muted-foreground text-right">
                       Por: {oco.funcionarios?.nome || 'Sistema'}
                     </div>
                   </div>
