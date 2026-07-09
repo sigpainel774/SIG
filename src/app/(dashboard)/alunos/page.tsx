@@ -195,7 +195,7 @@ export default function AlunosPage() {
 
       {/* Topo / Título */}
       <div className="print:hidden space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
           <div>
             <div className="flex items-center gap-3">
               <Link href="/home">
@@ -203,19 +203,19 @@ export default function AlunosPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
-                <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-highlight shrink-0" />
-                <span>Gestão de Alunos</span>
-              </h1>
+              <div className="p-2.5 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center text-[#185FA5] dark:text-[#3ea6ff]">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Gestão de Alunos</h1>
             </div>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+            <p className="text-muted-foreground text-xs sm:text-sm mt-2 ml-1">
               Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
             </p>
           </div>
           {isEditMode && (
             <Button 
               onClick={handleNovoAluno}
-              className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md"
+              className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-semibold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md rounded-xl border-none px-4 py-2"
             >
               <Plus className="w-4 h-4" />
               <span>Novo Aluno</span>
@@ -261,100 +261,103 @@ export default function AlunosPage() {
               return (
                 <div 
                   key={aluno.id} 
-                  className="bg-surface-1 border border-borderCustom hover:border-[#3ea6ff]/40 rounded-2xl p-4 sm:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="bg-surface-1 border-[0.5px] border-borderCustom hover:border-[#185FA5]/40 dark:hover:border-[#3ea6ff]/40 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 shadow-sm"
                 >
-                  {/* Avatar + Nome + Informações Principais */}
-                  <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
-                    {/* Foto / Iniciais */}
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-[#3ea6ff]/40 flex-shrink-0 flex items-center justify-center bg-[#3ea6ff]/10 text-[#3ea6ff] text-base sm:text-lg font-bold overflow-hidden shadow-inner">
-                      {aluno.foto_url ? (
-                        <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-                      ) : (
-                        aluno.nome.substring(0, 2).toUpperCase()
-                      )}
-                    </div>
+                  {/* ── Topo do card: Foto + Nome + Série ── */}
+                  <div className="flex items-center justify-between gap-3 pb-4 border-b border-borderCustom/50">
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Foto / Iniciais */}
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-borderCustom flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
+                        {aluno.foto_url ? (
+                          <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
+                        ) : (
+                          aluno.nome.substring(0, 2).toUpperCase()
+                        )}
+                      </div>
 
-                    {/* Informações Funcionais */}
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
+                      {/* Informações Principais */}
+                      <div className="min-w-0">
                         <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate max-w-full">
                           {aluno.nome}
                         </h3>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0090ff]/10 text-[#0090ff] border border-[#0090ff]/20 shrink-0">
-                          {serieNome}
-                        </span>
-                      </div>
-
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <Building2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                          <span className="truncate">{escolaNome}</span>
+                        <div className="mt-1">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 border border-blue-200/50 text-[#185FA5] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400 shrink-0">
+                            {serieNome}
+                          </span>
                         </div>
-
-                        {telefone !== '-' && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <Phone className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="truncate">{telefone}</span>
-                          </div>
-                        )}
-
-                        {aluno.cpf && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="truncate">CPF: {aluno.cpf}</span>
-                          </div>
-                        )}
-
-                        {aluno.inep && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <BadgeInfo className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="truncate">INEP: {aluno.inep}</span>
-                          </div>
-                        )}
-
-                        {nomeMae && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <User className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="truncate">Mãe: {nomeMae}</span>
-                          </div>
-                        )}
-
-                        {endereco !== '-' && (
-                          <div className="flex items-center gap-1.5 truncate">
-                            <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="truncate">{endereco}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Botões de Ação */}
-                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-borderCustom">
+                  {/* ── Detalhes do Aluno ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Building2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                      <span className="truncate">{escolaNome}</span>
+                    </div>
+
+                    {telefone !== '-' && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Phone className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="truncate">{telefone}</span>
+                      </div>
+                    )}
+
+                    {aluno.cpf && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="truncate">CPF: {aluno.cpf}</span>
+                      </div>
+                    )}
+
+                    {aluno.inep && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <BadgeInfo className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="truncate">INEP: {aluno.inep}</span>
+                      </div>
+                    )}
+
+                    {nomeMae && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <User className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="truncate">Mãe: {nomeMae}</span>
+                      </div>
+                    )}
+
+                    {endereco !== '-' && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="truncate">{endereco}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Botões de Ação ── */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 pt-2">
                     <button 
                       onClick={() => setAlunoAnexos(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-semibold transition-colors cursor-pointer border border-indigo-500/30"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                       title="Anexos do Aluno"
                     >
-                      <Paperclip className="w-3.5 h-3.5" />
+                      <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="hidden sm:inline">Anexos</span>
                     </button>
 
                     {isEditMode && (
                       <button 
                         onClick={() => handleEditarAluno(aluno)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-2 hover:bg-hoverCustom text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors cursor-pointer border border-borderCustom"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                         title="Editar Aluno"
                       >
-                        <Edit className="w-3.5 h-3.5 text-[#0090ff]" />
+                        <Edit className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="hidden sm:inline">Editar</span>
                       </button>
                     )}
 
+                    {/* Imprimir Ficha (Único Destaque) */}
                     <button 
                       onClick={() => handleImprimirAluno(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0090ff]/10 hover:bg-[#0090ff]/20 text-[#0090ff] text-xs font-semibold transition-colors cursor-pointer border border-[#0090ff]/30"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#185FA5] hover:bg-[#185FA5]/90 text-white text-xs font-semibold transition-colors cursor-pointer border-none shadow-sm dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                       title="Imprimir Ficha de Matrícula"
                     >
                       <Printer className="w-3.5 h-3.5" />
@@ -363,20 +366,20 @@ export default function AlunosPage() {
 
                     <button 
                       onClick={() => setAlunoComprovanteImprimir(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold transition-colors cursor-pointer border border-emerald-500/30"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                       title="Imprimir Comprovante de Matrícula"
                     >
-                      <FileText className="w-3.5 h-3.5" />
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="hidden sm:inline">Comprovante</span>
                     </button>
 
                     {isEditMode && (
                       <button 
                         onClick={() => setAlunoArquivar(aluno)}
-                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
+                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
                         title="Arquivar Aluno"
                       >
-                        <Archive className="w-3.5 h-3.5" />
+                        <Archive className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="hidden sm:inline">Arquivar</span>
                       </button>
                     )}

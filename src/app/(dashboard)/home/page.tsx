@@ -15,10 +15,12 @@ import {
   Building2,
   ChevronRight,
   Smartphone,
-  UserCheck
+  UserCheck,
+  ArrowLeft
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 import { useSchoolStore } from '@/store/useSchoolStore'
 
@@ -74,16 +76,19 @@ export default function HomePage() {
       {/* Visão 1: Seleção de Escolas */}
       {!selectedEscola ? (
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Escolas</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+            <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
+            Escolas
+          </h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {escolas.map((escola) => (
               <Card
                 key={escola.id}
                 onClick={() => setSelectedEscola(escola)}
-                className="bg-surface-1 hover:bg-surface-2 border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md"
+                className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl"
               >
-                <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-blue-600'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
                   {escola.logo_url ? (
                     <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
                   ) : (
@@ -101,23 +106,28 @@ export default function HomePage() {
         /* Visão 2: Módulos da Escola Selecionada */
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            {selectedEscola.logo_url ? (
-              <div className="flex items-center gap-4">
-                <img
-                  src={selectedEscola.logo_url}
-                  alt={selectedEscola.nome}
-                  className="max-h-16 max-w-[280px] object-contain rounded-xl shadow-md border border-borderCustom p-1 bg-surface-1"
-                />
-                <h1 className="sr-only">{selectedEscola.nome}</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                {selectedEscola.logo_url ? (
+                  <img
+                    src={selectedEscola.logo_url}
+                    alt={selectedEscola.nome}
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <GraduationCap className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
+                )}
               </div>
-            ) : (
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">{selectedEscola.nome}</h1>
-            )}
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                {selectedEscola.nome}
+              </h1>
+            </div>
             <Button
               variant="outline"
               onClick={() => setSelectedEscola(null)}
-              className="bg-surface-1 border-borderCustom hover:bg-hoverCustom text-foregroundCustom hover:text-foreground"
+              className="bg-surface-1 border-[0.5px] border-borderCustom hover:bg-hoverCustom text-foregroundCustom hover:text-foreground rounded-xl flex items-center gap-2"
             >
+              <ArrowLeft className="w-4 h-4" />
               Voltar
             </Button>
           </div>
@@ -125,11 +135,17 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {modulosEscolares.map((modulo) => {
               const Icon = modulo.icon
+              const isOcorrencias = modulo.label.toLowerCase() === 'ocorrências'
               return (
                 <Link key={modulo.label} href={modulo.href}>
-                  <Card className="bg-surface-1 hover:bg-surface-2 border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-6 flex flex-col items-center justify-center text-center space-y-4 min-h-[180px] group shadow-md">
-                    <div className="p-3 rounded-2xl bg-surface-3 group-hover:bg-highlight/10 text-foregroundCustom/80 group-hover:text-highlight transition-colors">
-                      <Icon className="w-10 h-10" />
+                  <Card className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl">
+                    <div className={cn(
+                      "p-3 rounded-2xl transition-colors",
+                      isOcorrencias
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 group-hover:bg-amber-500/20"
+                        : "bg-[#185FA5]/8 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] group-hover:bg-[#185FA5]/15 dark:group-hover:bg-[#3ea6ff]/20"
+                    )}>
+                      <Icon className="w-9 h-9" />
                     </div>
                     <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-base">
                       {modulo.label}

@@ -18,8 +18,10 @@ import {
   Plus,
   Loader2,
   ArrowLeft,
+  Users
 } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import { ModalFuncionario } from '@/components/modals/modal-funcionario'
 import { ModalGestaoLotacoes } from '@/components/modals/modal-gestao-lotacoes'
 import { createClient } from '@/lib/supabaseClient'
@@ -941,11 +943,14 @@ export default function FuncionariosPage() {
       {/* ── Header ────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 mb-2">
         <Link href="/home">
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Funcionários</h1>
+        <div className="p-2.5 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center text-[#185FA5] dark:text-[#3ea6ff]">
+          <Users className="w-6 h-6" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Funcionários</h1>
       </div>
 
       {/* ── Barra de ferramentas ─────────────────────────────── */}
@@ -993,18 +998,17 @@ export default function FuncionariosPage() {
             setFuncLotacaoInicial(null)
             setModalLotacoesOpen(true)
           }}
-          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer"
+          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl"
           variant="outline"
         >
-          <Network className="w-4 h-4 text-[#3ea6ff]" />
+          <Network className="w-4 h-4 text-muted-foreground" />
           Gestão de Lotações
         </Button>
 
-        {/* Imprimir Lista */}
+        {/* Imprimir Lista (Único Primário) */}
         <Button
           onClick={handleImprimirLista}
-          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer"
-          variant="outline"
+          className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl border-none shadow-sm flex items-center px-4"
         >
           <Printer className="w-4 h-4" />
           Imprimir Lista
@@ -1015,9 +1019,10 @@ export default function FuncionariosPage() {
           <div className="ml-auto">
             <Button
               onClick={() => setModalNovoOpen(true)}
-              className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9 text-sm cursor-pointer"
+              className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl"
+              variant="outline"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-muted-foreground" />
               Novo Funcionário
             </Button>
           </div>
@@ -1027,7 +1032,7 @@ export default function FuncionariosPage() {
       {/* ── Grade de Cards ─────────────────────────────────────── */}
       {carregando ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin text-[#3ea6ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
         </div>
       ) : funcsFiltrados.length === 0 ? (
         <div className="bg-surface-1 border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground text-sm">
@@ -1042,98 +1047,100 @@ export default function FuncionariosPage() {
             return (
               <div
                 key={func.id}
-                className="bg-surface-1 border border-borderCustom hover:border-[#3ea6ff]/40 rounded-2xl p-4 flex flex-col gap-3 transition-all shadow-md"
+                className="bg-surface-1 border-[0.5px] border-borderCustom hover:border-[#185FA5]/40 dark:hover:border-[#3ea6ff]/40 rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md"
               >
-                {/* ── Topo do card: Avatar + Nome + Badges ── */}
-                <div className="flex items-start gap-3">
-                  {/* Avatar circular */}
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
-                  >
-                    {func.foto_url ? (
-                      <img
-                        src={func.foto_url}
-                        alt={func.nome}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      getInitials(func.nome)
-                    )}
-                  </div>
-
-                  {/* Nome + badges */}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-foreground text-sm leading-tight truncate">
-                      {func.nome}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      {/* Badge Cargo */}
-                      {func.cargo && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#0c2340] border border-[#1e4a7a] text-[#60a5fa] text-[10px] font-semibold tracking-wide truncate max-w-[130px]">
-                          {func.cargo}
-                        </span>
-                      )}
-                      {/* Badge Status */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
-                          isAtivo
-                            ? 'bg-emerald-950/60 border border-emerald-700/50 text-emerald-400'
-                            : 'bg-zinc-800/60 border border-zinc-600/50 text-zinc-400'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${isAtivo ? 'bg-emerald-400' : 'bg-zinc-500'}`}
+                {/* ── Topo do card: Avatar + Nome + Badges + Ações ── */}
+                <div className="flex items-start justify-between gap-3 pb-4 border-b border-borderCustom/50">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {/* Avatar circular */}
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
+                    >
+                      {func.foto_url ? (
+                        <img
+                          src={func.foto_url}
+                          alt={func.nome}
+                          className="w-full h-full object-cover"
                         />
-                        {isAtivo ? 'Ativo' : func.status.charAt(0).toUpperCase() + func.status.slice(1)}
-                      </span>
+                      ) : (
+                        getInitials(func.nome)
+                      )}
+                    </div>
+
+                    {/* Nome + badges */}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-foreground text-sm leading-tight truncate">
+                        {func.nome}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {/* Badge Cargo */}
+                        {func.cargo && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/50 text-[#185FA5] text-[10px] font-semibold tracking-wide truncate max-w-[130px] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400">
+                            {func.cargo}
+                          </span>
+                        )}
+                        {/* Badge Status */}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${
+                            isAtivo
+                              ? 'bg-emerald-50 border-emerald-200/50 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800/50 dark:text-emerald-400'
+                              : 'bg-zinc-50 border-zinc-200/50 text-zinc-700 dark:bg-zinc-800/40 dark:border-zinc-700/50 dark:text-zinc-400'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${isAtivo ? 'bg-emerald-500' : 'bg-zinc-500'}`}
+                          />
+                          {isAtivo ? 'Ativo' : func.status.charAt(0).toUpperCase() + func.status.slice(1)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* ── Botões de Ação ──────────────────────── */}
-                <div className="flex items-center gap-2">
-                  {/* M — Gestão de Lotações */}
-                  {isEditMode && (
+                  {/* ── Botões de Ação ──────────────────────── */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* M — Gestão de Lotações */}
+                    {isEditMode && (
+                      <button
+                        onClick={() => handleAbrirLotacoes(func)}
+                        title="Gestão de Lotações"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-borderCustom text-foreground font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+                      >
+                        M
+                      </button>
+                    )}
+                    {/* Imprimir ficha (Único Destaque do Card) */}
                     <button
-                      onClick={() => handleAbrirLotacoes(func)}
-                      title="Gestão de Lotações"
-                      className="w-9 h-9 rounded-full bg-[#1a2940] hover:bg-[#1e3a5f] border border-[#1e4a7a] text-[#60a5fa] font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+                      onClick={() => handleImprimir(func.id)}
+                      title="Imprimir ficha"
+                      className="w-9 h-9 rounded-xl bg-[#185FA5] hover:bg-[#185FA5]/90 text-white border-none flex items-center justify-center transition-all cursor-pointer dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                     >
-                      M
+                      <Printer className="w-4 h-4" />
                     </button>
-                  )}
-                  {/* Imprimir ficha */}
-                  <button
-                    onClick={() => handleImprimir(func.id)}
-                    title="Imprimir ficha"
-                    className="w-9 h-9 rounded-full bg-surface-2 hover:bg-hoverCustom border border-borderCustom text-muted-foreground flex items-center justify-center transition-all cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </button>
-                  {/* Editar */}
-                  {isEditMode && (
-                    <button
-                      onClick={() => handleEditar(func)}
-                      title="Editar funcionário"
-                      className="w-9 h-9 rounded-full bg-surface-2 hover:bg-hoverCustom border border-borderCustom text-muted-foreground flex items-center justify-center transition-all cursor-pointer"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                  {/* Excluir */}
-                  {isEditMode && (
-                    <button
-                      onClick={() => handleExcluir(func)}
-                      title="Excluir funcionário"
-                      className="w-9 h-9 rounded-full bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-400 flex items-center justify-center transition-all cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                    {/* Editar */}
+                    {isEditMode && (
+                      <button
+                        onClick={() => handleEditar(func)}
+                        title="Editar funcionário"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-borderCustom text-foreground flex items-center justify-center transition-all cursor-pointer"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
+                    {/* Excluir */}
+                    {isEditMode && (
+                      <button
+                        onClick={() => handleExcluir(func)}
+                        title="Excluir funcionário"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-red-500/10 hover:text-red-600 border border-borderCustom text-foreground flex items-center justify-center transition-all cursor-pointer dark:hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* ── Informações Adicionais ────────────────── */}
-                <div className="space-y-1.5 border-t border-borderCustom pt-3 text-xs text-muted-foreground">
+                <div className="space-y-1.5 text-xs text-muted-foreground">
                   {func.orgao && (
                     <p>
                       <span className="font-semibold text-foreground">Órgão:</span>{' '}
