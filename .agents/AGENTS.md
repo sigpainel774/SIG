@@ -132,3 +132,13 @@
 - **Resolução de Informações do Banco em Impressões**: Nunca confie apenas nas informações estáticas salvas no registro principal (como dados de alunos ou funcionários) para campos de relacionamento (escola, cargo, turma). Se estiverem ausentes no registro, realize uma busca ativa direta no Supabase usando o `escola_id`, `turma_id` ou `funcionario_id` no componente de impressão para exibir o nome correto.
 - **Parsing de Padrões de Turma**: Na rede municipal, as turmas são cadastradas sob o padrão `"Ano - Letra"` ou `"Ano° Letra"` (ex: `"6 - A"`, `"6° A"`). Ao exibir em campos que separam "Ano" e "Turma", utilize expressões regulares para extrair o Ano (primeira parte formatada como ordinal, ex: `"6º ANO"`) e a Letra da Turma (segunda parte, ex: `"A"`).
 <!-- END:print-view-best-practices -->
+
+<!-- BEGIN:supabase-storage-caching-rules -->
+# Diretrizes para Assinaturas, Storage e RLS do Supabase
+
+- **Busting de Cache de Imagens Dinâmicas**: Arquivos de imagem estáticos no Storage (como `aluno_{id}_responsavel.png` ou `escola_{id}_diretor.png`) possuem a mesma URL fixa, induzindo o navegador a usar versões obsoletas do cache. Ao renderizar essas imagens em componentes (ex: `SignaturePad`, visões de impressão ou perfis), sempre adicione um parâmetro query timestamp `?t=timestamp` dinâmico (ex: `${url}?t=${Date.now()}`), cuidando para não alterar dados em base64 (`data:image/...`).
+- **Limpeza de URLs de Banco de Dados**: Ao salvar as URLs de imagens no banco de dados, certifique-se de remover os parâmetros de cache-buster (`url.split('?')[0]`) para que o banco contenha caminhos limpos e consistentes.
+- **Relação de Políticas UPDATE de RLS Anônimas**: Ao criar políticas de RLS para comandos `UPDATE` que podem ser realizados de forma anônima (como o responsável assinando pelo celular sem login), sempre inclua a cláusula `WITH CHECK (true)` se o resultado da operação alterar as colunas usadas na condição `USING` (como zerar códigos temporários). Omitir o `WITH CHECK` fará com que o Postgres use a regra de `USING` no pós-update, bloqueando a gravação com um erro de violação de segurança.
+- **Políticas de UPDATE em Storage Público**: Operações de upload com `upsert: true` que atualizam arquivos já existentes em buckets públicos executam um `UPDATE` no Postgres. Certifique-se de que a política de `UPDATE` da tabela `storage.objects` permita acesso público/anônimo caso a tela de destino (ex: página de assinatura mobile) seja pública.
+<!-- END:supabase-storage-caching-rules -->
+
