@@ -66,13 +66,6 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
     if (onSuccess) onSuccess()
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleConfirmar()
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[400px] bg-[#18181b] border-[#3f3f46] text-white">
@@ -86,23 +79,37 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
           Para alternar para o modo de edição, confirme sua senha de login.
         </p>
 
-        <Input
-          type="password"
-          placeholder="Senha do usuário"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus
-          className="bg-[#121212] border-[#3f3f46] text-white h-12 focus:ring-[#0090ff] focus:border-[#0090ff]"
-        />
+        <form onSubmit={(e) => { e.preventDefault(); handleConfirmar(); }} className="space-y-4">
+          {/* Campo oculto de username para evitar que o navegador auto-preencha inputs da página de fundo */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={funcionario?.email || ''}
+            readOnly
+            className="absolute opacity-0 pointer-events-none w-0 h-0"
+            tabIndex={-1}
+          />
 
-        <Button 
-          onClick={handleConfirmar}
-          disabled={loading}
-          className="w-full h-12 bg-[#0090ff] text-white hover:bg-[#0070f3] font-bold mt-2"
-        >
-          {loading ? 'Confirmando...' : 'Confirmar'}
-        </Button>
+          <Input
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            placeholder="Senha do usuário"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            autoFocus
+            className="bg-[#121212] border-[#3f3f46] text-white h-12 focus:ring-[#0090ff] focus:border-[#0090ff]"
+          />
+
+          <Button 
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 bg-[#0090ff] text-white hover:bg-[#0070f3] font-bold mt-2"
+          >
+            {loading ? 'Confirmando...' : 'Confirmar'}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   )
