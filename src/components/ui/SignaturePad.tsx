@@ -1,34 +1,63 @@
 'use client'
 
 import React, { useRef, useState, useEffect } from 'react'
-import { PenTool, Trash2, RefreshCw } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { PenTool, Trash2, RefreshCw, X, Check } from 'lucide-react'
 import { Button } from './button'
+import { cn } from '@/lib/utils'
 
 interface SignaturePadProps {
   label: string
-  value: string | null // A URL da assinatura existente, se houver
+  value: string | null // A URL ou base64 da assinatura existente, se houver
   onChange: (base64: string | null) => void // Callback para retornar o base64
   isEditMode?: boolean
 }
 
 export function SignaturePad({ label, value, onChange, isEditMode = true }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
-  const [showCanvas, setShowCanvas] = useState(!value)
   const [drawnPaths, setDrawnPaths] = useState<Array<Array<{ x: number; y: number }>>>([])
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   // Armazenar caminhos desenhados para redesenho no resize/rotação
   const currentPathRef = useRef<Array<{ x: number; y: number }>>([])
 
-  // Ajustar tamanho do canvas de acordo com o DPI/DPR
-  const resizeCanvas = (canvas: HTMLCanvasElement) => {
+  // Registrar se o componente está montado (evita erros de SSR com portal)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Detectar orientação do dispositivo em dispositivos móveis
+  useEffect(() => {
+    if (!isModalOpen) return
+
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768
+      const isPortrait = window.innerHeight > window.innerWidth
+      setIsMobilePortrait(isMobile && isPortrait)
+    }
+
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    return () => window.removeEventListener('resize', checkOrientation)
+  }, [isModalOpen])
+
+  // Ajustar tamanho do canvas de acordo com o DPI/DPR e rotação
+  const resizeCanvas = (canvas: HTMLCanvasElement, rotated: boolean) => {
     const rect = canvas.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
     
     // Configura tamanho interno
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
+    if (rotated) {
+      canvas.width = rect.height * dpr
+      canvas.height = rect.width * dpr
+    } else {
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+    }
     
     const ctx = canvas.getContext('2d')
     if (ctx) {
@@ -36,7 +65,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
       ctx.strokeStyle = '#0033aa' // Caneta azul escuro
-      ctx.lineWidth = 1.5 // Espessura esferográfica
+      ctx.lineWidth = 2.0 // Espessura ideal para assinatura
     }
   }
 
@@ -46,6 +75,12 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
     if (!ctx || drawnPaths.length === 0) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = '#0033aa'
+    ctx.lineWidth = 2.0
+
     drawnPaths.forEach((path) => {
       if (path.length === 0) return
       ctx.beginPath()
@@ -57,20 +92,21 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
     })
   }
 
+  // Efeito para redimensionar e monitorar o canvas dentro do modal
   useEffect(() => {
-    if (!showCanvas) return
+    if (!isModalOpen) return
 
     const canvas = canvasRef.current
     if (!canvas) return
 
-    resizeCanvas(canvas)
+    // Ajustar tamanho inicial
+    resizeCanvas(canvas, isMobilePortrait)
     redrawPaths(canvas)
 
-    // ResizeObserver para monitorar mudanças de orientação e tela
+    // ResizeObserver para monitorar mudanças de container
     const resizeObserver = new ResizeObserver(() => {
       if (canvas) {
-        // Salva uma cópia temporária do canvas antes do resize se não houver drawnPaths estruturados
-        resizeCanvas(canvas)
+        resizeCanvas(canvas, isMobilePortrait)
         redrawPaths(canvas)
       }
     })
@@ -81,9 +117,9 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
     return () => {
       resizeObserver.disconnect()
     }
-  }, [showCanvas, drawnPaths])
+  }, [isModalOpen, isMobilePortrait, drawnPaths])
 
-  // Capturar coordenadas relativas
+  // Capturar coordenadas relativas (com suporte a rotação simulada de 90 graus)
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
     
@@ -99,9 +135,17 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
       clientY = e.clientY
     }
 
-    return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+    if (isMobilePortrait) {
+      // Mapeamento rotacionado de 90 graus no sentido horário
+      return {
+        x: clientY - rect.top,
+        y: rect.right - clientX
+      }
+    } else {
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      }
     }
   }
 
@@ -156,19 +200,16 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
       const newPaths = [...drawnPaths, currentPathRef.current]
       setDrawnPaths(newPaths)
       currentPathRef.current = []
-      
-      // Gera o crop e notifica a mudança
-      triggerCrop()
     }
   }
 
   // Recorte Inteligente (Auto-Crop)
-  const triggerCrop = () => {
+  const getCroppedBase64 = (): string | null => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) return null
 
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) return null
 
     // Lê os dados de pixels
     const w = canvas.width
@@ -197,10 +238,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
       }
     }
 
-    if (!hasPixels) {
-      onChange(null)
-      return
-    }
+    if (!hasPixels) return null
 
     // Adicionar margem de segurança de 6px convertida com base no DPI
     const padding = Math.round(6 * dpr)
@@ -212,10 +250,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
     const cropW = maxX - minX
     const cropH = maxY - minY
 
-    if (cropW <= 0 || cropH <= 0) {
-      onChange(null)
-      return
-    }
+    if (cropW <= 0 || cropH <= 0) return null
 
     // Cria canvas temporário para o recorte
     const tempCanvas = document.createElement('canvas')
@@ -226,9 +261,10 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
     if (tempCtx) {
       // Desenha o trecho recortado no novo canvas
       tempCtx.putImageData(ctx.getImageData(minX, minY, cropW, cropH), 0, 0)
-      const croppedBase64 = tempCanvas.toDataURL('image/png')
-      onChange(croppedBase64)
+      return tempCanvas.toDataURL('image/png')
     }
+
+    return null
   }
 
   const clear = () => {
@@ -239,16 +275,34 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       setDrawnPaths([])
       setHasSignature(false)
-      onChange(null)
     }
   }
 
-  const handleEditAgain = () => {
-    setShowCanvas(true)
-    setHasSignature(false)
+  const handleOpenModal = () => {
+    if (!isEditMode) return
     setDrawnPaths([])
-    onChange(null)
+    setHasSignature(false)
+    setIsModalOpen(true)
   }
+
+  const handleClose = () => {
+    setIsModalOpen(false)
+  }
+
+  const handleConfirm = () => {
+    const cropped = getCroppedBase64()
+    if (cropped) {
+      onChange(cropped)
+    } else {
+      onChange(null)
+    }
+    setIsModalOpen(false)
+  }
+
+  // Classes css do container do modal baseadas na orientação do celular
+  const modalClasses = isMobilePortrait
+    ? "w-[calc(100vh-24px)] h-[calc(100vw-24px)] rotate-90 origin-center bg-[#121214] border border-[#26262a] rounded-2xl p-4 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+    : "w-full h-full md:w-[750px] md:h-[480px] bg-[#121214] border border-transparent md:border-[#26262a] md:rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 
   return (
     <div className="space-y-2 w-full">
@@ -257,60 +311,113 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
           <PenTool className="w-3.5 h-3.5 text-[#3ea6ff]" />
           {label}
         </label>
-        {isEditMode && showCanvas && hasSignature && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={clear}
-            className="text-xs text-rose-400 hover:text-rose-300 h-7 px-2 hover:bg-rose-500/10 flex items-center gap-1"
-          >
-            <Trash2 className="w-3 h-3" />
-            Limpar
-          </Button>
-        )}
       </div>
 
-      <div className="relative border border-[#2a2a2a] rounded-xl overflow-hidden bg-[#0d0d0f] aspect-[3/1] min-h-[90px] flex items-center justify-center">
-        {showCanvas ? (
-          <canvas
-            ref={canvasRef}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-            className="w-full h-full cursor-crosshair touch-none"
-            style={{ display: 'block' }}
-          />
-        ) : (
-          <div className="p-3 w-full h-full flex flex-col items-center justify-center bg-[#141416]">
-            {value ? (
-              <img
-                src={value}
-                alt={`Assinatura ${label}`}
-                className="max-h-[75px] w-auto object-contain select-none pointer-events-none filter brightness-90 invert-[0.1]"
-              />
-            ) : (
-              <span className="text-xs text-gray-500">Nenhuma assinatura registrada</span>
-            )}
+      <div
+        onClick={handleOpenModal}
+        className={cn(
+          "relative border border-[#2a2a2a] rounded-xl overflow-hidden bg-[#0d0d0f] aspect-[3/1] min-h-[90px] flex items-center justify-center transition-all duration-200",
+          isEditMode ? "cursor-pointer hover:border-[#3ea6ff]/40 hover:bg-[#141416] active:scale-[0.99]" : ""
+        )}
+      >
+        {value ? (
+          <div className="p-3 w-full h-full flex flex-col items-center justify-center">
+            <img
+              src={value}
+              alt={`Assinatura ${label}`}
+              className="max-h-[75px] w-auto object-contain select-none pointer-events-none filter brightness-90 invert-[0.1]"
+            />
             {isEditMode && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleEditAgain}
-                className="absolute top-2 right-2 text-[10px] text-[#3ea6ff] hover:text-[#3ea6ff]/80 h-6 px-1.5 hover:bg-[#3ea6ff]/10 flex items-center gap-1.5"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
+              <span className="absolute bottom-2 right-2 text-[10px] text-[#3ea6ff] font-medium flex items-center gap-1">
+                <RefreshCw className="w-2.5 h-2.5" />
                 Alterar
-              </Button>
+              </span>
             )}
+          </div>
+        ) : (
+          <div className="p-4 w-full h-full flex flex-col items-center justify-center text-zinc-500 gap-1.5">
+            <PenTool className="w-5 h-5 text-zinc-500" />
+            <span className="text-xs font-medium">Toque para Assinar</span>
           </div>
         )}
       </div>
+
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-hidden p-4">
+          <div className={modalClasses}>
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-[#3ea6ff]" />
+                  {label}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {isMobilePortrait 
+                    ? "Gire o celular de lado se desejar usar em tela cheia." 
+                    : "Desenhe sua assinatura no quadro abaixo."}
+                </p>
+              </div>
+            </div>
+
+            {/* Canvas Area */}
+            <div className="flex-1 min-h-0 relative bg-white rounded-xl overflow-hidden border border-zinc-300 shadow-inner flex items-center justify-center">
+              <canvas
+                ref={canvasRef}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+                className="w-full h-full cursor-crosshair touch-none"
+              />
+              {!hasSignature && (
+                <div className="absolute pointer-events-none text-zinc-300 text-sm select-none border border-dashed border-zinc-300 px-4 py-2 rounded-lg">
+                  Assine aqui
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-between items-center pt-3 border-t border-[#26262a] mt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClose}
+                className="text-zinc-400 hover:text-white border border-[#27272a] rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
+              >
+                Fechar
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={clear}
+                  disabled={!hasSignature}
+                  className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl h-10 px-4 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Apagar
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={!hasSignature}
+                  className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] font-bold rounded-xl h-10 px-5 text-xs flex items-center gap-1.5 shadow-md shadow-[#3ea6ff]/10 disabled:opacity-40 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Confirmar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
