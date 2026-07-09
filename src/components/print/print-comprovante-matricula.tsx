@@ -133,15 +133,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
     return () => setMounted(false)
   }, [dm.assinatura_responsavel_url, dm.assinatura_funcionario_url])
 
-  // Abrir diálogo de impressão automaticamente após carregamento das imagens
-  useEffect(() => {
-    if (imagesLoaded) {
-      const timer = setTimeout(() => {
-        window.print()
-      }, 500)
-      return () => clearTimeout(timer)
-    }
-  }, [imagesLoaded])
+
 
   if (!mounted) return null
 
@@ -159,7 +151,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
               <img 
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)} 
                 alt="Prefeitura de Sapeaçu" 
-                className="h-10 w-auto object-contain"
+                className="h-14 w-auto object-contain"
               />
             </div>
 

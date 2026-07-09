@@ -172,7 +172,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <img 
                 src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`} 
                 alt="Prefeitura de Sapeaçu" 
-                className="h-16 w-auto object-contain"
+                className="h-20 w-auto object-contain"
               />
             </div>
 
@@ -185,7 +185,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <img 
                 src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`} 
                 alt="Secretaria Municipal de Educação" 
-                className="h-16 w-auto object-contain"
+                className="h-14 w-auto object-contain"
               />
             </div>
           </div>

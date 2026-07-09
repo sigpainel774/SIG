@@ -18,15 +18,18 @@ import {
   FileText,
   BadgeInfo,
   Building2,
-  ArrowLeft
+  ArrowLeft,
+  Archive,
+  Paperclip
 } from 'lucide-react'
 import Link from 'next/link'
 import { ModalAluno } from '@/components/modals/modal-aluno'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
+import { ModalJustificativaArquivamento } from '@/components/modals/modal-justificativa-arquivamento'
+import { ModalAlunosAnexos } from '@/components/modals/modal-alunos-anexos'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 
@@ -64,6 +67,8 @@ export default function AlunosPage() {
   const [alunoSelecionadoEditar, setAlunoSelecionadoEditar] = useState<Aluno | null>(null)
   const [alunoImprimir, setAlunoImprimir] = useState<Aluno | null>(null)
   const [alunoComprovanteImprimir, setAlunoComprovanteImprimir] = useState<Aluno | null>(null)
+  const [alunoArquivar, setAlunoArquivar] = useState<Aluno | null>(null)
+  const [alunoAnexos, setAlunoAnexos] = useState<Aluno | null>(null)
 
   const carregarAlunos = async () => {
     const supabase = createClient()
@@ -74,7 +79,7 @@ export default function AlunosPage() {
     const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
       !funcionario?.cargo?.toLowerCase().includes('coordenador')
 
-    let query = supabase.from('alunos').select('*').is('deleted_at', null)
+    let query = supabase.from('alunos').select('*, escolas(nome)').is('deleted_at', null)
     
     if (!isAdmin && escolaAtivaId) {
       if (isDiretor || isSecretario) {
@@ -103,7 +108,11 @@ export default function AlunosPage() {
     
     const { data } = await query.order('nome', { ascending: true })
     if (data) {
-      setAlunos(data as any)
+      const mapped = (data as any[]).map((aluno: any) => ({
+        ...aluno,
+        escola_nome: aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola'
+      }))
+      setAlunos(mapped)
     }
     setLoading(false)
   }
@@ -134,33 +143,6 @@ export default function AlunosPage() {
     setAlunoImprimir(aluno)
   }
 
-  const handleDeletar = async (id: string, nome: string) => {
-    if (confirm(`Tem certeza que deseja excluir a ficha do aluno "${nome}"?`)) {
-      const supabase = createClient()
-      const alunoParaDeletar = alunos.find(a => a.id === id) || {}
-      
-      const { success, error } = await softDeleteToTrash({
-        supabase,
-        tableName: 'alunos',
-        recordId: id,
-        recordSummary: `Aluno: ${nome}`,
-        recordPayload: alunoParaDeletar,
-        performedBy: {
-          id: funcionario?.id || '',
-          name: funcionario?.nome || 'Sistema',
-          email: funcionario?.email || ''
-        },
-        tenantId: escolaAtivaId || undefined
-      })
-
-      if (!success) {
-        toast.error(`Erro ao excluir: ${(error as any)?.message || 'Erro desconhecido'}`)
-      } else {
-        toast.success('Aluno movido para a Lixeira Global!')
-        carregarAlunos()
-      }
-    }
-  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto min-w-0">
@@ -185,6 +167,29 @@ export default function AlunosPage() {
         <PrintComprovanteMatricula 
           aluno={alunoComprovanteImprimir}
           onClose={() => setAlunoComprovanteImprimir(null)}
+        />
+      )}
+
+      {/* Modal de Justificativa de Arquivamento */}
+      {alunoArquivar && (
+        <ModalJustificativaArquivamento
+          open={!!alunoArquivar}
+          onOpenChange={(open) => !open && setAlunoArquivar(null)}
+          aluno={alunoArquivar}
+          funcionario={funcionario}
+          escolaAtivaId={escolaAtivaId}
+          onSuccess={carregarAlunos}
+        />
+      )}
+
+      {/* Modal de Anexos do Aluno */}
+      {alunoAnexos && (
+        <ModalAlunosAnexos
+          open={!!alunoAnexos}
+          onOpenChange={(open) => !open && setAlunoAnexos(null)}
+          aluno={alunoAnexos}
+          funcionario={funcionario}
+          escolaAtivaId={escolaAtivaId}
         />
       )}
 
@@ -247,11 +252,11 @@ export default function AlunosPage() {
             </div>
           ) : (
             alunosFiltrados.map((aluno) => {
-              const escolaNome = aluno.escola_nome || aluno.dados_matricula?.escolaNome || 'Sem Escola'
-              const serieNome = aluno.serie || aluno.dados_matricula?.serieAluno || 'Sem Série'
-              const telefone = aluno.telefone || aluno.dados_matricula?.telMaeAluno || '-'
-              const endereco = aluno.endereco || aluno.dados_matricula?.ruaAluno || '-'
-              const nomeMae = aluno.nome_mae || aluno.dados_matricula?.nomeMaeAluno || null
+              const escolaNome = aluno.escola_nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola'
+              const serieNome = aluno.serie ?? aluno.dados_matricula?.serieAluno ?? 'Sem Série'
+              const telefone = aluno.telefone ?? aluno.dados_matricula?.telMaeAluno ?? '-'
+              const endereco = aluno.endereco ?? aluno.dados_matricula?.ruaAluno ?? '-'
+              const nomeMae = aluno.nome_mae ?? aluno.dados_matricula?.nomeMaeAluno ?? null
 
               return (
                 <div 
@@ -327,6 +332,15 @@ export default function AlunosPage() {
 
                   {/* Botões de Ação */}
                   <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#26262a]">
+                    <button 
+                      onClick={() => setAlunoAnexos(aluno)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-semibold transition-colors cursor-pointer border border-indigo-500/30"
+                      title="Anexos do Aluno"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Anexos</span>
+                    </button>
+
                     {isEditMode && (
                       <button 
                         onClick={() => handleEditarAluno(aluno)}
@@ -358,12 +372,12 @@ export default function AlunosPage() {
 
                     {isEditMode && (
                       <button 
-                        onClick={() => handleDeletar(aluno.id, aluno.nome)}
+                        onClick={() => setAlunoArquivar(aluno)}
                         className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
-                        title="Excluir Aluno"
+                        title="Arquivar Aluno"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Excluir</span>
+                        <Archive className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Arquivar</span>
                       </button>
                     )}
                   </div>
