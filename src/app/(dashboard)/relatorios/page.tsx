@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { SchoolSelector } from '@/components/SchoolSelector'
-import { PrintBoletim } from '@/components/print/print-boletim'
+import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
 import { MapaGlobal } from '@/components/map/MapWrapper'
 import { createClient } from '@/lib/supabaseClient'
@@ -156,20 +155,7 @@ export default function RelatoriosPage() {
     window.print()
   }
 
-  // Render printable sub-document preview
-  if (printableSubView === 'boletim') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between no-print pb-2 border-b border-[#27272a]">
-          <Button variant="ghost" onClick={() => setPrintableSubView(null)} className="text-gray-300 hover:bg-[#27272a] gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao Relatório
-          </Button>
-        </div>
-        <PrintBoletim escola={selectedEscola?.nome || 'Rede Municipal de Sapeaçu'} />
-      </div>
-    )
-  }
+
 
   if (printableSubView === 'ficha') {
     return (
@@ -214,14 +200,7 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {activeReport === 'desempenho' && (
-              <Button
-                onClick={() => setPrintableSubView('boletim')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl gap-2"
-              >
-                <GraduationCap className="w-4 h-4" /> Visualizar Boletim Escolar (A4)
-              </Button>
-            )}
+
 
             {activeReport === 'frequencia' && (
               <Button
@@ -296,7 +275,7 @@ export default function RelatoriosPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#20293d]">
-                    {escolas.map((escola) => (
+                    {escolas.map((escola: any) => (
                       <tr key={escola.id} className="hover:bg-[#1f283b] transition-colors">
                         <td className="p-3 font-semibold text-white flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 rounded-full ${escola.color || 'bg-slate-500'}`} />

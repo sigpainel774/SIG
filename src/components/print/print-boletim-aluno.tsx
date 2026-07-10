@@ -125,9 +125,23 @@ export function PrintBoletimAluno({
   if (!mounted) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
       <style>{`
         @media print {
+          body > *:not(.print-portal-container) {
+            display: none !important;
+          }
+          .print-portal-container {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           @page {
             size: A4 portrait;
             margin: 10mm;
