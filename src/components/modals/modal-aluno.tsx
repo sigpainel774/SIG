@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Camera, UserPlus, Save, X, PenTool, CheckSquare, Smartphone, QrCode, Loader2, ExternalLink } from 'lucide-react'
+import { Camera, UserPlus, Save, X, PenTool, CheckSquare, Smartphone, QrCode, Loader2, ExternalLink, Lock, Unlock, Send, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { MiniMapa } from '@/components/map/MapWrapper'
@@ -147,6 +147,16 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   const [celularSigningField, setCelularSigningField] = useState<'resp' | 'func' | null>(null)
   const [celularSigningCode, setCelularSigningCode] = useState<string | null>(null)
   const pollingRef = useRef<any>(null)
+
+  // Estados para controle de bloqueio e solicitações de edições
+  const [isEdicaoLiberada, setIsEdicaoLiberada] = useState(false)
+  const [solicitandoLibere, setSolicitandoLibere] = useState(false)
+  const [solicitacaoPendente, setSolicitacaoPendente] = useState(false)
+  const [justificativaSolicitacao, setJustificativaSolicitacao] = useState('')
+  const [justificativaPendente, setJustificativaPendente] = useState('')
+  
+  const isDocumentoBloqueado = alunoEditar?.dados_matricula?.documento_bloqueado === true
+  const isFichaBloqueada = isDocumentoBloqueado && !isEdicaoLiberada
 
   // Lista de Opções para Checkboxes
   const OPCOES_RECURSOS = [
@@ -295,6 +305,45 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     }
     setCelularSigningCode(null)
     setCelularSigningField(null)
+    setSolicitandoLibere(false)
+    setJustificativaSolicitacao('')
+
+    // Checar se há solicitações e se a edição está liberada
+    const checarStatusLiberacao = async () => {
+      if (!alunoEditar?.id) {
+        setIsEdicaoLiberada(false)
+        setSolicitacaoPendente(false)
+        return
+      }
+      const supabase = createClient()
+      const { data: rawSol } = await (supabase
+        .from('solicitacoes_edicao_aluno' as any) as any)
+        .select('*')
+        .eq('aluno_id', alunoEditar.id)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const sol = rawSol as any
+
+      if (sol) {
+        if (sol.status === 'aprovado') {
+          setIsEdicaoLiberada(true)
+          setSolicitacaoPendente(false)
+        } else if (sol.status === 'pendente') {
+          setIsEdicaoLiberada(false)
+          setSolicitacaoPendente(true)
+          setJustificativaPendente(sol.justificativa)
+        } else {
+          setIsEdicaoLiberada(false)
+          setSolicitacaoPendente(false)
+        }
+      } else {
+        setIsEdicaoLiberada(false)
+        setSolicitacaoPendente(false)
+      }
+    }
+
+    checarStatusLiberacao()
   }, [alunoEditar])
 
   const carregarDadosIniciais = async () => {
@@ -359,11 +408,15 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
 
     const supabase = createClient()
     const columnName = tipo === 'resp' ? 'codigo_temp_resp' : 'codigo_temp_func'
+    const colCriadoEm = tipo === 'resp' ? 'codigo_temp_resp_criado_em' : 'codigo_temp_func_criado_em'
 
     try {
       const { error } = await supabase
         .from('alunos')
-        .update({ [columnName]: codeTemp } as any)
+        .update({ 
+          [columnName]: codeTemp,
+          [colCriadoEm]: new Date().toISOString()
+        } as any)
         .eq('id', alunoEditar.id)
 
       if (error) throw error
@@ -373,8 +426,25 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       // Cancelar polling anterior
       if (pollingRef.current) clearInterval(pollingRef.current)
 
-      // Iniciar Polling
+      let pollingTime = 0
+      // Iniciar Polling com timeout de 5 minutos (300 segundos)
       pollingRef.current = setInterval(async () => {
+        pollingTime += 3
+        if (pollingTime > 300) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
+          await supabase
+            .from('alunos')
+            .update({ [columnName]: null } as any)
+            .eq('id', alunoEditar.id)
+          setCelularSigningCode(null)
+          setCelularSigningField(null)
+          toast.error('Tempo limite de assinatura por celular expirou. Solicite um novo código.')
+          return
+        }
+
         const { data, error: pollError } = await supabase
           .from('alunos')
           .select('dados_matricula, codigo_temp_resp, codigo_temp_func')
@@ -431,6 +501,39 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     setCelularSigningCode(null)
     setCelularSigningField(null)
     toast.info('Assinatura pelo celular cancelada.')
+  }
+
+  const handleEnviarSolicitacaoEdicao = async () => {
+    if (!justificativaSolicitacao.trim()) {
+      toast.error('Por favor, descreva a justificativa para a liberação da ficha.')
+      return
+    }
+
+    setLoading(true)
+    const supabase = createClient()
+
+    try {
+      const { error } = await (supabase
+        .from('solicitacoes_edicao_aluno' as any) as any)
+        .insert({
+          aluno_id: alunoEditar.id,
+          solicitante_id: funcionario?.id || null,
+          justificativa: justificativaSolicitacao,
+          status: 'pendente'
+        })
+
+      if (error) throw error
+
+      toast.success('Solicitação de liberação enviada com sucesso!')
+      setSolicitacaoPendente(true)
+      setJustificativaPendente(justificativaSolicitacao)
+      setSolicitandoLibere(false)
+      setJustificativaSolicitacao('')
+    } catch (err: any) {
+      toast.error(`Erro ao enviar solicitação: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -620,6 +723,67 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         }
       }
 
+      // Se ambas as assinaturas estão presentes, acionar a geração do PDF e bloqueio
+      if (dadosMatriculaObj.assinatura_responsavel_url && dadosMatriculaObj.assinatura_funcionario_url) {
+        // Obter metadados do funcionário solicitante (logado)
+        let clientIp = '127.0.0.1'
+        try {
+          const ipRes = await fetch('/api/get-ip')
+          const ipData = await ipRes.json()
+          clientIp = ipData.ip || '127.0.0.1'
+        } catch (ipErr) {
+          console.error('Erro ao obter IP:', ipErr)
+        }
+
+        // Adicionar metadados do funcionário de quem está salvando
+        const ua = navigator.userAgent
+        
+        // Só atualiza se o funcionário assinou agora na tela
+        if (newSignatureFuncionario) {
+          dadosMatriculaObj.assinatura_funcionario_ip = clientIp
+          dadosMatriculaObj.assinatura_funcionario_user_agent = ua
+          dadosMatriculaObj.assinatura_funcionario_dispositivo = 'Desktop'
+          
+          await supabase
+            .from('alunos')
+            .update({ dados_matricula: dadosMatriculaObj })
+            .eq('id', savedAlunoId)
+        }
+
+        toast.info('Ambas as assinaturas salvas. Compilando PDF oficial com criptografia SHA-256...')
+        
+        try {
+          const pdfRes = await fetch('/api/matricula/gerar-pdf', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ alunoId: savedAlunoId })
+          })
+          
+          const pdfData = await pdfRes.json()
+          
+          if (pdfRes.ok) {
+            toast.success('Matrícula homologada e PDF assinado gerado com sucesso!')
+            
+            // Consumir a última solicitação de liberação pendente (se houver) marcando como 'finalizado' no banco
+            if (isEdicaoLiberada) {
+              await (supabase
+                .from('solicitacoes_edicao_aluno' as any) as any)
+                .update({ status: 'finalizado' } as any)
+                .eq('aluno_id', savedAlunoId)
+                .eq('status', 'aprovado')
+            }
+          } else {
+            console.error('Erro ao gerar PDF oficial:', pdfData.error)
+            toast.warning(`Ficha salva, mas a compilação do PDF oficial falhou: ${pdfData.error}`)
+          }
+        } catch (pdfErr: any) {
+          console.error('Erro de conexão ao gerar PDF:', pdfErr)
+          toast.warning('Ficha salva, mas falhou a conexão para gerar o PDF assinado oficial.')
+        }
+      }
+
       handleOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (err: any) {
@@ -645,6 +809,86 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         {/* Formulário com Scroll discreto */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-[#3a3a3a] scrollbar-track-[#181818]">
           
+          {/* Banner de Bloqueio por Assinatura */}
+          {isDocumentoBloqueado && (
+            <div className="bg-[#1e1b4b]/80 border border-[#3730a3] p-4 rounded-xl space-y-3 print:hidden">
+              <div className="flex items-start gap-3">
+                <Lock className="w-5 h-5 text-[#818cf8] shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-tight">Matrícula Assinada e Bloqueada</h4>
+                  <p className="text-xs text-zinc-300 leading-normal">
+                    Este documento possui assinatura eletrônica registrada. Para garantir a integridade das assinaturas e do PDF assinado oficial, modificações só são permitidas com liberação do Diretor.
+                  </p>
+                </div>
+              </div>
+
+              {!isEdicaoLiberada && (
+                <div className="pt-2 border-t border-[#3730a3]/50 flex flex-col gap-2">
+                  {solicitacaoPendente ? (
+                    <div className="text-[11px] text-zinc-400 bg-black/30 p-2.5 rounded-lg border border-[#2a2a2a] flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 text-[#3ea6ff] animate-spin shrink-0" />
+                      <span>Solicitação de liberação pendente de aprovação do Diretor. Justificativa: <em>"{justificativaPendente}"</em></span>
+                    </div>
+                  ) : (
+                    <>
+                      {!solicitandoLibere ? (
+                        <Button
+                          type="button"
+                          onClick={() => setSolicitandoLibere(true)}
+                          className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] font-bold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer w-fit"
+                        >
+                          <Unlock className="w-3.5 h-3.5" />
+                          Solicitar Liberação para Edição
+                        </Button>
+                      ) : (
+                        <div className="space-y-2 bg-black/30 p-3 rounded-lg border border-[#3730a3]/30">
+                          <Label className="text-[10px] text-zinc-400 font-bold uppercase">Justificativa para Alteração</Label>
+                          <textarea
+                            value={justificativaSolicitacao}
+                            onChange={(e) => setJustificativaSolicitacao(e.target.value)}
+                            placeholder="Descreva detalhadamente o motivo pelo qual precisa alterar a ficha do aluno..."
+                            className="w-full bg-[#18181b] border border-[#27272a] rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-[#3ea6ff] focus:outline-none min-h-[60px]"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => {
+                                setSolicitandoLibere(false)
+                                setJustificativaSolicitacao('')
+                              }}
+                              className="h-8 px-3 text-[10px] rounded-md text-zinc-400 hover:text-white"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={handleEnviarSolicitacaoEdicao}
+                              disabled={loading || !justificativaSolicitacao.trim()}
+                              className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] font-bold text-[10px] h-8 px-3 rounded-md flex items-center gap-1 cursor-pointer"
+                            >
+                              <Send className="w-3 h-3" />
+                              Enviar Solicitação
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {isEdicaoLiberada && (
+                <div className="text-[11px] text-emerald-400 bg-emerald-950/20 p-2.5 rounded-lg border border-emerald-800/30 flex items-center gap-1.5 font-semibold">
+                  <Unlock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Edição temporária liberada pelo Diretor! Qualquer alteração exigirá nova assinatura e recompilação do PDF.</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <fieldset disabled={isFichaBloqueada} className="space-y-6 flex flex-col">
+
           {/* 0. Seletor de Escola */}
           {escolas.length > 0 && (
             <div className="bg-[#121212] p-3 rounded-xl border border-[#2a2a2a]">
@@ -1647,6 +1891,8 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
             </div>
           )}
 
+          </fieldset>
+
           {/* Botão Salvar Fixo/Inferior */}
           <div className="pt-4 border-t border-[#2a2a2a] flex items-center justify-end gap-3">
             <Button
@@ -1659,10 +1905,10 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
             </Button>
             <Button
               type="submit"
-              disabled={loading}
-              className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl text-sm transition-all"
+              disabled={loading || isFichaBloqueada}
+              className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
             >
-              {loading ? 'Salving...' : (
+              {loading ? 'Salvando...' : (
                 <span className="flex items-center gap-2">
                   <Save className="w-4 h-4" />
                   {alunoEditar ? 'Atualizar Ficha' : 'Salvar Ficha do Aluno'}

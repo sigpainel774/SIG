@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Loader2, Printer, X } from 'lucide-react'
+import { Loader2, Printer, X, ExternalLink } from 'lucide-react'
+import QRCode from 'qrcode'
 import { createClient } from '@/lib/supabaseClient'
 
 export interface AlunoPrintData {
@@ -35,14 +36,19 @@ interface PrintComprovanteProps {
 export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovanteProps) {
   const [mounted, setMounted] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState(false)
-
-  const [escolaNome, setEscolaNome] = useState('')
-  const [turmaAno, setTurmaAno] = useState('')
-  const [turmaLetra, setTurmaLetra] = useState('')
-  const [turnoVal, setTurnoVal] = useState('')
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
 
   const dm = aluno.dados_matricula || {}
   const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
+
+  useEffect(() => {
+    if (dm.pdf_assinado_token) {
+      const siteUrl = window.location.origin
+      QRCode.toDataURL(`${siteUrl}/verificar/${dm.pdf_assinado_token}`, { margin: 1, width: 80 })
+        .then(setQrCodeUrl)
+        .catch(err => console.error('Erro ao gerar QR Code:', err))
+    }
+  }, [dm.pdf_assinado_token])
 
   // Prevenção de Cache com timestamp
   const getCacheBustedUrl = (url: string) => {
@@ -101,8 +107,14 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
       }
     }
 
+    // Declarar variáveis de estado de fetchDados
     fetchDados()
   }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
+
+  const [escolaNome, setEscolaNome] = useState('')
+  const [turmaAno, setTurmaAno] = useState('')
+  const [turmaLetra, setTurmaLetra] = useState('')
+  const [turnoVal, setTurnoVal] = useState('')
 
   useEffect(() => {
     setMounted(true)
@@ -300,7 +312,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
 
         {/* Assinaturas */}
         <div className="pt-2">
-          <div className="grid grid-cols-2 gap-8 text-center text-[7.5px]">
+          <div className="grid grid-cols-2 gap-8 text-center text-[7.5px] mb-2">
             {/* Responsável pela Matrícula (Funcionário) */}
             <div className="flex flex-col items-center justify-end h-14">
               <div className="h-8 flex items-center justify-center mb-0.5">
@@ -333,6 +345,19 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
               </div>
             </div>
           </div>
+
+          {/* Tarja de Autenticidade Digital */}
+          {qrCodeUrl && (
+            <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-3 text-[7.5px] text-gray-600 font-mono leading-tight bg-gray-50/50 p-1.5 rounded border border-gray-200">
+              <img src={qrCodeUrl} alt="QR Code Verificação" className="h-10 w-10 shrink-0 border border-gray-300 p-0.5 rounded bg-white" />
+              <div className="flex-1 space-y-0.5 text-left">
+                <span className="font-bold text-gray-800 uppercase block text-[7.5px]">DOCUMENTO ASSINADO ELETRONICAMENTE</span>
+                <span className="block">Chave de Verificação: <strong className="text-gray-900">{dm.pdf_assinado_token}</strong></span>
+                <span className="block truncate">Hash SHA-256: <strong className="text-gray-900 text-[6.5px]">{dm.pdf_assinado_hash}</strong></span>
+                <span className="block text-[6.5px] text-gray-500">Valide este comprovante lendo o QR Code ou em: {window.location.origin}/verificar/{dm.pdf_assinado_token}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -375,6 +400,17 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
 
       {/* Botões de Ação na tela (Ocultos na Impressão) */}
       <div className="fixed top-4 right-4 z-[100] flex gap-2 print-hidden">
+        {dm.pdf_assinado_url && (
+          <a
+            href={dm.pdf_assinado_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2.5 bg-[#818cf8] hover:bg-[#818cf8]/90 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 text-xs transition-all cursor-pointer text-decoration-none"
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span>Baixar PDF Assinado</span>
+          </a>
+        )}
         <button
           onClick={() => window.print()}
           disabled={!imagesLoaded}
