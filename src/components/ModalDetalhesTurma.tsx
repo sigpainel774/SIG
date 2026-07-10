@@ -57,6 +57,7 @@ export function ModalDetalhesTurma({
 
   // Notas
   const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null }>>({}) // alunoId_materiaId_unidade -> notas
+  const [recuperacoesState, setRecuperacoesState] = useState<Record<string, { nota: string | number | null }>>({}) // alunoId_materiaId -> recuperacao
   const [unidadesAtivas, setUnidadesAtivas] = useState<Record<string, number>>({}) // materiaId -> unidade ativa (1, 2 ou 3)
   const [savingNotas, setSavingNotas] = useState<Record<string, boolean>>({}) // materiaId -> loading de salvar
   const [materiaAberta, setMateriaAberta] = useState<string | null>(null) // Controlar Accordion manual
@@ -194,6 +195,7 @@ export function ModalDetalhesTurma({
   const fetchNotas = async () => {
     if (!turma?.id) return
     try {
+      // 1. Buscar notas comuns das unidades
       const { data } = await supabase
         .from('notas')
         .select('*')
@@ -211,8 +213,25 @@ export function ModalDetalhesTurma({
         })
       }
       setNotasState(map)
+
+      // 2. Buscar recuperações finais
+      const { data: recs } = await supabase
+        .from('recuperacoes_finais')
+        .select('*')
+        .eq('turma_id', turma.id)
+
+      const recMap: typeof recuperacoesState = {}
+      if (recs) {
+        recs.forEach((r: any) => {
+          const key = `${r.aluno_id}_${r.materia_id}`
+          recMap[key] = {
+            nota: r.nota !== null ? String(r.nota) : null
+          }
+        })
+      }
+      setRecuperacoesState(recMap)
     } catch (err) {
-      console.error('Erro ao buscar notas:', err)
+      console.error('Erro ao buscar notas/recuperações:', err)
     }
   }
 
@@ -326,6 +345,32 @@ export function ModalDetalhesTurma({
     }))
   }
 
+  // Manipular alteração de recuperação final
+  const handleRecuperacaoChange = (
+    alunoId: string,
+    materiaId: string,
+    valor: string
+  ) => {
+    const rawVal = valor.replace(',', '.')
+    const key = `${alunoId}_${materiaId}`
+    if (rawVal === '') {
+      setRecuperacoesState(prev => ({
+        ...prev,
+        [key]: { nota: null }
+      }))
+      return
+    }
+
+    if (!/^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/.test(rawVal)) {
+      return // ignorar valores inválidos
+    }
+
+    setRecuperacoesState(prev => ({
+      ...prev,
+      [key]: { nota: rawVal }
+    }))
+  }
+
   // Salvar notas da matéria e unidade ativas em lote (Upsert seguro)
   const handleSalvarNotas = async (materiaId: string) => {
     if (!escolaAtivaId) return
@@ -334,6 +379,7 @@ export function ModalDetalhesTurma({
     setSavingNotas(prev => ({ ...prev, [materiaId]: true }))
 
     try {
+      // 1. Salvar notas das unidades
       const upserts = alunos.map(aluno => {
         const key = `${aluno.id}_${materiaId}_${unidade}`
         const n = notasState[key] || { nota1: null, nota2: null, nota3: null }
@@ -355,10 +401,56 @@ export function ModalDetalhesTurma({
 
       if (error) throw error
 
+      // 2. Salvar ou deletar recuperações finais
+      const recUpserts: any[] = []
+      const recDeletes: string[] = []
+
+      alunos.forEach(aluno => {
+        const key = `${aluno.id}_${materiaId}`
+        const rec = recuperacoesState[key]
+        const m1 = calcularMediaUnidade(aluno.id, materiaId, 1)
+        const m2 = calcularMediaUnidade(aluno.id, materiaId, 2)
+        const m3 = calcularMediaUnidade(aluno.id, materiaId, 3)
+        const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+        const mediaFinal = calcularMediaFinal(aluno.id, materiaId)
+
+        if (rec && rec.nota !== null && rec.nota !== '') {
+          // Apenas salva a recuperação final se o aluno realmente estiver elegível (média < 5.0 e todas as unidades lançadas)
+          if (todasUnidades && mediaFinal !== null && mediaFinal < 5.0) {
+            recUpserts.push({
+              aluno_id: aluno.id,
+              turma_id: turma.id,
+              materia_id: materiaId,
+              escola_id: escolaAtivaId ?? '',
+              nota: Number(rec.nota)
+            })
+          }
+        } else {
+          recDeletes.push(aluno.id)
+        }
+      })
+
+      if (recUpserts.length > 0) {
+        const { error: recError } = await supabase
+          .from('recuperacoes_finais')
+          .upsert(recUpserts, { onConflict: 'aluno_id, materia_id' })
+        if (recError) throw recError
+      }
+
+      if (recDeletes.length > 0) {
+        const { error: delError } = await supabase
+          .from('recuperacoes_finais')
+          .delete()
+          .eq('turma_id', turma.id)
+          .eq('materia_id', materiaId)
+          .in('aluno_id', recDeletes)
+        if (delError) throw delError
+      }
+
       toast.success('Notas salvas com sucesso!')
       fetchNotas()
     } catch (err: any) {
-      console.error('Erro ao salvar notas:', err)
+      console.error('Erro ao salvar notas/recuperações:', err)
       toast.error('Erro ao salvar notas: ' + err.message)
     } finally {
       setSavingNotas(prev => ({ ...prev, [materiaId]: false }))
@@ -465,6 +557,11 @@ export function ModalDetalhesTurma({
     return notasState[key] || { nota1: null, nota2: null, nota3: null }
   }
 
+  const obterRecuperacao = (alunoId: string, materiaId: string) => {
+    const key = `${alunoId}_${materiaId}`
+    return recuperacoesState[key] || { nota: null }
+  }
+
   const calcularMediaUnidade = (alunoId: string, materiaId: string, unidade: number) => {
     const n = obterNotas(alunoId, materiaId, unidade)
     const n1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
@@ -488,8 +585,44 @@ export function ModalDetalhesTurma({
     const medias = [m1, m2, m3].filter((m): m is number => m !== null)
     if (medias.length === 0) return null
 
-    const soma = (m1 ?? 0) + (m2 ?? 0) + (m3 ?? 0)
-    return parseFloat((soma / 3).toFixed(1))
+    // Média baseia-se apenas nas unidades já lançadas para não distorcer no meio do ano
+    const soma = medias.reduce((a, b) => a + b, 0)
+    return parseFloat((soma / medias.length).toFixed(1))
+  }
+
+  const calcularMediaPosRecup = (alunoId: string, materiaId: string) => {
+    const m1 = calcularMediaUnidade(alunoId, materiaId, 1)
+    const m2 = calcularMediaUnidade(alunoId, materiaId, 2)
+    const m3 = calcularMediaUnidade(alunoId, materiaId, 3)
+    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+
+    const mediaFinal = calcularMediaFinal(alunoId, materiaId)
+    if (mediaFinal === null) return null
+    if (!todasUnidades || mediaFinal >= 5.0) return mediaFinal
+
+    const rec = obterRecuperacao(alunoId, materiaId)
+    const notaRec = rec.nota !== null && rec.nota !== '' ? Number(rec.nota) : null
+    if (notaRec === null) return mediaFinal
+
+    return notaRec
+  }
+
+  const obterSituacao = (alunoId: string, materiaId: string) => {
+    const m1 = calcularMediaUnidade(alunoId, materiaId, 1)
+    const m2 = calcularMediaUnidade(alunoId, materiaId, 2)
+    const m3 = calcularMediaUnidade(alunoId, materiaId, 3)
+    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+
+    const mediaFinal = calcularMediaFinal(alunoId, materiaId)
+    if (mediaFinal === null) return 'Sem Notas'
+    if (!todasUnidades) return 'Cursando'
+    if (mediaFinal >= 5.0) return 'Aprovado'
+
+    const rec = obterRecuperacao(alunoId, materiaId)
+    const notaRec = rec.nota !== null && rec.nota !== '' ? Number(rec.nota) : null
+    if (notaRec === null) return 'Em Recuperação'
+
+    return notaRec >= 5.0 ? 'Aprovado (Rec)' : 'Reprovado'
   }
 
   const processarNotasParaImpressao = (alunoId: string) => {
@@ -510,6 +643,17 @@ export function ModalDetalhesTurma({
       })
     })
     return formatadas
+  }
+
+  const processarRecuperacoesParaImpressao = (alunoId: string) => {
+    return materias.map(mat => {
+      const key = `${alunoId}_${mat.id}`
+      const rec = recuperacoesState[key]
+      return {
+        materia_id: mat.id,
+        nota: rec && rec.nota !== null && rec.nota !== '' ? Number(rec.nota) : null
+      }
+    })
   }
 
   if (!turma) return null
@@ -943,13 +1087,15 @@ export function ModalDetalhesTurma({
                                       <th className="p-3 w-16 text-center">Nota 3</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/40">Média Unid.</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/85">Recup. Final</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/90">Média Pós-Rec</th>
                                       <th className="p-3 w-24 text-right">Ação</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {alunos.length === 0 ? (
                                       <tr>
-                                        <td colSpan={7} className="p-8 text-center text-xs text-zinc-500 font-medium">
+                                        <td colSpan={9} className="p-8 text-center text-xs text-zinc-500 font-medium">
                                           Nenhum aluno matriculado nesta turma.
                                         </td>
                                       </tr>
@@ -958,6 +1104,14 @@ export function ModalDetalhesTurma({
                                         const n = obterNotas(aluno.id, mat.id, unidAtiva)
                                         const mediaUnid = calcularMediaUnidade(aluno.id, mat.id, unidAtiva)
                                         const mediaFinal = calcularMediaFinal(aluno.id, mat.id)
+                                        const rec = obterRecuperacao(aluno.id, mat.id)
+                                        const mediaPosRec = calcularMediaPosRecup(aluno.id, mat.id)
+                                        const situacao = obterSituacao(aluno.id, mat.id)
+                                        const m1 = calcularMediaUnidade(aluno.id, mat.id, 1)
+                                        const m2 = calcularMediaUnidade(aluno.id, mat.id, 2)
+                                        const m3 = calcularMediaUnidade(aluno.id, mat.id, 3)
+                                        const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+                                        const isElegivelRec = todasUnidades && mediaFinal !== null && mediaFinal < 5.0
 
                                         return (
                                           <tr key={aluno.id} className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
@@ -1008,9 +1162,42 @@ export function ModalDetalhesTurma({
                                             {/* Média Final */}
                                             <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
                                               {mediaFinal !== null ? (
-                                                <span className={mediaFinal < 6 ? 'text-red-500' : 'text-green-500'}>
+                                                <span className={mediaFinal < 5 ? 'text-red-500' : 'text-green-500'}>
                                                   {mediaFinal}
                                                 </span>
+                                              ) : '-'}
+                                            </td>
+
+                                            {/* Recuperação Final */}
+                                            <td className="p-2 text-center bg-yellow-500/5">
+                                              <input
+                                                type="text"
+                                                value={rec.nota ?? ''}
+                                                onChange={(e) => handleRecuperacaoChange(aluno.id, mat.id, e.target.value)}
+                                                disabled={!isElegivelRec}
+                                                placeholder={isElegivelRec ? "-" : "N/A"}
+                                                className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-white ${
+                                                  isElegivelRec 
+                                                    ? 'bg-[#18181b] border border-yellow-500/30' 
+                                                    : 'bg-zinc-800/30 border border-zinc-900 text-zinc-500 cursor-not-allowed'
+                                                }`}
+                                              />
+                                            </td>
+
+                                            {/* Média Pós-Rec / Situação */}
+                                            <td className="p-3 text-center bg-[#1c1c1e]/50 font-bold">
+                                              {mediaPosRec !== null ? (
+                                                <div className="flex flex-col items-center">
+                                                  <span className={mediaPosRec < 5 ? 'text-red-500' : 'text-green-500'}>
+                                                    {mediaPosRec}
+                                                  </span>
+                                                  <span className={`text-[9px] uppercase mt-0.5 font-bold ${
+                                                    situacao.startsWith('Aprovado') ? 'text-green-600' : 
+                                                    situacao === 'Em Recuperação' ? 'text-yellow-600' : 'text-red-600'
+                                                  }`}>
+                                                    {situacao}
+                                                  </span>
+                                                </div>
                                               ) : '-'}
                                             </td>
 
@@ -1064,6 +1251,7 @@ export function ModalDetalhesTurma({
           escolaNome={escolaNome}
           materias={materias}
           notas={alunoImprimir.notes}
+          recuperacoes={processarRecuperacoesParaImpressao(alunoImprimir.aluno.id)}
           onClose={() => setAlunoImprimir(null)}
         />
       )}
