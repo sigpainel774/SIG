@@ -140,10 +140,10 @@ export default function HomePage() {
                 <Link key={modulo.label} href={modulo.href}>
                   <Card className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl">
                     <div className={cn(
-                      "p-3 rounded-2xl transition-colors",
+                      "w-20 h-20 rounded-2xl transition-colors flex items-center justify-center shrink-0",
                       isOcorrencias
-                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 group-hover:bg-amber-500/20"
-                        : "bg-[#185FA5]/8 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] group-hover:bg-[#185FA5]/15 dark:group-hover:bg-[#3ea6ff]/20"
+                        ? "bg-[#ffedd5] text-[#b45309] dark:bg-[#2c1a0e] dark:text-[#f59e0b] group-hover:bg-[#fed7aa] dark:group-hover:bg-[#3d2916]"
+                        : "bg-[#e0f2fe] text-[#185FA5] dark:bg-[#1b253b] dark:text-[#3ea6ff] group-hover:bg-[#bae6fd] dark:group-hover:bg-[#253552]"
                     )}>
                       <Icon className="w-9 h-9" />
                     </div>
