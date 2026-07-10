@@ -49,7 +49,7 @@ const modulesList = [
 
 
 export default function ConfiguracoesPage() {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local' | 'assinatura-diretor'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local' | 'assinatura-diretor' | 'assinatura-pessoal'>('perfil')
   const [showPassword, setShowPassword] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -63,6 +63,11 @@ export default function ConfiguracoesPage() {
   const [assinaturaDiretorUrl, setAssinaturaDiretorUrl] = useState<string | null>(null)
   const [newDiretorSignature, setNewDiretorSignature] = useState<string | null>(null)
   const [loadingDiretorSig, setLoadingDiretorSig] = useState(false)
+
+  // Estados para a Assinatura Pessoal do Funcionário
+  const [assinaturaPessoalUrl, setAssinaturaPessoalUrl] = useState<string | null>(null)
+  const [newPessoalSignature, setNewPessoalSignature] = useState<string | null>(null)
+  const [loadingPessoalSig, setLoadingPessoalSig] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -88,6 +93,13 @@ export default function ConfiguracoesPage() {
       fetchLocal()
     }
   }, [funcionario])
+
+  // Sincroniza assinatura pessoal do funcionario
+  useEffect(() => {
+    if (localFuncionario) {
+      setAssinaturaPessoalUrl(localFuncionario.assinatura_url || null)
+    }
+  }, [localFuncionario])
 
   // Carrega assinatura do diretor se a escola ativa mudar ou se for carregada
   useEffect(() => {
@@ -151,6 +163,62 @@ export default function ConfiguracoesPage() {
       toast.error(`Erro ao salvar assinatura do diretor: ${err.message}`)
     } finally {
       setLoadingDiretorSig(false)
+    }
+  }
+
+  const handleSavePessoalSignature = async () => {
+    if (!localFuncionario?.id || !newPessoalSignature) return
+    setLoadingPessoalSig(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Converter base64 para blob
+      const parts = newPessoalSignature.split(';base64,')
+      const contentType = parts[0].split(':')[1]
+      const raw = window.atob(parts[1])
+      const rawLength = raw.length
+      const uInt8Array = new Uint8Array(rawLength)
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i)
+      }
+      const blob = new Blob([uInt8Array], { type: contentType })
+
+      // 2. Upload para storage
+      const fileName = `funcionario_${localFuncionario.id}_assinatura.png`
+      const { error: uploadErr } = await supabase.storage
+        .from('assinaturas_alunos')
+        .upload(fileName, blob, { contentType: 'image/png', upsert: true })
+
+      if (uploadErr) throw uploadErr
+
+      // 3. Obter URL pública
+      const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
+      const publicUrl = pData.publicUrl
+
+      // 4. Salvar na tabela funcionarios
+      const { error: dbErr } = await supabase
+        .from('funcionarios')
+        .update({ assinatura_url: publicUrl } as any)
+        .eq('id', localFuncionario.id)
+
+      if (dbErr) throw dbErr
+
+      setAssinaturaPessoalUrl(publicUrl)
+      
+      // Sincronizar em tempo real com o useAuthStore
+      useAuthStore.setState({ 
+        funcionario: { 
+          ...funcionario!, 
+          assinatura_url: publicUrl 
+        } 
+      })
+
+      setNewPessoalSignature(null)
+      toast.success('Sua assinatura pessoal foi salva com sucesso!')
+    } catch (err: any) {
+      toast.error(`Erro ao salvar assinatura pessoal: ${err.message}`)
+    } finally {
+      setLoadingPessoalSig(false)
     }
   }
 
@@ -240,6 +308,27 @@ export default function ConfiguracoesPage() {
             </div>
           </button>
         )}
+
+        <button
+          onClick={() => setActiveTab('assinatura-pessoal')}
+          className={cn(
+            "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
+            activeTab === 'assinatura-pessoal'
+              ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
+              : "bg-card border-borderCustom hover:bg-hoverCustom"
+          )}
+        >
+          <div className={cn(
+            "p-3 rounded-xl",
+            activeTab === 'assinatura-pessoal' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
+          )}>
+            <PenTool className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foregroundCustom text-base">Minha Assinatura</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Cadastrar sua assinatura digital pessoal para assinar documentos</p>
+          </div>
+        </button>
 
         {isAdmin && (
           <button
@@ -471,6 +560,61 @@ export default function ConfiguracoesPage() {
           </Card>
         </div>
       )}
+
+      {activeTab === 'assinatura-pessoal' && (
+        <div className="animate-in fade-in-50 duration-200">
+          <Card className="border-borderCustom bg-card p-6">
+            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
+              <PenTool className="h-5 w-5 text-highlight" />
+              Minha Assinatura Digital Pessoal
+            </h2>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Cadastre sua assinatura digital pessoal. Ela será usada quando você assinar documentos do sistema (como fichas de alunos) utilizando o preenchimento automático.
+              </p>
+              <div className="max-w-md">
+                <SignaturePad
+                  label="Minha Assinatura"
+                  value={newPessoalSignature || assinaturaPessoalUrl}
+                  onChange={setNewPessoalSignature}
+                  isEditMode={true}
+                />
+              </div>
+              {newPessoalSignature && (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setNewPessoalSignature(null)}
+                    className="text-zinc-400 hover:text-white"
+                    disabled={loadingPessoalSig}
+                  >
+                    Descartar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSavePessoalSignature}
+                    disabled={loadingPessoalSig}
+                    className="bg-highlight text-background hover:bg-highlight/90 font-bold"
+                  >
+                    {loadingPessoalSig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Assinatura
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
@@ -518,6 +662,7 @@ function ProfileField({
 }
 
 function ColetorLocalTab() {
+  const { funcionario } = useAuthStore()
   const [token, setToken] = useState('')
   const [aluno, setAluno] = useState<any | null>(null)
   const [sigType, setSigType] = useState<'resp' | 'func' | null>(null)
@@ -710,6 +855,7 @@ function ColetorLocalTab() {
               value={newSignature}
               onChange={setNewSignature}
               isEditMode={true}
+              globalSignatureUrl={sigType === 'func' ? funcionario?.assinatura_url : null}
             />
 
             <div className="flex gap-2 justify-end">

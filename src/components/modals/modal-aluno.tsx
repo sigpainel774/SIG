@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { MiniMapa } from '@/components/map/MapWrapper'
 import { SignaturePad } from '@/components/ui/SignaturePad'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface ModalAlunoProps {
   open?: boolean
@@ -29,6 +30,7 @@ interface ModalAlunoProps {
 
 export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess }: ModalAlunoProps) {
   const { isEditMode } = useEditModeStore()
+  const { funcionario } = useAuthStore()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [turmas, setTurmas] = useState<any[]>([])
@@ -1580,6 +1582,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
                   value={newSignatureFuncionario || assinaturaFuncionarioUrl}
                   onChange={setNewSignatureFuncionario}
                   isEditMode={isEditMode}
+                  globalSignatureUrl={funcionario?.assinatura_url}
                 />
                 {isEditMode && alunoEditar?.id && !celularSigningCode && (
                   <Button
