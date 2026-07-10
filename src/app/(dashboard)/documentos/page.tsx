@@ -46,9 +46,14 @@ export default function DocumentosPage() {
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
-  const dataNascimentoFormatada = alunoSelecionado?.data_nascimento
-    ? new Date(alunoSelecionado.data_nascimento).toLocaleDateString('pt-BR')
-    : 'Não informada'
+  const dataNascimentoFormatada = (() => {
+    if (!alunoSelecionado?.data_nascimento) return 'Não informada'
+    const parts = alunoSelecionado.data_nascimento.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    return new Date(alunoSelecionado.data_nascimento).toLocaleDateString('pt-BR')
+  })()
 
   // Clique fora do autocomplete fecha as sugestões
   useEffect(() => {
@@ -80,10 +85,10 @@ export default function DocumentosPage() {
 
       // Verificação de cargos e lotação
       if (!isAdmin) {
-        const isDiretor = vinculos.some(
+        const isDiretor = (vinculos || []).some(
           v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR'))
         )
-        const isSecretario = vinculos.some(
+        const isSecretario = (vinculos || []).some(
           v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'SECRETÁRIO' || v.cargo?.toUpperCase().includes('SECRET'))
         )
 

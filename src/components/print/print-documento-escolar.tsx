@@ -27,9 +27,14 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
   const { funcionario } = useAuthStore()
 
   const dm = aluno.dados_matricula || {}
-  const dataNascimentoFormatada = aluno.data_nascimento
-    ? new Date(aluno.data_nascimento).toLocaleDateString('pt-BR')
-    : 'Não informada'
+  const dataNascimentoFormatada = (() => {
+    if (!aluno.data_nascimento) return 'Não informada'
+    const parts = aluno.data_nascimento.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    return new Date(aluno.data_nascimento).toLocaleDateString('pt-BR')
+  })()
   
   const filiacao = [aluno.nome_mae, aluno.nome_pai].filter(Boolean).join(' e ') || 'Não informada'
   const anoLetivo = dm.anoLetivo || new Date().getFullYear().toString()
