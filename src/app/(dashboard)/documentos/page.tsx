@@ -17,7 +17,8 @@ import {
   Award,
   FileCheck,
   FileSpreadsheet,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -28,7 +29,7 @@ import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { PrintDocumentoEscolar } from '@/components/print/print-documento-escolar'
 
 export default function DocumentosPage() {
-  const { funcionario, vinculos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
+  const { funcionario, vinculos, acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const { isEditMode } = useEditModeStore()
   
   const [alunos, setAlunos] = useState<any[]>([])
@@ -36,6 +37,9 @@ export default function DocumentosPage() {
   const [buscaAluno, setBuscaAluno] = useState('')
   const [alunoSelecionado, setAlunoSelecionado] = useState<any | null>(null)
   const [showSugestoes, setShowSugestoes] = useState(false)
+  
+  const [turmas, setTurmas] = useState<any[]>([])
+  const [turmaFiltroId, setTurmaFiltroId] = useState<string>('all')
   
   const [docType, setDocType] = useState<string>('atestado-matricula')
   
@@ -45,6 +49,14 @@ export default function DocumentosPage() {
   const [alunoImprimirDocumentoEscolar, setAlunoImprimirDocumentoEscolar] = useState<any | null>(null)
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
+
+  // Função para normalizar strings para busca sem acentos
+  const normalizeString = (str: string) => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+  }
 
   const dataNascimentoFormatada = (() => {
     if (!alunoSelecionado?.data_nascimento) return 'Não informada'
@@ -66,6 +78,32 @@ export default function DocumentosPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Carregar turmas da escola ativa para o filtro
+  useEffect(() => {
+    if (!escolaAtivaId) {
+      setTurmas([])
+      return
+    }
+
+    const loadTurmas = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('turmas')
+        .select('id, nome, turno')
+        .eq('escola_id', escolaAtivaId)
+        .is('deleted_at', null)
+        .order('nome', { ascending: true })
+
+      if (error) {
+        console.error('Erro ao carregar turmas:', error)
+      } else if (data) {
+        setTurmas(data)
+      }
+    }
+
+    loadTurmas()
+  }, [escolaAtivaId])
+
   // Buscar alunos da escola ativa
   useEffect(() => {
     if (!escolaAtivaId) {
@@ -80,17 +118,19 @@ export default function DocumentosPage() {
 
       let query = supabase
         .from('alunos')
-        .select('*, escolas(nome)')
+        .select('*, escolas(nome), turmas(nome)')
         .is('deleted_at', null)
 
       // Verificação de cargos e lotação
       if (!isAdmin) {
-        const isDiretor = (vinculos || []).some(
-          v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR'))
-        )
-        const isSecretario = (vinculos || []).some(
-          v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'SECRETÁRIO' || v.cargo?.toUpperCase().includes('SECRET'))
-        )
+        const isDiretor = (acessos || []).some(a => a.nivel === 2 && a.escola_id === escolaAtivaId && a.ativo) ||
+          (vinculos || []).some(
+            v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR'))
+          )
+        const isSecretario = (acessos || []).some(a => a.nivel === 3 && a.escola_id === escolaAtivaId && a.ativo) ||
+          (vinculos || []).some(
+            v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'SECRETÁRIO' || v.cargo?.toUpperCase().includes('SECRET'))
+          )
 
         if (isDiretor || isSecretario) {
           query = query.eq('escola_id', escolaAtivaId)
@@ -116,23 +156,36 @@ export default function DocumentosPage() {
       }
 
       const { data, error } = await query.order('nome', { ascending: true })
-      if (data) {
+      if (error) {
+        console.error('Erro ao carregar alunos:', error)
+        toast.error('Erro ao carregar lista de alunos.')
+      } else if (data) {
         setAlunos(data)
       }
       setLoadingAlunos(false)
     }
 
     loadAlunos()
-  }, [escolaAtivaId, vinculos, funcionario?.id, isAdminGlobalOrRoot])
+  }, [escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot])
 
-  // Filtrar lista com base na digitação
+  // Filtrar lista com base na digitação e/ou turma
   const sugestoesAlunos = alunos.filter((aluno) => {
-    if (!buscaAluno) return false
-    return (
-      aluno.nome?.toLowerCase().includes(buscaAluno.toLowerCase()) ||
-      aluno.id?.toLowerCase().includes(buscaAluno.toLowerCase())
-    )
-  }).slice(0, 5)
+    // Filtro por turma
+    if (turmaFiltroId !== 'all' && aluno.turma_id !== turmaFiltroId) {
+      return false
+    }
+
+    // Se buscaAluno estiver vazio, só mostramos se a turma estiver selecionada (como lista rápida da turma)
+    if (!buscaAluno) {
+      return turmaFiltroId !== 'all'
+    }
+
+    const buscaNormalizada = normalizeString(buscaAluno)
+    const nomeNormalizado = normalizeString(aluno.nome || '')
+    const idNormalizado = normalizeString(aluno.id || '')
+
+    return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
+  }).slice(0, 10)
 
   const handleEmitirDocumento = () => {
     if (!alunoSelecionado) {
@@ -150,7 +203,7 @@ export default function DocumentosPage() {
   }
 
   const documentOptions = [
-    { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
+    { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo active do aluno no ano letivo corrente.' },
     { id: 'atestado-frequencia', label: 'Atestado de Frequência', icon: FileCheck, desc: 'Declara frequência escolar regular do estudante.' },
     { id: 'declaracao-vaga', label: 'Declaração de Vaga', icon: GraduationCap, desc: 'Reserva/indica vaga de transferência na unidade.' },
     { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
@@ -215,11 +268,38 @@ export default function DocumentosPage() {
           {/* Coluna Esquerda: Busca do Aluno */}
           <div className="md:col-span-1 space-y-4">
             <Card className="p-5 border-borderCustom bg-card space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+              <div className="space-y-4">
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">
                   1. Buscar Aluno(a)
                 </label>
-                <div ref={autocompleteRef} className="relative">
+
+                {/* Filtro por Turma */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Filtrar por Turma</span>
+                  <select
+                    value={turmaFiltroId}
+                    onChange={(e) => {
+                      setTurmaFiltroId(e.target.value)
+                      // Limpar seleção anterior se o aluno selecionado não for da nova turma
+                      if (alunoSelecionado && e.target.value !== 'all' && alunoSelecionado.turma_id !== e.target.value) {
+                        setAlunoSelecionado(null)
+                        setBuscaAluno('')
+                      }
+                    }}
+                    className="w-full h-10 px-3 bg-input border border-borderCustom text-zinc-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#185FA5]/50 hover:bg-[#1a1a1c] transition-all cursor-pointer"
+                  >
+                    <option value="all">Todas as Turmas</option>
+                    {turmas.map((t) => (
+                      <option key={t.id} value={t.id} className="bg-[#121214]">
+                        {t.nome} {t.turno ? `(${t.turno})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Campo de Busca por Aluno */}
+                <div ref={autocompleteRef} className="relative space-y-1.5">
+                  <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Nome ou Matrícula</span>
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
@@ -232,12 +312,26 @@ export default function DocumentosPage() {
                         if (alunoSelecionado) setAlunoSelecionado(null)
                       }}
                       onFocus={() => setShowSugestoes(true)}
-                      className="pl-9 h-10 bg-input border-borderCustom text-white rounded-xl"
+                      onClick={() => setShowSugestoes(true)}
+                      className="pl-9 pr-8 h-10 bg-input border-borderCustom text-white rounded-xl text-xs"
                     />
+                    {buscaAluno && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBuscaAluno('')
+                          setAlunoSelecionado(null)
+                          setShowSugestoes(false)
+                        }}
+                        className="absolute right-3 top-3 text-zinc-500 hover:text-white transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Sugestões do Autocomplete */}
-                  {showSugestoes && buscaAluno && (
+                  {showSugestoes && (buscaAluno || turmaFiltroId !== 'all') && (
                     <div className="absolute z-50 w-full mt-1.5 bg-[#121214] border border-borderCustom rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
                       {loadingAlunos ? (
                         <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
@@ -256,7 +350,15 @@ export default function DocumentosPage() {
                             className="w-full px-4 py-2.5 text-left text-xs hover:bg-[#185FA5]/10 hover:text-[#3ea6ff] text-zinc-300 transition-colors border-b border-borderCustom last:border-none cursor-pointer flex flex-col gap-0.5"
                           >
                             <span className="font-bold text-white uppercase">{aluno.nome}</span>
-                            <span className="text-[10px] text-zinc-500 font-mono">{aluno.id}</span>
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                              <span>Matrícula: {aluno.id}</span>
+                              {aluno.turmas?.nome && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-[#3ea6ff] font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
+                                </>
+                              )}
+                            </div>
                           </button>
                         ))
                       ) : (
@@ -278,9 +380,15 @@ export default function DocumentosPage() {
                       <span className="text-zinc-500 block">Aluno(a)</span>
                       <span className="font-semibold text-white uppercase">{alunoSelecionado.nome}</span>
                     </div>
+                    {alunoSelecionado.turmas?.nome && (
+                      <div>
+                        <span className="text-zinc-500 block">Turma</span>
+                        <span className="font-semibold text-[#3ea6ff] uppercase">{alunoSelecionado.turmas.nome}</span>
+                      </div>
+                    )}
                     <div>
                       <span className="text-zinc-500 block">Mãe / Responsável</span>
-                      <span className="font-semibold text-white uppercase">{alunoSelecionado.nome_mae || 'Não informado'}</span>
+                      <span className="font-semibold text-white uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500 block">Nascimento</span>
