@@ -18,7 +18,8 @@ import {
   Plus,
   Loader2,
   ArrowLeft,
-  Users
+  Users,
+  FileCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -991,6 +992,17 @@ export default function FuncionariosPage() {
             <SelectItem value="suspenso">Suspenso</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Atestados Médicos */}
+        <Link href="/atestados">
+          <Button
+            className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl"
+            variant="outline"
+          >
+            <FileCheck className="w-4 h-4 text-muted-foreground" />
+            Atestados Médicos
+          </Button>
+        </Link>
 
         {/* Gestão de Lotações */}
         <Button
