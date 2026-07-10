@@ -614,7 +614,8 @@ function ColetorLocalTab() {
       // 3. Atualizar dados_matricula e zerar token
       const dadosMatriculaAtualizados = {
         ...(aluno.dados_matricula || {}),
-        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl
+        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl,
+        [sigType === 'resp' ? 'assinatura_responsavel_at' : 'assinatura_funcionario_at']: new Date().toISOString()
       }
 
       const updatePayload: any = {

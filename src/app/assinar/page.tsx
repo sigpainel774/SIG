@@ -113,10 +113,11 @@ export default function AssinarPage() {
 
       const publicUrl = publicData.publicUrl
 
-      // 3. Atualizar dados_matricula com a nova URL
+      // 3. Atualizar dados_matricula com a nova URL e o timestamp
       const dadosMatriculaAtualizados = {
         ...(aluno.dados_matricula || {}),
-        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl
+        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl,
+        [sigType === 'resp' ? 'assinatura_responsavel_at' : 'assinatura_funcionario_at']: new Date().toISOString()
       }
 
       const updatePayload: any = {
