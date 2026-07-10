@@ -36,6 +36,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { SignaturePad } from '@/components/ui/SignaturePad'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { SchoolSelector } from '@/components/SchoolSelector'
 
 const modulesList = [
   { label: 'Mural', icon: Pin, enabled: true },
@@ -120,7 +121,14 @@ export default function ConfiguracoesPage() {
   }, [escolaAtivaId])
 
   const handleSaveDiretorSignature = async () => {
-    if (!escolaAtivaId || !newDiretorSignature) return
+    if (!escolaAtivaId) {
+      toast.error('Nenhuma escola ativa selecionada. Por favor, selecione uma escola antes de salvar.')
+      return
+    }
+    if (!newDiretorSignature) {
+      toast.error('Nenhuma assinatura foi desenhada para salvar.')
+      return
+    }
     setLoadingDiretorSig(true)
     const supabase = createClient()
 
@@ -167,7 +175,14 @@ export default function ConfiguracoesPage() {
   }
 
   const handleSavePessoalSignature = async () => {
-    if (!localFuncionario?.id || !newPessoalSignature) return
+    if (!localFuncionario?.id) {
+      toast.error('Funcionário não identificado. Recarregue a página.')
+      return
+    }
+    if (!newPessoalSignature) {
+      toast.error('Nenhuma assinatura foi desenhada para salvar.')
+      return
+    }
     setLoadingPessoalSig(true)
     const supabase = createClient()
 
@@ -517,44 +532,60 @@ export default function ConfiguracoesPage() {
               <p className="text-xs text-muted-foreground">
                 Esta assinatura será impressa automaticamente em todos os comprovantes, boletins e documentos oficiais desta escola.
               </p>
-              <div className="max-w-md">
-                <SignaturePad
-                  label="Assinatura Digital"
-                  value={newDiretorSignature || assinaturaDiretorUrl}
-                  onChange={setNewDiretorSignature}
-                  isEditMode={true}
-                />
-              </div>
-              {newDiretorSignature && (
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setNewDiretorSignature(null)}
-                    className="text-zinc-400 hover:text-white"
-                    disabled={loadingDiretorSig}
-                  >
-                    Descartar
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSaveDiretorSignature}
-                    disabled={loadingDiretorSig}
-                    className="bg-highlight text-background hover:bg-highlight/90 font-bold"
-                  >
-                    {loadingDiretorSig ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Salvar Assinatura Oficial
-                      </>
-                    )}
-                  </Button>
+              
+              {isAdmin && (
+                <div className="flex flex-col gap-2 p-4 bg-surface-2 rounded-xl border border-borderCustom max-w-md">
+                  <span className="text-xs font-semibold text-foregroundCustom">Selecione a Escola para configurar:</span>
+                  <SchoolSelector />
                 </div>
+              )}
+
+              {!escolaAtivaId ? (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-medium max-w-md">
+                  Por favor, selecione uma escola para visualizar e gerenciar a assinatura oficial do diretor.
+                </div>
+              ) : (
+                <>
+                  <div className="max-w-md">
+                    <SignaturePad
+                      label="Assinatura Digital"
+                      value={newDiretorSignature || assinaturaDiretorUrl}
+                      onChange={setNewDiretorSignature}
+                      isEditMode={true}
+                    />
+                  </div>
+                  {newDiretorSignature && (
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setNewDiretorSignature(null)}
+                        className="text-zinc-400 hover:text-white"
+                        disabled={loadingDiretorSig}
+                      >
+                        Descartar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSaveDiretorSignature}
+                        disabled={loadingDiretorSig}
+                        className="bg-highlight text-background hover:bg-highlight/90 font-bold"
+                      >
+                        {loadingDiretorSig ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Salvando...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Salvar Assinatura Oficial
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </Card>

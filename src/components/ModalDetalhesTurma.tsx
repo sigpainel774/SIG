@@ -27,7 +27,6 @@ import {
   Trash2
 } from 'lucide-react'
 import { ModalDetalhesAluno } from './ModalDetalhesAluno'
-import { PrintBoletimAluno } from './print/print-boletim-aluno'
 
 interface ModalDetalhesTurmaProps {
   open: boolean
@@ -71,7 +70,6 @@ export function ModalDetalhesTurma({
   
   // Modais de detalhe e impressão
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
-  const [alunoImprimir, setAlunoImprimir] = useState<any>(null)
 
   const supabase = createClient()
   const { escolaAtivaId } = useAuthStore()
@@ -1089,13 +1087,12 @@ export function ModalDetalhesTurma({
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/85">Recup. Final</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/90">Média Pós-Rec</th>
-                                      <th className="p-3 w-24 text-right">Ação</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {alunos.length === 0 ? (
                                       <tr>
-                                        <td colSpan={9} className="p-8 text-center text-xs text-zinc-500 font-medium">
+                                        <td colSpan={8} className="p-8 text-center text-xs text-zinc-500 font-medium">
                                           Nenhum aluno matriculado nesta turma.
                                         </td>
                                       </tr>
@@ -1200,19 +1197,6 @@ export function ModalDetalhesTurma({
                                                 </div>
                                               ) : '-'}
                                             </td>
-
-                                            {/* Boletim */}
-                                            <td className="p-2 text-right">
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setAlunoImprimir({ aluno, notes: processarNotasParaImpressao(aluno.id) })}
-                                                className="h-8 bg-[#1c1c1e] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg text-[10.5px] px-2.5 gap-1 font-semibold"
-                                              >
-                                                <Printer className="w-3 h-3" />
-                                                Boletim
-                                              </Button>
-                                            </td>
                                           </tr>
                                         )
                                       })
@@ -1242,19 +1226,6 @@ export function ModalDetalhesTurma({
         aluno={selectedAluno}
         turma={turma}
       />
-
-      {/* Impressão de Boletim */}
-      {alunoImprimir && (
-        <PrintBoletimAluno
-          aluno={alunoImprimir.aluno}
-          turma={turma}
-          escolaNome={escolaNome}
-          materias={materias}
-          notas={alunoImprimir.notes}
-          recuperacoes={processarRecuperacoesParaImpressao(alunoImprimir.aluno.id)}
-          onClose={() => setAlunoImprimir(null)}
-        />
-      )}
     </>
   )
 }

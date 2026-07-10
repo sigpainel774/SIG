@@ -27,6 +27,7 @@ import { toast } from 'sonner'
 import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { PrintDocumentoEscolar } from '@/components/print/print-documento-escolar'
+import { PrintBoletimAluno } from '@/components/print/print-boletim-aluno'
 
 export default function DocumentosPage() {
   const { funcionario, vinculos, acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
@@ -47,6 +48,15 @@ export default function DocumentosPage() {
   const [alunoImprimirFicha, setAlunoImprimirFicha] = useState<any | null>(null)
   const [alunoImprimirComprovante, setAlunoImprimirComprovante] = useState<any | null>(null)
   const [alunoImprimirDocumentoEscolar, setAlunoImprimirDocumentoEscolar] = useState<any | null>(null)
+  const [alunoImprimirBoletim, setAlunoImprimirBoletim] = useState<any | null>(null)
+  const [boletimData, setBoletimData] = useState<{
+    turma: any
+    escolaNome: string
+    materias: any[]
+    notas: any[]
+    recuperacoes: any[]
+  } | null>(null)
+  const [loadingBoletim, setLoadingBoletim] = useState(false)
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
@@ -187,7 +197,7 @@ export default function DocumentosPage() {
     return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
   }).slice(0, 10)
 
-  const handleEmitirDocumento = () => {
+  const handleEmitirDocumento = async () => {
     if (!alunoSelecionado) {
       toast.error('Por favor, selecione um aluno.')
       return
@@ -197,17 +207,96 @@ export default function DocumentosPage() {
       setAlunoImprimirFicha(alunoSelecionado)
     } else if (docType === 'comprovante-matricula') {
       setAlunoImprimirComprovante(alunoSelecionado)
+    } else if (docType === 'boletim') {
+      setLoadingBoletim(true)
+      try {
+        const supabase = createClient()
+        
+        // 1. Buscar a turma do aluno com turno e ano_letivo
+        const { data: turmaData, error: tErr } = await supabase
+          .from('turmas')
+          .select('id, nome, turno, ano_letivo')
+          .eq('id', alunoSelecionado.turma_id)
+          .maybeSingle()
+
+        if (tErr) throw tErr
+        if (!turmaData) throw new Error('Turma não encontrada para o aluno.')
+
+        // 2. Buscar escola do aluno
+        const { data: escolaData, error: eErr } = await supabase
+          .from('escolas')
+          .select('nome')
+          .eq('id', alunoSelecionado.escola_id)
+          .maybeSingle()
+        if (eErr) throw eErr
+        
+        // 3. Buscar as matérias vinculadas a essa turma
+        const { data: materiasData, error: mErr } = await supabase
+          .from('materias')
+          .select('id, nome')
+          .eq('turma_id', alunoSelecionado.turma_id)
+
+        if (mErr) throw mErr
+
+        // 4. Buscar notas do aluno nessa turma
+        const { data: notasData, error: nErr } = await supabase
+          .from('notas')
+          .select('materia_id, unidade, nota1, nota2, nota3')
+          .eq('aluno_id', alunoSelecionado.id)
+          .eq('turma_id', alunoSelecionado.turma_id)
+
+        if (nErr) throw nErr
+
+        // 5. Buscar recuperacoes finais do aluno
+        const { data: recData, error: rErr } = await supabase
+          .from('recuperacoes_finais')
+          .select('materia_id, nota')
+          .eq('aluno_id', alunoSelecionado.id)
+          .eq('turma_id', alunoSelecionado.turma_id)
+
+        if (rErr) throw rErr
+
+        // Formatar notas
+        const formatadasNotas = (notasData ?? []).map((n: any) => ({
+          materia_id: n.materia_id,
+          unidade: n.unidade,
+          nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
+          nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
+          nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+        }))
+
+        // Formatar recuperações
+        const formatadasRec = (recData ?? []).map((r: any) => ({
+          materia_id: r.materia_id,
+          nota: r.nota !== null && r.nota !== '' ? Number(r.nota) : null
+        }))
+
+        setBoletimData({
+          turma: turmaData,
+          escolaNome: escolaData?.nome || 'Escola Não Identificada',
+          materias: materiasData || [],
+          notas: formatadasNotas,
+          recuperacoes: formatadasRec
+        })
+        setAlunoImprimirBoletim(alunoSelecionado)
+      } catch (err: any) {
+        console.error('Erro ao carregar dados do boletim:', err)
+        toast.error(`Erro ao obter dados do boletim: ${err.message}`)
+      } finally {
+        setLoadingBoletim(false)
+      }
     } else {
       setAlunoImprimirDocumentoEscolar(alunoSelecionado)
     }
   }
 
   const documentOptions = [
-    { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo active do aluno no ano letivo corrente.' },
+    { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
     { id: 'atestado-frequencia', label: 'Atestado de Frequência', icon: FileCheck, desc: 'Declara frequência escolar regular do estudante.' },
     { id: 'declaracao-vaga', label: 'Declaração de Vaga', icon: GraduationCap, desc: 'Reserva/indica vaga de transferência na unidade.' },
     { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
     { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
+    { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
   ]
 
   return (
@@ -234,6 +323,21 @@ export default function DocumentosPage() {
           aluno={alunoImprimirDocumentoEscolar}
           docType={docType as any}
           onClose={() => setAlunoImprimirDocumentoEscolar(null)}
+        />
+      )}
+      {/* Impressão overlay - Boletim Escolar */}
+      {alunoImprimirBoletim && boletimData && (
+        <PrintBoletimAluno
+          aluno={alunoImprimirBoletim}
+          turma={boletimData.turma}
+          escolaNome={boletimData.escolaNome}
+          materias={boletimData.materias}
+          notas={boletimData.notas}
+          recuperacoes={boletimData.recuperacoes}
+          onClose={() => {
+            setAlunoImprimirBoletim(null)
+            setBoletimData(null)
+          }}
         />
       )}
 
@@ -440,11 +544,20 @@ export default function DocumentosPage() {
               <div className="flex justify-end pt-2 border-t border-borderCustom">
                 <Button
                   onClick={handleEmitirDocumento}
-                  disabled={!alunoSelecionado}
+                  disabled={!alunoSelecionado || loadingBoletim}
                   className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold gap-2 h-10 px-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Printer className="w-4 h-4" />
-                  Emitir & Imprimir Documento
+                  {loadingBoletim ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="w-4 h-4" />
+                      Emitir & Imprimir Documento
+                    </>
+                  )}
                 </Button>
               </div>
             </Card>
