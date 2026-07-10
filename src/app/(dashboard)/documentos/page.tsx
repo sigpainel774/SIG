@@ -267,7 +267,7 @@ export default function DocumentosPage() {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Coluna Esquerda: Busca do Aluno */}
           <div className="md:col-span-1 space-y-4">
-            <Card className="p-5 border-borderCustom bg-card space-y-4">
+            <Card className="p-5 border-borderCustom bg-card space-y-4 overflow-visible">
               <div className="space-y-4">
                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">
                   1. Buscar Aluno(a)
