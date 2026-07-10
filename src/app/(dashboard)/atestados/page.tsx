@@ -36,7 +36,7 @@ export default function AtestadosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
         <div>
           <div className="flex items-center gap-3">
-            <Link href="/home">
+            <Link href="/funcionarios">
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
