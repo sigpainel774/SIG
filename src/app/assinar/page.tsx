@@ -120,8 +120,7 @@ export default function AssinarPage() {
       }
 
       const updatePayload: any = {
-        dados_matricula: dadosMatriculaAtualizados,
-        [sigType === 'resp' ? 'codigo_temp_resp' : 'codigo_temp_func']: null
+        dados_matricula: dadosMatriculaAtualizados
       }
 
       const { error: updateError } = await supabase
