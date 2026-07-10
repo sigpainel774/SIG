@@ -974,6 +974,7 @@ export type Database = {
           doc_cpf_url: string | null
           doc_curso_superior_url: string | null
           doc_doutorado_url: string | null
+          assinatura_url: string | null
           doc_ensino_fundamental_url: string | null
           doc_ensino_medio_url: string | null
           doc_identidade_url: string | null
@@ -1051,6 +1052,7 @@ export type Database = {
           doc_cpf_url?: string | null
           doc_curso_superior_url?: string | null
           doc_doutorado_url?: string | null
+          assinatura_url?: string | null
           doc_ensino_fundamental_url?: string | null
           doc_ensino_medio_url?: string | null
           doc_identidade_url?: string | null
@@ -1128,6 +1130,7 @@ export type Database = {
           doc_cpf_url?: string | null
           doc_curso_superior_url?: string | null
           doc_doutorado_url?: string | null
+          assinatura_url?: string | null
           doc_ensino_fundamental_url?: string | null
           doc_ensino_medio_url?: string | null
           doc_identidade_url?: string | null

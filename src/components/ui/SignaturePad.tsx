@@ -2,18 +2,32 @@
 
 import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { PenTool, Trash2, RefreshCw, X, Check } from 'lucide-react'
+import { PenTool, Trash2, RefreshCw, X, Check, Loader2 } from 'lucide-react'
 import { Button } from './button'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface SignaturePadProps {
   label: string
   value: string | null // A URL ou base64 da assinatura existente, se houver
   onChange: (base64: string | null) => void // Callback para retornar o base64
   isEditMode?: boolean
+  globalSignatureUrl?: string | null
 }
 
-export function SignaturePad({ label, value, onChange, isEditMode = true }: SignaturePadProps) {
+const urlToBase64 = async (url: string): Promise<string> => {
+  const corsBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cors=1&t=${Date.now()}`
+  const response = await fetch(corsBustedUrl)
+  const blob = await response.blob()
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+export function SignaturePad({ label, value, onChange, isEditMode = true, globalSignatureUrl }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -311,13 +325,36 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
           <PenTool className="w-3.5 h-3.5 text-[#3ea6ff]" />
           {label}
         </label>
+        
+        {isEditMode && globalSignatureUrl && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async (e) => {
+              e.stopPropagation()
+              const toastId = toast.loading('Carregando assinatura pessoal...')
+              try {
+                const base64 = await urlToBase64(globalSignatureUrl)
+                onChange(base64)
+                toast.success('Assinatura pessoal carregada com sucesso!', { id: toastId })
+              } catch (err) {
+                console.error(err)
+                toast.error('Erro ao carregar assinatura pessoal.', { id: toastId })
+              }
+            }}
+            className="h-7 px-2.5 bg-[#185FA5]/10 hover:bg-[#185FA5]/20 text-[#3ea6ff] border-[#3ea6ff]/20 text-[10px] font-bold rounded-lg uppercase flex items-center gap-1 cursor-pointer"
+          >
+            <PenTool className="w-3 h-3 text-[#3ea6ff]" />
+            G - Usar Salva
+          </Button>
+        )}
       </div>
 
       <div
         onClick={handleOpenModal}
         className={cn(
-          "relative border border-[#2a2a2a] rounded-xl overflow-hidden bg-[#0d0d0f] aspect-[3/1] min-h-[90px] flex items-center justify-center transition-all duration-200",
-          isEditMode ? "cursor-pointer hover:border-[#3ea6ff]/40 hover:bg-[#141416] active:scale-[0.99]" : ""
+          "relative border border-[#2a2a2a] rounded-xl overflow-hidden bg-white aspect-[3/1] min-h-[90px] flex items-center justify-center transition-all duration-200",
+          isEditMode ? "cursor-pointer hover:border-[#3ea6ff]/40 hover:bg-[#f4f4f5] active:scale-[0.99]" : ""
         )}
       >
         {value ? (
@@ -325,10 +362,10 @@ export function SignaturePad({ label, value, onChange, isEditMode = true }: Sign
             <img
               src={value.startsWith('data:') ? value : `${value}${value.includes('?') ? '&' : '?'}t=${Date.now()}`}
               alt={`Assinatura ${label}`}
-              className="max-h-[75px] w-auto object-contain select-none pointer-events-none filter brightness-90 invert-[0.1]"
+              className="max-h-[75px] w-auto object-contain select-none pointer-events-none"
             />
             {isEditMode && (
-              <span className="absolute bottom-2 right-2 text-[10px] text-[#3ea6ff] font-medium flex items-center gap-1">
+              <span className="absolute bottom-2 right-2 text-[10px] text-[#185fa5] dark:text-[#3ea6ff] font-medium flex items-center gap-1">
                 <RefreshCw className="w-2.5 h-2.5" />
                 Alterar
               </span>
