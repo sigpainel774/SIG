@@ -818,6 +818,7 @@ export type Database = {
       }
       escolas: {
         Row: {
+          anexos_padrao: string[] | null
           assinatura_diretor_url: string | null
           ativo: boolean | null
           created_at: string
@@ -835,6 +836,7 @@ export type Database = {
           tipo: string | null
         }
         Insert: {
+          anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
           created_at?: string
@@ -852,6 +854,7 @@ export type Database = {
           tipo?: string | null
         }
         Update: {
+          anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
           created_at?: string
