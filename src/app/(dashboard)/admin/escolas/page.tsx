@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ModalEscola } from '@/components/modals/modal-escola'
+import { ModalConfigAnexosEscola } from '@/components/modals/modal-config-anexos-escola'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -22,6 +23,9 @@ export default function AdminEscolasPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [escolaToEdit, setEscolaToEdit] = useState<any | null>(null)
+
+  const [configAnexosOpen, setConfigAnexosOpen] = useState(false)
+  const [escolaParaAnexos, setEscolaParaAnexos] = useState<any | null>(null)
 
   const loadEscolas = async () => {
     setLoading(true)
@@ -150,6 +154,18 @@ export default function AdminEscolasPage() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
+                      onClick={() => {
+                        setEscolaParaAnexos(escola)
+                        setConfigAnexosOpen(true)
+                      }}
+                      className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                      title="Configurar Anexos Padrão"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
                       onClick={() => handleEditarEscola(escola)}
                       className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
                       title="Editar"
@@ -185,6 +201,16 @@ export default function AdminEscolasPage() {
         escolaToEdit={escolaToEdit}
         onSuccess={loadEscolas}
       />
+
+      {/* Modal de Configurar Anexos Padrão */}
+      {escolaParaAnexos && (
+        <ModalConfigAnexosEscola
+          open={configAnexosOpen}
+          onOpenChange={setConfigAnexosOpen}
+          escola={escolaParaAnexos}
+          onSuccess={loadEscolas}
+        />
+      )}
     </div>
   )
 }
