@@ -1384,6 +1384,65 @@ export type Database = {
           },
         ]
       }
+      recuperacoes_finais: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          escola_id: string
+          id: string
+          materia_id: string
+          nota: number
+          turma_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          escola_id: string
+          id?: string
+          materia_id: string
+          nota: number
+          turma_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          escola_id?: string
+          id?: string
+          materia_id?: string
+          nota?: number
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recuperacoes_finais_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null

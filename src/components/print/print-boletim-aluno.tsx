@@ -16,6 +16,11 @@ export interface BoletimNotaData {
   nota3: number | null
 }
 
+export interface BoletimRecuperacaoData {
+  materia_id: string
+  nota: number | null
+}
+
 interface PrintBoletimAlunoProps {
   aluno: {
     id: string
@@ -29,6 +34,7 @@ interface PrintBoletimAlunoProps {
   escolaNome: string
   materias: BoletimMateriaData[]
   notas: BoletimNotaData[]
+  recuperacoes?: BoletimRecuperacaoData[]
   onClose: () => void
 }
 
@@ -38,6 +44,7 @@ export function PrintBoletimAluno({
   escolaNome,
   materias,
   notas,
+  recuperacoes = [],
   onClose
 }: PrintBoletimAlunoProps) {
   const [mounted, setMounted] = useState(false)
@@ -71,7 +78,7 @@ export function PrintBoletimAluno({
     return parseFloat(((Number(n1) + Number(n2) + Number(n3)) / 3).toFixed(1))
   }
 
-  const calcularMediaFinal = (materiaId: string) => {
+  const calcularMediaFinalOriginal = (materiaId: string) => {
     const m1 = calcularMediaUnidade(materiaId, 1)
     const m2 = calcularMediaUnidade(materiaId, 2)
     const m3 = calcularMediaUnidade(materiaId, 3)
@@ -79,10 +86,41 @@ export function PrintBoletimAluno({
     const medias = [m1, m2, m3].filter((m): m is number => m !== null)
     if (medias.length === 0) return null
     
-    // Média acumulada das unidades lançadas
-    const soma = (m1 ?? 0) + (m2 ?? 0) + (m3 ?? 0)
-    return parseFloat((soma / 3).toFixed(1))
+    // Média baseia-se apenas nas unidades já lançadas para não distorcer no meio do ano
+    const soma = medias.reduce((a, b) => a + b, 0)
+    return parseFloat((soma / medias.length).toFixed(1))
   }
+
+  const obterRecuperacaoMateria = (materiaId: string) => {
+    return recuperacoes.find(r => r.materia_id === materiaId) || { nota: null }
+  }
+
+  const calcularMediaFinalPosRecup = (materiaId: string) => {
+    const m1 = calcularMediaUnidade(materiaId, 1)
+    const m2 = calcularMediaUnidade(materiaId, 2)
+    const m3 = calcularMediaUnidade(materiaId, 3)
+    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+
+    const mediaOriginal = calcularMediaFinalOriginal(materiaId)
+    if (mediaOriginal === null) return null
+    if (!todasUnidades || mediaOriginal >= 5.0) return mediaOriginal
+
+    const rec = obterRecuperacaoMateria(materiaId)
+    const notaRec = rec.nota !== null && !isNaN(Number(rec.nota)) ? Number(rec.nota) : null
+    if (notaRec === null) return mediaOriginal
+
+    return notaRec
+  }
+
+  const alunoTemRecuperacao = materias.some(mat => {
+    const m1 = calcularMediaUnidade(mat.id, 1)
+    const m2 = calcularMediaUnidade(mat.id, 2)
+    const m3 = calcularMediaUnidade(mat.id, 3)
+    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+
+    const mediaOriginal = calcularMediaFinalOriginal(mat.id)
+    return todasUnidades && mediaOriginal !== null && mediaOriginal < 5.0
+  })
 
   if (!mounted) return null
 
@@ -137,7 +175,6 @@ export function PrintBoletimAluno({
                 alt="Logo Prefeitura"
                 className="h-14 w-auto object-contain"
                 onError={(e) => {
-                  // Fallback silencioso se a imagem falhar
                   e.currentTarget.style.display = 'none'
                 }}
               />
@@ -176,9 +213,13 @@ export function PrintBoletimAluno({
                 <th className="border border-gray-300 p-2 text-center" colSpan={4}>1ª Unidade</th>
                 <th className="border border-gray-300 p-2 text-center" colSpan={4}>2ª Unidade</th>
                 <th className="border border-gray-300 p-2 text-center" colSpan={4}>3ª Unidade</th>
-                <th className="border border-gray-300 p-2 text-center" rowSpan={2}>Média Final</th>
+                {alunoTemRecuperacao ? (
+                  <th className="border border-gray-300 p-2 text-center" colSpan={3}>Resultado Final</th>
+                ) : (
+                  <th className="border border-gray-300 p-2 text-center" rowSpan={2}>Média Final</th>
+                )}
               </tr>
-              <tr className="bg-gray-50 text-[10px] text-gray-600 text-center">
+              <tr className="bg-gray-55 text-[10px] text-gray-600 text-center">
                 {/* 1ª */}
                 <th className="border border-gray-300 p-1 w-8">N1</th>
                 <th className="border border-gray-300 p-1 w-8">N2</th>
@@ -194,6 +235,14 @@ export function PrintBoletimAluno({
                 <th className="border border-gray-300 p-1 w-8">N2</th>
                 <th className="border border-gray-300 p-1 w-8">N3</th>
                 <th className="border border-gray-300 p-1 w-10 font-bold bg-gray-100">MÉD</th>
+                {/* Recuperação sub-headers */}
+                {alunoTemRecuperacao && (
+                  <>
+                    <th className="border border-gray-300 p-1 w-10 font-bold bg-gray-55">MÉD Anual</th>
+                    <th className="border border-gray-300 p-1 w-10 font-bold bg-yellow-50/50">REC Final</th>
+                    <th className="border border-gray-300 p-1 w-10 font-bold bg-gray-100">MÉD Final</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -205,7 +254,10 @@ export function PrintBoletimAluno({
                 const m1 = calcularMediaUnidade(mat.id, 1)
                 const m2 = calcularMediaUnidade(mat.id, 2)
                 const m3 = calcularMediaUnidade(mat.id, 3)
-                const mf = calcularMediaFinal(mat.id)
+                
+                const mfOriginal = calcularMediaFinalOriginal(mat.id)
+                const mfPosRec = calcularMediaFinalPosRecup(mat.id)
+                const rec = obterRecuperacaoMateria(mat.id)
 
                 return (
                   <tr key={mat.id} className="hover:bg-gray-50 text-gray-800 text-[11px]">
@@ -215,26 +267,38 @@ export function PrintBoletimAluno({
                     <td className="border border-gray-300 p-1 text-center">{u1.nota1 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u1.nota2 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u1.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-50">{m1 ?? '-'}</td>
+                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m1 ?? '-'}</td>
 
                     {/* 2ª Unidade */}
                     <td className="border border-gray-300 p-1 text-center">{u2.nota1 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u2.nota2 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u2.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-50">{m2 ?? '-'}</td>
+                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m2 ?? '-'}</td>
 
                     {/* 3ª Unidade */}
                     <td className="border border-gray-300 p-1 text-center">{u3.nota1 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u3.nota2 ?? '-'}</td>
                     <td className="border border-gray-300 p-1 text-center">{u3.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-50">{m3 ?? '-'}</td>
+                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m3 ?? '-'}</td>
 
-                    {/* Média Final */}
-                    <td className={`border border-gray-300 p-2 text-center font-bold text-[12px] ${
-                      mf !== null && mf < 6.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
-                    }`}>
-                      {mf ?? '-'}
-                    </td>
+                    {/* Média Final condicional */}
+                    {alunoTemRecuperacao ? (
+                      <>
+                        <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{mfOriginal ?? '-'}</td>
+                        <td className="border border-gray-300 p-1 text-center font-semibold bg-yellow-50/20">{rec.nota ?? '-'}</td>
+                        <td className={`border border-gray-300 p-1 text-center font-bold text-[12px] ${
+                          mfPosRec !== null && mfPosRec < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                        }`}>
+                          {mfPosRec ?? '-'}
+                        </td>
+                      </>
+                    ) : (
+                      <td className={`border border-gray-300 p-2 text-center font-bold text-[12px] ${
+                        mfOriginal !== null && mfOriginal < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                      }`}>
+                        {mfOriginal ?? '-'}
+                      </td>
+                    )}
                   </tr>
                 )
               })}

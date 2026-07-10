@@ -57,27 +57,66 @@ export function ModalDetalhesAluno({
         .eq('aluno_id', aluno.id)
         .eq('turma_id', turma.id)
 
+      const { data: recs } = await supabase
+        .from('recuperacoes_finais')
+        .select('*')
+        .eq('aluno_id', aluno.id)
+        .eq('turma_id', turma.id)
+
+      const recsMap: Record<string, number> = {}
+      if (recs) {
+        recs.forEach((r: any) => {
+          recsMap[r.materia_id] = Number(r.nota)
+        })
+      }
+
       if (notas && notas.length > 0) {
-        // Mapear médias por matéria
-        const mediasMateria: Record<string, number> = {}
+        // Agrupar médias por matéria e por unidade
+        const notasMateria: Record<string, Record<number, number>> = {}
         
         notas.forEach((n: any) => {
-          const key = n.materia_id
-          const n1 = n.nota1 !== null ? Number(n.nota1) : 0
-          const n2 = n.nota2 !== null ? Number(n.nota2) : 0
-          const n3 = n.nota3 !== null ? Number(n.nota3) : 0
-          const mediaUnidade = (n1 + n2 + n3) / 3
-          
-          if (!mediasMateria[key]) {
-            mediasMateria[key] = 0
+          if (!notasMateria[n.materia_id]) {
+            notasMateria[n.materia_id] = {}
           }
-          mediasMateria[key] += mediaUnidade / 3 // Média final é a média das 3 unidades
+          const n1 = n.nota1 !== null ? Number(n.nota1) : null
+          const n2 = n.nota2 !== null ? Number(n.nota2) : null
+          const n3 = n.nota3 !== null ? Number(n.nota3) : null
+
+          const validas = [n1, n2, n3].filter((v): v is number => v !== null && !isNaN(v))
+          if (validas.length > 0) {
+            const val1 = n1 ?? 0
+            const val2 = n2 ?? 0
+            const val3 = n3 ?? 0
+            const mediaUnidade = (val1 + val2 + val3) / 3
+            notasMateria[n.materia_id][n.unidade] = mediaUnidade
+          }
         })
 
-        const valoresMedias = Object.values(mediasMateria)
-        if (valoresMedias.length > 0) {
-          const somaMedias = valoresMedias.reduce((a, b) => a + b, 0)
-          const global = (somaMedias / valoresMedias.length).toFixed(1)
+        const mediasFinaisMateria: number[] = []
+
+        Object.entries(notasMateria).forEach(([materiaId, unidades]) => {
+          const m1 = unidades[1] ?? null
+          const m2 = unidades[2] ?? null
+          const m3 = unidades[3] ?? null
+          
+          const mediasValidas = [m1, m2, m3].filter((m): m is number => m !== null)
+          if (mediasValidas.length > 0) {
+            const soma = mediasValidas.reduce((a, b) => a + b, 0)
+            let mediaFinal = soma / mediasValidas.length
+            
+            // Se a média final for < 5.0, houver recuperação e todas as 3 unidades já estiverem lançadas
+            const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+            if (todasUnidades && mediaFinal < 5.0 && recsMap[materiaId] !== undefined) {
+              mediaFinal = recsMap[materiaId]
+            }
+            
+            mediasFinaisMateria.push(mediaFinal)
+          }
+        })
+
+        if (mediasFinaisMateria.length > 0) {
+          const somaMedias = mediasFinaisMateria.reduce((a, b) => a + b, 0)
+          const global = (somaMedias / mediasFinaisMateria.length).toFixed(1)
           setMediaGlobal(global)
         } else {
           setMediaGlobal('S/R')
