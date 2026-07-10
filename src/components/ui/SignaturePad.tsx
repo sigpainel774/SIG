@@ -99,8 +99,12 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
       if (path.length === 0) return
       ctx.beginPath()
       ctx.moveTo(path[0].x, path[0].y)
-      for (let i = 1; i < path.length; i++) {
-        ctx.lineTo(path[i].x, path[i].y)
+      if (path.length === 1) {
+        ctx.lineTo(path[0].x, path[0].y)
+      } else {
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].x, path[i].y)
+        }
       }
       ctx.stroke()
     })
@@ -178,6 +182,8 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     if (ctx) {
       ctx.beginPath()
       ctx.moveTo(coords.x, coords.y)
+      ctx.lineTo(coords.x, coords.y)
+      ctx.stroke()
       setIsDrawing(true)
       
       currentPathRef.current = [coords]
