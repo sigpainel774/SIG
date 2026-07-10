@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -17,7 +17,8 @@ import {
   Info,
   Smartphone,
   Laptop,
-  Printer
+  Printer,
+  History
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +46,7 @@ export default function AdminLixeiraPage() {
   const [sigLogsLoading, setSigLogsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [sigFilter, setSigFilter] = useState<'ALL' | 'RESP' | 'FUNC'>('ALL')
-  const [selectedLog, setSelectedLog] = useState<any | null>(null)
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
   const [isPrintOpen, setIsPrintOpen] = useState(false)
 
   const loadTrash = async () => {
@@ -109,26 +110,115 @@ export default function AdminLixeiraPage() {
     }
   }
 
-  // Filtragem de logs de assinatura
-  const filteredSigLogs = sigLogs.filter((log) => {
-    const searchLower = searchTerm.toLowerCase()
-    const studentName = log.new_data?.student_name || log.old_data?.student_name || ''
-    const userName = log.user_name || ''
-    const ip = log.ip_address || ''
-    const device = log.new_data?.user_agent || ''
-    
-    const matchesSearch = 
-      studentName.toLowerCase().includes(searchLower) ||
-      userName.toLowerCase().includes(searchLower) ||
-      ip.toLowerCase().includes(searchLower) ||
-      device.toLowerCase().includes(searchLower)
+  // Filtragem de logs de assinatura (lista plana para o gerador de relatórios)
+  const filteredSigLogs = useMemo(() => {
+    return sigLogs.filter((log) => {
+      const searchLower = searchTerm.toLowerCase()
+      const studentName = log.new_data?.student_name || log.old_data?.student_name || ''
+      const userName = log.user_name || ''
+      const ip = log.ip_address || ''
+      const device = log.new_data?.user_agent || log.old_data?.user_agent || ''
       
-    if (sigFilter === 'ALL') return matchesSearch
-    if (sigFilter === 'RESP') return matchesSearch && log.entity === 'alunos_assinatura_responsavel'
-    if (sigFilter === 'FUNC') return matchesSearch && log.entity === 'alunos_assinatura_funcionario'
-    
-    return matchesSearch
-  })
+      const matchesSearch = 
+        studentName.toLowerCase().includes(searchLower) ||
+        userName.toLowerCase().includes(searchLower) ||
+        ip.toLowerCase().includes(searchLower) ||
+        device.toLowerCase().includes(searchLower)
+        
+      if (sigFilter === 'ALL') return matchesSearch
+      if (sigFilter === 'RESP') return matchesSearch && log.entity === 'alunos_assinatura_responsavel'
+      if (sigFilter === 'FUNC') return matchesSearch && log.entity === 'alunos_assinatura_funcionario'
+      
+      return matchesSearch
+    })
+  }, [sigLogs, searchTerm, sigFilter])
+
+  // Agrupamento de logs de assinatura por estudante
+  const groupedStudents = useMemo(() => {
+    const studentsMap: Record<string, {
+      studentId: string
+      studentName: string
+      logs: any[]
+      lastUpdate: string
+      hasResp: boolean
+      hasFunc: boolean
+      respUrl: string | null
+      funcUrl: string | null
+    }> = {}
+
+    // Processa do mais antigo para o mais novo para que os estados mais recentes sobrescrevam
+    const sortedLogs = [...sigLogs].reverse()
+
+    for (const log of sortedLogs) {
+      const studentId = log.entity_id
+      if (!studentId) continue
+
+      const studentName = log.new_data?.student_name || log.old_data?.student_name || 'Desconhecido'
+      const sigUrl = log.new_data?.url || log.old_data?.url || null
+      const isResp = log.entity === 'alunos_assinatura_responsavel'
+
+      if (!studentsMap[studentId]) {
+        studentsMap[studentId] = {
+          studentId,
+          studentName,
+          logs: [],
+          lastUpdate: log.created_at,
+          hasResp: false,
+          hasFunc: false,
+          respUrl: null,
+          funcUrl: null
+        }
+      }
+
+      const entry = studentsMap[studentId]
+      entry.logs.unshift(log) // Mantém ordenação decrescente (mais recente primeiro) no histórico
+      entry.lastUpdate = log.created_at
+
+      if (isResp) {
+        entry.hasResp = log.action !== 'DELETE'
+        entry.respUrl = log.action !== 'DELETE' ? sigUrl : null
+      } else {
+        entry.hasFunc = log.action !== 'DELETE'
+        entry.funcUrl = log.action !== 'DELETE' ? sigUrl : null
+      }
+    }
+
+    return Object.values(studentsMap).sort((a, b) => 
+      new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime()
+    )
+  }, [sigLogs])
+
+  // Filtragem da lista agrupada de estudantes (busca avançada nos logs internos)
+  const filteredStudents = useMemo(() => {
+    return groupedStudents.filter((student) => {
+      const searchLower = searchTerm.toLowerCase()
+      
+      // Busca direta nos dados do aluno
+      const matchesStudent = 
+        student.studentName.toLowerCase().includes(searchLower) ||
+        student.studentId.toLowerCase().includes(searchLower)
+        
+      // Busca avançada: verifica se algum dos logs do histórico do aluno bate com o assinante, IP ou user agent
+      const matchesLog = student.logs.some((log) => {
+        const userName = log.user_name || ''
+        const ip = log.ip_address || ''
+        const device = log.new_data?.user_agent || log.old_data?.user_agent || ''
+        return (
+          userName.toLowerCase().includes(searchLower) ||
+          ip.toLowerCase().includes(searchLower) ||
+          device.toLowerCase().includes(searchLower)
+        )
+      })
+      
+      const matchesSearch = matchesStudent || matchesLog
+      
+      if (sigFilter === 'ALL') return matchesSearch
+      if (sigFilter === 'RESP') return matchesSearch && student.hasResp
+      if (sigFilter === 'FUNC') return matchesSearch && student.hasFunc
+      
+      return matchesSearch
+    })
+  }, [groupedStudents, searchTerm, sigFilter])
 
   // Formatador de User Agent
   const formatUserAgent = (ua: string | null | undefined) => {
@@ -320,89 +410,71 @@ export default function AdminLixeiraPage() {
               <TableHeader className="bg-[#18181b] border-b border-[#26262a]">
                 <TableRow className="border-none hover:bg-transparent">
                   <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Aluno / ID</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Tipo</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Ação</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Assinante / Cargo</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Dispositivo & IP</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Data / Hora</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs text-center">Assinatura</TableHead>
+                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs text-center">Assinatura Responsável</TableHead>
+                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs text-center">Assinatura Funcionário</TableHead>
+                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Última Atividade</TableHead>
                   <TableHead className="text-right text-zinc-300 font-bold uppercase tracking-wider text-xs">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSigLogs.map((log) => {
-                  const studentName = log.new_data?.student_name || log.old_data?.student_name || 'Desconhecido'
-                  const sigUrl = log.new_data?.url || log.old_data?.url
-                  const isResp = log.entity === 'alunos_assinatura_responsavel'
-                  
+                {filteredStudents.map((student) => {
                   return (
-                    <TableRow key={log.id} className="border-b border-[#1c1c1f] hover:bg-[#18181b] transition-colors">
+                    <TableRow key={student.studentId} className="border-b border-[#1c1c1f] hover:bg-[#18181b] transition-colors">
                       <TableCell className="font-semibold text-white">
-                        <div>{studentName}</div>
-                        <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{log.entity_id}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(
-                          "text-xs font-semibold border-none rounded-md px-2 py-0.5 uppercase",
-                          isResp ? "bg-[#3ea6ff]/10 text-[#3ea6ff]" : "bg-emerald-500/10 text-emerald-400"
-                        )}>
-                          {isResp ? 'Responsável' : 'Funcionário'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "text-xs font-bold uppercase",
-                          log.action === 'DELETE' ? "text-rose-500" : "text-emerald-500"
-                        )}>
-                          {log.action}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-zinc-200 font-medium">{log.user_name}</span>
-                          <span className="text-xs text-zinc-500">{log.user_email || '-'}</span>
-                          <span className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider font-bold">{log.user_cargo || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-zinc-300">{log.ip_address || 'IP não registrado'}</div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5 leading-tight truncate max-w-[150px]" title={log.new_data?.user_agent}>
-                          {formatUserAgent(log.new_data?.user_agent)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-zinc-400 whitespace-nowrap">
-                        {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
+                        <div>{student.studentName}</div>
+                        <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{student.studentId}</div>
                       </TableCell>
                       <TableCell className="align-middle text-center">
-                        {sigUrl ? (
-                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-[#0d0d0f] p-1 select-none pointer-events-none">
+                        {student.respUrl ? (
+                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
                             <img 
-                              src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
-                              alt="Assinatura" 
-                              className="max-h-7 max-w-[80px] object-contain filter brightness-90 invert-[0.1]"
+                              src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                              alt="Assinatura Responsável" 
+                              className="max-h-7 max-w-[80px] object-contain"
                             />
                           </div>
                         ) : (
-                          <span className="text-zinc-600 italic text-xs">Excluída</span>
+                          <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+                            Pendente
+                          </Badge>
                         )}
+                      </TableCell>
+                      <TableCell className="align-middle text-center">
+                        {student.funcUrl ? (
+                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
+                            <img 
+                              src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                              alt="Assinatura Funcionário" 
+                              className="max-h-7 max-w-[80px] object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+                            Pendente
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-zinc-400 whitespace-nowrap">
+                        {student.lastUpdate ? new Date(student.lastUpdate).toLocaleString('pt-BR') : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => setSelectedLog(log)}
+                          onClick={() => setSelectedStudent(student)}
                           className="hover:bg-[#202024] text-zinc-400 hover:text-white rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer"
+                          title="Ver Histórico Completo"
                         >
-                          <Info className="w-4 h-4" />
+                          <History className="w-4 h-4 text-[#3ea6ff]" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   )
                 })}
                 
-                {filteredSigLogs.length === 0 && !sigLogsLoading && (
+                {filteredStudents.length === 0 && !sigLogsLoading && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-zinc-500 font-medium">
+                    <TableCell colSpan={5} className="text-center py-12 text-zinc-500 font-medium">
                       Nenhum registro de assinatura encontrado.
                     </TableCell>
                   </TableRow>
@@ -421,110 +493,119 @@ export default function AdminLixeiraPage() {
         />
       )}
 
-      {/* Details Audit Modal */}
-      {selectedLog && (
-        <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="bg-[#121214] border border-[#26262a] text-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      {/* Grouped Student History Modal */}
+      {selectedStudent && (
+        <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
+          <DialogContent className="bg-[#121214] border border-[#26262a] text-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#3ea6ff]/40 to-transparent" />
             
             <DialogHeader className="pb-3 border-b border-[#26262a]">
               <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <PenTool className="w-5 h-5 text-[#3ea6ff]" />
-                <span>Auditoria Completa de Assinatura</span>
+                <History className="w-5 h-5 text-[#3ea6ff]" />
+                <span>Histórico de Assinaturas do Aluno</span>
               </DialogTitle>
               <DialogDescription className="text-zinc-400 text-xs mt-1">
-                Visualização detalhada dos logs de segurança registrados no banco.
+                Linha do tempo de todas as coletas, atualizações e exclusões registradas.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-5 pt-4 text-sm">
-              {/* Informações do Aluno */}
+            <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
+              {/* Aluno Info Card */}
               <div className="grid grid-cols-2 gap-4 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
                 <div>
                   <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Aluno Auditado</span>
-                  <span className="font-semibold text-white">{selectedLog.new_data?.student_name || selectedLog.old_data?.student_name}</span>
+                  <span className="font-semibold text-white">{selectedStudent.studentName}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
-                  <span className="font-mono text-xs text-zinc-300">{selectedLog.entity_id}</span>
+                  <span className="font-mono text-xs text-zinc-400">{selectedStudent.studentId}</span>
                 </div>
               </div>
 
-              {/* Informações do Responsável pelo Upload */}
-              <div className="space-y-3 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
-                <h4 className="text-xs font-bold text-[#3ea6ff] uppercase tracking-wider pb-1 border-b border-[#26262a]">
-                  Detalhes do Operador / Assinante
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Nome</span>
-                    <span className="text-white font-medium">{selectedLog.user_name || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">E-mail</span>
-                    <span className="text-white font-medium">{selectedLog.user_email || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Cargo / Relação</span>
-                    <span className="text-white font-medium">{selectedLog.user_cargo || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Ação Realizada</span>
-                    <span className={cn(
-                      "font-bold uppercase",
-                      selectedLog.action === 'DELETE' ? "text-rose-400" : "text-emerald-400"
-                    )}>
-                      {selectedLog.action === 'DELETE' ? 'Exclusão' : 'Atualização/Assinatura'}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              {/* Timeline Container */}
+              <div className="relative pl-4 space-y-4 before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#26262a]">
+                {selectedStudent.logs.map((log: any) => {
+                  const sigUrl = log.new_data?.url || log.old_data?.url
+                  const isResp = log.entity === 'alunos_assinatura_responsavel'
+                  const isDelete = log.action === 'DELETE'
+                  
+                  return (
+                    <div key={log.id} className="relative pl-5 space-y-2">
+                      {/* Circle Dot */}
+                      <span className={cn(
+                        "absolute -left-[15px] top-1.5 w-2.5 h-2.5 rounded-full border border-[#121214]",
+                        isDelete ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                      )} />
+                      
+                      <div className="bg-[#17171a] border border-[#26262a] p-4 rounded-xl space-y-3 shadow-inner">
+                        {/* Title and metadata */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#232328] pb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] font-bold border-none px-2 py-0.5 rounded-md uppercase",
+                              isResp ? "bg-[#3ea6ff]/10 text-[#3ea6ff]" : "bg-emerald-500/10 text-emerald-400"
+                            )}>
+                              {isResp ? 'Responsável' : 'Funcionário'}
+                            </Badge>
+                            <span className={cn(
+                              "text-xs font-bold uppercase",
+                              isDelete ? "text-rose-500" : "text-emerald-500"
+                            )}>
+                              {isDelete ? 'Exclusão' : 'Atualização'}
+                            </span>
+                          </div>
+                          
+                          <span className="text-zinc-500 text-xs">
+                            {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
+                          </span>
+                        </div>
+                        
+                        {/* Signer details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Assinante / Operador</span>
+                            <span className="text-white font-medium block">{log.user_name || '-'}</span>
+                            {log.user_email && <span className="text-zinc-400 block">{log.user_email}</span>}
+                            {log.user_cargo && <span className="text-[9px] text-[#3ea6ff] uppercase font-bold block mt-0.5">{log.user_cargo}</span>}
+                          </div>
+                          
+                          <div>
+                            <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Conexão & IP</span>
+                            <span className="text-white font-mono block">{log.ip_address || 'IP não registrado'}</span>
+                            <span className="text-zinc-500 block leading-tight mt-0.5 text-[10px]" title={log.new_data?.user_agent}>
+                              {formatUserAgent(log.new_data?.user_agent || log.old_data?.user_agent)}
+                            </span>
+                          </div>
+                        </div>
 
-              {/* Informações do Dispositivo */}
-              <div className="space-y-3 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
-                <h4 className="text-xs font-bold text-[#3ea6ff] uppercase tracking-wider pb-1 border-b border-[#26262a]">
-                  Dispositivo e Conexão
-                </h4>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold">Endereço IP</span>
-                    <span className="text-white font-mono font-medium">{selectedLog.ip_address || 'IP não registrado'}</span>
-                  </div>
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold shrink-0">User Agent</span>
-                    <span className="text-zinc-300 text-right font-medium leading-relaxed max-w-[280px] break-words">
-                      {selectedLog.new_data?.user_agent || 'Nenhum cabeçalho de dispositivo'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Visualização de Assinatura */}
-              <div className="space-y-2.5">
-                <span className="text-[10px] text-zinc-500 uppercase font-bold block">Imagem da Assinatura Coletada</span>
-                
-                {selectedLog.new_data?.url ? (
-                  <div className="border border-[#2a2a2a] rounded-2xl bg-[#0d0d0f] p-4 flex items-center justify-center min-h-[120px] shadow-inner">
-                    <img 
-                      src={`${selectedLog.new_data.url}${selectedLog.new_data.url.includes('?') ? '&' : '?'}t=${Date.now()}`}
-                      alt="Assinatura Auditada" 
-                      className="max-h-[100px] w-auto object-contain filter brightness-90 invert-[0.1]"
-                    />
-                  </div>
-                ) : (
-                  <div className="border border-dashed border-[#26262a] rounded-2xl p-6 text-center text-zinc-500 italic text-xs">
-                    Assinatura foi excluída neste registro de log.
-                  </div>
-                )}
+                        {/* Signature preview */}
+                        <div className="pt-2 border-t border-[#232328]">
+                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Assinatura no Registro</span>
+                          {sigUrl && !isDelete ? (
+                            <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
+                              <img 
+                                src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                alt="Assinatura Auditada" 
+                                className="max-h-12 w-auto object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-rose-500 italic text-xs font-semibold">Assinatura Excluída</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
             <div className="mt-6 pt-3.5 border-t border-[#26262a] flex justify-end">
               <Button
-                onClick={() => setSelectedLog(null)}
+                onClick={() => setSelectedStudent(null)}
                 className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-semibold rounded-xl h-10 px-5 cursor-pointer text-xs"
               >
-                Fechar Detalhes
+                Fechar Histórico
               </Button>
             </div>
           </DialogContent>
