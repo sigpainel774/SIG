@@ -503,7 +503,9 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       deficienciasSelecionadas,
       autoriza_imagem_voz: autorizaImagemVoz,
       assinatura_responsavel_url: (assinaturaResponsavelUrl ? assinaturaResponsavelUrl.split('?')[0] : null) || (alunoEditar?.dados_matricula?.assinatura_responsavel_url ? alunoEditar.dados_matricula.assinatura_responsavel_url.split('?')[0] : null) || null,
-      assinatura_funcionario_url: (assinaturaFuncionarioUrl ? assinaturaFuncionarioUrl.split('?')[0] : null) || (alunoEditar?.dados_matricula?.assinatura_funcionario_url ? alunoEditar.dados_matricula.assinatura_funcionario_url.split('?')[0] : null) || null
+      assinatura_funcionario_url: (assinaturaFuncionarioUrl ? assinaturaFuncionarioUrl.split('?')[0] : null) || (alunoEditar?.dados_matricula?.assinatura_funcionario_url ? alunoEditar.dados_matricula.assinatura_funcionario_url.split('?')[0] : null) || null,
+      assinatura_responsavel_at: alunoEditar?.dados_matricula?.assinatura_responsavel_at || null,
+      assinatura_funcionario_at: alunoEditar?.dados_matricula?.assinatura_funcionario_at || null
     }
 
     try {
@@ -531,6 +533,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
           if (uploadErr) throw uploadErr
           const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
           finalRespUrl = pData.publicUrl
+          dadosMatriculaObj.assinatura_responsavel_at = new Date().toISOString()
         }
         if (newSignatureFuncionario) {
           const blob = base64ToBlob(newSignatureFuncionario)
@@ -539,6 +542,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
           if (uploadErr) throw uploadErr
           const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
           finalFuncUrl = pData.publicUrl
+          dadosMatriculaObj.assinatura_funcionario_at = new Date().toISOString()
         }
       }
 
@@ -592,6 +596,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
           if (uploadErr) throw uploadErr
           const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
           dadosMatriculaObj.assinatura_responsavel_url = pData.publicUrl
+          dadosMatriculaObj.assinatura_responsavel_at = new Date().toISOString()
           hasNewSigs = true
         }
         if (newSignatureFuncionario) {
@@ -601,6 +606,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
           if (uploadErr) throw uploadErr
           const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
           dadosMatriculaObj.assinatura_funcionario_url = pData.publicUrl
+          dadosMatriculaObj.assinatura_funcionario_at = new Date().toISOString()
           hasNewSigs = true
         }
 
