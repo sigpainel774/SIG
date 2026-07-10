@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SignaturePad } from '@/components/ui/SignaturePad'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { ShieldAlert, CheckCircle2, Key, Loader2, Sparkles } from 'lucide-react'
+import { ShieldAlert, CheckCircle2, Key, Loader2, Sparkles, Smartphone } from 'lucide-react'
 
 export default function AssinarPage() {
   const [code, setCode] = useState('')
@@ -15,6 +15,20 @@ export default function AssinarPage() {
   const [sigType, setSigType] = useState<'resp' | 'func' | null>(null) // resp = responsável, func = funcionário
   const [tempSignature, setTempSignature] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [isPortrait, setIsPortrait] = useState(false)
+
+  // Detecta orientação física do dispositivo para forçar o modo paisagem
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768
+      const isVert = window.innerHeight > window.innerWidth
+      setIsPortrait(isMobile && isVert)
+    }
+
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    return () => window.removeEventListener('resize', checkOrientation)
+  }, [])
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +50,17 @@ export default function AssinarPage() {
         .maybeSingle()
 
       if (alunoResp) {
+        // Validar validade de 5 minutos
+        const criadoEm = (alunoResp as any).codigo_temp_resp_criado_em
+        if (criadoEm) {
+          const diffMs = Date.now() - Date.parse(criadoEm)
+          const diffMinutes = diffMs / 1000 / 60
+          if (diffMinutes > 5) {
+            toast.error('Código expirado. Solicite um novo código no computador da escola.')
+            setLoading(false)
+            return
+          }
+        }
         setAluno(alunoResp)
         setSigType('resp')
         toast.success('Código validado com sucesso!')
@@ -52,6 +77,17 @@ export default function AssinarPage() {
         .maybeSingle()
 
       if (alunoFunc) {
+        // Validar validade de 5 minutos
+        const criadoEm = (alunoFunc as any).codigo_temp_func_criado_em
+        if (criadoEm) {
+          const diffMs = Date.now() - Date.parse(criadoEm)
+          const diffMinutes = diffMs / 1000 / 60
+          if (diffMinutes > 5) {
+            toast.error('Código expirado. Solicite um novo código no computador da escola.')
+            setLoading(false)
+            return
+          }
+        }
         setAluno(alunoFunc)
         setSigType('func')
         toast.success('Código validado com sucesso!')
@@ -92,11 +128,30 @@ export default function AssinarPage() {
     const label = sigType === 'resp' ? 'responsavel' : 'funcionario'
 
     try {
+      // 1. Obter IP público do requisitante chamando a API local
+      let clientIp = '127.0.0.1'
+      try {
+        const ipRes = await fetch('/api/get-ip')
+        const ipData = await ipRes.json()
+        clientIp = ipData.ip || '127.0.0.1'
+      } catch (ipErr) {
+        console.error('Erro ao obter IP:', ipErr)
+      }
+
+      // 2. Coletar metadados do navegador e do dispositivo
+      const ua = navigator.userAgent
+      let dispositivo = 'Desktop'
+      if (/Tablet|iPad/i.test(ua)) {
+        dispositivo = 'Tablet'
+      } else if (/Mobi|Android|iPhone|Windows Phone/i.test(ua)) {
+        dispositivo = 'Celular'
+      }
+
       const blob = base64ToBlob(tempSignature)
       const fileExt = 'png'
       const fileName = `aluno_${aluno.id}_${label}.${fileExt}`
 
-      // 1. Upload da assinatura para o bucket
+      // 3. Upload da assinatura para o bucket
       const { error: uploadError } = await supabase.storage
         .from('assinaturas_alunos')
         .upload(fileName, blob, {
@@ -106,18 +161,22 @@ export default function AssinarPage() {
 
       if (uploadError) throw uploadError
 
-      // 2. Buscar URL Pública da assinatura
+      // 4. Buscar URL Pública da assinatura
       const { data: publicData } = supabase.storage
         .from('assinaturas_alunos')
         .getPublicUrl(fileName)
 
       const publicUrl = publicData.publicUrl
 
-      // 3. Atualizar dados_matricula com a nova URL e o timestamp
+      // 5. Atualizar dados_matricula com a nova URL, timestamp e evidências
+      const isResp = sigType === 'resp'
       const dadosMatriculaAtualizados = {
         ...(aluno.dados_matricula || {}),
-        [sigType === 'resp' ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl,
-        [sigType === 'resp' ? 'assinatura_responsavel_at' : 'assinatura_funcionario_at']: new Date().toISOString()
+        [isResp ? 'assinatura_responsavel_url' : 'assinatura_funcionario_url']: publicUrl,
+        [isResp ? 'assinatura_responsavel_at' : 'assinatura_funcionario_at']: new Date().toISOString(),
+        [isResp ? 'assinatura_responsavel_ip' : 'assinatura_funcionario_ip']: clientIp,
+        [isResp ? 'assinatura_responsavel_user_agent' : 'assinatura_funcionario_user_agent']: ua,
+        [isResp ? 'assinatura_responsavel_dispositivo' : 'assinatura_funcionario_dispositivo']: dispositivo
       }
 
       const updatePayload: any = {
@@ -138,6 +197,32 @@ export default function AssinarPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Tela de bloqueio para forçar o modo paisagem no celular
+  if (isPortrait && !success) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+        {/* Glow de fundo */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#3ea6ff]/10 rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="w-full max-w-sm bg-[#121214]/80 backdrop-blur-md border border-[#26262a] rounded-2xl p-8 shadow-2xl text-center space-y-6 flex flex-col items-center relative z-10">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#3ea6ff]/20 rounded-full blur-xl animate-pulse" />
+            <div className="relative p-5 bg-[#18181b] border border-[#27272a] rounded-full text-[#3ea6ff] animate-bounce">
+              <Smartphone className="w-12 h-12 rotate-0 transition-transform duration-1000 ease-in-out" style={{ transform: 'rotate(90deg)' }} />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-xl font-extrabold text-white tracking-tight">Gire o Aparelho</h1>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Para desenhar sua assinatura com conforto e precisão, deite o celular na horizontal (modo Paisagem).
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -265,7 +350,7 @@ export default function AssinarPage() {
       </div>
 
       {/* Selo de Segurança */}
-      <div className="mt-6 flex items-center gap-1.5 text-[10px] text-zinc-500">
+      <div className="print:hidden mt-6 flex items-center gap-1.5 text-[10px] text-zinc-500">
         <ShieldAlert className="w-3.5 h-3.5" />
         <span>Conexão criptografada oficial da Secretaria de Educação</span>
       </div>

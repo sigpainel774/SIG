@@ -33,7 +33,6 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
   const [drawnPaths, setDrawnPaths] = useState<Array<Array<{ x: number; y: number }>>>([])
-  const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   // Armazenar caminhos desenhados para redesenho no resize/rotação
@@ -44,34 +43,14 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     setMounted(true)
   }, [])
 
-  // Detectar orientação do dispositivo em dispositivos móveis
-  useEffect(() => {
-    if (!isModalOpen) return
-
-    const checkOrientation = () => {
-      const isMobile = window.innerWidth < 768
-      const isPortrait = window.innerHeight > window.innerWidth
-      setIsMobilePortrait(isMobile && isPortrait)
-    }
-
-    checkOrientation()
-    window.addEventListener('resize', checkOrientation)
-    return () => window.removeEventListener('resize', checkOrientation)
-  }, [isModalOpen])
-
-  // Ajustar tamanho do canvas de acordo com o DPI/DPR e rotação
-  const resizeCanvas = (canvas: HTMLCanvasElement, rotated: boolean) => {
+  // Ajustar tamanho do canvas de acordo com o DPI/DPR
+  const resizeCanvas = (canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
     
     // Configura tamanho interno
-    if (rotated) {
-      canvas.width = rect.height * dpr
-      canvas.height = rect.width * dpr
-    } else {
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
-    }
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
     
     const ctx = canvas.getContext('2d')
     if (ctx) {
@@ -118,13 +97,13 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     if (!canvas) return
 
     // Ajustar tamanho inicial
-    resizeCanvas(canvas, isMobilePortrait)
+    resizeCanvas(canvas)
     redrawPaths(canvas)
 
     // ResizeObserver para monitorar mudanças de container
     const resizeObserver = new ResizeObserver(() => {
       if (canvas) {
-        resizeCanvas(canvas, isMobilePortrait)
+        resizeCanvas(canvas)
         redrawPaths(canvas)
       }
     })
@@ -135,9 +114,9 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     return () => {
       resizeObserver.disconnect()
     }
-  }, [isModalOpen, isMobilePortrait, drawnPaths])
+  }, [isModalOpen, drawnPaths])
 
-  // Capturar coordenadas relativas (com suporte a rotação simulada de 90 graus)
+  // Capturar coordenadas relativas
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
     
@@ -153,17 +132,9 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
       clientY = e.clientY
     }
 
-    if (isMobilePortrait) {
-      // Mapeamento rotacionado de 90 graus no sentido horário
-      return {
-        x: clientY - rect.top,
-        y: rect.right - clientX
-      }
-    } else {
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      }
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
     }
   }
 
@@ -319,10 +290,8 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     setIsModalOpen(false)
   }
 
-  // Classes css do container do modal baseadas na orientação do celular
-  const modalClasses = isMobilePortrait
-    ? "w-[calc(100vh-24px)] h-[calc(100vw-24px)] rotate-90 origin-center bg-[#121214] border border-[#26262a] rounded-2xl p-4 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-    : "w-full h-full md:w-[750px] md:h-[480px] bg-[#121214] border border-transparent md:border-[#26262a] md:rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+  // Classes css do container do modal
+  const modalClasses = "w-full h-full md:w-[750px] md:h-[480px] bg-[#121214] border border-transparent md:border-[#26262a] md:rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 
   return (
     <div className="space-y-2 w-full">
@@ -396,9 +365,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                   {label}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-1">
-                  {isMobilePortrait 
-                    ? "Gire o celular de lado se desejar usar em tela cheia." 
-                    : "Desenhe sua assinatura no quadro abaixo."}
+                  Desenhe sua assinatura no quadro abaixo.
                 </p>
               </div>
             </div>

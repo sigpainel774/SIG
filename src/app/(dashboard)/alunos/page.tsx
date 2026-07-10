@@ -20,7 +20,10 @@ import {
   Building2,
   ArrowLeft,
   Archive,
-  Paperclip
+  Paperclip,
+  Lock,
+  Check,
+  XCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { ModalAluno } from '@/components/modals/modal-aluno'
@@ -69,6 +72,64 @@ export default function AlunosPage() {
   const [alunoComprovanteImprimir, setAlunoComprovanteImprimir] = useState<Aluno | null>(null)
   const [alunoArquivar, setAlunoArquivar] = useState<Aluno | null>(null)
   const [alunoAnexos, setAlunoAnexos] = useState<Aluno | null>(null)
+  
+  // Estados para gerenciamento de solicitações de liberação pelo Diretor/Admin
+  const [solicitacoes, setSolicitacoes] = useState<any[]>([])
+  const [carregandoSolicitacoes, setCarregandoSolicitacoes] = useState(false)
+
+  const carregarSolicitacoes = async () => {
+    const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
+    const isAdmin = isAdminGlobalOrRoot()
+    
+    // Apenas diretores e admins gerenciam solicitações
+    if (!isDiretor && !isAdmin) return
+
+    const supabase = createClient()
+    setCarregandoSolicitacoes(true)
+    
+    try {
+      // Filtrar solicitações da escola ativa
+      let query = (supabase
+        .from('solicitacoes_edicao_aluno' as any) as any)
+        .select('*, alunos!inner(nome, escola_id, escolas(nome)), solicitante:funcionarios(nome)')
+        .eq('status', 'pendente')
+      
+      if (!isAdmin && escolaAtivaId) {
+        query = query.eq('alunos.escola_id', escolaAtivaId)
+      }
+      
+      const { data, error } = await query.order('criado_em', { ascending: true })
+      if (error) throw error
+      setSolicitacoes(data || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar solicitações de liberação:', err)
+    } finally {
+      setCarregandoSolicitacoes(false)
+    }
+  }
+
+  const handleResponderSolicitacao = async (id: string, status: 'aprovado' | 'rejeitado') => {
+    const supabase = createClient()
+    
+    try {
+      const { error } = await (supabase
+        .from('solicitacoes_edicao_aluno' as any) as any)
+        .update({
+          status,
+          aprovado_por: funcionario?.id || null,
+          respondido_em: new Date().toISOString()
+        } as any)
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      toast.success(`Solicitação ${status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso!`)
+      carregarSolicitacoes()
+      carregarAlunos() // Recarregar alunos para destravar a ficha
+    } catch (err: any) {
+      toast.error(`Erro ao responder solicitação: ${err.message}`)
+    }
+  }
 
   const carregarAlunos = async () => {
     const supabase = createClient()
@@ -119,6 +180,7 @@ export default function AlunosPage() {
 
   useEffect(() => {
     carregarAlunos()
+    carregarSolicitacoes()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [escolaAtivaId])
 
@@ -223,6 +285,65 @@ export default function AlunosPage() {
           )}
         </div>
 
+        {/* Painel de Solicitações do Diretor (Apenas se houver pendências e for Diretor/Admin) */}
+        {solicitacoes.length > 0 && (acessos.some(a => a.nivel === 2 && a.ativo) || isAdminGlobalOrRoot()) && (
+          <div className="bg-[#121214] border border-[#26262a] rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl relative overflow-hidden print:hidden">
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#818cf8]/40 to-transparent" />
+            
+            <div className="flex items-center justify-between border-b border-[#26262a] pb-3 mb-1">
+              <div className="flex items-center gap-2 text-white">
+                <Lock className="w-4 h-4 text-[#818cf8]" />
+                <h2 className="text-sm font-bold uppercase tracking-wider">Solicitações de Liberação de Ficha ({solicitacoes.length})</h2>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-zinc-300 border-collapse">
+                <thead>
+                  <tr className="border-b border-[#26262a] text-zinc-500 font-bold uppercase text-[10px]">
+                    <th className="py-2 px-3">Aluno</th>
+                    <th className="py-2 px-3">Escola</th>
+                    <th className="py-2 px-3">Solicitante</th>
+                    <th className="py-2 px-3">Justificativa</th>
+                    <th className="py-2 px-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {solicitacoes.map((sol) => (
+                    <tr key={sol.id} className="border-b border-[#26262a]/50 hover:bg-[#18181b]/50">
+                      <td className="py-3 px-3 font-bold text-white">{sol.alunos?.nome}</td>
+                      <td className="py-3 px-3 text-zinc-400">{sol.alunos?.escolas?.nome || 'Escola Principal'}</td>
+                      <td className="py-3 px-3 font-medium text-[#3ea6ff]">{sol.solicitante?.nome || 'Funcionário'}</td>
+                      <td className="py-3 px-3 text-zinc-300 italic max-w-xs truncate" title={sol.justificativa}>
+                        "{sol.justificativa}"
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <div className="inline-flex gap-1.5 justify-end w-full">
+                          <Button
+                            onClick={() => handleResponderSolicitacao(sol.id, 'aprovado')}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                          >
+                            <Check className="w-3 h-3" />
+                            Liberar
+                          </Button>
+                          <Button
+                            onClick={() => handleResponderSolicitacao(sol.id, 'rejeitado')}
+                            variant="ghost"
+                            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            Recusar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Busca e Estatísticas */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md w-full">
@@ -277,8 +398,13 @@ export default function AlunosPage() {
 
                       {/* Informações Principais */}
                       <div className="min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate max-w-full">
-                          {aluno.nome}
+                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate max-w-full flex items-center gap-2">
+                          <span>{aluno.nome}</span>
+                          {aluno.dados_matricula?.documento_bloqueado === true && (
+                            <span className="p-1 bg-[#1e1b4b] border border-[#3730a3] rounded-md text-[#818cf8]" title="Ficha Assinada e Trancada">
+                              <Lock className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                         </h3>
                         <div className="mt-1">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 border border-blue-200/50 text-[#185FA5] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400 shrink-0">
