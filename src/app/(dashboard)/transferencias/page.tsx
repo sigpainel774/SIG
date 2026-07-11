@@ -178,7 +178,14 @@ function TransferenciasContent() {
         if (updateError) throw updateError
 
         if (aceitar) {
-          // 1. Atualiza escola_id na tabela alunos
+          // 1. Buscar anexos ativos do aluno antes da transferência
+          const { data: anexosAtivos } = await supabase
+            .from('alunos_anexos')
+            .select('*')
+            .eq('aluno_id', transferenciaSelecionada.aluno_id)
+            .is('deleted_at', null)
+
+          // 2. Atualiza escola_id na tabela alunos
           const { error: studentUpdateError } = await supabase
             .from('alunos')
             .update({ escola_id: transferenciaSelecionada.escola_destino_id })
@@ -186,7 +193,7 @@ function TransferenciasContent() {
 
           if (studentUpdateError) throw studentUpdateError
 
-          // 2. Gravar cópia histórica na tabela arquivados vinculada à escola de origem
+          // 3. Gravar cópia histórica na tabela arquivados vinculada à escola de origem (com todos os anexos)
           const { error: archiveError } = await supabase
             .from('arquivados')
             .insert({
@@ -197,12 +204,26 @@ function TransferenciasContent() {
               escola_origem_id: transferenciaSelecionada.escola_origem_id,
               arquivado_por: funcionario.id,
               payload_completo: transferenciaSelecionada.ficha_snapshot || {},
+              arquivos_anexos: anexosAtivos || [],
               status: 'TRANSFERIDO'
             })
 
           if (archiveError) throw archiveError
 
-          // 3. Log de auditoria
+          // 4. Soft-delete no comprovante de residência antigo nos anexos ativos do aluno
+          const { error: deleteDocError } = await supabase
+            .from('alunos_anexos')
+            .update({ 
+              deleted_at: new Date().toISOString(),
+              motivo_arquivamento: 'TRANSFERENCIA: Comprovante de residência antigo removido na transferência'
+            })
+            .eq('aluno_id', transferenciaSelecionada.aluno_id)
+            .is('deleted_at', null)
+            .ilike('nome', '%residencia%')
+
+          if (deleteDocError) throw deleteDocError
+
+          // 5. Log de auditoria
           await logAudit({
             supabase,
             action: 'UPDATE',
