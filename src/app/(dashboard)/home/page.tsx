@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Smartphone,
   UserCheck,
-  ArrowLeft
+  ArrowLeft,
+  ArrowLeftRight,
+  Archive
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,6 +41,8 @@ export default function HomePage() {
     { label: 'Matrículas', icon: FileText, href: '/matriculas' },
     { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
     { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias' },
+    { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
+    { label: 'Arquivo', icon: Archive, href: '/arquivos' },
     { label: 'Documentos', icon: FileText, href: '/documentos' },
     // { label: 'Ponto Mobile', icon: Smartphone, href: '/ponto-mobile' },
     { label: 'Painel Liderança', icon: UserCheck, href: '/painel-chefe' },
