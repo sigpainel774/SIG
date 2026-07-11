@@ -168,6 +168,33 @@ function ArquivosContent() {
                 </div>
               </div>
 
+              {/* Documentos Anexados (Pasta do Aluno) */}
+              {selectedArq.arquivos_anexos && Array.isArray(selectedArq.arquivos_anexos) && selectedArq.arquivos_anexos.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-purple-400" />
+                    <span>Documentos Anexados (Pasta)</span>
+                  </h4>
+                  <div className="bg-[#121212] border border-[#26262a] rounded-xl p-3.5 space-y-2.5 text-xs">
+                    {selectedArq.arquivos_anexos.map((arq: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center border-b border-[#26262a]/50 pb-2 last:border-b-0 last:pb-0">
+                        <span className="text-white font-medium">{arq.nome || `Documento ${idx + 1}`}</span>
+                        {arq.arquivo_url && (
+                          <a 
+                            href={arq.arquivo_url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="text-sky-400 hover:text-sky-300 hover:underline font-semibold"
+                          >
+                            Visualizar
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Registro do Histórico */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
