@@ -6,19 +6,23 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check } from 'lucide-react'
+import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check, Sliders } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
+import { ModalConfiguracoesNotificacoes } from '@/components/modals/modal-configuracoes-notificacoes'
 
 export default function HistoricoNotificacoesPage() {
   const router = useRouter()
-  const { funcionario } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [status, setStatus] = useState('todas')
   const [busca, setBusca] = useState('')
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
+
+  const canManage = funcionario?.is_superadmin || isAdminGlobalOrRoot?.()
 
   const loadNotificacoes = async () => {
     if (!funcionario?.id) return
@@ -72,13 +76,24 @@ export default function HistoricoNotificacoesPage() {
           Histórico de Notificações
         </h2>
         
-        <Button 
-          variant="outline"
-          onClick={() => router.push('/home')}
-          className="bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white"
-        >
-          <Home className="w-4 h-4 mr-2" /> Menu Inicial
-        </Button>
+        <div className="flex items-center gap-3">
+          {canManage && (
+            <Button 
+              variant="outline"
+              onClick={() => setConfigOpen(true)}
+              className="bg-purple-600/10 border-purple-600/30 text-purple-400 hover:bg-purple-600/20 hover:text-purple-300 cursor-pointer"
+            >
+              <Sliders className="w-4 h-4 mr-2" /> Configurar Regras
+            </Button>
+          )}
+          <Button 
+            variant="outline"
+            onClick={() => router.push('/home')}
+            className="bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white"
+          >
+            <Home className="w-4 h-4 mr-2" /> Menu Inicial
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -175,6 +190,14 @@ export default function HistoricoNotificacoesPage() {
       >
         <ArrowLeft className="w-6 h-6" />
       </button>
+
+      {/* Modal de Configurações */}
+      {configOpen && (
+        <ModalConfiguracoesNotificacoes
+          open={configOpen}
+          onOpenChange={setConfigOpen}
+        />
+      )}
     </div>
   )
 }

@@ -7,10 +7,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Bell, History, Circle, Check } from 'lucide-react'
+import { Bell, History, Circle, Check, Sliders } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
+import { ModalConfiguracoesNotificacoes } from '@/components/modals/modal-configuracoes-notificacoes'
 import { toast } from 'sonner'
 
 interface ModalNotificacoesProps {
@@ -20,9 +21,12 @@ interface ModalNotificacoesProps {
 
 export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificacoesProps) {
   const router = useRouter()
-  const { funcionario } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
   const [filtro, setFiltro] = useState('todas')
   const [notificacoes, setNotificacoes] = useState<any[]>([])
+  const [configOpen, setConfigOpen] = useState(false)
+
+  const canManage = funcionario?.is_superadmin || isAdminGlobalOrRoot?.()
 
   const loadNotificacoes = async () => {
     if (!funcionario?.id) return
@@ -78,10 +82,23 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
       {/* Usando alinhamento customizado para imitar o painel lateral/top-right do legado */}
       <DialogContent className="sm:max-w-[380px] bg-[#18181b] border-[#3f3f46] text-white p-0 gap-0 overflow-hidden sm:absolute sm:top-[60px] sm:right-[20px] sm:translate-x-0 sm:translate-y-0 sm:left-auto">
         <DialogHeader className="p-4 border-b border-[#3f3f46]">
-          <DialogTitle className="text-white flex items-center gap-2 m-0 text-base">
-            <Bell className="w-5 h-5 text-highlight" /> 
-            Notificações
-          </DialogTitle>
+          <div className="flex justify-between items-center w-full">
+            <DialogTitle className="text-white flex items-center gap-2 m-0 text-base">
+              <Bell className="w-5 h-5 text-highlight" /> 
+              Notificações
+            </DialogTitle>
+            {canManage && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setConfigOpen(true)}
+                className="text-zinc-400 hover:text-white h-8 w-8 cursor-pointer hover:bg-[#27272a]"
+                title="Configurações de Notificações"
+              >
+                <Sliders className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         
         {/* Filtros */}
@@ -145,6 +162,14 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
             <History className="w-3.5 h-3.5" /> Ver Histórico Completo
           </Button>
         </div>
+
+        {/* Modal de Configurações */}
+        {configOpen && (
+          <ModalConfiguracoesNotificacoes
+            open={configOpen}
+            onOpenChange={setConfigOpen}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
