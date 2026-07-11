@@ -85,31 +85,34 @@ export default function TransferenciaAlunoPage() {
         }
       } else {
         // Se interna, cria a solicitação na tabela de transferências
-        const { error: insertError } = await supabase.from('transferencias_alunos').insert({
-          aluno_id: alunoSelecionado.id,
-          escola_origem_id: escolaAtivaId,
-          escola_destino_id: destinoId,
-          solicitante_id: funcionario.id,
-          motivo,
-          fora_da_rede: false,
-          ficha_snapshot: alunoSelecionado,
-          status: 'PENDENTE'
-        })
+        const { data: insertData, error: insertError } = await supabase
+          .from('transferencias_alunos')
+          .insert({
+            aluno_id: alunoSelecionado.id,
+            escola_origem_id: escolaAtivaId,
+            escola_destino_id: destinoId,
+            solicitante_id: funcionario.id,
+            motivo,
+            fora_da_rede: false,
+            ficha_snapshot: alunoSelecionado,
+            status: 'PENDENTE'
+          })
+          .select('id')
+          .single()
         
         if (insertError) throw insertError
 
+        const transferId = insertData?.id
+
         // Notificar o diretor da escola de destino (buscando quem é o diretor lá, ou mandando pra todos de lá)
-        // Por simplicidade, inserimos uma notificação geral. 
-        // Na prática, deve-se pegar os usuários que gerenciam a `escola_destino_id`.
-        
-        // Simulação: Enviar notificação para a escola destino (usuário placeholder ou pegando do DB)
         const { data: escolaDest } = await supabase.from('escolas').select('diretor_id').eq('id', destinoId).single()
         if (escolaDest && escolaDest.diretor_id) {
           await supabase.from('notifications').insert({
             user_id: escolaDest.diretor_id,
             title: 'Nova Solicitação de Transferência',
             message: `O aluno ${alunoSelecionado.nome} solicitou transferência para sua escola.`,
-            type: 'INFO'
+            type: 'INFO',
+            link: `/transferencias?tab=alunos&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
           })
         }
 

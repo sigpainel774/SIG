@@ -132,7 +132,9 @@ export type Database = {
           cartao_sus: string | null
           certidao_nascimento: string | null
           codigo_temp_func: string | null
+          codigo_temp_func_criado_em: string | null
           codigo_temp_resp: string | null
+          codigo_temp_resp_criado_em: string | null
           cpf: string | null
           created_at: string
           dados_matricula: Json | null
@@ -158,7 +160,9 @@ export type Database = {
           cartao_sus?: string | null
           certidao_nascimento?: string | null
           codigo_temp_func?: string | null
+          codigo_temp_func_criado_em?: string | null
           codigo_temp_resp?: string | null
+          codigo_temp_resp_criado_em?: string | null
           cpf?: string | null
           created_at?: string
           dados_matricula?: Json | null
@@ -184,7 +188,9 @@ export type Database = {
           cartao_sus?: string | null
           certidao_nascimento?: string | null
           codigo_temp_func?: string | null
+          codigo_temp_func_criado_em?: string | null
           codigo_temp_resp?: string | null
+          codigo_temp_resp_criado_em?: string | null
           cpf?: string | null
           created_at?: string
           dados_matricula?: Json | null
@@ -438,6 +444,75 @@ export type Database = {
             columns: ["revertido_por"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assinatura: {
+        Row: {
+          aluno_id: string | null
+          arquivo_pdf_url: string | null
+          criado_em: string | null
+          data_funcionario: string | null
+          data_responsavel: string | null
+          dispositivo_funcionario: string | null
+          dispositivo_responsavel: string | null
+          hash_sha256: string
+          id: string
+          ip_funcionario: string | null
+          ip_responsavel: string | null
+          tipo_documento: string
+          token_verificacao: string
+          user_agent_funcionario: string | null
+          user_agent_responsavel: string | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          arquivo_pdf_url?: string | null
+          criado_em?: string | null
+          data_funcionario?: string | null
+          data_responsavel?: string | null
+          dispositivo_funcionario?: string | null
+          dispositivo_responsavel?: string | null
+          hash_sha256: string
+          id?: string
+          ip_funcionario?: string | null
+          ip_responsavel?: string | null
+          tipo_documento?: string
+          token_verificacao: string
+          user_agent_funcionario?: string | null
+          user_agent_responsavel?: string | null
+        }
+        Update: {
+          aluno_id?: string | null
+          arquivo_pdf_url?: string | null
+          criado_em?: string | null
+          data_funcionario?: string | null
+          data_responsavel?: string | null
+          dispositivo_funcionario?: string | null
+          dispositivo_responsavel?: string | null
+          hash_sha256?: string
+          id?: string
+          ip_funcionario?: string | null
+          ip_responsavel?: string | null
+          tipo_documento?: string
+          token_verificacao?: string
+          user_agent_funcionario?: string | null
+          user_agent_responsavel?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinatura_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinatura_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
             referencedColumns: ["id"]
           },
         ]
@@ -703,6 +778,33 @@ export type Database = {
           },
         ]
       }
+      configuracao_notificacoes_niveis: {
+        Row: {
+          cargo_pattern: string | null
+          created_at: string | null
+          enviar_web: boolean | null
+          id: string
+          nivel: number | null
+          tipo_notificacao: string
+        }
+        Insert: {
+          cargo_pattern?: string | null
+          created_at?: string | null
+          enviar_web?: boolean | null
+          id?: string
+          nivel?: number | null
+          tipo_notificacao: string
+        }
+        Update: {
+          cargo_pattern?: string | null
+          created_at?: string | null
+          enviar_web?: boolean | null
+          id?: string
+          nivel?: number | null
+          tipo_notificacao?: string
+        }
+        Relationships: []
+      }
       dispositivos: {
         Row: {
           created_at: string | null
@@ -959,6 +1061,7 @@ export type Database = {
           altas_habilidades: boolean | null
           area_diferenciada: string | null
           area_residencia: string | null
+          assinatura_url: string | null
           auth_user_id: string | null
           bairro: string | null
           cargo: string | null
@@ -977,7 +1080,6 @@ export type Database = {
           doc_cpf_url: string | null
           doc_curso_superior_url: string | null
           doc_doutorado_url: string | null
-          assinatura_url: string | null
           doc_ensino_fundamental_url: string | null
           doc_ensino_medio_url: string | null
           doc_identidade_url: string | null
@@ -1037,6 +1139,7 @@ export type Database = {
           altas_habilidades?: boolean | null
           area_diferenciada?: string | null
           area_residencia?: string | null
+          assinatura_url?: string | null
           auth_user_id?: string | null
           bairro?: string | null
           cargo?: string | null
@@ -1055,7 +1158,6 @@ export type Database = {
           doc_cpf_url?: string | null
           doc_curso_superior_url?: string | null
           doc_doutorado_url?: string | null
-          assinatura_url?: string | null
           doc_ensino_fundamental_url?: string | null
           doc_ensino_medio_url?: string | null
           doc_identidade_url?: string | null
@@ -1115,6 +1217,7 @@ export type Database = {
           altas_habilidades?: boolean | null
           area_diferenciada?: string | null
           area_residencia?: string | null
+          assinatura_url?: string | null
           auth_user_id?: string | null
           bairro?: string | null
           cargo?: string | null
@@ -1133,7 +1236,6 @@ export type Database = {
           doc_cpf_url?: string | null
           doc_curso_superior_url?: string | null
           doc_doutorado_url?: string | null
-          assinatura_url?: string | null
           doc_ensino_fundamental_url?: string | null
           doc_ensino_medio_url?: string | null
           doc_identidade_url?: string | null
@@ -1385,65 +1487,6 @@ export type Database = {
             referencedRelation: "turmas_ativas"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      recuperacoes_finais: {
-        Row: {
-          aluno_id: string
-          created_at: string
-          escola_id: string
-          id: string
-          materia_id: string
-          nota: number
-          turma_id: string
-        }
-        Insert: {
-          aluno_id: string
-          created_at?: string
-          escola_id: string
-          id?: string
-          materia_id: string
-          nota: number
-          turma_id: string
-        }
-        Update: {
-          aluno_id?: string
-          created_at?: string
-          escola_id?: string
-          id?: string
-          materia_id?: string
-          nota?: number
-          turma_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "recuperacoes_finais_aluno_id_fkey"
-            columns: ["aluno_id"]
-            isOneToOne: false
-            referencedRelation: "alunos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recuperacoes_finais_escola_id_fkey"
-            columns: ["escola_id"]
-            isOneToOne: false
-            referencedRelation: "escolas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recuperacoes_finais_materia_id_fkey"
-            columns: ["materia_id"]
-            isOneToOne: false
-            referencedRelation: "materias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recuperacoes_finais_turma_id_fkey"
-            columns: ["turma_id"]
-            isOneToOne: false
-            referencedRelation: "turmas"
-            referencedColumns: ["id"]
-          }
         ]
       }
       notifications: {
@@ -1730,6 +1773,111 @@ export type Database = {
           },
         ]
       }
+      prazos_unidades: {
+        Row: {
+          created_at: string | null
+          data_limite: string
+          escola_id: string | null
+          id: string
+          unidade: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_limite: string
+          escola_id?: string | null
+          id?: string
+          unidade: number
+        }
+        Update: {
+          created_at?: string | null
+          data_limite?: string
+          escola_id?: string | null
+          id?: string
+          unidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prazos_unidades_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recuperacoes_finais: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          escola_id: string
+          id: string
+          materia_id: string
+          nota: number
+          turma_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          escola_id: string
+          id?: string
+          materia_id: string
+          nota: number
+          turma_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          escola_id?: string
+          id?: string
+          materia_id?: string
+          nota?: number
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recuperacoes_finais_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperacoes_finais_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registros_ronda: {
         Row: {
           foto_url: string | null
@@ -1887,6 +2035,85 @@ export type Database = {
             columns: ["veiculo_id"]
             isOneToOne: false
             referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitacoes_edicao_aluno: {
+        Row: {
+          aluno_id: string | null
+          aprovado_por: string | null
+          criado_em: string | null
+          id: string
+          justificativa: string
+          justificativa_resposta: string | null
+          respondido_em: string | null
+          solicitante_id: string | null
+          status: string
+        }
+        Insert: {
+          aluno_id?: string | null
+          aprovado_por?: string | null
+          criado_em?: string | null
+          id?: string
+          justificativa: string
+          justificativa_resposta?: string | null
+          respondido_em?: string | null
+          solicitante_id?: string | null
+          status?: string
+        }
+        Update: {
+          aluno_id?: string | null
+          aprovado_por?: string | null
+          criado_em?: string | null
+          id?: string
+          justificativa?: string
+          justificativa_resposta?: string | null
+          respondido_em?: string | null
+          solicitante_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_edicao_aluno_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
         ]
@@ -2084,6 +2311,114 @@ export type Database = {
           },
           {
             foreignKeyName: "transferencias_alunos_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transferencias_funcionarios: {
+        Row: {
+          arquivos_anexos: Json | null
+          created_at: string | null
+          escola_destino_id: string | null
+          escola_origem_id: string
+          ficha_snapshot: Json | null
+          fora_da_rede: boolean | null
+          funcionario_id: string
+          id: string
+          motivo: string | null
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta_texto: string | null
+          solicitante_id: string | null
+          status: string | null
+        }
+        Insert: {
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_destino_id?: string | null
+          escola_origem_id: string
+          ficha_snapshot?: Json | null
+          fora_da_rede?: boolean | null
+          funcionario_id: string
+          id?: string
+          motivo?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_texto?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          arquivos_anexos?: Json | null
+          created_at?: string | null
+          escola_destino_id?: string | null
+          escola_origem_id?: string
+          ficha_snapshot?: Json | null
+          fora_da_rede?: boolean | null
+          funcionario_id?: string
+          id?: string
+          motivo?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_texto?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_funcionarios_escola_destino_id_fkey"
+            columns: ["escola_destino_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_escola_origem_id_fkey"
+            columns: ["escola_origem_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_solicitante_id_fkey"
             columns: ["solicitante_id"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
