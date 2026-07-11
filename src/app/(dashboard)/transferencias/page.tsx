@@ -497,7 +497,7 @@ function TransferenciasContent() {
               className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white font-semibold gap-2 h-11 px-4 rounded-xl shadow-md border-none cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Solicitar {activeTab === 'alunos' ? 'Aluno' : 'Funcionário'}</span>
+              <span>Nova Transferência</span>
             </Button>
           )}
         </div>
