@@ -21,14 +21,14 @@ export default function HistoricoNotificacoesPage() {
   const [loading, setLoading] = useState(false)
 
   const loadNotificacoes = async () => {
-    if (!funcionario?.auth_user_id) return
+    if (!funcionario?.id) return
     setLoading(true)
     const supabase = createClient()
     
     let query = supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', funcionario.auth_user_id)
+      .eq('user_id', funcionario.id)
       .order('created_at', { ascending: false })
 
     if (status === 'nao_lidas') query = query.eq('read', false)
@@ -42,14 +42,20 @@ export default function HistoricoNotificacoesPage() {
       query = query.or(`title.ilike.%${busca}%,message.ilike.%${busca}%`)
     }
 
-    const { data } = await query
-    if (data) setNotificacoes(data)
-    setLoading(false)
+    try {
+      const { data, error } = await query
+      if (error) throw error
+      if (data) setNotificacoes(data)
+    } catch (error) {
+      console.error('Erro ao carregar histórico de notificações:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
     loadNotificacoes()
-  }, [funcionario?.auth_user_id, status, dataInicio, dataFim, busca])
+  }, [funcionario?.id, status, dataInicio, dataFim, busca])
 
   const limparFiltros = () => {
     setDataInicio('')

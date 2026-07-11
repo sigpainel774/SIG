@@ -11,6 +11,7 @@ import { Bell, History, Circle, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
+import { toast } from 'sonner'
 
 interface ModalNotificacoesProps {
   open?: boolean
@@ -24,32 +25,43 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
   const [notificacoes, setNotificacoes] = useState<any[]>([])
 
   const loadNotificacoes = async () => {
-    if (!funcionario?.auth_user_id) return
+    if (!funcionario?.id) return
     const supabase = createClient()
     
     let query = supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', funcionario.auth_user_id)
+      .eq('user_id', funcionario.id)
       .order('created_at', { ascending: false })
       .limit(10)
 
     if (filtro === 'nao_lidas') query = query.eq('read', false)
     if (filtro === 'transferencias') query = query.eq('type', 'transferencia')
 
-    const { data } = await query
-    if (data) setNotificacoes(data)
+    try {
+      const { data, error } = await query
+      if (error) throw error
+      if (data) setNotificacoes(data)
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error)
+    }
   }
 
   useEffect(() => {
     if (open) loadNotificacoes()
-  }, [open, filtro, funcionario?.auth_user_id])
+  }, [open, filtro, funcionario?.id])
 
   const markAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).eq('id', id)
-    loadNotificacoes()
+    try {
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id)
+      if (error) throw error
+      loadNotificacoes()
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error)
+      toast.error('Erro ao atualizar notificação.')
+    }
   }
 
   const handleOpenChange = (val: boolean) => {
