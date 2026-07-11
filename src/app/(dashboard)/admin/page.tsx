@@ -30,7 +30,8 @@ import {
   AlertTriangle, 
   Bus,
   ArchiveRestore,
-  Gauge
+  Gauge,
+  TrendingUp
 } from 'lucide-react'
 
 interface QuickShortcut {
@@ -153,6 +154,13 @@ export default function AdminHubPage() {
       icon: BarChart3,
       iconColor: 'text-emerald-400',
       path: '/relatorios',
+    },
+    {
+      title: 'Indicadores',
+      subtitle: 'Prazos e pendências',
+      icon: TrendingUp,
+      iconColor: 'text-purple-400',
+      path: '/admin/indicadores',
     },
     {
       title: 'Configurações',
