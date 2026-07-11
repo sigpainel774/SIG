@@ -19,7 +19,8 @@ import {
   Pin,
   Lock,
   FileCheck,
-  QrCode
+  QrCode,
+  Archive
 } from 'lucide-react'
 import { ModalReport } from '@/components/modals/modal-report'
 
@@ -191,6 +192,40 @@ const diretrizes = [
           <li><strong>Superadmins:</strong> Permissão nativa e irrestrita para gerenciar posts.</li>
           <li><strong>Outros Níveis (1 a 6):</strong> Podem publicar comunicados apenas se o interruptor <strong>pode_mural</strong> estiver marcado como ativado nas permissões do usuário no sistema.</li>
         </ul>
+      </div>
+    )
+  },
+  {
+    id: 'd13_transf_arq',
+    icon: ArrowLeftRight,
+    titulo: 'Fluxo de Transferências e Arquivo Escolar',
+    conteudo: (
+      <div className="space-y-4">
+        <p>O sistema conta com um módulo unificado para gerenciar o fluxo de movimentação de estudantes e pessoal, bem como seu arquivamento histórico:</p>
+        
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">1. Central de Transferências</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Acessível pela página inicial da escola, permite solicitar e aprovar transferências de <strong>Alunos</strong> e <strong>Funcionários</strong>. É subdividida em:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
+          <li><strong>Recebimentos:</strong> Triagem de pedidos pendentes vindos de outras escolas. O Diretor pode avaliar, aceitar ou rejeitar (fornecendo justificativa).</li>
+          <li><strong>Submissões:</strong> Pedidos enviados pela sua escola para outras unidades ou para fora da rede.</li>
+          <li><strong>Histórico Geral:</strong> Registro de todas as movimentações passadas concluídas na unidade.</li>
+        </ul>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Arquivologia Histórica Automática</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Para cumprir as normas de arquivologia pública, no momento em que uma transferência é **aceita**:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
+          <li>A ficha ativa do aluno ou funcionário migra eletronicamente para a escola de destino (mudando seu vínculo ativo).</li>
+          <li>Uma **cópia estática (snapshot)** da ficha completa contendo os dados exatos do momento da transferência é gerada e arquivada na escola de origem, sob o status <code>TRANSFERIDO</code>.</li>
+        </ul>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">3. Arquivo Escolar</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          O módulo **Arquivo** na Home da escola permite pesquisar e inspecionar a ficha cadastral histórica de qualquer aluno ou funcionário que tenha sido desvinculado, arquivado ou transferido daquela escola.
+        </p>
       </div>
     )
   }
