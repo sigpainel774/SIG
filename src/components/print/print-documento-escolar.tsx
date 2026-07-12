@@ -331,9 +331,24 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
           .print-portal-container {
             display: block !important;
             background: white !important;
-            position: static !important;
-            overflow: visible !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
             height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 10mm 15mm;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .print-hidden {
             display: none !important;
@@ -381,7 +396,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
 
       {/* Folha A4 */}
       <div
-        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-12 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none flex flex-col justify-between my-auto border border-gray-300 print:border-none print:m-0"
+        className="bg-white text-black w-full max-w-[800px] min-h-[1050px] p-8 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none flex flex-col justify-between my-auto border border-gray-300 print:border-none print:m-0"
         style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
       >
         <div>
@@ -411,7 +426,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
           </div>
 
           {/* Sub-Cabeçalho com Logo da Escola (Se Houver) */}
-          <div className="flex flex-col items-center text-center space-y-2 mb-12">
+          <div className="flex flex-col items-center text-center space-y-2 mb-6">
             {escolaLogoUrl && (
               <img
                 src={getCacheBustedUrl(escolaLogoUrl)}
@@ -426,19 +441,19 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
           </div>
 
           {/* Título do Documento */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-6">
             <h2 className="text-[15px] font-black uppercase text-gray-900 tracking-widest underline decoration-2 underline-offset-4">
               {getDocumentTitle()}
             </h2>
           </div>
 
           {/* Corpo do Documento */}
-          <div className="px-6 mb-16">
+          <div className="px-6 mb-6">
             {renderDocumentContent()}
           </div>
 
           {/* Local e Data */}
-          <div className="px-6 mb-24 text-right text-sm font-semibold text-gray-900">
+          <div className="px-6 mb-10 text-right text-sm font-semibold text-gray-900">
             {dataPorExtenso}
           </div>
         </div>
