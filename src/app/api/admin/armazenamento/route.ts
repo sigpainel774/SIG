@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
 
 // Interface para representar as informações do arquivo mapeado
 interface MappedFile {
@@ -44,18 +43,7 @@ async function getAuthenticatedSuperadmin() {
   return funcionario
 }
 
-// 2. Inicializar o cliente Supabase administrativo apontando para o schema de 'storage'
-const supabaseStorageAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-  {
-    db: { schema: 'storage' },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
+// 2. Acesso ao storage via RPC no banco de dados (já que o schema 'storage' não é exposto via API)
 
 export async function GET(req: NextRequest) {
   try {
@@ -74,10 +62,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Erro ao buscar escolas: ${escolasErr.message}` }, { status: 500 })
     }
 
-    // C. Buscar metadados de arquivos na tabela storage.objects
-    const { data: objects, error: objectsErr } = await supabaseStorageAdmin
-      .from('objects')
-      .select('id, bucket_id, name, metadata, created_at')
+    // C. Buscar metadados de arquivos na tabela storage.objects via RPC (já que o schema 'storage' não é exposto via API)
+    const { data: objects, error: objectsErr } = await (supabaseAdmin as any)
+      .rpc('get_storage_objects') as { data: any[] | null; error: any }
     
     if (objectsErr) {
       return NextResponse.json({ error: `Erro ao buscar objetos de storage: ${objectsErr.message}` }, { status: 500 })
