@@ -895,20 +895,54 @@ export default function FuncionariosPage() {
   }
 
   const handleImprimirLista = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+    const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png?t=${Date.now()}`
+    const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg?t=${Date.now()}`
+
+    // Gera as iniciais (2 letras) do nome
+    const getInitialsLocal = (nome: string): string => {
+      const parts = nome.trim().split(' ').filter(Boolean)
+      if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+
+    // Paleta de cores para avatar baseada no nome
+    const PALETTES = [
+      { bg: '#1a3a5c', text: '#60a5fa' },
+      { bg: '#1a2e1a', text: '#4ade80' },
+      { bg: '#3a1a1a', text: '#f87171' },
+      { bg: '#2e1a3a', text: '#c084fc' },
+      { bg: '#3a2e1a', text: '#fbbf24' },
+      { bg: '#1a3a3a', text: '#34d399' },
+    ]
+    const getPalette = (nome: string) => {
+      let hash = 0
+      for (let i = 0; i < nome.length; i++) hash = nome.charCodeAt(i) + ((hash << 5) - hash)
+      return PALETTES[Math.abs(hash) % PALETTES.length]
+    }
+
     const linhas = funcsFiltrados
-      .map(
-        (f) =>
-          `<tr>
-            <td>${f.nome}</td>
-            <td>${f.cargo ?? '—'}</td>
-            <td>${f.status}</td>
-            <td>${f.orgao ?? '—'}</td>
-            <td>${formatarData(f.data_nascimento)}</td>
-          </tr>`
-      )
+      .map((f) => {
+        const initials = getInitialsLocal(f.nome)
+        const palette = getPalette(f.nome)
+        const fotoCell = f.foto_url
+          ? `<img src="${f.foto_url}?t=${Date.now()}" class="foto-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+             <div class="foto-initials" style="display:none; background:${palette.bg}; color:${palette.text};">${initials}</div>`
+          : `<div class="foto-initials" style="background:${palette.bg}; color:${palette.text};">${initials}</div>`
+
+        const statusClass = f.status === 'ativo' ? 'status-ativo' : f.status === 'afastado' ? 'status-afastado' : 'status-outro'
+        return `<tr>
+          <td class="td-foto"><div class="foto-wrap">${fotoCell}</div></td>
+          <td class="td-nome"><span class="nome-text">${f.nome}</span></td>
+          <td>${f.cargo ?? '—'}</td>
+          <td><span class="status-badge ${statusClass}">${f.status}</span></td>
+          <td>${f.orgao ?? '—'}</td>
+          <td>${formatarData(f.data_nascimento)}</td>
+        </tr>`
+      })
       .join('')
 
-    const win = window.open('', '_blank', 'width=900,height=700')
+    const win = window.open('', '_blank', 'width=1000,height=800')
     if (!win) return
     win.document.write(`
       <!DOCTYPE html>
@@ -916,28 +950,197 @@ export default function FuncionariosPage() {
         <head>
           <title>Lista de Funcionários</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 24px; }
-            h1 { font-size: 18px; }
-            table { width: 100%; border-collapse: collapse; font-size: 13px; }
-            th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
-            th { background: #f0f0f0; font-weight: bold; }
+            @page { size: A4 landscape; margin: 10mm 12mm; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: Arial, sans-serif;
+              color: #111;
+              background: #fff;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+
+            /* ── Cabeçalho ── */
+            .doc-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border-bottom: 3px solid #1a3a5c;
+              padding-bottom: 10px;
+              margin-bottom: 14px;
+            }
+            .doc-logo {
+              width: 70px;
+              height: 60px;
+              object-fit: contain;
+            }
+            .doc-title-block {
+              flex: 1;
+              text-align: center;
+              padding: 0 16px;
+            }
+            .doc-title-pref {
+              font-size: 10px;
+              font-weight: bold;
+              letter-spacing: 0.6px;
+              text-transform: uppercase;
+              color: #1a3a5c;
+            }
+            .doc-title-sec {
+              font-size: 9px;
+              color: #555;
+              margin-top: 1px;
+            }
+            .doc-title-main {
+              font-size: 15px;
+              font-weight: 900;
+              letter-spacing: 1px;
+              text-transform: uppercase;
+              color: #1a3a5c;
+              margin-top: 3px;
+            }
+            .doc-meta {
+              font-size: 8px;
+              color: #888;
+              margin-top: 2px;
+            }
+
+            /* ── Tabela ── */
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            thead tr {
+              background: #1a3a5c;
+              color: #fff;
+            }
+            thead th {
+              padding: 6px 8px;
+              text-align: left;
+              font-size: 9.5px;
+              font-weight: bold;
+              letter-spacing: 0.4px;
+              text-transform: uppercase;
+            }
+            tbody tr {
+              border-bottom: 1px solid #dde3f0;
+            }
+            tbody tr:nth-child(even) {
+              background: #f4f6fb;
+            }
+            tbody tr:hover {
+              background: #e8edf8;
+            }
+            td {
+              padding: 5px 8px;
+              vertical-align: middle;
+            }
+
+            /* ── Foto 3×4 ── */
+            .td-foto {
+              width: 44px;
+              padding: 4px 6px;
+            }
+            .foto-wrap {
+              width: 34px;
+              height: 45px;
+              border: 1px solid #bbb;
+              border-radius: 3px;
+              overflow: hidden;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #f0f0f0;
+            }
+            .foto-img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              display: block;
+            }
+            .foto-initials {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 100%;
+              height: 100%;
+              font-size: 13px;
+              font-weight: 900;
+              letter-spacing: -0.5px;
+            }
+
+            /* ── Nome ── */
+            .td-nome { font-weight: bold; }
+            .nome-text { font-size: 11px; }
+
+            /* ── Status badge ── */
+            .status-badge {
+              display: inline-block;
+              padding: 2px 7px;
+              border-radius: 10px;
+              font-size: 9px;
+              font-weight: bold;
+              text-transform: capitalize;
+            }
+            .status-ativo   { background: #d1fae5; color: #065f46; }
+            .status-afastado { background: #fef3c7; color: #92400e; }
+            .status-outro   { background: #fee2e2; color: #991b1b; }
+
+            /* ── Rodapé ── */
+            .doc-footer {
+              margin-top: 14px;
+              display: flex;
+              justify-content: space-between;
+              font-size: 8px;
+              color: #888;
+              border-top: 1px solid #ddd;
+              padding-top: 5px;
+            }
           </style>
+          <script>
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 600);
+            };
+          </script>
         </head>
         <body>
-          <h1>Lista de Funcionários</h1>
+          <!-- Cabeçalho -->
+          <div class="doc-header">
+            <img src="${logoPrefeituraUrl}" class="doc-logo" alt="Logo Prefeitura" onerror="this.style.visibility='hidden'" />
+            <div class="doc-title-block">
+              <div class="doc-title-pref">Prefeitura Municipal de Sapeaçu</div>
+              <div class="doc-title-sec">Secretaria Municipal de Educação</div>
+              <div class="doc-title-main">Lista de Funcionários</div>
+              <div class="doc-meta">Emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · Total: ${funcsFiltrados.length} funcionário(s)</div>
+            </div>
+            <img src="${logoSecretariaUrl}" class="doc-logo" alt="Logo Secretaria" onerror="this.style.visibility='hidden'" />
+          </div>
+
+          <!-- Tabela -->
           <table>
             <thead>
               <tr>
-                <th>Nome</th><th>Cargo</th><th>Status</th><th>Órgão</th><th>Nascimento</th>
+                <th style="width:44px;">Foto</th>
+                <th>Nome</th>
+                <th>Cargo / Função</th>
+                <th>Status</th>
+                <th>Unidade Escolar</th>
+                <th>Nascimento</th>
               </tr>
             </thead>
             <tbody>${linhas}</tbody>
           </table>
+
+          <!-- Rodapé -->
+          <div class="doc-footer">
+            <span>SIG Sapeaçu · Secretaria Municipal de Educação</span>
+            <span>Lista de Funcionários · Documento gerado automaticamente pelo sistema</span>
+          </div>
         </body>
       </html>
     `)
     win.document.close()
-    win.print()
   }
 
   /* ── Render ─────────────────────────────────────────────────── */
