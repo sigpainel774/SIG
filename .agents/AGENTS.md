@@ -131,6 +131,7 @@
   Isso evita que o layout de fundo da aplicação (sidebar, dashboards, etc) gere páginas em branco extras ou desalinhe a impressão.
 - **Resolução de Informações do Banco em Impressões**: Nunca confie apenas nas informações estáticas salvas no registro principal (como dados de alunos ou funcionários) para campos de relacionamento (escola, cargo, turma). Se estiverem ausentes no registro, realize uma busca ativa direta no Supabase usando o `escola_id`, `turma_id` ou `funcionario_id` no componente de impressão para exibir o nome correto.
 - **Parsing de Padrões de Turma**: Na rede municipal, as turmas são cadastradas sob o padrão `"Ano - Letra"` ou `"Ano° Letra"` (ex: `"6 - A"`, `"6° A"`). Ao exibir em campos que separam "Ano" e "Turma", utilize expressões regulares para extrair o Ano (primeira parte formatada como ordinal, ex: `"6º ANO"`) e a Letra da Turma (segunda parte, ex: `"A"`).
+- **Sintonia e Tamanho das Logos**: Em cabeçalhos de visualização de impressão e documentos oficiais, os dois logotipos posicionados nas extremidades superiores (Prefeitura e Secretaria/Escola) devem sempre possuir o mesmo tamanho físico (geralmente definidos com a mesma classe de altura como `doc-header-logo-prefeitura`) para manter a harmonia visual e o equilíbrio estético.
 <!-- END:print-view-best-practices -->
 
 <!-- BEGIN:supabase-storage-caching-rules -->
