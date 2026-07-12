@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { cn } from '@/lib/utils'
 import {
   Users,
   BookOpen,
@@ -68,6 +69,23 @@ export function ModalDetalhesTurma({
   const [novaMateriaNome, setNovaMateriaNome] = useState('')
   const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
   const [novaMateriaBaseCurricular, setNovaMateriaBaseCurricular] = useState('comum')
+  const [catalogoMaterias, setCatalogoMaterias] = useState<any[]>([])
+
+  const fetchCatalogoMaterias = async () => {
+    if (!escolaAtivaId) return
+    try {
+      const { data, error } = await supabase
+        .from('grade_curricular_escola')
+        .select('*')
+        .eq('escola_id', escolaAtivaId)
+        .order('nome', { ascending: true })
+
+      if (error) throw error
+      setCatalogoMaterias(data || [])
+    } catch (err: any) {
+      console.error('Erro ao buscar catálogo de matérias:', err.message)
+    }
+  }
   
   // Modais de detalhe e impressão
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
@@ -244,6 +262,7 @@ export function ModalDetalhesTurma({
       if (isEditMode) {
         fetchProfessoresEscola()
         fetchVinculosProfessores()
+        fetchCatalogoMaterias()
       }
     }
   }, [open, turma?.id, escolaAtivaId, isEditMode])
@@ -506,6 +525,16 @@ export function ModalDetalhesTurma({
       fetchVinculosProfessores()
     } catch (err: any) {
       toast.error('Erro ao remover professor: ' + err.message)
+    }
+  }
+
+  const handleSelectMateriaCatalogo = (nomeMateria: string) => {
+    setNovaMateriaNome(nomeMateria)
+    const selected = catalogoMaterias.find(m => m.nome === nomeMateria)
+    if (selected) {
+      setNovaMateriaBaseCurricular(selected.base_curricular)
+    } else {
+      setNovaMateriaBaseCurricular('comum')
     }
   }
 
@@ -839,12 +868,22 @@ export function ModalDetalhesTurma({
                       {/* Formulário de Adição (Dashed Container) */}
                       <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <Input
-                            placeholder="Nome da Matéria (Ex: Português...)"
+                          <select
                             value={novaMateriaNome}
-                            onChange={(e) => setNovaMateriaNome(e.target.value)}
-                            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 text-xs"
-                          />
+                            onChange={(e) => handleSelectMateriaCatalogo(e.target.value)}
+                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                          >
+                            <option value="">-- Selecione a Matéria --</option>
+                            {catalogoMaterias.length === 0 ? (
+                              <option value="" disabled>Cadastre matérias nas Configurações</option>
+                            ) : (
+                              catalogoMaterias.map((m) => (
+                                <option key={m.id} value={m.nome}>
+                                  {m.nome}
+                                </option>
+                              ))
+                            )}
+                          </select>
                           <select
                             value={novaMateriaProfId}
                             onChange={(e) => setNovaMateriaProfId(e.target.value)}
@@ -858,14 +897,17 @@ export function ModalDetalhesTurma({
                               </option>
                             ))}
                           </select>
-                          <select
-                            value={novaMateriaBaseCurricular}
-                            onChange={(e) => setNovaMateriaBaseCurricular(e.target.value)}
-                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
-                          >
-                            <option value="comum">Base Comum</option>
-                            <option value="diversificada">Base Diversificada</option>
-                          </select>
+                          <div className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-zinc-400 px-3 h-10 text-xs flex items-center justify-between">
+                            <span>Base:</span>
+                            <span className={cn(
+                              "font-semibold uppercase text-[10px] px-2 py-0.5 rounded border",
+                              novaMateriaBaseCurricular === 'comum'
+                                ? "bg-blue-500/10 border-blue-500/20 text-[#3ea6ff]"
+                                : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                            )}>
+                              {novaMateriaBaseCurricular === 'comum' ? 'Comum' : 'Diversificada'}
+                            </span>
+                          </div>
                         </div>
                         <Button
                           onClick={handleAddMateria}
