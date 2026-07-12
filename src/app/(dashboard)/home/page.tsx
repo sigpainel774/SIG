@@ -15,7 +15,8 @@ import {
   Users,
   CheckCircle2,
   Clock,
-  Printer
+  Printer,
+  Loader2
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -234,6 +235,20 @@ export default function HomePage() {
     }
   }, [selectedEscola?.id, fetchKpis])
 
+  // Auto-seleção de escola para usuários não administradores (Diretores, etc.)
+  useEffect(() => {
+    if (!isAdmin && escolas.length > 0) {
+      const acessoEscolar = acessos.find(a => a.nivel && a.nivel >= 2 && a.nivel <= 6 && a.ativo)
+      const targetId = acessoEscolar?.escola_id || escolaAtivaId
+      if (targetId) {
+        const escola = escolas.find(e => e.id === targetId)
+        if (escola && selectedEscola?.id !== escola.id) {
+          setSelectedEscola(escola)
+        }
+      }
+    }
+  }, [isAdmin, escolas, acessos, escolaAtivaId, selectedEscola, setSelectedEscola])
+
   // Determina o nível do usuário na escola selecionada (para exibição de KPIs)
   const nivelNaEscola = selectedEscola
     ? acessos.find(a => a.escola_id === selectedEscola.id)?.nivel ?? 99
@@ -259,51 +274,60 @@ export default function HomePage() {
               <span>{selectedEscola.nome}</span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedEscola(null)}
-            className="text-muted-foreground hover:text-foreground gap-1"
-          >
-            <X className="w-4 h-4" /> Trocar Escola
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedEscola(null)}
+              className="text-muted-foreground hover:text-foreground gap-1"
+            >
+              <X className="w-4 h-4" /> Trocar Escola
+            </Button>
+          )}
         </div>
       )}
 
       {/* ── VISÃO 1: SELEÇÃO DE ESCOLA ── */}
       {!selectedEscola ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
-              Selecione uma Escola
-            </h1>
-            <p className="text-sm text-muted-foreground hidden md:block">
-              Clique em uma escola para acessar o painel
-            </p>
+        !isAdmin ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
+            <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
+            <p className="text-sm text-muted-foreground">Carregando painel da escola...</p>
           </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+                <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
+                Selecione uma Escola
+              </h1>
+              <p className="text-sm text-muted-foreground hidden md:block">
+                Clique em uma escola para acessar o painel
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-            {escolas.map((escola) => (
-              <Card
-                key={escola.id}
-                onClick={() => setSelectedEscola(escola)}
-                className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl"
-              >
-                <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                  {escola.logo_url ? (
-                    <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
-                  ) : (
-                    <Building2 className="w-8 h-8" />
-                  )}
-                </div>
-                <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
-                  {escola.nome}
-                </h3>
-              </Card>
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+              {escolas.map((escola) => (
+                <Card
+                  key={escola.id}
+                  onClick={() => setSelectedEscola(escola)}
+                  className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl"
+                >
+                  <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                    {escola.logo_url ? (
+                      <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="w-8 h-8" />
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
+                    {escola.nome}
+                  </h3>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )
       ) : (
         /* ── VISÃO 2: DASHBOARD DE KPIs DA ESCOLA ── */
         <div className="space-y-6 animate-in fade-in duration-300">

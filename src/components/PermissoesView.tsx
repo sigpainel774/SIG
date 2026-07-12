@@ -74,9 +74,10 @@ const nivelColor = (nivel: string) => {
 
 export function PermissoesView({ onBack }: { onBack?: () => void }) {
   const { isEditMode, setEditMode } = useEditModeStore()
-  const { funcionario } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
   const pathname = usePathname()
   const autocompleteRef = useRef<HTMLDivElement>(null)
+  const isGlobalAdmin = isAdminGlobalOrRoot()
 
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false)
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
@@ -167,6 +168,13 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
 
     fetchAll()
   }, [])
+
+  // Auto-seleção de escola para usuários não-admins globais (ex: diretores)
+  useEffect(() => {
+    if (!isGlobalAdmin && escolas.length > 0 && !escolaSel) {
+      setEscolaSel(escolas[0].id)
+    }
+  }, [escolas, isGlobalAdmin, escolaSel])
 
   // ─── SuperAdmin check ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -457,7 +465,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
                 onChange={(e) => setEscolaSel(e.target.value)}
                 className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
               >
-                <option value="">Global / Todas as Escolas</option>
+                {isGlobalAdmin && <option value="">Global / Todas as Escolas</option>}
                 {escolas.map((e) => (
                   <option key={e.id} value={e.id}>
                     {e.nome}
