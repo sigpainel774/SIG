@@ -30,7 +30,7 @@ interface ModalAlunoProps {
 
 export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess }: ModalAlunoProps) {
   const { isEditMode } = useEditModeStore()
-  const { funcionario } = useAuthStore()
+  const { funcionario, escolaAtivaId } = useAuthStore()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [turmas, setTurmas] = useState<any[]>([])
@@ -213,138 +213,201 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   }, [])
 
   useEffect(() => {
-    if (alunoEditar) {
-      const dm = alunoEditar.dados_matricula || {}
-      setNome(alunoEditar.nome || '')
-      setCpf(alunoEditar.cpf || dm.cpfAluno || '')
-      setCenso(alunoEditar.inep || dm.censoAluno || '')
-      setTelefone(alunoEditar.telefone || dm.telefoneAluno || '')
-      setNascimento(alunoEditar.data_nascimento || dm.nascimentoAluno || '')
-      setFotoUrl(alunoEditar.foto_url || '')
-      setEscolaId(alunoEditar.escola_id || '')
-      setTurmaId(alunoEditar.turma_id || '')
-      setRg(alunoEditar.rg || dm.rgAluno || '')
-      setNis(alunoEditar.nis || dm.nisAluno || '')
-      setSus(alunoEditar.cartao_sus || dm.susAluno || '')
-      setCertidao(alunoEditar.certidao_nascimento || dm.certidaoAluno || '')
-      setMae(alunoEditar.nome_mae || dm.maeAluno || '')
-      setPai(alunoEditar.nome_pai || dm.paiAluno || '')
-      setEndereco(alunoEditar.endereco || dm.enderecoAluno || '')
-      setSerie(alunoEditar.serie || dm.serieAluno || '')
+    if (activeOpen) {
+      if (alunoEditar) {
+        const dm = alunoEditar.dados_matricula || {}
+        setNome(alunoEditar.nome || '')
+        setCpf(alunoEditar.cpf || dm.cpfAluno || '')
+        setCenso(alunoEditar.inep || dm.censoAluno || '')
+        setTelefone(alunoEditar.telefone || dm.telefoneAluno || '')
+        setNascimento(alunoEditar.data_nascimento || dm.nascimentoAluno || '')
+        setFotoUrl(alunoEditar.foto_url || '')
+        setEscolaId(alunoEditar.escola_id || '')
+        setTurmaId(alunoEditar.turma_id || '')
+        setRg(alunoEditar.rg || dm.rgAluno || '')
+        setNis(alunoEditar.nis || dm.nisAluno || '')
+        setSus(alunoEditar.cartao_sus || dm.susAluno || '')
+        setCertidao(alunoEditar.certidao_nascimento || dm.certidaoAluno || '')
+        setMae(alunoEditar.nome_mae || dm.maeAluno || '')
+        setPai(alunoEditar.nome_pai || dm.paiAluno || '')
+        setEndereco(alunoEditar.endereco || dm.enderecoAluno || '')
+        setSerie(alunoEditar.serie || dm.serieAluno || '')
 
-      setEstadoCivil(dm.estadoCivilAluno || 'Solteiro')
-      setCorRaca(dm.corRacaAluno || '')
-      setSexo(dm.sexoAluno || '')
-      setNacionalidade(dm.nacionalidadeAluno || 'BRASILEIRA')
-      setCidadeNasc(dm.cidadeNascAluno || '')
-      setUfNasc(dm.ufNascAluno || 'BA')
-      setTelMae(dm.telMaeAluno || '')
-      setTelPai(dm.telPaiAluno || '')
-      setTipoMatricula(dm.tipoMatricula || 'Renovação')
-      setDataMatricula(dm.dataMatricula || new Date().toISOString().split('T')[0])
-      setLocalizacao(dm.localizacaoAluno || 'Zona Urbana')
-      setTurno(dm.turnoAluno || 'Matutino')
-      setTurmaLetra(dm.turmaAluno || '')
-      setTransporte(!!dm.transporteAluno)
-      setRotaTransporte(dm.rotaTransporteAluno || '')
-      setRua(dm.ruaAluno || '')
-      setNumero(dm.numeroAluno || '')
-      setCep(dm.cepAluno || '')
-      setBairro(dm.bairroAluno || '')
-      setCidadeEnd(dm.cidadeEndAluno || 'SAPE AÇU')
-      setUfEnd(dm.ufEndAluno || 'BA')
-      setAreaLocalizacao(dm.areaLocalizacaoAluno || 'Urbana')
-      setAreaDiferenciada(dm.areaDiferenciadaAluno || 'Não está em área diferenciada')
-      setRecursosEspeciais(dm.recursosEspeciaisAluno || 'Não')
-      setRecursosSelecionados(dm.recursosSelecionados || [])
-      setDiabete(dm.diabeteAluno || 'Não')
-      setConvulsoes(dm.convulsoesAluno || 'Não')
-      setAsma(dm.asmaAluno || 'Não')
-      setInfeccoes(dm.infeccoesAluno || 'Não')
-      setRestricaoExercicio(dm.restricaoExercicioAluno || 'Não')
-      setCovid(dm.covidAluno || 'Não')
-      setCovidQuando(dm.covidQuandoAluno || '')
-      setSituacaoVacinalCovid(dm.situacaoVacinalAluno || '')
-      setAlergiaMed(dm.alergiaMedAluno || 'Não')
-      setAlergiaMedQuais(dm.alergiaMedQuaisAluno || '')
-      setMotivoNaoVacinacao(dm.motivoNaoVacinacaoAluno || '')
-      setRestricaoAlimentar(dm.restricaoAlimentarAluno || 'Não')
-      setRestricaoAlimentarQuais(dm.restricaoAlimentarQuaisAluno || '')
-      setSituacaoVacinal(dm.situacaoVacinalGeral || 'Em dia')
-      setRestricoesSaude(dm.restricoesSaudeAluno || '')
-      setNee(dm.neeAluno || 'Não')
-      setNeeSelecionadas(dm.neeSelecionadas || [])
-      setDeficiencia(dm.deficienciaAluno || 'Não')
-      setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
-      setLatitude(alunoEditar.latitude ? Number(alunoEditar.latitude) : null)
-      setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
-      
-      setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
-      const cacheBust = (url: string | null) => {
-        if (!url) return null
-        return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
+        setEstadoCivil(dm.estadoCivilAluno || 'Solteiro')
+        setCorRaca(dm.corRacaAluno || '')
+        setSexo(dm.sexoAluno || '')
+        setNacionalidade(dm.nacionalidadeAluno || 'BRASILEIRA')
+        setCidadeNasc(dm.cidadeNascAluno || '')
+        setUfNasc(dm.ufNascAluno || 'BA')
+        setTelMae(dm.telMaeAluno || '')
+        setTelPai(dm.telPaiAluno || '')
+        setTipoMatricula(dm.tipoMatricula || 'Renovação')
+        setDataMatricula(dm.dataMatricula || new Date().toISOString().split('T')[0])
+        setLocalizacao(dm.localizacaoAluno || 'Zona Urbana')
+        setTurno(dm.turnoAluno || 'Matutino')
+        setTurmaLetra(dm.turmaAluno || '')
+        setTransporte(!!dm.transporteAluno)
+        setRotaTransporte(dm.rotaTransporteAluno || '')
+        setRua(dm.ruaAluno || '')
+        setNumero(dm.numeroAluno || '')
+        setCep(dm.cepAluno || '')
+        setBairro(dm.bairroAluno || '')
+        setCidadeEnd(dm.cidadeEndAluno || 'SAPE AÇU')
+        setUfEnd(dm.ufEndAluno || 'BA')
+        setAreaLocalizacao(dm.areaLocalizacaoAluno || 'Urbana')
+        setAreaDiferenciada(dm.areaDiferenciadaAluno || 'Não está em área diferenciada')
+        setRecursosEspeciais(dm.recursosEspeciaisAluno || 'Não')
+        setRecursosSelecionados(dm.recursosSelecionados || [])
+        setDiabete(dm.diabeteAluno || 'Não')
+        setConvulsoes(dm.convulsoesAluno || 'Não')
+        setAsma(dm.asmaAluno || 'Não')
+        setInfeccoes(dm.infeccoesAluno || 'Não')
+        setRestricaoExercicio(dm.restricaoExercicioAluno || 'Não')
+        setCovid(dm.covidAluno || 'Não')
+        setCovidQuando(dm.covidQuandoAluno || '')
+        setSituacaoVacinalCovid(dm.situacaoVacinalAluno || '')
+        setAlergiaMed(dm.alergiaMedAluno || 'Não')
+        setAlergiaMedQuais(dm.alergiaMedQuaisAluno || '')
+        setMotivoNaoVacinacao(dm.motivoNaoVacinacaoAluno || '')
+        setRestricaoAlimentar(dm.restricaoAlimentarAluno || 'Não')
+        setRestricaoAlimentarQuais(dm.restricaoAlimentarQuaisAluno || '')
+        setSituacaoVacinal(dm.situacaoVacinalGeral || 'Em dia')
+        setRestricoesSaude(dm.restricoesSaudeAluno || '')
+        setNee(dm.neeAluno || 'Não')
+        setNeeSelecionadas(dm.neeSelecionadas || [])
+        setDeficiencia(dm.deficienciaAluno || 'Não')
+        setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
+        setLatitude(alunoEditar.latitude ? Number(alunoEditar.latitude) : null)
+        setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
+        
+        setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
+        const cacheBust = (url: string | null) => {
+          if (!url) return null
+          return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
+        }
+        setAssinaturaResponsavelUrl(cacheBust(dm.assinatura_responsavel_url))
+        setAssinaturaFuncionarioUrl(cacheBust(dm.assinatura_funcionario_url))
+        setNewSignatureResponsavel(null)
+        setNewSignatureFuncionario(null)
+      } else {
+        // Reset completo para cadastrar aluno novo
+        setNome('')
+        setCpf('')
+        setCenso('')
+        setTelefone('')
+        setNascimento('')
+        setFotoUrl('')
+        setEscolaId(escolaAtivaId || '')
+        setTurmaId('')
+        setRg('')
+        setNis('')
+        setSus('')
+        setCertidao('')
+        setMae('')
+        setPai('')
+        setEndereco('')
+        setSerie('')
+        setEstadoCivil('Solteiro')
+        setCorRaca('')
+        setSexo('')
+        setNacionalidade('BRASILEIRA')
+        setCidadeNasc('')
+        setUfNasc('BA')
+        setTelMae('')
+        setTelPai('')
+        setTipoMatricula('Renovação')
+        setDataMatricula(new Date().toISOString().split('T')[0])
+        setLocalizacao('Zona Urbana')
+        setTurno('Matutino')
+        setTurmaLetra('')
+        setTransporte(false)
+        setRotaTransporte('')
+        setRua('')
+        setNumero('')
+        setCep('')
+        setBairro('')
+        setCidadeEnd('SAPE AÇU')
+        setUfEnd('BA')
+        setAreaLocalizacao('Urbana')
+        setAreaDiferenciada('Não está em área diferenciada')
+        setRecursosEspeciais('Não')
+        setRecursosSelecionados([])
+        setDiabete('Não')
+        setConvulsoes('Não')
+        setAsma('Não')
+        setInfeccoes('Não')
+        setRestricaoExercicio('Não')
+        setCovid('Não')
+        setCovidQuando('')
+        setSituacaoVacinalCovid('')
+        setAlergiaMed('Não')
+        setAlergiaMedQuais('')
+        setMotivoNaoVacinacao('')
+        setRestricaoAlimentar('Não')
+        setRestricaoAlimentarQuais('')
+        setSituacaoVacinal('Em dia')
+        setRestricoesSaude('')
+        setNee('Não')
+        setNeeSelecionadas([])
+        setDeficiencia('Não')
+        setDeficienciasSelecionadas([])
+        setLatitude(null)
+        setLongitude(null)
+        setAutorizaImagemVoz('Não')
+        setAssinaturaResponsavelUrl(null)
+        setAssinaturaFuncionarioUrl(null)
+        setNewSignatureResponsavel(null)
+        setNewSignatureFuncionario(null)
       }
-      setAssinaturaResponsavelUrl(cacheBust(dm.assinatura_responsavel_url))
-      setAssinaturaFuncionarioUrl(cacheBust(dm.assinatura_funcionario_url))
-      setNewSignatureResponsavel(null)
-      setNewSignatureFuncionario(null)
-    } else {
-      setLatitude(null)
-      setLongitude(null)
-      setAutorizaImagemVoz('Não')
-      setAssinaturaResponsavelUrl(null)
-      setAssinaturaFuncionarioUrl(null)
-      setNewSignatureResponsavel(null)
-      setNewSignatureFuncionario(null)
-    }
 
-    // Limpar qualquer polling rodando ao trocar ou recarregar
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-    }
-    setCelularSigningCode(null)
-    setCelularSigningField(null)
-    setSolicitandoLibere(false)
-    setJustificativaSolicitacao('')
-
-    // Checar se há solicitações e se a edição está liberada
-    const checarStatusLiberacao = async () => {
-      if (!alunoEditar?.id) {
-        setIsEdicaoLiberada(false)
-        setSolicitacaoPendente(false)
-        return
+      // Limpar qualquer polling rodando ao trocar ou recarregar
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
       }
-      const supabase = createClient()
-      const { data: rawSol } = await (supabase
-        .from('solicitacoes_edicao_aluno' as any) as any)
-        .select('*')
-        .eq('aluno_id', alunoEditar.id)
-        .order('criado_em', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      const sol = rawSol as any
+      setCelularSigningCode(null)
+      setCelularSigningField(null)
+      setSolicitandoLibere(false)
+      setJustificativaSolicitacao('')
 
-      if (sol) {
-        if (sol.status === 'aprovado') {
-          setIsEdicaoLiberada(true)
-          setSolicitacaoPendente(false)
-        } else if (sol.status === 'pendente') {
+      // Checar se há solicitações e se a edição está liberada
+      const checarStatusLiberacao = async () => {
+        if (!alunoEditar?.id) {
           setIsEdicaoLiberada(false)
-          setSolicitacaoPendente(true)
-          setJustificativaPendente(sol.justificativa)
+          setSolicitacaoPendente(false)
+          return
+        }
+        const supabase = createClient()
+        const { data: rawSol } = await (supabase
+          .from('solicitacoes_edicao_aluno' as any) as any)
+          .select('*')
+          .eq('aluno_id', alunoEditar.id)
+          .order('criado_em', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        const sol = rawSol as any
+
+        if (sol) {
+          if (sol.status === 'aprovado') {
+            setIsEdicaoLiberada(true)
+            setSolicitacaoPendente(false)
+          } else if (sol.status === 'pendente') {
+            setIsEdicaoLiberada(false)
+            setSolicitacaoPendente(true)
+            setJustificativaPendente(sol.justificativa)
+          } else {
+            setIsEdicaoLiberada(false)
+            setSolicitacaoPendente(false)
+          }
         } else {
           setIsEdicaoLiberada(false)
           setSolicitacaoPendente(false)
         }
-      } else {
-        setIsEdicaoLiberada(false)
-        setSolicitacaoPendente(false)
       }
-    }
 
-    checarStatusLiberacao()
-  }, [alunoEditar])
+      checarStatusLiberacao()
+    }
+  }, [activeOpen, alunoEditar, escolaAtivaId])
 
   const carregarDadosIniciais = async () => {
     const supabase = createClient()
