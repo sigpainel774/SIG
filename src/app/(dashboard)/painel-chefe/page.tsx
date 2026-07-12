@@ -39,15 +39,42 @@ export default function PainelChefePage() {
 
   const fetchPainelData = async () => {
     setLoading(true)
+    const isDir = useAuthStore.getState().isDiretor()
+
     const [funcRes, escRes, altRes] = await Promise.all([
-      supabase.from('funcionarios').select('*').order('nome'),
+      supabase.from('funcionarios').select('*, acessos_usuarios(nivel, ativo)').order('nome'),
       (supabase.from as any)('escalas_servico').select('*, funcionarios(nome), escolas(nome)').order('data', { ascending: false }),
       (supabase.from as any)('solicitacoes_rh').select('*, funcionarios(nome)').order('data', { ascending: false })
     ])
     
-    if (funcRes.data) setEquipe(funcRes.data)
-    if (escRes.data) setEscalas(escRes.data)
-    if (altRes.data) setAlertas(altRes.data)
+    if (funcRes.data) {
+      let filteredEquipe = funcRes.data
+      if (isDir) {
+        filteredEquipe = funcRes.data.filter((f: any) => {
+          if (f.is_superadmin) return false
+          if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+          
+          const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
+          if (acessosList.some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)) {
+            return false
+          }
+          return true
+        })
+      }
+      setEquipe(filteredEquipe)
+
+      const equipeIds = new Set(filteredEquipe.map((f: any) => f.id))
+
+      if (escRes.data) {
+        setEscalas(isDir ? escRes.data.filter((e: any) => equipeIds.has(e.funcionario_id)) : escRes.data)
+      }
+      if (altRes.data) {
+        setAlertas(isDir ? altRes.data.filter((a: any) => equipeIds.has(a.funcionario_id)) : altRes.data)
+      }
+    } else {
+      if (escRes.data) setEscalas(escRes.data)
+      if (altRes.data) setAlertas(altRes.data)
+    }
     
     setLoading(false)
   }
