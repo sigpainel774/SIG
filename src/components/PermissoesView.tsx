@@ -131,11 +131,21 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       // 2. Todos os funcionários (para o autocomplete)
       const { data: funcsData } = await supabase
         .from('funcionarios')
-        .select('id, nome, email')
+        .select('id, nome, email, is_superadmin, acessos_usuarios(nivel, ativo)')
         .eq('status', 'ativo')
         .order('nome')
 
-      if (funcsData) setFuncionariosAll(funcsData)
+      if (funcsData) {
+        const filtered = funcsData.filter((f: any) => {
+          if (restringirNivel) {
+            if (f.is_superadmin) return false
+            const acessosList = f.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
+          }
+          return true
+        })
+        setFuncionariosAll(filtered)
+      }
 
       // 3. Registros de permissão com escola vinculada
       const { data: permData } = await supabase
@@ -143,27 +153,35 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
         .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
 
       if (permData) {
-        const formatados: RegistroPermissao[] = permData.map((f: any) => {
-          const acesso = f.acessos_usuarios?.[0]
-          const nivelNum: number | null = acesso?.nivel ?? null
-          let nomeNivel = nivelLabel(nivelNum)
-          if (f.is_superadmin) nomeNivel = 'ROOT'
+        const formatados: RegistroPermissao[] = permData
+          .map((f: any) => {
+            const acesso = f.acessos_usuarios?.[0]
+            const nivelNum: number | null = acesso?.nivel ?? null
+            let nomeNivel = nivelLabel(nivelNum)
+            if (f.is_superadmin) nomeNivel = 'ROOT'
 
-          const school = acesso?.escolas as { nome: string } | null
-          const escolaNome: string = school?.nome ?? 'Sem Lotação'
-          const escolaId: string | null = acesso?.escola_id ?? null
+            const school = acesso?.escolas as { nome: string } | null
+            const escolaNome: string = school?.nome ?? 'Sem Lotação'
+            const escolaId: string | null = acesso?.escola_id ?? null
 
-          return {
-            id: f.id,
-            nome: f.nome,
-            email: f.email ?? f.nome,
-            nivel: nomeNivel,
-            nivelNum,
-            escola: escolaNome,
-            escolaId,
-            status: f.status || 'ativo',
-          }
-        })
+            return {
+              id: f.id,
+              nome: f.nome,
+              email: f.email ?? f.nome,
+              nivel: nomeNivel,
+              nivelNum,
+              escola: escolaNome,
+              escolaId,
+              status: f.status || 'ativo',
+            }
+          })
+          .filter((item) => {
+            if (restringirNivel) {
+              if (item.nivel === 'ROOT') return false
+              if (item.nivelNum !== null && item.nivelNum < 3) return false
+            }
+            return true
+          })
         setRegistros(formatados)
       }
 
@@ -297,22 +315,30 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
         .from('funcionarios')
         .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
       if (permData) {
-        const formatados: RegistroPermissao[] = (permData as any[]).map((f) => {
-          const acesso = f.acessos_usuarios?.[0]
-          const nivelNum2: number | null = acesso?.nivel ?? null
-          let nomeNivel = nivelLabel(nivelNum2)
-          if (f.is_superadmin) nomeNivel = 'ROOT'
-          return {
-            id: f.id,
-            nome: f.nome,
-            email: f.email ?? f.nome,
-            nivel: nomeNivel,
-            nivelNum: nivelNum2,
-            escola: (acesso?.escolas as any)?.nome ?? 'Sem Lotação',
-            escolaId: acesso?.escola_id ?? null,
-            status: f.status || 'ativo',
-          }
-        })
+        const formatados: RegistroPermissao[] = (permData as any[])
+          .map((f) => {
+            const acesso = f.acessos_usuarios?.[0]
+            const nivelNum2: number | null = acesso?.nivel ?? null
+            let nomeNivel = nivelLabel(nivelNum2)
+            if (f.is_superadmin) nomeNivel = 'ROOT'
+            return {
+              id: f.id,
+              nome: f.nome,
+              email: f.email ?? f.nome,
+              nivel: nomeNivel,
+              nivelNum: nivelNum2,
+              escola: (acesso?.escolas as any)?.nome ?? 'Sem Lotação',
+              escolaId: acesso?.escola_id ?? null,
+              status: f.status || 'ativo',
+            }
+          })
+          .filter((item) => {
+            if (restringirNivel) {
+              if (item.nivel === 'ROOT') return false
+              if (item.nivelNum !== null && item.nivelNum < 3) return false
+            }
+            return true
+          })
         setRegistros(formatados)
       }
     }
