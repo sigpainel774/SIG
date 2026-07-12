@@ -86,9 +86,11 @@ function formatarData(iso: string | null | undefined): string {
 
 export default function FuncionariosPage() {
   const supabase = createClient()
-  const { funcionario: authFuncionario, acessos, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario: authFuncionario, acessos, isAdminGlobalOrRoot, isDiretor } = useAuthStore()
   const { isEditMode } = useEditModeStore()
   const isAdmin = isAdminGlobalOrRoot()
+  const isDir = isDiretor()
+  const canManagePermissions = isAdmin || isDir
 
   const [viewMode, setViewMode] = useState<'lista' | 'permissoes'>('lista')
 
@@ -977,7 +979,7 @@ export default function FuncionariosPage() {
       </div>
 
       {/* ── Painel de Ações Rápidas ─────────────────────────── */}
-      <div className={cn("grid grid-cols-1 gap-4 mb-6", isAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+      <div className={cn("grid grid-cols-1 gap-4 mb-6", canManagePermissions ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
         {/* Atestados Médicos */}
         <Link href="/atestados" className="group">
           <div className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom hover:border-emerald-500/30 dark:hover:border-emerald-400/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full">
@@ -1009,7 +1011,7 @@ export default function FuncionariosPage() {
         </div>
 
         {/* Permissões de Acesso */}
-        {isAdmin && (
+        {canManagePermissions && (
           <div
             onClick={() => setViewMode(viewMode === 'lista' ? 'permissoes' : 'lista')}
             className={cn(
