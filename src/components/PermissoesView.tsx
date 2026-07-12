@@ -15,6 +15,7 @@ import {
   UserCheck,
   Building2,
   Shield,
+  ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,7 +72,7 @@ const nivelColor = (nivel: string) => {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function PermissoesView() {
+export function PermissoesView({ onBack }: { onBack?: () => void }) {
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario } = useAuthStore()
   const pathname = usePathname()
@@ -333,14 +334,27 @@ export function PermissoesView() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-            <Shield className="w-8 h-8 text-[#0090ff]" />
-            Permissões
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Gerencie os níveis de acesso de cada funcionário por escola ou órgão.
-          </p>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              onClick={onBack}
+              className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+              <Shield className="w-8 h-8 text-[#0090ff]" />
+              Permissões
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Gerencie os níveis de acesso de cada funcionário por escola ou órgão.
+            </p>
+          </div>
         </div>
 
         {/* Botões de alternância */}

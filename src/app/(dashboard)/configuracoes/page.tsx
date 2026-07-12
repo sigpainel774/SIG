@@ -30,7 +30,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
-import { PermissoesView } from '@/components/PermissoesView'
+
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { SignaturePad } from '@/components/ui/SignaturePad'
@@ -50,7 +50,7 @@ const modulesList = [
 
 
 export default function ConfiguracoesPage() {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'permissoes' | 'coletor-local' | 'assinatura-diretor' | 'assinatura-pessoal'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'coletor-local' | 'assinatura-diretor' | 'assinatura-pessoal'>('perfil')
   const [showPassword, setShowPassword] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -345,28 +345,6 @@ export default function ConfiguracoesPage() {
           </div>
         </button>
 
-        {isAdmin && (
-          <button
-            onClick={() => setActiveTab('permissoes')}
-            className={cn(
-              "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
-              activeTab === 'permissoes'
-                ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
-                : "bg-card border-borderCustom hover:bg-hoverCustom"
-            )}
-          >
-            <div className={cn(
-              "p-3 rounded-xl",
-              activeTab === 'permissoes' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
-            )}>
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foregroundCustom text-base">Permissões de Acesso</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Gestão de níveis, escolas e módulos por funcionário</p>
-            </div>
-          </button>
-        )}
       </div>
 
       {/* Main Content Sections */}
@@ -509,11 +487,6 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {activeTab === 'permissoes' && (
-        <div className="animate-in fade-in-50 duration-200">
-          <PermissoesView />
-        </div>
-      )}
 
       {activeTab === 'coletor-local' && (
         <div className="animate-in fade-in-50 duration-200">
