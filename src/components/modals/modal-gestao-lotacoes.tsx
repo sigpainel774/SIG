@@ -106,7 +106,10 @@ export function ModalGestaoLotacoes({
   funcionarioInicial,
 }: ModalGestaoLotacoesProps) {
   const supabase = createClient()
-  const { funcionario: authFuncionario } = useAuthStore()
+  const { funcionario: authFuncionario, isDiretor, isAdminGlobalOrRoot } = useAuthStore()
+  const isDir = isDiretor()
+  const isGlobalAdmin = isAdminGlobalOrRoot()
+  const restringirNivel = isDir && !isGlobalAdmin
 
   const [funcionarios, setFuncionarios] = useState<FuncItem[]>([])
   const [escolas, setEscolas] = useState<Escola[]>([])
@@ -139,14 +142,14 @@ export function ModalGestaoLotacoes({
       const [funcsRes, escsRes, cargsRes, vincsRes] = await Promise.all([
         supabase
           .from('funcionarios')
-          .select('id, nome, email, cpf, cargo, foto_url, status')
+          .select('id, nome, email, cpf, cargo, foto_url, status, is_superadmin, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
         supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
-          .select('id, funcionario_id, escola_id, cargo, ativo, data_inicio')
+          .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio')
           .eq('ativo', true),
       ])
 
@@ -160,26 +163,35 @@ export function ModalGestaoLotacoes({
       escsData.forEach((e) => { escolaMap[e.id] = e.nome })
 
       // 3. Montar lista de funcionários com suas lotações
-      const lista: FuncItem[] = funcsData.map((f) => ({
-        id: f.id,
-        nome: f.nome,
-        email: f.email,
-        cpf: f.cpf ?? null,
-        cargo: f.cargo ?? null,
-        foto_url: f.foto_url ?? null,
-        status: f.status ?? 'ativo',
-        lotacoes: vincsData
-          .filter((v) => v.funcionario_id === f.id)
-          .map((v) => ({
-            id: v.id,
-            funcionario_id: v.funcionario_id ?? '',
-            escola_id: v.escola_id ?? '',
-            cargo: v.cargo ?? null,
-            ativo: v.ativo,
-            data_inicio: v.data_inicio ?? null,
-            escolaNome: v.escola_id ? (escolaMap[v.escola_id] ?? 'Escola desconhecida') : undefined,
-          })),
-      }))
+      const lista: FuncItem[] = funcsData
+        .filter((f: any) => {
+          if (restringirNivel) {
+            if (f.is_superadmin) return false
+            const acessosList = f.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
+          }
+          return true
+        })
+        .map((f: any) => ({
+          id: f.id,
+          nome: f.nome,
+          email: f.email,
+          cpf: f.cpf ?? null,
+          cargo: f.cargo ?? null,
+          foto_url: f.foto_url ?? null,
+          status: f.status ?? 'ativo',
+          lotacoes: vincsData
+            .filter((v: any) => v.funcionario_id === f.id)
+            .map((v: any) => ({
+              id: v.id,
+              funcionario_id: v.funcionario_id ?? '',
+              escola_id: v.school_id ?? '',
+              cargo: v.cargo ?? null,
+              ativo: v.ativo,
+              data_inicio: v.data_inicio ?? null,
+              escolaNome: v.school_id ? (escolaMap[v.school_id] ?? 'Escola desconhecida') : undefined,
+            })),
+        }))
 
       setFuncionarios(lista)
       setEscolas(escsData)

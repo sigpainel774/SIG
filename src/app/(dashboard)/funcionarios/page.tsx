@@ -157,12 +157,12 @@ export default function FuncionariosPage() {
       const formatados: Funcionario[] = (data ?? [])
         .filter((f: Record<string, any>) => {
           if (isDir) {
-            // Se for diretor, não pode ver conta nivel 1 e/ou root
+            // Se for diretor (nível 2), só deve enxergar nível 3 para baixo, portanto oculta superadmin, root, nível 1 e nível 2
             if (f.is_superadmin) return false
             if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
             
             const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
-            if (acessosList.some(a => a.nivel === 1 && a.ativo)) {
+            if (acessosList.some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)) {
               return false
             }
           }
