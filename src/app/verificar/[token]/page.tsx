@@ -92,7 +92,17 @@ export default async function VerificarPage({ params }: PageProps) {
                 </div>
                 <div className="space-y-1">
                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">Tipo do Documento</span>
-                  <span className="font-medium text-zinc-300">Comprovante de Matrícula Escolar</span>
+                  <span className="font-medium text-zinc-300">
+                    {assinatura.tipo_documento === 'comprovante_matricula'
+                      ? 'Comprovante de Matrícula Escolar'
+                      : assinatura.tipo_documento === 'atestado-matricula'
+                      ? 'Atestado de Matrícula'
+                      : assinatura.tipo_documento === 'atestado-frequencia'
+                      ? 'Atestado de Frequência'
+                      : assinatura.tipo_documento === 'declaracao-vaga'
+                      ? 'Declaração de Vaga'
+                      : assinatura.tipo_documento || 'Documento Escolar'}
+                  </span>
                 </div>
                 <div className="space-y-1">
                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">Código de Verificação</span>
@@ -109,24 +119,28 @@ export default async function VerificarPage({ params }: PageProps) {
               </h3>
               
               <div className="space-y-3">
-                {/* Assinatura 1: Responsável */}
-                <div className="bg-[#18181b]/40 border border-[#27272a]/60 p-4 rounded-xl text-xs space-y-2">
-                  <div className="flex justify-between items-center border-b border-[#27272a]/60 pb-1.5">
-                    <span className="font-bold text-[#3ea6ff] uppercase tracking-wider text-[10px]">1. Responsável pelo Aluno</span>
-                    <span className="text-emerald-400 font-semibold bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">Assinatura Coletada</span>
+                {/* Assinatura 1: Responsável (Apenas para comprovante de matrícula) */}
+                {assinatura.tipo_documento === 'comprovante_matricula' && (
+                  <div className="bg-[#18181b]/40 border border-[#27272a]/60 p-4 rounded-xl text-xs space-y-2">
+                    <div className="flex justify-between items-center border-b border-[#27272a]/60 pb-1.5">
+                      <span className="font-bold text-[#3ea6ff] uppercase tracking-wider text-[10px]">1. Responsável pelo Aluno</span>
+                      <span className="text-emerald-400 font-semibold bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">Assinatura Coletada</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-400">
+                      <div>Data: <strong className="text-zinc-200">{assinatura.data_responsavel ? new Date(assinatura.data_responsavel).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}</strong></div>
+                      <div>IP: <strong className="text-zinc-200">{assinatura.ip_responsavel ?? 'Não registrado'}</strong></div>
+                      <div className="col-span-2 truncate">Navegador: <strong className="text-zinc-200" title={assinatura.user_agent_responsavel}>{assinatura.user_agent_responsavel ?? '-'}</strong></div>
+                      <div>Dispositivo: <strong className="text-zinc-200">{assinatura.dispositivo_responsavel ?? 'Celular'}</strong></div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-400">
-                    <div>Data: <strong className="text-zinc-200">{assinatura.data_responsavel ? new Date(assinatura.data_responsavel).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}</strong></div>
-                    <div>IP: <strong className="text-zinc-200">{assinatura.ip_responsavel ?? 'Não registrado'}</strong></div>
-                    <div className="col-span-2 truncate">Navegador: <strong className="text-zinc-200" title={assinatura.user_agent_responsavel}>{assinatura.user_agent_responsavel ?? '-'}</strong></div>
-                    <div>Dispositivo: <strong className="text-zinc-200">{assinatura.dispositivo_responsavel ?? 'Celular'}</strong></div>
-                  </div>
-                </div>
+                )}
 
                 {/* Assinatura 2: Funcionário */}
                 <div className="bg-[#18181b]/40 border border-[#27272a]/60 p-4 rounded-xl text-xs space-y-2">
                   <div className="flex justify-between items-center border-b border-[#27272a]/60 pb-1.5">
-                    <span className="font-bold text-[#3ea6ff] uppercase tracking-wider text-[10px]">2. Servidor Público (SIG)</span>
+                    <span className="font-bold text-[#3ea6ff] uppercase tracking-wider text-[10px]">
+                      {assinatura.tipo_documento === 'comprovante_matricula' ? '2. Servidor Público (SIG)' : 'Servidor Público (SIG)'}
+                    </span>
                     <span className="text-emerald-400 font-semibold bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">Assinatura Coletada</span>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-400">

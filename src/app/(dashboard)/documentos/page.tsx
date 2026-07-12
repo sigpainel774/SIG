@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -58,6 +58,9 @@ export default function DocumentosPage() {
     recuperacoes: any[]
   } | null>(null)
   const [loadingBoletim, setLoadingBoletim] = useState(false)
+  const [tokenDocumentoExistente, setTokenDocumentoExistente] = useState<string | null>(null)
+  const [verificandoHistorico, setVerificandoHistorico] = useState(false)
+  const [usarHistorico, setUsarHistorico] = useState(false)
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
@@ -198,12 +201,54 @@ export default function DocumentosPage() {
     return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
   }).slice(0, 10)
 
+  // Checar se já existe um documento emitido deste tipo para o aluno (Histórico)
+  const checarHistoricoRapido = useCallback(async () => {
+    if (!alunoSelecionado || !docType) {
+      setTokenDocumentoExistente(null)
+      return
+    }
+
+    // Apenas atestados e declaração de vaga que usam a tabela 'assinatura' genérica
+    if (['atestado-matricula', 'atestado-frequencia', 'declaracao-vaga'].indexOf(docType) === -1) {
+      setTokenDocumentoExistente(null)
+      return
+    }
+
+    setVerificandoHistorico(true)
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('assinatura')
+        .select('token_verificacao')
+        .eq('aluno_id', alunoSelecionado.id)
+        .eq('tipo_documento', docType)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (data?.token_verificacao) {
+        setTokenDocumentoExistente(data.token_verificacao)
+      } else {
+        setTokenDocumentoExistente(null)
+      }
+    } catch (e) {
+      console.error('Erro ao verificar histórico:', e)
+    } finally {
+      setVerificandoHistorico(false)
+    }
+  }, [alunoSelecionado, docType])
+
+  useEffect(() => {
+    checarHistoricoRapido()
+  }, [checarHistoricoRapido])
+
   const handleEmitirDocumento = async () => {
     if (!alunoSelecionado) {
       toast.error('Por favor, selecione um aluno.')
       return
     }
 
+    setUsarHistorico(false)
     if (docType === 'ficha-aluno') {
       setAlunoImprimirFicha(alunoSelecionado)
     } else if (docType === 'comprovante-matricula') {
@@ -324,7 +369,11 @@ export default function DocumentosPage() {
         <PrintDocumentoEscolar 
           aluno={alunoImprimirDocumentoEscolar}
           docType={docType as any}
-          onClose={() => setAlunoImprimirDocumentoEscolar(null)}
+          tokenExistente={usarHistorico ? tokenDocumentoExistente : null}
+          onClose={() => {
+            setAlunoImprimirDocumentoEscolar(null)
+            checarHistoricoRapido()
+          }}
         />
       )}
       {/* Impressão overlay - Boletim Escolar */}
@@ -544,11 +593,25 @@ export default function DocumentosPage() {
               </div>
 
               {/* Botão de Emissão */}
-              <div className="flex justify-end pt-2 border-t border-borderCustom">
+              <div className="flex justify-end pt-2 border-t border-borderCustom items-center gap-2">
+                {tokenDocumentoExistente && (
+                  <Button
+                    onClick={() => {
+                      setUsarHistorico(true)
+                      setAlunoImprimirDocumentoEscolar(alunoSelecionado)
+                    }}
+                    type="button"
+                    variant="outline"
+                    title="Visualizar documento arquivado (Histórico)"
+                    className="border-[#0090ff] text-[#0090ff] hover:bg-[#0090ff]/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                  >
+                    <span className="text-xs">Histórico</span>
+                  </Button>
+                )}
                 <Button
                   onClick={handleEmitirDocumento}
                   disabled={!alunoSelecionado || loadingBoletim}
-                  className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold gap-2 h-10 px-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700 font-bold gap-2 h-10 px-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {loadingBoletim ? (
                     <>
@@ -558,7 +621,7 @@ export default function DocumentosPage() {
                   ) : (
                     <>
                       <Printer className="w-4 h-4" />
-                      Emitir & Imprimir Documento
+                      {tokenDocumentoExistente ? 'Emitir Novo & Assinar' : 'Emitir & Imprimir Documento'}
                     </>
                   )}
                 </Button>

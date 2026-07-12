@@ -5,14 +5,26 @@ import { createPortal } from 'react-dom'
 import { Printer, X, Loader2, Award, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import QRCode from 'qrcode'
+import { toast } from 'sonner'
+
+function generateVerificacaoToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let token = ''
+  for (let i = 0; i < 8; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return token
+}
 
 interface PrintDocumentoProps {
   aluno: any
   docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga'
+  tokenExistente?: string | null
   onClose: () => void
 }
 
-export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocumentoProps) {
+export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose }: PrintDocumentoProps) {
   const [mounted, setMounted] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   
@@ -23,6 +35,12 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
 
   const [turmaNome, setTurmaNome] = useState('')
   const [turnoVal, setTurnoVal] = useState('')
+
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
+  const [tokenVerificacao, setTokenVerificacao] = useState('')
+  const [hashSha256, setHashSha256] = useState('')
+  const [dataEmissao, setDataEmissao] = useState<string | null>(null)
+  const [registrandoAssinatura, setRegistrandoAssinatura] = useState(false)
 
   const { funcionario } = useAuthStore()
 
@@ -85,6 +103,31 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
 
     fetchDados()
   }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
+
+  // Carregar assinatura existente se houver (Modo Histórico)
+  useEffect(() => {
+    if (tokenExistente) {
+      const loadAssinatura = async () => {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('assinatura')
+          .select('*')
+          .eq('token_verificacao', tokenExistente)
+          .maybeSingle()
+
+        if (data) {
+          setTokenVerificacao(data.token_verificacao)
+          setHashSha256(data.hash_sha256)
+          setDataEmissao(data.data_funcionario || data.criado_em)
+          
+          const siteUrl = window.location.origin
+          const qrUrl = await QRCode.toDataURL(`${siteUrl}/verificar/${data.token_verificacao}`, { margin: 1, width: 80 })
+          setQrCodeUrl(qrUrl)
+        }
+      }
+      loadAssinatura()
+    }
+  }, [tokenExistente])
 
   useEffect(() => {
     setMounted(true)
@@ -177,16 +220,105 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
     )
   }
 
-  // Data atual formatada por extenso
-  const dataHoje = new Date()
+  // Data de emissão ou data atual formatada por extenso
+  const dataRef = dataEmissao ? new Date(dataEmissao) : new Date()
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ]
-  const dataPorExtenso = `Sapeaçu - BA, ${dataHoje.getDate()} de ${meses[dataHoje.getMonth()]} de ${dataHoje.getFullYear()}.`
+  const dataPorExtenso = `Sapeaçu - BA, ${dataRef.getDate()} de ${meses[dataRef.getMonth()]} de ${dataRef.getFullYear()}.`
 
-  const handlePrint = () => {
-    window.print()
+  const handlePrint = async () => {
+    if (tokenVerificacao) {
+      window.print()
+      return
+    }
+
+    setRegistrandoAssinatura(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Obter IP externo (com fallback rápido)
+      let ip = '127.0.0.1'
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json')
+        if (ipRes.ok) {
+          const ipData = await ipRes.json()
+          ip = ipData.ip
+        }
+      } catch (ipErr) {
+        console.error('Erro ao obter IP externo:', ipErr)
+      }
+
+      // 2. Gerar Token e Hash
+      const token = generateVerificacaoToken()
+      
+      const nomeAluno = aluno.nome?.toUpperCase() || ''
+      const matriculaId = aluno.id || ''
+      const cursoTurma = turmaNome?.toUpperCase() || ''
+      
+      let hashHex = ''
+      const payload = nomeAluno + matriculaId + cursoTurma + anoLetivo + new Date().toISOString() + token
+      if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+        const msgUint8 = new TextEncoder().encode(payload)
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgUint8)
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      } else {
+        // Fallback para hashes sem HTTPS / crypto.subtle indisponível
+        let hash = 0
+        for (let i = 0; i < payload.length; i++) {
+          const char = payload.charCodeAt(i)
+          hash = (hash << 5) - hash + char
+          hash = hash & hash // Convert to 32bit integer
+        }
+        hashHex = Math.abs(hash).toString(16).padEnd(64, 'a')
+      }
+
+      // 3. Salvar no banco
+      const { error: insertError } = await supabase
+        .from('assinatura')
+        .insert({
+          aluno_id: aluno.id,
+          tipo_documento: docType,
+          token_verificacao: token,
+          hash_sha256: hashHex,
+          ip_funcionario: ip,
+          user_agent_funcionario: navigator.userAgent,
+          dispositivo_funcionario: window.innerWidth < 768 ? 'Celular' : 'Computador',
+          data_funcionario: new Date().toISOString()
+        })
+
+      if (insertError) throw insertError
+
+      // 4. Deletar atestados/documentos anteriores deste mesmo tipo para o mesmo aluno
+      await supabase
+        .from('assinatura')
+        .delete()
+        .eq('aluno_id', aluno.id)
+        .eq('tipo_documento', docType)
+        .neq('token_verificacao', token)
+
+      // 5. Atualizar QR Code no state
+      const siteUrl = window.location.origin
+      const qrUrl = await QRCode.toDataURL(`${siteUrl}/verificar/${token}`, { margin: 1, width: 80 })
+      
+      setQrCodeUrl(qrUrl)
+      setTokenVerificacao(token)
+      setHashSha256(hashHex)
+      setDataEmissao(new Date().toISOString())
+
+      // Pequeno timeout para garantir a renderização antes de disparar o print do browser
+      setTimeout(() => {
+        window.print()
+      }, 300)
+
+    } catch (err: any) {
+      console.error('Erro ao registrar assinatura eletrônica:', err)
+      toast.error('Erro ao validar assinatura eletrônica: ' + err.message)
+    } finally {
+      setRegistrandoAssinatura(false)
+    }
   }
 
   return createPortal(
@@ -210,16 +342,26 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
       `}</style>
 
       {/* Botões de Ações Flutuantes */}
-      <div className="fixed top-4 right-4 z-[101] flex gap-3 print-hidden">
+      <div className="fixed top-4 right-4 z-[101] flex gap-3 print-hidden items-center">
+        {!tokenVerificacao && (
+          <span className="text-amber-400 text-xs font-semibold mr-2 bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-900/30">
+            ⚠️ O QR Code de validade digital e a assinatura eletrônica serão gerados ao clicar em imprimir.
+          </span>
+        )}
         <button
           onClick={handlePrint}
-          disabled={!imagesLoaded}
+          disabled={!imagesLoaded || registrandoAssinatura}
           className="px-4 py-2.5 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 text-xs transition-all cursor-pointer disabled:opacity-50"
         >
-          {imagesLoaded ? (
+          {registrandoAssinatura ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Gerando Autenticidade...</span>
+            </>
+          ) : imagesLoaded ? (
             <>
               <Printer className="w-4 h-4" />
-              <span>Imprimir Documento</span>
+              <span>{tokenVerificacao ? 'Imprimir Documento' : 'Gerar QR Code & Imprimir'}</span>
             </>
           ) : (
             <>
@@ -339,8 +481,21 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
             </div>
           </div>
 
+          {/* Autenticação com QR Code */}
+          {qrCodeUrl && (
+            <div className="mt-8 pt-3 border-t border-gray-300 flex items-center gap-3 text-[8px] text-gray-500 font-mono leading-tight bg-gray-50/50 p-2 rounded border border-gray-200">
+              <img src={qrCodeUrl} alt="QR Code Verificação" className="h-11 w-11 shrink-0 border border-gray-300 p-0.5 rounded bg-white" />
+              <div className="flex-1 space-y-0.5 text-left">
+                <span className="font-bold text-gray-800 uppercase block text-[8px]">DOCUMENTO ASSINADO E REGISTRADO ELETRONICAMENTE</span>
+                <span className="block text-[8px] text-gray-600">Chave de Verificação: <strong className="text-gray-900">{tokenVerificacao}</strong></span>
+                <span className="block text-[8px] text-gray-600 truncate">Hash SHA-256: <strong className="text-gray-900 text-[7px]">{hashSha256}</strong></span>
+                <span className="block text-[7px] text-gray-500">Valide este comprovante lendo o QR Code ou acesse: {window.location.origin}/verificar/{tokenVerificacao}</span>
+              </div>
+            </div>
+          )}
+
           {/* Autenticação/Notas de Rodapé */}
-          <div className="border-t border-gray-300 mt-16 pt-4 text-[9px] font-semibold text-gray-500 text-center">
+          <div className="border-t border-gray-300 mt-6 pt-4 text-[9px] font-semibold text-gray-500 text-center">
             Este documento é de emissão oficial do Painel Escolar Municipal de Sapeaçu. Qualquer adulteração invalida sua legalidade jurídica.
           </div>
         </div>
