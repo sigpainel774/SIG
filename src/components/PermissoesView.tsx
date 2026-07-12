@@ -43,7 +43,7 @@ interface RegistroPermissao {
   nome: string
   email: string
   nivel: string
-  nivelNum: number
+  nivelNum: number | null
   escola: string
   escolaId: string | null
   status: string
@@ -57,7 +57,8 @@ const nivelLabel = (n: number | null | undefined): string => {
   if (n === 4) return 'Nível 4 - Professor'
   if (n === 5) return 'Nível 5 - Chefe de Equipe'
   if (n === 6) return 'Nível 6 - Operacional'
-  return 'Nível 1 - Administrador Global'
+  if (n === 1) return 'Nível 1 - Administrador Global'
+  return 'Pendente / Sem Permissão'
 }
 
 const nivelColor = (nivel: string) => {
@@ -74,10 +75,12 @@ const nivelColor = (nivel: string) => {
 
 export function PermissoesView({ onBack }: { onBack?: () => void }) {
   const { isEditMode, setEditMode } = useEditModeStore()
-  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot, isDiretor } = useAuthStore()
   const pathname = usePathname()
   const autocompleteRef = useRef<HTMLDivElement>(null)
   const isGlobalAdmin = isAdminGlobalOrRoot()
+  const isDir = isDiretor()
+  const restringirNivel = isDir && !isGlobalAdmin
 
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false)
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
@@ -142,11 +145,12 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       if (permData) {
         const formatados: RegistroPermissao[] = permData.map((f: any) => {
           const acesso = f.acessos_usuarios?.[0]
-          const nivelNum: number = acesso?.nivel ?? 1
+          const nivelNum: number | null = acesso?.nivel ?? null
           let nomeNivel = nivelLabel(nivelNum)
           if (f.is_superadmin) nomeNivel = 'ROOT'
 
-          const escolaNome: string = acesso?.escolas?.nome ?? 'Sem Lotação'
+          const school = acesso?.escolas as { nome: string } | null
+          const escolaNome: string = school?.nome ?? 'Sem Lotação'
           const escolaId: string | null = acesso?.escola_id ?? null
 
           return {
@@ -244,6 +248,12 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
     const nivelNum = parseInt(nivelSel, 10)
     const escolaIdToSave = escolaSel || null
 
+    if (restringirNivel && (nivelNum === 1 || nivelNum === 2)) {
+      toast.error('Você não tem permissão para conceder este nível de acesso.')
+      setSalvando(false)
+      return
+    }
+
     // Verificar se já existe acesso para este funcionário + escola
     const { data: existente } = await supabase
       .from('acessos_usuarios')
@@ -289,7 +299,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       if (permData) {
         const formatados: RegistroPermissao[] = (permData as any[]).map((f) => {
           const acesso = f.acessos_usuarios?.[0]
-          const nivelNum2: number = acesso?.nivel ?? 1
+          const nivelNum2: number | null = acesso?.nivel ?? null
           let nomeNivel = nivelLabel(nivelNum2)
           if (f.is_superadmin) nomeNivel = 'ROOT'
           return {
@@ -298,7 +308,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
             email: f.email ?? f.nome,
             nivel: nomeNivel,
             nivelNum: nivelNum2,
-            escola: acesso?.escolas?.nome ?? 'Sem Lotação',
+            escola: (acesso?.escolas as any)?.nome ?? 'Sem Lotação',
             escolaId: acesso?.escola_id ?? null,
             status: f.status || 'ativo',
           }
@@ -485,8 +495,8 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
                 className="w-full bg-surface-1 border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff] focus:border-[#0090ff] cursor-pointer"
               >
                 <option value="">Selecione o nível</option>
-                <option value="1">Nível 1 - Administrador Global</option>
-                <option value="2">Nível 2 - Diretor</option>
+                {!restringirNivel && <option value="1">Nível 1 - Administrador Global</option>}
+                {!restringirNivel && <option value="2">Nível 2 - Diretor</option>}
                 <option value="3">Nível 3 - Coord. / Secretário</option>
                 <option value="4">Nível 4 - Professor</option>
                 <option value="5">Nível 5 - Chefe de Equipe</option>
@@ -540,12 +550,13 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
           >
             <option value="">Todos os Níveis</option>
             <option value="ROOT">ROOT</option>
+            <option value="Nível 1">Nível 1 - Administrador Global</option>
             <option value="Nível 2">Nível 2 - Diretor</option>
             <option value="Nível 3">Nível 3 - Coord. / Secretário</option>
             <option value="Nível 4">Nível 4 - Professor</option>
             <option value="Nível 5">Nível 5 - Chefe de Equipe</option>
             <option value="Nível 6">Nível 6 - Operacional</option>
-            <option value="Nível 1">Nível 1 - Administrador Global</option>
+            <option value="Pendente / Sem Permissão">Pendente / Sem Permissão</option>
           </select>
 
           {/* Filtro Escola — populado do banco */}
@@ -617,7 +628,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
                     }
                     const escolaEncontrada = escolas.find((e) => e.nome === item.escola)
                     setEscolaSel(escolaEncontrada?.id ?? '')
-                    setNivelSel(item.nivelNum.toString())
+                    setNivelSel(item.nivelNum !== null && item.nivelNum !== undefined ? item.nivelNum.toString() : '')
                     window.scrollTo({ top: 0, behavior: 'smooth' })
                     toast.info(`Editando permissões de ${item.nome}`)
                   }
@@ -664,7 +675,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
                             }
                             const escolaEncontrada = escolas.find((e) => e.nome === item.escola)
                             setEscolaSel(escolaEncontrada?.id ?? '')
-                            setNivelSel(item.nivelNum.toString())
+                            setNivelSel(item.nivelNum !== null && item.nivelNum !== undefined ? item.nivelNum.toString() : '')
                             setModoAtribuicao('funcionario')
                             window.scrollTo({ top: 0, behavior: 'smooth' })
                             toast.info(`Editando permissões de ${item.nome}`)
