@@ -10,7 +10,7 @@ let robotoFontBytes: Uint8Array | null = null
 
 async function getRobotoFont() {
   if (robotoFontBytes) return robotoFontBytes
-  const res = await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/roboto/static/Roboto-Regular.ttf')
+  const res = await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/roboto/Roboto-Regular.ttf')
   const arrayBuffer = await res.arrayBuffer()
   robotoFontBytes = new Uint8Array(arrayBuffer)
   return robotoFontBytes
