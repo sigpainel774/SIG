@@ -14,7 +14,15 @@ import {
   RefreshCw, 
   LogOut,
   Loader2,
-  X
+  X,
+  BookOpen,
+  FileText,
+  ClipboardList,
+  AlertTriangle,
+  ArrowLeftRight,
+  Archive,
+  UserCheck,
+  FileBadge
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -85,15 +93,82 @@ export function Sidebar() {
     window.location.reload()
   }
 
-  const menuItems = [
-    { href: '/home', label: 'Início', icon: Home },
-    { href: '/mural', label: 'Mural', icon: Pin },
-    { href: '/funcionarios', label: 'Funcionários', icon: Users },
-    { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+  type MenuItem = { href: string; label: string; icon: React.ElementType }
+  type MenuGroup = { label: string | null; items: MenuItem[] }
+
+  const menuGroups: MenuGroup[] = [
+    {
+      label: null,
+      items: [
+        { href: '/home', label: 'Início', icon: Home },
+        { href: '/mural', label: 'Mural', icon: Pin },
+      ]
+    },
+    {
+      label: 'GESTÃO ACADÊMICA',
+      items: [
+        { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+        { href: '/turmas', label: 'Turmas', icon: BookOpen },
+        { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
+        { href: '/avaliacoes', label: 'Avaliações', icon: ClipboardList },
+        { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+      ]
+    },
+    {
+      label: 'SECRETARIA',
+      items: [
+        { href: '/documentos', label: 'Documentos', icon: FileText },
+        { href: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
+        { href: '/arquivos', label: 'Arquivo', icon: Archive },
+      ]
+    },
+    {
+      label: 'GESTÃO',
+      items: [
+        { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+        { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
+        { href: '/funcionarios', label: 'Funcionários', icon: Users },
+      ]
+    },
+  ]
+
+  const systemItems: MenuItem[] = [
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
-    { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
   ]
+
+  const getIsActive = (href: string): boolean => {
+    if (href === '/configuracoes') return pathname === '/configuracoes' || pathname === '/perfil' || pathname === '/permissoes'
+    if (href === '/avaliacoes') return pathname.startsWith('/avaliacoes')
+    if (href === '/transferencias') return pathname.startsWith('/transferencias')
+    if (href === '/turmas') return pathname === '/turmas'
+    if (href === '/matriculas') return pathname === '/matriculas'
+    if (href === '/ocorrencias') return pathname === '/ocorrencias'
+    if (href === '/arquivos') return pathname === '/arquivos'
+    if (href === '/documentos') return pathname === '/documentos'
+    if (href === '/painel-chefe') return pathname === '/painel-chefe'
+    return pathname === href
+  }
+
+  const NavLink = ({ item }: { item: MenuItem }) => {
+    const Icon = item.icon
+    const isActive = getIsActive(item.href)
+    return (
+      <Link
+        href={item.href}
+        onClick={closeMobile}
+        className={cn(
+          "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
+          isActive
+            ? "bg-[#185FA5]/8 text-[#185FA5] font-semibold border-l-2 border-[#185FA5] rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]"
+            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
+        )}
+      >
+        <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-[#185FA5] dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
+        <span>{item.label}</span>
+      </Link>
+    )
+  }
 
   const SidebarContent = () => (
     <>
@@ -124,30 +199,36 @@ export function Sidebar() {
       </div>
 
       {/* Main Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href || 
-            (item.href === '/configuracoes' && (pathname === '/perfil' || pathname === '/permissoes')) ||
-            (item.href === '/admin' && (pathname.startsWith('/admin') || pathname === '/root'))
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {menuGroups.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            {group.label !== null && (
+              <>
+                <hr className="border-sidebar-border/40 mx-3 my-1" />
+                <div className="px-4 pt-4 pb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
+                    {group.label}
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="space-y-1.5">
+              {group.items.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </div>
+          </div>
+        ))}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={closeMobile}
-              className={cn(
-                "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
-                isActive 
-                  ? "bg-[#185FA5]/8 text-[#185FA5] font-semibold border-l-2 border-[#185FA5] rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]" 
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
-              )}
-            >
-              <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-[#185FA5] dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
+        {/* System items — separador visual sem rótulo */}
+        <>
+          <hr className="border-sidebar-border/40 mx-3 my-1" />
+          <div className="space-y-1.5 mt-1">
+            {systemItems.map((item) => (
+              <NavLink key={item.href} item={item} />
+            ))}
+          </div>
+        </>
       </nav>
 
       {/* Footer Nav */}
