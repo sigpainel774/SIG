@@ -21,7 +21,10 @@ export function AuthInitializer({ funcionario, acessos, vinculos = [] }: AuthIni
     useAuthStore.getState().setAuth(funcionario, acessos, vinculos)
     
     const state = useAuthStore.getState()
-    if (!state.escolaAtivaId && !state.isAdminGlobalOrRoot()) {
+    const acessoNivelEscolar = acessos.find(a => a.nivel && a.nivel >= 2 && a.nivel <= 6 && a.ativo)
+    if (acessoNivelEscolar?.escola_id) {
+      state.setEscolaAtivaId(acessoNivelEscolar.escola_id)
+    } else if (!state.escolaAtivaId && !state.isAdminGlobalOrRoot()) {
       // Prioriza a primeira lotação (escola) ativa do funcionário
       const primeiroVinculo = vinculos.find(v => v.ativo)
       if (primeiroVinculo?.escola_id) {
@@ -35,6 +38,11 @@ export function AuthInitializer({ funcionario, acessos, vinculos = [] }: AuthIni
   useEffect(() => {
     if (funcionario) {
       useAuthStore.getState().setAuth(funcionario, acessos, vinculos)
+      const state = useAuthStore.getState()
+      const acessoNivelEscolar = acessos.find(a => a.nivel && a.nivel >= 2 && a.nivel <= 6 && a.ativo)
+      if (acessoNivelEscolar?.escola_id) {
+        state.setEscolaAtivaId(acessoNivelEscolar.escola_id)
+      }
     }
   }, [funcionario, acessos, vinculos])
 
