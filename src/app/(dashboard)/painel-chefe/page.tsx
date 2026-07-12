@@ -19,17 +19,26 @@ import {
   Loader2,
   ArrowLeft
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalEscala } from '@/components/ModalEscala'
 
 export default function PainelChefePage() {
-  const { funcionario } = useAuthStore()
+  const { funcionario, isDiretor } = useAuthStore()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas'>('equipe')
   const [busca, setBusca] = useState('')
   const [cargosGerenciados, setCargosGerenciados] = useState<string[]>([])
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
+
+  useEffect(() => {
+    if (funcionario && !isDiretor()) {
+      toast.error('Acesso restrito a Diretores (Nível 2).')
+      router.push('/home')
+    }
+  }, [funcionario, isDiretor, router])
 
   const supabase = createClient()
   const [equipe, setEquipe] = useState<any[]>([])

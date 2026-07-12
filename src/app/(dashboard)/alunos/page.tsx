@@ -35,6 +35,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { IconTile } from '@/components/ui/icon-tile'
 
 interface Aluno {
   id: string
@@ -257,7 +258,7 @@ export default function AlunosPage() {
 
       {/* Topo / Título */}
       <div className="print:hidden space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
           <div>
             <div className="flex items-center gap-3">
               <Link href="/home">
@@ -265,19 +266,17 @@ export default function AlunosPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <div className="p-2.5 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center text-[#185FA5] dark:text-[#3ea6ff]">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Gestão de Alunos</h1>
+              <IconTile icon={GraduationCap} variant="primary" className="h-10 w-10 shrink-0" />
+              <h1 className="text-2xl font-bold text-foreground">Gestão de Alunos</h1>
             </div>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-2 ml-1">
+            <p className="text-muted-foreground text-sm font-normal mt-2 ml-1">
               Cadastro completo com 11 seções, busca por INEP/CPF e impressão individual da Ficha de Matrícula.
             </p>
           </div>
           {isEditMode && (
             <Button 
               onClick={handleNovoAluno}
-              className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-semibold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md rounded-xl border-none px-4 py-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 self-start sm:self-auto shrink-0 cursor-pointer shadow-md rounded-xl border-none px-4 py-2"
             >
               <Plus className="w-4 h-4" />
               <span>Novo Aluno</span>
@@ -382,13 +381,13 @@ export default function AlunosPage() {
               return (
                 <div 
                   key={aluno.id} 
-                  className="bg-surface-1 border-[0.5px] border-borderCustom hover:border-[#185FA5]/40 dark:hover:border-[#3ea6ff]/40 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 shadow-sm"
+                  className="bg-card border-[0.5px] border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 shadow-sm"
                 >
                   {/* ── Topo do card: Foto + Nome + Série ── */}
-                  <div className="flex items-center justify-between gap-3 pb-4 border-b border-borderCustom/50">
+                  <div className="flex items-center justify-between gap-3 pb-4 border-b border-border/50">
                     <div className="flex items-center gap-4 min-w-0">
                       {/* Foto / Iniciais */}
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-borderCustom flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-border flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
                         {aluno.foto_url ? (
                           <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
                         ) : (
@@ -398,16 +397,16 @@ export default function AlunosPage() {
 
                       {/* Informações Principais */}
                       <div className="min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate max-w-full flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-foreground tracking-tight truncate max-w-full flex items-center gap-2">
                           <span>{aluno.nome}</span>
                           {aluno.dados_matricula?.documento_bloqueado === true && (
-                            <span className="p-1 bg-[#1e1b4b] border border-[#3730a3] rounded-md text-[#818cf8]" title="Ficha Assinada e Trancada">
+                            <span className="p-1 bg-primary/10 border border-primary/20 rounded-md text-primary" title="Ficha Assinada e Trancada">
                               <Lock className="w-3.5 h-3.5" />
                             </span>
                           )}
                         </h3>
                         <div className="mt-1">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 border border-blue-200/50 text-[#185FA5] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400 shrink-0">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 border border-primary/20 text-primary shrink-0">
                             {serieNome}
                           </span>
                         </div>
@@ -416,7 +415,7 @@ export default function AlunosPage() {
                   </div>
 
                   {/* ── Detalhes do Aluno ── */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm font-normal text-muted-foreground">
                     <div className="flex items-center gap-1.5 truncate">
                       <Building2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                       <span className="truncate">{escolaNome}</span>
@@ -462,7 +461,7 @@ export default function AlunosPage() {
                   <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 pt-2">
                     <button 
                       onClick={() => setAlunoAnexos(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                       title="Anexos do Aluno"
                     >
                       <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
@@ -472,7 +471,7 @@ export default function AlunosPage() {
                     {isEditMode && (
                       <button 
                         onClick={() => handleEditarAluno(aluno)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                         title="Editar Aluno"
                       >
                         <Edit className="w-3.5 h-3.5 text-muted-foreground" />
@@ -483,7 +482,7 @@ export default function AlunosPage() {
                     {/* Imprimir Ficha (Único Destaque) */}
                     <button 
                       onClick={() => handleImprimirAluno(aluno)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#185FA5] hover:bg-[#185FA5]/90 text-white text-xs font-semibold transition-colors cursor-pointer border-none shadow-sm dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors cursor-pointer border-none shadow-sm"
                       title="Imprimir Ficha de Matrícula"
                     >
                       <Printer className="w-3.5 h-3.5" />
@@ -492,7 +491,7 @@ export default function AlunosPage() {
 
                     <button 
                       onClick={() => setAlunoComprovanteImprimir(aluno)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
                       title="Imprimir Comprovante de Matrícula"
                     >
                       <FileText className="w-3.5 h-3.5 text-muted-foreground" />
@@ -502,7 +501,7 @@ export default function AlunosPage() {
                     {isEditMode && (
                       <button 
                         onClick={() => setAlunoArquivar(aluno)}
-                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-transparent border border-borderCustom text-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-destructive/10 hover:text-destructive text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
                         title="Arquivar Aluno"
                       >
                         <Archive className="w-3.5 h-3.5 text-muted-foreground" />

@@ -37,7 +37,7 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, limparSessao } = useAuthStore()
+  const { funcionario, limparSessao, isDiretor } = useAuthStore()
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
 
@@ -202,25 +202,36 @@ export function Sidebar() {
 
       {/* Main Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {menuGroups.map((group, groupIndex) => (
-          <div key={groupIndex}>
-            {group.label !== null && (
-              <>
-                <hr className="border-sidebar-border/40 mx-3 my-1" />
-                <div className="px-4 pt-4 pb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
-                    {group.label}
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="space-y-1.5">
-              {group.items.map((item) => (
-                <NavLink key={item.href} item={item} />
-              ))}
+        {menuGroups.map((group, groupIndex) => {
+          const filteredItems = group.items.filter((item) => {
+            if (item.href === '/painel-chefe') {
+              return isDiretor()
+            }
+            return true
+          })
+
+          if (filteredItems.length === 0) return null
+
+          return (
+            <div key={groupIndex}>
+              {group.label !== null && (
+                <>
+                  <hr className="border-sidebar-border/40 mx-3 my-1" />
+                  <div className="px-4 pt-4 pb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
+                      {group.label}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="space-y-1.5">
+                {filteredItems.map((item) => (
+                  <NavLink key={item.href} item={item} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* System items — separador visual sem rótulo */}
         <>
