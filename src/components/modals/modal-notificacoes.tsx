@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Bell, History, Circle, Check, Sliders } from 'lucide-react'
+import { Bell, History, Circle, Check, Sliders, UserCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
@@ -21,7 +21,7 @@ interface ModalNotificacoesProps {
 
 export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificacoesProps) {
   const router = useRouter()
-  const { funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, acessos, isAdminGlobalOrRoot } = useAuthStore()
   const [filtro, setFiltro] = useState('todas')
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [configOpen, setConfigOpen] = useState(false)
@@ -41,6 +41,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
 
     if (filtro === 'nao_lidas') query = query.eq('read', false)
     if (filtro === 'transferencias') query = query.eq('type', 'transferencia')
+    if (filtro === 'atividade_secretaria') query = query.eq('type', 'atividade_secretaria')
 
     try {
       const { data, error } = await query
@@ -55,12 +56,27 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     if (open) loadNotificacoes()
   }, [open, filtro, funcionario?.id])
 
-  const markAsRead = async (id: string, e: React.MouseEvent) => {
+  const markAsRead = async (notif: any, e: React.MouseEvent) => {
     e.stopPropagation()
     const supabase = createClient()
+    const isSecretario = funcionario && acessos?.some((a: any) => a.nivel === 3 && a.ativo)
     try {
-      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id)
-      if (error) throw error
+      // Marcar a própria notificação como lida
+      await supabase.from('notifications').update({ read: true }).eq('id', notif.id)
+
+      // Se for secretário e a notificação ainda não tiver processado_por, processar o grupo
+      if (isSecretario && notif.grupo_id && !notif.processado_por) {
+        await (supabase as any)
+          .from('notifications')
+          .update({
+            processado_por: funcionario?.id ?? null,
+            processado_por_nome: funcionario?.nome ?? 'Secretário',
+            processado_em: new Date().toISOString(),
+          })
+          .eq('grupo_id', notif.grupo_id)
+          .is('processado_por', null)
+      }
+
       loadNotificacoes()
     } catch (error) {
       console.error('Erro ao marcar como lida:', error)
@@ -111,6 +127,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
             <option value="todas">Todas</option>
             <option value="nao_lidas">Não Lidas</option>
             <option value="transferencias">Transferências</option>
+            <option value="atividade_secretaria">Atividades</option>
           </select>
         </div>
 
@@ -128,14 +145,16 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
               }}
             >
               <div className="pt-1">
-                {!notif.read && <Circle className="w-2 h-2 fill-[#3ea6ff] text-[#3ea6ff]" />}
+                {/* Badge: só mostrar se não lida E (sem processado_por OU o usuário é secretário) */}
+                {!notif.read && !notif.processado_por && <Circle className="w-2 h-2 fill-[#3ea6ff] text-[#3ea6ff]" />}
+                {!notif.read && notif.processado_por && <Circle className="w-2 h-2 fill-zinc-500 text-zinc-500" />}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <p className="text-sm font-medium text-white mb-1">{notif.title}</p>
                   {!notif.read && (
                     <button 
-                      onClick={(e) => markAsRead(notif.id, e)}
+                      onClick={(e) => markAsRead(notif, e)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-[#aaa] hover:text-white"
                       title="Marcar como lida"
                     >
@@ -143,6 +162,16 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
                     </button>
                   )}
                 </div>
+                <p className="text-xs text-[#aaa]">{notif.message}</p>
+                {/* Mostrar quem processou (para outras secretárias que ainda não leram) */}
+                {notif.processado_por && notif.processado_por_nome && (
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <UserCheck className="w-3 h-3 text-emerald-400" />
+                    <span className="text-[10px] text-emerald-400">
+                      Processada por {notif.processado_por_nome}
+                    </span>
+                  </div>
+                )}
                 <p className="text-xs text-[#aaa] mt-1">{new Date(notif.created_at).toLocaleString('pt-BR')}</p>
               </div>
             </div>
