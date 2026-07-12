@@ -35,6 +35,7 @@ import {
   ChevronRight,
   Users,
   LucideIcon,
+  HardDrive,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -170,6 +171,13 @@ const adminGroups: AdminGroup[] = [
         icon: Database,
         iconColor: 'text-slate-300',
         path: '/admin/banco',
+      },
+      {
+        title: 'Armazenamento',
+        subtitle: 'Detalhes do disco',
+        icon: HardDrive,
+        iconColor: 'text-sky-400',
+        path: '/admin/armazenamento',
       },
     ],
   },
