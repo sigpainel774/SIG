@@ -22,6 +22,7 @@ import {
   User
 } from 'lucide-react'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { cn } from '@/lib/utils'
 
 interface ModalTurmaProps {
   open: boolean
@@ -46,6 +47,33 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
   const [novaMateriaNome, setNovaMateriaNome] = useState('')
   const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
   const [novaMateriaBaseCurricular, setNovaMateriaBaseCurricular] = useState('comum')
+  const [catalogoMaterias, setCatalogoMaterias] = useState<any[]>([])
+
+  const fetchCatalogoMaterias = async () => {
+    if (!escolaAtivaId) return
+    try {
+      const { data, error } = await supabase
+        .from('grade_curricular_escola')
+        .select('*')
+        .eq('escola_id', escolaAtivaId)
+        .order('nome', { ascending: true })
+
+      if (error) throw error
+      setCatalogoMaterias(data || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar catálogo de matérias:', err)
+    }
+  }
+
+  const handleSelectMateriaCatalogo = (nomeMateria: string) => {
+    setNovaMateriaNome(nomeMateria)
+    const selected = catalogoMaterias.find(m => m.nome === nomeMateria)
+    if (selected) {
+      setNovaMateriaBaseCurricular(selected.base_curricular)
+    } else {
+      setNovaMateriaBaseCurricular('comum')
+    }
+  }
 
   const supabase = createClient() as any
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
@@ -132,6 +160,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         setMaterias([])
       }
       fetchProfessoresEscola()
+      fetchCatalogoMaterias()
       setSelectedProfId('')
       setNovaMateriaNome('')
       setNovaMateriaProfId('')
@@ -451,12 +480,22 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 {isEditMode && (
                   <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <Input
-                        placeholder="Nome da Matéria (Ex: Português...)"
-                        value={novaMateriaNome}
-                        onChange={(e) => setNovaMateriaNome(e.target.value)}
-                        className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10"
-                      />
+                      <Select value={novaMateriaNome} onValueChange={(val) => handleSelectMateriaCatalogo(val ?? '')}>
+                        <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                          <SelectValue placeholder="-- Selecione a Matéria --" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                          {catalogoMaterias.length === 0 ? (
+                            <SelectItem value="nenhuma" disabled>Cadastre matérias nas Configurações</SelectItem>
+                          ) : (
+                            catalogoMaterias.map((m) => (
+                              <SelectItem key={m.id} value={m.nome}>
+                                {m.nome}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                       <Select value={novaMateriaProfId} onValueChange={(val) => setNovaMateriaProfId(val ?? '')}>
                         <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
                           <SelectValue placeholder="-- Selecione o Professor --" />
@@ -470,15 +509,17 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                           ))}
                         </SelectContent>
                       </Select>
-                      <Select value={novaMateriaBaseCurricular} onValueChange={(val) => setNovaMateriaBaseCurricular(val ?? 'comum')}>
-                        <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
-                          <SelectValue placeholder="Base Curricular" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
-                          <SelectItem value="comum">Base Comum</SelectItem>
-                          <SelectItem value="diversificada">Base Diversificada</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-zinc-400 px-3 h-10 text-xs flex items-center justify-between">
+                        <span>Base:</span>
+                        <span className={cn(
+                          "font-semibold uppercase text-[10px] px-2 py-0.5 rounded border",
+                          novaMateriaBaseCurricular === 'comum'
+                            ? "bg-blue-500/10 border-blue-500/20 text-[#3ea6ff]"
+                            : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                        )}>
+                          {novaMateriaBaseCurricular === 'comum' ? 'Comum' : 'Diversificada'}
+                        </span>
+                      </div>
                     </div>
                     <Button
                       onClick={handleAddMateria}
