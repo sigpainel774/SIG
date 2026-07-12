@@ -22,7 +22,8 @@ import {
   ArrowLeftRight,
   Archive,
   UserCheck,
-  FileBadge
+  FileBadge,
+  Fingerprint
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -134,6 +135,7 @@ export function Sidebar() {
 
   const systemItems: MenuItem[] = [
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
+    { href: '/coleta-local', label: 'Coleta Local', icon: Fingerprint },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
   ]
 

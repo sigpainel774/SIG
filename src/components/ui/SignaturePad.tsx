@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { PenTool, Trash2, RefreshCw, X, Check, Loader2 } from 'lucide-react'
 import { Button } from './button'
-import { cn } from '@/lib/utils'
+import { cn, urlToBase64 } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface SignaturePadProps {
@@ -13,18 +13,6 @@ interface SignaturePadProps {
   onChange: (base64: string | null) => void // Callback para retornar o base64
   isEditMode?: boolean
   globalSignatureUrl?: string | null
-}
-
-const urlToBase64 = async (url: string): Promise<string> => {
-  const corsBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cors=1&t=${Date.now()}`
-  const response = await fetch(corsBustedUrl)
-  const blob = await response.blob()
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
 }
 
 export function SignaturePad({ label, value, onChange, isEditMode = true, globalSignatureUrl }: SignaturePadProps) {
