@@ -113,7 +113,8 @@ export default function FuncionariosPage() {
         .select(`
           id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
           endereco, latitude, longitude,
-          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome))
+          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
+          acessos_usuarios(nivel, ativo)
         `)
         .is('deleted_at', null)
         .order('nome')
@@ -144,29 +145,45 @@ export default function FuncionariosPage() {
       const { data, error } = await query
       if (error) throw error
 
-      const formatados: Funcionario[] = (data ?? []).map((f: Record<string, any>) => {
-        // Pegar o primeiro vínculo ativo como órgão principal
-        const vincs = (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
-        const vinculoAtivo = vincs.find((v) => v.ativo)
-        const escola = vinculoAtivo?.escolas as { nome: string } | null
+      const isDir = useAuthStore.getState().isDiretor()
 
-        return {
-          id: f.id as string,
-          nome: f.nome as string,
-          email: f.email as string,
-          cpf: f.cpf as string | null,
-          cargo: f.cargo as string | null,
-          status: (f.status as string) ?? 'ativo',
-          formacao: f.formacao as string | null,
-          foto_url: f.foto_url as string | null,
-          data_nascimento: f.data_nascimento as string | null,
-          is_superadmin: f.is_superadmin as boolean | null,
-          orgao: escola?.nome ?? null,
-          endereco: f.endereco as string | null,
-          latitude: f.latitude ? Number(f.latitude) : null,
-          longitude: f.longitude ? Number(f.longitude) : null,
-        }
-      })
+      const formatados: Funcionario[] = (data ?? [])
+        .filter((f: Record<string, any>) => {
+          if (isDir) {
+            // Se for diretor, não pode ver conta nivel 1 e/ou root
+            if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            
+            const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
+            if (acessosList.some(a => a.nivel === 1 && a.ativo)) {
+              return false
+            }
+          }
+          return true
+        })
+        .map((f: Record<string, any>) => {
+          // Pegar o primeiro vínculo ativo como órgão principal
+          const vincs = (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
+          const vinculoAtivo = vincs.find((v) => v.ativo)
+          const escola = vinculoAtivo?.escolas as { nome: string } | null
+
+          return {
+            id: f.id as string,
+            nome: f.nome as string,
+            email: f.email as string,
+            cpf: f.cpf as string | null,
+            cargo: f.cargo as string | null,
+            status: (f.status as string) ?? 'ativo',
+            formacao: f.formacao as string | null,
+            foto_url: f.foto_url as string | null,
+            data_nascimento: f.data_nascimento as string | null,
+            is_superadmin: f.is_superadmin as boolean | null,
+            orgao: escola?.nome ?? null,
+            endereco: f.endereco as string | null,
+            latitude: f.latitude ? Number(f.latitude) : null,
+            longitude: f.longitude ? Number(f.longitude) : null,
+          }
+        })
 
       setFuncionarios(formatados)
     } catch (err) {

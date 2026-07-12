@@ -42,6 +42,10 @@ export function SchoolSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  if (!isAdmin) {
+    return null
+  }
+
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button

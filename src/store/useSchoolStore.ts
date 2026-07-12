@@ -20,7 +20,7 @@ interface SchoolState {
   escolas: Escola[]
   selectedEscola: Escola | null
   setSelectedEscola: (escola: Escola | null) => void
-  selectEscolaById: (id: string | null) => void
+  selectEscolaById: (id: string | null) => void | Promise<void>
   loadEscolas: () => Promise<void>
 }
 
@@ -32,7 +32,7 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
     set({ selectedEscola: escola })
     useAuthStore.getState().setEscolaAtivaId(escola ? escola.id : null)
   },
-  selectEscolaById: (id) => {
+  selectEscolaById: async (id) => {
     if (get().selectedEscola?.id === id) return
     if (!id) {
       set({ selectedEscola: null })
@@ -40,8 +40,27 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
       return
     }
     const found = get().escolas.find((e) => e.id === id) || null
-    set({ selectedEscola: found })
-    useAuthStore.getState().setEscolaAtivaId(id)
+    if (found) {
+      set({ selectedEscola: found })
+      useAuthStore.getState().setEscolaAtivaId(id)
+    } else {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('escolas')
+          .select('*')
+          .eq('id', id)
+          .is('deleted_at', null)
+          .maybeSingle()
+        
+        if (data) {
+          set({ selectedEscola: data as Escola })
+        }
+      } catch (err) {
+        console.error('Erro ao carregar escola ativa:', err)
+      }
+      useAuthStore.getState().setEscolaAtivaId(id)
+    }
   },
   loadEscolas: async () => {
     const supabase = createClient()

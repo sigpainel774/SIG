@@ -21,6 +21,7 @@ interface AuthState {
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
   isAdminGlobalOrRoot: () => boolean;
+  isDiretor: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -40,5 +41,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const state = get();
     if (state.funcionario?.is_superadmin) return true;
     return state.acessos.some(a => a.nivel === 1);
+  },
+  isDiretor: () => {
+    const state = get();
+    return state.acessos.some(a => a.nivel === 2 && a.ativo);
   },
 }));
