@@ -549,6 +549,38 @@ export function ModalDetalhesTurma({
     }
   }
 
+  const handleUpdateMateriaProfessor = async (materiaId: string, professorId: string) => {
+    const profIdVal = professorId === 'sem_professor' || !professorId ? null : professorId
+
+    // Atualização otimista local
+    setMaterias(prev => prev.map(m => {
+      if (m.id === materiaId) {
+        const nomeProf = vinculosProfessores.find(vp => vp.funcionario_id === profIdVal)?.funcionarios?.nome || null
+        return {
+          ...m,
+          professor_id: profIdVal,
+          funcionarios: profIdVal ? { id: profIdVal, nome: nomeProf } : null
+        }
+      }
+      return m
+    }))
+
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .update({ professor_id: profIdVal })
+        .eq('id', materiaId)
+
+      if (error) throw error
+      toast.success('Professor da matéria atualizado com sucesso!')
+      fetchData() // Sincroniza com o banco de dados
+    } catch (err: any) {
+      toast.error('Erro ao atualizar professor da matéria: ' + err.message)
+      fetchData() // Reverte para o estado correto em caso de erro
+    }
+  }
+
+
   // Funções utilitárias auxiliares de cálculo de média
   const obterNotas = (alunoId: string, materiaId: string, unidade: number) => {
     const key = `${alunoId}_${materiaId}_${unidade}`
@@ -812,13 +844,30 @@ export function ModalDetalhesTurma({
                           <div className="text-xs text-zinc-500 text-center py-2 font-medium">Nenhuma matéria cadastrada.</div>
                         ) : (
                           materias.map((mat) => (
-                            <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022]">
-                              <div className="flex flex-col min-w-0 pr-2">
+                            <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022] gap-3">
+                              <div className="flex flex-col min-w-0 flex-1 pr-2">
                                 <span className="text-xs font-bold text-white truncate">{mat.nome}</span>
-                                <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 mt-1 truncate">
-                                  <UserIcon className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-                                  {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
-                                </span>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                  <UserIcon className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                  <select
+                                    value={mat.professor_id ?? 'sem_professor'}
+                                    onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
+                                    className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none max-w-[200px]"
+                                  >
+                                    <option value="sem_professor">Sem professor</option>
+                                    {vinculosProfessores.map((vp) => (
+                                      <option key={vp.funcionario_id} value={vp.funcionario_id}>
+                                        {vp.funcionarios?.nome || 'Sem nome'}
+                                      </option>
+                                    ))}
+                                    {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
+                                    {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
+                                      <option key={mat.professor_id} value={mat.professor_id}>
+                                        {mat.funcionarios?.nome || 'Professor atual (Fora da Turma)'}
+                                      </option>
+                                    )}
+                                  </select>
+                                </div>
                               </div>
                               <Button
                                 variant="ghost"
