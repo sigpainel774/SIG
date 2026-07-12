@@ -19,6 +19,7 @@ import { MiniMapa } from '@/components/map/MapWrapper'
 import { SignaturePad } from '@/components/ui/SignaturePad'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { urlToBase64 } from '@/lib/utils'
 
 interface ModalAlunoProps {
   open?: boolean
@@ -203,6 +204,29 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       carregarDadosIniciais()
     }
   }, [activeOpen])
+
+  useEffect(() => {
+    let active = true
+    if (activeOpen) {
+      const dm = alunoEditar?.dados_matricula
+      const temAssinaturaSalva = dm?.assinatura_funcionario_url
+      
+      if (!temAssinaturaSalva && funcionario?.assinatura_url) {
+        urlToBase64(funcionario.assinatura_url)
+          .then(b64 => {
+            if (active) {
+              setNewSignatureFuncionario(b64)
+            }
+          })
+          .catch(err => {
+            console.error('Erro ao converter assinatura do funcionario para base64:', err)
+          })
+      }
+    }
+    return () => {
+      active = false
+    }
+  }, [activeOpen, alunoEditar?.id, funcionario?.assinatura_url])
 
   useEffect(() => {
     return () => {
