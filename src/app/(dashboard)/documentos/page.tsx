@@ -7,6 +7,7 @@ import { useEditModeStore } from '@/store/useEditModeStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { IconTile } from '@/components/ui/icon-tile'
 import { 
   FileText, 
   Search, 
@@ -394,27 +395,27 @@ export default function DocumentosPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#26262a]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white rounded-xl">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-xl">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FileText className="w-6 h-6 text-[#3ea6ff]" /> 
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <IconTile icon={FileText} variant="primary" className="h-10 w-10" /> 
               Documentos & Atestados Escolares
             </h2>
           </div>
-          <p className="text-[#aaa] text-xs mt-1 ml-12">Emissão de comprovantes, certidões e atestados com validade oficial.</p>
+          <p className="text-muted-foreground text-xs mt-1 ml-14">Emissão de comprovantes, certidões e atestados com validade oficial.</p>
         </div>
       </div>
 
       {!escolaAtivaId ? (
-        <Card className="p-8 border-borderCustom bg-card flex flex-col items-center justify-center text-center space-y-4">
-          <GraduationCap className="h-12 w-12 text-zinc-500 animate-pulse" />
-          <h3 className="text-sm font-semibold text-white">Nenhuma Escola Ativa</h3>
+        <Card className="p-8 border-border bg-card flex flex-col items-center justify-center text-center space-y-4">
+          <GraduationCap className="h-12 w-12 text-muted-foreground animate-pulse" />
+          <h3 className="text-sm font-semibold text-foreground">Nenhuma Escola Ativa</h3>
           <p className="text-xs text-muted-foreground max-w-sm">
             Selecione uma escola no painel inicial para liberar a busca e emissão de documentos oficiais.
           </p>
@@ -527,28 +528,28 @@ export default function DocumentosPage() {
 
               {/* Ficha Rápida do Aluno Selecionado */}
               {alunoSelecionado && (
-                <div className="p-4 bg-background border border-borderCustom rounded-xl space-y-3 animate-in fade-in duration-200">
-                  <h3 className="text-xs uppercase font-bold text-zinc-400 border-b border-borderCustom pb-1">
+                <div className="p-4 bg-background border border-border rounded-xl space-y-3 animate-in fade-in duration-200">
+                  <h3 className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
                     Ficha de Emissão
                   </h3>
                   <div className="space-y-2 text-xs">
                     <div>
-                      <span className="text-zinc-500 block">Aluno(a)</span>
-                      <span className="font-semibold text-white uppercase">{alunoSelecionado.nome}</span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Aluno(a)</span>
+                      <span className="text-sm font-semibold text-foreground uppercase">{alunoSelecionado.nome}</span>
                     </div>
                     {alunoSelecionado.turmas?.nome && (
                       <div>
-                        <span className="text-zinc-500 block">Turma</span>
-                        <span className="font-semibold text-[#3ea6ff] uppercase">{alunoSelecionado.turmas.nome}</span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Turma</span>
+                        <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.turmas.nome}</span>
                       </div>
                     )}
                     <div>
-                      <span className="text-zinc-500 block">Mãe / Responsável</span>
-                      <span className="font-semibold text-white uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Mãe / Responsável</span>
+                      <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block">Nascimento</span>
-                      <span className="font-semibold text-white">{dataNascimentoFormatada}</span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Nascimento</span>
+                      <span className="text-sm font-normal text-muted-foreground">{dataNascimentoFormatada}</span>
                     </div>
                   </div>
                 </div>
@@ -558,9 +559,9 @@ export default function DocumentosPage() {
 
           {/* Coluna Direita: Seleção do Documento */}
           <div className="md:col-span-2 space-y-4">
-            <Card className="p-5 border-borderCustom bg-card space-y-5">
+            <Card className="p-5 border-border bg-card space-y-5">
               <div>
-                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
                   2. Escolha o Documento
                 </label>
 
@@ -575,16 +576,14 @@ export default function DocumentosPage() {
                         onClick={() => setDocType(opt.id)}
                         className={`p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer flex gap-3.5 shadow-sm hover:scale-[1.01] ${
                           isSelected
-                            ? 'bg-[#185FA5]/10 border-[#185FA5] dark:bg-[#3ea6ff]/10 dark:border-[#3ea6ff] text-white'
-                            : 'bg-background border-borderCustom text-zinc-300 hover:bg-[#1a1a1c]'
+                            ? 'bg-primary/10 border-primary text-foreground'
+                            : 'bg-background border-border text-muted-foreground hover:bg-hoverCustom'
                         }`}
                       >
-                        <div className={`p-2.5 rounded-xl shrink-0 ${isSelected ? 'bg-[#185FA5]/20 text-[#3ea6ff]' : 'bg-surface-1 text-zinc-400'}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
+                        <IconTile icon={Icon} variant="primary" className="h-10 w-10 shrink-0" />
                         <div>
-                          <h4 className="font-bold text-sm text-white">{opt.label}</h4>
-                          <p className="text-[10px] text-zinc-500 mt-0.5 leading-snug">{opt.desc}</p>
+                          <h4 className="font-semibold text-sm text-foreground">{opt.label}</h4>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
                         </div>
                       </button>
                     )

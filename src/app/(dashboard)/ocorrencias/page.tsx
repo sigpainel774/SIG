@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertTriangle, RefreshCw, CheckCircle2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { IconTile } from '@/components/ui/icon-tile'
 
 export default function OcorrenciasPage() {
   const [dataFiltro, setDataFiltro] = useState('')
@@ -33,37 +34,37 @@ export default function OcorrenciasPage() {
 
   const getGravidadeColor = (gravidade: string) => {
     switch (gravidade) {
-      case 'Alta': return 'bg-red-500/20 text-red-500 border-red-500/30'
-      case 'Média': return 'bg-amber-500/20 text-amber-500 border-amber-500/30'
-      case 'Baixa': return 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      case 'Alta': return 'bg-destructive/20 text-destructive border-destructive/30'
+      case 'Média': return 'bg-warning/20 text-warning border-warning/30'
+      case 'Baixa': return 'bg-success/20 text-success border-success/30'
+      default: return 'bg-muted text-muted-foreground border-border'
     }
   }
 
   const getStatusPaisColor = (status: string) => {
     switch (status) {
-      case 'Cientes': return 'text-emerald-500'
-      case 'Reunião Agendada': return 'text-amber-500'
-      default: return 'text-[#aaa]'
+      case 'Cientes': return 'text-success'
+      case 'Reunião Agendada': return 'text-warning'
+      default: return 'text-muted-foreground'
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <AlertTriangle className="w-6 h-6 text-[#ff9800]" /> 
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <IconTile icon={AlertTriangle} variant="destructive" className="h-10 w-10 shrink-0" /> 
               Gestão de Ocorrências
-            </h2>
+            </h1>
           </div>
-          <p className="text-[#aaa] text-sm mt-1">Monitoramento disciplinar e pedagógico da escola.</p>
+          <p className="text-muted-foreground text-sm font-normal mt-2 ml-14">Monitoramento disciplinar e pedagógico da escola.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -71,14 +72,14 @@ export default function OcorrenciasPage() {
             type="date"
             value={dataFiltro}
             onChange={(e) => setDataFiltro(e.target.value)}
-            className="bg-[#121212] border-[#3f3f46] text-white w-auto"
+            className="bg-background border-border text-foreground w-auto"
           />
           
           <Select value={gravidadeFiltro} onValueChange={(val) => val && setGravidadeFiltro(val)}>
-            <SelectTrigger className="w-[180px] bg-[#121212] border-[#3f3f46] text-white">
+            <SelectTrigger className="w-[180px] bg-background border-border text-foreground">
               <SelectValue placeholder="Gravidade" />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectContent className="bg-popover border-border text-foreground">
               <SelectItem value="todas">Todas as Gravidades</SelectItem>
               <SelectItem value="Baixa">Baixa</SelectItem>
               <SelectItem value="Média">Média</SelectItem>
@@ -88,7 +89,7 @@ export default function OcorrenciasPage() {
 
           <Button 
             variant="outline" 
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            className="bg-background border-border text-foreground hover:bg-hoverCustom"
             onClick={fetchOcorrencias}
             disabled={loading}
           >
@@ -97,17 +98,17 @@ export default function OcorrenciasPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
+          <TableHeader className="bg-secondary border-b border-border">
             <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold">Data</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Aluno</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Turma</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Tipo / Gravidade</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Descrição</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Registro por</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Status (Pais)</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Data</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Aluno</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Turma</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Tipo / Gravidade</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Descrição</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Registro por</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Status (Pais)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -119,25 +120,25 @@ export default function OcorrenciasPage() {
               </TableRow>
             )}
             {ocorrencias.map((oco) => (
-              <TableRow key={oco.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors">
-                <TableCell className="text-[#aaa] whitespace-nowrap">{new Date(oco.data).toLocaleDateString('pt-BR')}</TableCell>
-                <TableCell className="text-white font-medium">{oco.alunos?.nome}</TableCell>
-                <TableCell className="text-[#aaa]">{oco.turmas?.nome}</TableCell>
+              <TableRow key={oco.id} className="border-b border-border hover:bg-hoverCustom transition-colors">
+                <TableCell className="text-muted-foreground text-sm font-normal whitespace-nowrap">{new Date(oco.data).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell className="text-foreground font-semibold text-sm">{oco.alunos?.nome}</TableCell>
+                <TableCell className="text-muted-foreground text-sm font-normal">{oco.turmas?.nome}</TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1 items-start">
-                    <span className="text-sm text-white">{oco.tipo}</span>
+                    <span className="text-sm font-medium text-foreground">{oco.tipo}</span>
                     <Badge variant="outline" className={`text-xs font-semibold ${getGravidadeColor(oco.gravidade)}`}>
                       {oco.gravidade}
                     </Badge>
                   </div>
                 </TableCell>
-                <TableCell className="text-[#aaa] max-w-[250px] truncate" title={oco.descricao}>
+                <TableCell className="text-muted-foreground text-sm font-normal max-w-[250px] truncate" title={oco.descricao}>
                   {oco.descricao}
                 </TableCell>
-                <TableCell className="text-[#aaa]">{oco.funcionarios?.nome || '-'}</TableCell>
+                <TableCell className="text-muted-foreground text-sm font-normal">{oco.funcionarios?.nome || '-'}</TableCell>
                 <TableCell>
                   <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.status_pais)}`}>
-                    {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4" />}
+                    {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4 text-success" />}
                     {oco.status_pais}
                   </span>
                 </TableCell>

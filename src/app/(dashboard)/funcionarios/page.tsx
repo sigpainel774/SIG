@@ -32,6 +32,7 @@ import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
+import { IconTile } from '@/components/ui/icon-tile'
 
 /* ─── Tipo Funcionário ─────────────────────────────────────── */
 
@@ -966,24 +967,22 @@ export default function FuncionariosPage() {
       />
 
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3 mb-2 pb-4 border-b border-border">
         <Link href="/home">
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <div className="p-2.5 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center text-[#185FA5] dark:text-[#3ea6ff]">
-          <Users className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Funcionários</h1>
+        <IconTile icon={Users} variant="primary" className="h-10 w-10 shrink-0" />
+        <h1 className="text-2xl font-bold text-foreground">Gestão de Funcionários</h1>
       </div>
 
       {/* ── Painel de Ações Rápidas ─────────────────────────── */}
       <div className={cn("grid grid-cols-1 gap-4 mb-6", canManagePermissions ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
         {/* Atestados Médicos */}
         <Link href="/atestados" className="group">
-          <div className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom hover:border-emerald-500/30 dark:hover:border-emerald-400/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform duration-200">
+          <div className="bg-surface-1 hover:bg-hoverCustom border border-border hover:border-success/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full">
+            <div className="p-3 rounded-xl bg-success/10 text-success group-hover:scale-105 transition-transform duration-200">
               <FileCheck className="w-6 h-6" />
             </div>
             <div>
@@ -999,9 +998,9 @@ export default function FuncionariosPage() {
             setFuncLotacaoInicial(null)
             setModalLotacoesOpen(true)
           }}
-          className="group bg-surface-1 hover:bg-hoverCustom border border-borderCustom hover:border-amber-500/30 dark:hover:border-amber-400/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full"
+          className="group bg-surface-1 hover:bg-hoverCustom border border-border hover:border-warning/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full"
         >
-          <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform duration-200">
+          <div className="p-3 rounded-xl bg-warning/10 text-warning group-hover:scale-105 transition-transform duration-200">
             <Network className="w-6 h-6" />
           </div>
           <div>
@@ -1017,15 +1016,15 @@ export default function FuncionariosPage() {
             className={cn(
               "group bg-surface-1 hover:bg-hoverCustom border rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full",
               viewMode === 'permissoes'
-                ? "border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/30 dark:ring-[#3ea6ff]/30 bg-[#185FA5]/5 dark:bg-[#3ea6ff]/5"
-                : "border-borderCustom hover:border-[#185FA5]/30 dark:hover:border-[#3ea6ff]/30"
+                ? "border-primary ring-1 ring-primary/30 bg-primary/5"
+                : "border-border hover:border-primary/30"
             )}
           >
             <div className={cn(
               "p-3 rounded-xl group-hover:scale-105 transition-transform duration-200",
               viewMode === 'permissoes'
-                ? "bg-[#185FA5]/20 text-[#185FA5] dark:bg-[#3ea6ff]/20 dark:text-[#3ea6ff]"
-                : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                ? "bg-primary/20 text-primary"
+                : "bg-primary/10 text-primary"
             )}>
               <ShieldCheck className="w-6 h-6" />
             </div>
@@ -1113,10 +1112,10 @@ export default function FuncionariosPage() {
       {/* ── Grade de Cards ─────────────────────────────────────── */}
       {carregando ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : funcsFiltrados.length === 0 ? (
-        <div className="bg-surface-1 border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground text-sm">
+        <div className="bg-surface-1 border border-dashed border-border rounded-2xl p-12 text-center text-muted-foreground text-sm">
           Nenhum funcionário encontrado com os filtros aplicados.
         </div>
       ) : (
@@ -1128,10 +1127,10 @@ export default function FuncionariosPage() {
             return (
               <div
                 key={func.id}
-                className="bg-surface-1 border-[0.5px] border-borderCustom hover:border-[#185FA5]/40 dark:hover:border-[#3ea6ff]/40 rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md"
+                className="bg-card border-[0.5px] border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md"
               >
                 {/* ── Topo do card: Avatar + Nome + Badges + Ações ── */}
-                <div className="flex items-start justify-between gap-3 pb-4 border-b border-borderCustom/50">
+                <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/50">
                   <div className="flex items-start gap-3 min-w-0 flex-1">
                     {/* Avatar circular */}
                     <div
@@ -1150,13 +1149,13 @@ export default function FuncionariosPage() {
 
                     {/* Nome + badges */}
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-foreground text-sm leading-tight truncate">
+                      <h3 className="text-base font-semibold text-foreground tracking-tight truncate">
                         {func.nome}
-                      </p>
+                      </h3>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                         {/* Badge Cargo */}
                         {func.cargo && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/50 text-[#185FA5] text-[10px] font-semibold tracking-wide truncate max-w-[130px] dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-400">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold tracking-wide truncate max-w-[130px]">
                             {func.cargo}
                           </span>
                         )}
@@ -1164,8 +1163,8 @@ export default function FuncionariosPage() {
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${
                             isAtivo
-                              ? 'bg-emerald-50 border-emerald-200/50 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800/50 dark:text-emerald-400'
-                              : 'bg-zinc-50 border-zinc-200/50 text-zinc-700 dark:bg-zinc-800/40 dark:border-zinc-700/50 dark:text-zinc-400'
+                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                              : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
                           }`}
                         >
                           <span
@@ -1184,7 +1183,7 @@ export default function FuncionariosPage() {
                       <button
                         onClick={() => handleAbrirLotacoes(func)}
                         title="Gestão de Lotações"
-                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-borderCustom text-foreground font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
                       >
                         M
                       </button>
@@ -1193,7 +1192,7 @@ export default function FuncionariosPage() {
                     <button
                       onClick={() => handleImprimir(func.id)}
                       title="Imprimir ficha"
-                      className="w-9 h-9 rounded-xl bg-[#185FA5] hover:bg-[#185FA5]/90 text-white border-none flex items-center justify-center transition-all cursor-pointer dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                      className="w-9 h-9 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none flex items-center justify-center transition-all cursor-pointer"
                     >
                       <Printer className="w-4 h-4" />
                     </button>
@@ -1202,7 +1201,7 @@ export default function FuncionariosPage() {
                       <button
                         onClick={() => handleEditar(func)}
                         title="Editar funcionário"
-                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-borderCustom text-foreground flex items-center justify-center transition-all cursor-pointer"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -1212,7 +1211,7 @@ export default function FuncionariosPage() {
                       <button
                         onClick={() => handleExcluir(func)}
                         title="Excluir funcionário"
-                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-red-500/10 hover:text-red-600 border border-borderCustom text-foreground flex items-center justify-center transition-all cursor-pointer dark:hover:text-red-400"
+                        className="w-9 h-9 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1221,24 +1220,24 @@ export default function FuncionariosPage() {
                 </div>
 
                 {/* ── Informações Adicionais ────────────────── */}
-                <div className="space-y-1.5 text-xs text-muted-foreground">
+                <div className="space-y-2.5">
                   {func.orgao && (
-                    <p>
-                      <span className="font-semibold text-foreground">Órgão:</span>{' '}
-                      {func.orgao}
-                    </p>
+                    <div className="flex flex-col">
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">Órgão</span>
+                      <span className="text-sm font-normal text-muted-foreground">{func.orgao}</span>
+                    </div>
                   )}
                   {func.data_nascimento && (
-                    <p>
-                      <span className="font-semibold text-foreground">Nascimento:</span>{' '}
-                      {formatarData(func.data_nascimento)}
-                    </p>
+                    <div className="flex flex-col">
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">Nascimento</span>
+                      <span className="text-sm font-normal text-muted-foreground">{formatarData(func.data_nascimento)}</span>
+                    </div>
                   )}
                   {func.formacao && (
-                    <p>
-                      <span className="font-semibold text-foreground">Formação:</span>{' '}
-                      {func.formacao}
-                    </p>
+                    <div className="flex flex-col">
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">Formação</span>
+                      <span className="text-sm font-normal text-muted-foreground">{func.formacao}</span>
+                    </div>
                   )}
                 </div>
               </div>
