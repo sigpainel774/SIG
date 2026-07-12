@@ -245,11 +245,11 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
         <div>
           {/* Cabeçalho Oficial da Prefeitura/SME */}
           <div className="flex items-center justify-between pb-3 border-b border-black mb-8">
-            <div className="flex items-center gap-2 max-w-[130px] shrink-0">
+            <div className="flex items-center gap-2 max-w-[180px] shrink-0">
               <img
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)}
                 alt="Prefeitura de Sapeaçu"
-                className="h-16 w-auto object-contain"
+                className="doc-header-logo-prefeitura"
               />
             </div>
 
@@ -259,11 +259,11 @@ export function PrintDocumentoEscolar({ aluno, docType, onClose }: PrintDocument
               <p className="text-[10px] font-bold text-gray-600 mt-0.5">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
             </div>
 
-            <div className="text-right max-w-[135px] shrink-0">
+            <div className="text-right max-w-[180px] shrink-0">
               <img
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)}
                 alt="Secretaria de Educação"
-                className="h-12 w-auto object-contain"
+                className="doc-header-logo-secretaria"
               />
             </div>
           </div>

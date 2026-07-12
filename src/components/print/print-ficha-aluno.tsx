@@ -172,7 +172,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <img 
                 src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`} 
                 alt="Prefeitura de Sapeaçu" 
-                className="h-20 w-auto object-contain"
+                className="doc-header-logo-prefeitura"
               />
             </div>
 
@@ -181,11 +181,11 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <p className="text-xs font-bold text-gray-600">Ano Letivo {dm.anoLetivo || '2026'}</p>
             </div>
 
-            <div className="text-right max-w-[220px]">
+            <div className="text-right max-w-[200px]">
               <img 
                 src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`} 
                 alt="Secretaria Municipal de Educação" 
-                className="h-14 w-auto object-contain"
+                className="doc-header-logo-secretaria"
               />
             </div>
           </div>

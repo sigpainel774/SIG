@@ -187,7 +187,7 @@ export function PrintBoletimAluno({
               <img
                 src="/img/logo-prefeitura.png"
                 alt="Logo Prefeitura"
-                className="h-14 w-auto object-contain"
+                className="doc-header-logo-prefeitura"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
                 }}
@@ -198,7 +198,16 @@ export function PrintBoletimAluno({
               <p className="text-sm font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
               <p className="text-xs text-gray-500">Ano Letivo {turma.ano_letivo}</p>
             </div>
-            <div className="w-[180px]" /> {/* Spacer */}
+            <div className="text-right max-w-[180px]">
+              <img
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`}
+                alt="Secretaria Municipal de Educação"
+                className="doc-header-logo-secretaria"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
           </div>
 
           {/* Dados do Aluno */}
