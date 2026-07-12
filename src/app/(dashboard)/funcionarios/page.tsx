@@ -19,12 +19,14 @@ import {
   Loader2,
   ArrowLeft,
   Users,
-  FileCheck
+  FileCheck,
+  ShieldCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ModalFuncionario } from '@/components/modals/modal-funcionario'
 import { ModalGestaoLotacoes } from '@/components/modals/modal-gestao-lotacoes'
+import { PermissoesView } from '@/components/PermissoesView'
 import { createClient } from '@/lib/supabaseClient'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -84,8 +86,11 @@ function formatarData(iso: string | null | undefined): string {
 
 export default function FuncionariosPage() {
   const supabase = createClient()
-  const { funcionario: authFuncionario, acessos } = useAuthStore()
+  const { funcionario: authFuncionario, acessos, isAdminGlobalOrRoot } = useAuthStore()
   const { isEditMode } = useEditModeStore()
+  const isAdmin = isAdminGlobalOrRoot()
+
+  const [viewMode, setViewMode] = useState<'lista' | 'permissoes'>('lista')
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -971,7 +976,76 @@ export default function FuncionariosPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Funcionários</h1>
       </div>
 
-      {/* ── Barra de ferramentas ─────────────────────────────── */}
+      {/* ── Painel de Ações Rápidas ─────────────────────────── */}
+      <div className={cn("grid grid-cols-1 gap-4 mb-6", isAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        {/* Atestados Médicos */}
+        <Link href="/atestados" className="group">
+          <div className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom hover:border-emerald-500/30 dark:hover:border-emerald-400/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full">
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform duration-200">
+              <FileCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground text-sm leading-tight">Atestados Médicos</h3>
+              <p className="text-xs text-muted-foreground mt-1">Registrar e gerenciar atestados e afastamentos</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Gestão de Lotações */}
+        <div 
+          onClick={() => {
+            setFuncLotacaoInicial(null)
+            setModalLotacoesOpen(true)
+          }}
+          className="group bg-surface-1 hover:bg-hoverCustom border border-borderCustom hover:border-amber-500/30 dark:hover:border-amber-400/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full"
+        >
+          <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform duration-200">
+            <Network className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground text-sm leading-tight">Gestão de Lotações</h3>
+            <p className="text-xs text-muted-foreground mt-1">Vincular servidores às suas respectivas escolas</p>
+          </div>
+        </div>
+
+        {/* Permissões de Acesso */}
+        {isAdmin && (
+          <div
+            onClick={() => setViewMode(viewMode === 'lista' ? 'permissoes' : 'lista')}
+            className={cn(
+              "group bg-surface-1 hover:bg-hoverCustom border rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full",
+              viewMode === 'permissoes'
+                ? "border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/30 dark:ring-[#3ea6ff]/30 bg-[#185FA5]/5 dark:bg-[#3ea6ff]/5"
+                : "border-borderCustom hover:border-[#185FA5]/30 dark:hover:border-[#3ea6ff]/30"
+            )}
+          >
+            <div className={cn(
+              "p-3 rounded-xl group-hover:scale-105 transition-transform duration-200",
+              viewMode === 'permissoes'
+                ? "bg-[#185FA5]/20 text-[#185FA5] dark:bg-[#3ea6ff]/20 dark:text-[#3ea6ff]"
+                : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+            )}>
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground text-sm leading-tight">Permissões de Acesso</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                {viewMode === 'permissoes'
+                  ? 'Voltar para a Lista de Funcionários'
+                  : 'Gerenciar níveis e atribuições de acessos'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {viewMode === 'permissoes' ? (
+        <div className="animate-in fade-in duration-200">
+          <PermissoesView onBack={() => setViewMode('lista')} />
+        </div>
+      ) : (
+        <>
+          {/* ── Barra de ferramentas ─────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Busca */}
         <Input
@@ -1009,30 +1083,6 @@ export default function FuncionariosPage() {
             <SelectItem value="suspenso">Suspenso</SelectItem>
           </SelectContent>
         </Select>
-
-        {/* Atestados Médicos */}
-        <Link href="/atestados">
-          <Button
-            className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl"
-            variant="outline"
-          >
-            <FileCheck className="w-4 h-4 text-muted-foreground" />
-            Atestados Médicos
-          </Button>
-        </Link>
-
-        {/* Gestão de Lotações */}
-        <Button
-          onClick={() => {
-            setFuncLotacaoInicial(null)
-            setModalLotacoesOpen(true)
-          }}
-          className="bg-surface-1 hover:bg-hoverCustom border border-borderCustom text-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl"
-          variant="outline"
-        >
-          <Network className="w-4 h-4 text-muted-foreground" />
-          Gestão de Lotações
-        </Button>
 
         {/* Imprimir Lista (Único Primário) */}
         <Button
@@ -1193,6 +1243,8 @@ export default function FuncionariosPage() {
             )
           })}
         </div>
+      )}
+        </>
       )}
     </div>
   )
