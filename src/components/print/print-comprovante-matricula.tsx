@@ -173,11 +173,11 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
         <div>
           {/* Cabeçalho */}
           <div className="flex items-center justify-between pb-1.5 border-b border-black mb-2">
-            <div className="flex items-center gap-2 max-w-[130px]">
+            <div className="flex items-center gap-2 max-w-[180px]">
               <img 
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)} 
                 alt="Prefeitura de Sapeaçu" 
-                className="h-12 w-auto object-contain"
+                className="doc-header-logo-prefeitura"
               />
             </div>
 
@@ -187,11 +187,11 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
               <p className="text-[8.5px] font-bold text-gray-600">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
             </div>
 
-            <div className="text-right max-w-[135px]">
+            <div className="text-right max-w-[180px]">
               <img 
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)} 
                 alt="Secretaria de Educação" 
-                className="h-9 w-auto object-contain"
+                className="doc-header-logo-secretaria"
               />
             </div>
           </div>

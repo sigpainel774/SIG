@@ -234,3 +234,18 @@
 .dark .leaflet-popup-close-button:hover {
   color: #f87171 !important;
 }
+
+/* Classes para padronizar e ajustar o tamanho dos logos nos cabeçalhos de documentos oficiais */
+.doc-header-logo-prefeitura {
+  height: 4.5rem !important; /* ~72px, dando destaque adequado */
+  width: auto !important;
+  max-width: 200px !important;
+  object-fit: contain !important;
+}
+
+.doc-header-logo-secretaria {
+  height: 2.75rem !important; /* ~44px, mantendo equilíbrio visual */
+  width: auto !important;
+  max-width: 200px !important;
+  object-fit: contain !important;
+}

@@ -172,15 +172,14 @@ export async function POST(request: NextRequest) {
     let yPosition = height - margin
 
     // Desenhar Cabeçalho Institucional
-    const logoY = yPosition - 42
     
     // Desenhar Logo Prefeitura (Esquerda)
     if (logoPrefeituraImage) {
       page.drawImage(logoPrefeituraImage, {
         x: margin,
-        y: logoY,
-        width: 60,
-        height: 35
+        y: yPosition - 46,
+        width: 75,
+        height: 44
       })
     }
 
@@ -188,7 +187,7 @@ export async function POST(request: NextRequest) {
     if (logoSecretariaImage) {
       page.drawImage(logoSecretariaImage, {
         x: width - margin - 75,
-        y: logoY + 2,
+        y: yPosition - 38,
         width: 75,
         height: 30
       })
