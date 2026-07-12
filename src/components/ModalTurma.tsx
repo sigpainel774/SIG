@@ -45,6 +45,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
   const [selectedProfId, setSelectedProfId] = useState('')
   const [novaMateriaNome, setNovaMateriaNome] = useState('')
   const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
+  const [novaMateriaBaseCurricular, setNovaMateriaBaseCurricular] = useState('comum')
 
   const supabase = createClient() as any
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
@@ -279,13 +280,15 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           nome: novaMateriaNome.trim(),
           turma_id: turma.id,
           escola_id: escolaAtivaId,
-          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId
+          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId,
+          base_curricular: novaMateriaBaseCurricular
         })
 
       if (error) throw error
       toast.success('Matéria adicionada com sucesso')
       setNovaMateriaNome('')
       setNovaMateriaProfId('')
+      setNovaMateriaBaseCurricular('comum')
       fetchMaterias()
     } catch (err: any) {
       toast.error('Erro ao adicionar matéria: ' + err.message)
@@ -447,7 +450,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 {/* Formulário de Adição (Dashed Container) */}
                 {isEditMode && (
                   <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <Input
                         placeholder="Nome da Matéria (Ex: Português...)"
                         value={novaMateriaNome}
@@ -465,6 +468,15 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                               {vp.funcionarios?.nome || 'Sem nome'}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={novaMateriaBaseCurricular} onValueChange={(val) => setNovaMateriaBaseCurricular(val ?? 'comum')}>
+                        <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                          <SelectValue placeholder="Base Curricular" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                          <SelectItem value="comum">Base Comum</SelectItem>
+                          <SelectItem value="diversificada">Base Diversificada</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -487,10 +499,15 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                       <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022]">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-white">{mat.nome}</span>
-                          <span className="flex items-center gap-1.5 text-xs text-zinc-400 mt-1">
-                            <User className="w-3.5 h-3.5 text-zinc-500" />
-                            {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="flex items-center gap-1.5 text-xs text-zinc-400">
+                              <User className="w-3.5 h-3.5 text-zinc-500" />
+                              {mat.funcionarios?.nome ? mat.funcionarios.nome : 'Sem professor'}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-[#3ea6ff] border border-blue-500/20 font-semibold">
+                              {mat.base_curricular === 'diversificada' ? 'Diversificada' : 'Comum'}
+                            </span>
+                          </div>
                         </div>
                         {isEditMode && (
                           <Button
