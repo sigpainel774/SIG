@@ -142,3 +142,8 @@
 - **Políticas de UPDATE em Storage Público**: Operações de upload com `upsert: true` que atualizam arquivos já existentes em buckets públicos executam um `UPDATE` no Postgres. Certifique-se de que a política de `UPDATE` da tabela `storage.objects` permita acesso público/anônimo caso a tela de destino (ex: página de assinatura mobile) seja pública.
 <!-- END:supabase-storage-caching-rules -->
 
+<!-- BEGIN:language-preference-rule -->
+# Preferência de Idioma
+
+- **Idioma de Comunicação**: O agente deve sempre se comunicar e explicar as alterações, diagnósticos e planos em português brasileiro (PT-BR).
+<!-- END:language-preference-rule -->

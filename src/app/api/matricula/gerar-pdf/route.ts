@@ -3,6 +3,8 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 // Cache da fonte em memória para evitar múltiplos downloads
@@ -10,9 +12,9 @@ let robotoFontBytes: Uint8Array | null = null
 
 async function getRobotoFont() {
   if (robotoFontBytes) return robotoFontBytes
-  const res = await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/roboto/Roboto-Regular.ttf')
-  const arrayBuffer = await res.arrayBuffer()
-  robotoFontBytes = new Uint8Array(arrayBuffer)
+  const filePath = path.join(process.cwd(), 'public', 'fonts', 'Roboto-Regular.ttf')
+  const fileBuffer = fs.readFileSync(filePath)
+  robotoFontBytes = new Uint8Array(fileBuffer)
   return robotoFontBytes
 }
 
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
       robotoBytes = await getRobotoFont()
     } catch (fontErr: any) {
       return NextResponse.json({ 
-        error: `Erro ao baixar fonte institucional Roboto: ${fontErr.message}` 
+        error: `Erro ao carregar fonte institucional Roboto: ${fontErr.message}` 
       }, { status: 500 })
     }
 
