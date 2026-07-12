@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 export interface BoletimMateriaData {
   id: string
   nome: string
+  base_curricular?: string
 }
 
 export interface BoletimNotaData {
@@ -32,6 +33,7 @@ interface PrintBoletimAlunoProps {
     ano_letivo: number
   }
   escolaNome: string
+  escolaLogoUrl?: string | null
   materias: BoletimMateriaData[]
   notas: BoletimNotaData[]
   recuperacoes?: BoletimRecuperacaoData[]
@@ -42,6 +44,7 @@ export function PrintBoletimAluno({
   aluno,
   turma,
   escolaNome,
+  escolaLogoUrl,
   materias,
   notas,
   recuperacoes = [],
@@ -187,24 +190,24 @@ export function PrintBoletimAluno({
               <img
                 src="/img/logo-prefeitura.png"
                 alt="Logo Prefeitura"
-                className="doc-header-logo-prefeitura"
+                className="doc-header-logo-prefeitura h-12 w-auto object-contain"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.src = '/img/brasaoSapeaçu.png'
                 }}
               />
             </div>
             <div className="text-center flex-1 px-4">
-              <h1 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{escolaNome}</h1>
-              <p className="text-sm font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
-              <p className="text-xs text-gray-500">Ano Letivo {turma.ano_letivo}</p>
+              <h1 className="text-sm font-bold text-gray-800 uppercase tracking-wider">{escolaNome}</h1>
+              <p className="text-xs font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
+              <p className="text-[10px] text-gray-500">Ano Letivo {turma.ano_letivo}</p>
             </div>
-            <div className="text-right max-w-[180px]">
+            <div className="text-right max-w-[180px] flex items-center justify-end">
               <img
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`}
-                alt="Secretaria Municipal de Educação"
-                className="doc-header-logo-secretaria"
+                src={escolaLogoUrl ? (escolaLogoUrl.includes('data:image') ? escolaLogoUrl : `${escolaLogoUrl.split('?')[0]}?t=${Date.now()}`) : '/img/logo-secretaria.png'}
+                alt="Logo Escola"
+                className="h-12 w-auto object-contain max-h-[50px]"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.src = '/img/logo-secretaria.png'
                 }}
               />
             </div>
@@ -269,62 +272,155 @@ export function PrintBoletimAluno({
               </tr>
             </thead>
             <tbody>
-              {materias.map((mat) => {
-                const u1 = obterNotasUnidade(mat.id, 1)
-                const u2 = obterNotasUnidade(mat.id, 2)
-                const u3 = obterNotasUnidade(mat.id, 3)
-
-                const m1 = calcularMediaUnidade(mat.id, 1)
-                const m2 = calcularMediaUnidade(mat.id, 2)
-                const m3 = calcularMediaUnidade(mat.id, 3)
-                
-                const mfOriginal = calcularMediaFinalOriginal(mat.id)
-                const mfPosRec = calcularMediaFinalPosRecup(mat.id)
-                const rec = obterRecuperacaoMateria(mat.id)
-
-                return (
-                  <tr key={mat.id} className="hover:bg-gray-50 text-gray-800 text-[11px]">
-                    <td className="border border-gray-300 p-2 font-semibold text-gray-900">{mat.nome}</td>
-                    
-                    {/* 1ª Unidade */}
-                    <td className="border border-gray-300 p-1 text-center">{u1.nota1 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u1.nota2 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u1.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m1 ?? '-'}</td>
-
-                    {/* 2ª Unidade */}
-                    <td className="border border-gray-300 p-1 text-center">{u2.nota1 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u2.nota2 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u2.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m2 ?? '-'}</td>
-
-                    {/* 3ª Unidade */}
-                    <td className="border border-gray-300 p-1 text-center">{u3.nota1 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u3.nota2 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center">{u3.nota3 ?? '-'}</td>
-                    <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{m3 ?? '-'}</td>
-
-                    {/* Média Final condicional */}
-                    {alunoTemRecuperacao ? (
-                      <>
-                        <td className="border border-gray-300 p-1 text-center font-bold bg-gray-55">{mfOriginal ?? '-'}</td>
-                        <td className="border border-gray-300 p-1 text-center font-semibold bg-yellow-50/20">{rec.nota ?? '-'}</td>
-                        <td className={`border border-gray-300 p-1 text-center font-bold text-[12px] ${
-                          mfPosRec !== null && mfPosRec < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
-                        }`}>
-                          {mfPosRec ?? '-'}
-                        </td>
-                      </>
-                    ) : (
-                      <td className={`border border-gray-300 p-2 text-center font-bold text-[12px] ${
-                        mfOriginal !== null && mfOriginal < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
-                      }`}>
-                        {mfOriginal ?? '-'}
+              {/* Seção 1: BASE NACIONAL COMUM */}
+              <tr className="bg-gray-100 font-bold text-gray-700 text-[10px] uppercase">
+                <td className="border border-gray-300 p-2" colSpan={alunoTemRecuperacao ? 16 : 14}>
+                  Base Nacional Comum
+                </td>
+              </tr>
+              {(() => {
+                const materiasComuns = materias.filter(mat => mat.base_curricular === 'comum' || !mat.base_curricular);
+                if (materiasComuns.length === 0) {
+                  return (
+                    <tr>
+                      <td className="border border-gray-300 p-2 text-center text-gray-500 italic text-[11px]" colSpan={alunoTemRecuperacao ? 16 : 14}>
+                        Nenhuma disciplina cadastrada na Base Comum.
                       </td>
-                    )}
-                  </tr>
-                )
-              })}
+                    </tr>
+                  );
+                }
+                return materiasComuns.map((mat) => {
+                  const u1 = obterNotasUnidade(mat.id, 1)
+                  const u2 = obterNotasUnidade(mat.id, 2)
+                  const u3 = obterNotasUnidade(mat.id, 3)
+
+                  const m1 = calcularMediaUnidade(mat.id, 1)
+                  const m2 = calcularMediaUnidade(mat.id, 2)
+                  const m3 = calcularMediaUnidade(mat.id, 3)
+                  
+                  const mfOriginal = calcularMediaFinalOriginal(mat.id)
+                  const mfPosRec = calcularMediaFinalPosRecup(mat.id)
+                  const rec = obterRecuperacaoMateria(mat.id)
+
+                  return (
+                    <tr key={mat.id} className="hover:bg-gray-50 text-gray-800 text-[10px]">
+                      <td className="border border-gray-300 p-1.5 font-semibold text-gray-900">{mat.nome}</td>
+                      
+                      {/* 1ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m1 ?? '-'}</td>
+
+                      {/* 2ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m2 ?? '-'}</td>
+
+                      {/* 3ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m3 ?? '-'}</td>
+
+                      {/* Média Final condicional */}
+                      {alunoTemRecuperacao ? (
+                        <>
+                          <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{mfOriginal ?? '-'}</td>
+                          <td className="border border-gray-300 p-0.5 text-center font-semibold bg-yellow-50/20">{rec.nota ?? '-'}</td>
+                          <td className={`border border-gray-300 p-0.5 text-center font-bold text-[11px] ${
+                            mfPosRec !== null && mfPosRec < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                          }`}>
+                            {mfPosRec ?? '-'}
+                          </td>
+                        </>
+                      ) : (
+                        <td className={`border border-gray-300 p-1 text-center font-bold text-[11px] ${
+                          mfOriginal !== null && mfOriginal < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                        }`}>
+                          {mfOriginal ?? '-'}
+                        </td>
+                      )}
+                    </tr>
+                  )
+                });
+              })()}
+
+              {/* Seção 2: PARTE DIVERSIFICADA */}
+              <tr className="bg-gray-100 font-bold text-gray-700 text-[10px] uppercase">
+                <td className="border border-gray-300 p-2 border-t-2 border-t-gray-400" colSpan={alunoTemRecuperacao ? 16 : 14}>
+                  Parte Diversificada
+                </td>
+              </tr>
+              {(() => {
+                const materiasDiversificadas = materias.filter(mat => mat.base_curricular === 'diversificada');
+                if (materiasDiversificadas.length === 0) {
+                  return (
+                    <tr>
+                      <td className="border border-gray-300 p-2 text-center text-gray-500 italic text-[11px]" colSpan={alunoTemRecuperacao ? 16 : 14}>
+                        Nenhuma disciplina cadastrada na Parte Diversificada.
+                      </td>
+                    </tr>
+                  );
+                }
+                return materiasDiversificadas.map((mat) => {
+                  const u1 = obterNotasUnidade(mat.id, 1)
+                  const u2 = obterNotasUnidade(mat.id, 2)
+                  const u3 = obterNotasUnidade(mat.id, 3)
+
+                  const m1 = calcularMediaUnidade(mat.id, 1)
+                  const m2 = calcularMediaUnidade(mat.id, 2)
+                  const m3 = calcularMediaUnidade(mat.id, 3)
+                  
+                  const mfOriginal = calcularMediaFinalOriginal(mat.id)
+                  const mfPosRec = calcularMediaFinalPosRecup(mat.id)
+                  const rec = obterRecuperacaoMateria(mat.id)
+
+                  return (
+                    <tr key={mat.id} className="hover:bg-gray-50 text-gray-800 text-[10px]">
+                      <td className="border border-gray-300 p-1.5 font-semibold text-gray-900">{mat.nome}</td>
+                      
+                      {/* 1ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u1.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m1 ?? '-'}</td>
+
+                      {/* 2ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u2.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m2 ?? '-'}</td>
+
+                      {/* 3ª Unidade */}
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota1 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota2 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center">{u3.nota3 ?? '-'}</td>
+                      <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{m3 ?? '-'}</td>
+
+                      {/* Média Final condicional */}
+                      {alunoTemRecuperacao ? (
+                        <>
+                          <td className="border border-gray-300 p-0.5 text-center font-bold bg-gray-55">{mfOriginal ?? '-'}</td>
+                          <td className="border border-gray-300 p-0.5 text-center font-semibold bg-yellow-50/20">{rec.nota ?? '-'}</td>
+                          <td className={`border border-gray-300 p-0.5 text-center font-bold text-[11px] ${
+                            mfPosRec !== null && mfPosRec < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                          }`}>
+                            {mfPosRec ?? '-'}
+                          </td>
+                        </>
+                      ) : (
+                        <td className={`border border-gray-300 p-1 text-center font-bold text-[11px] ${
+                          mfOriginal !== null && mfOriginal < 5.0 ? 'text-red-600 bg-red-50/20' : 'text-green-700 bg-green-50/20'
+                        }`}>
+                          {mfOriginal ?? '-'}
+                        </td>
+                      )}
+                    </tr>
+                  )
+                });
+              })()}
             </tbody>
           </table>
         </div>

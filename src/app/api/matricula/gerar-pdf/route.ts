@@ -168,32 +168,11 @@ export async function POST(request: NextRequest) {
     const { width, height } = page.getSize()
 
     // Margens e Estilos
-    const margin = 40
-    let yPosition = height - margin
+    const margin = 30
+    const tableWidth = width - (margin * 2)
+    const pageCenter = width / 2
+    const paddingLeft = 6
 
-    // Desenhar Cabeçalho Institucional
-    
-    // Desenhar Logo Prefeitura (Esquerda)
-    if (logoPrefeituraImage) {
-      page.drawImage(logoPrefeituraImage, {
-        x: margin,
-        y: yPosition - 46,
-        width: 75,
-        height: 44
-      })
-    }
-
-    // Desenhar Logo Secretaria (Direita)
-    if (logoSecretariaImage) {
-      page.drawImage(logoSecretariaImage, {
-        x: width - margin - 75,
-        y: yPosition - 38,
-        width: 75,
-        height: 30
-      })
-    }
-
-    // Textos Institucionais centralizados
     const txtEstado = 'ESTADO DA BAHIA'
     const txtPrefeitura = 'PREFEITURA MUNICIPAL DE SAPEAÇU'
     const txtSecretaria = 'SECRETARIA MUNICIPAL DE EDUCAÇÃO'
@@ -201,106 +180,6 @@ export async function POST(request: NextRequest) {
     const wEstado = robotoFont.widthOfTextAtSize(txtEstado, 9)
     const wPrefeitura = robotoFont.widthOfTextAtSize(txtPrefeitura, 11)
     const wSecretaria = robotoFont.widthOfTextAtSize(txtSecretaria, 8)
-
-    const pageCenter = width / 2
-
-    page.drawText(txtEstado, {
-      x: pageCenter - (wEstado / 2),
-      y: yPosition - 12,
-      size: 9,
-      font: robotoFont,
-      color: rgb(0.3, 0.3, 0.3)
-    })
-    
-    page.drawText(txtPrefeitura, {
-      x: pageCenter - (wPrefeitura / 2),
-      y: yPosition - 26,
-      size: 11,
-      font: robotoFont,
-      color: rgb(0.1, 0.1, 0.1)
-    })
-
-    page.drawText(txtSecretaria, {
-      x: pageCenter - (wSecretaria / 2),
-      y: yPosition - 38,
-      size: 8,
-      font: robotoFont,
-      color: rgb(0.2, 0.2, 0.2)
-    })
-    
-    // Linha Divisória
-    yPosition -= 50
-    page.drawLine({
-      start: { x: margin, y: yPosition },
-      end: { x: width - margin, y: yPosition },
-      thickness: 1,
-      color: rgb(0, 0, 0)
-    })
-
-    // Título do Documento
-    yPosition -= 25
-    const txtDocTitle = 'COMPROVANTE OFICIAL DE MATRÍCULA ELETRÔNICA'
-    const txtAnoLetivo = `ANO LETIVO: ${dm.anoLetivo || '2026'}`
-    const wDocTitle = robotoFont.widthOfTextAtSize(txtDocTitle, 11)
-    const wAnoLetivo = robotoFont.widthOfTextAtSize(txtAnoLetivo, 9)
-
-    page.drawText(txtDocTitle, {
-      x: pageCenter - (wDocTitle / 2),
-      y: yPosition,
-      size: 11,
-      font: robotoFont,
-      color: rgb(0.05, 0.05, 0.05)
-    })
-    page.drawText(txtAnoLetivo, {
-      x: pageCenter - (wAnoLetivo / 2),
-      y: yPosition - 14,
-      size: 9,
-      font: robotoFont,
-      color: rgb(0.2, 0.2, 0.2)
-    })
-
-    // Box com dados do aluno (Tabela Estruturada)
-    yPosition -= 35
-    const tableHeight = 100
-    const tableWidth = width - (margin * 2)
-    const tableY = yPosition - tableHeight
-
-    // Borda externa
-    page.drawRectangle({
-      x: margin,
-      y: tableY,
-      width: tableWidth,
-      height: tableHeight,
-      borderColor: rgb(0.1, 0.1, 0.1),
-      borderWidth: 0.75,
-      color: rgb(1, 1, 1)
-    })
-
-    // Linhas horizontais divisórias
-    page.drawLine({ start: { x: margin, y: yPosition - 25 }, end: { x: width - margin, y: yPosition - 25 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-    page.drawLine({ start: { x: margin, y: yPosition - 50 }, end: { x: width - margin, y: yPosition - 50 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-    page.drawLine({ start: { x: margin, y: yPosition - 75 }, end: { x: width - margin, y: yPosition - 75 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-
-    // Linha vertical divisória - Linha 1 (3/4 e 1/4)
-    const col1_4 = margin + tableWidth * 0.75 // 426.46
-    page.drawLine({ start: { x: col1_4, y: yPosition - 25 }, end: { x: col1_4, y: yPosition }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-
-    // Linha vertical divisória - Linha 3 (1/3, 1/3, 1/3)
-    const col3_1 = margin + tableWidth / 3 // 211.76
-    const col3_2 = margin + (tableWidth / 3) * 2 // 383.52
-    page.drawLine({ start: { x: col3_1, y: yPosition - 75 }, end: { x: col3_1, y: yPosition - 50 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-    page.drawLine({ start: { x: col3_2, y: yPosition - 75 }, end: { x: col3_2, y: yPosition - 50 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-
-    // Linha vertical divisória - Linha 4 (1/2 e 1/2)
-    const col2_1 = margin + tableWidth / 2 // 297.64
-    page.drawLine({ start: { x: col2_1, y: tableY }, end: { x: col2_1, y: yPosition - 75 }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
-
-    // Rótulos e Valores
-    const labelColor = rgb(0.3, 0.3, 0.3)
-    const valueColor = rgb(0, 0, 0)
-    const labelSize = 6.5
-    const valueSize = 8.5
-    const paddingLeft = 6
 
     const escolaNome = aluno.escolas?.nome || dm.escolaNome || 'Não especificada'
     const dataMatriculaFormatada = dm.dataMatricula 
@@ -320,243 +199,396 @@ export async function POST(request: NextRequest) {
       exibidoTurma = dm.turmaAluno || '-'
     }
 
-    // --- LINHA 1 ---
-    // Unidade Escolar
-    page.drawText('UNIDADE ESCOLAR', { x: margin + paddingLeft, y: yPosition - 8, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText((escolaNome || 'Sem Escola').toUpperCase(), { x: margin + paddingLeft, y: yPosition - 18, size: valueSize, font: robotoFont, color: valueColor })
-
-    // Data
-    page.drawText('DATA', { x: col1_4 + paddingLeft, y: yPosition - 8, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(dataMatriculaFormatada, { x: col1_4 + paddingLeft, y: yPosition - 18, size: valueSize, font: robotoFont, color: valueColor })
-
-    // --- LINHA 2 ---
-    // Aluno
-    page.drawText('ALUNO(A)', { x: margin + paddingLeft, y: yPosition - 33, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(aluno.nome.toUpperCase(), { x: margin + paddingLeft, y: yPosition - 43, size: valueSize, font: robotoFont, color: valueColor })
-
-    // --- LINHA 3 ---
-    // Ano
-    page.drawText('ANO', { x: margin + paddingLeft, y: yPosition - 58, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(exibidoAno, { x: margin + paddingLeft, y: yPosition - 68, size: valueSize, font: robotoFont, color: valueColor })
-
-    // Turma
-    page.drawText('TURMA', { x: col3_1 + paddingLeft, y: yPosition - 58, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(exibidoTurma, { x: col3_1 + paddingLeft, y: yPosition - 68, size: valueSize, font: robotoFont, color: valueColor })
-
-    // Turno
-    page.drawText('TURNO', { x: col3_2 + paddingLeft, y: yPosition - 58, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText((dm.turnoAluno || 'MATUTINO').toUpperCase(), { x: col3_2 + paddingLeft, y: yPosition - 68, size: valueSize, font: robotoFont, color: valueColor })
-
-    // --- LINHA 4 ---
-    // RG
-    page.drawText('Nº IDENTIDADE (RG)', { x: margin + paddingLeft, y: yPosition - 83, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(aluno.rg || dm.rgAluno || '-', { x: margin + paddingLeft, y: yPosition - 93, size: valueSize, font: robotoFont, color: valueColor })
-
-    // CPF
-    page.drawText('CPF', { x: col2_1 + paddingLeft, y: yPosition - 83, size: labelSize, font: robotoFont, color: labelColor })
-    page.drawText(aluno.cpf || dm.cpfAluno || '-', { x: col2_1 + paddingLeft, y: yPosition - 93, size: valueSize, font: robotoFont, color: valueColor })
-
-    // Atualiza yPosition para após a tabela
-    yPosition -= tableHeight
-
-    // --- TERMO DE COMPROMISSO ---
-    yPosition -= 15
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 12,
-      width: tableWidth,
-      height: 12,
-      borderColor: rgb(0.1, 0.1, 0.1),
-      borderWidth: 0.75,
-      color: rgb(0.88, 0.88, 0.88)
-    })
-    page.drawText('TERMO DE COMPROMISSO DO RESPONSÁVEL LEGAL', {
-      x: margin + 6,
-      y: yPosition - 9.5,
-      size: 7.5,
-      font: robotoFont,
-      color: rgb(0.1, 0.1, 0.1)
-    })
-
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 12 - 55,
-      width: tableWidth,
-      height: 55,
-      borderColor: rgb(0.1, 0.1, 0.1),
-      borderWidth: 0.75,
-      color: rgb(1, 1, 1)
-    })
-    const termoText = 'Declaro, sob as penas da Lei, que as informações prestadas bem como documentos que apresento para a matrícula são verdadeiros e autênticos (fiéis à verdade e condizentes com a realidade). Estou ciente de que as informações contidas nesta ficha são muito importantes para o registro do CENSO ESCOLAR e para que a escola possa tomar as providências necessárias em caso de acidentes ou doenças durante a permanência do aluno no período de aulas. Firmo acordo de informar a escola caso haja qualquer mudança nas informações aqui prestadas e a manter-las sempre atualizada. Comprometo-me pelo zelo e preservação do patrimônio desta Escola e responsabilizo-me pelo ressarcimento de quaisquer danos e prejuízo causados pelo aluno sob nossa responsabilidade.'
-    
-    page.drawText(termoText, {
-      x: margin + 6,
-      y: yPosition - 20,
-      size: 7,
-      font: robotoFont,
-      lineHeight: 9.5,
-      maxWidth: tableWidth - 12,
-      color: rgb(0.15, 0.15, 0.15)
-    })
-    yPosition -= (12 + 55)
-
-    // --- AUTORIZAÇÃO DE IMAGEM E VOZ ---
-    yPosition -= 15
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 12,
-      width: tableWidth,
-      height: 12,
-      borderColor: rgb(0.1, 0.1, 0.1),
-      borderWidth: 0.75,
-      color: rgb(0.88, 0.88, 0.88)
-    })
-    page.drawText('AUTORIZAÇÃO DE USO DE IMAGEM E VOZ', {
-      x: margin + 6,
-      y: yPosition - 9.5,
-      size: 7.5,
-      font: robotoFont,
-      color: rgb(0.1, 0.1, 0.1)
-    })
-
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 12 - 38,
-      width: tableWidth,
-      height: 38,
-      borderColor: rgb(0.1, 0.1, 0.1),
-      borderWidth: 0.75,
-      color: rgb(1, 1, 1)
-    })
-
-    const autorizaTexto = 'Neste ato, e para todos os fins de direito admitidos autorizo expressamente a utilização da imagem e voz do alunos acima discriminado, em caráter definitivo e gratuito, constante em fotos e filmagens decorrentes da sua participação em eventos da Secretaria Municipal de Educação de Sapeaçu-Bahia.'
-
-    page.drawText(autorizaTexto, {
-      x: margin + 6,
-      y: yPosition - 20,
-      size: 6.8,
-      font: robotoFont,
-      lineHeight: 9,
-      maxWidth: 350,
-      color: rgb(0.15, 0.15, 0.15)
-    })
-
-    // Desenhar as opções Sim e Não
-    const optX = margin + 370
-    const optY = yPosition - 32
     const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
 
-    // Opção Sim
-    page.drawRectangle({
-      x: optX,
-      y: optY,
-      width: 9,
-      height: 9,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 0.75,
-      color: rgb(1, 1, 1)
-    })
-    if (autorizaImagemVoz === 'Sim') {
-      page.drawText('X', { x: optX + 2, y: optY + 1.5, size: 7.5, font: robotoFont })
+    // Função auxiliar para desenhar uma Via do Comprovante
+    const drawVia = (yStart: number, isTopCopy: boolean, hashText: string) => {
+      let y = yStart
+
+      // 1. Cabeçalho
+      // Logo Prefeitura (Esquerda)
+      if (logoPrefeituraImage) {
+        page.drawImage(logoPrefeituraImage, {
+          x: margin,
+          y: y - 44,
+          width: 75,
+          height: 44
+        })
+      }
+
+      // Logo Secretaria (Direita)
+      if (logoSecretariaImage) {
+        page.drawImage(logoSecretariaImage, {
+          x: width - margin - 75,
+          y: y - 38,
+          width: 75,
+          height: 30
+        })
+      }
+
+      // Textos Centralizados
+      page.drawText(txtEstado, {
+        x: pageCenter - (wEstado / 2),
+        y: y - 12,
+        size: 9,
+        font: robotoFont,
+        color: rgb(0.3, 0.3, 0.3)
+      })
+      page.drawText(txtPrefeitura, {
+        x: pageCenter - (wPrefeitura / 2),
+        y: y - 25,
+        size: 11,
+        font: robotoFont,
+        color: rgb(0.1, 0.1, 0.1)
+      })
+      page.drawText(txtSecretaria, {
+        x: pageCenter - (wSecretaria / 2),
+        y: y - 36,
+        size: 8,
+        font: robotoFont,
+        color: rgb(0.2, 0.2, 0.2)
+      })
+
+      // Linha Divisória
+      page.drawLine({
+        start: { x: margin, y: y - 50 },
+        end: { x: width - margin, y: y - 50 },
+        thickness: 0.75,
+        color: rgb(0, 0, 0)
+      })
+
+      y -= 50
+
+      // 2. Banner de Título
+      y -= 22
+      page.drawRectangle({
+        x: margin,
+        y: y - 12,
+        width: tableWidth,
+        height: 12,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(0.92, 0.92, 0.92)
+      })
+      const txtTitle = `COMPROVANTE DE MATRÍCULA - ANO LETIVO ${dm.anoLetivo || '2026'}`
+      const wTitle = robotoFont.widthOfTextAtSize(txtTitle, 8.5)
+      page.drawText(txtTitle, {
+        x: pageCenter - wTitle / 2,
+        y: y - 9.5,
+        size: 8.5,
+        font: robotoFont,
+        color: rgb(0, 0, 0)
+      })
+
+      y -= 12
+
+      // 3. Tabela de Dados (Estruturada)
+      y -= 10
+      const tableHeight = 70
+      const tableY = y - tableHeight
+
+      // Borda Externa
+      page.drawRectangle({
+        x: margin,
+        y: tableY,
+        width: tableWidth,
+        height: tableHeight,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(1, 1, 1)
+      })
+
+      // Linhas Horizontais
+      const row1Y = y - 18
+      const row2Y = y - 35
+      const row3Y = y - 52
+      page.drawLine({ start: { x: margin, y: row1Y }, end: { x: width - margin, y: row1Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+      page.drawLine({ start: { x: margin, y: row2Y }, end: { x: width - margin, y: row2Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+      page.drawLine({ start: { x: margin, y: row3Y }, end: { x: width - margin, y: row3Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+
+      // Linhas Verticais
+      const col1_4 = margin + tableWidth * 0.75
+      const col3_1 = margin + tableWidth / 3
+      const col3_2 = margin + (tableWidth / 3) * 2
+      const col2_1 = margin + tableWidth / 2
+
+      page.drawLine({ start: { x: col1_4, y: row1Y }, end: { x: col1_4, y: y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+      page.drawLine({ start: { x: col3_1, y: row3Y }, end: { x: col3_1, y: row2Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+      page.drawLine({ start: { x: col3_2, y: row3Y }, end: { x: col3_2, y: row2Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+      page.drawLine({ start: { x: col2_1, y: tableY }, end: { x: col2_1, y: row3Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
+
+      // Rótulos e Valores
+      const labelColor = rgb(0.3, 0.3, 0.3)
+      const valueColor = rgb(0, 0, 0)
+      const labelSize = 6.5
+      const valueSize = 8
+
+      // Linha 1
+      page.drawText('UNIDADE ESCOLAR', { x: margin + paddingLeft, y: y - 7, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText((escolaNome || 'Sem Escola').toUpperCase(), { x: margin + paddingLeft, y: y - 15, size: valueSize, font: robotoFont, color: valueColor })
+
+      page.drawText('DATA', { x: col1_4 + paddingLeft, y: y - 7, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(dataMatriculaFormatada, { x: col1_4 + paddingLeft, y: y - 15, size: valueSize, font: robotoFont, color: valueColor })
+
+      // Linha 2
+      page.drawText('ALUNO(A)', { x: margin + paddingLeft, y: y - 24.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(aluno.nome.toUpperCase(), { x: margin + paddingLeft, y: y - 32.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      // Linha 3
+      page.drawText('ANO', { x: margin + paddingLeft, y: y - 41.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(exibidoAno, { x: margin + paddingLeft, y: y - 49.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      page.drawText('TURMA', { x: col3_1 + paddingLeft, y: y - 41.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(exibidoTurma, { x: col3_1 + paddingLeft, y: y - 49.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      page.drawText('TURNO', { x: col3_2 + paddingLeft, y: y - 41.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText((dm.turnoAluno || 'MATUTINO').toUpperCase(), { x: col3_2 + paddingLeft, y: y - 49.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      // Linha 4
+      page.drawText('Nº IDENTIDADE (RG)', { x: margin + paddingLeft, y: y - 58.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(aluno.rg || dm.rgAluno || '-', { x: margin + paddingLeft, y: y - 66.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      page.drawText('CPF', { x: col2_1 + paddingLeft, y: y - 58.5, size: labelSize, font: robotoFont, color: labelColor })
+      page.drawText(aluno.cpf || dm.cpfAluno || '-', { x: col2_1 + paddingLeft, y: y - 66.5, size: valueSize, font: robotoFont, color: valueColor })
+
+      y -= tableHeight
+
+      // 4. Termo de Compromisso
+      y -= 8
+      page.drawRectangle({
+        x: margin,
+        y: y - 10,
+        width: tableWidth,
+        height: 10,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(0.92, 0.92, 0.92)
+      })
+      page.drawText('TERMO DE COMPROMISSO DO RESPONSÁVEL LEGAL', {
+        x: margin + paddingLeft,
+        y: y - 8,
+        size: 7,
+        font: robotoFont,
+        color: rgb(0, 0, 0)
+      })
+
+      const termoBoxHeight = 45
+      page.drawRectangle({
+        x: margin,
+        y: y - 10 - termoBoxHeight,
+        width: tableWidth,
+        height: termoBoxHeight,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(1, 1, 1)
+      })
+
+      const termoText = 'Declaro, sob as penas da Lei, que as informações prestadas bem como documentos que apresento para a matrícula são verdadeiros e autênticos (fiéis à verdade e condizentes com a realidade). Estou ciente de que as informações contidas nesta ficha são muito importantes para o registro do CENSO ESCOLAR e para que a escola possa tomar as providências necessárias em caso de acidentes ou doenças durante a permanência do aluno no período de aulas. Firmo acordo de informar a escola caso haja qualquer mudança nas informações aqui prestadas e a manter-las sempre atualizada. Comprometo-me pelo zelo e preservação do patrimônio desta Escola e responsabilizo-me pelo ressarcimento de quaisquer danos e prejuízo causados pelo aluno sob nossa responsabilidade.'
+      page.drawText(termoText, {
+        x: margin + paddingLeft,
+        y: y - 17,
+        size: 6.2,
+        font: robotoFont,
+        lineHeight: 8,
+        maxWidth: tableWidth - 12,
+        color: rgb(0.15, 0.15, 0.15)
+      })
+
+      y -= (10 + termoBoxHeight)
+
+      // 5. Uso de Imagem e Voz
+      y -= 8
+      page.drawRectangle({
+        x: margin,
+        y: y - 10,
+        width: tableWidth,
+        height: 10,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(0.92, 0.92, 0.92)
+      })
+      page.drawText('USO DE IMAGEM E VOZ', {
+        x: margin + paddingLeft,
+        y: y - 8,
+        size: 7,
+        font: robotoFont,
+        color: rgb(0, 0, 0)
+      })
+
+      const imagemBoxHeight = 28
+      page.drawRectangle({
+        x: margin,
+        y: y - 10 - imagemBoxHeight,
+        width: tableWidth,
+        height: imagemBoxHeight,
+        borderColor: rgb(0.1, 0.1, 0.1),
+        borderWidth: 0.75,
+        color: rgb(1, 1, 1)
+      })
+
+      const autorizaTexto = 'Neste ato, e para todos os fins de direito admitidos autorizo expressamente a utilização da imagem e voz do alunos acima discriminado, em caráter definitivo e gratuito, constante em fotos e filmagens decorrentes da sua participação em eventos da Secretaria Municipal de Educação de Sapeaçu-Bahia.'
+      page.drawText(autorizaTexto, {
+        x: margin + paddingLeft,
+        y: y - 17,
+        size: 6.2,
+        font: robotoFont,
+        lineHeight: 7.8,
+        maxWidth: 390,
+        color: rgb(0.15, 0.15, 0.15)
+      })
+
+      // Checkboxes Sim / Não
+      const optXSim = margin + 415
+      const optXNao = margin + 475
+      const optY = y - 20
+
+      // Checkbox Sim
+      page.drawRectangle({
+        x: optXSim,
+        y: optY,
+        width: 8,
+        height: 8,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 0.75,
+        color: rgb(1, 1, 1)
+      })
+      page.drawText('Sim, autorizo.', { x: optXSim + 12, y: optY + 1, size: 6.5, font: robotoFont })
+      if (autorizaImagemVoz === 'Sim') {
+        page.drawText('X', { x: optXSim + 1.5, y: optY + 1, size: 6.5, font: robotoFont })
+      }
+
+      // Checkbox Não
+      page.drawRectangle({
+        x: optXNao,
+        y: optY,
+        width: 8,
+        height: 8,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 0.75,
+        color: rgb(1, 1, 1)
+      })
+      page.drawText('Não, não autorizo.', { x: optXNao + 12, y: optY + 1, size: 6.5, font: robotoFont })
+      if (autorizaImagemVoz === 'Não') {
+        page.drawText('X', { x: optXNao + 1.5, y: optY + 1, size: 6.5, font: robotoFont })
+      }
+
+      y -= (10 + imagemBoxHeight)
+
+      // 6. Área de Assinaturas
+      y -= 42
+      const signatureWidth = 140
+      const signatureHeight = 25
+
+      // Funcionário (Esquerda)
+      const xFunc = margin + 15
+      page.drawImage(funcSigImage, {
+        x: xFunc + 10,
+        y: y + 6,
+        width: signatureWidth,
+        height: signatureHeight
+      })
+      page.drawLine({
+        start: { x: xFunc, y: y + 4 },
+        end: { x: xFunc + signatureWidth + 20, y: y + 4 },
+        thickness: 0.5,
+        color: rgb(0.1, 0.1, 0.1)
+      })
+      const txtFuncLabel = isTopCopy 
+        ? 'ASSINATURA DO FUNCIONÁRIO RESPONSÁVEL PELA MATRÍCULA' 
+        : 'FUNCIONÁRIO RESPONSÁVEL PELA MATRÍCULA'
+      page.drawText(txtFuncLabel, { x: xFunc - 5, y: y - 5, size: 6.2, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
+
+      // Responsável (Direita)
+      const xResp = width - margin - signatureWidth - 35
+      page.drawImage(respSigImage, {
+        x: xResp + 10,
+        y: y + 6,
+        width: signatureWidth,
+        height: signatureHeight
+      })
+      page.drawLine({
+        start: { x: xResp, y: y + 4 },
+        end: { x: xResp + signatureWidth + 20, y: y + 4 },
+        thickness: 0.5,
+        color: rgb(0.1, 0.1, 0.1)
+      })
+      page.drawText('ASSINATURA DO PAI/MÃE/RESPONSÁVEL PELO ALUNO(A)', { x: xResp - 5, y: y - 5, size: 6.2, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
+
+      y -= 15
+
+      // 7. Tarja de Autenticidade Digital
+      y -= 40
+      page.drawRectangle({
+        x: margin,
+        y: y,
+        width: tableWidth,
+        height: 35,
+        borderColor: rgb(0.8, 0.8, 0.8),
+        borderWidth: 0.5,
+        color: rgb(0.96, 0.97, 0.98)
+      })
+
+      page.drawImage(qrCodeImage, {
+        x: margin + 5,
+        y: y + 3.5,
+        width: 28,
+        height: 28
+      })
+
+      const xMeta = margin + 40
+      page.drawText('DOCUMENTO ASSINADO ELETRONICAMENTE', { 
+        x: xMeta, 
+        y: y + 25, 
+        size: 7, 
+        font: robotoFont, 
+        color: rgb(0.1, 0.2, 0.4) 
+      })
+      page.drawText(`Chave de Verificação: ${token}  |  Hash SHA-256: ${hashText}`, { 
+        x: xMeta, 
+        y: y + 15, 
+        size: 5.5, 
+        font: robotoFont, 
+        color: rgb(0.1, 0.1, 0.1) 
+      })
+      page.drawText(`Valide este comprovante lendo o QR Code ou em: ${verificationUrl}`, { 
+        x: xMeta, 
+        y: y + 6, 
+        size: 5.5, 
+        font: robotoFont, 
+        color: rgb(0.3, 0.3, 0.3) 
+      })
     }
-    page.drawText('Sim, autorizo.', { x: optX + 13, y: optY + 1.5, size: 7.5, font: robotoFont })
 
-    // Opção Não
-    page.drawRectangle({
-      x: optX,
-      y: optY - 14,
-      width: 9,
-      height: 9,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 0.75,
-      color: rgb(1, 1, 1)
-    })
-    if (autorizaImagemVoz === 'Não') {
-      page.drawText('X', { x: optX + 2, y: optY - 12.5, size: 7.5, font: robotoFont })
-    }
-    page.drawText('Não, não autorizo.', { x: optX + 13, y: optY - 12.5, size: 7.5, font: robotoFont })
+    // Coordenadas Y de início de cada via
+    const via0YStart = height - 20 // Via Superior
+    const via1YStart = height / 2 - 15 // Via Inferior
+    const placeholderHash = '----------------------------------------------------------------'
 
-    yPosition -= (12 + 38)
+    // Passo A: Desenhar ambas as vias com um hash provisório
+    drawVia(via0YStart, true, placeholderHash)
+    drawVia(via1YStart, false, placeholderHash)
 
-    // ÁREA DE ASSINATURAS
-    yPosition -= 65
-    
-    // Desenhar as Assinaturas Lado a Lado
-    const signatureWidth = 140
-    const signatureHeight = 35
-    
-    // 1. Assinatura do Funcionário (Esquerda)
-    const xFunc = margin + 20
-    const ySigs = yPosition - 45
-    page.drawImage(funcSigImage, {
-      x: xFunc + 10,
-      y: ySigs + 10,
-      width: signatureWidth,
-      height: signatureHeight
-    })
+    // Desenhar a linha tracejada divisória de vias (meio da página A4)
+    const yMiddle = height / 2
     page.drawLine({
-      start: { x: xFunc, y: ySigs + 8 },
-      end: { x: xFunc + signatureWidth + 20, y: ySigs + 8 },
-      thickness: 0.5,
-      color: rgb(0.1, 0.1, 0.1)
-    })
-    page.drawText('ASSINATURA DO FUNCIONÁRIO RESPONSÁVEL PELA MATRÍCULA', { x: xFunc - 5, y: ySigs - 1, size: 6.5, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
-    
-    // 2. Assinatura do Responsável (Direita)
-    const xResp = width - margin - signatureWidth - 40
-    page.drawImage(respSigImage, {
-      x: xResp + 10,
-      y: ySigs + 10,
-      width: signatureWidth,
-      height: signatureHeight
-    })
-    page.drawLine({
-      start: { x: xResp, y: ySigs + 8 },
-      end: { x: xResp + signatureWidth + 20, y: ySigs + 8 },
-      thickness: 0.5,
-      color: rgb(0.1, 0.1, 0.1)
-    })
-    page.drawText('ASSINATURA DO PAI/MÃE/RESPONSÁVEL PELO ALUNO(A)', { x: xResp - 5, y: ySigs - 1, size: 6.5, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
-
-    yPosition = ySigs - 15
-
-    // ÁREA DE INTEGRIDADE (QR Code e Metadados) no rodapé
-    yPosition -= 50
-    const metaBoxHeight = 55
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 10,
-      width: tableWidth,
-      height: metaBoxHeight,
-      borderColor: rgb(0.8, 0.8, 0.8),
-      borderWidth: 0.5,
-      color: rgb(0.96, 0.97, 0.98)
+      start: { x: 20, y: yMiddle },
+      end: { x: width - 20, y: yMiddle },
+      thickness: 1,
+      dashArray: [4, 4],
+      color: rgb(0.5, 0.5, 0.5)
     })
 
-    // Desenhar QR Code de verificação
-    page.drawImage(qrCodeImage, {
-      x: margin + 8,
-      y: yPosition - 7,
-      width: 48,
-      height: 48
-    })
+    // Salvar o arquivo PDF temporariamente em buffer para computar o hash correto
+    const tempPdfBytes = await pdfDoc.save()
 
-    // Textos de Integridade e Hash
-    const xMeta = margin + 65
-    page.drawText('DOCUMENTO ASSINADO ELETRONICAMENTE', { x: xMeta, y: yPosition + 33, size: 7.5, font: robotoFont, color: rgb(0.1, 0.2, 0.4) })
-    page.drawText(`Chave de Verificação: ${token}`, { x: xMeta, y: yPosition + 23, size: 7, font: robotoFont, color: rgb(0.1, 0.1, 0.1) })
-    page.drawText(`Valide este comprovante lendo o QR Code ou acessando: ${verificationUrl}`, { x: xMeta, y: yPosition + 14, size: 6.5, font: robotoFont, color: rgb(0.3, 0.3, 0.3) })
+    // Calcular o Hash SHA-256 final a partir dos bytes temporários
+    const hash = crypto.createHash('sha256').update(tempPdfBytes).digest('hex')
 
-    // Salvar o arquivo PDF em buffer
-    const pdfBytes = await pdfDoc.save()
+    // Passo B: Redesenhar os blocos de autenticidade (com a real chave e hash real)
+    drawVia(via0YStart, true, hash)
+    drawVia(via1YStart, false, hash)
 
-    // 7. Calcular o Hash SHA-256 do arquivo gerado
-    const hash = crypto.createHash('sha256').update(pdfBytes).digest('hex')
-
-    // Escrever o Hash no rodapé do PDF (para que apareça na folha impressa)
-    page.drawText(`Hash de Integridade SHA-256: ${hash}`, { x: xMeta, y: yPosition + 4, size: 6, font: robotoFont, color: rgb(0.4, 0.4, 0.4) })
-    
-    // Salvar o PDF com o hash desenhado
+    // Salvar o PDF finalizado com o hash impresso nas vias
     const finalPdfBytes = await pdfDoc.save()
 
     // 8. Fazer upload do PDF gerado para o Supabase Storage (comprovantes_matriculas)

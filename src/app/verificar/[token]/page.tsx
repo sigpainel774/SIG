@@ -116,7 +116,7 @@ export default async function VerificarPage({ params }: PageProps) {
                     <span className="text-emerald-400 font-semibold bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">Assinatura Coletada</span>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-400">
-                    <div>Data: <strong className="text-zinc-200">{assinatura.data_responsavel ? new Date(assinatura.data_responsavel).toLocaleString('pt-BR') : '-'}</strong></div>
+                    <div>Data: <strong className="text-zinc-200">{assinatura.data_responsavel ? new Date(assinatura.data_responsavel).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}</strong></div>
                     <div>IP: <strong className="text-zinc-200">{assinatura.ip_responsavel ?? 'Não registrado'}</strong></div>
                     <div className="col-span-2 truncate">Navegador: <strong className="text-zinc-200" title={assinatura.user_agent_responsavel}>{assinatura.user_agent_responsavel ?? '-'}</strong></div>
                     <div>Dispositivo: <strong className="text-zinc-200">{assinatura.dispositivo_responsavel ?? 'Celular'}</strong></div>
@@ -130,7 +130,7 @@ export default async function VerificarPage({ params }: PageProps) {
                     <span className="text-emerald-400 font-semibold bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">Assinatura Coletada</span>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-zinc-400">
-                    <div>Data: <strong className="text-zinc-200">{assinatura.data_funcionario ? new Date(assinatura.data_funcionario).toLocaleString('pt-BR') : '-'}</strong></div>
+                    <div>Data: <strong className="text-zinc-200">{assinatura.data_funcionario ? new Date(assinatura.data_funcionario).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}</strong></div>
                     <div>IP: <strong className="text-zinc-200">{assinatura.ip_funcionario ?? '-'}</strong></div>
                     <div className="col-span-2 truncate">Navegador: <strong className="text-zinc-200" title={assinatura.user_agent_funcionario}>{assinatura.user_agent_funcionario ?? '-'}</strong></div>
                     <div>Dispositivo: <strong className="text-zinc-200">{assinatura.dispositivo_funcionario ?? 'Computador'}</strong></div>

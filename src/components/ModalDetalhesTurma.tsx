@@ -67,11 +67,12 @@ export function ModalDetalhesTurma({
   const [selectedProfId, setSelectedProfId] = useState('')
   const [novaMateriaNome, setNovaMateriaNome] = useState('')
   const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
+  const [novaMateriaBaseCurricular, setNovaMateriaBaseCurricular] = useState('comum')
   
   // Modais de detalhe e impressão
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
 
-  const supabase = createClient()
+  const supabase = createClient() as any
   const { escolaAtivaId } = useAuthStore()
   const { isEditMode } = useEditModeStore()
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
@@ -177,7 +178,7 @@ export function ModalDetalhesTurma({
 
       const map: Record<string, boolean> = {}
       if (data) {
-        data.forEach(f => {
+        data.forEach((f: any) => {
           map[f.aluno_id] = f.presenca
         })
       }
@@ -521,13 +522,15 @@ export function ModalDetalhesTurma({
           nome: novaMateriaNome.trim(),
           turma_id: turma.id,
           escola_id: escolaAtivaId ?? '',
-          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId
+          professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId,
+          base_curricular: novaMateriaBaseCurricular
         })
 
       if (error) throw error
       toast.success('Matéria adicionada com sucesso')
       setNovaMateriaNome('')
       setNovaMateriaProfId('')
+      setNovaMateriaBaseCurricular('comum')
       fetchData() // Recarregar matérias
     } catch (err: any) {
       toast.error('Erro ao adicionar matéria: ' + err.message)
@@ -572,10 +575,37 @@ export function ModalDetalhesTurma({
         .eq('id', materiaId)
 
       if (error) throw error
-      toast.success('Professor da matéria atualizado com sucesso!')
+      toast.success('Professor da matéria updated!')
       fetchData() // Sincroniza com o banco de dados
     } catch (err: any) {
       toast.error('Erro ao atualizar professor da matéria: ' + err.message)
+      fetchData() // Reverte para o estado correto em caso de erro
+    }
+  }
+
+  const handleUpdateMateriaBase = async (materiaId: string, baseCurricular: string) => {
+    // Atualização otimista local
+    setMaterias(prev => prev.map(m => {
+      if (m.id === materiaId) {
+        return {
+          ...m,
+          base_curricular: baseCurricular
+        }
+      }
+      return m
+    }))
+
+    try {
+      const { error } = await supabase
+        .from('materias')
+        .update({ base_curricular: baseCurricular })
+        .eq('id', materiaId)
+
+      if (error) throw error
+      toast.success('Base curricular da matéria atualizada com sucesso!')
+      fetchData() // Sincroniza com o banco de dados
+    } catch (err: any) {
+      toast.error('Erro ao atualizar base curricular da matéria: ' + err.message)
       fetchData() // Reverte para o estado correto em caso de erro
     }
   }
@@ -808,7 +838,7 @@ export function ModalDetalhesTurma({
 
                       {/* Formulário de Adição (Dashed Container) */}
                       <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <Input
                             placeholder="Nome da Matéria (Ex: Português...)"
                             value={novaMateriaNome}
@@ -827,6 +857,14 @@ export function ModalDetalhesTurma({
                                 {vp.funcionarios?.nome || 'Sem nome'}
                               </option>
                             ))}
+                          </select>
+                          <select
+                            value={novaMateriaBaseCurricular}
+                            onChange={(e) => setNovaMateriaBaseCurricular(e.target.value)}
+                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                          >
+                            <option value="comum">Base Comum</option>
+                            <option value="diversificada">Base Diversificada</option>
                           </select>
                         </div>
                         <Button
@@ -847,26 +885,39 @@ export function ModalDetalhesTurma({
                             <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022] gap-3">
                               <div className="flex flex-col min-w-0 flex-1 pr-2">
                                 <span className="text-xs font-bold text-white truncate">{mat.nome}</span>
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                  <UserIcon className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-                                  <select
-                                    value={mat.professor_id ?? 'sem_professor'}
-                                    onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
-                                    className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none max-w-[200px]"
-                                  >
-                                    <option value="sem_professor">Sem professor</option>
-                                    {vinculosProfessores.map((vp) => (
-                                      <option key={vp.funcionario_id} value={vp.funcionario_id}>
-                                        {vp.funcionarios?.nome || 'Sem nome'}
-                                      </option>
-                                    ))}
-                                    {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
-                                    {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
-                                      <option key={mat.professor_id} value={mat.professor_id}>
-                                        {mat.funcionarios?.nome || 'Professor atual (Fora da Turma)'}
-                                      </option>
-                                    )}
-                                  </select>
+                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                  <div className="flex items-center gap-1">
+                                    <UserIcon className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    <select
+                                      value={mat.professor_id ?? 'sem_professor'}
+                                      onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
+                                      className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none max-w-[130px]"
+                                    >
+                                      <option value="sem_professor">Sem professor</option>
+                                      {vinculosProfessores.map((vp) => (
+                                        <option key={vp.funcionario_id} value={vp.funcionario_id}>
+                                          {vp.funcionarios?.nome || 'Sem nome'}
+                                        </option>
+                                      ))}
+                                      {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
+                                      {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
+                                        <option key={mat.professor_id} value={mat.professor_id}>
+                                          {mat.funcionarios?.nome || 'Professor atual (Fora da Turma)'}
+                                        </option>
+                                      )}
+                                    </select>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <BookOpen className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    <select
+                                      value={mat.base_curricular ?? 'comum'}
+                                      onChange={(e) => handleUpdateMateriaBase(mat.id, e.target.value)}
+                                      className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none"
+                                    >
+                                      <option value="comum">Base Comum</option>
+                                      <option value="diversificada">Base Diversificada</option>
+                                    </select>
+                                  </div>
                                 </div>
                               </div>
                               <Button
@@ -896,7 +947,12 @@ export function ModalDetalhesTurma({
                           key={mat.id}
                           className="bg-[#18181b] border border-[#26262a] rounded-xl p-4 flex items-center justify-between h-13"
                         >
-                          <span className="text-sm font-bold text-white">{mat.nome}</span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white">{mat.nome}</span>
+                            <span className="text-[10px] text-zinc-400 mt-0.5">
+                              {mat.base_curricular === 'diversificada' ? 'Base Diversificada' : 'Base Comum'}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-zinc-400">
                             <UserIcon className="w-4 h-4 text-zinc-500" />
                             <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>

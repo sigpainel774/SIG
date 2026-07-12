@@ -52,6 +52,7 @@ export default function DocumentosPage() {
   const [boletimData, setBoletimData] = useState<{
     turma: any
     escolaNome: string
+    escolaLogoUrl?: string | null
     materias: any[]
     notas: any[]
     recuperacoes: any[]
@@ -225,7 +226,7 @@ export default function DocumentosPage() {
         // 2. Buscar escola do aluno
         const { data: escolaData, error: eErr } = await supabase
           .from('escolas')
-          .select('nome')
+          .select('nome, logo_url')
           .eq('id', alunoSelecionado.escola_id)
           .maybeSingle()
         if (eErr) throw eErr
@@ -233,7 +234,7 @@ export default function DocumentosPage() {
         // 3. Buscar as matérias vinculadas a essa turma
         const { data: materiasData, error: mErr } = await supabase
           .from('materias')
-          .select('id, nome')
+          .select('id, nome, base_curricular')
           .eq('turma_id', alunoSelecionado.turma_id)
 
         if (mErr) throw mErr
@@ -274,6 +275,7 @@ export default function DocumentosPage() {
         setBoletimData({
           turma: turmaData,
           escolaNome: escolaData?.nome || 'Escola Não Identificada',
+          escolaLogoUrl: escolaData?.logo_url || null,
           materias: materiasData || [],
           notas: formatadasNotas,
           recuperacoes: formatadasRec
@@ -331,6 +333,7 @@ export default function DocumentosPage() {
           aluno={alunoImprimirBoletim}
           turma={boletimData.turma}
           escolaNome={boletimData.escolaNome}
+          escolaLogoUrl={boletimData.escolaLogoUrl}
           materias={boletimData.materias}
           notas={boletimData.notas}
           recuperacoes={boletimData.recuperacoes}
