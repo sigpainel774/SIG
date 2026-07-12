@@ -52,6 +52,18 @@ export function PrintBoletimAluno({
 }: PrintBoletimAlunoProps) {
   const [mounted, setMounted] = useState(false)
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
+  const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
+
+  const getCacheBustedUrl = (url: string) => {
+    if (!url) return ''
+    if (url.startsWith('data:image')) return url
+    const cleanUrl = url.split('?')[0]
+    const separator = cleanUrl.includes('?') ? '&' : '?'
+    return `${cleanUrl}${separator}t=${Date.now()}`
+  }
+
   useEffect(() => {
     setMounted(true)
     return () => setMounted(false)
@@ -186,11 +198,11 @@ export function PrintBoletimAluno({
         <div>
           {/* Cabeçalho */}
           <div className="flex items-center justify-between pb-4 border-b-2 border-black mb-6">
-            <div className="flex items-center gap-2 max-w-[180px]">
+            <div className="flex items-center gap-2 max-w-[180px] shrink-0">
               <img
-                src="/img/logo-prefeitura.png"
+                src={getCacheBustedUrl(logoPrefeituraUrl)}
                 alt="Logo Prefeitura"
-                className="doc-header-logo-prefeitura h-12 w-auto object-contain"
+                className="doc-header-logo-prefeitura"
                 onError={(e) => {
                   e.currentTarget.src = '/img/brasaoSapeaçu.png'
                 }}
@@ -201,11 +213,11 @@ export function PrintBoletimAluno({
               <p className="text-xs font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
               <p className="text-[10px] text-gray-500">Ano Letivo {turma.ano_letivo}</p>
             </div>
-            <div className="text-right max-w-[180px] flex items-center justify-end">
+            <div className="text-right max-w-[180px] flex items-center justify-end shrink-0">
               <img
-                src={escolaLogoUrl ? (escolaLogoUrl.includes('data:image') ? escolaLogoUrl : `${escolaLogoUrl.split('?')[0]}?t=${Date.now()}`) : '/img/logo-secretaria.png'}
+                src={escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : getCacheBustedUrl(logoSecretariaUrl)}
                 alt="Logo Escola"
-                className="h-12 w-auto object-contain max-h-[50px]"
+                className="doc-header-logo-prefeitura"
                 onError={(e) => {
                   e.currentTarget.src = '/img/logo-secretaria.png'
                 }}
