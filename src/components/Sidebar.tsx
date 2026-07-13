@@ -37,7 +37,8 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, limparSessao, isDiretor, vinculos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const { funcionario, limparSessao, isDiretor, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const isProfessor = acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
 
@@ -228,6 +229,10 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {menuGroups.map((group, groupIndex) => {
           const filteredItems = group.items.filter((item) => {
+            if (isProfessor) {
+              const permitidos = ['/home', '/mural', '/alunos', '/turmas', '/avaliacoes']
+              return permitidos.includes(item.href)
+            }
             if (item.href === '/painel-chefe') {
               return isDiretor()
             }
@@ -261,7 +266,13 @@ export function Sidebar() {
         <>
           <hr className="border-sidebar-border/40 mx-3 my-1" />
           <div className="space-y-1.5 mt-1">
-            {systemItems.map((item) => (
+            {systemItems.filter((item) => {
+              if (isProfessor) {
+                const permitidos = ['/configuracoes', '/ajuda']
+                return permitidos.includes(item.href)
+              }
+              return true
+            }).map((item) => (
               <NavLink key={item.href} item={item} />
             ))}
           </div>

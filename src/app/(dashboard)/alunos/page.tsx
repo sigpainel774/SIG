@@ -63,6 +63,32 @@ interface Aluno {
 
 export default function AlunosPage() {
   const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
+
+  const isProfessor = acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
+
+  if (isProfessor) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-surface-1 border border-borderCustom rounded-2xl space-y-6">
+        <div className="w-16 h-16 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-[#185FA5] dark:text-[#3ea6ff]">
+          <GraduationCap className="w-8 h-8" />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Área de Alunos do Professor</h1>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            Esta funcionalidade está sendo customizada e atualmente está em desenvolvimento. Em breve você poderá gerenciar a lista de alunos de suas turmas e disciplinas.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link href="/home">
+            <Button className="bg-[#185FA5] hover:bg-[#144f8a] text-white font-medium px-6 py-2.5 rounded-xl text-sm transition-all shadow-md cursor-pointer border-none">
+              Voltar ao Início
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   const { isEditMode } = useEditModeStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [alunos, setAlunos] = useState<Aluno[]>([])
