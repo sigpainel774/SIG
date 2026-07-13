@@ -17,6 +17,7 @@ export default function TransferenciaAlunoPage() {
   const [loading, setLoading] = useState(false)
 
   const [buscaAluno, setBuscaAluno] = useState('')
+  const [resultadosBusca, setResultadosBusca] = useState<any[]>([])
   const [alunoSelecionado, setAlunoSelecionado] = useState<any>(null)
   const [escolas, setEscolas] = useState<any[]>([])
   
@@ -41,23 +42,45 @@ export default function TransferenciaAlunoPage() {
   }, [escolaAtivaId, supabase])
 
   const handleBuscarAluno = async () => {
-    if (!buscaAluno || !escolaAtivaId) return
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('alunos')
-      .select('*')
-      .eq('escola_id', escolaAtivaId)
-      .ilike('nome', `%${buscaAluno}%`)
-      .is('deleted_at', null)
-      .limit(1)
-
-    if (data && data.length > 0) {
-      setAlunoSelecionado(data[0])
-    } else {
-      toast.error('Nenhum aluno encontrado na sua escola com esse nome.')
-      setAlunoSelecionado(null)
+    if (!buscaAluno) return
+    
+    const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
+    if (!escolaAtivaId && !isAdmin) {
+      toast.error('Nenhuma escola ativa selecionada.')
+      return
     }
-    setLoading(false)
+
+    setLoading(true)
+    setAlunoSelecionado(null)
+    setResultadosBusca([])
+
+    try {
+      let query = supabase
+        .from('alunos')
+        .select('*')
+        .ilike('nome', `%${buscaAluno}%`)
+        .is('deleted_at', null)
+
+      if (escolaAtivaId) {
+        query = query.eq('escola_id', escolaAtivaId)
+      }
+
+      const { data, error } = await query.limit(10)
+
+      if (data && data.length > 0) {
+        setResultadosBusca(data)
+        if (data.length === 1) {
+          setAlunoSelecionado(data[0])
+        }
+      } else {
+        toast.error('Nenhum aluno encontrado com esse nome.')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao buscar alunos.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmeter = async () => {
@@ -74,7 +97,7 @@ export default function TransferenciaAlunoPage() {
           supabase,
           aluno: alunoSelecionado,
           motivo: `TRANSFERENCIA_FORA_REDE: ${motivo}`,
-          escolaOrigemId: escolaAtivaId || undefined,
+          escolaOrigemId: alunoSelecionado.escola_id || undefined, // Mitigação: usar escola_id do aluno ao invés da ativa do usuário
           arquivadoPor: { id: funcionario.id, name: funcionario.nome, email: funcionario.email }
         })
         if (res.success) {
@@ -89,8 +112,8 @@ export default function TransferenciaAlunoPage() {
           .from('transferencias_alunos')
           .insert({
             aluno_id: alunoSelecionado.id,
-            escola_origem_id: escolaAtivaId,
-            escola_destino_id: destinoId,
+            escola_origem_id: alunoSelecionado.escola_id, // Mitigação: usar escola_id do aluno ao invés da ativa do usuário
+            escola_destino_id: destinoId || null, // Mitigação: converter string vazia para null para evitar erro de UUID
             solicitante_id: funcionario.id,
             motivo,
             fora_da_rede: false,
@@ -104,7 +127,7 @@ export default function TransferenciaAlunoPage() {
 
         const transferId = insertData?.id
 
-        // Notificar o diretor da escola de destino (buscando quem é o diretor lá, ou mandando pra todos de lá)
+        // Notificar o diretor da escola de destino
         const { data: escolaDest } = await supabase.from('escolas').select('diretor_id').eq('id', destinoId).single()
         if (escolaDest && escolaDest.diretor_id) {
           await supabase.from('notifications').insert({
@@ -145,21 +168,56 @@ export default function TransferenciaAlunoPage() {
               placeholder="Nome do aluno..." 
               value={buscaAluno}
               onChange={(e) => setBuscaAluno(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleBuscarAluno()
+                }
+              }}
               className="bg-[#18181a] border-[#3f3f46] text-white"
             />
             <Button onClick={handleBuscarAluno} disabled={loading} className="bg-[#27272a] hover:bg-[#3f3f46]">
               <Search className="w-4 h-4" />
             </Button>
           </div>
+
+          {/* Resultados de Busca se houver múltiplos */}
+          {resultadosBusca.length > 1 && !alunoSelecionado && (
+            <div className="mt-2 border border-[#3f3f46] bg-[#18181a] rounded-lg max-h-40 overflow-y-auto divide-y divide-[#26262a]">
+              {resultadosBusca.map((aluno) => (
+                <button
+                  key={aluno.id}
+                  onClick={() => setAlunoSelecionado(aluno)}
+                  className="w-full text-left px-3 py-2.5 text-sm text-zinc-300 hover:bg-[#27272a] hover:text-white transition-colors flex items-center justify-between cursor-pointer"
+                >
+                  <span className="font-semibold">{aluno.nome}</span>
+                  <span className="text-xs text-zinc-500">ID: {aluno.id.split('-')[0]}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {alunoSelecionado && (
-            <div className="mt-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 font-bold">
-                {alunoSelecionado.nome.charAt(0)}
+            <div className="mt-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 font-bold">
+                  {alunoSelecionado.nome.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-emerald-500 font-semibold">{alunoSelecionado.nome}</p>
+                  <p className="text-xs text-emerald-500/70">ID: {alunoSelecionado.id.split('-')[0]}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-emerald-500 font-semibold">{alunoSelecionado.nome}</p>
-                <p className="text-xs text-emerald-500/70">ID: {alunoSelecionado.id.split('-')[0]}</p>
-              </div>
+              {resultadosBusca.length > 1 && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setAlunoSelecionado(null)}
+                  className="text-xs text-[#aaa] hover:text-white hover:bg-zinc-800"
+                >
+                  Alterar
+                </Button>
+              )}
             </div>
           )}
         </div>
