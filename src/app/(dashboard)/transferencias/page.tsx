@@ -27,13 +27,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { ModalTransferirFuncionario } from '@/components/modals/modal-transferir-funcionario'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 function TransferenciasContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
   
-  const { funcionario, escolaAtivaId } = useAuthStore()
+  const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const { isEditMode } = useEditModeStore()
 
   // Abas de estado
@@ -246,81 +247,94 @@ function TransferenciasContent() {
 
       } else {
         // Funcionários
-        const { error: updateError } = await supabase
-          .from('transferencias_funcionarios')
-          .update({
-            status: statusDestino,
-            resposta_texto: justificativa,
-            respondido_por: funcionario.id,
-            respondido_em: new Date().toISOString()
+        if (transferenciaSelecionada.lotacao_id) {
+          // Chamada da RPC segura para transferência de lotação
+          const { error: rpcError } = await (supabase as any).rpc('processar_decisao_transferencia_lotacao', {
+            p_transferencia_id: transferenciaSelecionada.id,
+            p_aceitar: aceitar,
+            p_resposta_texto: justificativa,
+            p_respondido_por_id: funcionario.id
           })
-          .eq('id', transferenciaSelecionada.id)
 
-        if (updateError) throw updateError
-
-        if (aceitar) {
-          // 1. Inativar vínculo anterior na escola de origem
-          const { error: deactivateError } = await supabase
-            .from('vinculos_funcionarios')
-            .update({ ativo: false, data_fim: new Date().toISOString() })
-            .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
-            .eq('escola_id', transferenciaSelecionada.escola_origem_id)
-            .eq('ativo', true)
-
-          if (deactivateError) throw deactivateError
-
-          // 2. Criar novo vínculo na escola de destino
-          const cargoAnterior = transferenciaSelecionada.funcionarios?.cargo || 'Funcionário'
-          const { error: activateError } = await supabase
-            .from('vinculos_funcionarios')
-            .insert({
-              funcionario_id: transferenciaSelecionada.funcionario_id,
-              escola_id: transferenciaSelecionada.escola_destino_id,
-              cargo: cargoAnterior,
-              ativo: true,
-              data_inicio: new Date().toISOString()
+          if (rpcError) throw rpcError
+        } else {
+          // Fluxo legado para transferência completa (mantido por compatibilidade)
+          const { error: updateError } = await supabase
+            .from('transferencias_funcionarios')
+            .update({
+              status: statusDestino,
+              resposta_texto: justificativa,
+              respondido_por: funcionario.id,
+              respondido_em: new Date().toISOString()
             })
+            .eq('id', transferenciaSelecionada.id)
 
-          if (activateError) throw activateError
+          if (updateError) throw updateError
 
-          // 3. Atualizar escola em acessos_usuarios para manter a permissão
-          const { error: accessError } = await supabase
-            .from('acessos_usuarios')
-            .update({ escola_id: transferenciaSelecionada.escola_destino_id })
-            .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
-            .eq('escola_id', transferenciaSelecionada.escola_origem_id)
+          if (aceitar) {
+            // 1. Inativar vínculo anterior na escola de origem
+            const { error: deactivateError } = await supabase
+              .from('vinculos_funcionarios')
+              .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+              .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
+              .eq('escola_id', transferenciaSelecionada.escola_origem_id)
+              .eq('ativo', true)
 
-          if (accessError) throw accessError
+            if (deactivateError) throw deactivateError
 
-          // 4. Salvar histórico em arquivados da escola de origem
-          const { error: archiveError } = await supabase
-            .from('arquivados')
-            .insert({
-              tipo: 'FUNCIONARIO_TRANSFERIDO',
-              referencia_id: transferenciaSelecionada.funcionario_id,
-              tabela_origem: 'funcionarios',
-              motivo: `TRANSFERENCIA: Transferido para a escola ${transferenciaSelecionada.destino?.nome ?? 'Destino'}`,
-              escola_origem_id: transferenciaSelecionada.escola_origem_id,
-              arquivado_por: funcionario.id,
-              payload_completo: transferenciaSelecionada.ficha_snapshot || {},
-              status: 'TRANSFERIDO'
+            // 2. Criar novo vínculo na escola de destino
+            const cargoAnterior = transferenciaSelecionada.funcionarios?.cargo || 'Funcionário'
+            const { error: activateError } = await supabase
+              .from('vinculos_funcionarios')
+              .insert({
+                funcionario_id: transferenciaSelecionada.funcionario_id,
+                escola_id: transferenciaSelecionada.escola_destino_id,
+                cargo: cargoAnterior,
+                ativo: true,
+                data_inicio: new Date().toISOString().split('T')[0]
+              })
+
+            if (activateError) throw activateError
+
+            // 3. Atualizar escola em acessos_usuarios para manter a permissão
+            const { error: accessError } = await supabase
+              .from('acessos_usuarios')
+              .update({ escola_id: transferenciaSelecionada.escola_destino_id })
+              .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
+              .eq('escola_id', transferenciaSelecionada.escola_origem_id)
+
+            if (accessError) throw accessError
+
+            // 4. Salvar histórico em arquivados da escola de origem
+            const { error: archiveError } = await supabase
+              .from('arquivados')
+              .insert({
+                tipo: 'FUNCIONARIO_TRANSFERIDO',
+                referencia_id: transferenciaSelecionada.funcionario_id,
+                tabela_origem: 'funcionarios',
+                motivo: `TRANSFERENCIA: Transferido para a escola ${transferenciaSelecionada.destino?.nome ?? 'Destino'}`,
+                escola_origem_id: transferenciaSelecionada.escola_origem_id,
+                arquivado_por: funcionario.id,
+                payload_completo: transferenciaSelecionada.ficha_snapshot || {},
+                status: 'TRANSFERIDO'
+              })
+
+            if (archiveError) throw archiveError
+
+            // 5. Log de auditoria
+            await logAudit({
+              supabase,
+              action: 'UPDATE',
+              entity: 'funcionarios (TRANSFERENCIA)',
+              entityId: transferenciaSelecionada.funcionario_id,
+              newData: { escola_destino_id: transferenciaSelecionada.escola_destino_id },
+              performedBy: { id: funcionario.id, name: funcionario.nome, email: funcionario.email },
+              tenantId: transferenciaSelecionada.escola_origem_id
             })
-
-          if (archiveError) throw archiveError
-
-          // 5. Log de auditoria
-          await logAudit({
-            supabase,
-            action: 'UPDATE',
-            entity: 'funcionarios (TRANSFERENCIA)',
-            entityId: transferenciaSelecionada.funcionario_id,
-            newData: { escola_destino_id: transferenciaSelecionada.escola_destino_id },
-            performedBy: { id: funcionario.id, name: funcionario.nome, email: funcionario.email },
-            tenantId: transferenciaSelecionada.escola_origem_id
-          })
+          }
         }
 
-        // 6. Notificar solicitante
+        // 6. Notificar solicitante (comum a ambos os fluxos)
         await supabase.from('notifications').insert({
           user_id: transferenciaSelecionada.solicitante_id,
           title: `Transferência de Funcionário ${statusDestino}`,
@@ -338,6 +352,57 @@ function TransferenciasContent() {
     } catch (err: any) {
       console.error(err)
       toast.error(`Erro ao salvar decisão: ${err.message}`)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleReverterTransferencia = async () => {
+    if (!funcionario || !transferenciaSelecionada) return
+    setProcessing(true)
+    try {
+      const { error } = await (supabase as any).rpc('reverter_transferencia_lotacao', {
+        p_transferencia_id: transferenciaSelecionada.id,
+        p_revertido_por_id: funcionario.id
+      })
+
+      if (error) throw error
+
+      // Notificar diretores da escola de origem e de destino
+      const userIds = new Set<string>()
+      
+      const { data: acessosEnvolvidos } = await supabase
+        .from('acessos_usuarios')
+        .select('funcionarios(auth_user_id)')
+        .in('escola_id', [transferenciaSelecionada.escola_origem_id, transferenciaSelecionada.escola_destino_id])
+        .eq('nivel', 2)
+        .eq('ativo', true)
+
+      if (acessosEnvolvidos) {
+        acessosEnvolvidos.forEach((acc: any) => {
+          const authId = acc.funcionarios?.auth_user_id
+          if (authId) userIds.add(authId)
+        })
+      }
+
+      if (userIds.size > 0) {
+        const notificationsToInsert = Array.from(userIds).map((userId) => ({
+          user_id: userId,
+          title: 'Transferência Revertida pelo Admin',
+          message: `A transferência de lotação do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi revertida pelo Administrador Global.`,
+          type: 'WARNING',
+          link: '/transferencias?tab=funcionarios'
+        }))
+        await supabase.from('notifications').insert(notificationsToInsert)
+      }
+
+      toast.success('Transferência de lotação revertida com sucesso!')
+      setModalDecisaoOpen(false)
+      setTransferenciaSelecionada(null)
+      loadTransferencias()
+    } catch (err: any) {
+      console.error(err)
+      toast.error(`Erro ao reverter: ${err.message}`)
     } finally {
       setProcessing(false)
     }
@@ -433,6 +498,19 @@ function TransferenciasContent() {
               >
                 Fechar
               </Button>
+              {activeTab === 'funcionarios' && 
+               transferenciaSelecionada.status === 'ACEITA' && 
+               transferenciaSelecionada.lotacao_id && 
+               isAdminGlobalOrRoot() && (
+                <Button
+                  disabled={processing}
+                  onClick={handleReverterTransferencia}
+                  className="bg-amber-600/20 text-amber-500 hover:bg-amber-600 hover:text-white border border-amber-600/50 font-bold gap-2"
+                >
+                  <RefreshCw className={cn("w-4 h-4", processing && "animate-spin")} />
+                  Reverter Transferência
+                </Button>
+              )}
               {transferenciaSelecionada.status === 'PENDENTE' && isEditMode && (
                 <>
                   <Button 
@@ -601,6 +679,11 @@ function TransferenciasContent() {
                         <div className="text-xs text-[#ccc] flex flex-col">
                           <span>Origem: {sol.origem?.nome ?? 'Rede'}</span>
                           <span className="text-[#888]">Destino: {sol.fora_da_rede ? 'Fora da Rede' : (sol.destino?.nome ?? 'Rede')}</span>
+                          {activeTab === 'funcionarios' && (
+                            <span className="text-[10px] text-sky-400 font-semibold mt-1">
+                              {sol.lotacao_id ? 'Lotação Específica' : 'Transferência Completa'}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-[#aaa]">

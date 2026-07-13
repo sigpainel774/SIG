@@ -37,9 +37,11 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, limparSessao, isDiretor } = useAuthStore()
+  const { funcionario, limparSessao, isDiretor, vinculos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
+
+  const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -175,29 +177,51 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       {/* Brand Header */}
-      <div className="p-5 flex items-center justify-between border-b border-sidebar-border/50 md:border-b-0 min-w-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {selectedEscola?.logo_url ? (
-            <img
-              src={selectedEscola.logo_url}
-              alt={selectedEscola.nome}
-              className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-surface-1"
-            />
-          ) : (
-            <Logo variant="icon" className="w-10 h-10 shrink-0" />
-          )}
-          <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground truncate">
-            {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
-          </h2>
+      <div className="p-5 border-b border-sidebar-border/50 md:border-b-0 min-w-0 flex flex-col gap-3">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3 min-w-0">
+            {selectedEscola?.logo_url ? (
+              <img
+                src={selectedEscola.logo_url}
+                alt={selectedEscola.nome}
+                className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-surface-1"
+              />
+            ) : (
+              <Logo variant="icon" className="w-10 h-10 shrink-0" />
+            )}
+            <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground truncate">
+              {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
+            </h2>
+          </div>
+          <button 
+            onClick={closeMobile}
+            className="md:hidden p-2 text-sidebar-foreground/70 hover:text-highlight hover:bg-sidebar-accent rounded-lg transition-colors"
+            title="Recolher Menu"
+            aria-label="Recolher Menu"
+          >
+            <X className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff]" />
+          </button>
         </div>
-        <button 
-          onClick={closeMobile}
-          className="md:hidden p-2 text-sidebar-foreground/70 hover:text-highlight hover:bg-sidebar-accent rounded-lg transition-colors"
-          title="Recolher Menu"
-          aria-label="Recolher Menu"
-        >
-          <X className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff]" />
-        </button>
+
+        {/* Dropdown de Escolas para Multi-lotação */}
+        {vinculosAtivos.length > 1 && (
+          <div className="px-1">
+            <label className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest block mb-1">
+              Unidade Escolar Ativa
+            </label>
+            <select
+              value={escolaAtivaId || ''}
+              onChange={(e) => setEscolaAtivaId(e.target.value)}
+              className="w-full bg-sidebar-accent/45 border border-sidebar-border/50 text-sidebar-foreground text-xs rounded-xl px-3 py-2 outline-none focus:border-sky-500 font-semibold cursor-pointer transition-all duration-200"
+            >
+              {vinculosAtivos.map((v) => (
+                <option key={v.id} value={v.escola_id} className="bg-[#18181b] text-white">
+                  {v.escolaNome || 'Escola sem nome'}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Main Nav */}
