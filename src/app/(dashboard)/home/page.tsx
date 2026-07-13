@@ -20,10 +20,12 @@ import {
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
+import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 
 interface KPIData {
   totalAlunos: number
@@ -142,6 +144,26 @@ export default function HomePage() {
   const [loadingKpi, setLoadingKpi] = useState(false)
   const [loadingEscolas, setLoadingEscolas] = useState(false)
 
+  // Estados para Professor
+  interface TeacherKPIData {
+    totalTurmas: number
+    totalAlunos: number
+    chamadasPendentes: number
+    atividadesImpressao: number
+  }
+  const [teacherKpi, setTeacherKpi] = useState<TeacherKPIData | null>(null)
+  const [loadingTeacherKpi, setLoadingTeacherKpi] = useState(false)
+  const [aulasHoje, setAulasHoje] = useState<any[]>([])
+  const [loadingAulasHoje, setLoadingAulasHoje] = useState(false)
+  
+  const [schoolStats, setSchoolStats] = useState<Record<string, { turmas: number; aulasHoje: number; chamadasPendentes: number }>>({})
+  const [loadingSchoolStats, setLoadingSchoolStats] = useState(false)
+  
+  // Modal de Chamada do Professor
+  const [selectedTurmaChamada, setSelectedTurmaChamada] = useState<any | null>(null)
+  const [selectedAulaChamada, setSelectedAulaChamada] = useState<any | null>(null)
+  const [isModalChamadaOpen, setIsModalChamadaOpen] = useState(false)
+
   useEffect(() => {
     loadEscolas()
   }, [loadEscolas])
@@ -239,6 +261,184 @@ export default function HomePage() {
     }
   }, [selectedEscola?.id, fetchKpis])
 
+  // Buscar estatísticas rápidas por escola para professores multi-lotados
+  const fetchSchoolStats = useCallback(async () => {
+    if (!funcionario?.id || vinculosAtivos.length === 0) return
+    setLoadingSchoolStats(true)
+    const supabase = createClient() as any
+    const hoje = new Date().toISOString().split('T')[0]
+    
+    const stats: Record<string, { turmas: number; aulasHoje: number; chamadasPendentes: number }> = {}
+
+    try {
+      await Promise.all(
+        vinculosAtivos.map(async (v) => {
+          const escolaId = v.escola_id
+          
+          // 1. Contagem de turmas vinculadas ao professor nesta escola
+          const { data: vtData } = await supabase
+            .from('vinculos_turmas')
+            .select('turma_id')
+            .eq('funcionario_id', funcionario.id)
+            .eq('escola_id', escolaId)
+          
+          const tIds = (vtData || []).map((vt: any) => vt.turma_id)
+          const turmasCount = tIds.length
+
+          // 2. Aulas hoje
+          const { data: aulasHojeData } = await supabase
+            .from('agenda_aulas')
+            .select('id, materia_id')
+            .eq('professor_id', funcionario.id)
+            .eq('escola_id', escolaId)
+            .eq('data', hoje)
+            .neq('status', 'cancelado')
+
+          const aulasHojeCount = aulasHojeData?.length ?? 0
+
+          // 3. Chamadas pendentes
+          let chamadasPendentesCount = 0
+          if (aulasHojeCount > 0) {
+            const { data: freqData } = await supabase
+              .from('frequencias')
+              .select('agenda_aula_id, materia_id')
+              .eq('escola_id', escolaId)
+              .eq('data', hoje)
+
+            const frequenciasLancadas = new Set(
+              (freqData || []).map((f: any) => f.agenda_aula_id || f.materia_id)
+            )
+
+            const pendentes = (aulasHojeData || []).filter(
+              (aula: any) => !frequenciasLancadas.has(aula.id) && !frequenciasLancadas.has(aula.materia_id)
+            )
+            chamadasPendentesCount = pendentes.length
+          }
+
+          stats[escolaId] = {
+            turmas: turmasCount,
+            aulasHoje: aulasHojeCount,
+            chamadasPendentes: chamadasPendentesCount
+          }
+        })
+      )
+      setSchoolStats(stats)
+    } catch (err) {
+      console.error('Erro ao buscar estatísticas das escolas:', err)
+    } finally {
+      setLoadingSchoolStats(false)
+    }
+  }, [funcionario?.id, vinculosAtivos])
+
+  useEffect(() => {
+    if (isProfessor && vinculosAtivos.length > 0 && !selectedEscola) {
+      fetchSchoolStats()
+    }
+  }, [isProfessor, vinculosAtivos, selectedEscola, fetchSchoolStats])
+
+  // Buscar dados específicos do professor para a escola selecionada
+  const fetchTeacherDashboard = useCallback(async (escolaId: string) => {
+    if (!funcionario?.id) return
+    setLoadingTeacherKpi(true)
+    setLoadingAulasHoje(true)
+    const supabase = createClient() as any
+    const hoje = new Date().toISOString().split('T')[0]
+
+    try {
+      // 1. Minhas Turmas
+      const { data: vtData, error: vtError } = await supabase
+        .from('vinculos_turmas')
+        .select('turma_id')
+        .eq('funcionario_id', funcionario.id)
+        .eq('escola_id', escolaId)
+
+      if (vtError) throw vtError
+      const tIds = (vtData || []).map((vt: any) => vt.turma_id)
+
+      // 2. Meus Alunos
+      let totalAlunos = 0
+      if (tIds.length > 0) {
+        const { count, error: aluError } = await supabase
+          .from('alunos')
+          .select('id', { count: 'exact', head: true })
+          .in('turma_id', tIds)
+          .is('deleted_at', null)
+
+        if (aluError) throw aluError
+        totalAlunos = count ?? 0
+      }
+
+      // 3. Aulas Hoje
+      const { data: aulasHojeData, error: ahError } = await supabase
+        .from('agenda_aulas')
+        .select(`
+          id,
+          horario_inicio,
+          horario_fim,
+          status,
+          materia_id,
+          turma_id,
+          turmas:turma_id (nome),
+          materias:materia_id (nome)
+        `)
+        .eq('professor_id', funcionario.id)
+        .eq('escola_id', escolaId)
+        .eq('data', hoje)
+        .order('horario_inicio')
+
+      if (ahError) throw ahError
+      setAulasHoje(aulasHojeData || [])
+
+      // 4. Chamadas Pendentes Hoje
+      const aulasAtivas = (aulasHojeData || []).filter((a: any) => a.status !== 'cancelado')
+      let chamadasPendentesCount = 0
+      if (aulasAtivas.length > 0) {
+        const { data: freqData } = await supabase
+          .from('frequencias')
+          .select('agenda_aula_id, materia_id')
+          .eq('escola_id', escolaId)
+          .eq('data', hoje)
+
+        const frequenciasLancadas = new Set(
+          (freqData || []).map((f: any) => f.agenda_aula_id || f.materia_id)
+        )
+
+        const pendentes = aulasAtivas.filter(
+          (aula: any) => !frequenciasLancadas.has(aula.id) && !frequenciasLancadas.has(aula.materia_id)
+        )
+        chamadasPendentesCount = pendentes.length
+      }
+
+      // 5. Atividades Secretaria
+      const { count: atividadesCount, error: atError } = await supabase
+        .from('atividades_secretaria')
+        .select('id', { count: 'exact', head: true })
+        .eq('professor_id', funcionario.id)
+        .eq('escola_id', escolaId)
+        .in('status', ['recebida', 'em_impressao'])
+
+      if (atError) throw atError
+
+      setTeacherKpi({
+        totalTurmas: tIds.length,
+        totalAlunos,
+        chamadasPendentes: chamadasPendentesCount,
+        atividadesImpressao: atividadesCount ?? 0
+      })
+    } catch (err) {
+      console.error('Erro ao buscar dados do painel do professor:', err)
+    } finally {
+      setLoadingTeacherKpi(false)
+      setLoadingAulasHoje(false)
+    }
+  }, [funcionario?.id])
+
+  useEffect(() => {
+    if (selectedEscola?.id && isProfessor) {
+      fetchTeacherDashboard(selectedEscola.id)
+    }
+  }, [selectedEscola?.id, isProfessor, fetchTeacherDashboard])
+
   // Auto-seleção de escola para usuários não administradores (Diretores, etc.)
   useEffect(() => {
     if (isMultiLotadoDocente) return
@@ -312,28 +512,202 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-              {(isAdmin ? escolas : escolas.filter(e => vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => (
-                <Card
-                  key={escola.id}
-                  onClick={() => setSelectedEscola(escola)}
-                  className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-center text-center space-y-4 min-h-[170px] group shadow-md rounded-2xl"
-                >
-                  <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                    {escola.logo_url ? (
-                      <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
-                    ) : (
-                      <Building2 className="w-8 h-8" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {(isAdmin ? escolas : escolas.filter(e => vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => {
+                const stats = schoolStats[escola.id]
+                return (
+                  <Card
+                    key={escola.id}
+                    onClick={() => setSelectedEscola(escola)}
+                    className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-between min-h-[200px] group shadow-md rounded-2xl"
+                  >
+                    <div className="flex flex-col items-center text-center space-y-3 w-full">
+                      <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                        {escola.logo_url ? (
+                          <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
+                        ) : (
+                          <Building2 className="w-8 h-8" />
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
+                        {escola.nome}
+                      </h3>
+                    </div>
+
+                    {isProfessor && (
+                      <div className="w-full pt-3 mt-3 border-t border-borderCustom/50 flex flex-col gap-1.5 text-center">
+                        {loadingSchoolStats ? (
+                          <div className="h-4 w-20 bg-muted/20 rounded animate-pulse mx-auto" />
+                        ) : stats ? (
+                          <>
+                            <div className="flex justify-around text-[10px] text-muted-foreground font-medium">
+                              <span><strong>{stats.turmas}</strong> turmas</span>
+                              <span>•</span>
+                              <span><strong>{stats.aulasHoje}</strong> aulas hoje</span>
+                            </div>
+                            {stats.chamadasPendentes > 0 && (
+                              <span className="inline-flex items-center justify-center gap-1 mx-auto px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+                                <Clock className="w-2.5 h-2.5" />
+                                {stats.chamadasPendentes} Chamada{stats.chamadasPendentes > 1 ? 's' : ''} Pendente{stats.chamadasPendentes > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">Sem dados</span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
-                    {escola.nome}
-                  </h3>
-                </Card>
-              ))}
+                  </Card>
+                )
+              })}
             </div>
           </div>
         )
+      ) : !podeVerKpiGerencial && isProfessor ? (
+        /* ── VISÃO 3: DASHBOARD DO PROFESSOR ── */
+        <div className="space-y-6 animate-in fade-in duration-300">
+          
+          {/* Header da escola */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                {selectedEscola.logo_url ? (
+                  <img
+                    src={selectedEscola.logo_url}
+                    alt={selectedEscola.nome}
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <GraduationCap className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                  {selectedEscola.nome}
+                </h1>
+                <p className="text-sm text-muted-foreground">Painel do Docente — Atividades de hoje</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fetchTeacherDashboard(selectedEscola.id)}
+              disabled={loadingTeacherKpi}
+              className="text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              <RefreshCw className={cn('w-4 h-4', loadingTeacherKpi && 'animate-spin')} />
+              Atualizar
+            </Button>
+          </div>
+
+          {/* KPIs do Professor */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <KPICard
+              icon={Users}
+              label="Minhas Turmas"
+              value={teacherKpi?.totalTurmas ?? 0}
+              loading={loadingTeacherKpi}
+              color="violet"
+            />
+            <KPICard
+              icon={GraduationCap}
+              label="Meus Alunos"
+              value={teacherKpi?.totalAlunos ?? 0}
+              loading={loadingTeacherKpi}
+              color="blue"
+            />
+            <KPICard
+              icon={Clock}
+              label="Chamadas Pendentes"
+              value={teacherKpi?.chamadasPendentes ?? 0}
+              loading={loadingTeacherKpi}
+              color="amber"
+            />
+            <KPICard
+              icon={Printer}
+              label="Atividades na Fila"
+              value={teacherKpi?.atividadesImpressao ?? 0}
+              loading={loadingTeacherKpi}
+              color="emerald"
+              href="/avaliacoes"
+            />
+          </div>
+
+          {/* Minhas Aulas Hoje */}
+          <Card className="bg-surface-1 border-borderCustom rounded-2xl p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-highlight" />
+              Minha Agenda de Aulas — Hoje
+            </h3>
+
+            {loadingAulasHoje ? (
+              <div className="space-y-3 py-6 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-highlight" />
+                <span>Buscando agenda de aulas...</span>
+              </div>
+            ) : aulasHoje.length === 0 ? (
+              <div className="text-center py-10 border border-dashed border-borderCustom rounded-2xl text-muted-foreground text-sm">
+                Nenhuma aula programada na agenda para o dia de hoje.
+              </div>
+            ) : (
+              <div className="rounded-xl border border-borderCustom overflow-hidden bg-[#0d0d0d] overflow-x-auto">
+                <Table className="min-w-[600px]">
+                  <TableHeader className="bg-[#080808]">
+                    <TableRow className="border-borderCustom hover:bg-transparent">
+                      <TableHead className="text-white">Horário</TableHead>
+                      <TableHead className="text-white text-center">Turma</TableHead>
+                      <TableHead className="text-white text-center">Disciplina</TableHead>
+                      <TableHead className="text-white text-center">Status</TableHead>
+                      <TableHead className="text-white text-right">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {aulasHoje.map((aula) => (
+                      <TableRow key={aula.id} className="border-borderCustom hover:bg-[#151517] transition-colors">
+                        <TableCell className="font-semibold text-white font-mono text-xs">
+                          {aula.horario_inicio.slice(0, 5)} - {aula.horario_fim.slice(0, 5)}
+                        </TableCell>
+                        <TableCell className="text-center text-white font-bold">
+                          {aula.turmas?.nome ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground font-medium">
+                          {aula.materias?.nome ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            aula.status === 'normal'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                              : aula.status === 'alterado'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                          }`}>
+                            {aula.status.toUpperCase()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            onClick={() => {
+                              setSelectedTurmaChamada({
+                                id: aula.turma_id,
+                                nome: aula.turmas?.nome || 'Turma'
+                              })
+                              setSelectedAulaChamada(aula)
+                              setIsModalChamadaOpen(true)
+                            }}
+                            disabled={aula.status === 'cancelado'}
+                            className="bg-highlight hover:bg-highlight/90 text-background font-bold text-xs h-8 rounded-lg cursor-pointer"
+                          >
+                            Lançar Presença
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        </div>
       ) : (
         /* ── VISÃO 2: DASHBOARD DE KPIs DA ESCOLA ── */
         <div className="space-y-6 animate-in fade-in duration-300">
@@ -485,6 +859,17 @@ export default function HomePage() {
           </div>
 
         </div>
+      )}
+
+      {selectedTurmaChamada && (
+        <ModalDetalhesTurma
+          open={isModalChamadaOpen}
+          onOpenChange={setIsModalChamadaOpen}
+          turma={selectedTurmaChamada}
+          initialMateriaId={selectedAulaChamada?.materia_id}
+          initialAgendaAulaId={selectedAulaChamada?.id}
+          initialData={new Date().toISOString().split('T')[0]}
+        />
       )}
     </div>
   )
