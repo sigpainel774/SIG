@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
-import { ArrowLeftRight, Save, X, Search, FileUp, School } from 'lucide-react'
+import { ArrowLeftRight, Save, X, Search, FileUp, School, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -17,13 +17,81 @@ export default function TransferenciaAlunoPage() {
   const [loading, setLoading] = useState(false)
 
   const [buscaAluno, setBuscaAluno] = useState('')
-  const [resultadosBusca, setResultadosBusca] = useState<any[]>([])
+  const [alunos, setAlunos] = useState<any[]>([])
+  const [loadingAlunos, setLoadingAlunos] = useState(false)
   const [alunoSelecionado, setAlunoSelecionado] = useState<any>(null)
+  const [showSugestoes, setShowSugestoes] = useState(false)
   const [escolas, setEscolas] = useState<any[]>([])
   
   const [destinoId, setDestinoId] = useState('')
   const [foraDaRede, setForaDaRede] = useState(false)
   const [motivo, setMotivo] = useState('')
+
+  const autocompleteRef = useRef<HTMLDivElement>(null)
+
+  // Clique fora do autocomplete fecha as sugestões
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
+        setShowSugestoes(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Carregar todos os alunos da escola ativa ao iniciar a página
+  useEffect(() => {
+    const loadAlunos = async () => {
+      const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
+      if (!escolaAtivaId && !isAdmin) {
+        setAlunos([])
+        return
+      }
+
+      setLoadingAlunos(true)
+      try {
+        let query = supabase
+          .from('alunos')
+          .select('*, escolas(nome), turmas(nome)')
+          .is('deleted_at', null)
+
+        if (escolaAtivaId) {
+          query = query.eq('escola_id', escolaAtivaId)
+        }
+
+        const { data, error } = await query.order('nome', { ascending: true })
+        if (error) throw error
+        setAlunos(data || [])
+      } catch (err) {
+        console.error('Erro ao carregar alunos:', err)
+        toast.error('Erro ao carregar lista de alunos.')
+      } finally {
+        setLoadingAlunos(false)
+      }
+    }
+
+    loadAlunos()
+  }, [escolaAtivaId, supabase])
+
+  // Normalização de strings para a busca dinâmica
+  const normalizeString = (str: string) => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+  }
+
+  // Filtrar lista com base na digitação
+  const sugestoesAlunos = alunos.filter((aluno) => {
+    if (!buscaAluno) return false
+
+    const buscaNormalizada = normalizeString(buscaAluno)
+    const nomeNormalizado = normalizeString(aluno.nome || '')
+    const idNormalizado = normalizeString(aluno.id || '')
+
+    return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
+  }).slice(0, 10)
 
   useEffect(() => {
     // Carrega escolas ativas para o select de destino (exceto a escola atual)
@@ -40,48 +108,6 @@ export default function TransferenciaAlunoPage() {
     }
     loadEscolas()
   }, [escolaAtivaId, supabase])
-
-  const handleBuscarAluno = async () => {
-    if (!buscaAluno) return
-    
-    const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
-    if (!escolaAtivaId && !isAdmin) {
-      toast.error('Nenhuma escola ativa selecionada.')
-      return
-    }
-
-    setLoading(true)
-    setAlunoSelecionado(null)
-    setResultadosBusca([])
-
-    try {
-      let query = supabase
-        .from('alunos')
-        .select('*')
-        .ilike('nome', `%${buscaAluno}%`)
-        .is('deleted_at', null)
-
-      if (escolaAtivaId) {
-        query = query.eq('escola_id', escolaAtivaId)
-      }
-
-      const { data, error } = await query.limit(10)
-
-      if (data && data.length > 0) {
-        setResultadosBusca(data)
-        if (data.length === 1) {
-          setAlunoSelecionado(data[0])
-        }
-      } else {
-        toast.error('Nenhum aluno encontrado com esse nome.')
-      }
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao buscar alunos.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSubmeter = async () => {
     if (!alunoSelecionado) return toast.error('Selecione um aluno')
@@ -127,16 +153,44 @@ export default function TransferenciaAlunoPage() {
 
         const transferId = insertData?.id
 
-        // Notificar o diretor da escola de destino
-        const { data: escolaDest } = await supabase.from('escolas').select('diretor_id').eq('id', destinoId).single()
-        if (escolaDest && escolaDest.diretor_id) {
-          await supabase.from('notifications').insert({
-            user_id: escolaDest.diretor_id,
+        // Notificar diretores e secretários da escola de destino (níveis 2 e 3 ativos)
+        const { data: acessosDest } = await supabase
+          .from('acessos_usuarios')
+          .select('funcionarios(auth_user_id)')
+          .eq('escola_id', destinoId)
+          .in('nivel', [2, 3])
+          .eq('ativo', true)
+
+        const { data: escolaDest } = await supabase
+          .from('escolas')
+          .select('diretor_id')
+          .eq('id', destinoId)
+          .single()
+
+        const userIds = new Set<string>()
+        if (escolaDest?.diretor_id) {
+          userIds.add(escolaDest.diretor_id)
+        }
+
+        if (acessosDest) {
+          acessosDest.forEach((acc: any) => {
+            const authId = acc.funcionarios?.auth_user_id
+            if (authId) {
+              userIds.add(authId)
+            }
+          })
+        }
+
+        if (userIds.size > 0) {
+          const notificationsToInsert = Array.from(userIds).map((userId) => ({
+            user_id: userId,
             title: 'Nova Solicitação de Transferência',
             message: `O aluno ${alunoSelecionado.nome} solicitou transferência para sua escola.`,
             type: 'INFO',
-            link: `/transferencias?tab=alunos&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
-          })
+            link: `/transferencias?tab=alunos&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
+            read: false
+          }))
+          await supabase.from('notifications').insert(notificationsToInsert)
         }
 
         toast.success('Solicitação enviada para a escola de destino!')
@@ -161,63 +215,100 @@ export default function TransferenciaAlunoPage() {
       <div className="bg-[#121212] border border-[#3f3f46] p-6 rounded-xl space-y-6">
         
         {/* Passo 1: Selecionar Aluno */}
-        <div className="space-y-3">
+        <div className="space-y-3 relative" ref={autocompleteRef}>
           <label className="text-sm font-semibold text-white">1. Buscar Aluno (Escola Atual)</label>
-          <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
             <Input 
-              placeholder="Nome do aluno..." 
+              placeholder="Digite o nome ou matrícula do aluno..." 
               value={buscaAluno}
-              onChange={(e) => setBuscaAluno(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleBuscarAluno()
-                }
+              onChange={(e) => {
+                setBuscaAluno(e.target.value)
+                setShowSugestoes(true)
+                if (alunoSelecionado) setAlunoSelecionado(null)
               }}
-              className="bg-[#18181a] border-[#3f3f46] text-white"
+              onFocus={() => setShowSugestoes(true)}
+              onClick={() => setShowSugestoes(true)}
+              className="pl-9 pr-10 bg-[#18181a] border-[#3f3f46] text-white rounded-xl h-10 text-sm focus:ring-2 focus:ring-sky-500/50"
             />
-            <Button onClick={handleBuscarAluno} disabled={loading} className="bg-[#27272a] hover:bg-[#3f3f46]">
-              <Search className="w-4 h-4" />
-            </Button>
+            {buscaAluno && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBuscaAluno('')
+                  setAlunoSelecionado(null)
+                  setShowSugestoes(false)
+                }}
+                className="absolute right-3 top-3 text-zinc-500 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Resultados de Busca se houver múltiplos */}
-          {resultadosBusca.length > 1 && !alunoSelecionado && (
-            <div className="mt-2 border border-[#3f3f46] bg-[#18181a] rounded-lg max-h-40 overflow-y-auto divide-y divide-[#26262a]">
-              {resultadosBusca.map((aluno) => (
-                <button
-                  key={aluno.id}
-                  onClick={() => setAlunoSelecionado(aluno)}
-                  className="w-full text-left px-3 py-2.5 text-sm text-zinc-300 hover:bg-[#27272a] hover:text-white transition-colors flex items-center justify-between cursor-pointer"
-                >
-                  <span className="font-semibold">{aluno.nome}</span>
-                  <span className="text-xs text-zinc-500">ID: {aluno.id.split('-')[0]}</span>
-                </button>
-              ))}
+          {/* Sugestões do Autocomplete */}
+          {showSugestoes && buscaAluno && (
+            <div className="absolute z-50 w-full mt-1 bg-[#121214] border border-[#3f3f46] rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+              {loadingAlunos ? (
+                <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
+                </div>
+              ) : sugestoesAlunos.length > 0 ? (
+                sugestoesAlunos.map((aluno) => (
+                  <button
+                    key={aluno.id}
+                    type="button"
+                    onClick={() => {
+                      setAlunoSelecionado(aluno)
+                      setBuscaAluno(aluno.nome)
+                      setShowSugestoes(false)
+                    }}
+                    className="w-full px-4 py-2.5 text-left text-xs hover:bg-[#185FA5]/10 hover:text-[#3ea6ff] text-zinc-300 transition-colors border-b border-[#26262a] last:border-none cursor-pointer flex flex-col gap-0.5"
+                  >
+                    <span className="font-bold text-white uppercase">{aluno.nome}</span>
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                      <span>Matrícula: {aluno.id}</span>
+                      {aluno.turmas?.nome && (
+                        <>
+                          <span>•</span>
+                          <span className="text-[#3ea6ff] font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-zinc-500">Nenhum aluno encontrado.</div>
+              )}
             </div>
           )}
 
+          {/* Ficha Rápida do Aluno Selecionado */}
           {alunoSelecionado && (
-            <div className="mt-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 font-bold">
-                  {alunoSelecionado.nome.charAt(0)}
+            <div className="p-4 bg-background border border-border rounded-xl space-y-3 animate-in fade-in duration-200 mt-2">
+              <h3 className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+                Ficha Rápida do Aluno
+              </h3>
+              <div className="space-y-2 text-xs">
+                <div>
+                  <span className="text-xs uppercase tracking-wide text-zinc-500 block mb-0.5">Aluno(a)</span>
+                  <span className="text-sm font-semibold text-white uppercase">{alunoSelecionado.nome}</span>
+                </div>
+                {alunoSelecionado.turmas?.nome && (
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-zinc-500 block mb-0.5">Turma</span>
+                    <span className="text-sm font-normal text-zinc-300 uppercase">{alunoSelecionado.turmas.nome}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-xs uppercase tracking-wide text-zinc-500 block mb-0.5">Mãe / Responsável</span>
+                  <span className="text-sm font-normal text-zinc-300 uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
                 </div>
                 <div>
-                  <p className="text-emerald-500 font-semibold">{alunoSelecionado.nome}</p>
-                  <p className="text-xs text-emerald-500/70">ID: {alunoSelecionado.id.split('-')[0]}</p>
+                  <span className="text-xs uppercase tracking-wide text-zinc-500 block mb-0.5">Escola de Origem</span>
+                  <span className="text-sm font-normal text-zinc-300 uppercase">{alunoSelecionado.escolas?.nome ?? 'Rede'}</span>
                 </div>
               </div>
-              {resultadosBusca.length > 1 && (
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => setAlunoSelecionado(null)}
-                  className="text-xs text-[#aaa] hover:text-white hover:bg-zinc-800"
-                >
-                  Alterar
-                </Button>
-              )}
             </div>
           )}
         </div>
