@@ -165,21 +165,6 @@ export function ModalGestaoLotacoes({
 
       // 3. Montar lista de funcionários com suas lotações
       const lista: FuncItem[] = funcsData
-        .filter((f: any) => {
-          if (escolaAtivaId) {
-            if (f.is_superadmin) return false
-            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
-            const acessosList = f.acessos_usuarios ?? []
-            if (acessosList.some((a: any) => a.nivel === 1 && a.ativo)) return false
-          }
-          if (restringirNivel) {
-            if (f.is_superadmin) return false
-            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
-            const acessosList = f.acessos_usuarios ?? []
-            if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
-          }
-          return true
-        })
         .map((f: any) => ({
           id: f.id,
           nome: f.nome,
@@ -200,6 +185,38 @@ export function ModalGestaoLotacoes({
               escolaNome: v.school_id ? (escolaMap[v.school_id] ?? 'Escola desconhecida') : undefined,
             })),
         }))
+        .filter((f: FuncItem) => {
+          // Filtragem de superadmin, root e níveis
+          const fRaw = funcsData.find((fd: any) => fd.id === f.id)
+
+          if (escolaAtivaId) {
+            if (fRaw?.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            const acessosList = fRaw?.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => a.nivel === 1 && a.ativo)) return false
+          }
+          if (restringirNivel) {
+            if (fRaw?.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            const acessosList = fRaw?.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
+          }
+
+          // Filtragem por Escola Selecionada (evita vazamento de dados de outras escolas)
+          if (escolaAtivaId) {
+            const temLotacaoNaEscolaAtiva = f.lotacoes.some((v) => v.escola_id === escolaAtivaId && v.ativo)
+            const temQualquerLotacao = f.lotacoes.some((v) => v.ativo)
+
+            // Se tem lotação ativa na escola selecionada, exibe
+            if (temLotacaoNaEscolaAtiva) return true
+            // Se não tem nenhuma lotação ativa no sistema E o usuário for Admin Global, exibe (para permitir alocação)
+            if (!temQualquerLotacao && isGlobalAdmin) return true
+            // Caso contrário, oculta
+            return false
+          }
+
+          return true
+        })
 
       setFuncionarios(lista)
       setEscolas(escsData)

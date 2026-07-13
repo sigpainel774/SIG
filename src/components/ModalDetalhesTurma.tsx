@@ -102,14 +102,42 @@ export function ModalDetalhesTurma({
     try {
       const { data, error } = await supabase
         .from('vinculos_funcionarios')
-        .select('id, cargo, ativo, funcionarios(id, nome)')
+        .select(`
+          id,
+          cargo,
+          ativo,
+          funcionarios (
+            id,
+            nome,
+            cargo,
+            acessos_usuarios (
+              nivel,
+              escola_id,
+              ativo
+            )
+          )
+        `)
         .eq('escola_id', escolaAtivaId)
         .eq('ativo', true)
 
       if (error) throw error
 
       const profs = (data || [])
-        .filter((v: any) => v.cargo?.toLowerCase().includes('professor'))
+        .filter((v: any) => {
+          const func = v.funcionarios
+          if (!func) return false
+
+          const cargoVinc = (v.cargo || '').toLowerCase()
+          const cargoFunc = (func.cargo || '').toLowerCase()
+          const temCargoProfessor = cargoVinc.includes('professor') || cargoFunc.includes('professor')
+
+          const acessosList = func.acessos_usuarios || []
+          const temAcessoProfessor = (Array.isArray(acessosList) ? acessosList : [acessosList]).some(
+            (a: any) => (a.nivel === 4 || a.nivel === 5) && a.ativo && a.escola_id === escolaAtivaId
+          )
+
+          return temCargoProfessor || temAcessoProfessor
+        })
         .map((v: any) => {
           const func = v.funcionarios
           if (Array.isArray(func)) return func[0]

@@ -30,6 +30,7 @@ import { PermissoesView } from '@/components/PermissoesView'
 import { createClient } from '@/lib/supabaseClient'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
 import { IconTile } from '@/components/ui/icon-tile'
@@ -88,6 +89,7 @@ function formatarData(iso: string | null | undefined): string {
 export default function FuncionariosPage() {
   const supabase = createClient()
   const { funcionario: authFuncionario, acessos, isAdminGlobalOrRoot, isDiretor } = useAuthStore()
+  const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const { isEditMode } = useEditModeStore()
   const isAdmin = isAdminGlobalOrRoot()
   const isDir = isDiretor()
@@ -300,7 +302,7 @@ export default function FuncionariosPage() {
             escola_id,
             cargo,
             ativo,
-            escolas(nome, inep, localizacao)
+            escolas(nome, inep, localizacao, logo_url)
           )
         `)
         .eq('id', funcId)
@@ -315,6 +317,7 @@ export default function FuncionariosPage() {
       const activeVinc = f.vinculos_funcionarios?.find((v: any) => v.ativo)
       const escolaNome = activeVinc?.escolas?.nome ?? 'Não informada'
       const escolaInep = activeVinc?.escolas?.inep ?? 'Não informado'
+      const schoolLogoUrl = activeVinc?.escolas?.logo_url ?? null
       const escolaLocalizacao = activeVinc?.escolas?.localizacao ?? 'Não informada'
 
       // Formatar Doenças
@@ -368,8 +371,13 @@ export default function FuncionariosPage() {
       if (f.doc_mestrado_url) docsAnexadosList.push('Comp. Escolaridade: Mestrado')
       if (f.doc_doutorado_url) docsAnexadosList.push('Comp. Escolaridade: Doutorado')
       const docsAnexadosStr = docsAnexadosList.length > 0 ? docsAnexadosList.join(', ') : 'Nenhum'
-
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+      const isRootOrNivel1 = isAdminGlobalOrRoot() || (acessos && acessos.some((a: any) => a.nivel === 1 && a.ativo))
+      const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg?t=${Date.now()}`
+      const logoDireitoUrl = isRootOrNivel1 
+        ? logoSecretariaUrl 
+        : (schoolLogoUrl ? `${schoolLogoUrl}?t=${Date.now()}` : logoSecretariaUrl)
+
       const win = window.open('', '_blank', 'width=900,height=900')
       if (!win) return
 
@@ -584,7 +592,7 @@ export default function FuncionariosPage() {
               <div class="header">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div class="photo-box">
-                    ${f.foto_url ? `<img src="${f.foto_url}" class="photo-img" />` : 'FOTO 3X4'}
+                    ${f.foto_url ? `<img src="${f.foto_url}?t=${Date.now()}" class="photo-img" />` : 'FOTO 3X4'}
                   </div>
                   <div class="header-title-box" style="text-align: center; flex-grow: 1;">
                     <h4 class="header-pref">PREFEITURA MUNICIPAL DE SAPEAÇU</h4>
@@ -592,7 +600,7 @@ export default function FuncionariosPage() {
                     <h2 class="header-title">CADASTRO DE FUNCIONÁRIO</h2>
                   </div>
                   <div class="logo-box">
-                    <img src="${supabaseUrl}/storage/v1/object/public/logos/logo_moises.svg" class="logo-img" onerror="this.onerror=null; this.src='${supabaseUrl}/storage/v1/object/public/logos/logo_moises.sgv';" />
+                    <img src="${logoDireitoUrl}" class="logo-img" onerror="this.onerror=null; this.src='${logoSecretariaUrl}';" />
                   </div>
                 </div>
               </div>
@@ -917,6 +925,11 @@ export default function FuncionariosPage() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
     const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png?t=${Date.now()}`
     const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg?t=${Date.now()}`
+    const isRootOrNivel1 = isAdminGlobalOrRoot() || (acessos && acessos.some((a: any) => a.nivel === 1 && a.ativo))
+    const logoEscolaAtivaUrl = selectedEscola?.logo_url || null
+    const logoDireitoUrl = isRootOrNivel1 
+      ? logoSecretariaUrl 
+      : (logoEscolaAtivaUrl ? `${logoEscolaAtivaUrl}?t=${Date.now()}` : logoSecretariaUrl)
 
     // Gera as iniciais (2 letras) do nome
     const getInitialsLocal = (nome: string): string => {
@@ -1145,7 +1158,7 @@ export default function FuncionariosPage() {
               <div class="doc-meta">Emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · Total: ${funcsParaImprimir.length} funcionário(s)</div>
               <div class="doc-meta" style="margin-top:3px; color:#1a3a5c; font-weight:bold;">Escola: ${legendaEscola} &nbsp;|&nbsp; Cargo: ${legendaCargo}</div>
             </div>
-            <img src="${logoSecretariaUrl}" class="doc-logo" alt="Logo Secretaria" onerror="this.style.visibility='hidden'" />
+             <img src="${logoDireitoUrl}" class="doc-logo" alt="Logo Secretaria" onerror="this.onerror=null; this.src='${logoSecretariaUrl}';" />
           </div>
 
           <!-- Tabela -->
