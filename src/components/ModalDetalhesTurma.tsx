@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -406,7 +406,7 @@ export function ModalDetalhesTurma({
   }
 
   // Manipular notas
-  const handleNotaChange = (
+  const handleNotaChange = useCallback((
     alunoId: string,
     materiaId: string,
     unidade: number,
@@ -439,10 +439,10 @@ export function ModalDetalhesTurma({
         [campo]: rawVal
       }
     }))
-  }
+  }, [])
 
   // Manipular alteração de recuperação final
-  const handleRecuperacaoChange = (
+  const handleRecuperacaoChange = useCallback((
     alunoId: string,
     materiaId: string,
     valor: string
@@ -465,7 +465,7 @@ export function ModalDetalhesTurma({
       ...prev,
       [key]: { nota: rawVal }
     }))
-  }
+  }, [])
 
   // Salvar notas da matéria e unidade ativas em lote (Upsert seguro)
   const handleSalvarNotas = async (materiaId: string) => {
@@ -504,11 +504,12 @@ export function ModalDetalhesTurma({
       alunos.forEach(aluno => {
         const key = `${aluno.id}_${materiaId}`
         const rec = recuperacoesState[key]
-        const m1 = calcularMediaUnidade(aluno.id, materiaId, 1)
-        const m2 = calcularMediaUnidade(aluno.id, materiaId, 2)
-        const m3 = calcularMediaUnidade(aluno.id, materiaId, 3)
-        const todasUnidades = m1 !== null && m2 !== null && m3 !== null
-        const mediaFinal = calcularMediaFinal(aluno.id, materiaId)
+        const calc = calculosNotas[key] ?? defaultCalculos
+        const m1 = calc.m1
+        const m2 = calc.m2
+        const m3 = calc.m3
+        const todasUnidades = calc.todasUnidades
+        const mediaFinal = calc.mediaFinal
 
         if (rec && rec.nota !== null && rec.nota !== '') {
           // Apenas salva a recuperação final se o aluno realmente estiver elegível (média < 5.0 e todas as unidades lançadas)
@@ -718,79 +719,101 @@ export function ModalDetalhesTurma({
   }
 
 
-  // Funções utilitárias auxiliares de cálculo de média
-  const obterNotas = (alunoId: string, materiaId: string, unidade: number) => {
-    const key = `${alunoId}_${materiaId}_${unidade}`
-    return notasState[key] || { nota1: null, nota2: null, nota3: null }
-  }
+  const defaultCalculos = useMemo(() => ({
+    m1: null,
+    m2: null,
+    m3: null,
+    mediaFinal: null,
+    mediaPosRec: null,
+    situacao: 'Sem Notas',
+    todasUnidades: false,
+    isElegivelRec: false
+  }), [])
 
-  const obterRecuperacao = (alunoId: string, materiaId: string) => {
-    const key = `${alunoId}_${materiaId}`
-    return recuperacoesState[key] || { nota: null }
-  }
+  const calculosNotas = useMemo(() => {
+    const res: Record<string, {
+      m1: number | null
+      m2: number | null
+      m3: number | null
+      mediaFinal: number | null
+      mediaPosRec: number | null
+      situacao: string
+      todasUnidades: boolean
+      isElegivelRec: boolean
+    }> = {}
 
-  const calcularMediaUnidade = (alunoId: string, materiaId: string, unidade: number) => {
-    const n = obterNotas(alunoId, materiaId, unidade)
-    const n1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
-    const n2 = n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null
-    const n3 = n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+    alunos.forEach(aluno => {
+      materias.forEach(mat => {
+        const keyPrefix = `${aluno.id}_${mat.id}`
+        
+        const n1Data = notasState[`${keyPrefix}_1`] || { nota1: null, nota2: null, nota3: null }
+        const n2Data = notasState[`${keyPrefix}_2`] || { nota1: null, nota2: null, nota3: null }
+        const n3Data = notasState[`${keyPrefix}_3`] || { nota1: null, nota2: null, nota3: null }
 
-    const validas = [n1, n2, n3].filter((v): v is number => v !== null && !isNaN(v))
-    if (validas.length === 0) return null
-    // Contamos avaliações pendentes como 0 para fins de composição da média final
-    const val1 = n1 ?? 0
-    const val2 = n2 ?? 0
-    const val3 = n3 ?? 0
-    return parseFloat(((val1 + val2 + val3) / 3).toFixed(1))
-  }
+        const parseUnidade = (n: typeof n1Data) => {
+          const v1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
+          const v2 = n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null
+          const v3 = n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+          
+          const validas = [v1, v2, v3].filter((v): v is number => v !== null && !isNaN(v))
+          if (validas.length === 0) return null
+          
+          const val1 = v1 ?? 0
+          const val2 = v2 ?? 0
+          const val3 = v3 ?? 0
+          return parseFloat(((val1 + val2 + val3) / 3).toFixed(1))
+        }
 
-  const calcularMediaFinal = (alunoId: string, materiaId: string) => {
-    const m1 = calcularMediaUnidade(alunoId, materiaId, 1)
-    const m2 = calcularMediaUnidade(alunoId, materiaId, 2)
-    const m3 = calcularMediaUnidade(alunoId, materiaId, 3)
+        const m1 = parseUnidade(n1Data)
+        const m2 = parseUnidade(n2Data)
+        const m3 = parseUnidade(n3Data)
 
-    const medias = [m1, m2, m3].filter((m): m is number => m !== null)
-    if (medias.length === 0) return null
+        const mediasValidas = [m1, m2, m3].filter((m): m is number => m !== null)
+        const mediaFinal = mediasValidas.length === 0 
+          ? null 
+          : parseFloat((mediasValidas.reduce((a, b) => a + b, 0) / mediasValidas.length).toFixed(1))
 
-    // Média baseia-se apenas nas unidades já lançadas para não distorcer no meio do ano
-    const soma = medias.reduce((a, b) => a + b, 0)
-    return parseFloat((soma / medias.length).toFixed(1))
-  }
+        const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+        const isElegivelRec = todasUnidades && mediaFinal !== null && mediaFinal < 5.0
 
-  const calcularMediaPosRecup = (alunoId: string, materiaId: string) => {
-    const m1 = calcularMediaUnidade(alunoId, materiaId, 1)
-    const m2 = calcularMediaUnidade(alunoId, materiaId, 2)
-    const m3 = calcularMediaUnidade(alunoId, materiaId, 3)
-    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
+        const recData = recuperacoesState[keyPrefix] || { nota: null }
+        const notaRec = recData.nota !== null && recData.nota !== '' ? Number(recData.nota) : null
 
-    const mediaFinal = calcularMediaFinal(alunoId, materiaId)
-    if (mediaFinal === null) return null
-    if (!todasUnidades || mediaFinal >= 5.0) return mediaFinal
+        let mediaPosRec = mediaFinal
+        if (mediaFinal !== null && todasUnidades && mediaFinal < 5.0) {
+          if (notaRec !== null) {
+            mediaPosRec = notaRec
+          }
+        }
 
-    const rec = obterRecuperacao(alunoId, materiaId)
-    const notaRec = rec.nota !== null && rec.nota !== '' ? Number(rec.nota) : null
-    if (notaRec === null) return mediaFinal
+        let situacao = 'Cursando'
+        if (mediaFinal === null) {
+          situacao = 'Sem Notas'
+        } else if (!todasUnidades) {
+          situacao = 'Cursando'
+        } else if (mediaFinal >= 5.0) {
+          situacao = 'Aprovado'
+        } else if (notaRec === null) {
+          situacao = 'Em Recuperação'
+        } else {
+          situacao = notaRec >= 5.0 ? 'Aprovado (Rec)' : 'Reprovado'
+        }
 
-    return notaRec
-  }
+        res[keyPrefix] = {
+          m1,
+          m2,
+          m3,
+          mediaFinal,
+          mediaPosRec,
+          situacao,
+          todasUnidades,
+          isElegivelRec
+        }
+      })
+    })
 
-  const obterSituacao = (alunoId: string, materiaId: string) => {
-    const m1 = calcularMediaUnidade(alunoId, materiaId, 1)
-    const m2 = calcularMediaUnidade(alunoId, materiaId, 2)
-    const m3 = calcularMediaUnidade(alunoId, materiaId, 3)
-    const todasUnidades = m1 !== null && m2 !== null && m3 !== null
-
-    const mediaFinal = calcularMediaFinal(alunoId, materiaId)
-    if (mediaFinal === null) return 'Sem Notas'
-    if (!todasUnidades) return 'Cursando'
-    if (mediaFinal >= 5.0) return 'Aprovado'
-
-    const rec = obterRecuperacao(alunoId, materiaId)
-    const notaRec = rec.nota !== null && rec.nota !== '' ? Number(rec.nota) : null
-    if (notaRec === null) return 'Em Recuperação'
-
-    return notaRec >= 5.0 ? 'Aprovado (Rec)' : 'Reprovado'
-  }
+    return res
+  }, [alunos, materias, notasState, recuperacoesState])
 
   const processarNotasParaImpressao = (alunoId: string) => {
     const formatadas: any[] = []
@@ -919,7 +942,7 @@ export function ModalDetalhesTurma({
                         <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
                           {vinculosProfessores.map((vp) => (
                             <div key={vp.id} className="flex items-center justify-between bg-[#121214] p-2 rounded-lg border border-[#202022]">
-                              <span className="text-xs font-semibold text-zinc-200 pl-1">{vp.funcionarios?.nome || 'Sem nome'}</span>
+                              <span className="text-xs font-semibold text-zinc-200 pl-1">{vp.funcionarios?.nome ?? 'Sem nome'}</span>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -971,7 +994,7 @@ export function ModalDetalhesTurma({
                             <option value="sem_professor">Sem professor</option>
                             {vinculosProfessores.map((vp) => (
                               <option key={vp.funcionario_id} value={vp.funcionario_id}>
-                                {vp.funcionarios?.nome || 'Sem nome'}
+                                {vp.funcionarios?.nome ?? 'Sem nome'}
                               </option>
                             ))}
                           </select>
@@ -1016,13 +1039,13 @@ export function ModalDetalhesTurma({
                                       <option value="sem_professor">Sem professor</option>
                                       {vinculosProfessores.map((vp) => (
                                         <option key={vp.funcionario_id} value={vp.funcionario_id}>
-                                          {vp.funcionarios?.nome || 'Sem nome'}
+                                          {vp.funcionarios?.nome ?? 'Sem nome'}
                                         </option>
                                       ))}
                                       {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
                                       {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
                                         <option key={mat.professor_id} value={mat.professor_id}>
-                                          {mat.funcionarios?.nome || 'Professor atual (Fora da Turma)'}
+                                          {mat.funcionarios?.nome ?? 'Professor atual (Fora da Turma)'}
                                         </option>
                                       )}
                                     </select>
@@ -1340,106 +1363,32 @@ export function ModalDetalhesTurma({
                                       </tr>
                                     ) : (
                                       alunos.map(aluno => {
-                                        const n = obterNotas(aluno.id, mat.id, unidAtiva)
-                                        const mediaUnid = calcularMediaUnidade(aluno.id, mat.id, unidAtiva)
-                                        const mediaFinal = calcularMediaFinal(aluno.id, mat.id)
-                                        const rec = obterRecuperacao(aluno.id, mat.id)
-                                        const mediaPosRec = calcularMediaPosRecup(aluno.id, mat.id)
-                                        const situacao = obterSituacao(aluno.id, mat.id)
-                                        const m1 = calcularMediaUnidade(aluno.id, mat.id, 1)
-                                        const m2 = calcularMediaUnidade(aluno.id, mat.id, 2)
-                                        const m3 = calcularMediaUnidade(aluno.id, mat.id, 3)
-                                        const todasUnidades = m1 !== null && m2 !== null && m3 !== null
-                                        const isElegivelRec = todasUnidades && mediaFinal !== null && mediaFinal < 5.0
+                                        const key = `${aluno.id}_${mat.id}`
+                                        const calc = calculosNotas[key] ?? defaultCalculos
+                                        const mediaUnid = unidAtiva === 1 ? calc.m1 : unidAtiva === 2 ? calc.m2 : calc.m3
+                                        const keyNota = `${key}_${unidAtiva}`
+                                        const n = notasState[keyNota] || { nota1: null, nota2: null, nota3: null }
+                                        const rec = recuperacoesState[key] || { nota: null }
 
                                         return (
-                                          <tr key={aluno.id} className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
-                                            <td className="p-3 font-semibold text-zinc-100">{aluno.nome}</td>
-                                            
-                                            {/* Nota 1 */}
-                                            <td className="p-2 text-center">
-                                              <input
-                                                type="text"
-                                                value={n.nota1 ?? ''}
-                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota1', e.target.value)}
-                                                placeholder="-"
-                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                              />
-                                            </td>
-
-                                            {/* Nota 2 */}
-                                            <td className="p-2 text-center">
-                                              <input
-                                                type="text"
-                                                value={n.nota2 ?? ''}
-                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota2', e.target.value)}
-                                                placeholder="-"
-                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                              />
-                                            </td>
-
-                                            {/* Nota 3 */}
-                                            <td className="p-2 text-center">
-                                              <input
-                                                type="text"
-                                                value={n.nota3 ?? ''}
-                                                onChange={(e) => handleNotaChange(aluno.id, mat.id, unidAtiva, 'nota3', e.target.value)}
-                                                placeholder="-"
-                                                className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
-                                              />
-                                            </td>
-
-                                            {/* Média Unidade */}
-                                            <td className="p-3 text-center bg-[#1c1c1e]/20 font-bold">
-                                              {mediaUnid !== null ? (
-                                                <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
-                                                  {mediaUnid}
-                                                </span>
-                                              ) : '-'}
-                                            </td>
-
-                                            {/* Média Final */}
-                                            <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
-                                              {mediaFinal !== null ? (
-                                                <span className={mediaFinal < 5 ? 'text-red-500' : 'text-green-500'}>
-                                                  {mediaFinal}
-                                                </span>
-                                              ) : '-'}
-                                            </td>
-
-                                            {/* Recuperação Final */}
-                                            <td className="p-2 text-center bg-yellow-500/5">
-                                              <input
-                                                type="text"
-                                                value={rec.nota ?? ''}
-                                                onChange={(e) => handleRecuperacaoChange(aluno.id, mat.id, e.target.value)}
-                                                disabled={!isElegivelRec}
-                                                placeholder={isElegivelRec ? "-" : "N/A"}
-                                                className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-white ${
-                                                  isElegivelRec 
-                                                    ? 'bg-[#18181b] border border-yellow-500/30' 
-                                                    : 'bg-zinc-800/30 border border-zinc-900 text-zinc-500 cursor-not-allowed'
-                                                }`}
-                                              />
-                                            </td>
-
-                                            {/* Média Pós-Rec / Situação */}
-                                            <td className="p-3 text-center bg-[#1c1c1e]/50 font-bold">
-                                              {mediaPosRec !== null ? (
-                                                <div className="flex flex-col items-center">
-                                                  <span className={mediaPosRec < 5 ? 'text-red-500' : 'text-green-500'}>
-                                                    {mediaPosRec}
-                                                  </span>
-                                                  <span className={`text-[9px] uppercase mt-0.5 font-bold ${
-                                                    situacao.startsWith('Aprovado') ? 'text-green-600' : 
-                                                    situacao === 'Em Recuperação' ? 'text-yellow-600' : 'text-red-600'
-                                                  }`}>
-                                                    {situacao}
-                                                  </span>
-                                                </div>
-                                              ) : '-'}
-                                            </td>
-                                          </tr>
+                                          <RowAlunoNotas
+                                            key={aluno.id}
+                                            alunoId={aluno.id}
+                                            alunoNome={aluno.nome}
+                                            materiaId={mat.id}
+                                            unidAtiva={unidAtiva}
+                                            nota1={n.nota1 !== null ? String(n.nota1) : null}
+                                            nota2={n.nota2 !== null ? String(n.nota2) : null}
+                                            nota3={n.nota3 !== null ? String(n.nota3) : null}
+                                            recNota={rec.nota !== null ? String(rec.nota) : null}
+                                            mediaUnid={mediaUnid}
+                                            mediaFinal={calc.mediaFinal}
+                                            mediaPosRec={calc.mediaPosRec}
+                                            situacao={calc.situacao}
+                                            isElegivelRec={calc.isElegivelRec}
+                                            onNotaChange={handleNotaChange}
+                                            onRecuperacaoChange={handleRecuperacaoChange}
+                                          />
                                         )
                                       })
                                     )}
@@ -1471,3 +1420,158 @@ export function ModalDetalhesTurma({
     </>
   )
 }
+
+interface RowAlunoNotasProps {
+  alunoId: string
+  alunoNome: string
+  materiaId: string
+  unidAtiva: number
+  nota1: string | null
+  nota2: string | null
+  nota3: string | null
+  recNota: string | null
+  mediaUnid: number | null
+  mediaFinal: number | null
+  mediaPosRec: number | null
+  situacao: string
+  isElegivelRec: boolean
+  onNotaChange: (
+    alunoId: string,
+    materiaId: string,
+    unidade: number,
+    campo: 'nota1' | 'nota2' | 'nota3',
+    valor: string
+  ) => void
+  onRecuperacaoChange: (
+    alunoId: string,
+    materiaId: string,
+    valor: string
+  ) => void
+}
+
+const RowAlunoNotas = memo(
+  function RowAlunoNotas({
+    alunoId,
+    alunoNome,
+    materiaId,
+    unidAtiva,
+    nota1,
+    nota2,
+    nota3,
+    recNota,
+    mediaUnid,
+    mediaFinal,
+    mediaPosRec,
+    situacao,
+    isElegivelRec,
+    onNotaChange,
+    onRecuperacaoChange
+  }: RowAlunoNotasProps) {
+    return (
+      <tr className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
+        <td className="p-3 font-semibold text-zinc-100">{alunoNome}</td>
+        
+        {/* Nota 1 */}
+        <td className="p-2 text-center">
+          <input
+            type="text"
+            value={nota1 ?? ''}
+            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota1', e.target.value)}
+            placeholder="-"
+            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+          />
+        </td>
+
+        {/* Nota 2 */}
+        <td className="p-2 text-center">
+          <input
+            type="text"
+            value={nota2 ?? ''}
+            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota2', e.target.value)}
+            placeholder="-"
+            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+          />
+        </td>
+
+        {/* Nota 3 */}
+        <td className="p-2 text-center">
+          <input
+            type="text"
+            value={nota3 ?? ''}
+            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota3', e.target.value)}
+            placeholder="-"
+            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+          />
+        </td>
+
+        {/* Média Unidade */}
+        <td className="p-3 text-center bg-[#1c1c1e]/20 font-bold">
+          {mediaUnid !== null ? (
+            <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
+              {mediaUnid}
+            </span>
+          ) : '-'}
+        </td>
+
+        {/* Média Final */}
+        <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
+          {mediaFinal !== null ? (
+            <span className={mediaFinal < 5 ? 'text-red-500' : 'text-green-500'}>
+              {mediaFinal}
+            </span>
+          ) : '-'}
+        </td>
+
+        {/* Recuperação Final */}
+        <td className="p-2 text-center bg-yellow-500/5">
+          <input
+            type="text"
+            value={recNota ?? ''}
+            onChange={(e) => onRecuperacaoChange(alunoId, materiaId, e.target.value)}
+            disabled={!isElegivelRec}
+            placeholder={isElegivelRec ? "-" : "N/A"}
+            className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-white ${
+              isElegivelRec 
+                ? 'bg-[#18181b] border border-yellow-500/30' 
+                : 'bg-zinc-800/30 border border-zinc-900 text-zinc-500 cursor-not-allowed'
+            }`}
+          />
+        </td>
+
+        {/* Média Pós-Rec / Situação */}
+        <td className="p-3 text-center bg-[#1c1c1e]/50 font-bold">
+          {mediaPosRec !== null ? (
+            <div className="flex flex-col items-center">
+              <span className={mediaPosRec < 5 ? 'text-red-500' : 'text-green-500'}>
+                {mediaPosRec}
+              </span>
+              <span className={`text-[9px] uppercase mt-0.5 font-bold ${
+                situacao.startsWith('Aprovado') ? 'text-green-600' : 
+                situacao === 'Em Recuperação' ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {situacao}
+              </span>
+            </div>
+          ) : '-'}
+        </td>
+      </tr>
+    )
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.alunoId === nextProps.alunoId &&
+      prevProps.alunoNome === nextProps.alunoNome &&
+      prevProps.materiaId === nextProps.materiaId &&
+      prevProps.unidAtiva === nextProps.unidAtiva &&
+      prevProps.nota1 === nextProps.nota1 &&
+      prevProps.nota2 === nextProps.nota2 &&
+      prevProps.nota3 === nextProps.nota3 &&
+      prevProps.recNota === nextProps.recNota &&
+      prevProps.mediaUnid === nextProps.mediaUnid &&
+      prevProps.mediaFinal === nextProps.mediaFinal &&
+      prevProps.mediaPosRec === nextProps.mediaPosRec &&
+      prevProps.situacao === nextProps.situacao &&
+      prevProps.isElegivelRec === nextProps.isElegivelRec
+    )
+  }
+)
