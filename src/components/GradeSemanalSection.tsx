@@ -13,7 +13,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 interface Turma {
   id: string
   nome: string
-  turno: 'matutino' | 'vespertino' | 'noturno'
+  turno: string
   ano_letivo: number
 }
 
@@ -114,12 +114,12 @@ export function GradeSemanalSection() {
         .select('id, nome, professor_id, funcionarios:professor_id (nome)')
         .eq('turma_id', selectedTurmaId)
 
-      // Carregar slots do turno da turma
+      // Carregar slots do turno da turma (de forma case-insensitive usando ilike)
       const slotsPromise = (supabase as any)
         .from('horarios_aulas_slots')
         .select('*')
         .eq('escola_id', selectedEscola.id)
-        .eq('turno', turma.turno)
+        .ilike('turno', turma.turno)
         .order('ordem_aula')
 
       // Carregar grade semanal salva para a turma e ano letivo atual
