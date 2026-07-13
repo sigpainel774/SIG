@@ -13,7 +13,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 interface HorarioSlot {
   id: string
   escola_id: string
-  turno: 'matutino' | 'vespertino' | 'noturno'
+  turno: string
   ordem_aula: number
   horario_inicio: string
   horario_fim: string
@@ -26,7 +26,7 @@ export function HorariosSlotsSection() {
   const [salvando, setSalvando] = useState(false)
 
   // Form State
-  const [turno, setTurno] = useState<'matutino' | 'vespertino' | 'noturno'>('matutino')
+  const [turno, setTurno] = useState<string>('Matutino')
   const [ordemAula, setOrdemAula] = useState<number>(1)
   const [horarioInicio, setHorarioInicio] = useState('')
   const [horarioFim, setHorarioFim] = useState('')
@@ -124,10 +124,15 @@ export function HorariosSlotsSection() {
     }
   }
 
-  const turnosMap = {
+  const turnosMap: Record<string, string> = {
+    Matutino: 'Matutino (Manhã)',
+    Vespertino: 'Vespertino (Tarde)',
+    Noturno: 'Noturno (Noite)',
+    Integral: 'Integral (Dia Todo)',
     matutino: 'Matutino (Manhã)',
     vespertino: 'Vespertino (Tarde)',
-    noturno: 'Noturno (Noite)'
+    noturno: 'Noturno (Noite)',
+    integral: 'Integral (Dia Todo)'
   }
 
   return (
@@ -145,12 +150,13 @@ export function HorariosSlotsSection() {
             </label>
             <select
               value={turno}
-              onChange={(e) => setTurno(e.target.value as any)}
+              onChange={(e) => setTurno(e.target.value)}
               className="w-full rounded-md border border-borderCustom bg-[#1c1c1e] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
             >
-              <option value="matutino">Matutino (Manhã)</option>
-              <option value="vespertino">Vespertino (Tarde)</option>
-              <option value="noturno">Noturno (Noite)</option>
+              <option value="Matutino">Matutino (Manhã)</option>
+              <option value="Vespertino">Vespertino (Tarde)</option>
+              <option value="Integral">Integral (Dia Todo)</option>
+              <option value="Noturno">Noturno (Noite)</option>
             </select>
           </div>
 
