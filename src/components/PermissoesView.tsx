@@ -123,8 +123,8 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       const formatados: RegistroPermissao[] = []
 
       permData.forEach((f: any) => {
-        // Se for diretor, filtra apenas funcionários com vínculo ativo ou acesso na escola dele
-        if (restringirNivel && escolaAtivaId) {
+        // Se uma escola estiver ativa (painel escolar), filtra apenas funcionários com vínculo ou acesso nela
+        if (schoolIdToUse) {
           const temVincEscolaAtiva = (f.vinculos_funcionarios ?? []).some(
             (v: any) => v.escola_id === schoolIdToUse && v.ativo
           )
@@ -217,8 +217,12 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
         }
       })
 
-      // Filtrar por nível conforme a regra restringirNivel
+      // Filtrar por nível conforme a regra restringirNivel e se estiver no painel escolar
       const filtrados = formatados.filter((item) => {
+        if (schoolIdToUse) {
+          if (item.nivel === 'ROOT') return false
+          if (item.nivelNum === 1) return false
+        }
         if (restringirNivel) {
           if (item.nivel === 'ROOT') return false
           if (item.nivelNum !== null && item.nivelNum < 3) return false
@@ -282,8 +286,15 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
 
       if (funcsData) {
         const filtered = funcsData.filter((f: any) => {
+          if (schoolIdToUse) {
+            if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            const acessosList = f.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => a.nivel === 1 && a.ativo)) return false
+          }
           if (restringirNivel) {
             if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
             const acessosList = f.acessos_usuarios ?? []
             if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
           }

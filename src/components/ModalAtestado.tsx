@@ -33,13 +33,49 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
     if (open && funcionarios.length === 0) {
       const fetchFuncionarios = async () => {
         setLoadingFuncs(true)
-        const { data } = await supabase.from('funcionarios').select('id, nome, cargo').order('nome')
-        if (data) setFuncionarios(data)
+        
+        let query = supabase
+          .from('funcionarios')
+          .select('id, nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo)')
+          .is('deleted_at', null)
+          .order('nome')
+
+        if (escolaAtivaId) {
+          // Filtrar apenas funcionários vinculados à escola ativa
+          const { data: vincs } = await supabase
+            .from('vinculos_funcionarios')
+            .select('funcionario_id')
+            .eq('escola_id', escolaAtivaId)
+            .eq('ativo', true)
+
+          const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
+          if (ids.length > 0) {
+            query = query.in('id', ids) as typeof query
+          } else {
+            setFuncionarios([])
+            setLoadingFuncs(false)
+            return
+          }
+        }
+
+        const { data } = await query
+        if (data) {
+          const filtrados = data.filter((f: any) => {
+            if (escolaAtivaId) {
+              if (f.is_superadmin) return false
+              if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+              const acessos = f.acessos_usuarios ?? []
+              if (acessos.some((a: any) => a.nivel === 1 && a.ativo)) return false
+            }
+            return true
+          })
+          setFuncionarios(filtrados)
+        }
         setLoadingFuncs(false)
       }
       fetchFuncionarios()
     }
-  }, [open, funcionarios.length, supabase])
+  }, [open, funcionarios.length, supabase, escolaAtivaId])
 
   const handleSave = async () => {
     if (!funcionarioId || !cid || dias <= 0) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,8 @@ import { FilePlus, Search, CheckCircle2, Clock, Paperclip, ArrowLeft } from 'luc
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { ModalAtestado } from '@/components/ModalAtestado'
+import { useAuthStore } from '@/store/useAuthStore'
+
 
 export default function AtestadosPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -16,20 +18,51 @@ export default function AtestadosPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const supabase = createClient()
+  const { escolaAtivaId } = useAuthStore()
 
   const fetchAtestados = async () => {
     setLoading(true)
-    const { data, error } = await (supabase.from as any)('atestados')
-      .select('*, funcionarios(nome, cargo)')
-      .order('data_inclusao', { ascending: false })
+    let query = supabase.from('atestados')
+      .select('*, funcionarios(nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo))')
+
+    if (escolaAtivaId) {
+      query = query.eq('escola_id', escolaAtivaId)
+    }
+
+    const { data } = await query.order('data_inclusao', { ascending: false })
     
-    if (data) setAtestados(data)
+    if (data) {
+      const filtrados = data.filter((item: any) => {
+        const f = item.funcionarios
+        if (!f) return true
+        if (escolaAtivaId) {
+          if (f.is_superadmin) return false
+          if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+          const acessos = f.acessos_usuarios ?? []
+          if (acessos.some((a: any) => a.nivel === 1 && a.ativo)) return false
+        }
+        return true
+      })
+      setAtestados(filtrados)
+    } else {
+      setAtestados([])
+    }
     setLoading(false)
   }
 
   useEffect(() => {
     fetchAtestados()
-  }, [])
+  }, [escolaAtivaId])
+
+  const atestadosFiltrados = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return atestados
+    return atestados.filter((item) => {
+      const nome = item.funcionarios?.nome?.toLowerCase() || ''
+      const cid = item.cid?.toLowerCase() || ''
+      return nome.includes(term) || cid.includes(term)
+    })
+  }, [atestados, searchTerm])
 
   return (
     <div className="space-y-6">
@@ -85,14 +118,14 @@ export default function AtestadosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {atestados.length === 0 && !loading && (
+            {atestadosFiltrados.length === 0 && !loading && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Nenhum atestado registrado.
                 </TableCell>
               </TableRow>
             )}
-            {atestados.map((item) => (
+            {atestadosFiltrados.map((item) => (
               <TableRow key={item.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
                 <TableCell className="text-[#aaa]">{new Date(item.data_inclusao).toLocaleDateString('pt-BR')}</TableCell>
                 <TableCell className="text-white font-medium">{item.funcionarios?.nome}</TableCell>
