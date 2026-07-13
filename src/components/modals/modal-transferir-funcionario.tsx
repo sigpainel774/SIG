@@ -96,26 +96,48 @@ export function ModalTransferirFuncionario({
       const funcionarioObj = funcionarios.find(f => f.id === funcionarioSelecionadoId)
       if (!funcionarioObj) throw new Error('Funcionário não localizado localmente')
 
+      // Buscar o vínculo ativo específico do funcionário nesta escola
+      const { data: vinculoAtivo, error: vinculoError } = await supabase
+        .from('vinculos_funcionarios')
+        .select('id')
+        .eq('funcionario_id', funcionarioSelecionadoId)
+        .eq('escola_id', escolaAtivaId)
+        .eq('ativo', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (vinculoError) throw vinculoError
+      if (!vinculoAtivo) throw new Error('Nenhum vínculo de lotação ativo encontrado para este funcionário nesta escola.')
+
       if (foraDaRede) {
         // Fluxo Fora da Rede: Efetivação imediata e arquivamento
         
-        // 1. Inativar vínculo na escola de origem
+        // 1. Inativar vínculo na escola de origem por id
         const { error: deactivateError } = await supabase
           .from('vinculos_funcionarios')
-          .update({ ativo: false, data_fim: new Date().toISOString() })
-          .eq('funcionario_id', funcionarioSelecionadoId)
-          .eq('escola_id', escolaAtivaId)
-          .eq('ativo', true)
+          .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+          .eq('id', vinculoAtivo.id)
 
         if (deactivateError) throw deactivateError
 
-        // 2. Soft-delete na tabela funcionarios
-        const { error: staffDeleteError } = await supabase
-          .from('funcionarios')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', funcionarioSelecionadoId)
+        // Verificar se ele tem outros vínculos ativos na rede
+        const { data: outrosVinculos, error: checkError } = await supabase
+          .from('vinculos_funcionarios')
+          .select('id')
+          .eq('funcionario_id', funcionarioSelecionadoId)
+          .eq('ativo', true)
 
-        if (staffDeleteError) throw staffDeleteError
+        if (checkError) throw checkError
+
+        // 2. Soft-delete na tabela funcionarios APENAS se ele não tiver outros vínculos ativos na rede
+        if (!outrosVinculos || outrosVinculos.length === 0) {
+          const { error: staffDeleteError } = await supabase
+            .from('funcionarios')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('id', funcionarioSelecionadoId)
+
+          if (staffDeleteError) throw staffDeleteError
+        }
 
         // 3. Gravar backup em arquivados da escola de origem
         const { error: archiveError } = await supabase
@@ -147,7 +169,7 @@ export function ModalTransferirFuncionario({
         toast.success('Funcionário transferido para Fora da Rede e arquivado com sucesso!')
       } else {
         // Fluxo de solicitação interna pendente
-        const { data: insertData, error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await (supabase as any)
           .from('transferencias_funcionarios')
           .insert({
             funcionario_id: funcionarioSelecionadoId,
@@ -157,6 +179,7 @@ export function ModalTransferirFuncionario({
             motivo,
             fora_da_rede: false,
             ficha_snapshot: funcionarioObj,
+            lotacao_id: vinculoAtivo.id,
             status: 'PENDENTE'
           })
           .select('id')
