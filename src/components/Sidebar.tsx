@@ -162,6 +162,7 @@ export function Sidebar() {
       <Link
         href={item.href}
         onClick={closeMobile}
+        prefetch={true}
         className={cn(
           "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
           isActive
