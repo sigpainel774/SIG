@@ -75,7 +75,7 @@ const nivelColor = (nivel: string) => {
 
 export function PermissoesView({ onBack }: { onBack?: () => void }) {
   const { isEditMode, setEditMode } = useEditModeStore()
-  const { funcionario, isAdminGlobalOrRoot, isDiretor } = useAuthStore()
+  const { funcionario, isAdminGlobalOrRoot, isDiretor, escolaAtivaId } = useAuthStore()
   const pathname = usePathname()
   const autocompleteRef = useRef<HTMLDivElement>(null)
   const isGlobalAdmin = isAdminGlobalOrRoot()
@@ -112,28 +112,173 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
 
   const isEditActive = isEditMode || isSuperAdminUser || isRootPanel
 
-  // ─── Fetch inicial ──────────────────────────────────────────────────────────
+  // ─── Buscar Registros de Permissão ──────────────────────────────────────────
+  const fetchRegistros = async (escolasLista: Escola[]) => {
+    const supabase = createClient()
+    const { data: permData } = await supabase
+      .from('funcionarios')
+      .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo)')
+
+    if (permData) {
+      const formatados: RegistroPermissao[] = []
+
+      permData.forEach((f: any) => {
+        // Se for diretor, filtra apenas funcionários com vínculo ativo ou acesso na escola dele
+        if (restringirNivel && escolaAtivaId) {
+          const temVincEscolaAtiva = (f.vinculos_funcionarios ?? []).some(
+            (v: any) => v.escola_id === schoolIdToUse && v.ativo
+          )
+          const temAcessoEscolaAtiva = (f.acessos_usuarios ?? []).some(
+            (a: any) => a.escola_id === schoolIdToUse
+          )
+
+          if (!temVincEscolaAtiva && !temAcessoEscolaAtiva) {
+            return
+          }
+        }
+
+        const acessos = f.acessos_usuarios ?? []
+        if (acessos.length > 0) {
+          acessos.forEach((ac: any) => {
+            // Se for diretor, só exibe o acesso da escola dele
+            if (restringirNivel && escolaAtivaId && ac.escola_id !== schoolIdToUse) {
+              return
+            }
+
+            const nivelNum = ac.nivel ?? null
+            let nomeNivel = nivelLabel(nivelNum)
+            if (f.is_superadmin) nomeNivel = 'ROOT'
+
+            formatados.push({
+              id: f.id,
+              nome: f.nome,
+              email: f.email ?? f.nome,
+              nivel: nomeNivel,
+              nivelNum,
+              escola: ac.escolas?.nome ?? 'Sem Lotação',
+              escolaId: ac.escola_id ?? null,
+              status: f.status || 'ativo',
+            })
+          })
+
+          // Se for diretor e o funcionário tem vínculo na escola mas não tem o acesso correspondente a essa escola ativa ainda
+          if (restringirNivel && escolaAtivaId) {
+            const temAcessoAqui = acessos.some((ac: any) => ac.escola_id === schoolIdToUse)
+            const temVincAqui = (f.vinculos_funcionarios ?? []).some(
+              (v: any) => v.escola_id === schoolIdToUse && v.ativo
+            )
+            if (temVincAqui && !temAcessoAqui) {
+              formatados.push({
+                id: f.id,
+                nome: f.nome,
+                email: f.email ?? f.nome,
+                nivel: nivelLabel(null),
+                nivelNum: null,
+                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? 'Escola Atual',
+                escolaId: schoolIdToUse,
+                status: f.status || 'ativo',
+              })
+            }
+          }
+        } else {
+          // Funcionário sem acessos cadastrados
+          if (restringirNivel && escolaAtivaId) {
+            const temVincAqui = (f.vinculos_funcionarios ?? []).some(
+              (v: any) => v.escola_id === schoolIdToUse && v.ativo
+            )
+            if (temVincAqui) {
+              formatados.push({
+                id: f.id,
+                nome: f.nome,
+                email: f.email ?? f.nome,
+                nivel: nivelLabel(null),
+                nivelNum: null,
+                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? 'Escola Atual',
+                escolaId: schoolIdToUse,
+                status: f.status || 'ativo',
+              })
+            }
+          } else {
+            // Admin global vê como sem lotação
+            let nomeNivel = nivelLabel(null)
+            if (f.is_superadmin) nomeNivel = 'ROOT'
+
+            formatados.push({
+              id: f.id,
+              nome: f.nome,
+              email: f.email ?? f.nome,
+              nivel: nomeNivel,
+              nivelNum: null,
+              escola: 'Sem Lotação',
+              escolaId: null,
+              status: f.status || 'ativo',
+            })
+          }
+        }
+      })
+
+      // Filtrar por nível conforme a regra restringirNivel
+      const filtrados = formatados.filter((item) => {
+        if (restringirNivel) {
+          if (item.nivel === 'ROOT') return false
+          if (item.nivelNum !== null && item.nivelNum < 3) return false
+        }
+        return true
+      })
+
+      setRegistros(filtrados)
+    }
+  }
+
+  const schoolIdToUse = escolaAtivaId
+
+  // ─── Fetch inicial e sincronização ──────────────────────────────────────────
   useEffect(() => {
     const fetchAll = async () => {
       const supabase = createClient()
       setLoading(true)
 
       // 1. Escolas ativas (sem soft-delete)
-      const { data: escolasData } = await supabase
+      let escolasQuery = supabase
         .from('escolas')
         .select('id, nome')
         .is('deleted_at', null)
         .eq('ativo', true)
-        .order('nome')
 
-      if (escolasData) setEscolas(escolasData)
+      if (restringirNivel && schoolIdToUse) {
+        escolasQuery = escolasQuery.eq('id', schoolIdToUse)
+      }
+
+      const { data: escolasData } = await escolasQuery.order('nome')
+      let escolasLista: Escola[] = []
+      if (escolasData) {
+        escolasLista = escolasData
+        setEscolas(escolasData)
+      }
 
       // 2. Todos os funcionários (para o autocomplete)
-      const { data: funcsData } = await supabase
+      let funcsQuery = supabase
         .from('funcionarios')
         .select('id, nome, email, is_superadmin, acessos_usuarios(nivel, ativo)')
         .eq('status', 'ativo')
-        .order('nome')
+
+      if (restringirNivel && schoolIdToUse) {
+        const { data: vincs } = await supabase
+          .from('vinculos_funcionarios')
+          .select('funcionario_id')
+          .eq('escola_id', schoolIdToUse)
+          .eq('ativo', true)
+
+        const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
+        if (ids.length > 0) {
+          funcsQuery = funcsQuery.in('id', ids)
+        } else {
+          setFuncionariosAll([])
+          funcsQuery = funcsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+        }
+      }
+
+      const { data: funcsData } = await funcsQuery.order('nome')
 
       if (funcsData) {
         const filtered = funcsData.filter((f: any) => {
@@ -147,49 +292,14 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
         setFuncionariosAll(filtered)
       }
 
-      // 3. Registros de permissão com escola vinculada
-      const { data: permData } = await supabase
-        .from('funcionarios')
-        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
-
-      if (permData) {
-        const formatados: RegistroPermissao[] = permData
-          .map((f: any) => {
-            const acesso = f.acessos_usuarios?.[0]
-            const nivelNum: number | null = acesso?.nivel ?? null
-            let nomeNivel = nivelLabel(nivelNum)
-            if (f.is_superadmin) nomeNivel = 'ROOT'
-
-            const school = acesso?.escolas as { nome: string } | null
-            const escolaNome: string = school?.nome ?? 'Sem Lotação'
-            const escolaId: string | null = acesso?.escola_id ?? null
-
-            return {
-              id: f.id,
-              nome: f.nome,
-              email: f.email ?? f.nome,
-              nivel: nomeNivel,
-              nivelNum,
-              escola: escolaNome,
-              escolaId,
-              status: f.status || 'ativo',
-            }
-          })
-          .filter((item) => {
-            if (restringirNivel) {
-              if (item.nivel === 'ROOT') return false
-              if (item.nivelNum !== null && item.nivelNum < 3) return false
-            }
-            return true
-          })
-        setRegistros(formatados)
-      }
+      // 3. Registros de permissão
+      await fetchRegistros(escolasLista)
 
       setLoading(false)
     }
 
     fetchAll()
-  }, [])
+  }, [restringirNivel, schoolIdToUse, isGlobalAdmin])
 
   // Auto-seleção de escola para usuários não-admins globais (ex: diretores)
   useEffect(() => {
@@ -311,36 +421,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       setNivelSel('')
 
       // Recarregar lista
-      const { data: permData } = await supabase
-        .from('funcionarios')
-        .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome))')
-      if (permData) {
-        const formatados: RegistroPermissao[] = (permData as any[])
-          .map((f) => {
-            const acesso = f.acessos_usuarios?.[0]
-            const nivelNum2: number | null = acesso?.nivel ?? null
-            let nomeNivel = nivelLabel(nivelNum2)
-            if (f.is_superadmin) nomeNivel = 'ROOT'
-            return {
-              id: f.id,
-              nome: f.nome,
-              email: f.email ?? f.nome,
-              nivel: nomeNivel,
-              nivelNum: nivelNum2,
-              escola: (acesso?.escolas as any)?.nome ?? 'Sem Lotação',
-              escolaId: acesso?.escola_id ?? null,
-              status: f.status || 'ativo',
-            }
-          })
-          .filter((item) => {
-            if (restringirNivel) {
-              if (item.nivel === 'ROOT') return false
-              if (item.nivelNum !== null && item.nivelNum < 3) return false
-            }
-            return true
-          })
-        setRegistros(formatados)
-      }
+      await fetchRegistros(escolas)
     }
     setSalvando(false)
   }
