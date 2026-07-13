@@ -1310,7 +1310,7 @@ export default function FuncionariosPage() {
         </Select>
 
         {/* ── Filtros de Impressão ── */}
-        <Select value={filtroImpEscola} onValueChange={setFiltroImpEscola}>
+        <Select value={filtroImpEscola} onValueChange={(v) => setFiltroImpEscola(v ?? 'todas')}>
           <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
             <SelectValue placeholder="Escola p/ impressão" />
           </SelectTrigger>
@@ -1322,7 +1322,7 @@ export default function FuncionariosPage() {
           </SelectContent>
         </Select>
 
-        <Select value={filtroImpCargo} onValueChange={setFiltroImpCargo}>
+        <Select value={filtroImpCargo} onValueChange={(v) => setFiltroImpCargo(v ?? 'todos')}>
           <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
             <SelectValue placeholder="Cargo p/ impressão" />
           </SelectTrigger>
