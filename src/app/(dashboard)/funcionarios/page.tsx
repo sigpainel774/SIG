@@ -119,6 +119,7 @@ export default function FuncionariosPage() {
     setCarregando(true)
     try {
       const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
+      const escolaId = useAuthStore.getState().escolaAtivaId
 
       let query = supabase
         .from('funcionarios')
@@ -131,9 +132,8 @@ export default function FuncionariosPage() {
         .is('deleted_at', null)
         .order('nome')
 
-      // Se não for admin global, filtra apenas pelos funcionários vinculados à escola ativa
-      if (!isAdmin) {
-        const escolaId = useAuthStore.getState().escolaAtivaId
+      // Se escolaId estiver definido, ou se o usuário não for admin global, filtra apenas pelos funcionários vinculados à escola ativa
+      if (escolaId || !isAdmin) {
         if (!escolaId) {
           setFuncionarios([])
           return
@@ -161,6 +161,16 @@ export default function FuncionariosPage() {
 
       const formatados: Funcionario[] = (data ?? [])
         .filter((f: Record<string, any>) => {
+          // Se estiver visualizando o painel de uma escola ativa, oculta root e nível 1
+          if (escolaId) {
+            if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            
+            const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
+            if (acessosList.some(a => a.nivel === 1 && a.ativo)) {
+              return false
+            }
+          }
           if (isDir) {
             // Se for diretor (nível 2), só deve enxergar nível 3 para baixo, portanto oculta superadmin, root, nível 1 e nível 2
             if (f.is_superadmin) return false

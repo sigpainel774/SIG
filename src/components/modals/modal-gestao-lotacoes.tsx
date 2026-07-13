@@ -166,8 +166,15 @@ export function ModalGestaoLotacoes({
       // 3. Montar lista de funcionários com suas lotações
       const lista: FuncItem[] = funcsData
         .filter((f: any) => {
+          if (escolaAtivaId) {
+            if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+            const acessosList = f.acessos_usuarios ?? []
+            if (acessosList.some((a: any) => a.nivel === 1 && a.ativo)) return false
+          }
           if (restringirNivel) {
             if (f.is_superadmin) return false
+            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
             const acessosList = f.acessos_usuarios ?? []
             if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
           }

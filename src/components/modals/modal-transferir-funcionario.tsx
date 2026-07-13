@@ -51,14 +51,23 @@ export function ModalTransferirFuncionario({
         // 1. Carrega funcionários vinculados e ativos na escola atual
         const { data: vData } = await supabase
           .from('vinculos_funcionarios')
-          .select('*, funcionarios(*)')
+          .select('*, funcionarios(*, acessos_usuarios(nivel, ativo))')
           .eq('escola_id', escolaAtivaId)
           .eq('ativo', true)
 
         if (vData) {
           const list = vData
             .map((v: any) => v.funcionarios)
-            .filter((f: any) => f && !f.deleted_at)
+            .filter((f: any) => {
+              if (!f || f.deleted_at) return false
+              if (escolaAtivaId) {
+                if (f.is_superadmin) return false
+                if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+                const acessos = f.acessos_usuarios ?? []
+                if (acessos.some((a: any) => a.nivel === 1 && a.ativo)) return false
+              }
+              return true
+            })
           setFuncionarios(list)
         }
 
