@@ -33,12 +33,18 @@ interface ModalDetalhesTurmaProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   turma: any // Objeto da turma selecionada
+  initialMateriaId?: string
+  initialAgendaAulaId?: string
+  initialData?: string
 }
 
 export function ModalDetalhesTurma({
   open,
   onOpenChange,
-  turma
+  turma,
+  initialMateriaId,
+  initialAgendaAulaId,
+  initialData
 }: ModalDetalhesTurmaProps) {
   const [activeTab, setActiveTab] = useState('materias')
   const [loading, setLoading] = useState(false)
@@ -52,6 +58,8 @@ export function ModalDetalhesTurma({
 
   // Frequência
   const [dataFreq, setDataFreq] = useState(new Date().toISOString().split('T')[0])
+  const [selectedMateriaId, setSelectedMateriaId] = useState<string>('')
+  const [selectedAgendaAulaId, setSelectedAgendaAulaId] = useState<string | null>(null)
   const [frequencias, setFrequencias] = useState<Record<string, boolean>>({}) // alunoId -> presenca
   const [loadingFreq, setLoadingFreq] = useState(false)
 
@@ -214,6 +222,10 @@ export function ModalDetalhesTurma({
   // Buscar Frequências do dia selecionado
   const fetchFrequencias = async () => {
     if (!turma?.id) return
+    if (!selectedMateriaId) {
+      setFrequencias({})
+      return
+    }
     setLoadingFreq(true)
     try {
       const { data } = await supabase
@@ -221,6 +233,7 @@ export function ModalDetalhesTurma({
         .select('aluno_id, presenca')
         .eq('turma_id', turma.id)
         .eq('data', dataFreq)
+        .eq('materia_id', selectedMateriaId)
 
       const map: Record<string, boolean> = {}
       if (data) {
@@ -280,11 +293,26 @@ export function ModalDetalhesTurma({
     }
   }
 
+  // Sincronizar parâmetros iniciais do professor/agenda
+  useEffect(() => {
+    if (open) {
+      if (initialData) setDataFreq(initialData)
+      if (initialMateriaId) setSelectedMateriaId(initialMateriaId)
+      if (initialAgendaAulaId) setSelectedAgendaAulaId(initialAgendaAulaId)
+    }
+  }, [open, initialData, initialMateriaId, initialAgendaAulaId])
+
+  // Autoselecionar a primeira matéria disponível para a chamada geral
+  useEffect(() => {
+    if (open && materias.length > 0 && !selectedMateriaId) {
+      setSelectedMateriaId(materias[0].id)
+    }
+  }, [open, materias, selectedMateriaId])
+
   // Carregar dados principais
   useEffect(() => {
     if (open && turma?.id) {
       fetchData()
-      fetchFrequencias()
       fetchNotas()
       
       if (isEditMode) {
@@ -298,15 +326,19 @@ export function ModalDetalhesTurma({
   // Resetar a aba ativa somente quando o modal abrir pela primeira vez
   useEffect(() => {
     if (open) {
-      setActiveTab('materias')
+      if (initialMateriaId) {
+        setActiveTab('frequencia')
+      } else {
+        setActiveTab('materias')
+      }
     }
-  }, [open])
+  }, [open, initialMateriaId])
 
   useEffect(() => {
-    if (open && turma?.id) {
+    if (open && turma?.id && selectedMateriaId) {
       fetchFrequencias()
     }
-  }, [dataFreq])
+  }, [dataFreq, selectedMateriaId, open, turma?.id])
 
   // Busca Dinâmica de Alunos
   const filteredAlunos = useMemo(() => {
@@ -323,6 +355,10 @@ export function ModalDetalhesTurma({
   // Gravar Frequência (Upsert Imediato com feedback reativo)
   const handleLancarFrequencia = async (alunoId: string, presenca: boolean) => {
     if (!escolaAtivaId) return
+    if (!selectedMateriaId) {
+      toast.error('Selecione uma matéria antes de lançar a frequência.')
+      return
+    }
 
     // Atualização otimista
     const anterior = frequencias[alunoId]
@@ -336,8 +372,10 @@ export function ModalDetalhesTurma({
           turma_id: turma.id,
           escola_id: escolaAtivaId ?? '',
           data: dataFreq,
-          presenca: presenca
-        }, { onConflict: 'aluno_id, data' })
+          presenca: presenca,
+          materia_id: selectedMateriaId,
+          agenda_aula_id: selectedAgendaAulaId
+        }, { onConflict: 'aluno_id, data, materia_id' })
 
       if (error) throw error
     } catch (err: any) {
@@ -1080,8 +1118,8 @@ export function ModalDetalhesTurma({
             {/* ABA: FREQUÊNCIA */}
             {activeTab === 'frequencia' && (
               <div className="space-y-4 mt-5">
-                {/* Controles de Data */}
-                <div className="flex items-center gap-3">
+                {/* Controles de Data e Matéria */}
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center bg-[#18181b] border border-[#26262a] rounded-xl overflow-hidden h-10">
                     <button
                       onClick={() => alterarData(-1)}
@@ -1102,6 +1140,23 @@ export function ModalDetalhesTurma({
                       <ChevronRight className="w-4.5 h-4.5" />
                     </button>
                   </div>
+
+                  <select
+                    value={selectedMateriaId}
+                    onChange={(e) => {
+                      setSelectedMateriaId(e.target.value)
+                      setSelectedAgendaAulaId(null) // Reseta se trocar matéria manualmente
+                    }}
+                    disabled={!!initialMateriaId}
+                    className="h-10 rounded-xl border border-[#26262a] bg-[#18181b] text-zinc-200 px-3.5 text-xs font-semibold focus:outline-none cursor-pointer"
+                  >
+                    <option value="" disabled>-- Selecione a Matéria --</option>
+                    {materias.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
 
                   <Button
                     variant="outline"

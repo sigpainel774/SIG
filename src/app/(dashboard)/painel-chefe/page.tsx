@@ -24,11 +24,13 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalEscala } from '@/components/ModalEscala'
+import { HorariosSlotsSection } from '@/components/HorariosSlotsSection'
+import { GradeSemanalSection } from '@/components/GradeSemanalSection'
 
 export default function PainelChefePage() {
   const { funcionario, isDiretor } = useAuthStore()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas'>('equipe')
+  const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas' | 'horarios' | 'grade'>('equipe')
   const [busca, setBusca] = useState('')
   const [cargosGerenciados, setCargosGerenciados] = useState<string[]>([])
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
@@ -232,11 +234,13 @@ export default function PainelChefePage() {
       </div>
 
       {/* Horizontal Tab Navigation */}
-      <div className="flex border-b border-borderCustom gap-2">
+      <div className="flex border-b border-borderCustom gap-2 overflow-x-auto">
         {[
           { id: 'equipe', label: 'Minha Equipe', icon: Users },
           { id: 'escalas', label: 'Escalas de Turno', icon: Calendar },
           { id: 'alertas', label: 'Atestados & Justificativas', icon: Bell },
+          { id: 'horarios', label: 'Configurar Horários', icon: Clock },
+          { id: 'grade', label: 'Montar Grade Semanal', icon: Calendar },
         ].map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -459,6 +463,14 @@ export default function PainelChefePage() {
             )}
           </div>
         </div>
+      )}
+
+      {activeTab === 'horarios' && (
+        <HorariosSlotsSection />
+      )}
+
+      {activeTab === 'grade' && (
+        <GradeSemanalSection />
       )}
 
       <ModalEscala 
