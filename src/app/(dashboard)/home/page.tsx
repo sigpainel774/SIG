@@ -132,7 +132,11 @@ function FrequenciaBar({ feitas, total, loading }: { feitas: number; total: numb
 
 export default function HomePage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
-  const { funcionario, acessos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+
+  const isProfessor = acessos.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
+  const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
+  const isMultiLotadoDocente = isProfessor && vinculosAtivos.length > 1
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
@@ -237,6 +241,8 @@ export default function HomePage() {
 
   // Auto-seleção de escola para usuários não administradores (Diretores, etc.)
   useEffect(() => {
+    if (isMultiLotadoDocente) return
+
     if (!isAdmin && escolas.length > 0) {
       const acessoEscolar = acessos.find(a => a.nivel && a.nivel >= 2 && a.nivel <= 6 && a.ativo)
       const targetId = acessoEscolar?.escola_id || escolaAtivaId
@@ -247,7 +253,7 @@ export default function HomePage() {
         }
       }
     }
-  }, [isAdmin, escolas, acessos, escolaAtivaId, selectedEscola, setSelectedEscola])
+  }, [isAdmin, escolas, acessos, escolaAtivaId, selectedEscola, setSelectedEscola, isMultiLotadoDocente])
 
   // Determina o nível do usuário na escola selecionada (para exibição de KPIs)
   const nivelNaEscola = selectedEscola
@@ -274,7 +280,7 @@ export default function HomePage() {
               <span>{selectedEscola.nome}</span>
             </div>
           </div>
-          {isAdmin && (
+          {(isAdmin || isMultiLotadoDocente) && (
             <Button
               variant="ghost"
               size="sm"
@@ -289,7 +295,7 @@ export default function HomePage() {
 
       {/* ── VISÃO 1: SELEÇÃO DE ESCOLA ── */}
       {!selectedEscola ? (
-        !isAdmin ? (
+        !isAdmin && !isMultiLotadoDocente ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
             <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
             <p className="text-sm text-muted-foreground">Carregando painel da escola...</p>
@@ -307,7 +313,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-              {escolas.map((escola) => (
+              {(isAdmin ? escolas : escolas.filter(e => vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => (
                 <Card
                   key={escola.id}
                   onClick={() => setSelectedEscola(escola)}
