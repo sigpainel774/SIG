@@ -103,6 +103,10 @@ export default function FuncionariosPage() {
   const [filtroCargo, setFiltroCargo] = useState('todos')
   const [filtroStatus, setFiltroStatus] = useState('todos')
 
+  /* Filtros de Impressão */
+  const [filtroImpEscola, setFiltroImpEscola] = useState('todas')
+  const [filtroImpCargo, setFiltroImpCargo] = useState('todos')
+
   /* Modais */
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
   const [modalEditando, setModalEditando] = useState<Funcionario | null>(null)
@@ -211,6 +215,11 @@ export default function FuncionariosPage() {
 
   const cargosUnicos = useMemo(() => {
     const set = new Set(funcionarios.map((f) => f.cargo).filter(Boolean) as string[])
+    return Array.from(set).sort()
+  }, [funcionarios])
+
+  const escolasUnicas = useMemo(() => {
+    const set = new Set(funcionarios.map((f) => f.orgao).filter(Boolean) as string[])
     return Array.from(set).sort()
   }, [funcionarios])
 
@@ -921,7 +930,18 @@ export default function FuncionariosPage() {
       return PALETTES[Math.abs(hash) % PALETTES.length]
     }
 
-    const linhas = funcsFiltrados
+    // Aplicar filtros de impressão sobre a lista já filtrada pela tela
+    const funcsParaImprimir = funcsFiltrados.filter((f) => {
+      const matchEscola = filtroImpEscola === 'todas' || (f.orgao ?? '') === filtroImpEscola
+      const matchCargo = filtroImpCargo === 'todos' || (f.cargo ?? '') === filtroImpCargo
+      return matchEscola && matchCargo
+    })
+
+    // Legenda dos filtros para o cabeçalho do documento
+    const legendaEscola = filtroImpEscola === 'todas' ? 'Todas as Escolas' : filtroImpEscola
+    const legendaCargo = filtroImpCargo === 'todos' ? 'Todos os Cargos' : filtroImpCargo
+
+    const linhas = funcsParaImprimir
       .map((f) => {
         const initials = getInitialsLocal(f.nome)
         const palette = getPalette(f.nome)
@@ -1112,7 +1132,8 @@ export default function FuncionariosPage() {
               <div class="doc-title-pref">Prefeitura Municipal de Sapeaçu</div>
               <div class="doc-title-sec">Secretaria Municipal de Educação</div>
               <div class="doc-title-main">Lista de Funcionários</div>
-              <div class="doc-meta">Emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · Total: ${funcsFiltrados.length} funcionário(s)</div>
+              <div class="doc-meta">Emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · Total: ${funcsParaImprimir.length} funcionário(s)</div>
+              <div class="doc-meta" style="margin-top:3px; color:#1a3a5c; font-weight:bold;">Escola: ${legendaEscola} &nbsp;|&nbsp; Cargo: ${legendaCargo}</div>
             </div>
             <img src="${logoSecretariaUrl}" class="doc-logo" alt="Logo Secretaria" onerror="this.style.visibility='hidden'" />
           </div>
@@ -1285,6 +1306,31 @@ export default function FuncionariosPage() {
             <SelectItem value="afastado">Afastado</SelectItem>
             <SelectItem value="desligado">Desligado</SelectItem>
             <SelectItem value="suspenso">Suspenso</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* ── Filtros de Impressão ── */}
+        <Select value={filtroImpEscola} onValueChange={setFiltroImpEscola}>
+          <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
+            <SelectValue placeholder="Escola p/ impressão" />
+          </SelectTrigger>
+          <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
+            <SelectItem value="todas">Todas as Escolas</SelectItem>
+            {escolasUnicas.map((escola) => (
+              <SelectItem key={escola} value={escola}>{escola}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroImpCargo} onValueChange={setFiltroImpCargo}>
+          <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
+            <SelectValue placeholder="Cargo p/ impressão" />
+          </SelectTrigger>
+          <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
+            <SelectItem value="todos">Todos os Cargos</SelectItem>
+            {cargosUnicos.map((cargo) => (
+              <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
