@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
+import useSWR from 'swr'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
+import { getProfessoresEscola, getCatalogoMaterias, getVinculosProfessores } from '@/lib/swrFetchers'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -47,12 +49,6 @@ export function ModalDetalhesTurma({
   initialData
 }: ModalDetalhesTurmaProps) {
   const [activeTab, setActiveTab] = useState('materias')
-  const [loading, setLoading] = useState(false)
-  
-  // Alunos e Matérias
-  const [alunos, setAlunos] = useState<any[]>([])
-  const [materias, setMaterias] = useState<any[]>([])
-  
   // Filtros locais de busca de alunos
   const [searchAluno, setSearchAluno] = useState('')
 
@@ -60,8 +56,6 @@ export function ModalDetalhesTurma({
   const [dataFreq, setDataFreq] = useState(new Date().toISOString().split('T')[0])
   const [selectedMateriaId, setSelectedMateriaId] = useState<string>('')
   const [selectedAgendaAulaId, setSelectedAgendaAulaId] = useState<string | null>(null)
-  const [frequencias, setFrequencias] = useState<Record<string, boolean>>({}) // alunoId -> presenca
-  const [loadingFreq, setLoadingFreq] = useState(false)
 
   // Notas
   const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null }>>({}) // alunoId_materiaId_unidade -> notas
@@ -71,29 +65,10 @@ export function ModalDetalhesTurma({
   const [materiaAberta, setMateriaAberta] = useState<string | null>(null) // Controlar Accordion manual
 
   // Estados Adicionais de Alocação Administrativa (quando isEditMode for true)
-  const [professoresEscola, setProfessoresEscola] = useState<any[]>([])
-  const [vinculosProfessores, setVinculosProfessores] = useState<any[]>([])
   const [selectedProfId, setSelectedProfId] = useState('')
   const [novaMateriaNome, setNovaMateriaNome] = useState('')
   const [novaMateriaProfId, setNovaMateriaProfId] = useState('')
   const [novaMateriaBaseCurricular, setNovaMateriaBaseCurricular] = useState('comum')
-  const [catalogoMaterias, setCatalogoMaterias] = useState<any[]>([])
-
-  const fetchCatalogoMaterias = async () => {
-    if (!escolaAtivaId) return
-    try {
-      const { data, error } = await supabase
-        .from('grade_curricular_escola')
-        .select('*')
-        .eq('escola_id', escolaAtivaId)
-        .order('nome', { ascending: true })
-
-      if (error) throw error
-      setCatalogoMaterias(data || [])
-    } catch (err: any) {
-      console.error('Erro ao buscar catálogo de matérias:', err.message)
-    }
-  }
   
   // Modais de detalhe e impressão
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
@@ -104,88 +79,12 @@ export function ModalDetalhesTurma({
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const escolaNome = selectedEscola?.nome ?? 'Sem Escola'
 
-  // Buscar professores ativos da escola
-  const fetchProfessoresEscola = async () => {
-    if (!escolaAtivaId) return
-    try {
-      const { data, error } = await supabase
-        .from('vinculos_funcionarios')
-        .select(`
-          id,
-          cargo,
-          ativo,
-          funcionarios (
-            id,
-            nome,
-            cargo,
-            acessos_usuarios (
-              nivel,
-              escola_id,
-              ativo
-            )
-          )
-        `)
-        .eq('escola_id', escolaAtivaId)
-        .eq('ativo', true)
+  // --- SWR Hooks para buscar dados ---
 
-      if (error) throw error
-
-      const profs = (data || [])
-        .filter((v: any) => {
-          const func = v.funcionarios
-          if (!func) return false
-
-          const cargoVinc = (v.cargo || '').toLowerCase()
-          const cargoFunc = (func.cargo || '').toLowerCase()
-          const temCargoProfessor = cargoVinc.includes('professor') || cargoFunc.includes('professor')
-
-          const acessosList = func.acessos_usuarios || []
-          const temAcessoProfessor = (Array.isArray(acessosList) ? acessosList : [acessosList]).some(
-            (a: any) => (a.nivel === 4 || a.nivel === 5) && a.ativo && a.escola_id === escolaAtivaId
-          )
-
-          return temCargoProfessor || temAcessoProfessor
-        })
-        .map((v: any) => {
-          const func = v.funcionarios
-          if (Array.isArray(func)) return func[0]
-          return func
-        })
-        .filter(Boolean)
-
-      const uniqueProfs = profs.filter((value: any, index: number, self: any[]) =>
-        self.findIndex((v: any) => v.id === value.id) === index
-      )
-
-      setProfessoresEscola(uniqueProfs)
-    } catch (err: any) {
-      console.error('Erro ao carregar professores da escola:', err)
-    }
-  }
-
-  // Buscar professores vinculados à turma
-  const fetchVinculosProfessores = async () => {
-    if (!turma?.id) return
-    try {
-      const { data, error } = await supabase
-        .from('vinculos_turmas')
-        .select('id, funcionario_id, funcionarios(id, nome)')
-        .eq('turma_id', turma.id)
-        .eq('tipo', 'professor')
-
-      if (error) throw error
-      setVinculosProfessores(data || [])
-    } catch (err: any) {
-      console.error('Erro ao carregar professores da turma:', err)
-    }
-  }
-
-  // Buscar dados iniciais
-  const fetchData = async () => {
-    if (!turma?.id || !escolaAtivaId) return
-    setLoading(true)
-    try {
-      // 1. Buscar Alunos e Matérias em paralelo para evitar waterfalls
+  // 1. Alunos e Matérias da Turma
+  const { data: turmaData, isLoading: loadingTurma, error: errorTurma, mutate: mutateTurmaData } = useSWR(
+    open && turma?.id && escolaAtivaId ? ['turma-detalhes', turma.id, escolaAtivaId] : null,
+    async () => {
       const [alunosRes, materiasRes] = await Promise.all([
         supabase
           .from('alunos')
@@ -201,109 +100,141 @@ export function ModalDetalhesTurma({
           .eq('escola_id', escolaAtivaId)
           .order('nome', { ascending: true })
       ])
-
       if (alunosRes.error) throw alunosRes.error
       if (materiasRes.error) throw materiasRes.error
-
-      const AlunosData = alunosRes.data
-      const MateriasData = materiasRes.data
-
-      setAlunos(AlunosData || [])
-
-      const mats = MateriasData || []
-      setMaterias(mats)
-
-      // Expandir a primeira matéria por padrão se nenhuma estiver aberta
-      if (mats.length > 0 && !materiaAberta) {
-        setMateriaAberta(mats[0].id)
-      }
-    } catch (err) {
-      console.error('Erro ao buscar dados do modal de turma:', err)
-      toast.error('Erro ao carregar dados da turma')
-    } finally {
-      setLoading(false)
+      return { alunos: alunosRes.data || [], materias: materiasRes.data || [] }
     }
-  }
+  )
 
-  // Buscar Frequências do dia selecionado
-  const fetchFrequencias = async () => {
-    if (!turma?.id) return
-    if (!selectedMateriaId) {
-      setFrequencias({})
-      return
+  const alunos: any[] = turmaData?.alunos ?? []
+  const materias: any[] = turmaData?.materias ?? []
+  const loading = loadingTurma
+
+  useEffect(() => {
+    if (errorTurma) {
+      toast.error('Erro ao carregar dados da turma: ' + errorTurma.message)
     }
-    setLoadingFreq(true)
-    try {
-      const { data } = await supabase
+  }, [errorTurma])
+
+  // Expandir a primeira matéria por padrão se nenhuma estiver aberta
+  useEffect(() => {
+    if (open && materias.length > 0 && !materiaAberta) {
+      setMateriaAberta(materias[0].id)
+    }
+  }, [open, materias, materiaAberta])
+
+  // 2. Professores da Escola (apenas em modo de edição)
+  const { data: professoresEscolaData, error: errorProfs } = useSWR(
+    open && isEditMode && escolaAtivaId ? ['professores-escola', escolaAtivaId] : null,
+    () => getProfessoresEscola(supabase, escolaAtivaId ?? '')
+  )
+  const professoresEscola: any[] = (professoresEscolaData as any[]) ?? []
+
+  useEffect(() => {
+    if (errorProfs) {
+      toast.error('Erro ao carregar professores da escola: ' + errorProfs.message)
+    }
+  }, [errorProfs])
+
+  // 3. Catálogo de Matérias (apenas em modo de edição)
+  const { data: catalogoMateriasData, error: errorCatalogo } = useSWR(
+    open && isEditMode && escolaAtivaId ? ['catalogo-materias', escolaAtivaId] : null,
+    () => getCatalogoMaterias(supabase, escolaAtivaId ?? '')
+  )
+  const catalogoMaterias: any[] = (catalogoMateriasData as any[]) ?? []
+
+  useEffect(() => {
+    if (errorCatalogo) {
+      toast.error('Erro ao carregar catálogo de matérias: ' + errorCatalogo.message)
+    }
+  }, [errorCatalogo])
+
+  // 4. Vínculos de Professores na Turma (apenas em modo de edição)
+  const { data: vinculosProfessoresData, error: errorVinculos, mutate: mutateVinculos } = useSWR(
+    open && isEditMode && turma?.id ? ['vinculos-professores', turma.id] : null,
+    () => getVinculosProfessores(supabase, turma.id)
+  )
+  const vinculosProfessores: any[] = (vinculosProfessoresData as any[]) ?? []
+
+  useEffect(() => {
+    if (errorVinculos) {
+      toast.error('Erro ao carregar vínculos de professores: ' + errorVinculos.message)
+    }
+  }, [errorVinculos])
+
+  // 5. Frequências do dia e matéria selecionados
+  const freqKey = open && turma?.id && selectedMateriaId
+    ? ['frequencias', turma.id, dataFreq, selectedMateriaId]
+    : null
+
+  const { data: frequencias = {}, isLoading: loadingFreq, error: errorFreq, mutate: mutateFrequencias } = useSWR(
+    freqKey,
+    async () => {
+      const { data, error } = await supabase
         .from('frequencias')
         .select('aluno_id, presenca')
         .eq('turma_id', turma.id)
         .eq('data', dataFreq)
         .eq('materia_id', selectedMateriaId)
-
+      if (error) throw error
       const map: Record<string, boolean> = {}
-      if (data) {
-        data.forEach((f: any) => {
-          map[f.aluno_id] = f.presenca
-        })
-      }
-      setFrequencias(map)
-    } catch (err) {
-      console.error('Erro ao buscar frequências:', err)
-    } finally {
-      setLoadingFreq(false)
+      ;(data || []).forEach((f: any) => { map[f.aluno_id] = f.presenca })
+      return map
     }
-  }
+  )
 
-  // Buscar todas as Notas da turma
-  const fetchNotas = async () => {
-    if (!turma?.id) return
-    try {
-      // 1. Buscar notas comuns e recuperações em paralelo para evitar waterfalls
+  useEffect(() => {
+    if (errorFreq) {
+      toast.error('Erro ao buscar frequências: ' + errorFreq.message)
+    }
+  }, [errorFreq])
+
+  // 6. Notas da Turma (Cache centralizado no servidor com revalidação controlada)
+  const { data: notasServidor, error: errorNotas, mutate: mutateNotasServidor } = useSWR(
+    open && turma?.id ? ['notas-turma', turma.id] : null,
+    async () => {
       const [notasRes, recsRes] = await Promise.all([
-        supabase
-          .from('notas')
-          .select('aluno_id, materia_id, unidade, nota1, nota2, nota3')
-          .eq('turma_id', turma.id),
-        supabase
-          .from('recuperacoes_finais')
-          .select('aluno_id, materia_id, nota')
-          .eq('turma_id', turma.id)
+        supabase.from('notas').select('aluno_id, materia_id, unidade, nota1, nota2, nota3').eq('turma_id', turma.id),
+        supabase.from('recuperacoes_finais').select('aluno_id, materia_id, nota').eq('turma_id', turma.id)
       ])
-
       if (notasRes.error) throw notasRes.error
       if (recsRes.error) throw recsRes.error
 
-      const data = notasRes.data
-      const recs = recsRes.data
-
-      const map: typeof notasState = {}
-      if (data) {
-        data.forEach((n: any) => {
-          const key = `${n.aluno_id}_${n.materia_id}_${n.unidade}`
-          map[key] = {
-            nota1: n.nota1 !== null ? String(n.nota1) : null,
-            nota2: n.nota2 !== null ? String(n.nota2) : null,
-            nota3: n.nota3 !== null ? String(n.nota3) : null
-          }
-        })
-      }
-      setNotasState(map)
+      const notasMap: typeof notasState = {}
+      ;(notasRes.data || []).forEach((n: any) => {
+        notasMap[`${n.aluno_id}_${n.materia_id}_${n.unidade}`] = {
+          nota1: n.nota1 !== null ? String(n.nota1) : null,
+          nota2: n.nota2 !== null ? String(n.nota2) : null,
+          nota3: n.nota3 !== null ? String(n.nota3) : null
+        }
+      })
 
       const recMap: typeof recuperacoesState = {}
-      if (recs) {
-        recs.forEach((r: any) => {
-          const key = `${r.aluno_id}_${r.materia_id}`
-          recMap[key] = {
-            nota: r.nota !== null ? String(r.nota) : null
-          }
-        })
-      }
-      setRecuperacoesState(recMap)
-    } catch (err) {
-      console.error('Erro ao buscar notas/recuperações:', err)
+      ;(recsRes.data || []).forEach((r: any) => {
+        recMap[`${r.aluno_id}_${r.materia_id}`] = { nota: r.nota !== null ? String(r.nota) : null }
+      })
+
+      return { notasMap, recMap }
+    },
+    { 
+      revalidateOnFocus: false, 
+      revalidateOnReconnect: false, 
+      revalidateIfStale: false 
     }
-  }
+  )
+
+  useEffect(() => {
+    if (errorNotas) {
+      toast.error('Erro ao buscar notas da turma: ' + errorNotas.message)
+    }
+  }, [errorNotas])
+
+  useEffect(() => {
+    if (notasServidor) {
+      setNotasState(notasServidor.notasMap)
+      setRecuperacoesState(notasServidor.recMap)
+    }
+  }, [notasServidor])
 
   // Sincronizar parâmetros iniciais do professor/agenda
   useEffect(() => {
@@ -321,20 +252,6 @@ export function ModalDetalhesTurma({
     }
   }, [open, materias, selectedMateriaId])
 
-  // Carregar dados principais
-  useEffect(() => {
-    if (open && turma?.id) {
-      fetchData()
-      fetchNotas()
-      
-      if (isEditMode) {
-        fetchProfessoresEscola()
-        fetchVinculosProfessores()
-        fetchCatalogoMaterias()
-      }
-    }
-  }, [open, turma?.id, escolaAtivaId, isEditMode])
-
   // Resetar a aba ativa somente quando o modal abrir pela primeira vez
   useEffect(() => {
     if (open) {
@@ -345,12 +262,6 @@ export function ModalDetalhesTurma({
       }
     }
   }, [open, initialMateriaId])
-
-  useEffect(() => {
-    if (open && turma?.id && selectedMateriaId) {
-      fetchFrequencias()
-    }
-  }, [dataFreq, selectedMateriaId, open, turma?.id])
 
   // Busca Dinâmica de Alunos
   const filteredAlunos = useMemo(() => {
@@ -364,7 +275,7 @@ export function ModalDetalhesTurma({
     setDataFreq(d.toISOString().split('T')[0])
   }
 
-  // Gravar Frequência (Upsert Imediato com feedback reativo)
+  // Gravar Frequência (Upsert Imediato com feedback reativo e rollback)
   const handleLancarFrequencia = async (alunoId: string, presenca: boolean) => {
     if (!escolaAtivaId) return
     if (!selectedMateriaId) {
@@ -372,9 +283,13 @@ export function ModalDetalhesTurma({
       return
     }
 
-    // Atualização otimista
     const anterior = frequencias[alunoId]
-    setFrequencias(prev => ({ ...prev, [alunoId]: presenca }))
+    
+    // Atualização otimista no cache SWR
+    await mutateFrequencias(
+      (curr) => ({ ...(curr || {}), [alunoId]: presenca }),
+      { revalidate: false }
+    )
 
     try {
       const { error } = await supabase
@@ -393,15 +308,19 @@ export function ModalDetalhesTurma({
     } catch (err: any) {
       console.error('Erro ao salvar frequência:', err)
       toast.error('Erro ao salvar presença: ' + err.message)
-      // Reverter alteração otimista
-      setFrequencias(prev => {
-        if (anterior === undefined) {
-          const next = { ...prev }
-          delete next[alunoId]
+      // Rollback imediato no cache local para o valor anterior
+      mutateFrequencias(
+        (curr) => {
+          const next = { ...(curr || {}) }
+          if (anterior === undefined) {
+            delete next[alunoId]
+          } else {
+            next[alunoId] = anterior
+          }
           return next
-        }
-        return { ...prev, [alunoId]: anterior }
-      })
+        },
+        { revalidate: false }
+      )
     }
   }
 
@@ -545,7 +464,7 @@ export function ModalDetalhesTurma({
       }
 
       toast.success('Notas salvas com sucesso!')
-      fetchNotas()
+      mutateNotasServidor()
     } catch (err: any) {
       console.error('Erro ao salvar notas/recuperações:', err)
       toast.error('Erro ao salvar notas: ' + err.message)
@@ -579,7 +498,7 @@ export function ModalDetalhesTurma({
       if (error) throw error
       toast.success('Professor adicionado com sucesso')
       setSelectedProfId('')
-      fetchVinculosProfessores()
+      mutateVinculos()
     } catch (err: any) {
       toast.error('Erro ao adicionar professor: ' + err.message)
     }
@@ -601,7 +520,7 @@ export function ModalDetalhesTurma({
 
       if (error) throw error
       toast.success('Professor removido com sucesso')
-      fetchVinculosProfessores()
+      mutateVinculos()
     } catch (err: any) {
       toast.error('Erro ao remover professor: ' + err.message)
     }
@@ -639,7 +558,7 @@ export function ModalDetalhesTurma({
       setNovaMateriaNome('')
       setNovaMateriaProfId('')
       setNovaMateriaBaseCurricular('comum')
-      fetchData() // Recarregar matérias
+      mutateTurmaData() // Recarregar matérias
     } catch (err: any) {
       toast.error('Erro ao adicionar matéria: ' + err.message)
     }
@@ -654,7 +573,7 @@ export function ModalDetalhesTurma({
 
       if (error) throw error
       toast.success('Matéria removida com sucesso')
-      fetchData() // Recarregar matérias
+      mutateTurmaData() // Recarregar matérias
     } catch (err: any) {
       toast.error('Erro ao remover matéria: ' + err.message)
     }
@@ -663,18 +582,26 @@ export function ModalDetalhesTurma({
   const handleUpdateMateriaProfessor = async (materiaId: string, professorId: string) => {
     const profIdVal = professorId === 'sem_professor' || !professorId ? null : professorId
 
-    // Atualização otimista local
-    setMaterias(prev => prev.map(m => {
-      if (m.id === materiaId) {
+    // Mutate otimista local no cache do SWR
+    mutateTurmaData(
+      (curr: any) => {
+        if (!curr) return curr
         const nomeProf = vinculosProfessores.find(vp => vp.funcionario_id === profIdVal)?.funcionarios?.nome || null
         return {
-          ...m,
-          professor_id: profIdVal,
-          funcionarios: profIdVal ? { id: profIdVal, nome: nomeProf } : null
+          ...curr,
+          materias: curr.materias.map((m: any) => 
+            m.id === materiaId 
+              ? { 
+                  ...m, 
+                  professor_id: profIdVal, 
+                  funcionarios: profIdVal ? { id: profIdVal, nome: nomeProf } : null 
+                } 
+              : m
+          )
         }
-      }
-      return m
-    }))
+      },
+      { revalidate: false }
+    )
 
     try {
       const { error } = await supabase
@@ -683,25 +610,30 @@ export function ModalDetalhesTurma({
         .eq('id', materiaId)
 
       if (error) throw error
-      toast.success('Professor da matéria updated!')
-      fetchData() // Sincroniza com o banco de dados
+      toast.success('Professor da matéria atualizado!')
+      mutateTurmaData() // Sincroniza com o banco de dados
     } catch (err: any) {
       toast.error('Erro ao atualizar professor da matéria: ' + err.message)
-      fetchData() // Reverte para o estado correto em caso de erro
+      mutateTurmaData() // Reverte para o estado correto do banco
     }
   }
 
   const handleUpdateMateriaBase = async (materiaId: string, baseCurricular: string) => {
-    // Atualização otimista local
-    setMaterias(prev => prev.map(m => {
-      if (m.id === materiaId) {
+    // Mutate otimista local no cache do SWR
+    mutateTurmaData(
+      (curr: any) => {
+        if (!curr) return curr
         return {
-          ...m,
-          base_curricular: baseCurricular
+          ...curr,
+          materias: curr.materias.map((m: any) => 
+            m.id === materiaId 
+              ? { ...m, base_curricular: baseCurricular } 
+              : m
+          )
         }
-      }
-      return m
-    }))
+      },
+      { revalidate: false }
+    )
 
     try {
       const { error } = await supabase
@@ -711,10 +643,10 @@ export function ModalDetalhesTurma({
 
       if (error) throw error
       toast.success('Base curricular da matéria atualizada com sucesso!')
-      fetchData() // Sincroniza com o banco de dados
+      mutateTurmaData() // Sincroniza com o banco de dados
     } catch (err: any) {
       toast.error('Erro ao atualizar base curricular da matéria: ' + err.message)
-      fetchData() // Reverte para o estado correto em caso de erro
+      mutateTurmaData() // Reverte para o estado correto do banco
     }
   }
 
@@ -1196,7 +1128,7 @@ export function ModalDetalhesTurma({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={fetchFrequencias}
+                    onClick={() => mutateFrequencias()}
                     className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-xl px-3.5 h-10 gap-1.5 text-xs font-semibold"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -1321,7 +1253,7 @@ export function ModalDetalhesTurma({
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={fetchNotas}
+                                    onClick={() => mutateNotasServidor()}
                                     className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg h-9 gap-1 text-xs font-semibold"
                                   >
                                     <RefreshCw className="w-3.5 h-3.5" />
