@@ -166,21 +166,44 @@ export function ModalTransferirFuncionario({
 
         const transferId = insertData?.id
 
-        // Notificar o diretor da escola destino
+        // Notificar diretores e secretários da escola destino (níveis 2 e 3 ativos)
+        const { data: acessosDest } = await supabase
+          .from('acessos_usuarios')
+          .select('funcionarios(auth_user_id)')
+          .eq('escola_id', escolaDestinoId)
+          .in('nivel', [2, 3])
+          .eq('ativo', true)
+
         const { data: escolaDest } = await supabase
           .from('escolas')
           .select('diretor_id')
           .eq('id', escolaDestinoId)
           .single()
 
-        if (escolaDest && escolaDest.diretor_id) {
-          await supabase.from('notifications').insert({
-            user_id: escolaDest.diretor_id,
+        const userIds = new Set<string>()
+        if (escolaDest?.diretor_id) {
+          userIds.add(escolaDest.diretor_id)
+        }
+
+        if (acessosDest) {
+          acessosDest.forEach((acc: any) => {
+            const authId = acc.funcionarios?.auth_user_id
+            if (authId) {
+              userIds.add(authId)
+            }
+          })
+        }
+
+        if (userIds.size > 0) {
+          const notificationsToInsert = Array.from(userIds).map((userId) => ({
+            user_id: userId,
             title: 'Nova Solicitação de Transferência de Funcionário',
             message: `O funcionário ${funcionarioObj.nome} solicitou transferência para sua escola.`,
             type: 'INFO',
-            link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
-          })
+            link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
+            read: false
+          }))
+          await supabase.from('notifications').insert(notificationsToInsert)
         }
 
         toast.success('Solicitação de transferência enviada!')
