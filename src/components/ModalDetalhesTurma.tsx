@@ -185,24 +185,30 @@ export function ModalDetalhesTurma({
     if (!turma?.id || !escolaAtivaId) return
     setLoading(true)
     try {
-      // 1. Buscar Alunos
-      const { data: AlunosData } = await supabase
-        .from('alunos')
-        .select('*')
-        .eq('turma_id', turma.id)
-        .eq('escola_id', escolaAtivaId)
-        .is('deleted_at', null)
-        .order('nome', { ascending: true })
+      // 1. Buscar Alunos e Matérias em paralelo para evitar waterfalls
+      const [alunosRes, materiasRes] = await Promise.all([
+        supabase
+          .from('alunos')
+          .select('id, nome, foto_url, nome_mae, nome_pai, telefone, dados_matricula, turma_id, escola_id')
+          .eq('turma_id', turma.id)
+          .eq('escola_id', escolaAtivaId)
+          .is('deleted_at', null)
+          .order('nome', { ascending: true }),
+        supabase
+          .from('materias')
+          .select('id, nome, professor_id, base_curricular, turma_id, escola_id, funcionarios:professor_id(id, nome)')
+          .eq('turma_id', turma.id)
+          .eq('escola_id', escolaAtivaId)
+          .order('nome', { ascending: true })
+      ])
+
+      if (alunosRes.error) throw alunosRes.error
+      if (materiasRes.error) throw materiasRes.error
+
+      const AlunosData = alunosRes.data
+      const MateriasData = materiasRes.data
 
       setAlunos(AlunosData || [])
-
-      // 2. Buscar Matérias com o respectivo professor
-      const { data: MateriasData } = await supabase
-        .from('materias')
-        .select('*, funcionarios:professor_id(id, nome)')
-        .eq('turma_id', turma.id)
-        .eq('escola_id', escolaAtivaId)
-        .order('nome', { ascending: true })
 
       const mats = MateriasData || []
       setMaterias(mats)
@@ -253,11 +259,23 @@ export function ModalDetalhesTurma({
   const fetchNotas = async () => {
     if (!turma?.id) return
     try {
-      // 1. Buscar notas comuns das unidades
-      const { data } = await supabase
-        .from('notas')
-        .select('*')
-        .eq('turma_id', turma.id)
+      // 1. Buscar notas comuns e recuperações em paralelo para evitar waterfalls
+      const [notasRes, recsRes] = await Promise.all([
+        supabase
+          .from('notas')
+          .select('aluno_id, materia_id, unidade, nota1, nota2, nota3')
+          .eq('turma_id', turma.id),
+        supabase
+          .from('recuperacoes_finais')
+          .select('aluno_id, materia_id, nota')
+          .eq('turma_id', turma.id)
+      ])
+
+      if (notasRes.error) throw notasRes.error
+      if (recsRes.error) throw recsRes.error
+
+      const data = notasRes.data
+      const recs = recsRes.data
 
       const map: typeof notasState = {}
       if (data) {
@@ -271,12 +289,6 @@ export function ModalDetalhesTurma({
         })
       }
       setNotasState(map)
-
-      // 2. Buscar recuperações finais
-      const { data: recs } = await supabase
-        .from('recuperacoes_finais')
-        .select('*')
-        .eq('turma_id', turma.id)
 
       const recMap: typeof recuperacoesState = {}
       if (recs) {
