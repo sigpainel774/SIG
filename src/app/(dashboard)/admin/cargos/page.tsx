@@ -12,6 +12,16 @@ import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 
+const getNivelLabel = (n: number | null | undefined): string => {
+  if (n === 1) return 'Administrador Global'
+  if (n === 2) return 'Diretor'
+  if (n === 3) return 'Coord. / Secretário'
+  if (n === 4) return 'Professor'
+  if (n === 5) return 'Chefe de Equipe'
+  if (n === 6) return 'Operacional'
+  return 'Não definido'
+}
+
 export default function AdminCargosPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
@@ -144,7 +154,7 @@ export default function AdminCargosPage() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    Nível {cargo.nivel}
+                    Nível {cargo.nivel} - {getNivelLabel(cargo.nivel)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-[#aaa]">
