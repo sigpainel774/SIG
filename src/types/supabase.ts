@@ -2834,6 +2834,19 @@ export type Database = {
         Returns: boolean
       }
       cleanup_performance_metrics: { Args: never; Returns: undefined }
+      get_performance_dashboard_stats: {
+        Args: { period_days?: number }
+        Returns: {
+          score: number
+          total_samples: number
+          p95: number
+          p99: number
+          cpu_stats: { cpu: string; avg: number; count: number }[]
+          ram_stats: { ram: string; avg: number; count: number }[]
+          network_stats: { type: string; avg: number; count: number }[]
+          route_metrics: { pathname: string; avg_value: number; sample_count: number }[]
+        }
+      }
       get_auth_funcionario_id: { Args: never; Returns: string }
       get_birthdays_of_month: {
         Args: { month_num: number }
