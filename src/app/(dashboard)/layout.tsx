@@ -7,6 +7,11 @@ import { createClient } from '@/lib/supabaseServer'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
+import {
+  getCachedFuncionarioByEmail,
+  getCachedAcessos,
+  getCachedVinculos,
+} from '@/lib/auth-cache'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
@@ -18,14 +23,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   let vinculos: any[] = []
 
   if (user && user.email) {
-    const { data: funcData } = await supabaseAdmin
-      .from('funcionarios')
-      .select('*')
-      .ilike('email', user.email)
-      .maybeSingle()
-    
+    // React.cache() garante que esta query só vai ao banco uma vez por request,
+    // mesmo que RootPage também chame getCachedFuncionarioByEmail.
+    const funcData = await getCachedFuncionarioByEmail(user.email)
+
     if (funcData) {
-      // Reconciliação on-the-fly
+      // Reconciliação on-the-fly: preenche auth_user_id se ainda estiver vazio
       if (!funcData.auth_user_id) {
         try {
           await supabaseAdmin.from('funcionarios').update({ auth_user_id: user.id }).eq('id', funcData.id)
@@ -38,25 +41,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       funcionario = funcData
       isSuperAdmin = funcData.is_superadmin || false
 
-      const { data: acessosData } = await supabaseAdmin
-        .from('acessos_usuarios')
-        .select('*')
-        .eq('funcionario_id', funcData.id)
-        .eq('ativo', true)
-      
-      acessos = acessosData || []
+      // React.cache() garante deduplicação dessas queries também
+      acessos = await getCachedAcessos(funcData.id)
+      const vinculosRaw = await getCachedVinculos(funcData.id)
 
-      const { data: vinculosData } = await supabaseAdmin
-        .from('vinculos_funcionarios')
-        .select('id, escola_id, cargo, ativo, escolas(nome)')
-        .eq('funcionario_id', funcData.id)
-      
-      vinculos = (vinculosData || []).map(v => ({
+      vinculos = vinculosRaw.map((v: any) => ({
         id: v.id,
         escola_id: v.escola_id,
         escolaNome: v.escolas?.nome,
         cargo: v.cargo,
-        ativo: v.ativo
+        ativo: v.ativo,
       }))
     } else {
       // Usuário órfão: logado mas sem cadastro na tabela funcionarios

@@ -112,7 +112,7 @@ export default function LoginPage() {
       }
 
       toast.success('Login bem sucedido!')
-      window.location.href = '/'
+      router.push('/')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao realizar login.')

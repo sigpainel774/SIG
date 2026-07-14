@@ -42,47 +42,28 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Se não estiver logado e tentando acessar rota protegida, envia pro login
+  // Usuário não autenticado tentando acessar rota protegida → login
   if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/assinar') && !pathname.startsWith('/verificar') && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return withTiming(NextResponse.redirect(url))
   }
 
-  // Lógica simplificada de níveis baseada em JWT Custom Claims.
-  // Em um cenário real, se as custom claims não estiverem habilitadas, 
-  // será preciso buscar o nível no banco e rotear.
-  // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
-  if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
-    return withTiming(supabaseResponse)
-  }
-
-  if (user) {
-    if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
-      const { supabaseAdmin } = await import('@/lib/supabaseAdmin')
-      const { data } = await supabaseAdmin
-        .from('funcionarios')
-        .select('is_superadmin')
-        .ilike('email', user.email || '')
-        .maybeSingle()
-
-      const isSuperAdmin = data?.is_superadmin || false
-
-      // Se for superadmin de sistema, a navegação fica trancada no painel root /admin
-      if (isSuperAdmin && !pathname.startsWith('/admin')) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/admin'
-        return withTiming(NextResponse.redirect(url))
-      } 
-      // Se NÃO for superadmin e estiver na raiz ou no login, joga pro home
-      else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/home'
-        return withTiming(NextResponse.redirect(url))
-      }
+  // Usuário autenticado tentando acessar /login:
+  // - Com ?error=orphan: deixa passar (DashboardLayout fará o signOut)
+  // - Sem o parâmetro: redireciona para / (RootPage decide /admin ou /home)
+  if (user && pathname.startsWith('/login')) {
+    if (request.nextUrl.searchParams.get('error') === 'orphan') {
+      return withTiming(supabaseResponse)
     }
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return withTiming(NextResponse.redirect(url))
   }
 
+  // Responsabilidade do proxy encerrada aqui.
+  // O routing pós-login (/admin vs /home) é feito pela RootPage em (dashboard)/page.tsx,
+  // usando React.cache() compartilhado com o DashboardLayout — sem nova query ao banco.
   return withTiming(supabaseResponse)
 }
 
