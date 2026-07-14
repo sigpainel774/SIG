@@ -36,6 +36,7 @@ interface FuncionarioSimples {
   id: string
   nome: string
   email: string | null
+  auth_user_id?: string | null
 }
 
 interface RegistroPermissao {
@@ -263,7 +264,7 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       // 2. Todos os funcionários (para o autocomplete)
       let funcsQuery = supabase
         .from('funcionarios')
-        .select('id, nome, email, is_superadmin, acessos_usuarios(nivel, ativo)')
+        .select('id, nome, email, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
         .eq('status', 'ativo')
 
       if (restringirNivel && schoolIdToUse) {
@@ -430,6 +431,12 @@ export function PermissoesView({ onBack }: { onBack?: () => void }) {
       setFuncSelecionado(null)
       setEscolaSel('')
       setNivelSel('')
+
+      // Invalida o cache do perfil do funcionário no servidor
+      if (funcSelecionado.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(funcSelecionado.auth_user_id)
+      }
 
       // Recarregar lista
       await fetchRegistros(escolas)

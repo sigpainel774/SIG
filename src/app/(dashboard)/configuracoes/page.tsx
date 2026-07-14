@@ -234,6 +234,11 @@ export default function ConfiguracoesPage() {
 
       setNewPessoalSignature(null)
       toast.success('Sua assinatura pessoal foi salva com sucesso!')
+
+      if (localFuncionario.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(localFuncionario.auth_user_id)
+      }
     } catch (err: any) {
       toast.error(`Erro ao salvar assinatura pessoal: ${err.message}`)
     } finally {

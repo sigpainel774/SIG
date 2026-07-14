@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
 import { createClient } from '@/lib/supabaseServer'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
 
@@ -18,50 +18,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   let vinculos: any[] = []
 
   if (user && user.email) {
-    const { data: funcData } = await supabaseAdmin
-      .from('funcionarios')
-      .select('*')
-      .ilike('email', user.email)
-      .maybeSingle()
-    
-    if (funcData) {
-      // Reconciliação on-the-fly
-      if (!funcData.auth_user_id) {
-        try {
-          await supabaseAdmin.from('funcionarios').update({ auth_user_id: user.id }).eq('id', funcData.id)
-          funcData.auth_user_id = user.id
-        } catch (err) {
-          console.error('Erro na reconciliação do auth_user_id no layout:', err)
-        }
-      }
+    // Busca o perfil completo via cache (0 queries no cache hit, 3 paralelas no miss)
+    const perfil = await getPerfilUsuario(user.id, user.email)
 
-      funcionario = funcData
-      isSuperAdmin = funcData.is_superadmin || false
-
-      const { data: acessosData } = await supabaseAdmin
-        .from('acessos_usuarios')
-        .select('*')
-        .eq('funcionario_id', funcData.id)
-        .eq('ativo', true)
-      
-      acessos = acessosData || []
-
-      const { data: vinculosData } = await supabaseAdmin
-        .from('vinculos_funcionarios')
-        .select('id, escola_id, cargo, ativo, escolas(nome)')
-        .eq('funcionario_id', funcData.id)
-      
-      vinculos = (vinculosData || []).map(v => ({
-        id: v.id,
-        escola_id: v.escola_id,
-        escolaNome: v.escolas?.nome,
-        cargo: v.cargo,
-        ativo: v.ativo
-      }))
-    } else {
+    if (!perfil) {
       // Usuário órfão: logado mas sem cadastro na tabela funcionarios
       redirect('/login?error=orphan')
     }
+
+    funcionario = perfil.funcionario
+    acessos = perfil.acessos
+    vinculos = perfil.vinculos
+    isSuperAdmin = funcionario.is_superadmin || false
   }
 
   // Layout exclusivo para Super Admin (Root)

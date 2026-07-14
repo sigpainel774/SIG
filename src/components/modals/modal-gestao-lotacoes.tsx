@@ -64,6 +64,7 @@ interface FuncItem {
   foto_url: string | null
   status: string
   lotacoes: Lotacao[]
+  auth_user_id?: string | null
 }
 
 type TabFiltro = 'todos' | 'sem_lotacao' | 'lotados'
@@ -143,7 +144,7 @@ export function ModalGestaoLotacoes({
       const [funcsRes, escsRes, cargsRes, vincsRes] = await Promise.all([
         supabase
           .from('funcionarios')
-          .select('id, nome, email, cpf, cargo, foto_url, status, is_superadmin, acessos_usuarios(nivel, ativo)')
+          .select('id, nome, email, cpf, cargo, foto_url, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
         supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
@@ -173,6 +174,7 @@ export function ModalGestaoLotacoes({
           cargo: f.cargo ?? null,
           foto_url: f.foto_url ?? null,
           status: f.status ?? 'ativo',
+          auth_user_id: f.auth_user_id ?? null,
           lotacoes: vincsData
             .filter((v: any) => v.funcionario_id === f.id)
             .map((v: any) => ({
@@ -313,6 +315,12 @@ export function ModalGestaoLotacoes({
       toast.success(`Lotação adicionada em ${escolaNome}`)
       setNovaEscola('')
       setNovoCargo('')
+
+      if (selecionado?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(selecionado.auth_user_id)
+      }
+
       await carregar()
     } catch (err: unknown) {
       toast.error(`Erro ao adicionar lotação: ${err instanceof Error ? err.message : String(err)}`)
@@ -359,6 +367,12 @@ export function ModalGestaoLotacoes({
       toast.success(`Funcionário transferido para ${escolaDestinoNome}`)
       setOrigemId('')
       setDestinoEscolaId('')
+
+      if (selecionado?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(selecionado.auth_user_id)
+      }
+
       await carregar()
     } catch (err: unknown) {
       toast.error(`Erro ao transferir: ${err instanceof Error ? err.message : String(err)}`)
@@ -386,6 +400,12 @@ export function ModalGestaoLotacoes({
       })
 
       toast.success('Lotação removida.')
+
+      if (selecionado?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(selecionado.auth_user_id)
+      }
+
       await carregar()
     } catch (err: unknown) {
       toast.error(`Erro ao remover lotação: ${err instanceof Error ? err.message : String(err)}`)

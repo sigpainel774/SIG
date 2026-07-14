@@ -98,6 +98,7 @@ export function ModalFuncionario({
 
   // Form states
   const [empId, setEmpId] = useState('')
+  const [authUserId, setAuthUserId] = useState<string | null>(null)
 
   // Escola vinculada (auto-preenchida)
   const [escolaId, setEscolaId] = useState('')
@@ -248,6 +249,7 @@ export function ModalFuncionario({
           if (error) throw error
           if (data) {
             setEmpId(data.id)
+            setAuthUserId(data.auth_user_id || null)
             populatePessoais(data)
             setCargo(data.cargo ?? '')
             setFuncaoEspec(data.funcao_especifica ?? '')
@@ -574,6 +576,11 @@ export function ModalFuncionario({
           .eq('id', funcionario.id)
         if (error) throw error
         toast.success('Funcionário atualizado com sucesso!')
+
+        if (authUserId) {
+          const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+          await invalidarCachePerfil(authUserId)
+        }
       } else {
         const cleanEmail = email.trim().toLowerCase()
         const { error } = await supabase

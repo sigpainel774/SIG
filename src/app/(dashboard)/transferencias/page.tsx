@@ -108,7 +108,7 @@ function TransferenciasContent() {
         .from('transferencias_funcionarios')
         .select(`
           *,
-          funcionarios(nome, cpf, cargo),
+          funcionarios(nome, cpf, cargo, auth_user_id),
           origem:escola_origem_id(nome),
           destino:escola_destino_id(nome),
           solicitante:solicitante_id(nome)
@@ -348,6 +348,13 @@ function TransferenciasContent() {
       setModalDecisaoOpen(false)
       setJustificativa('')
       setTransferenciaSelecionada(null)
+
+      // Invalida o cache do perfil do funcionário transferido no servidor se a transferência for aceita
+      if (aceitar && transferenciaSelecionada.funcionarios?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(transferenciaSelecionada.funcionarios.auth_user_id)
+      }
+
       loadTransferencias()
     } catch (err: any) {
       console.error(err)
@@ -398,6 +405,13 @@ function TransferenciasContent() {
       toast.success('Transferência de lotação revertida com sucesso!')
       setModalDecisaoOpen(false)
       setTransferenciaSelecionada(null)
+
+      // Invalida o cache do perfil do funcionário transferido no servidor
+      if (transferenciaSelecionada.funcionarios?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(transferenciaSelecionada.funcionarios.auth_user_id)
+      }
+
       loadTransferencias()
     } catch (err: any) {
       console.error(err)
