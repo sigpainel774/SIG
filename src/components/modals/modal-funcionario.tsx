@@ -35,6 +35,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { MiniMapa } from '@/components/map/MapWrapper'
 import { useAuthStore } from '@/store/useAuthStore'
+import { usePessoaForm } from '@/hooks/usePessoaForm'
 
 interface FuncionarioBasico {
   id: string
@@ -104,39 +105,50 @@ export function ModalFuncionario({
   const [escolaInep, setEscolaInep] = useState('')
   const [escolaLocalizacao, setEscolaLocalizacao] = useState('')
 
-  // Dados Pessoais / Identificação
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [cpf, setCpf] = useState('')
-  const [censo, setCenso] = useState('')
-  const [estadoCivil, setEstadoCivil] = useState('Não declarado')
-  const [corRaca, setCorRaca] = useState('Não declarado')
-  const [sexo, setSexo] = useState('Não declarado')
-  const [nomeMae, setNomeMae] = useState('')
-  const [nomePai, setNomePai] = useState('')
-  const [nacionalidade, setNacionalidade] = useState('Brasileira')
-  const [nacionalidadeEspec, setNacionalidadeEspec] = useState('')
-  const [nascimento, setNascimento] = useState('')
-  const [municipioNasc, setMunicipioNasc] = useState('')
-  const [ufNasc, setUfNasc] = useState('')
-
-  // Documentos
-  const [rg, setRg] = useState('')
-  const [nis, setNis] = useState('')
-
-  // Endereço
-  const [logradouro, setLogradouro] = useState('')
-  const [numero, setNumero] = useState('')
-  const [cep, setCep] = useState('')
-  const [bairro, setBairro] = useState('')
-  const [cidade, setCidade] = useState('')
-  const [ufResidencia, setUfResidencia] = useState('BA')
-  const [areaResidencia, setAreaResidencia] = useState('Urbana')
-  const [areaDiferenciada, setAreaDiferenciada] = useState('Não está em área diferenciada')
-  
-  // Localização (GPS)
-  const [latitude, setLatitude] = useState<number | null>(null)
-  const [longitude, setLongitude] = useState<number | null>(null)
+  // Hook para gerenciar os estados de dados pessoais e endereço
+  const {
+    nome, setNome,
+    email, setEmail,
+    cpf, setCpf,
+    censo, setCenso,
+    estadoCivil, setEstadoCivil,
+    corRaca, setCorRaca,
+    sexo, setSexo,
+    nascimento, setNascimento,
+    nacionalidade, setNacionalidade,
+    nacionalidadeEspec, setNacionalidadeEspec,
+    telefone, setTelefone,
+    nomeMae, setNomeMae,
+    nomePai, setNomePai,
+    municipioNasc, setMunicipioNasc,
+    ufNasc, setUfNasc,
+    rg, setRg,
+    nis, setNis,
+    logradouro, setLogradouro,
+    numero, setNumero,
+    cep, setCep,
+    bairro, setBairro,
+    cidade, setCidade,
+    ufResidencia, setUfResidencia,
+    areaResidencia, setAreaResidencia,
+    areaDiferenciada, setAreaDiferenciada,
+    latitude, setLatitude,
+    longitude, setLongitude,
+    resetPessoais,
+    populatePessoais,
+    formatCPF,
+    formatCEP
+  } = usePessoaForm({
+    estadoCivilDefault: 'Não declarado',
+    nacionalidadeDefault: 'Brasileira',
+    ufNascDefault: '',
+    sexoDefault: 'Não declarado',
+    corRacaDefault: 'Não declarado',
+    cidadeEndDefault: '',
+    ufEndDefault: 'BA',
+    areaLocalizacaoDefault: 'Urbana',
+    areaDiferenciadaDefault: 'Não está em área diferenciada'
+  })
 
   // Emprego
   const [cargo, setCargo] = useState('') 
@@ -200,23 +212,6 @@ export function ModalFuncionario({
   const [observacoes, setObservacoes] = useState('')
   const [dataPreenchimento, setDataPreenchimento] = useState('')
 
-  // Masks
-  const formatCPF = (value: string) => {
-    const clean = value.replace(/\D/g, '')
-    return clean
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .substring(0, 14)
-  }
-
-  const formatCEP = (value: string) => {
-    const clean = value.replace(/\D/g, '')
-    return clean
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .substring(0, 9)
-  }
-
   // Load cargos
   useEffect(() => {
     const supabase = createClient()
@@ -253,32 +248,7 @@ export function ModalFuncionario({
           if (error) throw error
           if (data) {
             setEmpId(data.id)
-            setNome(data.nome ?? '')
-            setEmail(data.email ?? '')
-            setCpf(data.cpf ?? '')
-            setCenso(data.censo ?? '')
-            setEstadoCivil(data.estado_civil ?? 'Não declarado')
-            setCorRaca(data.cor_raca ?? 'Não declarado')
-            setSexo(data.sexo ?? 'Não declarado')
-            setNomeMae(data.nome_mae ?? '')
-            setNomePai(data.nome_pai ?? '')
-            setNacionalidade(data.nacionalidade ?? 'Brasileira')
-            setNacionalidadeEspec(data.nacionalidade_especificacao ?? '')
-            setNascimento(data.data_nascimento ?? '')
-            setMunicipioNasc(data.municipio_nascimento ?? '')
-            setUfNasc(data.uf_nascimento ?? '')
-            setRg(data.rg ?? '')
-            setNis(data.nis ?? '')
-            setLogradouro(data.logradouro ?? '')
-            setNumero(data.numero ?? '')
-            setCep(data.cep ?? '')
-            setBairro(data.bairro ?? '')
-            setCidade(data.cidade ?? '')
-            setUfResidencia(data.uf_residencia ?? 'BA')
-            setAreaResidencia(data.area_residencia ?? 'Urbana')
-            setAreaDiferenciada(data.area_diferenciada ?? 'Não está em área diferenciada')
-            setLatitude(data.latitude ? Number(data.latitude) : null)
-            setLongitude(data.longitude ? Number(data.longitude) : null)
+            populatePessoais(data)
             setCargo(data.cargo ?? '')
             setFuncaoEspec(data.funcao_especifica ?? '')
             setTipoVinculo(data.tipo_vinculo ?? 'Contratado')
@@ -344,32 +314,7 @@ export function ModalFuncionario({
         setEmpId(newUuid)
         
         // Reset states
-        setNome('')
-        setEmail('')
-        setCpf('')
-        setCenso('')
-        setEstadoCivil('Não declarado')
-        setCorRaca('Não declarado')
-        setSexo('Não declarado')
-        setNomeMae('')
-        setNomePai('')
-        setNacionalidade('Brasileira')
-        setNacionalidadeEspec('')
-        setNascimento('')
-        setMunicipioNasc('')
-        setUfNasc('')
-        setRg('')
-        setNis('')
-        setLogradouro('')
-        setNumero('')
-        setCep('')
-        setBairro('')
-        setCidade('')
-        setUfResidencia('BA')
-        setAreaResidencia('Urbana')
-        setAreaDiferenciada('Não está em área diferenciada')
-        setLatitude(null)
-        setLongitude(null)
+        resetPessoais()
         setCargo('')
         setFuncaoEspec('')
         setTipoVinculo('Contratado')

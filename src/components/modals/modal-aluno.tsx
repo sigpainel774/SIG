@@ -20,6 +20,7 @@ import { SignaturePad } from '@/components/ui/SignaturePad'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { urlToBase64 } from '@/lib/utils'
+import { usePessoaForm } from '@/hooks/usePessoaForm'
 
 interface ModalAlunoProps {
   open?: boolean
@@ -51,37 +52,63 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     setIsOpen(val)
   }
 
+  // Hook para gerenciar os estados de dados pessoais e endereço
+  const {
+    nome, setNome,
+    nascimento, setNascimento,
+    censo, setCenso,
+    cpf, setCpf,
+    telefone, setTelefone,
+    estadoCivil, setEstadoCivil,
+    corRaca, setCorRaca,
+    sexo, setSexo,
+    rg, setRg,
+    nis, setNis,
+    nacionalidade, setNacionalidade,
+    cidadeNasc, setCidadeNasc,
+    ufNasc, setUfNasc,
+    mae, setMae,
+    telMae, setTelMae,
+    pai, setPai,
+    telPai, setTelPai,
+    rua, setRua,
+    numero, setNumero,
+    cep, setCep,
+    bairro, setBairro,
+    cidadeEnd, setCidadeEnd,
+    ufEnd, setUfEnd,
+    latitude, setLatitude,
+    longitude, setLongitude,
+    areaLocalizacao, setAreaLocalizacao,
+    areaDiferenciada, setAreaDiferenciada,
+    resetPessoais,
+    populatePessoais
+  } = usePessoaForm({
+    estadoCivilDefault: 'Solteiro',
+    nacionalidadeDefault: 'BRASILEIRA',
+    ufNascDefault: 'BA',
+    sexoDefault: '',
+    corRacaDefault: '',
+    cidadeEndDefault: 'SAPE AÇU',
+    ufEndDefault: 'BA',
+    areaLocalizacaoDefault: 'Urbana',
+    areaDiferenciadaDefault: 'Não está em área diferenciada'
+  })
+
   // 0. Escola Seletor
   const [escolaId, setEscolaId] = useState('')
 
   // 1. Identificação Básica
   const [fotoUrl, setFotoUrl] = useState('')
-  const [nome, setNome] = useState('')
-  const [nascimento, setNascimento] = useState('')
-  const [censo, setCenso] = useState('')
-  const [cpf, setCpf] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [estadoCivil, setEstadoCivil] = useState('Solteiro')
-  const [corRaca, setCorRaca] = useState('')
-  const [sexo, setSexo] = useState('')
 
   // 2. Turma Vinculada
   const [turmaId, setTurmaId] = useState('')
 
-  // 3. Documentos
-  const [rg, setRg] = useState('')
-  const [nis, setNis] = useState('')
+  // 3. Documentos Específicos
   const [sus, setSus] = useState('')
   const [certidao, setCertidao] = useState('')
-  const [nacionalidade, setNacionalidade] = useState('BRASILEIRA')
-  const [cidadeNasc, setCidadeNasc] = useState('')
-  const [ufNasc, setUfNasc] = useState('BA')
 
-  // 4. Filiação e Contato
-  const [mae, setMae] = useState('')
-  const [telMae, setTelMae] = useState('')
-  const [pai, setPai] = useState('')
-  const [telPai, setTelPai] = useState('')
+  // 4. Filiação e Contato (Campo de fallback completo)
   const [endereco, setEndereco] = useState('')
 
   // 5. Matrícula & Etapa
@@ -97,18 +124,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
   const [rotaTransporte, setRotaTransporte] = useState('')
   const [situacaoVacinal, setSituacaoVacinal] = useState('Em dia')
   const [restricoesSaude, setRestricoesSaude] = useState('')
-
-  // 7. Endereço Residencial Detalhado
-  const [rua, setRua] = useState('')
-  const [numero, setNumero] = useState('')
-  const [cep, setCep] = useState('')
-  const [bairro, setBairro] = useState('')
-  const [cidadeEnd, setCidadeEnd] = useState('SAPE AÇU')
-  const [ufEnd, setUfEnd] = useState('BA')
-  const [latitude, setLatitude] = useState<number | null>(null)
-  const [longitude, setLongitude] = useState<number | null>(null)
-  const [areaLocalizacao, setAreaLocalizacao] = useState('Urbana')
-  const [areaDiferenciada, setAreaDiferenciada] = useState('Não está em área diferenciada')
 
   // 8. Recursos SAEB (INEP)
   const [recursosEspeciais, setRecursosEspeciais] = useState('Não')
@@ -240,29 +255,15 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
     if (activeOpen) {
       if (alunoEditar) {
         const dm = alunoEditar.dados_matricula || {}
-        setNome(alunoEditar.nome || '')
-        setCpf(alunoEditar.cpf || dm.cpfAluno || '')
-        setCenso(alunoEditar.inep || dm.censoAluno || '')
-        setTelefone(alunoEditar.telefone || dm.telefoneAluno || '')
-        setNascimento(alunoEditar.data_nascimento || dm.nascimentoAluno || '')
+        populatePessoais({ ...alunoEditar, ...dm })
         setFotoUrl(alunoEditar.foto_url || '')
         setEscolaId(alunoEditar.escola_id || '')
         setTurmaId(alunoEditar.turma_id || '')
-        setRg(alunoEditar.rg || dm.rgAluno || '')
-        setNis(alunoEditar.nis || dm.nisAluno || '')
         setSus(alunoEditar.cartao_sus || dm.susAluno || '')
         setCertidao(alunoEditar.certidao_nascimento || dm.certidaoAluno || '')
-        setMae(alunoEditar.nome_mae || dm.maeAluno || '')
-        setPai(alunoEditar.nome_pai || dm.paiAluno || '')
         setEndereco(alunoEditar.endereco || dm.enderecoAluno || '')
         setSerie(alunoEditar.serie || dm.serieAluno || '')
 
-        setEstadoCivil(dm.estadoCivilAluno || 'Solteiro')
-        setCorRaca(dm.corRacaAluno || '')
-        setSexo(dm.sexoAluno || '')
-        setNacionalidade(dm.nacionalidadeAluno || 'BRASILEIRA')
-        setCidadeNasc(dm.cidadeNascAluno || '')
-        setUfNasc(dm.ufNascAluno || 'BA')
         setTelMae(dm.telMaeAluno || '')
         setTelPai(dm.telPaiAluno || '')
         setTipoMatricula(dm.tipoMatricula || 'Renovação')
@@ -272,14 +273,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         setTurmaLetra(dm.turmaAluno || '')
         setTransporte(!!dm.transporteAluno)
         setRotaTransporte(dm.rotaTransporteAluno || '')
-        setRua(dm.ruaAluno || '')
-        setNumero(dm.numeroAluno || '')
-        setCep(dm.cepAluno || '')
-        setBairro(dm.bairroAluno || '')
-        setCidadeEnd(dm.cidadeEndAluno || 'SAPE AÇU')
-        setUfEnd(dm.ufEndAluno || 'BA')
-        setAreaLocalizacao(dm.areaLocalizacaoAluno || 'Urbana')
-        setAreaDiferenciada(dm.areaDiferenciadaAluno || 'Não está em área diferenciada')
         setRecursosEspeciais(dm.recursosEspeciaisAluno || 'Não')
         setRecursosSelecionados(dm.recursosSelecionados || [])
         setDiabete(dm.diabeteAluno || 'Não')
@@ -301,8 +294,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         setNeeSelecionadas(dm.neeSelecionadas || [])
         setDeficiencia(dm.deficienciaAluno || 'Não')
         setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
-        setLatitude(alunoEditar.latitude ? Number(alunoEditar.latitude) : null)
-        setLongitude(alunoEditar.longitude ? Number(alunoEditar.longitude) : null)
         
         setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
         const cacheBust = (url: string | null) => {
@@ -315,28 +306,14 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         setNewSignatureFuncionario(null)
       } else {
         // Reset completo para cadastrar aluno novo
-        setNome('')
-        setCpf('')
-        setCenso('')
-        setTelefone('')
-        setNascimento('')
+        resetPessoais()
         setFotoUrl('')
         setEscolaId(escolaAtivaId || '')
         setTurmaId('')
-        setRg('')
-        setNis('')
         setSus('')
         setCertidao('')
-        setMae('')
-        setPai('')
         setEndereco('')
         setSerie('')
-        setEstadoCivil('Solteiro')
-        setCorRaca('')
-        setSexo('')
-        setNacionalidade('BRASILEIRA')
-        setCidadeNasc('')
-        setUfNasc('BA')
         setTelMae('')
         setTelPai('')
         setTipoMatricula('Renovação')
@@ -346,14 +323,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         setTurmaLetra('')
         setTransporte(false)
         setRotaTransporte('')
-        setRua('')
-        setNumero('')
-        setCep('')
-        setBairro('')
-        setCidadeEnd('SAPE AÇU')
-        setUfEnd('BA')
-        setAreaLocalizacao('Urbana')
-        setAreaDiferenciada('Não está em área diferenciada')
         setRecursosEspeciais('Não')
         setRecursosSelecionados([])
         setDiabete('Não')
@@ -375,8 +344,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         setNeeSelecionadas([])
         setDeficiencia('Não')
         setDeficienciasSelecionadas([])
-        setLatitude(null)
-        setLongitude(null)
         setAutorizaImagemVoz('Não')
         setAssinaturaResponsavelUrl(null)
         setAssinaturaFuncionarioUrl(null)
