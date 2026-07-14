@@ -237,12 +237,12 @@ function TransferenciasContent() {
         }
 
         // 4. Notificar solicitante
-        await supabase.from('notifications').insert({
-          user_id: transferenciaSelecionada.solicitante_id,
-          title: `Transferência de Aluno ${statusDestino}`,
-          message: `O pedido de transferência do aluno ${transferenciaSelecionada.alunos?.nome ?? 'Aluno'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
-          type: aceitar ? 'SUCCESS' : 'ERROR',
-          link: '/transferencias?tab=alunos&subtab=submissoes'
+        await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: [transferenciaSelecionada.solicitante_id],
+          p_title: `Transferência de Aluno ${statusDestino}`,
+          p_message: `O pedido de transferência do aluno ${transferenciaSelecionada.alunos?.nome ?? 'Aluno'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
+          p_type: aceitar ? 'SUCCESS' : 'ERROR',
+          p_link: '/transferencias?tab=alunos&subtab=submissoes'
         })
 
       } else {
@@ -335,12 +335,12 @@ function TransferenciasContent() {
         }
 
         // 6. Notificar solicitante (comum a ambos os fluxos)
-        await supabase.from('notifications').insert({
-          user_id: transferenciaSelecionada.solicitante_id,
-          title: `Transferência de Funcionário ${statusDestino}`,
-          message: `O pedido de transferência do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
-          type: aceitar ? 'SUCCESS' : 'ERROR',
-          link: '/transferencias?tab=funcionarios&subtab=submissoes'
+        await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: [transferenciaSelecionada.solicitante_id],
+          p_title: `Transferência de Funcionário ${statusDestino}`,
+          p_message: `O pedido de transferência do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
+          p_type: aceitar ? 'SUCCESS' : 'ERROR',
+          p_link: '/transferencias?tab=funcionarios&subtab=submissoes'
         })
       }
 
@@ -386,14 +386,13 @@ function TransferenciasContent() {
       }
 
       if (userIds.size > 0) {
-        const notificationsToInsert = Array.from(userIds).map((userId) => ({
-          user_id: userId,
-          title: 'Transferência Revertida pelo Admin',
-          message: `A transferência de lotação do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi revertida pelo Administrador Global.`,
-          type: 'WARNING',
-          link: '/transferencias?tab=funcionarios'
-        }))
-        await supabase.from('notifications').insert(notificationsToInsert)
+        await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: Array.from(userIds),
+          p_title: 'Transferência Revertida pelo Admin',
+          p_message: `A transferência de lotação do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi revertida pelo Administrador Global.`,
+          p_type: 'WARNING',
+          p_link: '/transferencias?tab=funcionarios'
+        })
       }
 
       toast.success('Transferência de lotação revertida com sucesso!')

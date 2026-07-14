@@ -227,15 +227,13 @@ export function ModalTransferirFuncionario({
         }
 
         if (userIds.size > 0) {
-          const notificationsToInsert = Array.from(userIds).map((userId) => ({
-            user_id: userId,
-            title: 'Nova Solicitação de Transferência de Funcionário',
-            message: `O funcionário ${funcionarioObj.nome} solicitou transferência para sua escola.`,
-            type: 'INFO',
-            link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
-            read: false
-          }))
-          await supabase.from('notifications').insert(notificationsToInsert)
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(userIds),
+            p_title: 'Nova Solicitação de Transferência de Funcionário',
+            p_message: `O funcionário ${funcionarioObj.nome} solicitou transferência para sua escola.`,
+            p_type: 'INFO',
+            p_link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
+          })
         }
 
         toast.success('Solicitação de transferência enviada!')
