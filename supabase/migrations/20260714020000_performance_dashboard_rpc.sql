@@ -15,6 +15,9 @@ DECLARE
   v_route_metrics jsonb;
   v_p95_route numeric;
   v_p99_route numeric;
+  v_middleware_avg numeric;
+  v_middleware_p95 numeric;
+  v_middleware_p99 numeric;
 BEGIN
   -- 0. Segurança: apenas administradores globais/superadmins podem invocar
   IF NOT public.is_superadmin_by_uid() THEN
@@ -42,6 +45,15 @@ BEGIN
   INTO v_p95_route, v_p99_route
   FROM public.performance_metrics
   WHERE metric_name = 'ROUTE_CHANGE_MS' AND created_at >= v_start_time;
+
+  -- 2.1. Estatísticas do Middleware (MIDDLEWARE_MS)
+  SELECT 
+    round(avg(metric_value)::numeric, 1),
+    round(percentile_cont(0.95) WITHIN GROUP (ORDER BY metric_value)::numeric, 1),
+    round(percentile_cont(0.99) WITHIN GROUP (ORDER BY metric_value)::numeric, 1)
+  INTO v_middleware_avg, v_middleware_p95, v_middleware_p99
+  FROM public.performance_metrics
+  WHERE metric_name = 'MIDDLEWARE_MS' AND created_at >= v_start_time;
 
   -- 3. Estatísticas por CPU (hardware_concurrency)
   SELECT jsonb_agg(t) INTO v_cpu_stats
@@ -103,7 +115,10 @@ BEGIN
     'cpu_stats', COALESCE(v_cpu_stats, '[]'::jsonb),
     'ram_stats', COALESCE(v_ram_stats, '[]'::jsonb),
     'network_stats', COALESCE(v_network_stats, '[]'::jsonb),
-    'route_metrics', COALESCE(v_route_metrics, '[]'::jsonb)
+    'route_metrics', COALESCE(v_route_metrics, '[]'::jsonb),
+    'middleware_avg', COALESCE(v_middleware_avg, 0),
+    'middleware_p95', COALESCE(v_middleware_p95, 0),
+    'middleware_p99', COALESCE(v_middleware_p99, 0)
   );
 END;
 $$;

@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function proxy(request: NextRequest) {
+  const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now()
+
+  // Helper para injetar o tempo de carregamento/processamento do middleware na resposta
+  const withTiming = (response: NextResponse) => {
+    const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startTime
+    response.headers.set('Server-Timing', `middleware;dur=${duration.toFixed(3)};desc="Middleware"`)
+    return response
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -37,7 +46,7 @@ export async function proxy(request: NextRequest) {
   if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/assinar') && !pathname.startsWith('/verificar') && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return withTiming(NextResponse.redirect(url))
   }
 
   // Lógica simplificada de níveis baseada em JWT Custom Claims.
@@ -45,7 +54,7 @@ export async function proxy(request: NextRequest) {
   // será preciso buscar o nível no banco e rotear.
   // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
   if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
-    return supabaseResponse
+    return withTiming(supabaseResponse)
   }
 
   if (user) {
@@ -63,18 +72,18 @@ export async function proxy(request: NextRequest) {
       if (isSuperAdmin && !pathname.startsWith('/admin')) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin'
-        return NextResponse.redirect(url)
+        return withTiming(NextResponse.redirect(url))
       } 
       // Se NÃO for superadmin e estiver na raiz ou no login, joga pro home
       else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
         const url = request.nextUrl.clone()
         url.pathname = '/home'
-        return NextResponse.redirect(url)
+        return withTiming(NextResponse.redirect(url))
       }
     }
   }
 
-  return supabaseResponse
+  return withTiming(supabaseResponse)
 }
 
 export const config = {
