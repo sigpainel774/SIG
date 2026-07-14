@@ -373,15 +373,15 @@ function TransferenciasContent() {
       
       const { data: acessosEnvolvidos } = await supabase
         .from('acessos_usuarios')
-        .select('funcionarios(auth_user_id)')
+        .select('funcionarios(id)')
         .in('escola_id', [transferenciaSelecionada.escola_origem_id, transferenciaSelecionada.escola_destino_id])
         .eq('nivel', 2)
         .eq('ativo', true)
 
       if (acessosEnvolvidos) {
         acessosEnvolvidos.forEach((acc: any) => {
-          const authId = acc.funcionarios?.auth_user_id
-          if (authId) userIds.add(authId)
+          const funcId = acc.funcionarios?.id
+          if (funcId) userIds.add(funcId)
         })
       }
 

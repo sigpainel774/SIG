@@ -156,7 +156,7 @@ export default function TransferenciaAlunoPage() {
         // Notificar diretores e secretários da escola de destino (níveis 2 e 3 ativos)
         const { data: acessosDest } = await supabase
           .from('acessos_usuarios')
-          .select('funcionarios(auth_user_id)')
+          .select('funcionarios(id)')
           .eq('escola_id', destinoId)
           .in('nivel', [2, 3])
           .eq('ativo', true)
@@ -174,9 +174,9 @@ export default function TransferenciaAlunoPage() {
 
         if (acessosDest) {
           acessosDest.forEach((acc: any) => {
-            const authId = acc.funcionarios?.auth_user_id
-            if (authId) {
-              userIds.add(authId)
+            const funcId = acc.funcionarios?.id
+            if (funcId) {
+              userIds.add(funcId)
             }
           })
         }

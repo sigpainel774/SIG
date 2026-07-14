@@ -255,6 +255,10 @@ export default function DocumentosPage() {
     } else if (docType === 'comprovante-matricula') {
       setAlunoImprimirComprovante(alunoSelecionado)
     } else if (docType === 'boletim') {
+      if (!alunoSelecionado?.turma_id) {
+        toast.error('Este aluno não possui vínculo com nenhuma turma. Não é possível emitir o boletim.')
+        return
+      }
       setLoadingBoletim(true)
       try {
         const supabase = createClient()

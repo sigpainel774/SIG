@@ -184,14 +184,14 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
       // 5. Buscar secretários ativos da escola
       const { data: secretarios } = await (supabase as any)
         .from('acessos_usuarios')
-        .select('funcionarios(auth_user_id, nome)')
+        .select('funcionarios(id, nome)')
         .eq('escola_id', escolaAtivaId)
         .eq('nivel', 3)
         .eq('ativo', true)
 
       const secretariosValidos = (secretarios ?? [])
         .map((s: any) => s.funcionarios)
-        .filter((f: any) => f?.auth_user_id)
+        .filter((f: any) => f?.id)
 
       if (secretariosValidos.length > 0) {
         const grupoId = crypto.randomUUID()
@@ -199,7 +199,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         const materiaNome = materia?.nome ?? 'disciplina'
 
         const notificacoes = secretariosValidos.map((sec: any) => ({
-          user_id: sec.auth_user_id,
+          user_id: sec.id,
           title: 'Nova Atividade Recebida',
           message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
           type: 'atividade_secretaria',

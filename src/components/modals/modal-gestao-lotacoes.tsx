@@ -431,7 +431,7 @@ export function ModalGestaoLotacoes({
       // 2. Notificar diretores da escola destino (nível 2 ativos)
       const { data: acessosDest } = await supabase
         .from('acessos_usuarios')
-        .select('funcionarios(auth_user_id)')
+        .select('funcionarios(id)')
         .eq('escola_id', destinoEscolaId)
         .eq('nivel', 2)
         .eq('ativo', true)
@@ -439,22 +439,22 @@ export function ModalGestaoLotacoes({
       const userIds = new Set<string>()
       if (acessosDest) {
         acessosDest.forEach((acc: any) => {
-          const authId = acc.funcionarios?.auth_user_id
-          if (authId) userIds.add(authId)
+          const funcId = acc.funcionarios?.id
+          if (funcId) userIds.add(funcId)
         })
       }
 
       // 3. Notificar administradores globais (nível 1 ativos)
       const { data: acessosGlobais } = await supabase
         .from('acessos_usuarios')
-        .select('funcionarios(auth_user_id)')
+        .select('funcionarios(id)')
         .eq('nivel', 1)
         .eq('ativo', true)
 
       if (acessosGlobais) {
         acessosGlobais.forEach((acc: any) => {
-          const authId = acc.funcionarios?.auth_user_id
-          if (authId) userIds.add(authId)
+          const funcId = acc.funcionarios?.id
+          if (funcId) userIds.add(funcId)
         })
       }
 
