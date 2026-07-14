@@ -176,6 +176,11 @@ export function ModalTransferirFuncionario({
         })
 
         toast.success('Funcionário transferido para Fora da Rede e arquivado com sucesso!')
+
+        if (funcionarioObj.auth_user_id) {
+          const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+          await invalidarCachePerfil(funcionarioObj.auth_user_id)
+        }
       } else {
         // Fluxo de solicitação interna pendente
         const { data: insertData, error: insertError } = await (supabase as any)

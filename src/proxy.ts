@@ -50,14 +50,8 @@ export async function proxy(request: NextRequest) {
 
   if (user) {
     if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
-      const { supabaseAdmin } = await import('@/lib/supabaseAdmin')
-      const { data } = await supabaseAdmin
-        .from('funcionarios')
-        .select('is_superadmin')
-        .ilike('email', user.email || '')
-        .maybeSingle()
-
-      const isSuperAdmin = data?.is_superadmin || false
+      // Zero queries: lê is_superadmin diretamente do JWT (app_metadata populado pelo trigger Postgres)
+      const isSuperAdmin = user.app_metadata?.is_superadmin === true
 
       // Se for superadmin de sistema, a navegação fica trancada no painel root /admin
       if (isSuperAdmin && !pathname.startsWith('/admin')) {
