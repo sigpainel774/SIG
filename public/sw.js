@@ -1,16 +1,19 @@
-// SIG Sapeaçu — Service Worker v5
+// SIG Sapeaçu — Service Worker v6
 // Estratégia: Network First
 // Durante o desenvolvimento, sempre busca na rede.
 // Cache é usado APENAS como fallback quando offline.
 
-const CACHE_NAME = 'sig-sapeacu-v5';
+const CACHE_NAME = 'sig-sapeacu-v6';
 
 // Apenas assets estáticos essenciais para o ícone do PWA e manifest
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/icon.svg'
+  '/icon.svg',
+  '/offline.html',
+  '/img/logo-prefeitura.png',
+  '/img/brasaoSapeaçu.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -83,10 +86,15 @@ self.addEventListener('fetch', (event) => {
         const cached = await caches.match(event.request);
         if (cached) return cached;
 
-        // Para navegação: retorna página de fallback se disponível
+        // Para navegação: retorna a página offline estilizada
         if (event.request.mode === 'navigate') {
-          const mainPage = await caches.match('/');
-          if (mainPage) return mainPage;
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) return offlinePage;
+          // Fallback final caso offline.html ainda não esteja em cache
+          return new Response(
+            '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem Conexão</title><style>body{background:#0f1117;color:#e8eaf6;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}h1{font-size:1.5rem}p{color:#8a8fa8;margin-top:.5rem}</style></head><body><div><h1>🔌 Você está offline</h1><p>Verifique sua conexão e tente novamente.</p><br><button onclick="location.reload()" style="background:#3b6cf4;color:#fff;border:none;border-radius:8px;padding:.6rem 1.5rem;cursor:pointer;font-size:.9rem">Tentar novamente</button></div></body></html>',
+            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
         }
 
         return new Response(
