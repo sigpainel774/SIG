@@ -66,7 +66,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
 
       // Se for secretário e a notificação ainda não tiver processado_por, processar o grupo
       if (isSecretario && notif.grupo_id && !notif.processado_por) {
-        await (supabase as any)
+        const { data, error } = await (supabase as any)
           .from('notifications')
           .update({
             processado_por: funcionario?.id ?? null,
@@ -75,6 +75,15 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
           })
           .eq('grupo_id', notif.grupo_id)
           .is('processado_por', null)
+          .select()
+
+        if (error) throw error
+
+        if (!data || data.length === 0) {
+          toast.warning('Esta atividade já foi processada por outro colega.')
+        } else {
+          toast.success('Atividade marcada como processada.')
+        }
       }
 
       loadNotificacoes()
