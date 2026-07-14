@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Building2,
@@ -134,23 +133,12 @@ function FrequenciaBar({ feitas, total, loading }: { feitas: number; total: numb
 }
 
 export default function HomePage() {
-  const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
   const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
 
   const isProfessor = acessos.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
   const isMultiLotadoDocente = isProfessor && vinculosAtivos.length > 1
-
-  // Guard: superadmins não pertencem ao /home — redireciona para /admin.
-  // O proxy simplificado não bloqueia mais esta rota para superadmins,
-  // então este efeito restaura o comportamento correto no lado do cliente.
-  const isAdmin = isAdminGlobalOrRoot?.() ?? false
-  useEffect(() => {
-    if (isAdmin) {
-      router.replace('/admin')
-    }
-  }, [isAdmin, router])
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
@@ -180,7 +168,7 @@ export default function HomePage() {
     loadEscolas()
   }, [loadEscolas])
 
-  // isAdmin já definido acima (guard de superadmin)
+  const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
   const fetchKpis = useCallback(async (escolaId: string) => {
     setLoadingKpi(true)

@@ -44,9 +44,6 @@ export function PerformanceTracker() {
   // Referência ao timer de debounce para rotas
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Referência para garantir registro único da métrica de middleware por carregamento
-  const hasLoggedMiddleware = useRef(false)
-
   // Mede o tempo desde o clique (performance.mark 'route-start')
   // até o useEffect rodar (após commit do React = tela pintada)
   useEffect(() => {
@@ -154,63 +151,6 @@ export function PerformanceTracker() {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [pathname, funcionario?.id, escolaAtivaId])
-
-  // 3. Rastreamento do tempo do middleware (Server-Timing) extraído da navegação inicial
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (hasLoggedMiddleware.current) return
-
-    const handleLoad = async () => {
-      if (hasLoggedMiddleware.current) return
-
-      try {
-        const navigationEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
-        if (navigationEntries.length > 0) {
-          const navEntry = navigationEntries[0]
-          const serverTimings = navEntry.serverTiming || []
-          const middlewareTiming = serverTimings.find(t => t.name === 'middleware')
-          
-          if (middlewareTiming) {
-            const durationMs = middlewareTiming.duration
-            hasLoggedMiddleware.current = true // Bloqueia envios duplicados neste carregamento
-
-            const rating =
-              durationMs < 50 ? 'good'
-              : durationMs < 200 ? 'needs-improvement'
-              : 'poor'
-
-            const payload = {
-              funcionario_id: funcionario?.id ?? null,
-              escola_id: escolaAtivaId ?? null,
-              pathname: window.location.pathname,
-              metric_name: 'MIDDLEWARE_MS',
-              metric_value: durationMs,
-              rating,
-              connection_type: getConnectionType(),
-              device_memory: getDeviceMemory(),
-              hardware_concurrency: getHardwareConcurrency(),
-              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-            }
-
-            const { error } = await supabase
-              .from('performance_metrics')
-              .insert(payload)
-
-            if (error) console.warn('[Perf] Erro ao salvar métrica de middleware:', error.message)
-          }
-        }
-      } catch (err) {
-        console.warn('[Perf] Erro ao obter Server-Timing do middleware:', err)
-      }
-    }
-
-    if (document.readyState === 'complete') {
-      handleLoad()
-    } else {
-      window.addEventListener('load', handleLoad)
-      return () => window.removeEventListener('load', handleLoad)
-    }
-  }, [funcionario?.id, escolaAtivaId, supabase])
 
   return null
 }

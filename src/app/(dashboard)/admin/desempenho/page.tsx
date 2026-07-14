@@ -39,9 +39,6 @@ export default function DesempenhoPage() {
     ram_stats: { ram: string; avg: number; count: number }[]
     network_stats: { type: string; avg: number; count: number }[]
     route_metrics: { pathname: string; avg_value: number; sample_count: number }[]
-    middleware_avg: number
-    middleware_p95: number
-    middleware_p99: number
   }>({
     score: 100,
     total_samples: 0,
@@ -50,10 +47,7 @@ export default function DesempenhoPage() {
     cpu_stats: [],
     ram_stats: [],
     network_stats: [],
-    route_metrics: [],
-    middleware_avg: 0,
-    middleware_p95: 0,
-    middleware_p99: 0
+    route_metrics: []
   })
 
   // Estado dos logs recentes paginados
@@ -84,10 +78,7 @@ export default function DesempenhoPage() {
           cpu_stats: parsedData.cpu_stats ?? [],
           ram_stats: parsedData.ram_stats ?? [],
           network_stats: parsedData.network_stats ?? [],
-          route_metrics: parsedData.route_metrics ?? [],
-          middleware_avg: Number(parsedData.middleware_avg ?? 0),
-          middleware_p95: Number(parsedData.middleware_p95 ?? 0),
-          middleware_p99: Number(parsedData.middleware_p99 ?? 0)
+          route_metrics: parsedData.route_metrics ?? []
         })
       }
 
@@ -151,7 +142,6 @@ export default function DesempenhoPage() {
   const getMetricIcon = (name: string) => {
     switch (name) {
       case 'ROUTE_CHANGE_MS': return <TrendingUp className="w-4 h-4 text-violet-400" />
-      case 'MIDDLEWARE_MS': return <Cpu className="w-4 h-4 text-pink-400" />
       case 'LCP': return <Layers className="w-4 h-4 text-sky-400" />
       case 'FID': return <Clock className="w-4 h-4 text-emerald-400" />
       case 'TTFB': return <Wifi className="w-4 h-4 text-amber-400" />
@@ -161,14 +151,13 @@ export default function DesempenhoPage() {
 
   const formatMetricValue = (name: string, value: number) => {
     if (name === 'CLS') return value.toFixed(3)
-    if (value >= 1000 && name !== 'ROUTE_CHANGE_MS' && name !== 'MIDDLEWARE_MS') return `${(value / 1000).toFixed(2)}s`
+    if (value >= 1000 && name !== 'ROUTE_CHANGE_MS') return `${(value / 1000).toFixed(2)}s`
     return `${Math.round(value)}ms`
   }
 
   const getMetricLabel = (name: string) => {
     switch (name) {
       case 'ROUTE_CHANGE_MS': return 'Navegação entre Telas'
-      case 'MIDDLEWARE_MS': return 'Tempo do Middleware (Proxy)'
       case 'TTFB': return 'Tempo até o 1º Byte (TTFB)'
       case 'FCP': return 'Primeira Pintura (FCP)'
       case 'LCP': return 'Maior Pintura (LCP)'
@@ -238,7 +227,7 @@ export default function DesempenhoPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1 */}
         <Card className="bg-[#121214] border-[#232326] text-white">
           <CardHeader className="pb-2">
@@ -272,24 +261,6 @@ export default function DesempenhoPage() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-slate-500">99% das transições são mais rápidas que isso.</p>
-          </CardContent>
-        </Card>
-
-        {/* KPI Middleware */}
-        <Card className="bg-[#121214] border-[#232326] text-white">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Tempo de Middleware (Médio)</CardDescription>
-            <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
-              {dashboardStats.middleware_avg > 0 ? `${Math.round(dashboardStats.middleware_avg)}ms` : 'Sem dados'}
-              {dashboardStats.middleware_avg > 0 && (
-                <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.middleware_avg < 50 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.middleware_avg < 200 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                  {dashboardStats.middleware_avg < 50 ? 'Bom' : dashboardStats.middleware_avg < 200 ? 'Regular' : 'Ruim'}
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-slate-500">Sobrecarga média por requisição de página.</p>
           </CardContent>
         </Card>
 

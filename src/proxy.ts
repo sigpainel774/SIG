@@ -2,15 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function proxy(request: NextRequest) {
-  const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now()
-
-  // Helper para injetar o tempo de carregamento/processamento do middleware na resposta
-  const withTiming = (response: NextResponse) => {
-    const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startTime
-    response.headers.set('Server-Timing', `middleware;dur=${duration.toFixed(3)};desc="Middleware"`)
-    return response
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -42,29 +33,48 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Usuário não autenticado tentando acessar rota protegida → login
+  // Se não estiver logado e tentando acessar rota protegida, envia pro login
   if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/assinar') && !pathname.startsWith('/verificar') && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return withTiming(NextResponse.redirect(url))
+    return NextResponse.redirect(url)
   }
 
-  // Usuário autenticado tentando acessar /login:
-  // - Com ?error=orphan: deixa passar (DashboardLayout fará o signOut)
-  // - Sem o parâmetro: redireciona para / (RootPage decide /admin ou /home)
-  if (user && pathname.startsWith('/login')) {
-    if (request.nextUrl.searchParams.get('error') === 'orphan') {
-      return withTiming(supabaseResponse)
+  // Lógica simplificada de níveis baseada em JWT Custom Claims.
+  // Em um cenário real, se as custom claims não estiverem habilitadas, 
+  // será preciso buscar o nível no banco e rotear.
+  // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
+  if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
+    return supabaseResponse
+  }
+
+  if (user) {
+    if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
+      const { supabaseAdmin } = await import('@/lib/supabaseAdmin')
+      const { data } = await supabaseAdmin
+        .from('funcionarios')
+        .select('is_superadmin')
+        .ilike('email', user.email || '')
+        .maybeSingle()
+
+      const isSuperAdmin = data?.is_superadmin || false
+
+      // Se for superadmin de sistema, a navegação fica trancada no painel root /admin
+      if (isSuperAdmin && !pathname.startsWith('/admin')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin'
+        return NextResponse.redirect(url)
+      } 
+      // Se NÃO for superadmin e estiver na raiz ou no login, joga pro home
+      else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/home'
+        return NextResponse.redirect(url)
+      }
     }
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return withTiming(NextResponse.redirect(url))
   }
 
-  // Responsabilidade do proxy encerrada aqui.
-  // O routing pós-login (/admin vs /home) é feito pela RootPage em (dashboard)/page.tsx,
-  // usando React.cache() compartilhado com o DashboardLayout — sem nova query ao banco.
-  return withTiming(supabaseResponse)
+  return supabaseResponse
 }
 
 export const config = {
