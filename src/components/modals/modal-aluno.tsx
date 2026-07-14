@@ -31,7 +31,7 @@ interface ModalAlunoProps {
 
 export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess }: ModalAlunoProps) {
   const { isEditMode } = useEditModeStore()
-  const { funcionario, escolaAtivaId } = useAuthStore()
+  const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [turmas, setTurmas] = useState<any[]>([])
@@ -444,7 +444,15 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
       .is('deleted_at', null)
       .eq('ativo', true)
       .order('nome', { ascending: true })
-    if (eData) setEscolas(eData)
+    if (eData) {
+      if (isAdminGlobalOrRoot()) {
+        setEscolas(eData)
+      } else if (escolaAtivaId) {
+        setEscolas(eData.filter(esc => esc.id === escolaAtivaId))
+      } else {
+        setEscolas([])
+      }
+    }
   }
 
   const handleFotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -748,7 +756,6 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         telefone: telefone || null,
         data_nascimento: nascimento || null,
         foto_url: fotoUrl || null,
-        escola_id: escolaId || null,
         turma_id: turmaId || null,
         rg: rg || null,
         nis: nis || null,
@@ -761,6 +768,10 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
         longitude: longitude ?? null,
         serie: serie || null,
         dados_matricula: dadosMatriculaObj
+      }
+
+      if (!alunoEditar?.id) {
+        payload.escola_id = escolaId || null
       }
 
       let savedAlunoId = alunoEditar?.id
@@ -977,7 +988,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
           <fieldset disabled={isFichaBloqueada} className="space-y-6 flex flex-col">
 
           {/* 0. Seletor de Escola */}
-          {escolas.length > 0 && (
+          {!alunoEditar && escolas.length > 0 && (
             <div className="bg-[#121212] p-3 rounded-xl border border-[#2a2a2a]">
               <Label className="text-xs text-gray-400 font-bold uppercase">Escola / Unidade Escolar</Label>
               <Select value={escolaId} onValueChange={(val) => setEscolaId(val || '')}>
