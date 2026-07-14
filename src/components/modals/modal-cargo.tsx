@@ -130,10 +130,12 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
                 onChange={(e) => setNivel(e.target.value)}
                 className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
               >
-                <option value="1">Nível 1 (Direção Geral)</option>
-                <option value="2">Nível 2 (Gestão / Coordenação)</option>
-                <option value="3">Nível 3 (Corpo Docente / Técnico)</option>
-                <option value="4">Nível 4 (Apoio Operacional)</option>
+                <option value="1">Nível 1 - Administrador Global</option>
+                <option value="2">Nível 2 - Diretor</option>
+                <option value="3">Nível 3 - Coord. / Secretário</option>
+                <option value="4">Nível 4 - Professor</option>
+                <option value="5">Nível 5 - Chefe de Equipe</option>
+                <option value="6">Nível 6 - Operacional</option>
               </select>
             </div>
 
