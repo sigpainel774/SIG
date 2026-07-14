@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f1117" />
+  <title>Sem Conexão — SIG Sapeaçu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #22263a;
+      --border: rgba(255,255,255,0.07);
+      --accent: #3b6cf4;
+      --accent-glow: rgba(59,108,244,0.35);
+      --text: #e8eaf6;
+      --text-muted: #8a8fa8;
+      --danger: #f44336;
+      --danger-soft: rgba(244,67,54,0.12);
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      background: var(--bg);
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* Fundo com gradiente animado */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,108,244,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 90%, rgba(120,40,200,0.10) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    /* Grade pontilhada */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      gap: 2rem;
+    }
+
+    /* Card principal */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow:
+        0 0 0 1px rgba(59,108,244,0.08),
+        0 24px 64px rgba(0,0,0,0.45),
+        0 0 80px var(--accent-glow);
+      animation: slideUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo */
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .logo-img {
+      height: 56px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 12px rgba(59,108,244,0.3));
+    }
+
+    .logo-divider {
+      width: 1px;
+      height: 40px;
+      background: var(--border);
+      border-radius: 999px;
+    }
+
+    .logo-text {
+      text-align: left;
+    }
+
+    .logo-text .city {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
+    .logo-text .system {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    /* Ícone de sem conexão animado */
+    .icon-wrapper {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 1.75rem;
+    }
+
+    .icon-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--danger-soft);
+      border: 1px solid rgba(244,67,54,0.2);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(1.1); opacity: 0.6; }
+    }
+
+    .icon-inner {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      background: rgba(244,67,54,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-inner svg {
+      width: 36px;
+      height: 36px;
+      color: var(--danger);
+    }
+
+    /* Textos */
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    /* Dicas */
+    .tips {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .tip {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .tip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Botão tentar novamente */
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.8rem 2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      box-shadow: 0 4px 20px rgba(59,108,244,0.4);
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-retry:hover {
+      background: #2d5de8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(59,108,244,0.55);
+    }
+
+    .btn-retry:active {
+      transform: translateY(0);
+    }
+
+    .btn-retry svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.5s;
+    }
+
+    .btn-retry:hover svg {
+      transform: rotate(180deg);
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--danger-soft);
+      border: 1px solid rgba(244,67,54,0.2);
+      border-radius: 999px;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #ff6b6b;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ff6b6b;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 1;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.18);
+      text-align: center;
+      animation: slideUp 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    /* Responsivo */
+    @media (max-width: 480px) {
+      .card {
+        padding: 2rem 1.5rem;
+        border-radius: 20px;
+      }
+      .logo-img { height: 44px; }
+      .title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-grid"></div>
+
+  <div class="container">
+    <div class="card">
+
+      <!-- Logo da Prefeitura + Nome do Sistema -->
+      <div class="logo-row">
+        <img
+          src="/img/logo-prefeitura.png"
+          alt="Prefeitura de Sapeaçu"
+          class="logo-img"
+          onerror="this.style.display='none'"
+        />
+        <div class="logo-divider"></div>
+        <div class="logo-text">
+          <div class="city">Prefeitura de Sapeaçu</div>
+          <div class="system">SIG · Painel Escolar</div>
+        </div>
+      </div>
+
+      <!-- Ícone animado -->
+      <div class="icon-wrapper">
+        <div class="icon-bg"></div>
+        <div class="icon-inner">
+          <!-- Ícone Wi-Fi off (inline SVG, sem dependência) -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+            <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <circle cx="12" cy="20" r="1" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Badge de status -->
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        SEM CONEXÃO
+      </div>
+
+      <!-- Título e descrição -->
+      <h1 class="title">Você está offline</h1>
+      <p class="subtitle">
+        Não foi possível conectar ao servidor.<br/>
+        Verifique sua conexão com a internet e tente novamente.
+      </p>
+
+      <!-- Dicas -->
+      <div class="tips">
+        <div class="tip">
+          <div class="tip-dot"></div>
+          Verifique se o Wi-Fi ou dados móveis estão ativos
+        </div>
+        <div class="tip">
+          <div class="tip-dot"></div>
+          Tente desconectar e reconectar à sua rede
+        </div>
+        <div class="tip">
+          <div class="tip-dot"></div>
+          Aguarde alguns instantes e tente novamente
+        </div>
+      </div>
+
+      <!-- Botão -->
+      <button class="btn-retry" onclick="window.location.reload()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Tentar novamente
+      </button>
+
+    </div>
+
+    <p class="footer">
+      Secretaria Municipal de Educação de Sapeaçu &nbsp;·&nbsp; Sistema SIG
+    </p>
+  </div>
+
+  <script>
+    // Tenta reconectar automaticamente a cada 8 segundos
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      fetch('/').then(() => {
+        clearInterval(interval);
+        window.location.reload();
+      }).catch(() => {});
+      // Para após 30 tentativas (~4 min)
+      if (attempts >= 30) clearInterval(interval);
+    }, 8000);
+  </script>
+</body>
+</html>
