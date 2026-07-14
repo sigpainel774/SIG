@@ -460,15 +460,13 @@ export function ModalGestaoLotacoes({
 
       // Enviar notificações
       if (userIds.size > 0) {
-        const notificationsToInsert = Array.from(userIds).map((userId) => ({
-          user_id: userId,
-          title: 'Solicitação de Transferência de Lotação',
-          message: `O Diretor da escola ${escolaOrigemNome} solicitou a transferência do funcionário ${selecionado.nome} para a escola ${escolaDestinoNome}.`,
-          type: 'INFO',
-          link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
-          read: false
-        }))
-        await supabase.from('notifications').insert(notificationsToInsert)
+        await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: Array.from(userIds),
+          p_title: 'Solicitação de Transferência de Lotação',
+          p_message: `O Diretor da escola ${escolaOrigemNome} solicitou a transferência do funcionário ${selecionado.nome} para a escola ${escolaDestinoNome}.`,
+          p_type: 'INFO',
+          p_link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
+        })
       }
 
       await logAudit({

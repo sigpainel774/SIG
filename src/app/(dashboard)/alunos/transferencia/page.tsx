@@ -182,15 +182,13 @@ export default function TransferenciaAlunoPage() {
         }
 
         if (userIds.size > 0) {
-          const notificationsToInsert = Array.from(userIds).map((userId) => ({
-            user_id: userId,
-            title: 'Nova Solicitação de Transferência',
-            message: `O aluno ${alunoSelecionado.nome} solicitou transferência para sua escola.`,
-            type: 'INFO',
-            link: `/transferencias?tab=alunos&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
-            read: false
-          }))
-          await supabase.from('notifications').insert(notificationsToInsert)
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(userIds),
+            p_title: 'Nova Solicitação de Transferência',
+            p_message: `O aluno ${alunoSelecionado.nome} solicitou transferência para sua escola.`,
+            p_type: 'INFO',
+            p_link: `/transferencias?tab=alunos&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
+          })
         }
 
         toast.success('Solicitação enviada para a escola de destino!')

@@ -260,21 +260,14 @@ export default function AdminIndicadoresPage() {
       const dataPrazoFormat = new Date(prazo.data_limite).toLocaleDateString('pt-BR')
       const msg = `O prazo limite para fechamento da ${unidadeSel}ª Unidade é dia ${dataPrazoFormat}. Existem notas pendentes de lançamento na rede.`
       
-      const insertData = Array.from(idsParaNotificar).map(userId => ({
-        user_id: userId,
-        title: `Prazo Curto: Fechamento da ${unidadeSel}ª Unidade`,
-        message: msg,
-        type: 'WARNING',
-        link: '/turmas'
-      }))
-
-      // Upload em fatias de 50 registros por lote
-      const chunkSize = 50
-      for (let i = 0; i < insertData.length; i += chunkSize) {
-        const chunk = insertData.slice(i, i + chunkSize)
-        const { error } = await supabase.from('notifications').insert(chunk)
-        if (error) throw error
-      }
+      const { error } = await supabase.rpc('criar_notificacoes', {
+        p_destinatarios: Array.from(idsParaNotificar),
+        p_title: `Prazo Curto: Fechamento da ${unidadeSel}ª Unidade`,
+        p_message: msg,
+        p_type: 'WARNING',
+        p_link: '/turmas'
+      })
+      if (error) throw error
 
       toast.success(`Alertas disparados com sucesso para ${idsParaNotificar.size} funcionários!`)
     } catch (err: any) {

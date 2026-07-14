@@ -198,17 +198,14 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         const turmaNome = turmaData?.nome ?? 'turma'
         const materiaNome = materia?.nome ?? 'disciplina'
 
-        const notificacoes = secretariosValidos.map((sec: any) => ({
-          user_id: sec.id,
-          title: 'Nova Atividade Recebida',
-          message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
-          type: 'atividade_secretaria',
-          link: `/avaliacoes?tab=central&id=${atividadeId}`,
-          grupo_id: grupoId,
-          read: false,
-        }))
-
-        await (supabase as any).from('notifications').insert(notificacoes)
+        await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: secretariosValidos.map((sec: any) => sec.id),
+          p_title: 'Nova Atividade Recebida',
+          p_message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
+          p_type: 'atividade_secretaria',
+          p_link: `/avaliacoes?tab=central&id=${atividadeId}`,
+          p_grupo_id: grupoId
+        })
       }
 
       toast.success('Atividade enviada com sucesso!')

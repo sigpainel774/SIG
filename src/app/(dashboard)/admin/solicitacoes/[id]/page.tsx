@@ -80,11 +80,11 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
       }
 
       // Notificar quem solicitou
-      await supabase.from('notifications').insert({
-        user_id: solicitacao.solicitante_id,
-        title: `Transferência ${novoStatus}`,
-        message: `O pedido de transferência do aluno ${solicitacao.alunos?.nome} foi ${novoStatus.toLowerCase()} pela escola de destino.`,
-        type: aceitar ? 'SUCCESS' : 'ERROR'
+      await (supabase as any).rpc('criar_notificacoes', {
+        p_destinatarios: [solicitacao.solicitante_id],
+        p_title: `Transferência ${novoStatus}`,
+        p_message: `O pedido de transferência do aluno ${solicitacao.alunos?.nome} foi ${novoStatus.toLowerCase()} pela escola de destino.`,
+        p_type: aceitar ? 'SUCCESS' : 'ERROR'
       })
 
       toast.success(`Transferência ${aceitar ? 'aceita' : 'rejeitada'} com sucesso!`)
