@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   Users,
   FileCheck,
-  ShieldCheck
+  ShieldCheck,
+  Banknote
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -1225,7 +1226,7 @@ export default function FuncionariosPage() {
       </div>
 
       {/* ── Painel de Ações Rápidas ─────────────────────────── */}
-      <div className={cn("grid grid-cols-1 gap-4 mb-6", canManagePermissions ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+      <div className={cn("grid grid-cols-1 gap-4 mb-6", canManagePermissions ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3")}>
         {/* Atestados Médicos */}
         <Link href="/atestados" className="group">
           <div className="bg-surface-1 hover:bg-hoverCustom border border-border hover:border-success/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md cursor-pointer h-full">
@@ -1285,6 +1286,22 @@ export default function FuncionariosPage() {
             </div>
           </div>
         )}
+        {/* Folha de Pagamento */}
+        <div className="group bg-surface-1 border border-border hover:border-warning/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md h-full">
+          <div className="p-3 rounded-xl bg-warning/10 text-warning group-hover:scale-105 transition-transform duration-200">
+            <Banknote className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground text-sm leading-tight">Folha de pagamento</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Módulo em desenvolvimento. Caso tenha sugestões, acesse a{' '}
+              <Link href="/ajuda" className="text-primary hover:underline font-medium">
+                página de ajuda
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
       </div>
 
       {viewMode === 'permissoes' ? (
