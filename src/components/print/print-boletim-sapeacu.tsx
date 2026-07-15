@@ -369,20 +369,18 @@ export function PrintBoletimSapeacu({
           <div className="absolute left-[148.5mm] top-0 bottom-0 border-l border-dashed border-gray-300 print:hidden z-10" />
 
           {/* Metade Direita da Folha: A Capa */}
-          <div className="absolute right-0 top-0 w-[148.5mm] h-full flex flex-col justify-between items-center select-text font-sans pb-6">
+          <div className="absolute right-0 top-0 w-[148.5mm] h-full flex flex-col justify-between items-center select-text font-sans">
             
-            {/* Topo: Faixa Azul e Laranja com Cortes Slant (Igual ao boletim real) */}
-            <div className="w-full relative select-none">
-              {/* Faixa Azul Principal */}
-              <div className="bg-[#0b4a8c] h-[34px] w-full flex items-center pl-6 text-white text-[15px] font-black tracking-wider uppercase">
-                Boletim Escolar
-              </div>
-              {/* Faixa Laranja com o Design Inclinado */}
-              <div className="h-[12px] bg-[#f07800] relative w-full overflow-hidden">
-                {/* Slanted Cortes em Azul */}
-                <div className="absolute right-12 top-0 bottom-0 w-3 bg-[#0b4a8c] transform -skew-x-[25deg]" />
-                <div className="absolute right-4 top-0 bottom-0 w-5 bg-[#0b4a8c] transform -skew-x-[25deg]" />
-              </div>
+            {/* Topo: Imagem top_boletim.png */}
+            <div className="w-full select-none">
+              <img
+                src={getCacheBustedUrl(`${supabaseUrl}/storage/v1/object/public/logos/top_boletim.png`)}
+                alt="Capa Boletim Topo"
+                className="w-full h-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
 
             {/* Centro: Logotipo / Selo Circular */}
@@ -445,92 +443,16 @@ export function PrintBoletimSapeacu({
               })()}
             </div>
 
-            {/* Painel de Identificação */}
-            <div className="w-full px-8 text-left text-xs font-bold space-y-2 max-w-[370px]">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Aluno(a)</span>
-                <input
-                  type="text"
-                  value={alunoNome}
-                  onChange={(e) => {
-                    setAlunoNome(e.target.value)
-                    setAlunoRodape(e.target.value)
-                  }}
-                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
-                />
-              </div>
-
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Unidade Escolar</span>
-                <input
-                  type="text"
-                  value={escolaEditada}
-                  onChange={(e) => setEscolaEditada(e.target.value)}
-                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Ano Letivo</span>
-                  <input
-                    type="text"
-                    value={anoLetivo}
-                    onChange={(e) => setAnoLetivo(e.target.value)}
-                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
-                  />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Matrícula / Código</span>
-                  <span className="border-b border-black w-full px-1 text-[11px] text-gray-800 py-0.5 truncate font-mono">
-                    {aluno.id}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Ano / Série</span>
-                  <input
-                    type="text"
-                    value={anoEscolar}
-                    onChange={(e) => setAnoEscolar(e.target.value)}
-                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
-                  />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Turma / Turno</span>
-                  <div className="flex gap-1 items-center">
-                    <input
-                      type="text"
-                      value={turmaNome}
-                      onChange={(e) => setTurmaNome(e.target.value)}
-                      className="bg-transparent border-b border-black w-10 text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-[11px]"
-                    />
-                    <span className="text-gray-400 font-normal">/</span>
-                    <input
-                      type="text"
-                      value={turno}
-                      onChange={(e) => setTurno(e.target.value)}
-                      className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-[11px]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Base: Faixa Azul e Laranja Inclinada (Simétrica ao Topo) */}
-            <div className="w-full relative select-none mt-2">
-              {/* Faixa Laranja */}
-              <div className="h-[12px] bg-[#f07800] relative w-full overflow-hidden">
-                {/* Slanted Cortes em Azul */}
-                <div className="absolute left-4 top-0 bottom-0 w-5 bg-[#0b4a8c] transform -skew-x-[25deg]" />
-                <div className="absolute left-12 top-0 bottom-0 w-3 bg-[#0b4a8c] transform -skew-x-[25deg]" />
-              </div>
-              {/* Faixa Azul Principal */}
-              <div className="bg-[#0b4a8c] h-[34px] w-full flex items-center justify-center text-white text-[8px] font-bold tracking-widest uppercase">
-                Prefeitura Municipal de Sapeaçú • Secretaria de Educação
-              </div>
+            {/* Base: Imagem bottom_boletim.png */}
+            <div className="w-full select-none">
+              <img
+                src={getCacheBustedUrl(`${supabaseUrl}/storage/v1/object/public/logos/bottom_boletim.png`)}
+                alt="Capa Boletim Base"
+                className="w-full h-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           </div>
         </div>
