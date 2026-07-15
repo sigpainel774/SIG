@@ -31,6 +31,12 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const requestHeaders = new Headers(request.headers)
+  if (user) {
+    requestHeaders.set('x-user-id', user.id)
+    requestHeaders.set('x-user-email', user.email || '')
+  }
+
   const { pathname } = request.nextUrl
 
   // Se não estiver logado e tentando acessar rota protegida, envia pro login
@@ -45,7 +51,13 @@ export async function proxy(request: NextRequest) {
   // será preciso buscar o nível no banco e rotear.
   // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
   if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
-    return supabaseResponse
+    const res = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c.name, c.value, c))
+    return res
   }
 
   if (user) {
@@ -68,7 +80,13 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return supabaseResponse
+  const finalResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+  supabaseResponse.cookies.getAll().forEach((c) => finalResponse.cookies.set(c.name, c.value, c))
+  return finalResponse
 }
 
 export const config = {

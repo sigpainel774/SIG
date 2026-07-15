@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
@@ -9,17 +10,25 @@ import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const headersList = await headers()
+  let userId = headersList.get('x-user-id')
+  let userEmail = headersList.get('x-user-email')
+
+  if (!userId || !userEmail) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id || null
+    userEmail = user?.email || null
+  }
 
   let isSuperAdmin = false
   let funcionario = null
   let acessos: any[] = []
   let vinculos: any[] = []
 
-  if (user && user.email) {
+  if (userId && userEmail) {
     // Busca o perfil completo via cache (0 queries no cache hit, 3 paralelas no miss)
-    const perfil = await getPerfilUsuario(user.id, user.email)
+    const perfil = await getPerfilUsuario(userId, userEmail)
 
     if (!perfil) {
       // Usuário órfão: logado mas sem cadastro na tabela funcionarios
