@@ -468,10 +468,79 @@ export function PrintBoletimSapeacu({
           {/* Metade Direita da Folha: A Tabela do Boletim */}
           <div className="absolute right-0 top-0 w-[148.5mm] h-full p-6 flex flex-col justify-between font-sans">
             <div>
-              {/* Mini Cabeçalho da Tabela */}
-              <div className="flex justify-between items-center text-[9.5px] font-bold text-black pb-1 border-b border-black mb-1.5 uppercase">
-                <span className="truncate max-w-[240px]">Aluno: {alunoNome}</span>
-                <span>Turma: {turmaNome} ({turno})</span>
+              {/* Cabeçalho Oficial Sapeaçu */}
+              <div className="flex items-center justify-center gap-4 relative pb-1 mb-2">
+                <img 
+                  src={getCacheBustedUrl(logoPrefeituraUrl)} 
+                  alt="Brasão" 
+                  className="w-10 h-10 object-contain absolute left-0"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div className="text-center font-black text-[10px] uppercase tracking-wide text-black leading-tight">
+                  <p>Estado da Bahia</p>
+                  <p>Prefeitura Municipal de Sapeaçu</p>
+                </div>
+              </div>
+              <div className="border-b-2 border-double border-black mb-2" />
+
+              {/* Caixa de Identificação do Aluno */}
+              <div className="border border-black bg-white select-text w-full mb-2">
+                {/* Linha do Aluno */}
+                <div className="flex items-center text-[9px] font-bold border-b border-black h-6 px-2">
+                  <span className="uppercase text-[8px] mr-1 shrink-0 text-black">Aluno (a):</span>
+                  <input 
+                    type="text" 
+                    value={alunoNome} 
+                    onChange={(e) => setAlunoNome(e.target.value)} 
+                    disabled={!isEditMode} 
+                    className="flex-1 bg-transparent focus:outline-none uppercase font-bold text-[9px] py-0 text-black" 
+                  />
+                </div>
+                {/* Linha de Ano, Turma e Turno */}
+                <div className="grid grid-cols-12 text-[9px] font-bold h-6">
+                  {/* Lado Esquerdo: Ano e Turma */}
+                  <div className="col-span-8 flex items-center px-2 border-r border-black gap-4">
+                    <div className="flex items-center">
+                      <span className="uppercase text-[8px] mr-1 shrink-0 text-black">Ano:</span>
+                      <input 
+                        type="text" 
+                        value={anoEscolar} 
+                        onChange={(e) => setAnoEscolar(e.target.value)} 
+                        disabled={!isEditMode} 
+                        className="w-20 bg-transparent focus:outline-none uppercase font-bold text-[9px] text-black" 
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <span className="uppercase text-[8px] mr-1 shrink-0 text-black">Turma:</span>
+                      <input 
+                        type="text" 
+                        value={turmaNome} 
+                        onChange={(e) => setTurmaNome(e.target.value)} 
+                        disabled={!isEditMode} 
+                        className="w-16 bg-transparent focus:outline-none uppercase font-bold text-[9px] text-black" 
+                      />
+                    </div>
+                  </div>
+                  {/* Lado Direito: Turno */}
+                  <div className="col-span-4 flex items-center justify-center gap-2 px-1">
+                    <span className="uppercase text-[8px] text-black">Turno:</span>
+                    <div className="flex items-center gap-1.5 text-[8.5px] text-black">
+                      <div className="flex items-center gap-0.5 select-none">
+                        <span>Mat</span>
+                        <span>({(turno.toLowerCase().includes('mat') || turno.toLowerCase().includes('manh')) ? 'X' : ' '})</span>
+                      </div>
+                      <div className="flex items-center gap-0.5 select-none">
+                        <span>Vesp</span>
+                        <span>({(turno.toLowerCase().includes('vesp') || turno.toLowerCase().includes('tard')) ? 'X' : ' '})</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Título de seção */}
+              <div className="text-center font-black text-[11px] uppercase tracking-wider my-1 text-black">
+                Anos Finais
               </div>
 
               {/* Tabela de Notas */}
@@ -483,18 +552,18 @@ export function PrintBoletimSapeacu({
                       Anos Finais
                     </th>
                   </tr>
-                  {/* Linha 2: Cabeçalhos principais (Corrigida: 8 colunas para alinhar com o rowSpan) */}
+                  {/* Linha 2: Cabeçalhos principais */}
                   <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[8.5px]">
-                    <th className="border border-black w-6"></th> {/* Espaço alinhado com a barra lateral de base/diversas */}
+                    <th className="border border-black w-6"></th>
                     <th className="border border-black px-1.5 py-0.5 text-left uppercase w-[38%]">
                       Componentes Curriculares
                     </th>
-                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
-                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
-                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
+                    <th className="border border-black py-0.5 w-[8%]">1º TRI</th>
+                    <th className="border border-black py-0.5 w-[8%]">2º TRI</th>
+                    <th className="border border-black py-0.5 w-[8%]">3º TRI</th>
                     <th className="border border-black py-0.5 w-[10%]">TOTAL</th>
-                    <th className="border border-black py-0.5 w-[11%]">Média Final</th>
                     <th className="border border-black py-0.5 w-[11%]">REC</th>
+                    <th className="border border-black py-0.5 w-[11%]">Média Final</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -569,14 +638,8 @@ export function PrintBoletimSapeacu({
                             </td>
 
                             {/* TOTAL */}
-                            <td className="border border-black py-0.5 bg-slate-50">
+                            <td className="border border-black py-0.5 bg-slate-50 text-black">
                               {total !== null ? total.toFixed(1) : '-'}
-                            </td>
-                            {/* Média Final */}
-                            <td className={`border border-black py-0.5 ${
-                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-950'
-                            }`}>
-                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
                             </td>
                             {/* Recuperação Final */}
                             <td className="border border-black p-0">
@@ -587,6 +650,12 @@ export function PrintBoletimSapeacu({
                                 disabled={!isEditMode}
                                 className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
+                            </td>
+                            {/* Média Final */}
+                            <td className={`border border-black py-0.5 ${
+                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-950'
+                            }`}>
+                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
                             </td>
                           </tr>
                         )
@@ -665,14 +734,8 @@ export function PrintBoletimSapeacu({
                             </td>
 
                             {/* TOTAL */}
-                            <td className="border border-black py-0.5 bg-slate-50">
+                            <td className="border border-black py-0.5 bg-slate-50 text-black">
                               {total !== null ? total.toFixed(1) : '-'}
-                            </td>
-                            {/* Média Final */}
-                            <td className={`border border-black py-0.5 ${
-                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-955'
-                            }`}>
-                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
                             </td>
                             {/* Recuperação Final */}
                             <td className="border border-black p-0">
@@ -684,6 +747,12 @@ export function PrintBoletimSapeacu({
                                 className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
+                            {/* Média Final */}
+                            <td className={`border border-black py-0.5 ${
+                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-955'
+                            }`}>
+                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
+                            </td>
                           </tr>
                         )
                       })
@@ -691,75 +760,67 @@ export function PrintBoletimSapeacu({
                   })()}
                 </tbody>
               </table>
-            </div>
 
-            {/* Rodapé: Legendas, Assinaturas e Resultado Final */}
-            <div className="space-y-1.5 mt-2 text-black">
-              {/* Legendas e Assinaturas Trimestrais */}
-              <div className="grid grid-cols-12 gap-2 items-start">
-                {/* Legenda */}
-                <div className="col-span-5 text-[7.5px] leading-relaxed text-black border border-black p-1 font-bold rounded-sm">
-                  <span className="block border-b border-black pb-0.5 mb-0.5 text-[8px] font-black uppercase text-center">
-                    Parte Diversificada
-                  </span>
-                  <div className="space-y-0.5 uppercase text-left">
-                    <p>ED: Em Desenvolvimento</p>
-                    <p>AO: Adequado</p>
-                    <p>AV: Avaliado</p>
-                  </div>
+              {/* Legenda da Parte Diversificada */}
+              <div className="text-[7.5px] font-bold text-black uppercase mt-2 mb-1 text-left w-full">
+                <span className="block font-black text-[8px] mb-0.5">Legenda da Parte Diversificada</span>
+                <div className="flex gap-6 font-bold text-slate-800">
+                  <span>ED: Em Desenvolvimento</span>
+                  <span>AD: Adequado</span>
+                  <span>AV: Avançado</span>
                 </div>
+              </div>
 
-                {/* Assinatura dos pais ou responsáveis (Trimestres) */}
-                <div className="col-span-7 border border-black p-1 rounded-sm flex flex-col justify-between min-h-[50px]">
-                  <span className="block border-b border-black pb-0.5 mb-0.5 text-[8px] font-black uppercase text-center">
-                    Assinatura dos Pais ou Responsáveis
-                  </span>
-                  <div className="grid grid-cols-3 gap-1 text-[7px]">
-                    <div className="flex flex-col gap-0.5">
-                      <input
-                        type="text"
-                        value={assinaturaTrimestre1}
-                        onChange={(e) => setAssinaturaTrimestre1(e.target.value)}
-                        placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
-                      />
-                      <span className="text-center font-bold text-[7px] uppercase">1º Trimestre</span>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <input
-                        type="text"
-                        value={assinaturaTrimestre2}
-                        onChange={(e) => setAssinaturaTrimestre2(e.target.value)}
-                        placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
-                      />
-                      <span className="text-center font-bold text-[7px] uppercase">2º Trimestre</span>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <input
-                        type="text"
-                        value={assinaturaTrimestre3}
-                        onChange={(e) => setAssinaturaTrimestre3(e.target.value)}
-                        placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
-                      />
-                      <span className="text-center font-bold text-[7px] uppercase">3º Trimestre</span>
-                    </div>
+              {/* Seção de Assinatura dos Pais */}
+              <div className="w-full mt-2.5">
+                <div className="text-center font-black text-[8.5px] uppercase tracking-wider text-black mb-1">
+                  Assinatura dos pais ou responsáveis
+                </div>
+                <div className="border border-black rounded-sm w-full bg-white select-text">
+                  <div className="flex items-center text-[9px] font-bold border-b border-black h-7 px-2">
+                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">1º Trimestre:</span>
+                    <input
+                      type="text"
+                      value={assinaturaTrimestre1}
+                      onChange={(e) => setAssinaturaTrimestre1(e.target.value)}
+                      placeholder="Assinatura"
+                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
+                    />
+                  </div>
+                  <div className="flex items-center text-[9px] font-bold border-b border-black h-7 px-2">
+                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">2º Trimestre:</span>
+                    <input
+                      type="text"
+                      value={assinaturaTrimestre2}
+                      onChange={(e) => setAssinaturaTrimestre2(e.target.value)}
+                      placeholder="Assinatura"
+                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
+                    />
+                  </div>
+                  <div className="flex items-center text-[9px] font-bold h-7 px-2">
+                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">3º Trimestre:</span>
+                    <input
+                      type="text"
+                      value={assinaturaTrimestre3}
+                      onChange={(e) => setAssinaturaTrimestre3(e.target.value)}
+                      placeholder="Assinatura"
+                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Resultado Final (Bottom Section) */}
-              <div className="border border-black p-1.5 rounded-sm space-y-1">
+              {/* Resultado Final */}
+              <div className="border border-black p-2 rounded-sm space-y-2 mt-2.5 bg-white select-text w-full">
                 <h3 className="text-center text-[8.5px] font-black uppercase tracking-wider text-black">
                   Resultado Final
                 </h3>
                 
                 <div className="h-px bg-black w-full" />
 
-                <div className="grid grid-cols-12 gap-y-1 gap-x-2 text-[8.5px] font-bold">
-                  <div className="col-span-9 flex items-center gap-1">
-                    <span className="uppercase text-[8px] shrink-0 text-slate-700">O(A) aluno (a):</span>
+                <div className="space-y-2 text-[8.5px] font-bold text-black">
+                  <div className="flex items-center gap-1">
+                    <span className="uppercase text-[8px] shrink-0">O(A) aluno (a):</span>
                     <input
                       type="text"
                       value={alunoRodape}
@@ -768,43 +829,38 @@ export function PrintBoletimSapeacu({
                     />
                   </div>
 
-                  <div className="col-span-3 flex items-center gap-1">
-                    <span className="uppercase text-[8px] shrink-0 text-slate-700">fol:</span>
+                  <div className="flex items-center gap-1">
+                    <span className="uppercase text-[8px] shrink-0">foi</span>
                     <input
                       type="text"
                       value={fol}
                       onChange={(e) => setFol(e.target.value)}
-                      className="flex-1 bg-transparent border-b border-black focus:outline-none text-center font-bold text-black py-0 px-0.5 text-[8.5px]"
+                      className="w-48 bg-transparent border-b border-black focus:outline-none font-bold text-black py-0 px-1 text-[8.5px]"
                     />
                   </div>
                 </div>
 
                 {/* Linhas de Assinatura do Gestor e Data */}
-                <div className="grid grid-cols-12 gap-2 items-end pt-0.5">
-                  <div className="col-span-5 text-center flex flex-col justify-end min-h-[20px]">
-                    <div className="border-b border-black w-full" />
-                    <span className="text-[7px] uppercase font-bold text-slate-500 mt-0.5 block">Assinatura Secretário(a)</span>
-                  </div>
-
-                  <div className="col-span-4 text-center flex flex-col justify-end min-h-[20px]">
+                <div className="flex justify-between items-end pt-3 px-2">
+                  <div className="text-center flex flex-col justify-end w-[45%]">
                     <input
                       type="text"
                       value={gestorAssinatura}
                       onChange={(e) => setGestorAssinatura(e.target.value)}
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-bold py-0 h-3.5 uppercase"
+                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-bold py-0 h-4 uppercase text-black"
                     />
-                    <span className="text-[7px] uppercase font-bold text-slate-700 mt-0.5 block">Gestor(a)</span>
+                    <span className="text-[7px] uppercase font-bold text-black mt-1 block">Gestor(a)</span>
                   </div>
 
-                  <div className="col-span-3 text-center flex flex-col justify-end min-h-[20px]">
+                  <div className="text-center flex flex-col justify-end w-[35%]">
                     <input
                       type="text"
                       value={dataEmissao}
                       onChange={(e) => setDataEmissao(e.target.value)}
                       placeholder="__/__/____"
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-mono font-bold py-0 h-3.5"
+                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-mono font-bold py-0 h-4 text-black"
                     />
-                    <span className="text-[7px] uppercase font-bold text-slate-700 mt-0.5 block">Data</span>
+                    <span className="text-[7px] uppercase font-bold text-black mt-1 block">Data</span>
                   </div>
                 </div>
               </div>
