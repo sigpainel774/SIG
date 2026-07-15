@@ -32,7 +32,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | null
+type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'notas' | null
 
 export default function RelatoriosPage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -149,6 +149,13 @@ export default function RelatoriosPage() {
       description: 'Logs de ponto e ronda (App Mobile).',
       icon: Scan,
       variant: 'primary' as const,
+    },
+    {
+      id: 'notas' as const,
+      title: 'Relatório de Notas',
+      description: 'Módulo em desenvolvimento.',
+      icon: GraduationCap,
+      variant: 'warning' as const,
     },
   ]
 
