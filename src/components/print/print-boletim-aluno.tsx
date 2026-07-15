@@ -15,6 +15,7 @@ export interface BoletimNotaData {
   nota1: number | null
   nota2: number | null
   nota3: number | null
+  nota4: number | null
 }
 
 export interface BoletimRecuperacaoData {
@@ -78,19 +79,24 @@ export function PrintBoletimAluno({
     return notas.find(n => n.materia_id === materiaId && n.unidade === unidade) || {
       nota1: null,
       nota2: null,
-      nota3: null
+      nota3: null,
+      nota4: null
     }
   }
 
   const calcularMediaUnidade = (materiaId: string, unidade: number) => {
     const n = obterNotasUnidade(materiaId, unidade)
-    const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+    const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
     if (validas.length === 0) return null
     // Contamos notas não lançadas como 0 caso pelo menos uma tenha sido lançada
     const n1 = n.nota1 ?? 0
     const n2 = n.nota2 ?? 0
     const n3 = n.nota3 ?? 0
-    return parseFloat(((Number(n1) + Number(n2) + Number(n3)) / 3).toFixed(1))
+    const n4 = n.nota4 ?? null
+    
+    const divisor = (n4 !== null) ? 4 : 3
+    const soma = Number(n1) + Number(n2) + Number(n3) + (n4 !== null ? Number(n4) : 0)
+    return parseFloat((soma / divisor).toFixed(1))
   }
 
   const calcularMediaFinalOriginal = (materiaId: string) => {

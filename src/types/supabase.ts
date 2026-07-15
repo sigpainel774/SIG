@@ -1417,6 +1417,7 @@ export type Database = {
           nota1: number | null
           nota2: number | null
           nota3: number | null
+          nota4: number | null
           turma_id: string
           unidade: number
         }
@@ -1429,6 +1430,7 @@ export type Database = {
           nota1?: number | null
           nota2?: number | null
           nota3?: number | null
+          nota4?: number | null
           turma_id: string
           unidade: number
         }
@@ -1441,6 +1443,7 @@ export type Database = {
           nota1?: number | null
           nota2?: number | null
           nota3?: number | null
+          nota4?: number | null
           turma_id?: string
           unidade?: number
         }

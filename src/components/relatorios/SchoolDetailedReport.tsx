@@ -27,6 +27,7 @@ export function SchoolDetailedReport({
 }: SchoolDetailedReportProps) {
   const [selectedTurma, setSelectedTurma] = useState('todos')
   const [selectedMateria, setSelectedMateria] = useState('todos')
+  const [selectedUnidade, setSelectedUnidade] = useState('todos')
 
   useEffect(() => {
     onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria })
@@ -46,15 +47,15 @@ export function SchoolDetailedReport({
           notasPorMateria[n.materia_id] = { t1: null, t2: null, t3: null }
         }
         if (n.unidade === 1) {
-          const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
           notasPorMateria[n.materia_id].t1 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
         }
         if (n.unidade === 2) {
-          const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
           notasPorMateria[n.materia_id].t2 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
         }
         if (n.unidade === 3) {
-          const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
           notasPorMateria[n.materia_id].t3 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
         }
       })
@@ -106,6 +107,67 @@ export function SchoolDetailedReport({
     window.print()
   }
 
+  // Processamento das linhas analíticas detalhadas
+  const rowsAnaliticas = alunos
+    .filter((aluno) => selectedTurma === 'todos' || aluno.turma_id === selectedTurma)
+    .flatMap((aluno) => {
+      const notasAluno = notas.filter((n) => n.aluno_id === aluno.id)
+      const turmaNome = turmas.find((t) => t.id === aluno.turma_id)?.nome || 'Sem Turma'
+
+      const materiasExibir = materias.filter(
+        (m) => selectedMateria === 'todos' || m.id === selectedMateria
+      )
+
+      return materiasExibir.flatMap((materia) => {
+        const unidades = [1, 2, 3].filter(
+          (u) => selectedUnidade === 'todos' || u === Number(selectedUnidade)
+        )
+
+        return unidades.map((unidade) => {
+          const n = notasAluno.find(
+            (note) => note.materia_id === materia.id && note.unidade === unidade
+          )
+
+          const nota1 = n?.nota1 ?? null
+          const nota2 = n?.nota2 ?? null
+          const nota3 = n?.nota3 ?? null
+          const nota4 = n?.nota4 ?? null
+
+          // Se nenhuma nota está lançada para esta combinação, podemos omitir ou exibir zerado
+          // Mostrar apenas se houver pelo menos uma nota ou se não houver filtro estrito
+          const validas = [nota1, nota2, nota3, nota4].filter(
+            (v): v is number => v !== null && !isNaN(v)
+          )
+
+          let media: number | null = null
+          if (validas.length > 0) {
+            const val1 = nota1 ?? 0
+            const val2 = nota2 ?? 0
+            const val3 = nota3 ?? 0
+            const val4 = nota4 ?? 0
+            
+            // Divisor dinâmico: se a nota 4 opcional for informada, dividimos por 4.
+            const divisor = (nota4 !== null) ? 4 : 3
+            const soma = val1 + val2 + val3 + (nota4 !== null ? val4 : 0)
+            media = parseFloat((soma / divisor).toFixed(1))
+          }
+
+          return {
+            key: `${aluno.id}_${materia.id}_${unidade}`,
+            alunoNome: aluno.nome,
+            turmaNome,
+            materiaNome: materia.nome,
+            unidade,
+            nota1,
+            nota2,
+            nota3,
+            nota4,
+            media
+          }
+        })
+      })
+    })
+
   return (
     <div className="space-y-6">
       {/* Filtros Internos do Relatório */}
@@ -142,6 +204,21 @@ export function SchoolDetailedReport({
                   {m.nome}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Seletor de Unidade */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Unidade / Trimestre</label>
+            <select
+              value={selectedUnidade}
+              onChange={(e) => setSelectedUnidade(e.target.value)}
+              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[150px]"
+            >
+              <option value="todos">Todos os trimestres</option>
+              <option value="1">1º Trimestre</option>
+              <option value="2">2º Trimestre</option>
+              <option value="3">3º Trimestre</option>
             </select>
           </div>
         </div>
@@ -239,7 +316,7 @@ export function SchoolDetailedReport({
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
             <span className="text-xs">Carregando diário de notas...</span>
           </div>
-        ) : alunosProcessados.length === 0 ? (
+        ) : rowsAnaliticas.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-border rounded-xl text-muted-foreground text-xs italic">
             Nenhum estudante encontrado com os filtros aplicados nesta unidade escolar.
           </div>
@@ -250,56 +327,31 @@ export function SchoolDetailedReport({
                 <tr className="border-b border-border">
                   <th className="p-3">Estudante</th>
                   <th className="p-3">Turma</th>
-                  <th className="p-3">1º Trimestre</th>
-                  <th className="p-3">2º Trimestre</th>
-                  <th className="p-3">3º Trimestre</th>
-                  <th className="p-3 text-right">Média Final</th>
+                  <th className="p-3">Disciplina</th>
+                  <th className="p-3">Trimestre</th>
+                  <th className="p-3 text-center w-14">Nota 1</th>
+                  <th className="p-3 text-center w-14">Nota 2</th>
+                  <th className="p-3 text-center w-14">Nota 3</th>
+                  <th className="p-3 text-center w-14">Nota 4</th>
+                  <th className="p-3 text-right w-24">Média Unidade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {alunosProcessados.map((aluno) => {
-                  // Agrupar médias do aluno para exibir uma linha resumo na tabela
-                  const m1Valores = aluno.mediasMaterias.map((m) => m.t1).filter((v): v is number => v !== null)
-                  const m2Valores = aluno.mediasMaterias.map((m) => m.t2).filter((v): v is number => v !== null)
-                  const m3Valores = aluno.mediasMaterias.map((m) => m.t3).filter((v): v is number => v !== null)
-
-                  const tri1 = m1Valores.length > 0 ? (m1Valores.reduce((a, b) => a + b, 0) / m1Valores.length) : null
-                  const tri2 = m2Valores.length > 0 ? (m2Valores.reduce((a, b) => a + b, 0) / m2Valores.length) : null
-                  const tri3 = m3Valores.length > 0 ? (m3Valores.reduce((a, b) => a + b, 0) / m3Valores.length) : null
-                  
-                  const mediaFinal = aluno.mediaGeralAluno
-
-                  const turmaNome = turmas.find((t) => t.id === aluno.turmaId)?.nome || 'Sem Turma'
-
+                {rowsAnaliticas.map((row) => {
                   return (
-                    <tr key={aluno.id} className="hover:bg-hoverCustom transition-colors">
-                      <td className="p-3 font-bold text-foreground uppercase">{aluno.nome}</td>
-                      <td className="p-3 font-semibold text-muted-foreground">{turmaNome}</td>
-                      <td className="p-3 font-mono">
-                        {tri1 !== null ? (
-                          <span className={tri1 < 5.0 ? 'text-rose-400 font-bold' : 'text-foreground'}>
-                            {tri1.toFixed(1)}
-                          </span>
-                        ) : '-'}
-                      </td>
-                      <td className="p-3 font-mono">
-                        {tri2 !== null ? (
-                          <span className={tri2 < 5.0 ? 'text-rose-400 font-bold' : 'text-foreground'}>
-                            {tri2.toFixed(1)}
-                          </span>
-                        ) : '-'}
-                      </td>
-                      <td className="p-3 font-mono">
-                        {tri3 !== null ? (
-                          <span className={tri3 < 5.0 ? 'text-rose-400 font-bold' : 'text-foreground'}>
-                            {tri3.toFixed(1)}
-                          </span>
-                        ) : '-'}
-                      </td>
+                    <tr key={row.key} className="hover:bg-hoverCustom transition-colors">
+                      <td className="p-3 font-bold text-foreground uppercase">{row.alunoNome}</td>
+                      <td className="p-3 font-semibold text-muted-foreground">{row.turmaNome}</td>
+                      <td className="p-3 font-semibold text-muted-foreground">{row.materiaNome}</td>
+                      <td className="p-3 font-semibold text-muted-foreground">{row.unidade}º Trim</td>
+                      <td className="p-3 font-mono text-center">{row.nota1 !== null ? row.nota1.toFixed(1) : '-'}</td>
+                      <td className="p-3 font-mono text-center">{row.nota2 !== null ? row.nota2.toFixed(1) : '-'}</td>
+                      <td className="p-3 font-mono text-center">{row.nota3 !== null ? row.nota3.toFixed(1) : '-'}</td>
+                      <td className="p-3 font-mono text-center">{row.nota4 !== null ? row.nota4.toFixed(1) : '-'}</td>
                       <td className="p-3 font-mono text-right font-black">
-                        {mediaFinal !== null ? (
-                          <span className={mediaFinal < 5.0 ? 'text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20' : 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20'}>
-                            {mediaFinal.toFixed(1)}
+                        {row.media !== null ? (
+                          <span className={row.media < 5.0 ? 'text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20' : 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20'}>
+                            {row.media.toFixed(1)}
                           </span>
                         ) : '-'}
                       </td>

@@ -20,6 +20,7 @@ export interface BoletimNotaData {
   nota1: number | null
   nota2: number | null
   nota3: number | null
+  nota4: number | null
 }
 
 export interface BoletimRecuperacaoData {
@@ -123,7 +124,7 @@ export function PrintBoletimSapeacu({
 
     const initialNotas: Record<string, string> = {}
     notas.forEach((n) => {
-      const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+      const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
       if (validas.length > 0) {
         const soma = validas.reduce((a, b) => a + b, 0)
         const media = parseFloat((soma / validas.length).toFixed(1))
@@ -224,7 +225,8 @@ export function PrintBoletimSapeacu({
               unidade: unidade,
               nota1: notaVal,
               nota2: notaVal,
-              nota3: notaVal
+              nota3: notaVal,
+              nota4: null
             })
           }
         }
