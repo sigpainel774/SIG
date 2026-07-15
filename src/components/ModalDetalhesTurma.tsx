@@ -542,13 +542,21 @@ export function ModalDetalhesTurma({
       return
     }
 
+    const alreadyExists = materias.some(
+      (m: any) => m.nome.trim().toLowerCase() === novaMateriaNome.trim().toLowerCase()
+    )
+    if (alreadyExists) {
+      toast.error('Esta matéria já está vinculada a esta turma.')
+      return
+    }
+
     try {
       const { error } = await supabase
         .from('materias')
         .insert({
           nome: novaMateriaNome.trim(),
           turma_id: turma.id,
-          escola_id: escolaAtivaId ?? '',
+          escola_id: escolaAtivaId || null,
           professor_id: novaMateriaProfId === 'sem_professor' || !novaMateriaProfId ? null : novaMateriaProfId,
           base_curricular: novaMateriaBaseCurricular
         })
@@ -561,6 +569,43 @@ export function ModalDetalhesTurma({
       mutateTurmaData() // Recarregar matérias
     } catch (err: any) {
       toast.error('Erro ao adicionar matéria: ' + err.message)
+    }
+  }
+
+  const handleImportarMateriasDaGrade = async () => {
+    if (!catalogoMaterias || catalogoMaterias.length === 0) {
+      toast.info('Não há matérias na grade curricular desta escola.')
+      return
+    }
+
+    try {
+      const missingMaterias = catalogoMaterias.filter((gridMat: any) => 
+        !materias.some((mat: any) => mat.nome.trim().toLowerCase() === gridMat.nome.trim().toLowerCase())
+      )
+
+      if (missingMaterias.length === 0) {
+        toast.info('Todas as matérias da grade já estão nesta turma.')
+        return
+      }
+
+      const inserts = missingMaterias.map((gridMat: any) => ({
+        nome: gridMat.nome.trim(),
+        turma_id: turma.id,
+        escola_id: escolaAtivaId || null,
+        professor_id: null,
+        base_curricular: gridMat.base_curricular || 'comum'
+      }))
+
+      const { error } = await supabase
+        .from('materias')
+        .insert(inserts)
+
+      if (error) throw error
+
+      toast.success(`${missingMaterias.length} matéria(s) importada(s) com sucesso!`)
+      mutateTurmaData() // Recarregar matérias
+    } catch (err: any) {
+      toast.error('Erro ao importar matérias da grade: ' + err.message)
     }
   }
 
@@ -942,13 +987,22 @@ export function ModalDetalhesTurma({
                             </span>
                           </div>
                         </div>
-                        <Button
-                          onClick={handleAddMateria}
-                          className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3 text-xs"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Adicionar Matéria
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={handleAddMateria}
+                            className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3 text-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Adicionar Matéria
+                          </Button>
+                          <Button
+                            onClick={handleImportarMateriasDaGrade}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 w-9 p-0 text-xs rounded-lg flex items-center justify-center"
+                            title="Importar todas as matérias da grade curricular"
+                          >
+                            T
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Lista de Matérias */}
