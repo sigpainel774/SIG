@@ -148,3 +148,15 @@
 
 - **Idioma de Comunicação**: O agente deve sempre se comunicar e explicar as alterações, diagnósticos e planos em português brasileiro (PT-BR).
 <!-- END:language-preference-rule -->
+
+<!-- BEGIN:project-map-rule -->
+# Leitura Prévia de Mapeamento do Projeto
+
+- **Uso do PROJECT_MAP.md**: O agente deve SEMPRE realizar a leitura do arquivo `PROJECT_MAP.md` localizado na raiz do projeto (`c:\Users\Pc\Documents\GitHub\SIG\PROJECT_MAP.md`) logo no início de qualquer nova iteração de prompt de alteração ou diagnóstico antes de realizar buscas ou varreduras nos diretórios.
+<!-- END:project-map-rule -->
+
+<!-- BEGIN:db-map-rule -->
+# Leitura Prévia de Mapeamento do Banco de Dados
+
+- **Uso do DB_MAP.md**: O agente deve SEMPRE realizar a leitura do arquivo `DB_MAP.md` localizado na raiz do projeto (`c:\Users\Pc\Documents\GitHub\SIG\DB_MAP.md`) antes de formular ou executar qualquer query SQL, insert, update ou delete, a fim de garantir a exatidão dos nomes de tabelas, colunas, chaves estrangeiras e tipos de dados sem a necessidade de varredura prévia de tabelas via API.
+<!-- END:db-map-rule -->
