@@ -58,7 +58,7 @@ export function ModalDetalhesTurma({
   const [selectedAgendaAulaId, setSelectedAgendaAulaId] = useState<string | null>(null)
 
   // Notas
-  const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null }>>({}) // alunoId_materiaId_unidade -> notas
+  const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null; nota4: string | number | null }>>({}) // alunoId_materiaId_unidade -> notas
   const [recuperacoesState, setRecuperacoesState] = useState<Record<string, { nota: string | number | null }>>({}) // alunoId_materiaId -> recuperacao
   const [unidadesAtivas, setUnidadesAtivas] = useState<Record<string, number>>({}) // materiaId -> unidade ativa (1, 2 ou 3)
   const [savingNotas, setSavingNotas] = useState<Record<string, boolean>>({}) // materiaId -> loading de salvar
@@ -194,7 +194,7 @@ export function ModalDetalhesTurma({
     open && turma?.id ? ['notas-turma', turma.id] : null,
     async () => {
       const [notasRes, recsRes] = await Promise.all([
-        supabase.from('notas').select('aluno_id, materia_id, unidade, nota1, nota2, nota3').eq('turma_id', turma.id),
+        supabase.from('notas').select('aluno_id, materia_id, unidade, nota1, nota2, nota3, nota4').eq('turma_id', turma.id),
         supabase.from('recuperacoes_finais').select('aluno_id, materia_id, nota').eq('turma_id', turma.id)
       ])
       if (notasRes.error) throw notasRes.error
@@ -205,7 +205,8 @@ export function ModalDetalhesTurma({
         notasMap[`${n.aluno_id}_${n.materia_id}_${n.unidade}`] = {
           nota1: n.nota1 !== null ? String(n.nota1) : null,
           nota2: n.nota2 !== null ? String(n.nota2) : null,
-          nota3: n.nota3 !== null ? String(n.nota3) : null
+          nota3: n.nota3 !== null ? String(n.nota3) : null,
+          nota4: n.nota4 !== null ? String(n.nota4) : null
         }
       })
 
@@ -329,7 +330,7 @@ export function ModalDetalhesTurma({
     alunoId: string,
     materiaId: string,
     unidade: number,
-    campo: 'nota1' | 'nota2' | 'nota3',
+    campo: 'nota1' | 'nota2' | 'nota3' | 'nota4',
     valor: string
   ) => {
     const rawVal = valor.replace(',', '.')
@@ -338,7 +339,7 @@ export function ModalDetalhesTurma({
       setNotasState(prev => ({
         ...prev,
         [key]: {
-          ...(prev[key] || { nota1: null, nota2: null, nota3: null }),
+          ...(prev[key] || { nota1: null, nota2: null, nota3: null, nota4: null }),
           [campo]: null
         }
       }))
@@ -354,7 +355,7 @@ export function ModalDetalhesTurma({
     setNotasState(prev => ({
       ...prev,
       [key]: {
-        ...(prev[key] || { nota1: null, nota2: null, nota3: null }),
+        ...(prev[key] || { nota1: null, nota2: null, nota3: null, nota4: null }),
         [campo]: rawVal
       }
     }))
@@ -397,7 +398,7 @@ export function ModalDetalhesTurma({
       // 1. Salvar notas das unidades
       const upserts = alunos.map(aluno => {
         const key = `${aluno.id}_${materiaId}_${unidade}`
-        const n = notasState[key] || { nota1: null, nota2: null, nota3: null }
+        const n = notasState[key] || { nota1: null, nota2: null, nota3: null, nota4: null }
         return {
           aluno_id: aluno.id,
           turma_id: turma.id,
@@ -406,7 +407,8 @@ export function ModalDetalhesTurma({
           unidade: unidade,
           nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
           nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
-          nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+          nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null,
+          nota4: n.nota4 !== null && n.nota4 !== '' ? Number(n.nota4) : null
         }
       })
 
@@ -723,22 +725,27 @@ export function ModalDetalhesTurma({
       materias.forEach(mat => {
         const keyPrefix = `${aluno.id}_${mat.id}`
         
-        const n1Data = notasState[`${keyPrefix}_1`] || { nota1: null, nota2: null, nota3: null }
-        const n2Data = notasState[`${keyPrefix}_2`] || { nota1: null, nota2: null, nota3: null }
-        const n3Data = notasState[`${keyPrefix}_3`] || { nota1: null, nota2: null, nota3: null }
+        const n1Data = notasState[`${keyPrefix}_1`] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const n2Data = notasState[`${keyPrefix}_2`] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const n3Data = notasState[`${keyPrefix}_3`] || { nota1: null, nota2: null, nota3: null, nota4: null }
 
         const parseUnidade = (n: typeof n1Data) => {
           const v1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
           const v2 = n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null
           const v3 = n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+          const v4 = n.nota4 !== null && n.nota4 !== '' ? Number(n.nota4) : null
           
-          const validas = [v1, v2, v3].filter((v): v is number => v !== null && !isNaN(v))
+          const validas = [v1, v2, v3, v4].filter((v): v is number => v !== null && !isNaN(v))
           if (validas.length === 0) return null
           
           const val1 = v1 ?? 0
           const val2 = v2 ?? 0
           const val3 = v3 ?? 0
-          return parseFloat(((val1 + val2 + val3) / 3).toFixed(1))
+          const val4 = v4 ?? 0
+          
+          const divisor = (v4 !== null) ? 4 : 3
+          const soma = val1 + val2 + val3 + (v4 !== null ? val4 : 0)
+          return parseFloat((soma / divisor).toFixed(1))
         }
 
         const m1 = parseUnidade(n1Data)
@@ -804,7 +811,8 @@ export function ModalDetalhesTurma({
             unidade: unid,
             nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
             nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
-            nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
+            nota3: n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null,
+            nota4: n.nota4 !== null && n.nota4 !== '' ? Number(n.nota4) : null
           })
         }
       })
@@ -1334,6 +1342,7 @@ export function ModalDetalhesTurma({
                                       <th className="p-3 w-16 text-center">Nota 1</th>
                                       <th className="p-3 w-16 text-center">Nota 2</th>
                                       <th className="p-3 w-16 text-center">Nota 3</th>
+                                      <th className="p-3 w-16 text-center">Nota 4</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/40">Média Unid.</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
                                       <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/85">Recup. Final</th>
@@ -1366,6 +1375,7 @@ export function ModalDetalhesTurma({
                                             nota1={n.nota1 !== null ? String(n.nota1) : null}
                                             nota2={n.nota2 !== null ? String(n.nota2) : null}
                                             nota3={n.nota3 !== null ? String(n.nota3) : null}
+                                            nota4={n.nota4 !== null ? String(n.nota4) : null}
                                             recNota={rec.nota !== null ? String(rec.nota) : null}
                                             mediaUnid={mediaUnid}
                                             mediaFinal={calc.mediaFinal}
@@ -1415,6 +1425,7 @@ interface RowAlunoNotasProps {
   nota1: string | null
   nota2: string | null
   nota3: string | null
+  nota4: string | null
   recNota: string | null
   mediaUnid: number | null
   mediaFinal: number | null
@@ -1425,7 +1436,7 @@ interface RowAlunoNotasProps {
     alunoId: string,
     materiaId: string,
     unidade: number,
-    campo: 'nota1' | 'nota2' | 'nota3',
+    campo: 'nota1' | 'nota2' | 'nota3' | 'nota4',
     valor: string
   ) => void
   onRecuperacaoChange: (
@@ -1444,6 +1455,7 @@ const RowAlunoNotas = memo(
     nota1,
     nota2,
     nota3,
+    nota4,
     recNota,
     mediaUnid,
     mediaFinal,
@@ -1485,6 +1497,17 @@ const RowAlunoNotas = memo(
             type="text"
             value={nota3 ?? ''}
             onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota3', e.target.value)}
+            placeholder="-"
+            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+          />
+        </td>
+
+        {/* Nota 4 */}
+        <td className="p-2 text-center">
+          <input
+            type="text"
+            value={nota4 ?? ''}
+            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota4', e.target.value)}
             placeholder="-"
             className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
           />
@@ -1552,6 +1575,7 @@ const RowAlunoNotas = memo(
       prevProps.nota1 === nextProps.nota1 &&
       prevProps.nota2 === nextProps.nota2 &&
       prevProps.nota3 === nextProps.nota3 &&
+      prevProps.nota4 === nextProps.nota4 &&
       prevProps.recNota === nextProps.recNota &&
       prevProps.mediaUnid === nextProps.mediaUnid &&
       prevProps.mediaFinal === nextProps.mediaFinal &&

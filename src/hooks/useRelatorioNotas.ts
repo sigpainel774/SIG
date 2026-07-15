@@ -13,6 +13,7 @@ export interface NotaRecord {
   nota1: number | null
   nota2: number | null
   nota3: number | null
+  nota4: number | null
   alunos?: {
     nome: string
   }
@@ -101,7 +102,7 @@ export function useRelatorioNotas(escolaId: string | null) {
         // 2. Buscar Notas
         let queryNotas = supabase
           .from('notas')
-          .select('id, aluno_id, materia_id, turma_id, escola_id, unidade, nota1, nota2, nota3, alunos!inner(nome)')
+          .select('id, aluno_id, materia_id, turma_id, escola_id, unidade, nota1, nota2, nota3, nota4, alunos!inner(nome)')
           .eq('escola_id', escolaId)
         
         if (filters.turmaId && filters.turmaId !== 'todos') {
@@ -122,7 +123,7 @@ export function useRelatorioNotas(escolaId: string | null) {
           supabase.from('escolas').select('id, nome').is('deleted_at', null),
           supabase.from('turmas').select('id, escola_id').is('deleted_at', null),
           supabase.from('alunos').select('id, escola_id').is('deleted_at', null),
-          supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3')
+          supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3, nota4')
         ])
 
         if (escolasRes.error) throw escolasRes.error
@@ -146,7 +147,7 @@ export function useRelatorioNotas(escolaId: string | null) {
           const alunoMedias: Record<string, number[]> = {}
           
           escNotas.forEach((n) => {
-            const validas = [n.nota1, n.nota2, n.nota3].filter((val): val is number => val !== null && !isNaN(Number(val)))
+            const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
             if (validas.length > 0) {
               const soma = validas.reduce((a, b) => a + b, 0)
               const media = soma / validas.length
