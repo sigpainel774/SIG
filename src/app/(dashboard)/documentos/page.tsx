@@ -28,7 +28,6 @@ import { toast } from 'sonner'
 import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
 import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
 import { PrintDocumentoEscolar } from '@/components/print/print-documento-escolar'
-import { PrintBoletimAluno } from '@/components/print/print-boletim-aluno'
 import { PrintBoletimSapeacu } from '@/components/print/print-boletim-sapeacu'
 
 export default function DocumentosPage() {
@@ -51,7 +50,6 @@ export default function DocumentosPage() {
   const [alunoImprimirComprovante, setAlunoImprimirComprovante] = useState<any | null>(null)
   const [alunoImprimirDocumentoEscolar, setAlunoImprimirDocumentoEscolar] = useState<any | null>(null)
   const [alunoImprimirBoletim, setAlunoImprimirBoletim] = useState<any | null>(null)
-  const [alunoImprimirBoletimSapeacu, setAlunoImprimirBoletimSapeacu] = useState<any | null>(null)
   const [boletimData, setBoletimData] = useState<{
     turma: any
     escolaNome: string
@@ -256,7 +254,7 @@ export default function DocumentosPage() {
       setAlunoImprimirFicha(alunoSelecionado)
     } else if (docType === 'comprovante-matricula') {
       setAlunoImprimirComprovante(alunoSelecionado)
-    } else if (docType === 'boletim' || docType === 'boletim-sapeacu') {
+    } else if (docType === 'boletim') {
       if (!alunoSelecionado?.turma_id) {
         toast.error('Este aluno não possui vínculo com nenhuma turma. Não é possível emitir o boletim.')
         return
@@ -338,11 +336,7 @@ export default function DocumentosPage() {
           recuperacoes: formatadasRec
         })
         
-        if (docType === 'boletim-sapeacu') {
-          setAlunoImprimirBoletimSapeacu(alunoSelecionado)
-        } else {
-          setAlunoImprimirBoletim(alunoSelecionado)
-        }
+        setAlunoImprimirBoletim(alunoSelecionado)
       } catch (err: any) {
         console.error('Erro ao carregar dados do boletim:', err)
         toast.error(`Erro ao obter dados do boletim: ${err.message}`)
@@ -361,7 +355,6 @@ export default function DocumentosPage() {
     { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
     { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
     { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
-    { id: 'boletim-sapeacu', label: 'Boletim Sapeaçú (Anos Finais)', icon: FileText, desc: 'Boletim oficial de Anos Finais da Prefeitura de Sapeaçú editável e imprimível.' },
   ]
 
   return (
@@ -394,9 +387,9 @@ export default function DocumentosPage() {
           }}
         />
       )}
-      {/* Impressão overlay - Boletim Escolar */}
+      {/* Impressão overlay - Boletim Escolar Oficial */}
       {alunoImprimirBoletim && boletimData && (
-        <PrintBoletimAluno
+        <PrintBoletimSapeacu
           aluno={alunoImprimirBoletim}
           turma={boletimData.turma}
           escolaNome={boletimData.escolaNome}
@@ -406,23 +399,6 @@ export default function DocumentosPage() {
           recuperacoes={boletimData.recuperacoes}
           onClose={() => {
             setAlunoImprimirBoletim(null)
-            setBoletimData(null)
-          }}
-        />
-      )}
-
-      {/* Impressão overlay - Boletim Escolar Sapeaçú */}
-      {alunoImprimirBoletimSapeacu && boletimData && (
-        <PrintBoletimSapeacu
-          aluno={alunoImprimirBoletimSapeacu}
-          turma={boletimData.turma}
-          escolaNome={boletimData.escolaNome}
-          escolaLogoUrl={boletimData.escolaLogoUrl}
-          materias={boletimData.materias}
-          notas={boletimData.notas}
-          recuperacoes={boletimData.recuperacoes}
-          onClose={() => {
-            setAlunoImprimirBoletimSapeacu(null)
             setBoletimData(null)
           }}
         />
