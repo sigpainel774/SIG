@@ -36,7 +36,20 @@ export function PrintBoletim({
   ]
 }: Partial<PrintBoletimProps>) {
   const handlePrint = () => {
+    const originalTitle = document.title
+    const anoAtual = new Date().getFullYear()
+    const nomeFormatado = (nomeAluno || 'aluno')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '')
+
+    document.title = `${nomeFormatado}_boletim_${anoAtual}`
     window.print()
+    document.title = originalTitle
   }
 
   return (
