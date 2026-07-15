@@ -127,6 +127,7 @@ export default function AdminEscolasPage() {
         <Table>
           <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
             <TableRow className="border-none hover:bg-transparent">
+              <TableHead className="text-[#ccc] font-semibold w-24">Código</TableHead>
               <TableHead className="text-[#ccc] font-semibold">Nome da Escola</TableHead>
               <TableHead className="text-[#ccc] font-semibold">INEP</TableHead>
               <TableHead className="text-[#ccc] font-semibold">Tipo</TableHead>
@@ -137,6 +138,7 @@ export default function AdminEscolasPage() {
           <TableBody>
             {escolasFiltradas.map((escola) => (
               <TableRow key={escola.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
+                <TableCell className="text-purple-400 font-mono font-bold">{escola.codigo !== undefined && escola.codigo !== null ? String(escola.codigo).padStart(2, '0') : '-'}</TableCell>
                 <TableCell className="font-medium text-white">{escola.nome}</TableCell>
                 <TableCell className="text-[#aaa]">{escola.inep || '-'}</TableCell>
                 <TableCell>

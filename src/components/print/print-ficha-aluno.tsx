@@ -24,6 +24,7 @@ export interface AlunoPrintData {
   escola_id?: string | null
   turma_id?: string | null
   dados_matricula?: Record<string, any>
+  numero_matricula?: string | null
 }
 
 interface PrintFichaAlunoProps {
@@ -223,9 +224,13 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
           <table className="w-full border-collapse border border-black mb-2 text-[10px]">
             <tbody>
               <tr>
-                <td colSpan={4} className="border border-black p-1">
+                <td colSpan={3} className="border border-black p-1">
                   <span className="font-bold block text-[9px] text-gray-700">1 - Nome Completo do ALUNO</span>
                   <span className="font-bold text-[11px]">{aluno.nome}</span>
+                </td>
+                <td colSpan={1} className="border border-black p-1">
+                  <span className="font-bold block text-[9px] text-gray-700">Nº de Matrícula (SIG)</span>
+                  <span className="font-bold text-[11px] font-mono text-purple-700">{aluno.numero_matricula || '-'}</span>
                 </td>
               </tr>
               <tr>

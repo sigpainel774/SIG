@@ -1007,15 +1007,25 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
             </div>
 
             <div className="space-y-3">
-              <div>
-                <Label className="text-xs text-gray-300">Nome Completo do Aluno *</Label>
-                <Input 
-                  value={nome} 
-                  onChange={(e) => setNome(e.target.value)} 
-                  placeholder="Nome do Aluno" 
-                  className="bg-[#121212] border-[#2a2a2a] text-white mt-1 focus:border-[#3ea6ff]" 
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="md:col-span-3">
+                  <Label className="text-xs text-gray-300">Nome Completo do Aluno *</Label>
+                  <Input 
+                    value={nome} 
+                    onChange={(e) => setNome(e.target.value)} 
+                    placeholder="Nome do Aluno" 
+                    className="bg-[#121212] border-[#2a2a2a] text-white mt-1 focus:border-[#3ea6ff]" 
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-300">Número de Matrícula</Label>
+                  <Input 
+                    value={alunoEditar?.numero_matricula || 'Gerado ao salvar'} 
+                    className="bg-[#1a1a1a] border-[#2a2a2a] text-[#888] mt-1 cursor-not-allowed font-mono text-center font-bold" 
+                    disabled
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

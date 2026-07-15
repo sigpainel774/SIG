@@ -168,7 +168,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
 
   const renderDocumentContent = () => {
     const nomeAluno = aluno.nome?.toUpperCase() || '_________________________________'
-    const matriculaId = aluno.id || 'N/A'
+    const matriculaId = aluno.numero_matricula || aluno.id || 'N/A'
     const cursoTurno = turnoVal?.toUpperCase() || '___________________'
     const cursoTurma = turmaNome?.toUpperCase() || '___________________'
     const nascimento = dataNascimentoFormatada
@@ -254,7 +254,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       const token = generateVerificacaoToken()
       
       const nomeAluno = aluno.nome?.toUpperCase() || ''
-      const matriculaId = aluno.id || ''
+      const matriculaId = aluno.numero_matricula || aluno.id || ''
       const cursoTurma = turmaNome?.toUpperCase() || ''
       
       let hashHex = ''
