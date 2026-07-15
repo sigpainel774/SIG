@@ -112,6 +112,17 @@ export default function DesempenhoPage() {
     loadData()
   }, [loadData])
 
+  // Auto-refresh a cada 1 minuto se a aba estiver ativa/visível
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadData()
+      }
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [loadData])
+
   const handleCleanup = async () => {
     if (!confirm('Deseja realmente limpar as métricas mais antigas que 30 dias?')) return
     
