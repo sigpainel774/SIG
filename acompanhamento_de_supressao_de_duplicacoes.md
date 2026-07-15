@@ -2,6 +2,11 @@
 
 Este documento serve para monitorar o progresso na eliminação de código duplicado no projeto SIG. À medida que as refatorações forem implementadas, o progresso e o impacto em linhas de código serão atualizados aqui.
 
+## 💡 Benefício de Performance (Shared Chunks)
+
+> [!NOTE]
+> **Code-Splitting & Cache Reutilizável**: Ao centralizar as lógicas duplicadas em componentes ou hooks compartilhados, o compilador do Next.js (Webpack/Turbopack) gera *shared chunks* (pedaços compartilhados de código). O navegador baixa e faz cache desse código comum uma única vez. Quando o usuário navega entre rotas que usam o mesmo componente, o navegador reutiliza o cache em vez de baixar dados duplicados, reduzindo drasticamente o tempo de carregamento das telas.
+
 ---
 
 ## 📈 Status Geral
