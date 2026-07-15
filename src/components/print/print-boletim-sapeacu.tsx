@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
-import { Save, Printer, X, Loader2 } from 'lucide-react'
+import { Save, Printer, X, Loader2, BookOpen, Star } from 'lucide-react'
 
 export interface BoletimMateriaData {
   id: string
@@ -87,18 +87,6 @@ export function PrintBoletimSapeacu({
 
   // Regex para validação de notas decimais de 0.0 a 10.0
   const notaRegex = /^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/
-
-  // Logos com Cache Busting
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-  const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
-
-  const getCacheBustedUrl = (url: string) => {
-    if (!url) return ''
-    if (url.startsWith('data:image')) return url
-    const cleanUrl = url.split('?')[0]
-    return `${cleanUrl}?t=${Date.now()}`
-  }
 
   // Parsing automático da turma (ex: "6 - A" -> Ano: "6º ANO", Turma: "A")
   useEffect(() => {
@@ -210,9 +198,9 @@ export function PrintBoletimSapeacu({
     setSalvando(true)
     try {
       const supabase = createClient()
-      const escolaId = aluno.escola_id || escolaAtivaId
+      const schoolId = aluno.escola_id || escolaAtivaId
 
-      if (!escolaId) {
+      if (!schoolId) {
         throw new Error('ID da Escola não identificado.')
       }
 
@@ -227,7 +215,7 @@ export function PrintBoletimSapeacu({
               aluno_id: aluno.id,
               turma_id: turma.id,
               materia_id: mat.id,
-              escola_id: escolaId,
+              escola_id: schoolId,
               unidade: unidade,
               nota1: notaVal,
               nota2: notaVal,
@@ -254,7 +242,7 @@ export function PrintBoletimSapeacu({
             aluno_id: aluno.id,
             turma_id: turma.id,
             materia_id: mat.id,
-            escola_id: escolaId,
+            escola_id: schoolId,
             nota: Number(valorRecStr)
           })
         } else if (valorRecStr === '') {
@@ -326,7 +314,7 @@ export function PrintBoletimSapeacu({
         }
       `}</style>
 
-      {/* Botões de Ação flutuantes (escondidos na impressão) */}
+      {/* Botões de Ação flutuantes */}
       <div className="fixed top-4 right-4 z-[100] flex gap-2 print:hidden">
         {isEditMode && (
           <button
@@ -369,45 +357,60 @@ export function PrintBoletimSapeacu({
           <div className="absolute left-[148.5mm] top-0 bottom-0 border-l border-dashed border-gray-300 print:hidden z-10" />
 
           {/* Metade Direita da Folha: A Capa */}
-          <div className="absolute right-0 top-0 w-[148.5mm] h-full p-8 flex flex-col justify-between items-center text-center select-text font-sans">
+          <div className="absolute right-0 top-0 w-[148.5mm] h-full flex flex-col justify-between items-center select-text font-sans pb-6">
             
-            {/* Cabeçalho Capa */}
-            <div className="space-y-3 mt-4 w-full flex flex-col items-center">
-              <img
-                src={getCacheBustedUrl(logoPrefeituraUrl)}
-                alt="Brasão Sapeaçú"
-                className="h-20 w-auto object-contain mb-2 doc-header-logo-prefeitura"
-                onError={(e) => {
-                  e.currentTarget.src = '/img/brasaoSapeaçu.png'
-                }}
-              />
-              <div className="space-y-0.5">
-                <span className="text-[9px] uppercase font-bold text-gray-500 block tracking-widest">Estado da Bahia</span>
-                <h1 className="text-sm font-black uppercase text-black tracking-wider leading-tight">
-                  Prefeitura Municipal de Sapeaçú
-                </h1>
-                <h2 className="text-[10px] font-bold uppercase text-gray-700 leading-snug max-w-[260px] mx-auto border-t border-gray-200 pt-1">
-                  Secretaria Municipal de Educação, Cultura, Esporte e Lazer
-                </h2>
+            {/* Topo: Faixa Azul e Laranja com Cortes Slant (Igual ao boletim real) */}
+            <div className="w-full relative select-none">
+              {/* Faixa Azul Principal */}
+              <div className="bg-[#0b4a8c] h-[34px] w-full flex items-center pl-6 text-white text-[15px] font-black tracking-wider uppercase">
+                Boletim Escolar
+              </div>
+              {/* Faixa Laranja com o Design Inclinado */}
+              <div className="h-[12px] bg-[#f07800] relative w-full overflow-hidden">
+                {/* Slanted Cortes em Azul */}
+                <div className="absolute right-12 top-0 bottom-0 w-3 bg-[#0b4a8c] transform -skew-x-[25deg]" />
+                <div className="absolute right-4 top-0 bottom-0 w-5 bg-[#0b4a8c] transform -skew-x-[25deg]" />
               </div>
             </div>
 
-            {/* Título Principal */}
-            <div className="my-6">
-              <div className="border-y-2 border-black py-2.5 px-6">
-                <span className="block text-2xl font-black uppercase tracking-widest text-black">
-                  Boletim Escolar
-                </span>
-                <span className="block text-xs font-bold uppercase text-gray-600 tracking-wider mt-0.5">
-                  Ensino Fundamental - Anos Finais
-                </span>
+            {/* Centro: Logotipo / Selo Circular */}
+            <div className="flex flex-col items-center justify-center my-2">
+              <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex flex-col items-center justify-center p-5 bg-white relative shadow-inner">
+                {/* Bordas internas finas circulares */}
+                <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none" />
+                <div className="absolute inset-2.5 rounded-full border-2 border-double border-[#0b4a8c] pointer-events-none" />
+                
+                {/* Conteúdo do Selo */}
+                <div className="flex flex-col items-center text-center justify-between h-full py-2 z-10 max-w-[155px]">
+                  <span className="text-[7.5px] font-extrabold uppercase text-[#0b4a8c] tracking-tight leading-none px-1">
+                    {escolaEditada.length > 55 ? escolaEditada.substring(0, 52) + '...' : escolaEditada}
+                  </span>
+                  
+                  {/* Divisor do centro com abreviação ou livro */}
+                  <div className="flex flex-col items-center justify-center my-0.5">
+                    <span className="text-[12px] font-black uppercase text-[#0b4a8c] leading-none mb-1">
+                      {escolaEditada.split(' ').map(w => w[0]).filter(c => c === c.toUpperCase() && c.match(/[A-Z]/)).join('').substring(0, 7)}
+                    </span>
+                    <div className="w-10 h-[1.5px] bg-[#0b4a8c] mb-1.5" />
+                    <div className="flex gap-0.5 text-[#0b4a8c] mb-0.5">
+                      <Star className="w-2.5 h-2.5 fill-current" />
+                      <Star className="w-2.5 h-2.5 fill-current transform -translate-y-0.5" />
+                      <Star className="w-2.5 h-2.5 fill-current" />
+                    </div>
+                    <BookOpen className="w-9 h-9 text-[#185fa5] stroke-[2.5]" />
+                  </div>
+
+                  <span className="text-[7px] font-black uppercase text-[#0b4a8c] tracking-widest leading-none pt-0.5 border-t border-[#0b4a8c]/35 w-full">
+                    Sapeaçú - BA
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Painel de Identificação */}
-            <div className="w-full bg-slate-50 border border-black p-4 rounded-sm text-left text-xs font-bold space-y-2.5 max-w-[340px] mb-6">
-              <div className="flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Aluno(a)</span>
+            <div className="w-full px-8 text-left text-xs font-bold space-y-2 max-w-[370px]">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Aluno(a)</span>
                 <input
                   type="text"
                   value={alunoNome}
@@ -415,72 +418,81 @@ export function PrintBoletimSapeacu({
                     setAlunoNome(e.target.value)
                     setAlunoRodape(e.target.value)
                   }}
-                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-xs"
+                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Unidade Escolar</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Unidade Escolar</span>
                 <input
                   type="text"
                   value={escolaEditada}
                   onChange={(e) => setEscolaEditada(e.target.value)}
-                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-xs"
+                  className="bg-transparent border-b border-black w-full focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Ano Letivo</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Ano Letivo</span>
                   <input
                     type="text"
                     value={anoLetivo}
                     onChange={(e) => setAnoLetivo(e.target.value)}
-                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-xs"
+                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Código / Matrícula</span>
-                  <span className="border-b border-black w-full px-1 text-xs text-gray-800 py-0.5 truncate font-mono">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Matrícula / Código</span>
+                  <span className="border-b border-black w-full px-1 text-[11px] text-gray-800 py-0.5 truncate font-mono">
                     {aluno.id}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Ano / Série</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Ano / Série</span>
                   <input
                     type="text"
                     value={anoEscolar}
                     onChange={(e) => setAnoEscolar(e.target.value)}
-                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-xs"
+                    className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-1 text-[11px]"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Turma / Turno</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8.5px] uppercase tracking-wider text-gray-500 block">Turma / Turno</span>
                   <div className="flex gap-1 items-center">
                     <input
                       type="text"
                       value={turmaNome}
                       onChange={(e) => setTurmaNome(e.target.value)}
-                      className="bg-transparent border-b border-black w-10 text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-xs"
+                      className="bg-transparent border-b border-black w-10 text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-[11px]"
                     />
                     <span className="text-gray-400 font-normal">/</span>
                     <input
                       type="text"
                       value={turno}
                       onChange={(e) => setTurno(e.target.value)}
-                      className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-xs"
+                      className="bg-transparent border-b border-black w-full text-center focus:outline-none uppercase font-bold text-black py-0 px-0.5 text-[11px]"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Rodapé da Capa */}
-            <div className="text-[9px] text-gray-400 font-semibold mb-2">
-              Desenvolvido pela Secretaria Municipal de Educação de Sapeaçú
+            {/* Base: Faixa Azul e Laranja Inclinada (Simétrica ao Topo) */}
+            <div className="w-full relative select-none mt-2">
+              {/* Faixa Laranja */}
+              <div className="h-[12px] bg-[#f07800] relative w-full overflow-hidden">
+                {/* Slanted Cortes em Azul */}
+                <div className="absolute left-4 top-0 bottom-0 w-5 bg-[#0b4a8c] transform -skew-x-[25deg]" />
+                <div className="absolute left-12 top-0 bottom-0 w-3 bg-[#0b4a8c] transform -skew-x-[25deg]" />
+              </div>
+              {/* Faixa Azul Principal */}
+              <div className="bg-[#0b4a8c] h-[34px] w-full flex items-center justify-center text-white text-[8px] font-bold tracking-widest uppercase">
+                Prefeitura Municipal de Sapeaçú • Secretaria de Educação
+              </div>
             </div>
           </div>
         </div>
@@ -497,31 +509,31 @@ export function PrintBoletimSapeacu({
           <div className="absolute right-0 top-0 w-[148.5mm] h-full p-6 flex flex-col justify-between font-sans">
             <div>
               {/* Mini Cabeçalho da Tabela */}
-              <div className="flex justify-between items-center text-[10px] font-bold text-black pb-1.5 border-b border-black mb-2 uppercase">
+              <div className="flex justify-between items-center text-[9.5px] font-bold text-black pb-1 border-b border-black mb-1.5 uppercase">
                 <span className="truncate max-w-[240px]">Aluno: {alunoNome}</span>
                 <span>Turma: {turmaNome} ({turno})</span>
               </div>
 
               {/* Tabela de Notas */}
-              <table className="w-full border-collapse border border-black text-center font-bold text-[9.5px]">
+              <table className="w-full border-collapse border border-black text-center font-bold text-[9px]">
                 <thead>
                   {/* Linha 1: ANOS FINAIS */}
                   <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }}>
-                    <th colSpan={8} className="border border-black py-1 text-center text-xs font-black uppercase tracking-wider text-black">
+                    <th colSpan={8} className="border border-black py-0.5 text-center text-[11px] font-black uppercase tracking-wider text-black">
                       Anos Finais
                     </th>
                   </tr>
                   {/* Linha 2: Cabeçalhos principais */}
-                  <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[9px]">
-                    <th className="border border-black px-1.5 py-1 text-left uppercase w-[38%]">
+                  <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[8.5px]">
+                    <th className="border border-black px-1.5 py-0.5 text-left uppercase w-[38%]">
                       Componentes Curriculares
                     </th>
-                    <th className="border border-black py-1 w-[8%]">TRI</th>
-                    <th className="border border-black py-1 w-[8%]">TRI</th>
-                    <th className="border border-black py-1 w-[8%]">TRI</th>
-                    <th className="border border-black py-1 w-[10%]">TOTAL</th>
-                    <th className="border border-black py-1 w-[11%]">Média Final</th>
-                    <th className="border border-black py-1 w-[11%]">REC</th>
+                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
+                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
+                    <th className="border border-black py-0.5 w-[8%]">TRI</th>
+                    <th className="border border-black py-0.5 w-[10%]">TOTAL</th>
+                    <th className="border border-black py-0.5 w-[11%]">Média Final</th>
+                    <th className="border border-black py-0.5 w-[11%]">REC</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -533,13 +545,13 @@ export function PrintBoletimSapeacu({
                         <td
                           rowSpan={1}
                           style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                          className="border border-black p-1.5 font-black text-center text-[9px] uppercase w-5 leading-none shrink-0"
+                          className="border border-black p-1 font-black text-center text-[8.5px] uppercase w-5 leading-none shrink-0"
                         >
                           <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black select-none">
                             Base Comum
                           </div>
                         </td>
-                        <td colSpan={7} className="border border-black p-2 text-center text-gray-500 italic font-normal text-[10px]">
+                        <td colSpan={7} className="border border-black p-1.5 text-center text-gray-500 italic font-normal text-[9px]">
                           Nenhuma disciplina de Base Comum vinculada a esta turma.
                         </td>
                       </tr>
@@ -548,12 +560,12 @@ export function PrintBoletimSapeacu({
                         const total = calcularTotal(mat.id)
                         const mediaFinal = calcularMediaFinal(mat.id)
                         return (
-                          <tr key={mat.id} className="text-[9.5px]">
+                          <tr key={mat.id} className="text-[9px]">
                             {index === 0 && (
                               <td
                                 rowSpan={totalComum}
                                 style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                                className="border border-black font-black text-center text-[9px] uppercase w-5 leading-none select-none shrink-0"
+                                className="border border-black font-black text-center text-[8.5px] uppercase w-5 leading-none select-none shrink-0"
                               >
                                 <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black">
                                   Base Comum
@@ -571,7 +583,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_1`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 1, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                             {/* Trimestre 2 */}
@@ -581,7 +593,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_2`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 2, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                             {/* Trimestre 3 */}
@@ -591,7 +603,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_3`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 3, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
 
@@ -612,7 +624,7 @@ export function PrintBoletimSapeacu({
                                 value={recsState[mat.id] || ''}
                                 onChange={(e) => handleRecChange(mat.id, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                           </tr>
@@ -629,13 +641,13 @@ export function PrintBoletimSapeacu({
                         <td
                           rowSpan={1}
                           style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                          className="border border-black p-1.5 font-black text-center text-[9px] uppercase w-5 leading-none shrink-0"
+                          className="border border-black p-1 font-black text-center text-[8.5px] uppercase w-5 leading-none shrink-0"
                         >
                           <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black select-none">
                             Diversas
                           </div>
                         </td>
-                        <td colSpan={7} className="border border-black p-2 text-center text-gray-500 italic font-normal text-[10px]">
+                        <td colSpan={7} className="border border-black p-1.5 text-center text-gray-500 italic font-normal text-[9px]">
                           Nenhuma disciplina de Parte Diversificada vinculada a esta turma.
                         </td>
                       </tr>
@@ -644,12 +656,12 @@ export function PrintBoletimSapeacu({
                         const total = calcularTotal(mat.id)
                         const mediaFinal = calcularMediaFinal(mat.id)
                         return (
-                          <tr key={mat.id} className="text-[9.5px]">
+                          <tr key={mat.id} className="text-[9px]">
                             {index === 0 && (
                               <td
                                 rowSpan={totalDiversas}
                                 style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                                className="border border-black font-black text-center text-[9px] uppercase w-5 leading-none select-none shrink-0"
+                                className="border border-black font-black text-center text-[8.5px] uppercase w-5 leading-none select-none shrink-0"
                               >
                                 <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black">
                                   Diversas
@@ -667,7 +679,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_1`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 1, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                             {/* Trimestre 2 */}
@@ -677,7 +689,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_2`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 2, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                             {/* Trimestre 3 */}
@@ -687,7 +699,7 @@ export function PrintBoletimSapeacu({
                                 value={notasState[`${mat.id}_3`] || ''}
                                 onChange={(e) => handleNotaChange(mat.id, 3, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
 
@@ -708,7 +720,7 @@ export function PrintBoletimSapeacu({
                                 value={recsState[mat.id] || ''}
                                 onChange={(e) => handleRecChange(mat.id, e.target.value)}
                                 disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9.5px] py-0.5"
+                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
                               />
                             </td>
                           </tr>
@@ -721,12 +733,12 @@ export function PrintBoletimSapeacu({
             </div>
 
             {/* Rodapé: Legendas, Assinaturas e Resultado Final */}
-            <div className="space-y-2 mt-3 text-black">
+            <div className="space-y-1.5 mt-2 text-black">
               {/* Legendas e Assinaturas Trimestrais */}
-              <div className="grid grid-cols-12 gap-2.5 items-start">
+              <div className="grid grid-cols-12 gap-2 items-start">
                 {/* Legenda */}
-                <div className="col-span-5 text-[8px] leading-relaxed text-black border border-black p-1.5 font-bold rounded-sm">
-                  <span className="block border-b border-black pb-0.5 mb-1 text-[8.5px] font-black uppercase text-center">
+                <div className="col-span-5 text-[7.5px] leading-relaxed text-black border border-black p-1 font-bold rounded-sm">
+                  <span className="block border-b border-black pb-0.5 mb-0.5 text-[8px] font-black uppercase text-center">
                     Parte Diversificada
                   </span>
                   <div className="space-y-0.5 uppercase text-left">
@@ -737,20 +749,20 @@ export function PrintBoletimSapeacu({
                 </div>
 
                 {/* Assinatura dos pais ou responsáveis (Trimestres) */}
-                <div className="col-span-7 border border-black p-1.5 rounded-sm flex flex-col justify-between min-h-[58px]">
-                  <span className="block border-b border-black pb-0.5 mb-1 text-[8.5px] font-black uppercase text-center">
+                <div className="col-span-7 border border-black p-1 rounded-sm flex flex-col justify-between min-h-[50px]">
+                  <span className="block border-b border-black pb-0.5 mb-0.5 text-[8px] font-black uppercase text-center">
                     Assinatura dos Pais ou Responsáveis
                   </span>
-                  <div className="grid grid-cols-3 gap-1 text-[7.5px]">
+                  <div className="grid grid-cols-3 gap-1 text-[7px]">
                     <div className="flex flex-col gap-0.5">
                       <input
                         type="text"
                         value={assinaturaTrimestre1}
                         onChange={(e) => setAssinaturaTrimestre1(e.target.value)}
                         placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8px] h-3.5 py-0 uppercase"
+                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
                       />
-                      <span className="text-center font-bold text-[7.5px] uppercase">1º Trimestre</span>
+                      <span className="text-center font-bold text-[7px] uppercase">1º Trimestre</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <input
@@ -758,9 +770,9 @@ export function PrintBoletimSapeacu({
                         value={assinaturaTrimestre2}
                         onChange={(e) => setAssinaturaTrimestre2(e.target.value)}
                         placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8px] h-3.5 py-0 uppercase"
+                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
                       />
-                      <span className="text-center font-bold text-[7.5px] uppercase">2º Trimestre</span>
+                      <span className="text-center font-bold text-[7px] uppercase">2º Trimestre</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <input
@@ -768,70 +780,70 @@ export function PrintBoletimSapeacu({
                         value={assinaturaTrimestre3}
                         onChange={(e) => setAssinaturaTrimestre3(e.target.value)}
                         placeholder="Assinatura"
-                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8px] h-3.5 py-0 uppercase"
+                        className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] h-3 py-0 uppercase"
                       />
-                      <span className="text-center font-bold text-[7.5px] uppercase">3º Trimestre</span>
+                      <span className="text-center font-bold text-[7px] uppercase">3º Trimestre</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Resultado Final (Bottom Section) */}
-              <div className="border border-black p-2 rounded-sm space-y-1.5">
-                <h3 className="text-center text-[9px] font-black uppercase tracking-wider text-black">
+              <div className="border border-black p-1.5 rounded-sm space-y-1">
+                <h3 className="text-center text-[8.5px] font-black uppercase tracking-wider text-black">
                   Resultado Final
                 </h3>
                 
                 <div className="h-px bg-black w-full" />
 
-                <div className="grid grid-cols-12 gap-y-1.5 gap-x-2 text-[9px] font-bold">
+                <div className="grid grid-cols-12 gap-y-1 gap-x-2 text-[8.5px] font-bold">
                   <div className="col-span-9 flex items-center gap-1">
-                    <span className="uppercase text-[8.5px] shrink-0 text-slate-700">O(A) aluno (a):</span>
+                    <span className="uppercase text-[8px] shrink-0 text-slate-700">O(A) aluno (a):</span>
                     <input
                       type="text"
                       value={alunoRodape}
                       onChange={(e) => setAlunoRodape(e.target.value)}
-                      className="flex-1 bg-transparent border-b border-black focus:outline-none uppercase font-bold text-black py-0 px-1 text-[9px]"
+                      className="flex-1 bg-transparent border-b border-black focus:outline-none uppercase font-bold text-black py-0 px-1 text-[8.5px]"
                     />
                   </div>
 
                   <div className="col-span-3 flex items-center gap-1">
-                    <span className="uppercase text-[8.5px] shrink-0 text-slate-700">fol:</span>
+                    <span className="uppercase text-[8px] shrink-0 text-slate-700">fol:</span>
                     <input
                       type="text"
                       value={fol}
                       onChange={(e) => setFol(e.target.value)}
-                      className="flex-1 bg-transparent border-b border-black focus:outline-none text-center font-bold text-black py-0 px-0.5 text-[9px]"
+                      className="flex-1 bg-transparent border-b border-black focus:outline-none text-center font-bold text-black py-0 px-0.5 text-[8.5px]"
                     />
                   </div>
                 </div>
 
                 {/* Linhas de Assinatura do Gestor e Data */}
-                <div className="grid grid-cols-12 gap-2.5 items-end pt-1">
-                  <div className="col-span-5 text-center flex flex-col justify-end min-h-[24px]">
+                <div className="grid grid-cols-12 gap-2 items-end pt-0.5">
+                  <div className="col-span-5 text-center flex flex-col justify-end min-h-[20px]">
                     <div className="border-b border-black w-full" />
-                    <span className="text-[7.5px] uppercase font-bold text-slate-500 mt-0.5 block">Assinatura Secretário(a)</span>
+                    <span className="text-[7px] uppercase font-bold text-slate-500 mt-0.5 block">Assinatura Secretário(a)</span>
                   </div>
 
-                  <div className="col-span-4 text-center flex flex-col justify-end min-h-[24px]">
+                  <div className="col-span-4 text-center flex flex-col justify-end min-h-[20px]">
                     <input
                       type="text"
                       value={gestorAssinatura}
                       onChange={(e) => setGestorAssinatura(e.target.value)}
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[9px] font-bold py-0 h-4 uppercase"
+                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-bold py-0 h-3.5 uppercase"
                     />
-                    <span className="text-[7.5px] uppercase font-bold text-slate-700 mt-0.5 block">Gestor(a)</span>
+                    <span className="text-[7px] uppercase font-bold text-slate-700 mt-0.5 block">Gestor(a)</span>
                   </div>
 
-                  <div className="col-span-3 text-center flex flex-col justify-end min-h-[24px]">
+                  <div className="col-span-3 text-center flex flex-col justify-end min-h-[20px]">
                     <input
                       type="text"
                       value={dataEmissao}
                       onChange={(e) => setDataEmissao(e.target.value)}
                       placeholder="__/__/____"
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[9px] font-mono font-bold py-0 h-4"
+                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-mono font-bold py-0 h-3.5"
                     />
-                    <span className="text-[7.5px] uppercase font-bold text-slate-700 mt-0.5 block">Data</span>
+                    <span className="text-[7px] uppercase font-bold text-slate-700 mt-0.5 block">Data</span>
                   </div>
                 </div>
               </div>
