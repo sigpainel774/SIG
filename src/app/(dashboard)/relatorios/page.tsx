@@ -5,6 +5,7 @@ import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
 import { MapaGlobal } from '@/components/map/MapWrapper'
+import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
 import { createClient } from '@/lib/supabaseClient'
 import { IconTile } from '@/components/ui/icon-tile'
 import { cn } from '@/lib/utils'
@@ -387,6 +388,8 @@ export default function RelatoriosPage() {
               )}
             </div>
           </div>
+        ) : activeReport === 'notas' ? (
+          <RelatorioNotas selectedEscola={selectedEscola} />
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-foreground mb-3">
