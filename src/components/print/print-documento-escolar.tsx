@@ -57,10 +57,13 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
   const filiacao = [aluno.nome_mae, aluno.nome_pai].filter(Boolean).join(' e ') || 'Não informada'
   const anoLetivo = dm.anoLetivo || new Date().getFullYear().toString()
 
+  const [timestamp] = useState(() => Date.now())
+
   const getCacheBustedUrl = (url: string) => {
     if (!url) return ''
+    if (url.startsWith('data:')) return url
     const separator = url.includes('?') ? '&' : '?'
-    return `${url}${separator}t=${Date.now()}`
+    return `${url}${separator}t=${timestamp}`
   }
 
   useEffect(() => {
@@ -401,7 +404,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       >
         <div>
           {/* Cabeçalho Oficial da Prefeitura/SME */}
-          <div className="flex items-center justify-between pb-3 border-b border-black mb-8">
+          <div className="flex items-center justify-between pb-3 border-b border-black mb-4">
             <div className="flex items-center gap-2 max-w-[180px] shrink-0">
               <img
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)}
@@ -420,97 +423,97 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
               <img
                 src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)}
                 alt="Secretaria de Educação"
-                className="doc-header-logo-secretaria"
+                className="doc-header-logo-prefeitura"
               />
             </div>
           </div>
 
           {/* Sub-Cabeçalho com Logo da Escola (Se Houver) */}
-          <div className="flex flex-col items-center text-center space-y-2 mb-6">
+          <div className="flex flex-col items-center text-center space-y-1 mb-3">
             {escolaLogoUrl && (
               <img
                 src={getCacheBustedUrl(escolaLogoUrl)}
                 alt={escolaNome}
-                className="h-16 w-auto object-contain mb-1"
+                className="h-12 w-auto object-contain mb-1"
               />
             )}
-            <h1 className="text-lg font-black text-gray-900 uppercase tracking-wide">
+            <h1 className="text-base font-black text-gray-900 uppercase tracking-wide">
               {escolaNome || 'UNIDADE ESCOLAR MUNICIPAL'}
             </h1>
-            <div className="w-16 h-0.5 bg-black"></div>
+            <div className="w-12 h-0.5 bg-black"></div>
           </div>
 
           {/* Título do Documento */}
-          <div className="text-center mb-6">
-            <h2 className="text-[15px] font-black uppercase text-gray-900 tracking-widest underline decoration-2 underline-offset-4">
+          <div className="text-center mb-3">
+            <h2 className="text-[14px] font-black uppercase text-gray-900 tracking-widest underline decoration-2 underline-offset-4">
               {getDocumentTitle()}
             </h2>
           </div>
 
           {/* Corpo do Documento */}
-          <div className="px-6 mb-6">
+          <div className="px-6 mb-4">
             {renderDocumentContent()}
           </div>
 
           {/* Local e Data */}
-          <div className="px-6 mb-10 text-right text-sm font-semibold text-gray-900">
+          <div className="px-6 mb-4 text-right text-xs font-semibold text-gray-900">
             {dataPorExtenso}
           </div>
         </div>
 
         {/* Rodapé e Área de Assinatura */}
-        <div className="px-6 pb-6">
-          <div className="grid grid-cols-2 gap-12 text-center text-xs font-semibold mt-6">
+        <div className="px-6 pb-4">
+          <div className="grid grid-cols-2 gap-8 text-center text-xs font-semibold mt-3">
             {/* Diretor da Unidade */}
-            <div className="flex flex-col items-center justify-end min-h-[90px]">
+            <div className="flex flex-col items-center justify-end min-h-[80px]">
               {diretorAssinaturaUrl ? (
                 <img
                   src={getCacheBustedUrl(diretorAssinaturaUrl)}
                   alt="Assinatura Diretor"
-                  className="max-h-[60px] w-auto object-contain mb-1 select-none pointer-events-none"
+                  className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
                 />
               ) : (
-                <div className="w-32 h-[45px] border-b border-dashed border-gray-400 mb-1"></div>
+                <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
               )}
-              <span className="font-bold text-[11px] uppercase border-t border-black pt-1 w-full max-w-[220px]">
+              <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
                 {diretorNome || 'Diretor(a) Escolar'}
               </span>
-              <span className="text-gray-500 text-[10px] mt-0.5">Direção Escolar</span>
+              <span className="text-gray-500 text-[9px] mt-0.5">Direção Escolar</span>
             </div>
 
             {/* Secretário / Emitente */}
-            <div className="flex flex-col items-center justify-end min-h-[90px]">
+            <div className="flex flex-col items-center justify-end min-h-[80px]">
               {funcionario?.assinatura_url ? (
                 <img
                   src={getCacheBustedUrl(funcionario.assinatura_url)}
                   alt="Assinatura Servidor"
-                  className="max-h-[60px] w-auto object-contain mb-1 select-none pointer-events-none"
+                  className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
                 />
               ) : (
-                <div className="w-32 h-[45px] border-b border-dashed border-gray-400 mb-1"></div>
+                <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
               )}
-              <span className="font-bold text-[11px] uppercase border-t border-black pt-1 w-full max-w-[220px]">
+              <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
                 {funcionario?.nome || 'Responsável p/ Emissão'}
               </span>
-              <span className="text-gray-500 text-[10px] mt-0.5">Secretaria / Coordenação</span>
+              <span className="text-gray-500 text-[9px] mt-0.5">Secretaria / Coordenação</span>
             </div>
           </div>
 
           {/* Autenticação com QR Code */}
           {qrCodeUrl && (
-            <div className="mt-8 pt-3 border-t border-gray-300 flex items-center gap-3 text-[8px] text-gray-500 font-mono leading-tight bg-gray-50/50 p-2 rounded border border-gray-200">
-              <img src={qrCodeUrl} alt="QR Code Verificação" className="h-11 w-11 shrink-0 border border-gray-300 p-0.5 rounded bg-white" />
+            <div className="mt-4 pt-2 border-t border-gray-300 flex items-center gap-2.5 text-[8px] text-gray-500 font-mono leading-tight bg-gray-50/50 p-1.5 rounded border border-gray-200">
+              <img src={qrCodeUrl} alt="QR Code Verificação" className="h-10 w-10 shrink-0 border border-gray-300 p-0.5 rounded bg-white" />
               <div className="flex-1 space-y-0.5 text-left">
-                <span className="font-bold text-gray-800 uppercase block text-[8px]">DOCUMENTO ASSINADO E REGISTRADO ELETRONICAMENTE</span>
-                <span className="block text-[8px] text-gray-600">Chave de Verificação: <strong className="text-gray-900">{tokenVerificacao}</strong></span>
-                <span className="block text-[8px] text-gray-600 truncate">Hash SHA-256: <strong className="text-gray-900 text-[7px]">{hashSha256}</strong></span>
-                <span className="block text-[7px] text-gray-500">Valide este comprovante lendo o QR Code ou acesse: {window.location.origin}/verificar/{tokenVerificacao}</span>
+                <span className="font-bold text-gray-800 uppercase block text-[7.5px]">DOCUMENTO ASSINADO E REGISTRADO ELETRONICAMENTE</span>
+                <span className="block text-[7.5px] text-gray-600">Chave de Verificação: <strong className="text-gray-900">{tokenVerificacao}</strong></span>
+                <span className="block text-[7.5px] text-gray-600 truncate">Hash SHA-256: <strong className="text-gray-900 text-[6.5px]">{hashSha256}</strong></span>
+                <span className="block text-[6.5px] text-gray-500">Valide este comprovante lendo o QR Code ou acesse: {window.location.origin}/verificar/{tokenVerificacao}</span>
               </div>
             </div>
           )}
 
           {/* Autenticação/Notas de Rodapé */}
-          <div className="border-t border-gray-300 mt-6 pt-4 text-[9px] font-semibold text-gray-500 text-center">
+          <div className="border-t border-gray-300 mt-4 pt-2 text-[8px] font-semibold text-gray-500 text-center">
             Este documento é de emissão oficial do Painel Escolar Municipal de Sapeaçu. Qualquer adulteração invalida sua legalidade jurídica.
           </div>
         </div>
