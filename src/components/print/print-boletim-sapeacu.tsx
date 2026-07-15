@@ -88,6 +88,18 @@ export function PrintBoletimSapeacu({
   // Regex para validação de notas decimais de 0.0 a 10.0
   const notaRegex = /^(10(\.0?)?|[0-9](\.[0-9]?)?|\.)$/
 
+  // Logos com Cache Busting
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
+  const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
+
+  const getCacheBustedUrl = (url: string) => {
+    if (!url) return ''
+    if (url.startsWith('data:image')) return url
+    const cleanUrl = url.split('?')[0]
+    return `${cleanUrl}?t=${Date.now()}`
+  }
+
   // Parsing automático da turma (ex: "6 - A" -> Ano: "6º ANO", Turma: "A")
   useEffect(() => {
     const nomeTurma = turma.nome
@@ -375,36 +387,62 @@ export function PrintBoletimSapeacu({
 
             {/* Centro: Logotipo / Selo Circular */}
             <div className="flex flex-col items-center justify-center my-2">
-              <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex flex-col items-center justify-center p-5 bg-white relative shadow-inner">
-                {/* Bordas internas finas circulares */}
-                <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none" />
-                <div className="absolute inset-2.5 rounded-full border-2 border-double border-[#0b4a8c] pointer-events-none" />
-                
-                {/* Conteúdo do Selo */}
-                <div className="flex flex-col items-center text-center justify-between h-full py-2 z-10 max-w-[155px]">
-                  <span className="text-[7.5px] font-extrabold uppercase text-[#0b4a8c] tracking-tight leading-none px-1">
-                    {escolaEditada.length > 55 ? escolaEditada.substring(0, 52) + '...' : escolaEditada}
-                  </span>
-                  
-                  {/* Divisor do centro com abreviação ou livro */}
-                  <div className="flex flex-col items-center justify-center my-0.5">
-                    <span className="text-[12px] font-black uppercase text-[#0b4a8c] leading-none mb-1">
-                      {escolaEditada.split(' ').map(w => w[0]).filter(c => c === c.toUpperCase() && c.match(/[A-Z]/)).join('').substring(0, 7)}
-                    </span>
-                    <div className="w-10 h-[1.5px] bg-[#0b4a8c] mb-1.5" />
-                    <div className="flex gap-0.5 text-[#0b4a8c] mb-0.5">
-                      <Star className="w-2.5 h-2.5 fill-current" />
-                      <Star className="w-2.5 h-2.5 fill-current transform -translate-y-0.5" />
-                      <Star className="w-2.5 h-2.5 fill-current" />
-                    </div>
-                    <BookOpen className="w-9 h-9 text-[#185fa5] stroke-[2.5]" />
-                  </div>
+              {(() => {
+                const isMoises = escolaEditada.toLowerCase().includes('moises') || escolaEditada.toLowerCase().includes('moisés');
+                const hasLogo = isMoises || escolaLogoUrl;
+                const logoSrc = isMoises 
+                  ? '/img/logo-moises.png' 
+                  : (escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : '');
 
-                  <span className="text-[7px] font-black uppercase text-[#0b4a8c] tracking-widest leading-none pt-0.5 border-t border-[#0b4a8c]/35 w-full">
-                    Sapeaçú - BA
-                  </span>
-                </div>
-              </div>
+                if (hasLogo) {
+                  return (
+                    <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex items-center justify-center p-2 bg-white relative shadow-inner overflow-hidden">
+                      <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none z-10" />
+                      <img
+                        src={logoSrc}
+                        alt="Logo Escola"
+                        className="w-full h-full object-contain rounded-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
+                // Fallback: Selo Circular Estilizado em CSS se não houver imagem
+                return (
+                  <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex flex-col items-center justify-center p-5 bg-white relative shadow-inner">
+                    {/* Bordas internas finas circulares */}
+                    <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none" />
+                    <div className="absolute inset-2.5 rounded-full border-2 border-double border-[#0b4a8c] pointer-events-none" />
+                    
+                    {/* Conteúdo do Selo */}
+                    <div className="flex flex-col items-center text-center justify-between h-full py-2 z-10 max-w-[155px]">
+                      <span className="text-[7.5px] font-extrabold uppercase text-[#0b4a8c] tracking-tight leading-none px-1">
+                        {escolaEditada.length > 55 ? escolaEditada.substring(0, 52) + '...' : escolaEditada}
+                      </span>
+                      
+                      <div className="flex flex-col items-center justify-center my-0.5">
+                        <span className="text-[12px] font-black uppercase text-[#0b4a8c] leading-none mb-1">
+                          {escolaEditada.split(' ').map(w => w[0]).filter(c => c === c.toUpperCase() && c.match(/[A-Z]/)).join('').substring(0, 7)}
+                        </span>
+                        <div className="w-10 h-[1.5px] bg-[#0b4a8c] mb-1.5" />
+                        <div className="flex gap-0.5 text-[#0b4a8c] mb-0.5">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <Star className="w-2.5 h-2.5 fill-current transform -translate-y-0.5" />
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                        </div>
+                        <BookOpen className="w-9 h-9 text-[#185fa5] stroke-[2.5]" />
+                      </div>
+
+                      <span className="text-[7px] font-black uppercase text-[#0b4a8c] tracking-widest leading-none pt-0.5 border-t border-[#0b4a8c]/35 w-full">
+                        Sapeaçú - BA
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Painel de Identificação */}
@@ -523,8 +561,9 @@ export function PrintBoletimSapeacu({
                       Anos Finais
                     </th>
                   </tr>
-                  {/* Linha 2: Cabeçalhos principais */}
+                  {/* Linha 2: Cabeçalhos principais (Corrigida: 8 colunas para alinhar com o rowSpan) */}
                   <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[8.5px]">
+                    <th className="border border-black w-6"></th> {/* Espaço alinhado com a barra lateral de base/diversas */}
                     <th className="border border-black px-1.5 py-0.5 text-left uppercase w-[38%]">
                       Componentes Curriculares
                     </th>
@@ -709,7 +748,7 @@ export function PrintBoletimSapeacu({
                             </td>
                             {/* Média Final */}
                             <td className={`border border-black py-0.5 ${
-                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-950'
+                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-955'
                             }`}>
                               {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
                             </td>
