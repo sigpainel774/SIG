@@ -360,7 +360,7 @@ export default function AdminIndicadoresPage() {
 
           {/* Seletor de Unidade */}
           <div className="flex bg-[#18181a] p-1 rounded-xl border border-[#27272a] gap-1">
-            {[1, 2, 3, 4].map(un => (
+            {[1, 2, 3].map(un => (
               <button
                 key={un}
                 onClick={() => handleUnidadeChange(un)}
