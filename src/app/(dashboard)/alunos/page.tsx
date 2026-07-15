@@ -23,7 +23,8 @@ import {
   Paperclip,
   Lock,
   Check,
-  XCircle
+  XCircle,
+  Hash
 } from 'lucide-react'
 import Link from 'next/link'
 import { ModalAluno } from '@/components/modals/modal-aluno'
@@ -58,6 +59,7 @@ interface Aluno {
   escola_nome?: string
   foto_url?: string | null
   dados_matricula?: Record<string, any>
+  numero_matricula?: string | null
   created_at: string
 }
 
@@ -214,6 +216,7 @@ export default function AlunosPage() {
   const alunosFiltrados = alunos.filter(
     (aluno) =>
       aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (aluno.numero_matricula && aluno.numero_matricula.includes(searchTerm)) ||
       (aluno.cpf && aluno.cpf.includes(searchTerm)) ||
       (aluno.inep && aluno.inep.includes(searchTerm))
   )
@@ -375,7 +378,7 @@ export default function AlunosPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="search"
-              placeholder="Buscar por Nome, CPF ou Código INEP..."
+              placeholder="Buscar por Nome, Matrícula, CPF ou Código INEP..."
               className="pl-9 bg-surface-1 border-borderCustom text-foreground focus-visible:ring-highlight w-full h-11 text-sm rounded-xl"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -442,6 +445,13 @@ export default function AlunosPage() {
 
                   {/* ── Detalhes do Aluno ── */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm font-normal text-muted-foreground">
+                    {aluno.numero_matricula && (
+                      <div className="flex items-center gap-1.5 truncate text-purple-400 font-semibold">
+                        <Hash className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <span className="truncate">Matrícula: {aluno.numero_matricula}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-1.5 truncate">
                       <Building2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                       <span className="truncate">{escolaNome}</span>

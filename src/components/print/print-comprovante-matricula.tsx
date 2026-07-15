@@ -26,6 +26,7 @@ export interface AlunoPrintData {
   escola_id?: string | null
   turma_id?: string | null
   dados_matricula?: Record<string, any>
+  numero_matricula?: string | null
 }
 
 interface PrintComprovanteProps {
@@ -217,9 +218,13 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
                 </td>
               </tr>
               <tr>
-                <td colSpan={2} className="border border-black p-1">
+                <td className="border border-black p-1 w-3/4">
                   <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Aluno(a)</span>
                   <span className="text-[10px] font-bold uppercase">{aluno.nome}</span>
+                </td>
+                <td className="border border-black p-1 w-1/4">
+                  <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Nº Matrícula</span>
+                  <span className="text-[10px] font-bold font-mono">{aluno.numero_matricula || '-'}</span>
                 </td>
               </tr>
               <tr>

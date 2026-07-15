@@ -22,6 +22,7 @@ interface EscolaToEdit {
   tipo?: string | null
   ativo?: boolean | null
   logo_url?: string | null
+  codigo?: number | null
 }
 
 interface ModalEscolaProps {
@@ -152,15 +153,25 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div>
-            <Label className="text-xs text-[#aaa]">Nome Completo da Escola *</Label>
-            <Input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Ex: Escola Municipal Eraldo Tinoco"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-3">
+              <Label className="text-xs text-[#aaa]">Nome Completo da Escola *</Label>
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: Escola Municipal Eraldo Tinoco"
+                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-[#aaa]">Código do SIG</Label>
+              <Input
+                value={escolaToEdit?.codigo !== undefined && escolaToEdit?.codigo !== null ? String(escolaToEdit.codigo).padStart(2, '0') : 'Auto'}
+                className="bg-[#1e1e20] border-[#27272a] text-[#888] mt-1 font-mono text-center font-bold cursor-not-allowed"
+                disabled
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
