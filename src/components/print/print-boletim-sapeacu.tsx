@@ -115,14 +115,7 @@ export function PrintBoletimSapeacu({
     }
   }, [turma.nome])
 
-  // Data de Emissão inicial
-  useEffect(() => {
-    const hoje = new Date()
-    const dia = String(hoje.getDate()).padStart(2, '0')
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-    const ano = hoje.getFullYear()
-    setDataEmissao(`${dia}/${mes}/${ano}`)
-  }, [])
+
 
   // Inicializar notasState e recsState a partir das props
   useEffect(() => {
@@ -469,17 +462,23 @@ export function PrintBoletimSapeacu({
           <div className="absolute right-0 top-0 w-[148.5mm] h-full p-6 flex flex-col justify-between font-sans">
             <div>
               {/* Cabeçalho Oficial Sapeaçu */}
-              <div className="flex items-center justify-center gap-4 relative pb-1 mb-2">
+              <div className="flex items-center justify-center gap-4 relative pb-1 mb-2 min-h-10">
                 <img 
                   src={getCacheBustedUrl(logoPrefeituraUrl)} 
                   alt="Brasão" 
                   className="w-10 h-10 object-contain absolute left-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-                <div className="text-center font-black text-[10px] uppercase tracking-wide text-black leading-tight">
+                <div className="text-center font-black text-[10px] uppercase tracking-wide text-black leading-tight mx-12">
                   <p>Estado da Bahia</p>
                   <p>Prefeitura Municipal de Sapeaçu</p>
                 </div>
+                <img 
+                  src={getCacheBustedUrl(logoSecretariaUrl)} 
+                  alt="Secretaria" 
+                  className="w-10 h-10 object-contain absolute right-0"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
               </div>
               <div className="border-b-2 border-double border-black mb-2" />
 
@@ -522,18 +521,9 @@ export function PrintBoletimSapeacu({
                     </div>
                   </div>
                   {/* Lado Direito: Turno */}
-                  <div className="col-span-4 flex items-center justify-center gap-2 px-1">
-                    <span className="uppercase text-[8px] text-black">Turno:</span>
-                    <div className="flex items-center gap-1.5 text-[8.5px] text-black">
-                      <div className="flex items-center gap-0.5 select-none">
-                        <span>Mat</span>
-                        <span>({(turno.toLowerCase().includes('mat') || turno.toLowerCase().includes('manh')) ? 'X' : ' '})</span>
-                      </div>
-                      <div className="flex items-center gap-0.5 select-none">
-                        <span>Vesp</span>
-                        <span>({(turno.toLowerCase().includes('vesp') || turno.toLowerCase().includes('tard')) ? 'X' : ' '})</span>
-                      </div>
-                    </div>
+                  <div className="col-span-4 flex items-center justify-center gap-1 px-1">
+                    <span className="uppercase text-[8px] text-black shrink-0">Turno:</span>
+                    <span className="uppercase font-bold text-[9px] text-black truncate">{turno}</span>
                   </div>
                 </div>
               </div>
@@ -546,12 +536,7 @@ export function PrintBoletimSapeacu({
               {/* Tabela de Notas */}
               <table className="w-full border-collapse border border-black text-center font-bold text-[9px]">
                 <thead>
-                  {/* Linha 1: ANOS FINAIS */}
-                  <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }}>
-                    <th colSpan={8} className="border border-black py-0.5 text-center text-[11px] font-black uppercase tracking-wider text-black">
-                      Anos Finais
-                    </th>
-                  </tr>
+
                   {/* Linha 2: Cabeçalhos principais */}
                   <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[8.5px]">
                     <th className="border border-black w-6"></th>
