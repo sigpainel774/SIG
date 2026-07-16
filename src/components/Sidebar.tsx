@@ -166,11 +166,11 @@ export function Sidebar() {
         className={cn(
           "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
           isActive
-            ? "bg-[#185FA5]/8 text-[#185FA5] font-semibold border-l-2 border-[#185FA5] rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-l-2 border-sidebar-primary rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]"
             : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
         )}
       >
-        <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-[#185FA5] dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
+        <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-sidebar-accent-foreground dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
         <span>{item.label}</span>
       </Link>
     )
@@ -201,7 +201,7 @@ export function Sidebar() {
             title="Recolher Menu"
             aria-label="Recolher Menu"
           >
-            <X className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff]" />
+            <X className="w-5 h-5 text-sidebar-accent-foreground dark:text-[#3ea6ff]" />
           </button>
         </div>
 
@@ -217,7 +217,7 @@ export function Sidebar() {
               className="w-full bg-sidebar-accent/45 border border-sidebar-border/50 text-sidebar-foreground text-xs rounded-xl px-3 py-2 outline-none focus:border-sky-500 font-semibold cursor-pointer transition-all duration-200"
             >
               {vinculosAtivos.map((v) => (
-                <option key={v.id} value={v.escola_id} className="bg-[#18181b] text-white">
+                <option key={v.id} value={v.escola_id} className="bg-background text-foreground">
                   {v.escolaNome || 'Escola sem nome'}
                 </option>
               ))}

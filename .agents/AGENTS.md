@@ -84,6 +84,7 @@
 - **O que são Erros Silenciosos**: Casos extremos de UX (edge cases), rejeições não tratadas (unhandled rejections), ausência de meta tags importantes (ex: `theme-color`), problemas de ciclo de vida (ex: service workers presos em cache antigo) ou problemas de responsividade que não geram erro no console, mas degradam a experiência do usuário.
 - **Ação Proativa**: Caso detecte potenciais erros silenciosos, o agente deve sugerir ou aplicar as correções (ex: adicionar evento `controllerchange` para SW, adicionar propriedades ausentes no `manifest.json`, ajustar bloqueios de zoom em `maximumScale`, etc) para garantir 100% de conformidade com as melhores práticas (ex: Google Lighthouse).
 - **Etapa de Planejamento**: Ao elaborar um plano de implementação (`implementation_plan.md`), a última etapa obrigatória de elaboração e redação do documento deve ser a busca, identificação e mapeamento de potenciais "erros silenciosos" (erros lógicos, concorrência, UX, RLS Postgres, caches) e suas respectivas ações de mitigação antes de submeter o plano para aprovação do usuário.
+- **Verificação Pós-Execução**: Após concluir a execução de qualquer plano de implementação, o agente deve realizar uma varredura de fechamento e documentar os resultados no arquivo `walkthrough.md` sob uma seção dedicada ("Varredura de Erros Silenciosos"), garantindo que todos os detalhes e impactos de UX colaterais foram validados antes da entrega.
 <!-- END:silent-errors-rule -->
 
 <!-- BEGIN:shadcn-dialog-rules -->
