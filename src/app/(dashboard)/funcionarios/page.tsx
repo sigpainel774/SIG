@@ -1287,21 +1287,22 @@ export default function FuncionariosPage() {
           </div>
         )}
         {/* Folha de Pagamento */}
-        <div className="group bg-surface-1 border border-border hover:border-warning/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md h-full">
-          <div className="p-3 rounded-xl bg-warning/10 text-warning group-hover:scale-105 transition-transform duration-200">
-            <Banknote className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground text-sm leading-tight">Folha de pagamento</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Módulo em desenvolvimento. Caso tenha sugestões, acesse a{' '}
-              <Link href="/ajuda" className="text-primary hover:underline font-medium">
-                página de ajuda
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
+        {isAdmin && (
+          <Link
+            href="/financeiro/folha-pagamento"
+            className="group bg-surface-1 border border-border hover:border-warning/30 rounded-2xl p-5 flex items-center gap-4 transition-all duration-200 shadow-md h-full cursor-pointer"
+          >
+            <div className="p-3 rounded-xl bg-warning/10 text-warning group-hover:scale-105 transition-transform duration-200">
+              <Banknote className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground text-sm leading-tight">Folha de pagamento</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Controle administrativo, dia de fechamento, desligamentos e adicionais salariais.
+              </p>
+            </div>
+          </Link>
+        )}
       </div>
 
       {viewMode === 'permissoes' ? (

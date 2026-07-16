@@ -5,7 +5,7 @@ import { useAuthStore } from './useAuthStore'
 export interface Escola {
   id: string
   nome: string
-  codigo?: string
+  codigo?: number | string
   color?: string
   totalAlunos?: number
   totalProfessores?: number

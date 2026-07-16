@@ -98,9 +98,9 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
   return (
     <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger render={trigger as any} />}
-      <DialogContent className="sm:max-w-md bg-[#121212] border-borderCustom text-white">
+      <DialogContent className="sm:max-w-md bg-card border-borderCustom text-foreground rounded-[18px] shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
+          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
             <Bug className="w-5 h-5 text-rose-500" />
             Reportar Erro ou Sugestão
           </DialogTitle>
@@ -112,7 +112,7 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
               type="button"
               variant={tipo === 'bug' ? 'default' : 'outline'}
               onClick={() => setTipo('bug')}
-              className={`flex-1 gap-2 ${tipo === 'bug' ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'border-borderCustom'}`}
+              className={`flex-1 gap-2 cursor-pointer ${tipo === 'bug' ? 'bg-rose-600 hover:bg-rose-700 text-white font-semibold' : 'border-borderCustom text-muted-foreground'}`}
             >
               <Bug className="w-4 h-4" /> Erro / Bug
             </Button>
@@ -120,30 +120,30 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
               type="button"
               variant={tipo === 'sugestao' ? 'default' : 'outline'}
               onClick={() => setTipo('sugestao')}
-              className={`flex-1 gap-2 ${tipo === 'sugestao' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'border-borderCustom'}`}
+              className={`flex-1 gap-2 cursor-pointer ${tipo === 'sugestao' ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold' : 'border-borderCustom text-muted-foreground'}`}
             >
               <Sparkles className="w-4 h-4" /> Sugestão
             </Button>
           </div>
 
           <div>
-            <Label>Título Resumido</Label>
+            <Label className="text-foreground font-semibold text-xs">Título Resumido</Label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ex: Botão de impressão com erro na tela de alunos"
-              className="bg-[#181818] border-borderCustom text-white mt-1"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary mt-1"
               required
             />
           </div>
 
           <div>
-            <Label>Descrição Detalhada</Label>
+            <Label className="text-foreground font-semibold text-xs">Descrição Detalhada</Label>
             <Textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Descreva o que aconteceu ou a melhoria que deseja sugerir..."
-              className="bg-[#181818] border-borderCustom text-white mt-1 min-h-[100px]"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary mt-1 min-h-[100px]"
               required
             />
           </div>
@@ -153,14 +153,14 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              className="bg-[#1a1a1a] border-borderCustom text-white hover:bg-hoverCustom"
+              className="bg-muted text-foreground border-border hover:bg-muted/80 rounded-lg cursor-pointer font-semibold"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2 cursor-pointer"
             >
               <Send className="w-4 h-4" />
               {loading ? 'Enviando...' : 'Enviar Reporte'}

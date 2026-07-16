@@ -127,6 +127,161 @@ export type Database = {
           },
         ]
       }
+      adicionais_salario: {
+        Row: {
+          ano_referencia: number | null
+          ativo: boolean | null
+          created_at: string | null
+          criado_por: string | null
+          descricao: string
+          funcionario_id: string | null
+          id: string
+          mes_referencia: number | null
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          ano_referencia?: number | null
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          descricao: string
+          funcionario_id?: string | null
+          id?: string
+          mes_referencia?: number | null
+          tipo?: string
+          valor: number
+        }
+        Update: {
+          ano_referencia?: number | null
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string
+          funcionario_id?: string | null
+          id?: string
+          mes_referencia?: number | null
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adicionais_salario_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adicionais_salario_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_aulas: {
+        Row: {
+          created_at: string
+          data: string
+          data_original: string | null
+          escola_id: string
+          grade_semanal_id: string | null
+          horario_fim: string
+          horario_inicio: string
+          horario_original_inicio: string | null
+          id: string
+          materia_id: string
+          observacao: string | null
+          professor_id: string | null
+          status: string
+          turma_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          data_original?: string | null
+          escola_id: string
+          grade_semanal_id?: string | null
+          horario_fim: string
+          horario_inicio: string
+          horario_original_inicio?: string | null
+          id?: string
+          materia_id: string
+          observacao?: string | null
+          professor_id?: string | null
+          status?: string
+          turma_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          data_original?: string | null
+          escola_id?: string
+          grade_semanal_id?: string | null
+          horario_fim?: string
+          horario_inicio?: string
+          horario_original_inicio?: string | null
+          id?: string
+          materia_id?: string
+          observacao?: string | null
+          professor_id?: string | null
+          status?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_aulas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_grade_semanal_id_fkey"
+            columns: ["grade_semanal_id"]
+            isOneToOne: false
+            referencedRelation: "grade_semanal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_aulas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos: {
         Row: {
           cartao_sus: string | null
@@ -151,6 +306,7 @@ export type Database = {
           nome: string
           nome_mae: string | null
           nome_pai: string | null
+          numero_matricula: string | null
           rg: string | null
           serie: string | null
           telefone: string | null
@@ -179,6 +335,7 @@ export type Database = {
           nome: string
           nome_mae?: string | null
           nome_pai?: string | null
+          numero_matricula?: string | null
           rg?: string | null
           serie?: string | null
           telefone?: string | null
@@ -207,6 +364,7 @@ export type Database = {
           nome?: string
           nome_mae?: string | null
           nome_pai?: string | null
+          numero_matricula?: string | null
           rg?: string | null
           serie?: string | null
           telefone?: string | null
@@ -578,6 +736,175 @@ export type Database = {
           },
         ]
       }
+      atividades_secretaria: {
+        Row: {
+          ano_letivo: number
+          arquivo_nome: string | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string | null
+          data_aplicacao: string
+          escola_id: string
+          id: string
+          materia_id: string | null
+          observacoes: string | null
+          professor_id: string
+          status: string
+          titulo: string
+          trimestre: number | null
+          turma_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          ano_letivo?: number
+          arquivo_nome?: string | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          data_aplicacao: string
+          escola_id: string
+          id?: string
+          materia_id?: string | null
+          observacoes?: string | null
+          professor_id: string
+          status?: string
+          titulo: string
+          trimestre?: number | null
+          turma_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          ano_letivo?: number
+          arquivo_nome?: string | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          data_aplicacao?: string
+          escola_id?: string
+          id?: string
+          materia_id?: string | null
+          observacoes?: string | null
+          professor_id?: string
+          status?: string
+          titulo?: string
+          trimestre?: number | null
+          turma_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_secretaria_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_secretaria_historico: {
+        Row: {
+          alterado_em: string | null
+          alterado_por: string | null
+          alterado_por_nome: string | null
+          atividade_id: string
+          id: string
+          status_anterior: string | null
+          status_novo: string
+        }
+        Insert: {
+          alterado_em?: string | null
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          atividade_id: string
+          id?: string
+          status_anterior?: string | null
+          status_novo: string
+        }
+        Update: {
+          alterado_em?: string | null
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          atividade_id?: string
+          id?: string
+          status_anterior?: string | null
+          status_novo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_secretaria_historico_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_historico_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_secretaria_historico_atividade_id_fkey"
+            columns: ["atividade_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_secretaria"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -805,6 +1132,61 @@ export type Database = {
         }
         Relationships: []
       }
+      desligamentos_programados: {
+        Row: {
+          created_at: string | null
+          data_desligamento: string
+          funcionario_id: string | null
+          id: string
+          motivo: string | null
+          programado_por: string | null
+          status: string
+          vinculo_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_desligamento: string
+          funcionario_id?: string | null
+          id?: string
+          motivo?: string | null
+          programado_por?: string | null
+          status?: string
+          vinculo_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_desligamento?: string
+          funcionario_id?: string | null
+          id?: string
+          motivo?: string | null
+          programado_por?: string | null
+          status?: string
+          vinculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desligamentos_programados_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "desligamentos_programados_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "desligamentos_programados_vinculo_id_fkey"
+            columns: ["vinculo_id"]
+            isOneToOne: false
+            referencedRelation: "vinculos_funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dispositivos: {
         Row: {
           created_at: string | null
@@ -923,6 +1305,7 @@ export type Database = {
           anexos_padrao: string[] | null
           assinatura_diretor_url: string | null
           ativo: boolean | null
+          codigo: number
           created_at: string
           deleted_at: string | null
           diretor_id: string | null
@@ -941,6 +1324,7 @@ export type Database = {
           anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
+          codigo: number
           created_at?: string
           deleted_at?: string | null
           diretor_id?: string | null
@@ -959,6 +1343,7 @@ export type Database = {
           anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
+          codigo?: number
           created_at?: string
           deleted_at?: string | null
           diretor_id?: string | null
@@ -990,35 +1375,72 @@ export type Database = {
           },
         ]
       }
+      folha_pagamento_config: {
+        Row: {
+          atualizado_por: string | null
+          dia_fechamento: number
+          id: string
+          observacoes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          atualizado_por?: string | null
+          dia_fechamento: number
+          id?: string
+          observacoes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          atualizado_por?: string | null
+          dia_fechamento?: number
+          id?: string
+          observacoes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       frequencias: {
         Row: {
+          agenda_aula_id: string | null
           aluno_id: string
           created_at: string
           data: string
           escola_id: string
           id: string
+          materia_id: string | null
           presenca: boolean
           turma_id: string
         }
         Insert: {
+          agenda_aula_id?: string | null
           aluno_id: string
           created_at?: string
           data: string
           escola_id: string
           id?: string
+          materia_id?: string | null
           presenca: boolean
           turma_id: string
         }
         Update: {
+          agenda_aula_id?: string | null
           aluno_id?: string
           created_at?: string
           data?: string
           escola_id?: string
           id?: string
+          materia_id?: string | null
           presenca?: boolean
           turma_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "frequencias_agenda_aula_id_fkey"
+            columns: ["agenda_aula_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_aulas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "frequencias_aluno_id_fkey"
             columns: ["aluno_id"]
@@ -1038,6 +1460,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencias_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
             referencedColumns: ["id"]
           },
           {
@@ -1293,8 +1722,144 @@ export type Database = {
         }
         Relationships: []
       }
+      grade_curricular_escola: {
+        Row: {
+          base_curricular: string
+          created_at: string
+          escola_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          base_curricular: string
+          created_at?: string
+          escola_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          base_curricular?: string
+          created_at?: string
+          escola_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_curricular_escola_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grade_semanal: {
+        Row: {
+          ano_letivo: number
+          ativo: boolean
+          created_at: string
+          dia_semana: number
+          escola_id: string
+          id: string
+          materia_id: string
+          ordem_aula: number
+          turma_id: string
+        }
+        Insert: {
+          ano_letivo: number
+          ativo?: boolean
+          created_at?: string
+          dia_semana: number
+          escola_id: string
+          id?: string
+          materia_id: string
+          ordem_aula: number
+          turma_id: string
+        }
+        Update: {
+          ano_letivo?: number
+          ativo?: boolean
+          created_at?: string
+          dia_semana?: number
+          escola_id?: string
+          id?: string
+          materia_id?: string
+          ordem_aula?: number
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_semanal_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grade_semanal_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grade_semanal_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grade_semanal_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horarios_aulas_slots: {
+        Row: {
+          created_at: string
+          escola_id: string
+          horario_fim: string
+          horario_inicio: string
+          id: string
+          ordem_aula: number
+          turno: string
+        }
+        Insert: {
+          created_at?: string
+          escola_id: string
+          horario_fim: string
+          horario_inicio: string
+          id?: string
+          ordem_aula: number
+          turno: string
+        }
+        Update: {
+          created_at?: string
+          escola_id?: string
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          ordem_aula?: number
+          turno?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horarios_aulas_slots_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materias: {
         Row: {
+          base_curricular: string | null
           created_at: string
           escola_id: string | null
           id: string
@@ -1303,6 +1868,7 @@ export type Database = {
           turma_id: string | null
         }
         Insert: {
+          base_curricular?: string | null
           created_at?: string
           escola_id?: string | null
           id?: string
@@ -1311,6 +1877,7 @@ export type Database = {
           turma_id?: string | null
         }
         Update: {
+          base_curricular?: string | null
           created_at?: string
           escola_id?: string | null
           id?: string
@@ -1495,9 +2062,13 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string | null
+          grupo_id: string | null
           id: string
           link: string | null
           message: string
+          processado_em: string | null
+          processado_por: string | null
+          processado_por_nome: string | null
           read: boolean | null
           tenant_id: string | null
           title: string
@@ -1506,9 +2077,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          grupo_id?: string | null
           id?: string
           link?: string | null
           message: string
+          processado_em?: string | null
+          processado_por?: string | null
+          processado_por_nome?: string | null
           read?: boolean | null
           tenant_id?: string | null
           title: string
@@ -1517,9 +2092,13 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          grupo_id?: string | null
           id?: string
           link?: string | null
           message?: string
+          processado_em?: string | null
+          processado_por?: string | null
+          processado_por_nome?: string | null
           read?: boolean | null
           tenant_id?: string | null
           title?: string
@@ -1527,6 +2106,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_processado_por_fkey"
+            columns: ["processado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_processado_por_fkey"
+            columns: ["processado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -2331,6 +2924,7 @@ export type Database = {
           fora_da_rede: boolean | null
           funcionario_id: string
           id: string
+          lotacao_id: string | null
           motivo: string | null
           respondido_em: string | null
           respondido_por: string | null
@@ -2347,6 +2941,7 @@ export type Database = {
           fora_da_rede?: boolean | null
           funcionario_id: string
           id?: string
+          lotacao_id?: string | null
           motivo?: string | null
           respondido_em?: string | null
           respondido_por?: string | null
@@ -2363,6 +2958,7 @@ export type Database = {
           fora_da_rede?: boolean | null
           funcionario_id?: string
           id?: string
+          lotacao_id?: string | null
           motivo?: string | null
           respondido_em?: string | null
           respondido_por?: string | null
@@ -2397,6 +2993,13 @@ export type Database = {
             columns: ["funcionario_id"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_funcionarios_lotacao_id_fkey"
+            columns: ["lotacao_id"]
+            isOneToOne: false
+            referencedRelation: "vinculos_funcionarios"
             referencedColumns: ["id"]
           },
           {
@@ -2587,6 +3190,7 @@ export type Database = {
           escola_id: string | null
           funcionario_id: string | null
           id: string
+          tipo_vinculo: string | null
         }
         Insert: {
           ativo?: boolean
@@ -2597,6 +3201,7 @@ export type Database = {
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
+          tipo_vinculo?: string | null
         }
         Update: {
           ativo?: boolean
@@ -2607,6 +3212,7 @@ export type Database = {
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
+          tipo_vinculo?: string | null
         }
         Relationships: [
           {
@@ -2837,18 +3443,54 @@ export type Database = {
         Returns: boolean
       }
       cleanup_performance_metrics: { Args: never; Returns: undefined }
-      get_performance_dashboard_stats: {
-        Args: { period_days?: number }
-        Returns: {
-          score: number
-          total_samples: number
-          p95: number
-          p99: number
-          cpu_stats: { cpu: string; avg: number; count: number }[]
-          ram_stats: { ram: string; avg: number; count: number }[]
-          network_stats: { type: string; avg: number; count: number }[]
-          route_metrics: { pathname: string; avg_value: number; sample_count: number }[]
+      criar_notificacoes: {
+        Args: {
+          p_destinatarios: string[]
+          p_grupo_id?: string
+          p_link?: string
+          p_message?: string
+          p_tenant_id?: string
+          p_title?: string
+          p_type?: string
         }
+        Returns: {
+          created_at: string | null
+          grupo_id: string | null
+          id: string
+          link: string | null
+          message: string
+          processado_em: string | null
+          processado_por: string | null
+          processado_por_nome: string | null
+          read: boolean | null
+          tenant_id: string | null
+          title: string
+          type: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      gerar_agenda_ano_letivo: {
+        Args: {
+          p_ano_letivo: number
+          p_data_fim: string
+          p_data_inicio: string
+          p_escola_id: string
+        }
+        Returns: number
+      }
+      gerar_numero_matricula: {
+        Args: {
+          aluno_id: string
+          p_data_matricula: string
+          p_escola_id: string
+        }
+        Returns: string
       }
       get_auth_funcionario_id: { Args: never; Returns: string }
       get_birthdays_of_month: {
@@ -2860,10 +3502,41 @@ export type Database = {
         }[]
       }
       get_funcionario_id_from_auth: { Args: never; Returns: string }
+      get_performance_dashboard_stats: {
+        Args: { period_days?: number }
+        Returns: Json
+      }
+      get_storage_objects: {
+        Args: never
+        Returns: {
+          bucket_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          name: string
+        }[]
+      }
       is_admin_global: { Args: never; Returns: boolean }
       is_diretor_da_escola: { Args: { escola_alvo: string }; Returns: boolean }
       is_superadmin_by_uid: { Args: never; Returns: boolean }
       is_superadmin_email: { Args: { user_email: string }; Returns: boolean }
+      pode_atualizar_notificacao: {
+        Args: { p_notif_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      processar_decisao_transferencia_lotacao: {
+        Args: {
+          p_aceitar: boolean
+          p_respondido_por_id: string
+          p_resposta_texto: string
+          p_transferencia_id: string
+        }
+        Returns: undefined
+      }
+      reverter_transferencia_lotacao: {
+        Args: { p_revertido_por_id: string; p_transferencia_id: string }
+        Returns: undefined
+      }
       tem_acesso_a_escola: { Args: { escola_alvo: string }; Returns: boolean }
     }
     Enums: {
