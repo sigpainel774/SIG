@@ -78,6 +78,36 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url)
       }
     }
+    if (pathname.startsWith('/financeiro/folha-pagamento')) {
+      const isSuperAdmin = user.app_metadata?.is_superadmin === true
+      if (!isSuperAdmin) {
+        const { data: funcData } = await supabase
+          .from('funcionarios')
+          .select('id')
+          .ilike('email', user.email || '')
+          .maybeSingle()
+
+        if (!funcData) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/login'
+          url.searchParams.set('error', 'orphan')
+          return NextResponse.redirect(url)
+        }
+
+        const { data: acessos } = await supabase
+          .from('acessos_usuarios')
+          .select('nivel')
+          .eq('funcionario_id', funcData.id)
+          .eq('ativo', true)
+
+        const temNivel1 = acessos?.some((a: any) => a.nivel === 1)
+        if (!temNivel1) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/home'
+          return NextResponse.redirect(url)
+        }
+      }
+    }
   }
 
   const finalResponse = NextResponse.next({

@@ -127,7 +127,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             tipo,
             ativo,
             logo_url: logoUrl || null
-          })
+          } as any)
 
         if (error) throw error
         toast.success('Escola cadastrada com sucesso!')
