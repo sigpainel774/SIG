@@ -485,7 +485,7 @@ export function ModalFuncionario({
         const path = `${empId}/foto3x4_${Date.now()}.${ext}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('fotos-funcionarios')
-          .upload(path, fotoFile, { upsert: true })
+          .upload(path, fotoFile, { upsert: true, cacheControl: '31536000' })
 
         if (uploadError) throw uploadError
 
