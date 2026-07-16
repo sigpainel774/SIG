@@ -219,7 +219,7 @@ const diretrizes = [
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
           <li>A ficha ativa do aluno ou funcionário migra eletronicamente para a escola de destino (mudando seu vínculo ativo).</li>
-          <li>Uma **cópia estática (snapshot)** da ficha completa contendo os dados exatos do momento da transferência é gerada e arquivada na escola de origem, sob o status <code>TRANSFERIDO</code>.</li>
+          <li>Uma **cópia da ficha completa** contendo todos os dados e arquivos anexos no momento exato da transferência é arquivada eletronicamente na escola de origem, sob o status <code>TRANSFERIDO</code>.</li>
         </ul>
 
         <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">3. Arquivo Escolar</h4>
