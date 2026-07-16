@@ -6,6 +6,7 @@ import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
 import { MapaGlobal } from '@/components/map/MapWrapper'
 import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
+import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
 import { createClient } from '@/lib/supabaseClient'
 import { IconTile } from '@/components/ui/icon-tile'
 import { cn } from '@/lib/utils'
@@ -33,7 +34,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'notas' | null
+type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'notas' | 'necessidades_especiais' | null
 
 export default function RelatoriosPage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -156,6 +157,13 @@ export default function RelatoriosPage() {
       title: 'Relatório de Notas',
       description: 'Módulo em desenvolvimento.',
       icon: GraduationCap,
+      variant: 'warning' as const,
+    },
+    {
+      id: 'necessidades_especiais' as const,
+      title: 'Necessidades Especiais',
+      description: 'Módulo em desenvolvimento. Informações de AEE e Ficha de Saúde.',
+      icon: ShieldAlert,
       variant: 'warning' as const,
     },
   ]
@@ -390,6 +398,8 @@ export default function RelatoriosPage() {
           </div>
         ) : activeReport === 'notas' ? (
           <RelatorioNotas selectedEscola={selectedEscola} />
+        ) : activeReport === 'necessidades_especiais' ? (
+          <RelatorioNecessidades selectedEscola={selectedEscola} />
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-foreground mb-3">
