@@ -60,7 +60,7 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
 
       if (updateError) throw updateError
 
-      // Se aceitar, atualizar o aluno (mudar escola_id)
+      // Se aceitar, atualizar o aluno (mudar escola_id) e arquivar ficha completa
       if (aceitar && solicitacao.escola_destino_id) {
         const { error: alunoError } = await supabase
           .from('alunos')
@@ -68,6 +68,42 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
           .eq('id', solicitacao.aluno_id)
           
         if (alunoError) throw alunoError
+
+        // 1. Buscar a ficha completa do aluno na tabela 'alunos' (com acesso RLS agora na escola destino)
+        const { data: alunoCompleto } = await supabase
+          .from('alunos')
+          .select('*')
+          .eq('id', solicitacao.aluno_id)
+          .single()
+
+        // 2. Buscar anexos ativos do aluno (também com acesso RLS)
+        const { data: anexosAtivos } = await supabase
+          .from('alunos_anexos')
+          .select('*')
+          .eq('aluno_id', solicitacao.aluno_id)
+          .is('deleted_at', null)
+
+        // Ajustar o escola_id no payload cadastral para refletir a escola de origem no arquivamento histórico
+        const payloadCadastral = alunoCompleto
+          ? { ...alunoCompleto, escola_id: solicitacao.escola_origem_id }
+          : { ...solicitacao.ficha_snapshot, escola_id: solicitacao.escola_origem_id }
+
+        // 3. Gravar cópia histórica na tabela arquivados vinculada à escola de origem
+        const { error: archiveError } = await supabase
+          .from('arquivados')
+          .insert({
+            tipo: 'ALUNO_TRANSFERIDO',
+            referencia_id: solicitacao.aluno_id,
+            tabela_origem: 'alunos',
+            motivo: `TRANSFERENCIA: Transferido para a escola ${solicitacao.destino?.nome ?? 'Destino'}`,
+            escola_origem_id: solicitacao.escola_origem_id,
+            arquivado_por: funcionario.id,
+            payload_completo: payloadCadastral,
+            arquivos_anexos: anexosAtivos || [],
+            status: 'TRANSFERIDO'
+          })
+
+        if (archiveError) throw archiveError
 
         await logAudit({
           supabase,

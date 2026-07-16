@@ -179,14 +179,7 @@ function TransferenciasContent() {
         if (updateError) throw updateError
 
         if (aceitar) {
-          // 1. Buscar anexos ativos do aluno antes da transferência
-          const { data: anexosAtivos } = await supabase
-            .from('alunos_anexos')
-            .select('*')
-            .eq('aluno_id', transferenciaSelecionada.aluno_id)
-            .is('deleted_at', null)
-
-          // 2. Atualiza escola_id na tabela alunos
+          // 1. Atualiza escola_id na tabela alunos (muda o vínculo ativo)
           const { error: studentUpdateError } = await supabase
             .from('alunos')
             .update({ escola_id: transferenciaSelecionada.escola_destino_id })
@@ -194,7 +187,26 @@ function TransferenciasContent() {
 
           if (studentUpdateError) throw studentUpdateError
 
-          // 3. Gravar cópia histórica na tabela arquivados vinculada à escola de origem (com todos os anexos)
+          // 2. Buscar a ficha completa e atualizada do aluno na tabela 'alunos' (com acesso RLS na escola destino)
+          const { data: alunoCompleto } = await supabase
+            .from('alunos')
+            .select('*')
+            .eq('id', transferenciaSelecionada.aluno_id)
+            .single()
+
+          // 3. Buscar anexos ativos do aluno (também com acesso RLS na escola destino)
+          const { data: anexosAtivos } = await supabase
+            .from('alunos_anexos')
+            .select('*')
+            .eq('aluno_id', transferenciaSelecionada.aluno_id)
+            .is('deleted_at', null)
+
+          // Ajustar o escola_id no payload cadastral para refletir a escola de origem no arquivamento histórico
+          const payloadCadastral = alunoCompleto
+            ? { ...alunoCompleto, escola_id: transferenciaSelecionada.escola_origem_id }
+            : { ...transferenciaSelecionada.ficha_snapshot, escola_id: transferenciaSelecionada.escola_origem_id }
+
+          // 4. Gravar cópia histórica na tabela arquivados vinculada à escola de origem (com todos os anexos)
           const { error: archiveError } = await supabase
             .from('arquivados')
             .insert({
@@ -204,7 +216,7 @@ function TransferenciasContent() {
               motivo: `TRANSFERENCIA: Transferido para a escola ${transferenciaSelecionada.destino?.nome ?? 'Destino'}`,
               escola_origem_id: transferenciaSelecionada.escola_origem_id,
               arquivado_por: funcionario.id,
-              payload_completo: transferenciaSelecionada.ficha_snapshot || {},
+              payload_completo: payloadCadastral,
               arquivos_anexos: anexosAtivos || [],
               status: 'TRANSFERIDO'
             })
