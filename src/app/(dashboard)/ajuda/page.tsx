@@ -62,9 +62,9 @@ const diretrizes = [
           Ao salvar a matrícula com ambas as assinaturas (Responsável e Funcionário), o sistema compila automaticamente o PDF oficial e calcula seu **Hash SHA-256**. O arquivo é enviado para o storage e a ficha do aluno é **bloqueada permanentemente** para edições adicionais.
         </p>
 
-        <div className="bg-[#1e1b4b]/80 text-[#818cf8] p-4 border border-[#3730a3] rounded-xl text-sm leading-relaxed">
-          <strong className="flex items-center gap-1.5 mb-1 font-extrabold uppercase text-white text-[11px]">
-            <ShieldCheck className="w-4 h-4" /> Desbloqueio pelo Diretor (Auditoria)
+        <div className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-4 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-sm leading-relaxed">
+          <strong className="flex items-center gap-1.5 mb-1 font-extrabold uppercase text-indigo-950 dark:text-indigo-100 text-[11px]">
+            <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Desbloqueio pelo Diretor (Auditoria)
           </strong>
           Se for necessário fazer qualquer alteração em uma matrícula já homologada, o funcionário deve enviar uma solicitação com justificativa. Apenas o **Diretor (Nível 2)** ou **Admin** pode aprovar a solicitação na listagem de alunos. Ao aprovar, o sistema libera temporariamente a edição. Ao salvar novamente, um novo PDF e um novo Hash SHA-256 são gerados automaticamente.
         </div>
@@ -246,15 +246,15 @@ export default function AjudaPage() {
   )
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto selection:bg-[#3ea6ff]/30 selection:text-white pb-12">
+    <div className="space-y-6 max-w-4xl mx-auto selection:bg-primary/30 selection:text-foreground pb-12">
       <ModalReport open={reportModalOpen} onOpenChange={setReportModalOpen} />
 
-      <div className="pb-4 border-b border-[#26262a] flex items-center justify-between">
+      <div className="pb-4 border-b border-border flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <span>Central de Ajuda</span>
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Manuais operacionais, fluxos oficiais de acesso e guias do SIG Escolar.
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function AjudaPage() {
           placeholder="Buscar manuais ou palavras-chave (ex: assinatura, ponto, professor)..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="bg-[#121214] border-[#26262a] text-white focus-visible:ring-[#3ea6ff] h-12 text-sm rounded-xl"
+          className="bg-background border-border text-foreground focus-visible:ring-primary h-12 text-sm rounded-xl placeholder:text-muted-foreground"
         />
       </div>
 
@@ -276,22 +276,22 @@ export default function AjudaPage() {
           const Icon = diretriz.icon
 
           return (
-            <div key={diretriz.id} className="bg-[#121214] border border-[#26262a] rounded-2xl overflow-hidden transition-all duration-200 shadow-lg">
+            <div key={diretriz.id} className="bg-card border border-border rounded-2xl overflow-hidden transition-all duration-200 shadow-sm hover:shadow-md hover:border-primary/20">
               <button 
                 onClick={() => toggleDiretriz(diretriz.id)}
-                className="w-full bg-transparent border-none text-white p-4.5 text-left flex justify-between items-center cursor-pointer font-bold hover:bg-[#18181b] transition-colors"
+                className="w-full bg-transparent border-none text-foreground p-4.5 text-left flex justify-between items-center cursor-pointer font-bold hover:bg-muted/50 transition-colors"
               >
                 <span className="flex items-center gap-3 text-sm tracking-tight">
-                  <div className="p-2 rounded-xl bg-[#3ea6ff]/10 text-[#3ea6ff] border border-[#3ea6ff]/20">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <Icon className="w-4 h-4" />
                   </div>
                   {diretriz.titulo}
                 </span>
-                <ChevronDown className={`w-5 h-5 text-zinc-500 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180 text-foreground' : ''}`} />
               </button>
               
               {isExpanded && (
-                <div className="p-5 pt-1 text-zinc-300 text-sm leading-relaxed border-t border-[#26262a] bg-[#121214]/50 animate-fadeIn">
+                <div className="p-5 pt-1 text-muted-foreground text-sm leading-relaxed border-t border-border bg-muted/10 animate-fadeIn">
                   {diretriz.conteudo}
                 </div>
               )}
@@ -299,17 +299,17 @@ export default function AjudaPage() {
           )
         })}
         {diretrizesFiltradas.length === 0 && (
-          <div className="text-center text-zinc-500 py-12 bg-[#121214] border border-[#26262a] rounded-2xl">
+          <div className="text-center text-muted-foreground py-12 bg-card border border-border rounded-2xl shadow-sm">
             Nenhum manual encontrado para a busca especificada.
           </div>
         )}
       </div>
 
-      <div className="mt-8 text-center pt-8 border-t border-dashed border-[#26262a]">
+      <div className="mt-8 text-center pt-8 border-t border-dashed border-border">
         <Button 
           onClick={() => setReportModalOpen(true)}
           variant="outline" 
-          className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 font-semibold h-12 px-6 rounded-xl transition-all cursor-pointer"
+          className="bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 font-semibold h-12 px-6 rounded-xl transition-all cursor-pointer"
         >
           <MessageSquareWarning className="w-5 h-5 mr-2" />
           Reportar um Problema ou Bug no SIG
