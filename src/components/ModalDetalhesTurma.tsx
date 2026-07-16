@@ -839,7 +839,7 @@ export function ModalDetalhesTurma({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] w-full bg-card border-borderCustom text-foreground p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] w-full bg-card border-borderCustom text-foreground p-6 rounded-[18px] shadow-[0_24px_80px_rgba(15,23,42,0.18)] max-h-[92vh] overflow-y-auto">
           <DialogHeader className="pr-12">
             <DialogTitle className="text-2xl font-bold tracking-tight">{turma.nome}</DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm mt-1">
@@ -853,7 +853,7 @@ export function ModalDetalhesTurma({
               <button
                 onClick={() => setActiveTab('materias')}
                 className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'materias' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
+                  activeTab === 'materias' ? 'bg-card text-primary shadow border border-border' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -862,7 +862,7 @@ export function ModalDetalhesTurma({
               <button
                 onClick={() => setActiveTab('alunos')}
                 className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'alunos' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
+                  activeTab === 'alunos' ? 'bg-card text-primary shadow border border-border' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -871,7 +871,7 @@ export function ModalDetalhesTurma({
               <button
                 onClick={() => setActiveTab('frequencia')}
                 className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'frequencia' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
+                  activeTab === 'frequencia' ? 'bg-card text-primary shadow border border-border' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
                 }`}
               >
                 <CalendarDays className="w-4 h-4" />
@@ -880,7 +880,7 @@ export function ModalDetalhesTurma({
               <button
                 onClick={() => setActiveTab('notas')}
                 className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'notas' ? 'bg-card text-foreground shadow' : 'hover:text-foreground'
+                  activeTab === 'notas' ? 'bg-card text-primary shadow border border-border' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />
@@ -894,10 +894,9 @@ export function ModalDetalhesTurma({
                 {isEditMode ? (
                   // PAINEL DE ALOCAÇÃO ADMINISTRATIVA (Exibido se o Modo de Edição estiver ativo)
                   <div className="space-y-5">
-                    {/* Professores da Turma */}
-                    <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
-                        <Users className="w-4 h-4 text-zinc-400" />
+                    <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
+                        <Users className="w-4 h-4 text-muted-foreground" />
                         Professores da Turma
                       </div>
                       <div className="flex gap-2">
@@ -905,13 +904,13 @@ export function ModalDetalhesTurma({
                           <select
                             value={selectedProfId}
                             onChange={(e) => setSelectedProfId(e.target.value)}
-                            className="w-full bg-[#121214] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
                           >
                             <option value="">-- Selecione um Professor --</option>
                             {professoresEscola
                               .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
                               .map((prof) => (
-                                <option key={prof.id} value={prof.id}>
+                                <option key={prof.id} value={prof.id} className="bg-background text-foreground">
                                   {prof.nome}
                                 </option>
                               ))}
@@ -919,7 +918,7 @@ export function ModalDetalhesTurma({
                         </div>
                         <Button
                           onClick={handleAddProfessor}
-                          className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold px-4 h-10 text-xs"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 h-10 text-xs rounded-lg"
                         >
                           Adicionar
                         </Button>
@@ -929,13 +928,13 @@ export function ModalDetalhesTurma({
                       {vinculosProfessores.length > 0 ? (
                         <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
                           {vinculosProfessores.map((vp) => (
-                            <div key={vp.id} className="flex items-center justify-between bg-[#121214] p-2 rounded-lg border border-[#202022]">
-                              <span className="text-xs font-semibold text-zinc-200 pl-1">{vp.funcionarios?.nome ?? 'Sem nome'}</span>
+                            <div key={vp.id} className="flex items-center justify-between bg-background p-2 rounded-lg border border-border">
+                              <span className="text-xs font-semibold text-foreground pl-1">{vp.funcionarios?.nome ?? 'Sem nome'}</span>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
-                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -943,31 +942,30 @@ export function ModalDetalhesTurma({
                           ))}
                         </div>
                       ) : (
-                        <div className="text-xs text-zinc-500 text-center py-1 font-medium">Nenhum professor alocado.</div>
+                        <div className="text-xs text-muted-foreground text-center py-1 font-medium">Nenhum professor alocado.</div>
                       )}
                     </div>
 
-                    {/* Matérias da Turma */}
-                    <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
-                        <BookOpen className="w-4 h-4 text-zinc-400" />
+                    <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
+                        <BookOpen className="w-4 h-4 text-muted-foreground" />
                         Matérias da Turma
                       </div>
 
                       {/* Formulário de Adição (Dashed Container) */}
-                      <div className="border border-dashed border-[#3f3f46] bg-[#121214] rounded-lg p-3 space-y-3">
+                      <div className="border border-dashed border-border bg-background rounded-lg p-3 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <select
                             value={novaMateriaNome}
                             onChange={(e) => handleSelectMateriaCatalogo(e.target.value)}
-                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
                           >
-                            <option value="">-- Selecione a Matéria --</option>
+                            <option value="" className="bg-background text-foreground">-- Selecione a Matéria --</option>
                             {catalogoMaterias.length === 0 ? (
-                              <option value="" disabled>Cadastre matérias nas Configurações</option>
+                              <option value="" disabled className="bg-background text-foreground">Cadastre matérias nas Configurações</option>
                             ) : (
                               catalogoMaterias.map((m) => (
-                                <option key={m.id} value={m.nome}>
+                                <option key={m.id} value={m.nome} className="bg-background text-foreground">
                                   {m.nome}
                                 </option>
                               ))
@@ -976,23 +974,23 @@ export function ModalDetalhesTurma({
                           <select
                             value={novaMateriaProfId}
                             onChange={(e) => setNovaMateriaProfId(e.target.value)}
-                            className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-white px-3 h-10 text-xs focus:ring-1 focus:ring-[#3ea6ff]"
+                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
                           >
-                            <option value="">-- Selecione o Professor --</option>
-                            <option value="sem_professor">Sem professor</option>
+                            <option value="" className="bg-background text-foreground">-- Selecione o Professor --</option>
+                            <option value="sem_professor" className="bg-background text-foreground">Sem professor</option>
                             {vinculosProfessores.map((vp) => (
-                              <option key={vp.funcionario_id} value={vp.funcionario_id}>
+                              <option key={vp.funcionario_id} value={vp.funcionario_id} className="bg-background text-foreground">
                                 {vp.funcionarios?.nome ?? 'Sem nome'}
                               </option>
                             ))}
                           </select>
-                          <div className="w-full bg-[#18181b] border border-[#2a2a2a] rounded-lg text-zinc-400 px-3 h-10 text-xs flex items-center justify-between">
+                          <div className="w-full bg-background border border-border rounded-lg text-muted-foreground px-3 h-10 text-xs flex items-center justify-between">
                             <span>Base:</span>
                             <span className={cn(
                               "font-semibold uppercase text-[10px] px-2 py-0.5 rounded border",
                               novaMateriaBaseCurricular === 'comum'
-                                ? "bg-blue-500/10 border-blue-500/20 text-[#3ea6ff]"
-                                : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                                ? "bg-primary/10 border-primary/20 text-primary"
+                                : "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
                             )}>
                               {novaMateriaBaseCurricular === 'comum' ? 'Comum' : 'Diversificada'}
                             </span>
@@ -1001,14 +999,14 @@ export function ModalDetalhesTurma({
                         <div className="flex items-center gap-2">
                           <Button
                             onClick={handleAddMateria}
-                            className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold w-auto gap-1 h-9 px-3 text-xs"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-auto gap-1 h-9 px-3 text-xs rounded-lg"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Adicionar Matéria
                           </Button>
                           <Button
                             onClick={handleImportarMateriasDaGrade}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 w-9 p-0 text-xs rounded-lg flex items-center justify-center"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 w-9 p-0 text-xs rounded-lg flex items-center justify-center cursor-pointer"
                             title="Importar todas as matérias da grade curricular"
                           >
                             T
@@ -1019,43 +1017,43 @@ export function ModalDetalhesTurma({
                       {/* Lista de Matérias */}
                       <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                         {materias.length === 0 ? (
-                          <div className="text-xs text-zinc-500 text-center py-2 font-medium">Nenhuma matéria cadastrada.</div>
+                          <div className="text-xs text-muted-foreground text-center py-2 font-medium">Nenhuma matéria cadastrada.</div>
                         ) : (
                           materias.map((mat) => (
-                            <div key={mat.id} className="flex items-center justify-between bg-[#121214] p-3 rounded-lg border border-[#202022] gap-3">
+                            <div key={mat.id} className="flex items-center justify-between bg-background p-3 rounded-lg border border-border gap-3">
                               <div className="flex flex-col min-w-0 flex-1 pr-2">
-                                <span className="text-xs font-bold text-white truncate">{mat.nome}</span>
+                                <span className="text-xs font-bold text-foreground truncate">{mat.nome}</span>
                                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                                   <div className="flex items-center gap-1">
-                                    <UserIcon className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    <UserIcon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                                     <select
                                       value={mat.professor_id ?? 'sem_professor'}
                                       onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
-                                      className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none max-w-[130px]"
+                                      className="bg-background border border-border rounded text-foreground px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-primary outline-none max-w-[130px]"
                                     >
-                                      <option value="sem_professor">Sem professor</option>
+                                      <option value="sem_professor" className="bg-background text-foreground">Sem professor</option>
                                       {vinculosProfessores.map((vp) => (
-                                        <option key={vp.funcionario_id} value={vp.funcionario_id}>
+                                        <option key={vp.funcionario_id} value={vp.funcionario_id} className="bg-background text-foreground">
                                           {vp.funcionarios?.nome ?? 'Sem nome'}
                                         </option>
                                       ))}
                                       {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
                                       {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
-                                        <option key={mat.professor_id} value={mat.professor_id}>
+                                        <option key={mat.professor_id} value={mat.professor_id} className="bg-background text-foreground">
                                           {mat.funcionarios?.nome ?? 'Professor atual (Fora da Turma)'}
                                         </option>
                                       )}
                                     </select>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <BookOpen className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    <BookOpen className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                                     <select
                                       value={mat.base_curricular ?? 'comum'}
                                       onChange={(e) => handleUpdateMateriaBase(mat.id, e.target.value)}
-                                      className="bg-[#18181b] border border-[#2a2a2a] rounded text-zinc-300 px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-[#3ea6ff] outline-none"
+                                      className="bg-background border border-border rounded text-foreground px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-primary outline-none"
                                     >
-                                      <option value="comum">Base Comum</option>
-                                      <option value="diversificada">Base Diversificada</option>
+                                      <option value="comum" className="bg-background text-foreground">Base Comum</option>
+                                      <option value="diversificada" className="bg-background text-foreground">Base Diversificada</option>
                                     </select>
                                   </div>
                                 </div>
@@ -1064,7 +1062,7 @@ export function ModalDetalhesTurma({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleRemoveMateria(mat.id)}
-                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex-shrink-0"
+                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex-shrink-0 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -1078,23 +1076,23 @@ export function ModalDetalhesTurma({
                   // DIÁRIO SIMPLES (Exibido no modo de leitura comum)
                   <div className="space-y-3">
                     {loading ? (
-                      <div className="text-center py-10 text-xs text-zinc-500 font-medium">Carregando matérias...</div>
+                      <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando matérias...</div>
                     ) : materias.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-zinc-500 font-medium">Nenhuma matéria vinculada a esta turma.</div>
+                      <div className="text-center py-10 text-xs text-muted-foreground font-medium">Nenhuma matéria vinculada a esta turma.</div>
                     ) : (
                       materias.map((mat) => (
                         <div
                           key={mat.id}
-                          className="bg-[#18181b] border border-[#26262a] rounded-xl p-4 flex items-center justify-between h-13"
+                          className="bg-card border border-border hover:border-primary/50 shadow-[0_2px_10px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 rounded-xl p-4 flex items-center justify-between h-13 transition-all duration-200 text-foreground cursor-pointer"
                         >
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-white">{mat.nome}</span>
-                            <span className="text-[10px] text-zinc-400 mt-0.5">
+                            <span className="text-sm font-bold text-foreground">{mat.nome}</span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
                               {mat.base_curricular === 'diversificada' ? 'Base Diversificada' : 'Base Comum'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-zinc-400">
-                            <UserIcon className="w-4 h-4 text-zinc-500" />
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <UserIcon className="w-4 h-4 text-muted-foreground/60" />
                             <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>
                           </div>
                         </div>
@@ -1115,31 +1113,31 @@ export function ModalDetalhesTurma({
                     placeholder="Buscar aluno..."
                     value={searchAluno}
                     onChange={(e) => setSearchAluno(e.target.value)}
-                    className="bg-[#18181b] border-[#26262a] text-white placeholder-zinc-500 h-10 text-sm rounded-xl pl-3 focus-visible:ring-[#3ea6ff]"
+                    className="bg-background border-border text-foreground placeholder-muted-foreground h-10 text-sm rounded-xl pl-3 focus-visible:ring-primary"
                   />
                 </div>
 
                 {/* Lista */}
                 {loading ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Carregando alunos...</div>
+                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando alunos...</div>
                 ) : filteredAlunos.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Nenhum aluno encontrado.</div>
+                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Nenhum aluno encontrado.</div>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                     {filteredAlunos.map((aluno) => (
                       <div
                         key={aluno.id}
                         onClick={() => setSelectedAluno(aluno)}
-                        className="bg-[#18181b] border border-[#26262a] hover:border-[#3ea6ff]/40 p-3 rounded-xl flex items-center gap-3.5 cursor-pointer transition-all duration-200"
+                        className="bg-card border border-border hover:border-primary/40 shadow-[0_2px_10px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 p-3 rounded-xl flex items-center gap-3.5 cursor-pointer transition-all duration-200 text-foreground"
                       >
-                        <div className="w-10 h-10 rounded-full bg-[#3ea6ff]/10 border border-[#3ea6ff]/20 text-[#3ea6ff] text-sm font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
                           {aluno.foto_url ? (
                             <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
                           ) : (
                             aluno.nome.substring(0, 2).toUpperCase()
                           )}
                         </div>
-                        <span className="text-sm font-semibold text-zinc-200 truncate">{aluno.nome}</span>
+                        <span className="text-sm font-semibold text-foreground truncate">{aluno.nome}</span>
                       </div>
                     ))}
                   </div>
@@ -1152,10 +1150,10 @@ export function ModalDetalhesTurma({
               <div className="space-y-4 mt-5">
                 {/* Controles de Data e Matéria */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center bg-[#18181b] border border-[#26262a] rounded-xl overflow-hidden h-10">
+                  <div className="flex items-center bg-background border border-border rounded-xl overflow-hidden h-10">
                     <button
                       onClick={() => alterarData(-1)}
-                      className="p-2.5 hover:bg-[#202024] text-zinc-400 hover:text-white transition-colors"
+                      className="p-2.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <ChevronLeft className="w-4.5 h-4.5" />
                     </button>
@@ -1163,11 +1161,11 @@ export function ModalDetalhesTurma({
                       type="date"
                       value={dataFreq}
                       onChange={(e) => setDataFreq(e.target.value)}
-                      className="bg-transparent text-sm text-[#3ea6ff] font-bold text-center w-36 outline-none px-2 focus:ring-0"
+                      className="bg-transparent text-sm text-primary font-bold text-center w-36 outline-none px-2 focus:ring-0 cursor-pointer"
                     />
                     <button
                       onClick={() => alterarData(1)}
-                      className="p-2.5 hover:bg-[#202024] text-zinc-400 hover:text-white transition-colors"
+                      className="p-2.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <ChevronRight className="w-4.5 h-4.5" />
                     </button>
@@ -1180,11 +1178,11 @@ export function ModalDetalhesTurma({
                       setSelectedAgendaAulaId(null) // Reseta se trocar matéria manualmente
                     }}
                     disabled={!!initialMateriaId}
-                    className="h-10 rounded-xl border border-[#26262a] bg-[#18181b] text-zinc-200 px-3.5 text-xs font-semibold focus:outline-none cursor-pointer"
+                    className="h-10 rounded-xl border border-border bg-background text-foreground px-3.5 text-xs font-semibold focus:outline-none cursor-pointer outline-none"
                   >
-                    <option value="" disabled>-- Selecione a Matéria --</option>
+                    <option value="" disabled className="bg-background text-foreground">-- Selecione a Matéria --</option>
                     {materias.map((m) => (
-                      <option key={m.id} value={m.id}>
+                      <option key={m.id} value={m.id} className="bg-background text-foreground">
                         {m.nome}
                       </option>
                     ))}
@@ -1194,7 +1192,7 @@ export function ModalDetalhesTurma({
                     variant="outline"
                     size="sm"
                     onClick={() => mutateFrequencias()}
-                    className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-xl px-3.5 h-10 gap-1.5 text-xs font-semibold"
+                    className="bg-muted text-foreground border border-border hover:bg-muted/80 rounded-xl px-3.5 h-10 gap-1.5 text-xs font-semibold cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     Atualizar
@@ -1203,9 +1201,9 @@ export function ModalDetalhesTurma({
 
                 {/* Lista com Presença/Falta */}
                 {loading || loadingFreq ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Carregando diário de presenças...</div>
+                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando diário de presenças...</div>
                 ) : alunos.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-zinc-500 font-medium">Sem alunos matriculados nesta turma.</div>
+                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Sem alunos matriculados nesta turma.</div>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                     {alunos.map((aluno) => {
@@ -1213,27 +1211,27 @@ export function ModalDetalhesTurma({
                       return (
                         <div
                           key={aluno.id}
-                          className="bg-[#18181b] border border-[#26262a] p-3 rounded-xl flex items-center justify-between"
+                          className="bg-card border border-border shadow-[0_2px_10px_rgba(15,23,42,0.04)] p-3 rounded-xl flex items-center justify-between text-foreground"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-400 text-xs font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
                               {aluno.foto_url ? (
                                 <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
                               ) : (
                                 aluno.nome.substring(0, 2).toUpperCase()
                               )}
                             </div>
-                            <span className="text-sm font-semibold text-zinc-200 truncate pr-2">{aluno.nome}</span>
+                            <span className="text-sm font-semibold text-foreground truncate pr-2">{aluno.nome}</span>
                           </div>
 
                           {/* Botões Presente / Falta */}
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleLancarFrequencia(aluno.id, true)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                                 status === true
-                                  ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                                  : 'bg-transparent text-zinc-400 border-zinc-800 hover:bg-[#202024]'
+                                  ? 'bg-green-500/10 text-green-500 border-green-500/30'
+                                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
                               }`}
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1241,10 +1239,10 @@ export function ModalDetalhesTurma({
                             </button>
                             <button
                               onClick={() => handleLancarFrequencia(aluno.id, false)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                                 status === false
-                                  ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                                  : 'bg-transparent text-zinc-400 border-zinc-800 hover:bg-[#202024]'
+                                  ? 'bg-red-500/10 text-red-500 border-red-500/30'
+                                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
                               }`}
                             >
                               <XCircle className="w-3.5 h-3.5" />
@@ -1264,11 +1262,11 @@ export function ModalDetalhesTurma({
               <div className="space-y-4 mt-5">
                 <div className="space-y-3 w-full">
                   {loading ? (
-                    <div className="text-center py-10 text-xs text-zinc-500 font-medium bg-[#18181b] border border-[#26262a] rounded-xl">
+                    <div className="text-center py-10 text-xs text-muted-foreground font-medium bg-card border border-border rounded-xl">
                       Carregando notas...
                     </div>
                   ) : materias.length === 0 ? (
-                    <div className="text-center py-10 text-xs text-zinc-500 font-medium bg-[#18181b] border border-[#26262a] rounded-xl p-4">
+                    <div className="text-center py-10 text-xs text-muted-foreground font-medium bg-card border border-border rounded-xl p-4">
                       Nenhuma matéria vinculada a esta turma. Cadastre as matérias na aba "Matérias" para poder lançar notas.
                     </div>
                   ) : (
@@ -1280,33 +1278,33 @@ export function ModalDetalhesTurma({
                       return (
                         <div
                           key={mat.id}
-                          className="border border-[#26262a] bg-[#18181b] rounded-xl overflow-hidden"
+                          className="border border-border bg-card rounded-xl overflow-hidden shadow-[0_2px_10px_rgba(15,23,42,0.04)]"
                         >
                           <button
                             onClick={() => setMateriaAberta(isOpen ? null : mat.id)}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-white border-b border-[#26262a] bg-[#18181b] flex items-center justify-between"
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-foreground border-b border-border bg-muted/20 flex items-center justify-between cursor-pointer"
                           >
                             <span className="flex items-center gap-2">
-                              <BookOpen className="w-4.5 h-4.5 text-zinc-400" />
+                              <BookOpen className="w-4.5 h-4.5 text-muted-foreground" />
                               {mat.nome}
                             </span>
-                            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           
                           {isOpen && (
-                            <div className="p-4 bg-[#121214] space-y-4">
+                            <div className="p-4 bg-background space-y-4">
                               {/* Controles de Lançamento por Unidade e Botões de Ação */}
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#26262a] pb-3.5">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3.5">
                                 {/* Tabs de Unidade */}
-                                <div className="flex gap-1.5 bg-[#18181b] border border-[#26262a] p-1 rounded-lg">
+                                <div className="flex gap-1.5 bg-muted border border-border p-1 rounded-lg">
                                   {[1, 2, 3].map(u => (
                                     <button
                                       key={u}
                                       onClick={() => setUnidadesAtivas(prev => ({ ...prev, [mat.id]: u }))}
-                                      className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                                      className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
                                         unidAtiva === u
-                                          ? 'bg-[#3ea6ff] text-black'
-                                          : 'text-zinc-400 hover:text-white'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground'
                                       }`}
                                     >
                                       {u}ª Unidade
@@ -1319,7 +1317,7 @@ export function ModalDetalhesTurma({
                                     variant="outline"
                                     size="sm"
                                     onClick={() => mutateNotasServidor()}
-                                    className="bg-[#18181b] text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white rounded-lg h-9 gap-1 text-xs font-semibold"
+                                    className="bg-muted text-foreground border border-border hover:bg-muted/80 rounded-lg h-9 gap-1 text-xs font-semibold cursor-pointer"
                                   >
                                     <RefreshCw className="w-3.5 h-3.5" />
                                     Atualizar
@@ -1328,7 +1326,7 @@ export function ModalDetalhesTurma({
                                     size="sm"
                                     disabled={isSaving}
                                     onClick={() => handleSalvarNotas(mat.id)}
-                                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold h-9 gap-1 text-xs"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-9 gap-1 text-xs rounded-lg cursor-pointer"
                                   >
                                     <Save className="w-3.5 h-3.5" />
                                     {isSaving ? 'Salvando...' : 'Salvar Notas'}
@@ -1337,25 +1335,25 @@ export function ModalDetalhesTurma({
                               </div>
 
                               {/* Tabela de Notas */}
-                              <div className="overflow-x-auto border border-[#26262a] rounded-xl bg-[#141416]/50">
+                              <div className="overflow-x-auto border border-border rounded-xl bg-muted/5">
                                 <table className="w-full text-left border-collapse min-w-[500px]">
                                   <thead>
-                                    <tr className="border-b border-[#26262a] text-[10.5px] text-zinc-400 font-semibold uppercase bg-[#18181b]/30">
+                                    <tr className="border-b border-border text-[10.5px] text-muted-foreground font-semibold uppercase bg-muted/30">
                                       <th className="p-3">Aluno</th>
                                       <th className="p-3 w-16 text-center">Nota 1</th>
                                       <th className="p-3 w-16 text-center">Nota 2</th>
                                       <th className="p-3 w-16 text-center">Nota 3</th>
                                       <th className="p-3 w-16 text-center">Nota 4</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/40">Média Unid.</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/60">Média Final</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/85">Recup. Final</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-[#1c1c1e]/90">Média Pós-Rec</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-muted/20">Média Unid.</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-muted/40">Média Final</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-muted/60">Recup. Final</th>
+                                      <th className="p-3 w-20 text-center font-bold bg-muted/70">Média Pós-Rec</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {alunos.length === 0 ? (
                                       <tr>
-                                        <td colSpan={8} className="p-8 text-center text-xs text-zinc-500 font-medium">
+                                        <td colSpan={8} className="p-8 text-center text-xs text-muted-foreground font-medium">
                                           Nenhum aluno matriculado nesta turma.
                                         </td>
                                       </tr>
@@ -1469,8 +1467,8 @@ const RowAlunoNotas = memo(
     onRecuperacaoChange
   }: RowAlunoNotasProps) {
     return (
-      <tr className="border-b border-[#26262a] last:border-0 hover:bg-zinc-800/10 text-xs text-zinc-200">
-        <td className="p-3 font-semibold text-zinc-100">{alunoNome}</td>
+      <tr className="border-b border-border last:border-0 hover:bg-muted/30 text-xs text-foreground">
+        <td className="p-3 font-semibold text-foreground">{alunoNome}</td>
         
         {/* Nota 1 */}
         <td className="p-2 text-center">
@@ -1479,7 +1477,7 @@ const RowAlunoNotas = memo(
             value={nota1 ?? ''}
             onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota1', e.target.value)}
             placeholder="-"
-            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
           />
         </td>
 
@@ -1490,7 +1488,7 @@ const RowAlunoNotas = memo(
             value={nota2 ?? ''}
             onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota2', e.target.value)}
             placeholder="-"
-            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
           />
         </td>
 
@@ -1501,7 +1499,7 @@ const RowAlunoNotas = memo(
             value={nota3 ?? ''}
             onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota3', e.target.value)}
             placeholder="-"
-            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
           />
         </td>
 
@@ -1512,12 +1510,12 @@ const RowAlunoNotas = memo(
             value={nota4 ?? ''}
             onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota4', e.target.value)}
             placeholder="-"
-            className="w-11 h-8 bg-[#18181b] border border-[#2a2a2a] text-center rounded focus:outline-none focus:border-[#3ea6ff] text-xs font-semibold text-white"
+            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
           />
         </td>
 
         {/* Média Unidade */}
-        <td className="p-3 text-center bg-[#1c1c1e]/20 font-bold">
+        <td className="p-3 text-center bg-muted/10 font-bold">
           {mediaUnid !== null ? (
             <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
               {mediaUnid}
@@ -1526,7 +1524,7 @@ const RowAlunoNotas = memo(
         </td>
 
         {/* Média Final */}
-        <td className="p-3 text-center bg-[#1c1c1e]/40 font-bold text-sm">
+        <td className="p-3 text-center bg-muted/20 font-bold text-sm">
           {mediaFinal !== null ? (
             <span className={mediaFinal < 5 ? 'text-red-500' : 'text-green-500'}>
               {mediaFinal}
@@ -1542,16 +1540,16 @@ const RowAlunoNotas = memo(
             onChange={(e) => onRecuperacaoChange(alunoId, materiaId, e.target.value)}
             disabled={!isElegivelRec}
             placeholder={isElegivelRec ? "-" : "N/A"}
-            className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-white ${
+            className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-foreground ${
               isElegivelRec 
-                ? 'bg-[#18181b] border border-yellow-500/30' 
-                : 'bg-zinc-800/30 border border-zinc-900 text-zinc-500 cursor-not-allowed'
+                ? 'bg-background border border-yellow-500/50' 
+                : 'bg-muted/40 border border-border text-muted-foreground cursor-not-allowed'
             }`}
           />
         </td>
 
         {/* Média Pós-Rec / Situação */}
-        <td className="p-3 text-center bg-[#1c1c1e]/50 font-bold">
+        <td className="p-3 text-center bg-muted/30 font-bold">
           {mediaPosRec !== null ? (
             <div className="flex flex-col items-center">
               <span className={mediaPosRec < 5 ? 'text-red-500' : 'text-green-500'}>
