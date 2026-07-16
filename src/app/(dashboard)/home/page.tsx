@@ -132,6 +132,83 @@ function FrequenciaBar({ feitas, total, loading }: { feitas: number; total: numb
   )
 }
 
+function getSchoolIconProps(escola: any) {
+  const nomeLower = escola.nome.toLowerCase()
+  
+  if (nomeLower.includes('moisés alves') || nomeLower.includes('moises alves')) {
+    return {
+      style: { backgroundColor: '#1d4ed8' },
+      content: <span className="text-white font-extrabold text-lg tracking-tight select-none">EMV</span>
+    }
+  }
+  
+  if (nomeLower.includes('teste 1')) {
+    return {
+      style: { backgroundColor: '#4f46e5' },
+      content: <span className="text-white font-extrabold text-2xl select-none">1</span>
+    }
+  }
+
+  if (nomeLower.includes('teste 2')) {
+    return {
+      style: { backgroundColor: '#c2410c' },
+      content: <span className="text-white font-extrabold text-2xl select-none">2</span>
+    }
+  }
+
+  if (nomeLower.includes('eraldo tinoco')) {
+    return {
+      style: { backgroundColor: '#1b4e9b' },
+      content: <Building2 className="w-8 h-8 text-white" />
+    }
+  }
+
+  if (escola.logo_url) {
+    return {
+      style: {},
+      content: (
+        <img
+          src={escola.logo_url}
+          alt={escola.nome}
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+        />
+      )
+    }
+  }
+
+  // Fallback para as outras escolas sem logo
+  const words = escola.nome
+    .replace(/(municipal|colégio|colegio|escola|centro|educacional|de|da|do|para)/gi, '')
+    .trim()
+    .split(/\s+/)
+  const initials = words
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 3)
+
+  const colors = [
+    '#1d4ed8', // blue
+    '#059669', // emerald
+    '#7c3aed', // violet
+    '#db2777', // pink
+    '#d97706', // amber
+    '#dc2626', // red
+    '#0891b2'  // cyan
+  ]
+  const charCodeSum = escola.nome.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)
+  const bgStyle = { backgroundColor: colors[charCodeSum % colors.length] }
+
+  return {
+    style: bgStyle,
+    content: initials ? (
+      <span className="text-white font-extrabold text-base select-none">{initials}</span>
+    ) : (
+      <Building2 className="w-8 h-8 text-white" />
+    )
+  }
+}
+
 export default function HomePage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
   const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
@@ -512,43 +589,38 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-8 justify-items-center pt-6">
               {(isAdmin ? escolas : escolas.filter(e => vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => {
                 const stats = schoolStats[escola.id]
+                const iconProps = getSchoolIconProps(escola)
                 return (
-                  <Card
+                  <div
                     key={escola.id}
                     onClick={() => setSelectedEscola(escola)}
-                    className="bg-surface-1 hover:bg-surface-2 border-[0.5px] border-borderCustom hover:border-highlight/50 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center justify-between min-h-[200px] group shadow-md rounded-2xl"
+                    className="flex flex-col items-center cursor-pointer group w-32"
                   >
-                    <div className="flex flex-col items-center text-center space-y-3 w-full">
-                      <div className={`w-16 h-16 rounded-full overflow-hidden ${escola.logo_url ? 'bg-transparent border border-borderCustom' : escola.color || 'bg-[#185FA5]'} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                        {escola.logo_url ? (
-                          <img src={escola.logo_url} alt={escola.nome} className="w-full h-full object-cover" />
-                        ) : (
-                          <Building2 className="w-8 h-8" />
-                        )}
-                      </div>
-                      <h3 className="font-semibold text-foreground group-hover:text-highlight transition-colors text-sm leading-snug">
-                        {escola.nome}
-                      </h3>
+                    <div
+                      className="w-16 h-16 rounded-[16px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95"
+                      style={iconProps.style}
+                    >
+                      {iconProps.content}
                     </div>
+                    <span className="mt-2.5 text-xs font-semibold text-center text-foreground group-hover:text-highlight transition-colors line-clamp-2 max-w-[110px] leading-snug">
+                      {escola.nome}
+                    </span>
 
                     {isProfessor && (
-                      <div className="w-full pt-3 mt-3 border-t border-borderCustom/50 flex flex-col gap-1.5 text-center">
+                      <div className="flex flex-col items-center mt-1">
                         {loadingSchoolStats ? (
-                          <div className="h-4 w-20 bg-muted/20 rounded animate-pulse mx-auto" />
+                          <div className="h-3 w-12 bg-muted/20 rounded animate-pulse" />
                         ) : stats ? (
                           <>
-                            <div className="flex justify-around text-[10px] text-muted-foreground font-medium">
-                              <span><strong>{stats.turmas}</strong> turmas</span>
-                              <span>•</span>
-                              <span><strong>{stats.aulasHoje}</strong> aulas hoje</span>
-                            </div>
+                            <span className="text-[10px] text-muted-foreground font-medium">
+                              {stats.turmas} T • {stats.aulasHoje} A
+                            </span>
                             {stats.chamadasPendentes > 0 && (
-                              <span className="inline-flex items-center justify-center gap-1 mx-auto px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
-                                <Clock className="w-2.5 h-2.5" />
-                                {stats.chamadasPendentes} Chamada{stats.chamadasPendentes > 1 ? 's' : ''} Pendente{stats.chamadasPendentes > 1 ? 's' : ''}
+                              <span className="mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+                                {stats.chamadasPendentes} Pendente{stats.chamadasPendentes > 1 ? 's' : ''}
                               </span>
                             )}
                           </>
@@ -557,7 +629,7 @@ export default function HomePage() {
                         )}
                       </div>
                     )}
-                  </Card>
+                  </div>
                 )
               })}
             </div>
