@@ -674,7 +674,7 @@ export function PrintBoletimSapeacu({
                           className="border border-black p-1 font-black text-center text-[8.5px] uppercase w-5 leading-none shrink-0"
                         >
                           <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black select-none">
-                            Diversas
+                            Diversificada
                           </div>
                         </td>
                         <td colSpan={7} className="border border-black p-1.5 text-center text-gray-500 italic font-normal text-[9px]">
@@ -694,7 +694,7 @@ export function PrintBoletimSapeacu({
                                 className="border border-black font-black text-center text-[8.5px] uppercase w-5 leading-none select-none shrink-0"
                               >
                                 <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black">
-                                  Diversas
+                                  Diversificada
                                 </div>
                               </td>
                             )}
