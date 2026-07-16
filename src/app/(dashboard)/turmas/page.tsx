@@ -31,7 +31,11 @@ export default function TurmasPage() {
 
   const supabase = createClient() as any
   const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot } = useAuthStore()
-  const { isEditMode } = useEditModeStore()
+  const { isEditMode: globalEditMode } = useEditModeStore()
+
+  const isProfessor = !!(acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor'))
+  const isCoordenador = !!funcionario?.cargo?.toLowerCase().includes('coordenador')
+  const isEditMode = globalEditMode && !isProfessor && !isCoordenador
 
   const fetchTurmas = async () => {
     if (!escolaAtivaId) return
