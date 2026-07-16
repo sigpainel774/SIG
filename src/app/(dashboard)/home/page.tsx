@@ -133,46 +133,50 @@ function FrequenciaBar({ feitas, total, loading }: { feitas: number; total: numb
 }
 
 function getSchoolIconProps(escola: any) {
+  if (escola.logo_url) {
+    const logoSrc = escola.logo_url.startsWith('data:') 
+      ? escola.logo_url 
+      : `${escola.logo_url}${escola.logo_url.includes('?') ? '&' : '?'}t=${Date.now()}`
+
+    return {
+      style: {},
+      content: (
+        <img
+          src={logoSrc}
+          alt={escola.nome}
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+        />
+      )
+    }
+  }
+
   const nomeLower = escola.nome.toLowerCase()
   
   if (nomeLower.includes('moisés alves') || nomeLower.includes('moises alves')) {
     return {
       style: { backgroundColor: '#1d4ed8' },
-      content: <span className="text-white font-extrabold text-lg tracking-tight select-none">EMV</span>
+      content: <span className="text-white font-extrabold text-2xl tracking-tight select-none">EMV</span>
     }
   }
   
   if (nomeLower.includes('teste 1')) {
     return {
       style: { backgroundColor: '#4f46e5' },
-      content: <span className="text-white font-extrabold text-2xl select-none">1</span>
+      content: <span className="text-white font-extrabold text-4xl select-none">1</span>
     }
   }
 
   if (nomeLower.includes('teste 2')) {
     return {
       style: { backgroundColor: '#c2410c' },
-      content: <span className="text-white font-extrabold text-2xl select-none">2</span>
+      content: <span className="text-white font-extrabold text-4xl select-none">2</span>
     }
   }
 
   if (nomeLower.includes('eraldo tinoco')) {
     return {
       style: { backgroundColor: '#1b4e9b' },
-      content: <Building2 className="w-8 h-8 text-white" />
-    }
-  }
-
-  if (escola.logo_url) {
-    return {
-      style: {},
-      content: (
-        <img
-          src={escola.logo_url}
-          alt={escola.nome}
-          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-        />
-      )
+      content: <Building2 className="w-10 h-10 text-white" />
     }
   }
 
@@ -202,9 +206,9 @@ function getSchoolIconProps(escola: any) {
   return {
     style: bgStyle,
     content: initials ? (
-      <span className="text-white font-extrabold text-base select-none">{initials}</span>
+      <span className="text-white font-extrabold text-xl select-none">{initials}</span>
     ) : (
-      <Building2 className="w-8 h-8 text-white" />
+      <Building2 className="w-10 h-10 text-white" />
     )
   }
 }
@@ -600,7 +604,7 @@ export default function HomePage() {
                     className="flex flex-col items-center cursor-pointer group w-32"
                   >
                     <div
-                      className="w-16 h-16 rounded-[16px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95"
+                      className="w-20 h-20 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95"
                       style={iconProps.style}
                     >
                       {iconProps.content}
