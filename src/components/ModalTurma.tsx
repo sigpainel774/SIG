@@ -76,8 +76,11 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
   }
 
   const supabase = createClient() as any
-  const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
-  const { isEditMode } = useEditModeStore()
+  const { escolaAtivaId, acessos, funcionario } = useAuthStore()
+  const { isEditMode: globalEditMode } = useEditModeStore()
+  const isProfessor = !!(acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor'))
+  const isCoordenador = !!funcionario?.cargo?.toLowerCase().includes('coordenador')
+  const isEditMode = globalEditMode && !isProfessor && !isCoordenador
 
   const fetchProfessoresEscola = async () => {
     if (!escolaAtivaId) return

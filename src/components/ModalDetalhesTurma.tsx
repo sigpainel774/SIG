@@ -74,8 +74,11 @@ export function ModalDetalhesTurma({
   const [selectedAluno, setSelectedAluno] = useState<any>(null)
 
   const supabase = createClient() as any
-  const { escolaAtivaId } = useAuthStore()
-  const { isEditMode } = useEditModeStore()
+  const { escolaAtivaId, acessos, funcionario } = useAuthStore()
+  const { isEditMode: globalEditMode } = useEditModeStore()
+  const isProfessor = !!(acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor'))
+  const isCoordenador = !!funcionario?.cargo?.toLowerCase().includes('coordenador')
+  const isEditMode = globalEditMode && !isProfessor && !isCoordenador
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const escolaNome = selectedEscola?.nome ?? 'Sem Escola'
 
