@@ -433,7 +433,7 @@ export function ModalAluno({ open, onOpenChange, trigger, alunoEditar, onSuccess
 
     const { data, error } = await supabase.storage
       .from('fotos_alunos')
-      .upload(fileName, file)
+      .upload(fileName, file, { cacheControl: '31536000' })
 
     toast.dismiss()
 

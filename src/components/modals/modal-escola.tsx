@@ -70,7 +70,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
     try {
       const { data, error } = await supabase.storage
         .from('logos')
-        .upload(fileName, file)
+        .upload(fileName, file, { cacheControl: '31536000' })
 
       toast.dismiss()
 
