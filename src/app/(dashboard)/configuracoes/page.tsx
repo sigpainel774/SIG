@@ -945,13 +945,13 @@ function GradeCurricularTab() {
                   ) : (
                     materias.map((mat) => (
                       <tr key={mat.id} className="hover:bg-hoverCustom/30 transition-colors">
-                        <td className="p-4 font-medium text-white">{mat.nome}</td>
+                        <td className="p-4 font-medium text-foreground">{mat.nome}</td>
                         <td className="p-4">
                           <span className={cn(
                             "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border",
                             mat.base_curricular === 'comum'
-                              ? "bg-blue-500/10 border-blue-500/20 text-[#3ea6ff]"
-                              : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                              ? "bg-blue-500/10 border-blue-500/20 text-[#185FA5] dark:text-[#3ea6ff]"
+                              : "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
                           )}>
                             {mat.base_curricular === 'comum' ? 'Base Comum' : 'Base Diversificada'}
                           </span>
@@ -966,7 +966,7 @@ function GradeCurricularTab() {
                                 setEditingNome(mat.nome);
                                 setEditingBase(mat.base_curricular);
                               }}
-                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                              className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                               disabled={loading}
                             >
                               <Pencil className="h-4 w-4" />

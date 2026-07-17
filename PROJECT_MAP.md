@@ -12,7 +12,7 @@ src/
 │   ├── (auth)/           # Grupo de rotas de autenticação
 │   │   └── login/        # Rota de Login (/login)
 │   ├── (dashboard)/      # Grupo de rotas autenticadas
-│   │   ├── admin/        # Administração do sistema (Logs, dispositivos, trash_bin, etc.)
+│   │   ├── admin/        # Administração do sistema (Logs, dispositivos, lixeira, etc.)
 │   │   ├── ajuda/        # Ajuda e suporte do usuário
 │   │   ├── alunos/       # Gestão de Alunos (Ficha, ocorrências, anexos, notas)
 │   │   ├── arquivos/     # Arquivamento geral de registros
@@ -23,6 +23,7 @@ src/
 │   │   ├── documentos/   # Emissão de documentos oficiais e comprovantes
 │   │   ├── financeiro/   # Lançamentos e transações financeiras (caixa/escola)
 │   │   ├── funcionarios/ # Gestão de Funcionários, vínculos e lotações
+│   │   ├── historico-notificacoes/ # Histórico de notificações recebidas pelo usuário
 │   │   ├── home/         # Dashboard / Visão geral inicial pós-login
 │   │   ├── matriculas/   # Novas matrículas e solicitações
 │   │   ├── mural/        # Mural de avisos e comunicados da escola
@@ -32,7 +33,7 @@ src/
 │   │   ├── permissoes/   # Gestão de permissões ABAC
 │   │   ├── ponto-mobile/ # Ponto biométrico/escala mobile
 │   │   ├── relatorios/   # Relatórios gerais de notas, frequências e auditoria
-│   │   ├── root/         # Painel de controle do Superadmin
+│   │   ├── root/         # Painel de controle do Superadmin (Logs, IPs, Bugs)
 │   │   ├── transferencias/# Transferências de alunos e funcionários entre unidades
 │   │   └── turmas/       # Gestão de turmas, grade semanal e horários de aula
 │   │
@@ -53,21 +54,31 @@ src/
 │   ├── modals/           # Modais específicos de gestão (e.g. modal-aluno, modal-funcionario)
 │   ├── print/            # Visualizações e templates de impressão física (e.g. print-boletim, print-ficha)
 │   ├── map/              # Componentes de mapa (Leaflet/MapWrapper)
+│   ├── relatorios/       # Seções e componentes específicos de relatórios
 │   ├── Sidebar.tsx       # Menu lateral de navegação
 │   ├── Header.tsx        # Cabeçalho da dashboard
-│   └── SchoolSelector.tsx # Seletor global de Escolas no header
+│   ├── SchoolSelector.tsx # Seletor global de Escolas no header
+│   ├── theme-provider.tsx # Provedor de tema claro/escuro
+│   ├── GradeSemanalSection.tsx # Grade de horários semanal das turmas
+│   ├── HorariosSlotsSection.tsx # Slots de horários de aula da escola
+│   └── PerformanceTracker.tsx # Rastreador de performance da aplicação
 │
 ├── lib/                  # Bibliotecas auxiliares e conexões externas
 │   ├── supabaseClient.ts # Conexão Supabase Browser Client (use client)
 │   ├── supabaseServer.ts # Conexão Supabase Server Client (Server Components/API)
 │   ├── supabaseAdmin.ts  # Conexão Supabase Admin Bypass (Apenas Server/API - usar Service Role)
-│   └── audit/            # Helpers para geração de logs de auditoria
+│   ├── audit/            # Helpers para geração de logs de auditoria
+│   ├── profileCache.ts   # Sistema de cache local para perfis de funcionários
+│   ├── invalidarCachePerfil.ts # Helper para invalidação manual do cache de perfil
+│   ├── swrFetchers.ts    # Fetchers utilitários para uso com SWR
+│   └── utils.ts          # Utilitários gerais do projeto (cn, etc.)
 │
 ├── store/                # Estados globais controlados por Zustand
 │   ├── useAuthStore.ts   # Estado de autenticação do usuário logado
 │   ├── useSchoolStore.ts # Escola selecionada no seletor global do header
 │   ├── useEditModeStore.ts # Gerencia o estado isEditMode (Modo de Edição)
-│   └── useSidebarStore.ts # Controla recolhimento da sidebar
+│   ├── useSidebarStore.ts # Controla recolhimento da sidebar
+│   └── useFolhaPagamentoStore.ts # Gerenciamento do estado da folha de pagamentos
 │
 ├── hooks/                # Custom React Hooks reutilizáveis
 │   └── usePessoaForm.ts  # Hook utilitário para manipulação de formulários de Alunos/Funcionários
@@ -79,8 +90,6 @@ src/
 ---
 
 ## 🗄️ Tabelas Principais do Banco de Dados (Supabase - RLS Ativo)
-
-Esta referência evita a necessidade de listar as tabelas ou adivinhar suas estruturas no Supabase:
 
 *   **`public.escolas`**: Cadastro das unidades escolares municipais.
 *   **`public.funcionarios`**: Dados cadastrais dos servidores e funcionários do município.
@@ -99,11 +108,40 @@ Esta referência evita a necessidade de listar as tabelas ou adivinhar suas estr
 *   **`public.comunicados`**: Mensagens de texto publicadas no mural escolar.
 *   **`public.assinatura`**: Registro e tokens das assinaturas eletrônicas emitidas via QRCode.
 *   **`public.transferencias_alunos`**: Histórico de movimentações de estudantes entre escolas.
-*   **`public.audit_logs`**: Logs de auditoria de acessos e modificações de registros (compliance).
+*   **`public.transferencias_funcionarios`**: Histórico de movimentações de funcionários.
+*   **`public.audit_logs`**: Logs de auditoria de acessos e modificações de registros.
 *   **`public.trash_bin`**: Lixeira virtual para exclusões lógicas com suporte a restauração.
-*   **`public.configuracao_notificacoes_niveis`**: Definição de permissões de envio de e-mails/push por tipo de evento.
+*   **`public.configuracao_notificacoes_niveis`**: Níveis e patterns para notificações baseadas em cargo.
 *   **`public.grade_semanal`**: Slots semanais de aulas vinculando professor, turma e matéria.
 *   **`public.horarios_aulas_slots`**: Horários de início e fim dos períodos/aulas de cada escola.
+*   **`public.orgaos`**: Setores ou departamentos administrativos das escolas.
+*   **`public.pontos_ronda`**: Pontos de geolocalização cadastrados para rondas de vigilância.
+*   **`public.blocked_ips`**: Endereços de IP bloqueados temporariamente por segurança.
+*   **`public.access_logs`**: Logs brutos de requisições e acessos HTTP.
+*   **`public.notifications`**: Notificações in-app disparadas aos usuários.
+*   **`public.dispositivos`**: Dispositivos e coletores de ponto autorizados.
+*   **`public.veiculos`**: Veículos da frota de transporte escolar.
+*   **`public.rotas_transporte`**: Rotas do transporte escolar municipal.
+*   **`public.alunos_transporte`**: Relação de alunos enturmados em rotas de transporte.
+*   **`public.rotas_ronda`**: Rotas planejadas de vigilância noturna/patrulha.
+*   **`public.registros_ronda`**: Registros de passagens e checkpoints da ronda.
+*   **`public.arquivados`**: Histórico de registros migrados para o arquivo permanente.
+*   **`public.bug_reports`**: Relatórios de bugs e chamados enviados ao Superadmin.
+*   **`public.transacoes_financeiras`**: Caixa escolar, receitas e despesas.
+*   **`public.escalas_servico`**: Escalas de trabalho e plantões de funcionários.
+*   **`public.movimentacoes_funcionarios`**: Histórico de portarias e lotações de RH.
+*   **`public.solicitacoes_rh`**: Requerimentos de férias, licenças e serviços.
+*   **`public.performance_metrics`**: Métricas de tempo de resposta e performance web.
+*   **`public.recuperacoes_finais`**: Notas da recuperação final após o terceiro trimestre.
+*   **`public.solicitacoes_edicao_aluno`**: Solicitações de alteração de ficha cadastral restrita.
+*   **`public.prazos_unidades`**: Prazos limites para lançamentos de notas de cada trimestre.
+*   **`public.atividades_secretaria`**: Controle de entrega de diários e planejamentos pedagógicos.
+*   **`public.atividades_secretaria_historico`**: Histórico de alterações nos diários pedagógicos.
+*   **`public.grade_curricular_escola`**: Disciplinas curriculares ativas por escola.
+*   **`public.agenda_aulas`**: Aulas criadas dinamicamente com base na grade semanal.
+*   **`public.folha_pagamento_config`**: Parâmetros de fechamento mensal da folha financeira.
+*   **`public.desligamentos_programados`**: Agendamento de desligamentos futuros de vínculos de RH.
+*   **`public.adicionais_salario`**: Lançamento de adicionais (horas extras, gratificações) na folha.
 
 ---
 
