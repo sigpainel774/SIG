@@ -249,6 +249,12 @@ export default function ConfiguracoesPage() {
   const isDiretor = selectedEscola?.diretor_id === localFuncionario?.id || 
                     vinculos.some(v => v.escola_id === escolaAtivaId && (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR')))
 
+  useEffect(() => {
+    if (isDiretor && activeTab === 'assinatura-pessoal') {
+      setActiveTab('perfil')
+    }
+  }, [isDiretor, activeTab])
+
   const toggleModule = (index: number) => {
     setModules(prev => prev.map((m, i) => i === index ? { ...m, enabled: !m.enabled } : m))
   }
@@ -314,26 +320,28 @@ export default function ConfiguracoesPage() {
           </button>
         )}
 
-        <button
-          onClick={() => setActiveTab('assinatura-pessoal')}
-          className={cn(
-            "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
-            activeTab === 'assinatura-pessoal'
-              ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
-              : "bg-card border-borderCustom hover:bg-hoverCustom"
-          )}
-        >
-          <div className={cn(
-            "p-3 rounded-xl",
-            activeTab === 'assinatura-pessoal' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
-          )}>
-            <PenTool className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foregroundCustom text-base">Minha Assinatura</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Cadastrar sua assinatura digital pessoal para assinar documentos</p>
-          </div>
-        </button>
+        {!isDiretor && (
+          <button
+            onClick={() => setActiveTab('assinatura-pessoal')}
+            className={cn(
+              "flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm",
+              activeTab === 'assinatura-pessoal'
+                ? "bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50"
+                : "bg-card border-borderCustom hover:bg-hoverCustom"
+            )}
+          >
+            <div className={cn(
+              "p-3 rounded-xl",
+              activeTab === 'assinatura-pessoal' ? "bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-muted text-muted-foreground"
+            )}>
+              <PenTool className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Minha Assinatura</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Cadastrar sua assinatura digital pessoal para assinar documentos</p>
+            </div>
+          </button>
+        )}
 
         {(isDiretor || isAdmin) && (
           <button
@@ -510,7 +518,7 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {activeTab === 'assinatura-pessoal' && (
+      {activeTab === 'assinatura-pessoal' && !isDiretor && (
         <div className="animate-in fade-in-50 duration-200">
           <Card className="border-borderCustom bg-card p-6">
             <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
