@@ -127,7 +127,7 @@ export function Sidebar() {
       ]
     },
     {
-      label: 'GESTÃO',
+      label: 'GESTÃO ADMINISTRATIVA',
       items: [
         { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
         { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
