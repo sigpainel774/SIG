@@ -124,46 +124,49 @@ export default function FuncionariosPage() {
       const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
       const escolaId = useAuthStore.getState().escolaAtivaId
 
-      let query = supabase
-        .from('funcionarios')
-        .select(`
+      // Define os campos dinamicamente. Se houver escolaId, faz INNER JOIN imediato via PostgREST
+      const selectFields = (escolaId || !isAdmin)
+        ? `
+          id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          endereco, latitude, longitude,
+          vinculos_funcionarios!vinculos_funcionarios_funcionario_id_fkey!inner(escola_id, cargo, ativo, escolas(nome)),
+          acessos_usuarios(nivel, ativo)
+        `
+        : `
           id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
           endereco, latitude, longitude,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
-        `)
+        `;
+
+      let query = supabase
+        .from('funcionarios')
+        .select(selectFields)
         .is('deleted_at', null)
         .order('nome')
 
-      // Se escolaId estiver definido, ou se o usuário não for admin global, filtra apenas pelos funcionários vinculados à escola ativa
       if (escolaId || !isAdmin) {
         if (!escolaId) {
           setFuncionarios([])
           return
         }
-
-        const { data: vincs } = await supabase
-          .from('vinculos_funcionarios')
-          .select('funcionario_id')
-          .eq('escola_id', escolaId)
-          .eq('ativo', true)
-
-        const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
-        if (ids.length > 0) {
-          query = query.in('id', ids) as typeof query
-        } else {
-          setFuncionarios([])
-          return
-        }
+        query = query
+          .eq('vinculos_funcionarios.escola_id', escolaId)
+          .eq('vinculos_funcionarios.ativo', true)
       }
 
       const { data, error } = await query
       if (error) throw error
 
       const isDir = useAuthStore.getState().isDiretor()
+      const vistos = new Set()
 
       const formatados: Funcionario[] = (data ?? [])
         .filter((f: Record<string, any>) => {
+          // Desduplicação defensiva caso o mesmo funcionário tenha mais de um vínculo ativo na mesma escola
+          if (vistos.has(f.id)) return false
+          vistos.add(f.id)
+
           // Se estiver visualizando o painel de uma escola ativa, oculta root e nível 1
           if (escolaId) {
             if (f.is_superadmin) return false

@@ -248,7 +248,7 @@ export function Sidebar() {
                 <>
                   <hr className="border-sidebar-border/40 mx-3 my-1" />
                   <div className="px-4 pt-4 pb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/40">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700 dark:text-sidebar-foreground/40">
                       {group.label}
                     </span>
                   </div>

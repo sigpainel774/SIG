@@ -363,68 +363,6 @@ export default function ConfiguracoesPage() {
       {/* Main Content Sections */}
       {activeTab === 'perfil' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
-          {/* Card: Aparência e Tema */}
-          <Card className="border-[0.5px] border-borderCustom bg-card p-5">
-            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom/50 pb-4 text-lg font-semibold text-foregroundCustom">
-              <Sun className="h-5 w-5 text-[#185FA5] dark:text-[#3ea6ff]" />
-              Personalização de Tema
-            </h2>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="font-medium text-foregroundCustom">Tema do Sistema & Menu Lateral</h3>
-                <p className="text-sm text-muted-foreground">
-                  Escolha como deseja visualizar a interface e o menu lateral do painel.
-                </p>
-              </div>
-              
-              {mounted && (
-                <div className="flex items-center space-x-2 rounded-lg border border-borderCustom bg-input p-1">
-                  <button
-                    type="button"
-                    onClick={() => setTheme('light')}
-                    className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
-                      theme === 'light'
-                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
-                        : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
-                    )}
-                  >
-                    <Sun className="h-4 w-4 text-amber-500" />
-                    <span>Claro</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTheme('dark')}
-                    className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
-                      theme === 'dark'
-                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
-                        : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
-                    )}
-                  >
-                    <Moon className="h-4 w-4 text-blue-400" />
-                    <span>Escuro</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTheme('system')}
-                    className={cn(
-                      "flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-transparent",
-                      theme === 'system'
-                        ? "bg-background text-[#185FA5] border-[#185FA5]/30 shadow-sm font-semibold dark:text-[#3ea6ff] dark:border-[#3ea6ff]/30"
-                        : "text-muted-foreground hover:bg-hoverCustom hover:text-foregroundCustom"
-                    )}
-                  >
-                    <Monitor className="h-4 w-4" />
-                    <span>Sistema</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </Card>
-
           {/* Card: Dados da Ficha Funcional */}
           <Card className="border-[0.5px] border-borderCustom bg-card p-5">
             <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom/50 pb-4 text-lg font-semibold text-foregroundCustom">

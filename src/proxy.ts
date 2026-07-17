@@ -81,23 +81,11 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/financeiro/folha-pagamento')) {
       const isSuperAdmin = user.app_metadata?.is_superadmin === true
       if (!isSuperAdmin) {
-        const { data: funcData } = await supabase
-          .from('funcionarios')
-          .select('id')
-          .ilike('email', user.email || '')
-          .maybeSingle()
-
-        if (!funcData) {
-          const url = request.nextUrl.clone()
-          url.pathname = '/login'
-          url.searchParams.set('error', 'orphan')
-          return NextResponse.redirect(url)
-        }
-
+        // Otimização: unifica a busca em uma única query síncrona com join explícito para evitar RTTs redundantes
         const { data: acessos } = await supabase
           .from('acessos_usuarios')
-          .select('nivel')
-          .eq('funcionario_id', funcData.id)
+          .select('nivel, funcionarios!acessos_usuarios_funcionario_id_fkey!inner(auth_user_id)')
+          .eq('funcionarios.auth_user_id', user.id)
           .eq('ativo', true)
 
         const temNivel1 = acessos?.some((a: any) => a.nivel === 1)

@@ -60,28 +60,15 @@ export default function DesligamentosPage() {
   const handleEfetivar = async (desligamento: any) => {
     if (!isEditMode) return
     
-    // Inicia uma transação simulada (executando sequencialmente)
     try {
-      // 1. Atualizar o status do desligamento para efetivado
-      const { error: errorDesl } = await supabase
-        .from('desligamentos_programados')
-        .update({ status: 'efetivado' })
-        .eq('id', desligamento.id)
+      // Chama a RPC atômica que garante a consistência das duas tabelas em uma única transação
+      const { error } = await (supabase as any).rpc('efetivar_desligamento_rpc', {
+        p_desligamento_id: desligamento.id,
+        p_vinculo_id: desligamento.vinculo_id,
+        p_data_desligamento: desligamento.data_desligamento
+      })
 
-      if (errorDesl) throw errorDesl
-
-      // 2. Atualizar o vínculo de funcionário para inativo
-      if (desligamento.vinculo_id) {
-        const { error: errorVinc } = await supabase
-          .from('vinculos_funcionarios')
-          .update({
-            ativo: false,
-            data_fim: desligamento.data_desligamento
-          })
-          .eq('id', desligamento.vinculo_id)
-
-        if (errorVinc) throw errorVinc
-      }
+      if (error) throw error
 
       toast.success('Desligamento efetivado com sucesso! Vínculo inativado.')
       fetchDesligamentos()
