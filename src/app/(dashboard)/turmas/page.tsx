@@ -38,7 +38,11 @@ export default function TurmasPage() {
   const isEditMode = globalEditMode && !isProfessor && !isCoordenador
 
   const fetchTurmas = async () => {
-    if (!escolaAtivaId) return
+    if (!escolaAtivaId) {
+      setTurmas([])
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     const isAdmin = isAdminGlobalOrRoot()
@@ -103,6 +107,20 @@ export default function TurmasPage() {
       return matchesSearch && matchesTurno && matchesAno
     })
   }, [turmas, searchTerm, filterTurno, filterAno])
+
+  if (!escolaAtivaId) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6 bg-[#141416] border border-[#26262a] rounded-2xl max-w-lg mx-auto my-12 space-y-4 shadow-sm animate-in fade-in duration-300">
+        <div className="p-4 bg-amber-500/10 rounded-full text-amber-500">
+          <GraduationCap className="w-12 h-12" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Nenhuma Escola Selecionada</h2>
+        <p className="text-muted-foreground text-sm max-w-sm">
+          Para visualizar e gerenciar as turmas, você precisa selecionar uma escola ativa no seletor de escolas no topo.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

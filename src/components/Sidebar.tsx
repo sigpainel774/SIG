@@ -32,6 +32,8 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export function Sidebar() {
   const router = useRouter()
@@ -46,6 +48,7 @@ export function Sidebar() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showSchoolWarningModal, setShowSchoolWarningModal] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -158,10 +161,20 @@ export function Sidebar() {
   const NavLink = ({ item }: { item: MenuItem }) => {
     const Icon = item.icon
     const isActive = getIsActive(item.href)
+
+    const handleClick = (e: React.MouseEvent) => {
+      if (item.href === '/turmas' && !escolaAtivaId) {
+        e.preventDefault()
+        setShowSchoolWarningModal(true)
+        return
+      }
+      closeMobile()
+    }
+
     return (
       <Link
         href={item.href}
-        onClick={closeMobile}
+        onClick={handleClick}
         prefetch={true}
         className={cn(
           "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
@@ -325,6 +338,30 @@ export function Sidebar() {
           </aside>
         </>
       )}
+
+      {/* Warning Modal for school selection */}
+      <Dialog open={showSchoolWarningModal} onOpenChange={setShowSchoolWarningModal}>
+        <DialogContent className="sm:max-w-[450px] bg-[#141416] border border-[#26262a] text-foreground p-6 rounded-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center text-lg font-bold">Escola Não Selecionada</DialogTitle>
+            <DialogDescription className="text-center text-sm text-muted-foreground">
+              Para acessar a seção de <strong>Turmas</strong>, é necessário selecionar uma escola ativa primeiro.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center pt-4">
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 px-6"
+              onClick={() => setShowSchoolWarningModal(false)}
+            >
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
