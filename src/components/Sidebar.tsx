@@ -39,8 +39,8 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, limparSessao, isDiretor, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
-  const isProfessor = acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
+  const { funcionario, limparSessao, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
 
@@ -247,8 +247,12 @@ export function Sidebar() {
               const permitidos = ['/home', '/mural', '/alunos', '/turmas', '/avaliacoes']
               return permitidos.includes(item.href)
             }
+            if (isChefe()) {
+              const permitidos = ['/home', '/mural', '/painel-chefe']
+              return permitidos.includes(item.href)
+            }
             if (item.href === '/painel-chefe') {
-              return isDiretor()
+              return isDiretor() || isChefe()
             }
             return true
           })
@@ -281,7 +285,7 @@ export function Sidebar() {
           <hr className="border-sidebar-border/40 mx-3 my-1" />
           <div className="space-y-1.5 mt-1">
             {systemItems.filter((item) => {
-              if (isProfessor) {
+              if (isProfessor || isChefe()) {
                 const permitidos = ['/configuracoes', '/ajuda']
                 return permitidos.includes(item.href)
               }
@@ -341,7 +345,7 @@ export function Sidebar() {
 
       {/* Warning Modal for school selection */}
       <Dialog open={showSchoolWarningModal} onOpenChange={setShowSchoolWarningModal}>
-        <DialogContent className="sm:max-w-[450px] bg-[#141416] border border-[#26262a] text-foreground p-6 rounded-2xl">
+        <DialogContent className="sm:max-w-[450px] bg-card border border-borderCustom text-foreground p-6 rounded-2xl">
           <DialogHeader className="space-y-3">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
               <AlertTriangle className="h-6 w-6" />

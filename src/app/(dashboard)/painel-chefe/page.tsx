@@ -17,7 +17,8 @@ import {
   UserCheck, 
   Plus, 
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  AlertTriangle
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -28,7 +29,7 @@ import { HorariosSlotsSection } from '@/components/HorariosSlotsSection'
 import { GradeSemanalSection } from '@/components/GradeSemanalSection'
 
 export default function PainelChefePage() {
-  const { funcionario, isDiretor } = useAuthStore()
+  const { funcionario, isDiretor, isChefe, acessos } = useAuthStore()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas' | 'horarios' | 'grade'>('equipe')
   const [busca, setBusca] = useState('')
@@ -36,11 +37,11 @@ export default function PainelChefePage() {
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
 
   useEffect(() => {
-    if (funcionario && !isDiretor()) {
-      toast.error('Acesso restrito a Diretores (Nível 2).')
+    if (funcionario && !isDiretor() && !isChefe()) {
+      toast.error('Acesso restrito a Diretores (Nível 2) e Chefes de Equipe (Nível 5).')
       router.push('/home')
     }
-  }, [funcionario, isDiretor, router])
+  }, [funcionario, isDiretor, isChefe, router])
 
   const supabase = createClient()
   const [equipe, setEquipe] = useState<any[]>([])
@@ -50,7 +51,23 @@ export default function PainelChefePage() {
 
   const fetchPainelData = async () => {
     setLoading(true)
-    const isDir = useAuthStore.getState().isDiretor()
+    const state = useAuthStore.getState()
+    const isDir = state.isDiretor()
+    const isCh = state.isChefe()
+    const userId = state.funcionario?.id
+
+    let cargos: string[] = []
+    if (isCh && userId) {
+      const { data } = await supabase
+        .from('acessos_usuarios')
+        .select('cargos_gerenciados')
+        .eq('funcionario_id', userId)
+        .maybeSingle()
+      if (data?.cargos_gerenciados && Array.isArray(data.cargos_gerenciados)) {
+        cargos = data.cargos_gerenciados
+        setCargosGerenciados(cargos)
+      }
+    }
 
     const [funcRes, escRes, altRes] = await Promise.all([
       supabase.from('funcionarios').select('*, acessos_usuarios(nivel, ativo)').order('nome'),
@@ -71,16 +88,18 @@ export default function PainelChefePage() {
           }
           return true
         })
+      } else if (isCh) {
+        filteredEquipe = funcRes.data.filter((f: any) => f.cargo && cargos.includes(f.cargo))
       }
       setEquipe(filteredEquipe)
 
       const equipeIds = new Set(filteredEquipe.map((f: any) => f.id))
 
       if (escRes.data) {
-        setEscalas(isDir ? escRes.data.filter((e: any) => equipeIds.has(e.funcionario_id)) : escRes.data)
+        setEscalas(isDir || isCh ? escRes.data.filter((e: any) => equipeIds.has(e.funcionario_id)) : escRes.data)
       }
       if (altRes.data) {
-        setAlertas(isDir ? altRes.data.filter((a: any) => equipeIds.has(a.funcionario_id)) : altRes.data)
+        setAlertas(isDir || isCh ? altRes.data.filter((a: any) => equipeIds.has(a.funcionario_id)) : altRes.data)
       }
     } else {
       if (escRes.data) setEscalas(escRes.data)
@@ -264,6 +283,13 @@ export default function PainelChefePage() {
       {/* TAB 1: MINHA EQUIPE */}
       {activeTab === 'equipe' && (
         <div className="space-y-4">
+          {isChefe() && cargosGerenciados.length === 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-amber-500 text-sm flex items-center gap-2 mb-4">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <span>Nenhum cargo configurado sob sua gestão. Solicite a atribuição de cargos ao administrador para gerenciar sua equipe.</span>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md w-full">
               <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />

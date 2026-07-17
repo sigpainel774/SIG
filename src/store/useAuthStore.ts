@@ -22,6 +22,7 @@ interface AuthState {
   limparSessao: () => void;
   isAdminGlobalOrRoot: () => boolean;
   isDiretor: () => boolean;
+  isChefe: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -45,5 +46,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isDiretor: () => {
     const state = get();
     return state.acessos.some(a => a.nivel === 2 && a.ativo);
+  },
+  isChefe: () => {
+    const state = get();
+    return state.acessos.some(a => a.nivel === 5 && a.ativo);
   },
 }));
