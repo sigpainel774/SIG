@@ -9,6 +9,7 @@ import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -80,6 +81,7 @@ export default function RootLayout({
           {children}
           <Toaster theme="dark" />
           <SpeedInsights />
+          <Analytics />
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
