@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
-import { MapaGlobal } from '@/components/map/MapWrapper'
+import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
 import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
 import RelatorioOcorrencias from '@/components/relatorios/RelatorioOcorrencias'
@@ -36,6 +36,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | null
+type MapaAba = 'funcionarios' | 'alunos'
 
 export default function RelatoriosPage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -46,7 +47,10 @@ export default function RelatoriosPage() {
   const [activeReport, setActiveReport] = useState<ReportType>(null)
   const [printableSubView, setPrintableSubView] = useState<'boletim' | 'ficha' | 'diario' | null>(null)
   const [mapData, setMapData] = useState<any[]>([])
+  const [mapDataAlunos, setMapDataAlunos] = useState<any[]>([])
   const [isLoadingMap, setIsLoadingMap] = useState(false)
+  const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
+  const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
 
   // Fetch data for the Mapa Logístico
   useEffect(() => {
@@ -108,6 +112,59 @@ export default function RelatoriosPage() {
       fetchMapData()
     }
   }, [activeReport, selectedEscola])
+
+  // Fetch data para o Mapa de Alunos
+  useEffect(() => {
+    if (activeReport === 'mapa' && mapaAba === 'alunos') {
+      const fetchMapDataAlunos = async () => {
+        setIsLoadingMapAlunos(true)
+        const supabase = createClient()
+        try {
+          let query = supabase
+            .from('alunos')
+            .select(`
+              id,
+              nome,
+              foto_url,
+              latitude,
+              longitude,
+              escola_id,
+              turma_id,
+              escolas (nome),
+              turmas (nome)
+            `)
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+
+          if (selectedEscola) {
+            query = query.eq('escola_id', selectedEscola.id)
+          }
+
+          const { data, error } = await query
+          if (error) throw error
+
+          if (data) {
+            const anyData = data as any[]
+            const mapped = anyData.map((a) => ({
+              id: a.id,
+              nome: a.nome,
+              foto_url: a.foto_url,
+              escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
+              turma: (a.turmas as any)?.nome ?? undefined,
+              latitude: Number(a.latitude),
+              longitude: Number(a.longitude),
+            }))
+            setMapDataAlunos(mapped)
+          }
+        } catch (err) {
+          console.error('Erro ao buscar dados do mapa de alunos:', err)
+        } finally {
+          setIsLoadingMapAlunos(false)
+        }
+      }
+      fetchMapDataAlunos()
+    }
+  }, [activeReport, mapaAba, selectedEscola])
 
   // Report cards definition matching user screenshot
   const reportCards = [
@@ -235,18 +292,58 @@ export default function RelatoriosPage() {
               <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Logístico</span>
-                  <h3 className="text-xl font-bold text-foreground mt-0.5">Geolocalização de Funcionários</h3>
+                  <h3 className="text-xl font-bold text-foreground mt-0.5">Mapa de Geolocalização</h3>
                 </div>
                 <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
                   {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
                 </div>
               </div>
-              {isLoadingMap ? (
-                <div className="w-full h-[520px] rounded-2xl bg-surface-1 border border-border flex items-center justify-center text-muted-foreground animate-pulse">
-                  <span className="text-sm font-semibold">Buscando dados geográficos...</span>
-                </div>
+
+              {/* Abas: Funcionários / Alunos */}
+              <div className="flex items-center gap-1 bg-secondary/60 border border-border rounded-xl p-1 w-fit mb-6">
+                <button
+                  onClick={() => setMapaAba('funcionarios')}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                    mapaAba === 'funcionarios'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                  )}
+                >
+                  <Users className="w-4 h-4" />
+                  Funcionários
+                </button>
+                <button
+                  onClick={() => setMapaAba('alunos')}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                    mapaAba === 'alunos'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                  )}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  Alunos
+                </button>
+              </div>
+
+              {/* Conteúdo da aba ativa */}
+              {mapaAba === 'funcionarios' ? (
+                isLoadingMap ? (
+                  <div className="w-full h-[520px] rounded-2xl bg-surface-1 border border-border flex items-center justify-center text-muted-foreground animate-pulse">
+                    <span className="text-sm font-semibold">Buscando dados geográficos...</span>
+                  </div>
+                ) : (
+                  <MapaGlobal funcionarios={mapData} />
+                )
               ) : (
-                <MapaGlobal funcionarios={mapData} />
+                isLoadingMapAlunos ? (
+                  <div className="w-full h-[520px] rounded-2xl bg-surface-1 border border-border flex items-center justify-center text-muted-foreground animate-pulse">
+                    <span className="text-sm font-semibold">Buscando dados geográficos dos alunos...</span>
+                  </div>
+                ) : (
+                  <MapaAlunos alunos={mapDataAlunos} />
+                )
               )}
             </div>
           </div>

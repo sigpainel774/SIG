@@ -19,6 +19,11 @@ const MapaAuditoriaReal = dynamic(() => import('./MapaAuditoria'), {
   loading: () => <MapLoadingSkeleton height="400px" /> 
 });
 
+const MapaAlunosReal = dynamic(() => import('./MapaAlunos'), { 
+  ssr: false, 
+  loading: () => <MapLoadingSkeleton height="520px" /> 
+});
+
 function MapLoadingSkeleton({ height }: { height: string }) {
   return (
     <div 
@@ -30,4 +35,4 @@ function MapLoadingSkeleton({ height }: { height: string }) {
   );
 }
 
-export { MiniMapaReal as MiniMapa, MapaGlobalReal as MapaGlobal, MapaAuditoriaReal as MapaAuditoria };
+export { MiniMapaReal as MiniMapa, MapaGlobalReal as MapaGlobal, MapaAuditoriaReal as MapaAuditoria, MapaAlunosReal as MapaAlunos };
