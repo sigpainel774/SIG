@@ -35,7 +35,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'notas' | 'necessidades_especiais' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | null
 
 export default function RelatoriosPage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -113,17 +113,10 @@ export default function RelatoriosPage() {
   const reportCards = [
     {
       id: 'desempenho' as const,
-      title: 'Desempenho Escolar',
-      description: 'Boletim vermelho e métricas de notas.',
+      title: 'Desempenho & Assiduidade',
+      description: 'Boletim vermelho, controle de faltas e risco de evasão.',
       icon: TrendingUp,
       variant: 'primary' as const,
-    },
-    {
-      id: 'frequencia' as const,
-      title: 'Frequência e Evasão',
-      description: 'Controle de faltas e risco de evasão.',
-      icon: CalendarCheck,
-      variant: 'success' as const,
     },
     {
       id: 'censo' as const,
@@ -152,13 +145,6 @@ export default function RelatoriosPage() {
       description: 'Logs de ponto e ronda (App Mobile).',
       icon: Scan,
       variant: 'primary' as const,
-    },
-    {
-      id: 'notas' as const,
-      title: 'Relatório de Notas',
-      description: 'Módulo em desenvolvimento.',
-      icon: GraduationCap,
-      variant: 'warning' as const,
     },
     {
       id: 'necessidades_especiais' as const,
@@ -221,7 +207,7 @@ export default function RelatoriosPage() {
           <div className="flex items-center gap-3">
 
 
-            {activeReport === 'frequencia' && (
+            {activeReport === 'desempenho' && selectedEscola && (
               <Button
                 onClick={() => setPrintableSubView('ficha')}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl gap-2"
@@ -242,140 +228,7 @@ export default function RelatoriosPage() {
 
         {/* Dynamic Content based on Macro vs School Specific */}
         {activeReport === 'desempenho' ? (
-          !selectedEscola ? (
-          /* ==================== MACRO REDE REPORT DETAILS ==================== */
-          <div className="space-y-6">
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Macro da Rede</span>
-                  <h3 className="text-xl font-bold text-foreground mt-0.5">Consolidado Geral — Rede</h3>
-                </div>
-                <div className="bg-sky-500/10 text-sky-300 border border-sky-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
-                  {escolas.length} Escolas Integradas
-                </div>
-              </div>
-
-              {/* Macro Metrics Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Total de Alunos</p>
-                  <p className="text-2xl font-black text-foreground mt-1">-</p>
-                  <span className="text-[10px] text-emerald-400 font-semibold">Em breve</span>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Média Geral da Rede</p>
-                  <p className="text-2xl font-black text-primary mt-1">- / 10</p>
-                  <span className="text-[10px] text-muted-foreground">Todas as disciplinas</span>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Frequência Média</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-1">-%</p>
-                  <span className="text-[10px] text-emerald-400">Módulo em dev</span>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Alertas Disciplinares</p>
-                  <p className="text-2xl font-black text-rose-400 mt-1">-</p>
-                  <span className="text-[10px] text-rose-400">Aguardando dados</span>
-                </div>
-              </div>
-
-              {/* Tabela por Escola da Rede */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-muted-foreground">
-                  <thead className="bg-surface-1 text-muted-foreground uppercase text-[10px] tracking-wider font-bold">
-                    <tr>
-                      <th className="p-3 rounded-l-lg">Unidade Escolar</th>
-                      <th className="p-3">Alunos</th>
-                      <th className="p-3">Média Notas</th>
-                      <th className="p-3">Frequência</th>
-                      <th className="p-3">Boletim Vermelho</th>
-                      <th className="p-3 rounded-r-lg text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {escolas.map((escola: any) => (
-                      <tr key={escola.id} className="hover:bg-hoverCustom transition-colors">
-                        <td className="p-3 font-semibold text-foreground flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${escola.color || 'bg-slate-500'}`} />
-                          {escola.nome}
-                        </td>
-                        <td className="p-3 font-mono">{escola.totalAlunos || '-'}</td>
-                        <td className="p-3 font-mono font-bold text-primary">-</td>
-                        <td className="p-3 font-mono text-emerald-400">-%</td>
-                        <td className="p-3 font-mono text-rose-400 font-semibold">-</td>
-                        <td className="p-3 text-right">
-                          <span className="bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            N/D
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* ==================== DETAILED SCHOOL REPORT ==================== */
-          <div className="space-y-6">
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${selectedEscola.color} flex items-center justify-center text-white font-bold text-lg shadow-md`}>
-                    {selectedEscola.nome[0]}
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Detalhado da Unidade</span>
-                    <h3 className="text-xl font-bold text-foreground">{selectedEscola.nome}</h3>
-                  </div>
-                </div>
-                <div className="bg-blue-500/10 text-blue-300 border border-blue-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
-                  Código: {selectedEscola.codigo || 'ET-01'}
-                </div>
-              </div>
-
-              {/* School Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Matriculados na Escola</p>
-                  <p className="text-2xl font-black text-foreground mt-1">{selectedEscola.totalAlunos}</p>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Quadro de Professores</p>
-                  <p className="text-2xl font-black text-primary mt-1">{selectedEscola.totalProfessores}</p>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Turmas Ativas</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-1">{selectedEscola.totalTurmas}</p>
-                </div>
-                <div className="bg-surface-1 p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground">Taxa de Assiduidade</p>
-                  <p className="text-2xl font-black text-amber-400 mt-1">94.8%</p>
-                </div>
-              </div>
-
-              {/* Turmas / Detalhamento da Escola */}
-              <h4 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wider">
-                Desempenho por Turma da Escola
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {['6º Ano A', '7º Ano B', '8º Ano A', '9º Ano A', '9º Ano B'].map((turma, i) => (
-                  <div key={turma} className="bg-surface-1 p-4 rounded-xl border border-border flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-foreground text-sm">{turma}</p>
-                      <p className="text-xs text-muted-foreground">32 Alunos | Turno Matutino</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-emerald-400">Média 8.{i + 1}</p>
-                      <p className="text-[10px] text-muted-foreground">Frequência 95%</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          )
+          <RelatorioNotas selectedEscola={selectedEscola} />
         ) : activeReport === 'mapa' ? (
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-2xl p-6">
@@ -397,8 +250,6 @@ export default function RelatoriosPage() {
               )}
             </div>
           </div>
-        ) : activeReport === 'notas' ? (
-          <RelatorioNotas selectedEscola={selectedEscola} />
         ) : activeReport === 'necessidades_especiais' ? (
           <RelatorioNecessidades selectedEscola={selectedEscola} />
         ) : activeReport === 'ocorrencias' ? (
