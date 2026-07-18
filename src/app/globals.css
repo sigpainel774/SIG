@@ -209,9 +209,9 @@
   }
 
   /* Efeito de foco premium nos inputs no tema light */
-  :root input:focus-visible, 
-  :root textarea:focus-visible, 
-  :root select:focus-visible {
+  :root:not(.dark) input:focus-visible, 
+  :root:not(.dark) textarea:focus-visible, 
+  :root:not(.dark) select:focus-visible {
     background-color: #ffffff !important;
     border-color: #1D6FD6 !important;
   }
