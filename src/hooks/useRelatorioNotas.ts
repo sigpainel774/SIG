@@ -27,6 +27,18 @@ export interface EscolaDesempenho {
   alunosAprovados: number
   alunosRisco: number
   totalTurmas: number
+  taxaAssiduidade: number | null
+  alunosEvasao: number
+}
+
+export interface FrequenciaRecord {
+  id: string
+  aluno_id: string
+  turma_id: string
+  escola_id: string
+  materia_id: string | null
+  data: string
+  presenca: boolean
 }
 
 export function useRelatorioNotas(escolaId: string | null) {
@@ -38,6 +50,7 @@ export function useRelatorioNotas(escolaId: string | null) {
   const [turmas, setTurmas] = useState<any[]>([])
   const [materias, setMaterias] = useState<any[]>([])
   const [alunos, setAlunos] = useState<any[]>([])
+  const [frequencias, setFrequencias] = useState<FrequenciaRecord[]>([])
   const [escolasDesempenho, setEscolasDesempenho] = useState<EscolaDesempenho[]>([])
 
   // Dados calculados / agregados
@@ -116,34 +129,53 @@ export function useRelatorioNotas(escolaId: string | null) {
         if (errNotas) throw errNotas
         setNotas((NotasData as unknown as NotaRecord[]) || [])
 
+        // 3. Buscar Frequências (Lightweight)
+        let queryFreqs = supabase
+          .from('frequencias')
+          .select('id, aluno_id, turma_id, escola_id, materia_id, data, presenca')
+          .eq('escola_id', escolaId)
+
+        if (filters.turmaId && filters.turmaId !== 'todos') {
+          queryFreqs = queryFreqs.eq('turma_id', filters.turmaId)
+        }
+
+        const { data: FreqsData, error: errFreqs } = await queryFreqs
+        if (errFreqs) throw errFreqs
+        setFrequencias((FreqsData as FrequenciaRecord[]) || [])
+
       } else {
         // --- VISÃO CONSOLIDADA (REDE) ---
-        // Buscar todas as escolas, turmas, alunos e notas para agregarmos
-        const [escolasRes, turmasRes, alunosRes, notasRes] = await Promise.all([
+        // Buscar todas as escolas, turmas, alunos, notas e frequências para agregarmos
+        const [escolasRes, turmasRes, alunosRes, notasRes, freqsRes] = await Promise.all([
           supabase.from('escolas').select('id, nome').is('deleted_at', null),
           supabase.from('turmas').select('id, escola_id').is('deleted_at', null),
           supabase.from('alunos').select('id, escola_id').is('deleted_at', null),
-          supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3, nota4')
+          supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3, nota4'),
+          supabase.from('frequencias').select('aluno_id, escola_id, presenca')
         ])
 
         if (escolasRes.error) throw escolasRes.error
         if (turmasRes.error) throw turmasRes.error
         if (alunosRes.error) throw alunosRes.error
         if (notasRes.error) throw notasRes.error
+        if (freqsRes.error) throw freqsRes.error
 
         const allEscolas = escolasRes.data || []
         const allTurmas = turmasRes.data || []
         const allAlunos = alunosRes.data || []
         const allNotas = notasRes.data || []
+        const allFreqs = freqsRes.data || []
 
-        // Agrupar e calcular médias por escola
+        setFrequencias(allFreqs as FrequenciaRecord[])
+
+        // Agrupar e calcular médias/frequência por escola
         const escolaMetrics = allEscolas.map((esc) => {
           const escAlunos = allAlunos.filter((a) => a.escola_id === esc.id)
           const escTurmas = allTurmas.filter((t) => t.escola_id === esc.id)
           const escNotas = allNotas.filter((n) => n.escola_id === esc.id)
+          const escFreqs = allFreqs.filter((f) => f.escola_id === esc.id)
 
-          // Calcular médias de cada aluno
-          // chave: aluno_id, valor: array de médias por matéria
+          // 1. Calcular médias de cada aluno
           const alunoMedias: Record<string, number[]> = {}
           
           escNotas.forEach((n) => {
@@ -184,6 +216,33 @@ export function useRelatorioNotas(escolaId: string | null) {
 
           const mediaGeral = countMedias > 0 ? parseFloat((totalEscolaSoma / countMedias).toFixed(1)) : null
 
+          // 2. Calcular Assiduidade (Frequência) e Evasão (Frequência < 75%) por aluno
+          const alunoFreqsMap: Record<string, { presencas: number; total: number }> = {}
+          escFreqs.forEach((f) => {
+            if (!alunoFreqsMap[f.aluno_id]) {
+              alunoFreqsMap[f.aluno_id] = { presencas: 0, total: 0 }
+            }
+            alunoFreqsMap[f.aluno_id].total++
+            if (f.presenca) {
+              alunoFreqsMap[f.aluno_id].presencas++
+            }
+          })
+
+          let evasaoCount = 0
+          escAlunos.forEach((aluno) => {
+            const stats = alunoFreqsMap[aluno.id]
+            if (stats && stats.total > 0) {
+              const freqRate = (stats.presencas / stats.total) * 100
+              if (freqRate < 75) {
+                evasaoCount++
+              }
+            }
+          })
+
+          const totalFreqs = escFreqs.length
+          const totalPresencas = escFreqs.filter((f) => f.presenca).length
+          const taxaAssiduidade = totalFreqs > 0 ? parseFloat(((totalPresencas / totalFreqs) * 100).toFixed(1)) : null
+
           return {
             id: esc.id,
             nome: esc.nome,
@@ -191,7 +250,9 @@ export function useRelatorioNotas(escolaId: string | null) {
             mediaGeral,
             alunosAprovados: aprovados,
             alunosRisco: risco,
-            totalTurmas: escTurmas.length
+            totalTurmas: escTurmas.length,
+            taxaAssiduidade,
+            alunosEvasao: evasaoCount
           }
         })
 
@@ -240,6 +301,7 @@ export function useRelatorioNotas(escolaId: string | null) {
     turmas,
     materias,
     alunos,
+    frequencias,
     escolasDesempenho,
     mediaRede,
     taxaAprovados,

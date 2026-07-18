@@ -26,6 +26,7 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
     turmas,
     materias,
     alunos,
+    frequencias,
     escolasDesempenho,
     mediaRede,
     taxaAprovados,
@@ -65,6 +66,7 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
           notas={notas}
           turmas={turmas}
           materias={materias}
+          frequencias={frequencias}
           loading={loading}
           onFilterChange={handleFilterChange}
         />

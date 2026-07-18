@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { TrendingUp, Users, AlertTriangle, Trophy, BarChart3 } from 'lucide-react'
+import { TrendingUp, Users, AlertTriangle, Trophy, BarChart3, CalendarCheck } from 'lucide-react'
 import { EscolaDesempenho } from '@/hooks/useRelatorioNotas'
 
 interface NetworkConsolidatedReportProps {
@@ -35,6 +35,15 @@ export function NetworkConsolidatedReport({
     .sort((a, b) => (b.mediaGeral || 0) - (a.mediaGeral || 0))
     .slice(0, 5)
 
+  // Calcular média geral de assiduidade na rede
+  const escolasComAssiduidade = escolasDesempenho.filter((e) => e.taxaAssiduidade !== null)
+  const assiduidadeRede = escolasComAssiduidade.length > 0
+    ? parseFloat((escolasComAssiduidade.reduce((sum, e) => sum + (e.taxaAssiduidade || 0), 0) / escolasComAssiduidade.length).toFixed(1))
+    : null
+
+  // Total de alunos sob alerta de evasão na rede
+  const totalAlunosEvasao = escolasDesempenho.reduce((sum, e) => sum + (e.alunosEvasao || 0), 0)
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Indicadores Principais (KPIs) */}
@@ -53,31 +62,31 @@ export function NetworkConsolidatedReport({
           </div>
         </div>
 
-        {/* KPI 2: Taxa de Aprovação */}
+        {/* KPI 2: Assiduidade Geral */}
         <div className="relative overflow-hidden bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-500/10 rounded-xl">
-            <TrendingUp className="w-6 h-6 text-emerald-400" />
+            <CalendarCheck className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-semibold">Taxa Geral de Aprovação</p>
+            <p className="text-xs text-muted-foreground font-semibold">Assiduidade da Rede</p>
             <p className="text-2xl font-black text-emerald-400 mt-1">
-              {taxaAprovados > 0 ? `${taxaAprovados}%` : '-%'}
+              {assiduidadeRede !== null ? `${assiduidadeRede}%` : 'S/R'}
             </p>
-            <span className="text-[10px] text-emerald-400 font-semibold">Média final &gt;= 5.0</span>
+            <span className="text-[10px] text-muted-foreground">Presença geral consolidada</span>
           </div>
         </div>
 
-        {/* KPI 3: Alunos em Risco */}
+        {/* KPI 3: Alunos em Evasão */}
         <div className="relative overflow-hidden bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="p-3 bg-rose-500/10 rounded-xl">
             <AlertTriangle className="w-6 h-6 text-rose-400" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-semibold">Alunos em Risco / Recuperação</p>
+            <p className="text-xs text-muted-foreground font-semibold">Risco de Evasão</p>
             <p className="text-2xl font-black text-rose-400 mt-1">
-              {taxaRisco > 0 ? `${taxaRisco}%` : '-%'}
+              {totalAlunosEvasao}
             </p>
-            <span className="text-[10px] text-rose-400 font-semibold">Média final &lt; 5.0</span>
+            <span className="text-[10px] text-rose-400 font-semibold">Alunos com frequência &lt; 75%</span>
           </div>
         </div>
 
@@ -91,7 +100,7 @@ export function NetworkConsolidatedReport({
             <p className="text-2xl font-black text-foreground mt-1">
               {escolasDesempenho.length}
             </p>
-            <span className="text-[10px] text-muted-foreground">Unidades escolares ativas</span>
+            <span className="text-[10px] text-muted-foreground">Unidades de ensino integradas</span>
           </div>
         </div>
       </div>
@@ -134,10 +143,10 @@ export function NetworkConsolidatedReport({
           </div>
         </div>
 
-        {/* Gráfico de Desempenho Visual (Barras customizadas em Tailwind) */}
+        {/* Gráfico de Desempenho Visual (Barras comparadas) */}
         <div className="bg-card border border-border rounded-2xl p-5 lg:col-span-2">
           <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-            Desempenho Médio Comparado por Escola
+            Desempenho & Assiduidade Comparado
           </h3>
           {escolasDesempenho.length === 0 ? (
             <div className="text-center py-16 text-xs text-muted-foreground italic">
@@ -146,23 +155,47 @@ export function NetworkConsolidatedReport({
           ) : (
             <div className="space-y-4">
               {escolasDesempenho.map((esc) => {
-                const percent = esc.mediaGeral ? (esc.mediaGeral / 10) * 100 : 0
+                const percentNota = esc.mediaGeral ? (esc.mediaGeral / 10) * 100 : 0
+                const percentAssid = esc.taxaAssiduidade || 0
                 return (
-                  <div key={esc.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-semibold">
+                  <div key={esc.id} className="p-3 bg-surface-1/40 border border-border rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold">
                       <span className="text-foreground truncate max-w-[200px]">{esc.nome}</span>
-                      <span className="text-muted-foreground font-mono">
-                        Média: <strong className="text-primary">{esc.mediaGeral !== null ? esc.mediaGeral.toFixed(1) : '-'}</strong>
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground font-mono">
+                          Média: <strong className="text-primary">{esc.mediaGeral !== null ? esc.mediaGeral.toFixed(1) : '-'}</strong>
+                        </span>
+                        <span className="text-muted-foreground font-mono">
+                          Assiduidade: <strong className="text-emerald-400">{esc.taxaAssiduidade !== null ? `${esc.taxaAssiduidade}%` : 'S/R'}</strong>
+                        </span>
+                      </div>
                     </div>
-                    <div className="w-full h-3 bg-surface-1 rounded-full overflow-hidden border border-border/60">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          percent >= 70 ? 'bg-emerald-500' :
-                          percent >= 50 ? 'bg-primary' : 'bg-rose-500'
-                        }`}
-                        style={{ width: `${percent}%` }}
-                      />
+                    
+                    {/* Barra de Média Notas */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground w-12">Notas</span>
+                      <div className="flex-1 h-2 bg-surface-1 rounded-full overflow-hidden border border-border/60">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            percentNota >= 70 ? 'bg-emerald-500' :
+                            percentNota >= 50 ? 'bg-primary' : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${percentNota}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Barra de Frequência */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground w-12">Presença</span>
+                      <div className="flex-1 h-2 bg-surface-1 rounded-full overflow-hidden border border-border/60">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            percentAssid >= 75 ? 'bg-emerald-500' : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${percentAssid}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )
@@ -175,7 +208,7 @@ export function NetworkConsolidatedReport({
       {/* Tabela de Escolas Completa */}
       <div className="bg-card border border-border rounded-2xl p-5">
         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
-          Resumo Pedagógico da Rede
+          Resumo Pedagógico & Assiduidade da Rede
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-muted-foreground">
@@ -185,20 +218,20 @@ export function NetworkConsolidatedReport({
                 <th className="p-3.5">Matriculados</th>
                 <th className="p-3.5">Turmas</th>
                 <th className="p-3.5">Média Notas</th>
-                <th className="p-3.5">Aprovados (%)</th>
+                <th className="p-3.5">Assiduidade (%)</th>
+                <th className="p-3.5">Alunos em Risco de Evasão</th>
                 <th className="p-3.5 rounded-r-xl text-right">Risco / Em Recuperação (%)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {escolasDesempenho.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground italic">
                     Nenhuma escola cadastrada no banco de dados.
                   </td>
                 </tr>
               ) : (
                 escolasDesempenho.map((esc) => {
-                  const aprovPercent = esc.totalAlunos > 0 ? ((esc.alunosAprovados / esc.totalAlunos) * 100) : 0
                   const riscoPercent = esc.totalAlunos > 0 ? ((esc.alunosRisco / esc.totalAlunos) * 100) : 0
                   return (
                     <tr key={esc.id} className="hover:bg-hoverCustom transition-colors">
@@ -208,8 +241,23 @@ export function NetworkConsolidatedReport({
                       <td className="p-3.5 font-mono font-bold text-primary">
                         {esc.mediaGeral !== null ? esc.mediaGeral.toFixed(1) : '-'}
                       </td>
-                      <td className="p-3.5 font-mono text-emerald-400 font-semibold">
-                        {aprovPercent.toFixed(1)}%
+                      <td className={`p-3.5 font-mono font-semibold ${
+                        esc.taxaAssiduidade === null ? 'text-muted-foreground' :
+                        esc.taxaAssiduidade >= 75 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}>
+                        {esc.taxaAssiduidade !== null ? `${esc.taxaAssiduidade}%` : 'S/R'}
+                      </td>
+                      <td className={`p-3.5 font-mono font-semibold ${
+                        esc.alunosEvasao > 0 ? 'text-rose-400' : 'text-emerald-400'
+                      }`}>
+                        {esc.alunosEvasao > 0 ? (
+                          <span className="flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                            {esc.alunosEvasao} aluno(s)
+                          </span>
+                        ) : (
+                          'Nenhum'
+                        )}
                       </td>
                       <td className="p-3.5 font-mono text-rose-400 font-semibold text-right">
                         {riscoPercent.toFixed(1)}%

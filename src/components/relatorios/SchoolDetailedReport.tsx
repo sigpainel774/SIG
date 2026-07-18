@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Printer, GraduationCap, AlertTriangle, HelpCircle } from 'lucide-react'
+import { Printer, GraduationCap, AlertTriangle, CalendarCheck, Users } from 'lucide-react'
 import { NotaRecord } from '@/hooks/useRelatorioNotas'
 
 import { Escola } from '@/store/useSchoolStore'
@@ -12,6 +12,7 @@ interface SchoolDetailedReportProps {
   notas: NotaRecord[]
   turmas: any[]
   materias: any[]
+  frequencias: any[]
   loading: boolean
   onFilterChange: (filters: { turmaId?: string; materiaId?: string }) => void
 }
@@ -22,6 +23,7 @@ export function SchoolDetailedReport({
   notas,
   turmas,
   materias,
+  frequencias,
   loading,
   onFilterChange
 }: SchoolDetailedReportProps) {
@@ -32,6 +34,14 @@ export function SchoolDetailedReport({
   useEffect(() => {
     onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria })
   }, [selectedTurma, selectedMateria, onFilterChange])
+
+  // Lógica de cálculo de assiduidade de cada aluno
+  const calcularAssiduidadeAluno = (alunoId: string) => {
+    const freqsAluno = frequencias.filter((f) => f.aluno_id === alunoId)
+    if (freqsAluno.length === 0) return null
+    const presencas = freqsAluno.filter((f) => f.presenca).length
+    return parseFloat(((presencas / freqsAluno.length) * 100).toFixed(1))
+  }
 
   // Lógica de cálculo de médias por aluno
   const processarNotasAlunos = () => {
@@ -91,17 +101,30 @@ export function SchoolDetailedReport({
         nome: aluno.nome,
         turmaId: aluno.turma_id,
         mediasMaterias,
-        mediaGeralAluno
+        mediaGeralAluno,
+        frequenciaPct: calcularAssiduidadeAluno(aluno.id)
       }
     })
   }
 
   const alunosProcessados = processarNotasAlunos()
 
-  // Alunos abaixo de 5.0
-  const alunosEmRisco = alunosProcessados.filter(
+  // Alunos abaixo de 5.0 (Risco de Notas)
+  const alunosEmRiscoNotas = alunosProcessados.filter(
     (a) => a.mediaGeralAluno !== null && a.mediaGeralAluno < 5.0
   )
+
+  // Alunos abaixo de 75.0% (Risco de Evasão)
+  const alunosEmRiscoEvasao = alunosProcessados.filter(
+    (a) => a.frequenciaPct !== null && a.frequenciaPct < 75.0
+  )
+
+  // Calcular assiduidade média geral da escola
+  const totalFreqsEscola = frequencias.length
+  const totalPresencasEscola = frequencias.filter((f) => f.presenca).length
+  const assiduidadeEscola = totalFreqsEscola > 0
+    ? parseFloat(((totalPresencasEscola / totalFreqsEscola) * 100).toFixed(1))
+    : null
 
   const handlePrintReport = () => {
     window.print()
@@ -113,6 +136,7 @@ export function SchoolDetailedReport({
     .flatMap((aluno) => {
       const notasAluno = notas.filter((n) => n.aluno_id === aluno.id)
       const turmaNome = turmas.find((t) => t.id === aluno.turma_id)?.nome || 'Sem Turma'
+      const freqAluno = calcularAssiduidadeAluno(aluno.id)
 
       const materiasExibir = materias.filter(
         (m) => selectedMateria === 'todos' || m.id === selectedMateria
@@ -133,8 +157,6 @@ export function SchoolDetailedReport({
           const nota3 = n?.nota3 ?? null
           const nota4 = n?.nota4 ?? null
 
-          // Se nenhuma nota está lançada para esta combinação, podemos omitir ou exibir zerado
-          // Mostrar apenas se houver pelo menos uma nota ou se não houver filtro estrito
           const validas = [nota1, nota2, nota3, nota4].filter(
             (v): v is number => v !== null && !isNaN(v)
           )
@@ -146,7 +168,6 @@ export function SchoolDetailedReport({
             const val3 = nota3 ?? 0
             const val4 = nota4 ?? 0
             
-            // Divisor dinâmico: se a nota 4 opcional for informada, dividimos por 4.
             const divisor = (nota4 !== null) ? 4 : 3
             const soma = val1 + val2 + val3 + (nota4 !== null ? val4 : 0)
             media = parseFloat((soma / divisor).toFixed(1))
@@ -162,14 +183,15 @@ export function SchoolDetailedReport({
             nota2,
             nota3,
             nota4,
-            media
+            media,
+            frequencia: freqAluno
           }
         })
       })
     })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Filtros Internos do Relatório */}
       <div className="bg-card border border-border rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between no-print">
         <div className="flex flex-wrap gap-4 items-center">
@@ -256,10 +278,11 @@ export function SchoolDetailedReport({
       </div>
 
       {/* Indicadores Locais da Escola */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 no-print">
+        {/* KPI 1: Alunos */}
         <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-lg">
-            <GraduationCap className="w-5 h-5 text-primary" />
+            <Users className="w-5 h-5 text-primary" />
           </div>
           <div>
             <p className="text-[10px] text-muted-foreground font-semibold">Total de Estudantes</p>
@@ -267,35 +290,58 @@ export function SchoolDetailedReport({
           </div>
         </div>
 
+        {/* KPI 2: Assiduidade */}
         <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
           <div className="p-2.5 bg-emerald-500/10 rounded-lg">
-            <GraduationCap className="w-5 h-5 text-emerald-400" />
+            <CalendarCheck className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Turmas Filtradas</p>
-            <p className="text-lg font-bold text-foreground">
-              {selectedTurma === 'todos' ? turmas.length : 1}
+            <p className="text-[10px] text-muted-foreground font-semibold">Assiduidade Geral</p>
+            <p className={`text-lg font-bold ${assiduidadeEscola !== null && assiduidadeEscola < 75.0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              {assiduidadeEscola !== null ? `${assiduidadeEscola}%` : 'S/R'}
             </p>
           </div>
         </div>
 
+        {/* KPI 3: Alerta Notas */}
         <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
           <div className="p-2.5 bg-rose-500/10 rounded-lg">
             <AlertTriangle className="w-5 h-5 text-rose-400" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Alunos em Alerta (&lt; 5.0)</p>
-            <p className="text-lg font-bold text-rose-400">{alunosEmRisco.length}</p>
+            <p className="text-[10px] text-muted-foreground font-semibold">Abaixo da Média (&lt; 5.0)</p>
+            <p className="text-lg font-bold text-rose-400">{alunosEmRiscoNotas.length}</p>
+          </div>
+        </div>
+
+        {/* KPI 4: Risco Evasão */}
+        <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
+          <div className="p-2.5 bg-rose-500/10 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-rose-400" />
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground font-semibold">Risco de Evasão (&lt; 75%)</p>
+            <p className="text-lg font-bold text-rose-400">{alunosEmRiscoEvasao.length}</p>
           </div>
         </div>
       </div>
 
-      {/* Alerta de Risco (Se houver) */}
-      {alunosEmRisco.length > 0 && (
+      {/* Alerta de Notas Baixas */}
+      {alunosEmRiscoNotas.length > 0 && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-300 no-print">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-400 flex-shrink-0" />
           <div>
-            <strong>Atenção Gestão Escolar:</strong> Existem {alunosEmRisco.length} alunos com média final consolidada abaixo de 5.0 (Risco de recuperação pedagógica). É recomendada a verificação das notas e aplicação de reforço/recuperação.
+            <strong>Atenção Gestão Escolar (Notas):</strong> Existem {alunosEmRiscoNotas.length} alunos com média final consolidada abaixo de 5.0 (Risco de recuperação pedagógica). É recomendada a verificação das notas e aplicação de reforço.
+          </div>
+        </div>
+      )}
+
+      {/* Alerta de Baixa Frequência / Evasão */}
+      {alunosEmRiscoEvasao.length > 0 && (
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-300 no-print">
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-400 flex-shrink-0" />
+          <div>
+            <strong>Atenção Gestão Escolar (Evasão):</strong> Existem {alunosEmRiscoEvasao.length} alunos com taxa de frequência abaixo de 75% (Limite mínimo exigido por lei). Risco crítico de evasão escolar!
           </div>
         </div>
       )}
@@ -304,17 +350,17 @@ export function SchoolDetailedReport({
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-            Grade Analítica de Notas por Estudante
+            Grade Analítica de Notas & Frequência por Estudante
           </h3>
           <span className="text-[10px] bg-surface-1 border border-border text-muted-foreground px-2 py-0.5 rounded-lg font-semibold no-print">
-            {selectedTurma === 'todos' ? 'Todas as turmas' : turmas.find(t => t.id === selectedTurma)?.nome} | Média de aprovação: 5.0
+            {selectedTurma === 'todos' ? 'Todas as turmas' : turmas.find(t => t.id === selectedTurma)?.nome} | Média: 5.0 | Freq. Mínima: 75%
           </span>
         </div>
 
         {loading ? (
           <div className="py-12 flex flex-col items-center justify-center text-muted-foreground animate-pulse">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-            <span className="text-xs">Carregando diário de notas...</span>
+            <span className="text-xs">Carregando diário de notas e assiduidade...</span>
           </div>
         ) : rowsAnaliticas.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-border rounded-xl text-muted-foreground text-xs italic">
@@ -329,6 +375,7 @@ export function SchoolDetailedReport({
                   <th className="p-3">Turma</th>
                   <th className="p-3">Disciplina</th>
                   <th className="p-3">Trimestre</th>
+                  <th className="p-3 text-center">Frequência</th>
                   <th className="p-3 text-center w-14">Nota 1</th>
                   <th className="p-3 text-center w-14">Nota 2</th>
                   <th className="p-3 text-center w-14">Nota 3</th>
@@ -344,6 +391,20 @@ export function SchoolDetailedReport({
                       <td className="p-3 font-semibold text-muted-foreground">{row.turmaNome}</td>
                       <td className="p-3 font-semibold text-muted-foreground">{row.materiaNome}</td>
                       <td className="p-3 font-semibold text-muted-foreground">{row.unidade}º Trim</td>
+                      <td className="p-3 text-center">
+                        {row.frequencia !== null ? (
+                          <span className={`px-2 py-0.5 rounded font-bold border ${
+                            row.frequencia < 75.0
+                              ? 'text-rose-500 bg-rose-500/10 border-rose-500/20'
+                              : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                          }`}>
+                            {row.frequencia}%
+                            {row.frequencia < 75.0 && ' (Evasão)'}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">S/R</span>
+                        )}
+                      </td>
                       <td className="p-3 font-mono text-center">{row.nota1 !== null ? row.nota1.toFixed(1) : '-'}</td>
                       <td className="p-3 font-mono text-center">{row.nota2 !== null ? row.nota2.toFixed(1) : '-'}</td>
                       <td className="p-3 font-mono text-center">{row.nota3 !== null ? row.nota3.toFixed(1) : '-'}</td>
