@@ -161,3 +161,15 @@
 
 - **Uso do DB_MAP.md**: O agente deve SEMPRE realizar a leitura do arquivo `DB_MAP.md` localizado na raiz do projeto (`c:\Users\Pc\Documents\GitHub\SIG\DB_MAP.md`) antes de formular ou executar qualquer query SQL, insert, update ou delete, a fim de garantir a exatidão dos nomes de tabelas, colunas, chaves estrangeiras e tipos de dados sem a necessidade de varredura prévia de tabelas via API.
 <!-- END:db-map-rule -->
+
+<!-- BEGIN:refactoring-and-duplication-rules -->
+# Diretrizes de Reutilização de Código e Supressão de Duplicações
+
+- **Modais e Dialogs (StandardDialog)**: Novas estruturas de modais e caixas de diálogo administrativas devem obrigatoriamente utilizar o componente reutilizável `<StandardDialog>` (de `src/components/ui/standard-dialog.tsx`). Evite recriar estruturas cruas de `Dialog` para garantir consistência no visual escuro denso, breakpoints responsivos e tratamento nativo de fechamento.
+- **Tabelas de Listagem (StandardTable)**: Novas listagens tabulares devem utilizar o componente genérico `<StandardTable>` (de `src/components/ui/table.tsx`). Ele já fornece spinners de carregamento, tratamento estilizado para estados vazios (Empty States) e design denso consistente.
+- **Formulários de Dados Pessoais (usePessoaForm)**: Novas telas ou modais que lidem com cadastro ou edição de dados pessoais e endereço (alunos, funcionários, responsáveis, etc.) devem utilizar o hook `usePessoaForm` (de `src/hooks/usePessoaForm.ts`) para unificar os estados de controle, inicializações, resets e máscaras (ex: CPF e CEP).
+- **Cabeçalhos de Documentos Oficiais (PrintHeader)**: Qualquer novo layout de visualização de impressão ou documento oficial deve utilizar o componente `<PrintHeader>` (de `src/components/print/print-header.tsx`), assegurando a correta simetria física das logomarcas da prefeitura/secretaria e aplicação automatizada de query param timestamp para evitar cache do navegador.
+- **Carregamento de Dados Auxiliares (SWR)**: Evite utilizar hooks `useEffect` com lógica imperativa para buscar dados de tabelas auxiliares (ex: carregar listas de escolas, turmas ou cargos na abertura de um modal). Utilize hooks baseados em `useSWR` para obter carregamento declarativo, reativo e com cache automático compartilhado entre componentes.
+- **Prevenção de Memory Leaks**: Ao implementar `useEffect` para escutar canais de tempo real do Supabase ou observers de assinaturas (como no painel móvel), sempre implemente uma flag de controle de montagem (ex: `let active = true;` no início e `active = false;` no retorno da função de limpeza) para evitar atualizações de estado em componentes desmontados.
+<!-- END:refactoring-and-duplication-rules -->
+

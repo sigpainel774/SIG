@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
 
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~23,2%
-* **Linhas de Código Removidas/Otimizadas:** ~917
-* **Redução Acumulada do Projeto:** ~2,60%
+* **Percentual Atual de Duplicação:** ~22,6%
+* **Linhas de Código Removidas/Otimizadas:** ~1009
+* **Redução Acumulada do Projeto:** ~2,87%
 
 ---
 
@@ -25,10 +25,10 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~570 | ~360 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>`. |
 | **Grupo 2** | `useState` de campos pessoais (Aluno ↔ Funcionário) | ✅ Concluído | ~400 | ~267 linhas puras removidas. Lógicas de inicialização, reset e masks centralizadas via hook `usePessoaForm`. |
 | **Grupo 3** | Cabeçalho de Impressão Municipal | ✅ Concluído | ~360 | ~115 linhas puras removidas. Simetria física de logos da prefeitura/secretaria e cache-buster unificados via componente `<PrintHeader>`. |
-| **Grupo 4** | Padrão de Busca/Filtro Local | ⏳ Pendente | ~500 | - |
-| **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ⏳ Pendente | ~600 | - |
-| **Grupo 6** | Verificações de Permissão por Cargo | ⏳ Pendente | ~250 | - |
-| **Grupo 7** | Formatação de Data | ⏳ Pendente | ~130 | - |
+| **Grupo 4** | Padrão de Busca/Filtro Local | ✅ Concluído | ~500 | ~50 linhas puras removidas. Lógica de busca case-insensitive e com normalização de acentos centralizada via hook `useLocalSearch`. |
+| **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ✅ Concluído | ~600 | ~22 linhas puras removidas. Lógica de tratamento de erros assíncronos e loading unificada no utilitário `executeWithToast`. |
+| **Grupo 6** | Verificações de Permissão por Cargo | ✅ Concluído | ~250 | ~12 linhas puras removidas. Lógicas de verificação de cargos (Professor/Coordenador) unificadas na store `useAuthStore`. |
+| **Grupo 7** | Formatação de Data | ✅ Concluído | ~130 | ~8 linhas puras removidas. Padronização de formatação de data com correção automática de fuso horário via helper `formatDate`. |
 | **Grupo 8** | Upload de Arquivo com Preview | ⏳ Pendente | ~120 | - |
 | **Grupo 9** | Estado de Loading | ⏳ Pendente | ~300 | - |
 | **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ✅ Concluído (Parcial) | ~280 | ~25 linhas puras economizadas no modal-aluno. Lógicas de consulta de tabelas auxiliares (turmas/escolas) migradas para hooks SWR, reduzindo código imperativo e requests repetidas. |
@@ -38,6 +38,21 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ---
 
 ## 📝 Histórico de Alterações e Impacto Real
+
+### [19/07/2026] - Refatoração dos Grupos 6 e 7 Concluída
+* Centralização das permissões de cargo (`isProfessor` e `isCoordenador`) na store de autenticação global [useAuthStore](file:///c:/Users/Pc/Documents/GitHub/SIG/src/store/useAuthStore.ts). Refatoradas as páginas `turmas` e `alunos`.
+* Criação do helper [formatDate](file:///c:/Users/Pc/Documents/GitHub/SIG/src/lib/utils.ts) com suporte a tratamento de fuso horário local em strings de data YYYY-MM-DD. Refatoradas as páginas `ocorrencias` e `admin/solicitacoes`.
+* Validação do build executada com 100% de sucesso.
+
+### [19/07/2026] - Refatoração do Grupo 5 Concluída
+* Criação do utilitário [executeWithToast](file:///c:/Users/Pc/Documents/GitHub/SIG/src/lib/action-handler.ts) para padronizar try/catch/finally e feedback de Toasts.
+* Refatoração de 4 rotinas assíncronas em: `cargos` (exclusão), `escolas` (exclusão) e `dispositivos` (exclusão e alteração de status).
+* Validação do build executada com 100% de sucesso.
+
+### [19/07/2026] - Refatoração do Grupo 4 Concluída
+* Criação do hook de React reutilizável [useLocalSearch](file:///c:/Users/Pc/Documents/GitHub/SIG/src/hooks/useLocalSearch.ts) com normalização automática de acentos e prevenção de recomputação de callbacks.
+* Refatoração de 5 listagens administrativas: `cargos`, `escolas`, `acessos`, `dispositivos` e `armazenamento`.
+* Validação do build executada com 100% de sucesso.
 
 ### [19/07/2026] - Refatoração dos Grupos 1 e 3 Concluída
 * Criação do componente reutilizável [StandardDialog](file:///c:/Users/Pc/Documents/GitHub/SIG/src/components/ui/standard-dialog.tsx) e refatoração de 5 modais: `ModalAtestado`, `ModalEscala`, `ModalLancamentoFinanceiro`, `ModalNovaOcorrencia` e `ModalAdicionalSalario`.

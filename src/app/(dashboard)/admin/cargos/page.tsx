@@ -12,6 +12,9 @@ import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 
+import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { executeWithToast } from '@/lib/action-handler'
+
 export default function AdminCargosPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
@@ -58,33 +61,29 @@ export default function AdminCargosPage() {
     const confirm = window.confirm(`Deseja realmente mover o cargo "${cargo.nome}" para a Lixeira Global?`)
     if (!confirm) return
 
-    setLoading(true)
-    const { success, error } = await softDeleteToTrash({
-      supabase,
-      tableName: 'cargos',
-      recordId: cargo.id,
-      recordSummary: cargo.nome,
-      recordPayload: cargo,
-      performedBy: {
-        id: funcionario?.id ?? null,
-        name: funcionario?.nome || 'Administrador',
-        email: funcionario?.email || 'admin@super.com'
+    await executeWithToast({
+      action: () => softDeleteToTrash({
+        supabase,
+        tableName: 'cargos',
+        recordId: cargo.id,
+        recordSummary: cargo.nome,
+        recordPayload: cargo,
+        performedBy: {
+          id: funcionario?.id ?? null,
+          name: funcionario?.nome || 'Administrador',
+          email: funcionario?.email || 'admin@super.com'
+        }
+      }),
+      setLoading,
+      successMessage: 'Cargo enviado para a Lixeira Global!',
+      errorMessage: 'Erro ao excluir cargo',
+      onSuccess: () => {
+        loadCargos()
       }
     })
-
-    if (!success) {
-      toast.error(`Erro ao excluir cargo: ${(error as any)?.message || 'Erro desconhecido'}`)
-    } else {
-      toast.success('Cargo enviado para a Lixeira Global!')
-      loadCargos()
-    }
-    setLoading(false)
   }
 
-  const cargosFiltrados = cargos.filter(c => 
-    c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const cargosFiltrados = useLocalSearch(cargos, searchTerm, ['nome', 'descricao'])
 
   return (
     <div className="space-y-6">

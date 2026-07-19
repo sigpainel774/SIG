@@ -23,6 +23,8 @@ interface AuthState {
   isAdminGlobalOrRoot: () => boolean;
   isDiretor: () => boolean;
   isChefe: () => boolean;
+  isProfessor: () => boolean;
+  isCoordenador: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -50,5 +52,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isChefe: () => {
     const state = get();
     return state.acessos.some(a => a.nivel === 5 && a.ativo);
+  },
+  isProfessor: () => {
+    const state = get();
+    const acessos = state.acessos || [];
+    const cargo = state.funcionario?.cargo?.toLowerCase() || '';
+    return acessos.some(a => a.nivel === 4 || a.nivel === 5) || cargo.includes('professor');
+  },
+  isCoordenador: () => {
+    const state = get();
+    const cargo = state.funcionario?.cargo?.toLowerCase() || '';
+    return cargo.includes('coordenador');
   },
 }));

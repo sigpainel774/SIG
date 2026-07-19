@@ -13,6 +13,9 @@ import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 
+import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { executeWithToast } from '@/lib/action-handler'
+
 export default function AdminEscolasPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
@@ -57,33 +60,30 @@ export default function AdminEscolasPage() {
     const confirm = window.confirm(`Deseja realmente mover a escola "${escola.nome}" para a Lixeira Global?`)
     if (!confirm) return
 
-    setLoading(true)
-    const { success, error } = await softDeleteToTrash({
-      supabase,
-      tableName: 'escolas',
-      recordId: escola.id,
-      recordSummary: escola.nome,
-      recordPayload: escola,
-      performedBy: {
-        id: funcionario?.id ?? null,
-        name: funcionario?.nome || 'Administrador',
-        email: funcionario?.email || 'admin@super.com'
+    await executeWithToast({
+      action: () => softDeleteToTrash({
+        supabase,
+        tableName: 'escolas',
+        recordId: escola.id,
+        recordSummary: escola.nome,
+        recordPayload: escola,
+        performedBy: {
+          id: funcionario?.id ?? null,
+          name: funcionario?.nome || 'Administrador',
+          email: funcionario?.email || 'admin@super.com'
+        }
+      }),
+      setLoading,
+      successMessage: 'Escola enviada para a Lixeira Global!',
+      errorMessage: 'Erro ao excluir escola',
+      onSuccess: () => {
+        loadEscolas()
       }
     })
-
-    if (!success) {
-      toast.error(`Erro ao excluir escola: ${(error as any)?.message || 'Erro desconhecido'}`)
-    } else {
-      toast.success('Escola enviada para a Lixeira Global!')
-      loadEscolas()
-    }
-    setLoading(false)
   }
 
-  const escolasFiltradas = escolas.filter(e => 
-    e.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.inep?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const escolasFiltradas = useLocalSearch(escolas, searchTerm, ['nome', 'inep'])
+
 
   return (
     <div className="space-y-6">

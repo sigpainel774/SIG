@@ -24,6 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
 
 // Interfaces que batem com o retorno da API
 interface SchoolStat {
@@ -131,14 +132,12 @@ export default function AdminArmazenamentoPage() {
     return Array.from(set).sort()
   }, [data])
 
+  const searchedFiles = useLocalSearch(data?.topFiles || [], searchTerm, ['name'])
+
   // Filtrar e ordenar arquivos do inspetor de arquivos
   const filteredFiles = useMemo(() => {
-    if (!data?.topFiles) return []
-
-    return data.topFiles
+    return searchedFiles
       .filter(file => {
-        // Filtro de Busca
-        const nameMatch = file.name.toLowerCase().includes(searchTerm.toLowerCase())
         // Filtro de Escola
         const schoolMatch =
           selectedSchool === 'ALL' ||
@@ -149,7 +148,7 @@ export default function AdminArmazenamentoPage() {
         // Filtro de Tipo
         const typeMatch = selectedType === 'ALL' || file.type === selectedType
 
-        return nameMatch && schoolMatch && bucketMatch && typeMatch
+        return schoolMatch && bucketMatch && typeMatch
       })
       .sort((a, b) => {
         if (sortBy === 'size') {
@@ -158,7 +157,7 @@ export default function AdminArmazenamentoPage() {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         }
       })
-  }, [data, searchTerm, selectedSchool, selectedBucket, selectedType, sortBy])
+  }, [searchedFiles, selectedSchool, selectedBucket, selectedType, sortBy])
 
   // Calcular percentuais para a barra de progresso empilhada global
   const typeBreakdownPercentages = useMemo(() => {

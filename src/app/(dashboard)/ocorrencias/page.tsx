@@ -10,6 +10,7 @@ import { AlertTriangle, RefreshCw, CheckCircle2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { IconTile } from '@/components/ui/icon-tile'
+import { formatDate } from '@/lib/utils'
 
 export default function OcorrenciasPage() {
   const [dataFiltro, setDataFiltro] = useState('')
@@ -121,7 +122,7 @@ export default function OcorrenciasPage() {
             )}
             {ocorrencias.map((oco) => (
               <TableRow key={oco.id} className="border-b border-border hover:bg-hoverCustom transition-colors">
-                <TableCell className="text-muted-foreground text-sm font-normal whitespace-nowrap">{new Date(oco.data).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell className="text-muted-foreground text-sm font-normal whitespace-nowrap">{formatDate(oco.data)}</TableCell>
                 <TableCell className="text-foreground font-semibold text-sm">{oco.alunos?.nome}</TableCell>
                 <TableCell className="text-muted-foreground text-sm font-normal">{oco.turmas?.nome}</TableCell>
                 <TableCell>
