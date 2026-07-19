@@ -291,4 +291,20 @@
   width: auto !important;
   max-width: 200px !important;
   object-fit: contain !important;
+}
+
+/* ES-1 corrigido: animate-fadeIn não existe no tw-animate-css — definição manual */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
 }

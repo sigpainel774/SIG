@@ -1,6 +1,6 @@
-'use client'
+﻿'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -23,23 +23,36 @@ import {
   Archive
 } from 'lucide-react'
 import { ModalReport } from '@/components/modals/modal-report'
+import type { LucideIcon } from 'lucide-react'
 
-const diretrizes = [
+// Gargalo #1 corrigido: conteudo como render function () => JSX.
+// O JSX so e avaliado/alocado quando o usuario expande o painel.
+// Gargalo #2 corrigido: campo keywords[] para busca no conteudo real dos manuais.
+interface Diretriz {
+  id: string
+  icon: LucideIcon
+  titulo: string
+  keywords: string[]
+  conteudo: () => React.ReactNode
+}
+
+const diretrizes: Diretriz[] = [
   {
     id: 'd1',
     icon: Shield,
-    titulo: 'Níveis de Acesso (Hierarquia)',
-    conteudo: (
+    titulo: 'Niveis de Acesso (Hierarquia)',
+    keywords: ['root','superadmin','nivel 1','nivel 2','nivel 3','nivel 4','nivel 5','nivel 6','administrador','diretor','secretario','coordenador','professor','chefe','operacional','mobile','rbac','abac','rls','hierarquia','permissao'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>O SIG possui uma arquitetura de controle de acessos baseada em papéis (RBAC) e atributos (ABAC) integrada às políticas de segurança RLS do banco de dados:</p>
+        <p>O SIG possui uma arquitetura de controle de acessos baseada em papeis (RBAC) e atributos (ABAC) integrada as politicas de seguranca RLS do banco de dados:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>ROOT (Super Admin):</strong> Acesso administrativo global irrestrito a todas as unidades de ensino, logs do sistema, configurações de banco e chaves de segurança.</li>
-          <li><strong>Nível 1 (Administrador Global):</strong> Gestão ampla do painel, cadastro de novos funcionários e alocação de acessos na Secretaria de Educação.</li>
-          <li><strong>Nível 2 (Diretor Escolar):</strong> Gestão total de sua respectiva unidade. Possui autoridade exclusiva para aprovar solicitações de desbloqueio de matrículas.</li>
-          <li><strong>Nível 3 (Secretário / Coordenador):</strong> Controle operacional de secretaria, gerenciamento de cadastros e homologação diária de matrículas.</li>
-          <li><strong>Nível 4 (Professor):</strong> Acesso restrito ao Diário de Classe. Visualiza e lança notas/frequência apenas das turmas e disciplinas nas quais está vinculado.</li>
-          <li><strong>Nível 5 (Chefe de Equipe):</strong> Controle focado apenas nas profissões/cargos subordinados designados (ex: Vigias), sem acesso aos dados escolares gerais.</li>
-          <li><strong>Nível 6 (Operacional Mobile):</strong> Acesso estritamente restrito à interface móvel do leitor de QR Code para registro de Ponto e Rondas geolocalizadas.</li>
+          <li><strong>ROOT (Super Admin):</strong> Acesso administrativo global irrestrito a todas as unidades de ensino, logs do sistema, configuracoes de banco e chaves de seguranca.</li>
+          <li><strong>Nivel 1 (Administrador Global):</strong> Gestao ampla do painel, cadastro de novos funcionarios e alocacao de acessos na Secretaria de Educacao.</li>
+          <li><strong>Nivel 2 (Diretor Escolar):</strong> Gestao total de sua respectiva unidade. Possui autoridade exclusiva para aprovar solicitacoes de desbloqueio de matriculas.</li>
+          <li><strong>Nivel 3 (Secretario / Coordenador):</strong> Controle operacional de secretaria, gerenciamento de cadastros e homologacao diaria de matriculas.</li>
+          <li><strong>Nivel 4 (Professor):</strong> Acesso restrito ao Diario de Classe. Visualiza e lanca notas/frequencia apenas das turmas e disciplinas nas quais esta vinculado.</li>
+          <li><strong>Nivel 5 (Chefe de Equipe):</strong> Controle focado apenas nas profissoes/cargos subordinados designados (ex: Vigias), sem acesso aos dados escolares gerais.</li>
+          <li><strong>Nivel 6 (Operacional Mobile):</strong> Acesso estritamente restrito a interface movel do leitor de QR Code para registro de Ponto e Rondas geolocalizadas.</li>
         </ul>
       </div>
     )
@@ -47,26 +60,27 @@ const diretrizes = [
   {
     id: 'd2',
     icon: Lock,
-    titulo: 'Assinatura Eletrônica e Trava de Integridade',
-    conteudo: (
+    titulo: 'Assinatura Eletronica e Trava de Integridade',
+    keywords: ['assinatura','assinatura eletronica','hash','sha-256','sha256','qr code','qrcode','pdf','integridade','trava','homologacao','responsavel','desbloqueio','codigo temporario','4 digitos','5 minutos','ip','user agent','geolocalizacao','storage'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>Para eliminar o uso de papéis e garantir a autenticidade jurídica, o SIG utiliza um fluxo completo de **Assinatura Eletrônica de Matrículas**:</p>
+        <p>Para eliminar o uso de papeis e garantir a autenticidade juridica, o SIG utiliza um fluxo completo de Assinatura Eletronica de Matriculas:</p>
         
         <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">1. Captura pelo Celular</h4>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          O funcionário gera um código temporário de 4 dígitos (válido por 5 minutos) no painel. O responsável lê o QR Code na tela usando o celular e assina diretamente na tela móvel. O sistema valida os limites de tempo e coleta evidências de auditoria (IP, User Agent e Geolocalização).
+          O funcionario gera um codigo temporario de 4 digitos (valido por 5 minutos) no painel. O responsavel le o QR Code na tela usando o celular e assina diretamente na tela movel. O sistema valida os limites de tempo e coleta evidencias de auditoria (IP, User Agent e Geolocalizacao).
         </p>
 
-        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Homologação e Trava de Segurança</h4>
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Homologacao e Trava de Seguranca</h4>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Ao salvar a matrícula com ambas as assinaturas (Responsável e Funcionário), o sistema compila automaticamente o PDF oficial e calcula seu **Hash SHA-256**. O arquivo é enviado para o storage e a ficha do aluno é **bloqueada permanentemente** para edições adicionais.
+          Ao salvar a matricula com ambas as assinaturas (Responsavel e Funcionario), o sistema compila automaticamente o PDF oficial e calcula seu Hash SHA-256. O arquivo e enviado para o storage e a ficha do aluno e bloqueada permanentemente para edicoes adicionais.
         </p>
 
         <div className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-4 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-sm leading-relaxed">
           <strong className="flex items-center gap-1.5 mb-1 font-extrabold uppercase text-indigo-950 dark:text-indigo-100 text-[11px]">
             <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Desbloqueio pelo Diretor (Auditoria)
           </strong>
-          Se for necessário fazer qualquer alteração em uma matrícula já homologada, o funcionário deve enviar uma solicitação com justificativa. Apenas o **Diretor (Nível 2)** ou **Admin** pode aprovar a solicitação na listagem de alunos. Ao aprovar, o sistema libera temporariamente a edição. Ao salvar novamente, um novo PDF e um novo Hash SHA-256 são gerados automaticamente.
+          Se for necessario fazer qualquer alteracao em uma matricula ja homologada, o funcionario deve enviar uma solicitacao com justificativa. Apenas o Diretor (Nivel 2) ou Admin pode aprovar a solicitacao na listagem de alunos. Ao aprovar, o sistema libera temporariamente a edicao. Ao salvar novamente, um novo PDF e um novo Hash SHA-256 sao gerados automaticamente.
         </div>
       </div>
     )
@@ -74,14 +88,15 @@ const diretrizes = [
   {
     id: 'd3',
     icon: FileCheck,
-    titulo: 'Portal de Verificação de Autenticidade',
-    conteudo: (
+    titulo: 'Portal de Verificacao de Autenticidade',
+    keywords: ['verificar','verificacao','autenticidade','qr code','qrcode','token','hash','sha-256','sha256','comprovante','noindex','nofollow','privacidade','google','bing','ip','evidencia','trilha'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>Qualquer comprovante emitido possui uma tarja digital de integridade que permite a validação jurídica por terceiros:</p>
+        <p>Qualquer comprovante emitido possui uma tarja digital de integridade que permite a validacao juridica por terceiros:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>QR Code e Chave Única:</strong> O rodapé do comprovante impresso contém um QR Code que aponta para o endereço público `/verificar/[token]`.</li>
-          <li><strong>Trilha Completa de Evidências:</strong> No portal de validação, são apresentados os nomes das partes, o momento exato de cada assinatura, os IPs dos dispositivos utilizados, o navegador/sistema operacional e o Hash SHA-256 original do arquivo.</li>
-          <li><strong>Garantia de Privacidade:</strong> As páginas de verificação pública são configuradas com cabeçalhos de metadados <code>noindex, nofollow</code> para garantir que dados de estudantes nunca sejam expostos em indexações de busca do Google ou Bing.</li>
+          <li><strong>QR Code e Chave Unica:</strong> O rodape do comprovante impresso contem um QR Code que aponta para o endereco publico /verificar/[token].</li>
+          <li><strong>Trilha Completa de Evidencias:</strong> No portal de validacao, sao apresentados os nomes das partes, o momento exato de cada assinatura, os IPs dos dispositivos utilizados, o navegador/sistema operacional e o Hash SHA-256 original do arquivo.</li>
+          <li><strong>Garantia de Privacidade:</strong> As paginas de verificacao publica sao configuradas com cabecalhos de metadados noindex, nofollow para garantir que dados de estudantes nunca sejam expostos em indexacoes de busca do Google ou Bing.</li>
         </ul>
       </div>
     )
@@ -89,22 +104,23 @@ const diretrizes = [
   {
     id: 'd12',
     icon: UserPlus,
-    titulo: 'Criação de Contas e Conciliação por E-mail',
-    conteudo: (
+    titulo: 'Criacao de Contas e Conciliacao por E-mail',
+    keywords: ['conta','criar conta','email','e-mail','supabase','auth','login','reconciliacao','conciliacao','ficha','trigger','automatico','primeiro acesso','primeiro login','rls'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>A unificação entre contas de autenticação do Supabase e as fichas funcionais do SIG baseia-se no <strong>e-mail do funcionário</strong>:</p>
+        <p>A unificacao entre contas de autenticacao do Supabase e as fichas funcionais do SIG baseia-se no e-mail do funcionario:</p>
         
         <div className="bg-surface-2 p-4 border-l-4 border-blue-500 rounded-xl space-y-2">
           <h5 className="text-foreground font-bold text-sm">Caminho 1: Ficha criada ANTES do login (Recomendado)</h5>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            O gestor cadastra a ficha do funcionário informando o E-mail. Ao criar a conta de autenticação correspondente no Supabase Auth com o mesmo e-mail, a reconciliação e atribuição das chaves de acesso RLS ocorrem de forma transparente no primeiro login.
+            O gestor cadastra a ficha do funcionario informando o E-mail. Ao criar a conta de autenticacao correspondente no Supabase Auth com o mesmo e-mail, a reconciliacao e atribuicao das chaves de acesso RLS ocorrem de forma transparente no primeiro login.
           </p>
         </div>
 
         <div className="bg-surface-2 p-4 border-l-4 border-emerald-500 rounded-xl space-y-2">
           <h5 className="text-foreground font-bold text-sm">Caminho 2: Login criado ANTES da ficha</h5>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Se a conta de login for criada primeiro na Auth do Supabase, o banco acionará uma trigger automática criando uma "ficha vazia" associada àquele e-mail. O gestor da unidade precisará apenas preencher os campos restantes da ficha posteriormente.
+            Se a conta de login for criada primeiro na Auth do Supabase, o banco acionara uma trigger automatica criando uma "ficha vazia" associada aquele e-mail. O gestor da unidade precisara apenas preencher os campos restantes da ficha posteriormente.
           </p>
         </div>
       </div>
@@ -113,13 +129,14 @@ const diretrizes = [
   {
     id: 'd4',
     icon: BookOpen,
-    titulo: 'Vínculos de Diretores e Professores',
-    conteudo: (
+    titulo: 'Vinculos de Diretores e Professores',
+    keywords: ['vinculo','lotacao','diario','diario de classe','professor','diretor','nivel 2','nivel 4','escola','turma','disciplina','vazio','rls','permissao','cargo','acesso'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>Para garantir que professores acessem corretamente o Diário de Classe e diretores tenham controle sobre a sua unidade, atente-se às regras de lotação:</p>
+        <p>Para garantir que professores acessem corretamente o Diario de Classe e diretores tenham controle sobre a sua unidade, atente-se as regras de lotacao:</p>
         <ul className="list-disc pl-5 space-y-2 leading-relaxed">
-          <li><strong>Diretores (Nível 2):</strong> Devem ser lotados fisicamente na respectiva escola (menu Funcionários) e ter sua permissão de Nível 2 vinculada <strong>exatamente à mesma escola</strong> no menu de Acessos.</li>
-          <li><strong>Professores (Nível 4):</strong> A escola atribuída nas lotações e no menu de Permissões precisa coincidir rigorosamente. Caso contrário, embora consiga fazer o login, o painel de turmas e diários do docente será exibido vazio por razões de segurança RLS.</li>
+          <li><strong>Diretores (Nivel 2):</strong> Devem ser lotados fisicamente na respectiva escola (menu Funcionarios) e ter sua permissao de Nivel 2 vinculada exatamente a mesma escola no menu de Acessos.</li>
+          <li><strong>Professores (Nivel 4):</strong> A escola atribuida nas lotacoes e no menu de Permissoes precisa coincidir rigorosamente. Caso contrario, embora consiga fazer o login, o painel de turmas e diarios do docente sera exibido vazio por razoes de seguranca RLS.</li>
         </ul>
       </div>
     )
@@ -127,14 +144,15 @@ const diretrizes = [
   {
     id: 'd2_edit',
     icon: Edit3,
-    titulo: 'Interruptor do Modo de Edição',
-    conteudo: (
+    titulo: 'Interruptor do Modo de Edicao',
+    keywords: ['modo edicao','edicao','editar','senha','confirmacao','visualizacao','protecao','toggle','interruptor','acidental','professor','nota','falta','diario'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>Por padrão, usuários operacionais acessam a interface administrativa em <strong>Modo Visualização</strong> para proteção de registros contra toques acidentais:</p>
+        <p>Por padrao, usuarios operacionais acessam a interface administrativa em Modo Visualizacao para protecao de registros contra toques acidentais:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li>Para realizar alterações de matrículas, vínculos ou dados escolares, ative a chave <strong>Modo Edição</strong> no topo do painel superior.</li>
-          <li>O sistema exigirá a confirmação de segurança digitando a sua <strong>senha pessoal</strong> de acesso.</li>
-          <li><em>Exceção:</em> Professores em seus respectivos diários eletrônicos não precisam ativar o Modo Edição para lançar faltas e notas do dia.</li>
+          <li>Para realizar alteracoes de matriculas, vinculos ou dados escolares, ative a chave Modo Edicao no topo do painel superior.</li>
+          <li>O sistema exigira a confirmacao de seguranca digitando a sua senha pessoal de acesso.</li>
+          <li><em>Excecao:</em> Professores em seus respectivos diarios eletronicos nao precisam ativar o Modo Edicao para lancar faltas e notas do dia.</li>
         </ul>
       </div>
     )
@@ -142,13 +160,14 @@ const diretrizes = [
   {
     id: 'd3_lanc',
     icon: CalendarCheck,
-    titulo: 'Lançamento de Faltas, Decimais e Médias',
-    conteudo: (
+    titulo: 'Lancamento de Faltas, Decimais e Medias',
+    keywords: ['nota','falta','frequencia','decimal','media','float','8.5','arredondamento','string','lancamento','trimestre','unidade','log','rastreabilidade','auditoria'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>Os registros escolares de notas e frequência são monitorados em tempo de execução:</p>
+        <p>Os registros escolares de notas e frequencia sao monitorados em tempo de execucao:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Digitação de Decimais:</strong> Para evitar perda de dados e arredondamentos automáticos indesejados durante a escrita, as notas com frações decimais (ex: 8.5) são tratadas no estado de formulário local como strings, e convertidas para float de banco apenas na gravação final.</li>
-          <li><strong>Rastreabilidade de Alteração:</strong> Todo lançamento registra nos metadados de logs o ID e nome do funcionário responsável pela ação.</li>
+          <li><strong>Digitacao de Decimais:</strong> Para evitar perda de dados e arredondamentos automaticos indesejados durante a escrita, as notas com fracoes decimais (ex: 8.5) sao tratadas no estado de formulario local como strings, e convertidas para float de banco apenas na gravacao final.</li>
+          <li><strong>Rastreabilidade de Alteracao:</strong> Todo lancamento registra nos metadados de logs o ID e nome do funcionario responsavel pela acao.</li>
         </ul>
       </div>
     )
@@ -156,13 +175,14 @@ const diretrizes = [
   {
     id: 'd6',
     icon: ShieldCheck,
-    titulo: 'Módulo ABAC: Gestão de Equipes (Chefe)',
-    conteudo: (
+    titulo: 'Modulo ABAC: Gestao de Equipes (Chefe)',
+    keywords: ['abac','chefe','chefe de equipe','nivel 5','vigia','servicos gerais','cargo','subordinado','escala','ronda','ponto','consolidado','rede','gestao','equipe'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>A permissão de **Chefe de Equipe (Nível 5)** é configurada por escopo de cargos subordinados (ABAC):</p>
+        <p>A permissao de Chefe de Equipe (Nivel 5) e configurada por escopo de cargos subordinados (ABAC):</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Definição Global:</strong> O Chefe não fica associado a uma única escola física; ele gerencia os cargos subordinados (ex: Vigias, Serviços Gerais) atribuídos na concessão do seu acesso.</li>
-          <li><strong>Cruzamento de Dados:</strong> O painel do chefe consolida escalas, logs de rondas e pontos batidos pelos funcionários da rede inteira que pertençam aos cargos que ele gerencia.</li>
+          <li><strong>Definicao Global:</strong> O Chefe nao fica associado a uma unica escola fisica; ele gerencia os cargos subordinados (ex: Vigias, Servicos Gerais) atribuidos na concessao do seu acesso.</li>
+          <li><strong>Cruzamento de Dados:</strong> O painel do chefe consolida escalas, logs de rondas e pontos batidos pelos funcionarios da rede inteira que pertencam aos cargos que ele gerencia.</li>
         </ul>
       </div>
     )
@@ -170,13 +190,14 @@ const diretrizes = [
   {
     id: 'd7',
     icon: ScanLine,
-    titulo: 'Ponto Eletrônico e Rondas com GPS (Operacional)',
-    conteudo: (
+    titulo: 'Ponto Eletronico e Rondas com GPS (Operacional)',
+    keywords: ['ponto','ronda','gps','geolocalizacao','qr code','qrcode','mobile','celular','camera','raio','tolerancia','latitude','longitude','coordenadas','nivel 6','operacional','vigia'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>A validação do Ponto e das Rondas de segurança é executada estritamente via dispositivo móvel por leitura de QR Code:</p>
+        <p>A validacao do Ponto e das Rondas de seguranca e executada estritamente via dispositivo movel por leitura de QR Code:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Geolocalização Obrigatória:</strong> O App móvel exige acesso ao GPS do aparelho. Se a permissão geográfica for rejeitada pelo usuário, a ativação da câmera para escanear o QR Code é desabilitada.</li>
-          <li><strong>Raio de Tolerância:</strong> O local do QR Code é cadastrado com coordenadas (Latitude/Longitude) e raio de tolerância. O ponto só é registrado se o GPS do celular indicar que o funcionário está dentro da área permitida.</li>
+          <li><strong>Geolocalizacao Obrigatoria:</strong> O App movel exige acesso ao GPS do aparelho. Se a permissao geografica for rejeitada pelo usuario, a ativacao da camera para escanear o QR Code e desabilitada.</li>
+          <li><strong>Raio de Tolerancia:</strong> O local do QR Code e cadastrado com coordenadas (Latitude/Longitude) e raio de tolerancia. O ponto so e registrado se o GPS do celular indicar que o funcionario esta dentro da area permitida.</li>
         </ul>
       </div>
     )
@@ -185,12 +206,13 @@ const diretrizes = [
     id: 'd11',
     icon: Pin,
     titulo: 'Mural de Comunicados e Avisos',
-    conteudo: (
+    keywords: ['mural','comunicado','aviso','publicar','post','pode_mural','superadmin','nivel 1','nivel 2','nivel 3','nivel 4','nivel 5','nivel 6','permissao','home','dashboard'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>A publicação de avisos institucionais na página inicial do SIG segue regras de acesso específicas:</p>
+        <p>A publicacao de avisos institucionais na pagina inicial do SIG segue regras de acesso especificas:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Superadmins:</strong> Permissão nativa e irrestrita para gerenciar posts.</li>
-          <li><strong>Outros Níveis (1 a 6):</strong> Podem publicar comunicados apenas se o interruptor <strong>pode_mural</strong> estiver marcado como ativado nas permissões do usuário no sistema.</li>
+          <li><strong>Superadmins:</strong> Permissao nativa e irrestrita para gerenciar posts.</li>
+          <li><strong>Outros Niveis (1 a 6):</strong> Podem publicar comunicados apenas se o interruptor pode_mural estiver marcado como ativado nas permissoes do usuario no sistema.</li>
         </ul>
       </div>
     )
@@ -198,33 +220,34 @@ const diretrizes = [
   {
     id: 'd13_transf_arq',
     icon: ArrowLeftRight,
-    titulo: 'Fluxo de Transferências e Arquivo Escolar',
-    conteudo: (
+    titulo: 'Fluxo de Transferencias e Arquivo Escolar',
+    keywords: ['transferencia','arquivo','arquivamento','historico','aluno','funcionario','recebimento','submissao','aceitar','rejeitar','diretor','transferido','copia','ficha','vinculo','arquivologia'],
+    conteudo: () => (
       <div className="space-y-4">
-        <p>O sistema conta com um módulo unificado para gerenciar o fluxo de movimentação de estudantes e pessoal, bem como seu arquivamento histórico:</p>
+        <p>O sistema conta com um modulo unificado para gerenciar o fluxo de movimentacao de estudantes e pessoal, bem como seu arquivamento historico:</p>
         
-        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">1. Central de Transferências</h4>
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">1. Central de Transferencias</h4>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Acessível pela página inicial da escola, permite solicitar e aprovar transferências de <strong>Alunos</strong> e <strong>Funcionários</strong>. É subdividida em:
+          Acessivel pela pagina inicial da escola, permite solicitar e aprovar transferencias de Alunos e Funcionarios. E subdividida em:
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
           <li><strong>Recebimentos:</strong> Triagem de pedidos pendentes vindos de outras escolas. O Diretor pode avaliar, aceitar ou rejeitar (fornecendo justificativa).</li>
-          <li><strong>Submissões:</strong> Pedidos enviados pela sua escola para outras unidades ou para fora da rede.</li>
-          <li><strong>Histórico Geral:</strong> Registro de todas as movimentações passadas concluídas na unidade.</li>
+          <li><strong>Submissoes:</strong> Pedidos enviados pela sua escola para outras unidades ou para fora da rede.</li>
+          <li><strong>Historico Geral:</strong> Registro de todas as movimentacoes passadas concluidas na unidade.</li>
         </ul>
 
-        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Arquivologia Histórica Automática</h4>
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Arquivologia Historica Automatica</h4>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Para cumprir as normas de arquivologia pública, no momento em que uma transferência é **aceita**:
+          Para cumprir as normas de arquivologia publica, no momento em que uma transferencia e aceita:
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
-          <li>A ficha ativa do aluno ou funcionário migra eletronicamente para a escola de destino (mudando seu vínculo ativo).</li>
-          <li>Uma **cópia da ficha completa** contendo todos os dados e arquivos anexos no momento exato da transferência é arquivada eletronicamente na escola de origem, sob o status <code>TRANSFERIDO</code>.</li>
+          <li>A ficha ativa do aluno ou funcionario migra eletronicamente para a escola de destino (mudando seu vinculo ativo).</li>
+          <li>Uma copia da ficha completa contendo todos os dados e arquivos anexos no momento exato da transferencia e arquivada eletronicamente na escola de origem, sob o status TRANSFERIDO.</li>
         </ul>
 
         <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">3. Arquivo Escolar</h4>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          O módulo **Arquivo** na Home da escola permite pesquisar e inspecionar a ficha cadastral histórica de qualquer aluno ou funcionário que tenha sido desvinculado, arquivado ou transferido daquela escola.
+          O modulo Arquivo na Home da escola permite pesquisar e inspecionar a ficha cadastral historica de qualquer aluno ou funcionario que tenha sido desvinculado, arquivado ou transferido daquela escola.
         </p>
       </div>
     )
@@ -234,20 +257,29 @@ const diretrizes = [
 export default function AjudaPage() {
   const [busca, setBusca] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  // Gargalo #3 corrigido: modal montado condicionalmente
   const [reportModalOpen, setReportModalOpen] = useState(false)
 
   const toggleDiretriz = (id: string) => {
     setExpandedId(prev => (prev === id ? null : id))
   }
 
-  const diretrizesFiltradas = diretrizes.filter(d => 
-    d.titulo.toLowerCase().includes(busca.toLowerCase()) ||
-    d.id.toLowerCase().includes(busca.toLowerCase())
-  )
+  // ES-6 + Gargalo #2 corrigidos: useMemo + busca por keywords reais do conteudo
+  const diretrizesFiltradas = useMemo(() => {
+    const q = busca.toLowerCase().trim()
+    if (!q) return diretrizes
+    return diretrizes.filter(d =>
+      d.titulo.toLowerCase().includes(q) ||
+      d.keywords.some(kw => kw.includes(q))
+    )
+  }, [busca])
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto selection:bg-primary/30 selection:text-foreground pb-12">
-      <ModalReport open={reportModalOpen} onOpenChange={setReportModalOpen} />
+      {/* Gargalo #3 corrigido: ModalReport so montado quando necessario */}
+      {reportModalOpen && (
+        <ModalReport open={reportModalOpen} onOpenChange={setReportModalOpen} />
+      )}
 
       <div className="pb-4 border-b border-border flex items-center justify-between">
         <div>
@@ -263,7 +295,7 @@ export default function AjudaPage() {
       <div className="mb-6">
         <Input 
           type="text"
-          placeholder="Buscar manuais ou palavras-chave (ex: assinatura, ponto, professor)..."
+          placeholder="Buscar manuais ou palavras-chave (ex: assinatura, ponto, professor, sha-256)..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="bg-background border-border text-foreground focus-visible:ring-primary h-12 text-sm rounded-xl placeholder:text-muted-foreground"
@@ -290,9 +322,10 @@ export default function AjudaPage() {
                 <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180 text-foreground' : ''}`} />
               </button>
               
+              {/* Gargalo #1 corrigido: conteudo() so e invocado/avaliado aqui, ao expandir */}
               {isExpanded && (
                 <div className="p-5 pt-1 text-muted-foreground text-sm leading-relaxed border-t border-border bg-muted/10 animate-fadeIn">
-                  {diretriz.conteudo}
+                  {diretriz.conteudo()}
                 </div>
               )}
             </div>
