@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Loader2 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { FileUpload } from '@/components/ui/file-upload'
 
 interface ModalLancamentoFinanceiroProps {
   open: boolean
@@ -126,7 +127,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
             className="bg-highlight text-black hover:bg-highlight/90 font-bold gap-2"
             disabled={loading}
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
         </>
@@ -230,15 +231,12 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-zinc-300">Comprovante / Nota Fiscal (Opcional)</label>
-          <div className="flex items-center gap-2">
-            <Input
-              type="file"
-              accept=".pdf,image/*"
-              onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-              className="bg-[#18181b] border-[#3f3f46] text-white file:text-white file:bg-[#27272a] file:border-none file:mr-4 file:px-4 file:py-1 file:rounded-md cursor-pointer"
-            />
-          </div>
-          {arquivo && <p className="text-xs text-muted-foreground mt-1">Anexo: {arquivo.name}</p>}
+          <FileUpload
+            file={arquivo}
+            onChange={setArquivo}
+            accept=".pdf,image/*"
+            label="Selecione ou arraste o comprovante (PDF/Imagem)"
+          />
         </div>
       </div>
     </StandardDialog>
