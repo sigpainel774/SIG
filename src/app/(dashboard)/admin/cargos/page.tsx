@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Briefcase, Plus, Edit, Trash2, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ModalCargo } from '@/components/modals/modal-cargo'
 import { toast } from 'sonner'
@@ -26,6 +26,14 @@ export default function AdminCargosPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [cargoToEdit, setCargoToEdit] = useState<any | null>(null)
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   const loadCargos = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -33,6 +41,8 @@ export default function AdminCargosPage() {
       .select('*')
       .is('deleted_at', null)
       .order('nivel', { ascending: true })
+
+    if (!isMounted.current) return
 
     if (error) {
       console.error('Erro ao carregar cargos:', error)
@@ -85,6 +95,71 @@ export default function AdminCargosPage() {
 
   const cargosFiltrados = useLocalSearch(cargos, searchTerm, ['nome', 'descricao'])
 
+  const columns: TableColumn<any>[] = [
+    {
+      header: 'Cargo',
+      accessor: (cargo) => (
+        <div>
+          <div className="font-medium text-white">{cargo.nome}</div>
+          {cargo.descricao && <div className="text-xs text-[#aaa] mt-0.5">{cargo.descricao}</div>}
+        </div>
+      )
+    },
+    {
+      header: 'Nível',
+      accessor: (cargo) => (
+        <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
+          Nível {cargo.nivel}
+        </Badge>
+      )
+    },
+    {
+      header: 'Salário Base',
+      accessor: (cargo) => (
+        <span className="text-[#aaa]">
+          {cargo.salario_base !== null && cargo.salario_base !== undefined
+            ? `R$ ${Number(cargo.salario_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            : '-'}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: (cargo) => (
+        <Badge variant="outline" className={`text-xs ${cargo.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+          {cargo.ativo !== false ? 'ATIVO' : 'INATIVO'}
+        </Badge>
+      )
+    },
+    {
+      header: 'Ações',
+      headClassName: 'text-right w-24',
+      className: 'text-right',
+      accessor: (cargo) => (
+        <div className="flex justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleEditarCargo(cargo)}
+            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            title="Editar Cargo"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleExcluirCargo(cargo)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            title="Excluir Cargo (Lixeira)"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )
+    }
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -123,69 +198,15 @@ export default function AdminCargosPage() {
       </div>
 
       {/* Tabela */}
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold">Cargo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Nível</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Salário Base</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Status</TableHead>
-              <TableHead className="text-right text-[#ccc] font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cargosFiltrados.map((cargo) => (
-              <TableRow key={cargo.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                <TableCell>
-                  <div className="font-medium text-white">{cargo.nome}</div>
-                  {cargo.descricao && <div className="text-xs text-[#aaa] mt-0.5">{cargo.descricao}</div>}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    Nível {cargo.nivel}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-[#aaa]">
-                  {cargo.salario_base ? `R$ ${Number(cargo.salario_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={`text-xs ${cargo.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
-                    {cargo.ativo !== false ? 'ATIVO' : 'INATIVO'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleEditarCargo(cargo)}
-                      className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                      title="Editar Cargo"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleExcluirCargo(cargo)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                      title="Excluir Cargo (Lixeira)"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {cargosFiltrados.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-[#aaa]">Nenhum cargo encontrado.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={cargosFiltrados}
+        columns={columns}
+        keyExtractor={(cargo) => cargo.id}
+        loading={loading}
+        loadingMessage="Carregando lista de cargos..."
+        emptyMessage="Nenhum cargo encontrado."
+        className="border-[#3f3f46]"
+      />
 
       {/* Modal Criar / Editar Cargo */}
       <ModalCargo
