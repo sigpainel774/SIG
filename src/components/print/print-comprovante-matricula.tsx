@@ -41,7 +41,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
   const [qrCodeUrl, setQrCodeUrl] = useState('')
 
   const dm = aluno.dados_matricula || {}
-  const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
+  const autorizaImagemVoz = dm.autoriza_imagem_voz ?? 'Não'
 
   useEffect(() => {
     if (dm.pdf_assinado_token) {
@@ -60,35 +60,36 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
   }
 
   useEffect(() => {
+    let active = true
     const fetchDados = async () => {
       const supabase = createClient()
       
       // 1. Unidade Escolar
-      const targetEscolaId = aluno.escola_id || dm.escolaId
+      const targetEscolaId = aluno.escola_id ?? dm.escolaId
       if (targetEscolaId) {
         const { data: esc } = await supabase
           .from('escolas')
           .select('nome')
           .eq('id', targetEscolaId)
           .single()
-        if (esc) {
+        if (esc && active) {
           setEscolaNome(esc.nome)
         }
       }
 
       // 2. Turma e Ano
-      const targetTurmaId = aluno.turma_id || dm.turmaIdAluno
+      const targetTurmaId = aluno.turma_id ?? dm.turmaIdAluno
       if (targetTurmaId) {
         const { data: tur } = await supabase
           .from('turmas')
           .select('nome, turno')
           .eq('id', targetTurmaId)
           .single()
-        if (tur) {
-          setTurnoVal(tur.turno || '')
+        if (tur && active) {
+          setTurnoVal(tur.turno ?? '')
           
           // Parse class name e.g. "6° A" or "6º A" or "6 - A"
-          const nomeTurma = tur.nome || ''
+          const nomeTurma = tur.nome ?? ''
           const regex = /^(\d+)(?:\s*[-°ºª]?\s*)([a-zA-Z])$/i
           const match = nomeTurma.trim().match(regex)
           if (match) {
@@ -111,6 +112,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
 
     // Declarar variáveis de estado de fetchDados
     fetchDados()
+    return () => { active = false }
   }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
 
   const [escolaNome, setEscolaNome] = useState('')
@@ -181,7 +183,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
           {/* Título */}
           <div className="text-center bg-gray-100 py-0.5 rounded border border-gray-300 mb-1.5">
             <h1 className="text-[10px] font-black uppercase text-gray-900 tracking-wider">
-              COMPROVANTE DE MATRÍCULA - ANO LETIVO {dm.anoLetivo || '2026'}
+              COMPROVANTE DE MATRÍCULA - ANO LETIVO {dm.anoLetivo ?? '2026'}
             </h1>
           </div>
 
@@ -191,7 +193,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
               <tr>
                 <td className="border border-black p-1 w-3/4 font-semibold">
                   <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Unidade Escolar</span>
-                  <span className="text-[10px]">{escolaNome || aluno.escola_nome || dm.escolaNome || 'Sem Escola'}</span>
+                  <span className="text-[10px]">{escolaNome ?? aluno.escola_nome ?? dm.escolaNome ?? 'Sem Escola'}</span>
                 </td>
                 <td className="border border-black p-1 w-1/4">
                   <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Data</span>
@@ -223,7 +225,7 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
                         </td>
                         <td className="p-1 w-1/3">
                           <span className="font-bold block text-[8px] uppercase font-sans text-gray-700">Turno</span>
-                          <span>{dm.turnoAluno || turnoVal || 'Matutino'}</span>
+                          <span>{dm.turnoAluno ?? turnoVal ?? 'Matutino'}</span>
                         </td>
                       </tr>
                     </tbody>
