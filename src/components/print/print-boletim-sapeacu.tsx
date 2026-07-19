@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { PrintHeader } from '@/components/print/print-header'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -477,24 +478,17 @@ export function PrintBoletimSapeacu({
           <div className="absolute right-0 top-0 w-[148.5mm] h-full p-6 flex flex-col justify-between font-sans">
             <div>
               {/* Cabeçalho Oficial Sapeaçu */}
-              <div className="flex items-center justify-center gap-4 relative pb-1 mb-2 min-h-10">
-                <img 
-                  src={getCacheBustedUrl(logoPrefeituraUrl)} 
-                  alt="Brasão" 
-                  className="w-10 h-10 object-contain absolute left-0"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div className="text-center font-black text-[10px] uppercase tracking-wide text-black leading-tight mx-12">
-                  <p>Estado da Bahia</p>
-                  <p>Prefeitura Municipal de Sapeaçu</p>
-                </div>
-                <img 
-                  src={getCacheBustedUrl(logoSecretariaUrl)} 
-                  alt="Secretaria" 
-                  className="w-10 h-10 object-contain absolute right-0"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              </div>
+              <PrintHeader
+                className="pb-1 mb-2 border-none text-black items-center"
+                logoClassName="w-10 h-10 object-contain"
+                centerClassName="text-center font-black text-[10px] uppercase tracking-wide text-black leading-tight"
+                centerContent={
+                  <>
+                    <p>Estado da Bahia</p>
+                    <p>Prefeitura Municipal de Sapeaçu</p>
+                  </>
+                }
+              />
               <div className="border-b-2 border-double border-black mb-2" />
 
               {/* Caixa de Identificação do Aluno */}

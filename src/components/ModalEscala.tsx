@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -67,64 +67,14 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#121212] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle>Criar Escala de Trabalho</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Cadastre uma nova escala para um membro da sua equipe.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Funcionário</label>
-            <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)}>
-              <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectValue placeholder="Selecione um membro da equipe">
-                  {funcionarioId 
-                    ? (() => {
-                        const f = equipe.find((x) => x.id === funcionarioId);
-                        return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (equipe.length === 0 ? 'Carregando...' : funcionarioId);
-                      })()
-                    : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
-                {equipe.map((membro) => (
-                  <SelectItem key={membro.id} value={membro.id}>
-                    {membro.nome} {membro.cargo ? `(${membro.cargo})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Data</label>
-            <Input
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Turno</label>
-            <Select value={turno} onValueChange={(val) => val && setTurno(val)}>
-              <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectValue placeholder="Selecione o turno" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectItem value="Matutino">Matutino</SelectItem>
-                <SelectItem value="Vespertino">Vespertino</SelectItem>
-                <SelectItem value="Noturno">Noturno</SelectItem>
-                <SelectItem value="Integral">Integral</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Criar Escala de Trabalho"
+      description="Cadastre uma nova escala para um membro da sua equipe."
+      maxWidth="sm:max-w-[425px]"
+      footer={
+        <>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -140,8 +90,58 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
           >
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Funcionário</label>
+          <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)}>
+            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectValue placeholder="Selecione um membro da equipe">
+                {funcionarioId 
+                  ? (() => {
+                      const f = equipe.find((x) => x.id === funcionarioId);
+                      return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (equipe.length === 0 ? 'Carregando...' : funcionarioId);
+                    })()
+                  : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
+              {equipe.map((membro) => (
+                <SelectItem key={membro.id} value={membro.id}>
+                  {membro.nome} {membro.cargo ? `(${membro.cargo})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Data</label>
+          <Input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            className="bg-[#18181b] border-[#3f3f46] text-white"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Turno</label>
+          <Select value={turno} onValueChange={(val) => val && setTurno(val)}>
+            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectValue placeholder="Selecione o turno" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectItem value="Matutino">Matutino</SelectItem>
+              <SelectItem value="Vespertino">Vespertino</SelectItem>
+              <SelectItem value="Noturno">Noturno</SelectItem>
+              <SelectItem value="Integral">Integral</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </StandardDialog>
   )
 }

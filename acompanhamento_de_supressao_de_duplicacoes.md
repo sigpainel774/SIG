@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
 
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~25,9%
-* **Linhas de Código Removidas/Otimizadas:** ~442
-* **Redução Acumulada do Projeto:** ~1,26%
+* **Percentual Atual de Duplicação:** ~23,2%
+* **Linhas de Código Removidas/Otimizadas:** ~917
+* **Redução Acumulada do Projeto:** ~2,60%
 
 ---
 
@@ -22,9 +22,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 
 | Grupo | Descrição | Status | Linhas Estimadas Economizadas | Impacto Real |
 |---|---|---|---|---|
-| **Grupo 1** | Estruturas de Dialog/Modal | ⏳ Pendente | ~570 | - |
+| **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~570 | ~360 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>`. |
 | **Grupo 2** | `useState` de campos pessoais (Aluno ↔ Funcionário) | ✅ Concluído | ~400 | ~267 linhas puras removidas. Lógicas de inicialização, reset e masks centralizadas via hook `usePessoaForm`. |
-| **Grupo 3** | Cabeçalho de Impressão Municipal | ⏳ Pendente | ~360 | - |
+| **Grupo 3** | Cabeçalho de Impressão Municipal | ✅ Concluído | ~360 | ~115 linhas puras removidas. Simetria física de logos da prefeitura/secretaria e cache-buster unificados via componente `<PrintHeader>`. |
 | **Grupo 4** | Padrão de Busca/Filtro Local | ⏳ Pendente | ~500 | - |
 | **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ⏳ Pendente | ~600 | - |
 | **Grupo 6** | Verificações de Permissão por Cargo | ⏳ Pendente | ~250 | - |
@@ -38,6 +38,11 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ---
 
 ## 📝 Histórico de Alterações e Impacto Real
+
+### [19/07/2026] - Refatoração dos Grupos 1 e 3 Concluída
+* Criação do componente reutilizável [StandardDialog](file:///c:/Users/Pc/Documents/GitHub/SIG/src/components/ui/standard-dialog.tsx) e refatoração de 5 modais: `ModalAtestado`, `ModalEscala`, `ModalLancamentoFinanceiro`, `ModalNovaOcorrencia` e `ModalAdicionalSalario`.
+* Criação do componente reutilizável [PrintHeader](file:///c:/Users/Pc/Documents/GitHub/SIG/src/components/print/print-header.tsx) e refatoração de 5 layouts de impressão: `print-boletim-aluno`, `print-boletim-sapeacu`, `print-comprovante-matricula`, `print-documento-escolar` e `print-ficha-aluno`.
+* Validação do build executada com 100% de sucesso.
 
 ### [19/07/2026] - Refatoração do Grupo 10 (Parcial) Concluída
 * Eliminação de efeitos imperativos de carregamento de turmas/escolas em `AlunoFormContext.tsx` do modal do aluno, substituídos por hooks SWR reativos e declarativos.

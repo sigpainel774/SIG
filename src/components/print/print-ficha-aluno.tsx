@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabaseClient'
+import { PrintHeader } from '@/components/print/print-header'
 
 export interface AlunoPrintData {
   id?: string
@@ -168,28 +169,16 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
       >
         <div>
           {/* Cabeçalho Oficial */}
-          <div className="flex items-center justify-between pb-3 border-b-2 border-black mb-2">
-            <div className="flex items-center gap-2 max-w-[200px]">
-              <img 
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`} 
-                alt="Prefeitura de Sapeaçu" 
-                className="doc-header-logo-prefeitura"
-              />
-            </div>
-
-            <div className="text-center flex-1 px-2">
-              <h1 className="text-base font-extrabold tracking-wider text-gray-800 uppercase">FICHA DE MATRÍCULA</h1>
-              <p className="text-xs font-bold text-gray-600">Ano Letivo {dm.anoLetivo || '2026'}</p>
-            </div>
-
-            <div className="text-right max-w-[200px]">
-              <img 
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`} 
-                alt="Secretaria Municipal de Educação" 
-                className="doc-header-logo-secretaria"
-              />
-            </div>
-          </div>
+          <PrintHeader
+            className="pb-3 border-b-2 border-black mb-2"
+            logoClassName="doc-header-logo-prefeitura"
+            centerContent={
+              <>
+                <h1 className="text-base font-extrabold tracking-wider text-gray-800 uppercase">FICHA DE MATRÍCULA</h1>
+                <p className="text-xs font-bold text-gray-600">Ano Letivo {dm.anoLetivo || '2026'}</p>
+              </>
+            }
+          />
 
           {/* Dados da Unidade Escolar */}
           <table className="w-full border-collapse border border-black mb-2 text-[10px]">

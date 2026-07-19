@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Loader2, UploadCloud } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface ModalAtestadoProps {
   open: boolean
@@ -143,73 +143,14 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#121212] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle>Registrar Atestado</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Cadastre um novo atestado médico com o anexo do comprovante.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Servidor</label>
-            <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)} disabled={loadingFuncs}>
-              <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"}>
-                  {funcionarioId 
-                    ? (() => {
-                        const f = funcionarios.find((x) => x.id === funcionarioId);
-                        return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (funcionarios.length === 0 ? 'Carregando...' : funcionarioId);
-                      })()
-                    : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
-                {funcionarios.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.nome} {f.cargo ? `(${f.cargo})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">CID</label>
-            <Input
-              placeholder="Ex: J01"
-              value={cid}
-              onChange={(e) => setCid(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white uppercase"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Dias de Afastamento</label>
-            <Input
-              type="number"
-              min={1}
-              value={dias}
-              onChange={(e) => setDias(parseInt(e.target.value) || 0)}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Anexo do Atestado (Opcional)</label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept=".pdf,image/*"
-                onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-                className="bg-[#18181b] border-[#3f3f46] text-white file:text-white file:bg-[#27272a] file:border-none file:mr-4 file:px-4 file:py-1 file:rounded-md cursor-pointer"
-              />
-            </div>
-            {arquivo && <p className="text-xs text-muted-foreground mt-1">Anexo selecionado: {arquivo.name}</p>}
-          </div>
-        </div>
-        <DialogFooter>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Registrar Atestado"
+      description="Cadastre um novo atestado médico com o anexo do comprovante."
+      maxWidth="sm:max-w-[425px]"
+      footer={
+        <>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -226,8 +167,67 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? 'Salvando...' : 'Salvar Atestado'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Servidor</label>
+          <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)} disabled={loadingFuncs}>
+            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"}>
+                {funcionarioId 
+                  ? (() => {
+                      const f = funcionarios.find((x) => x.id === funcionarioId);
+                      return f ? `${f.nome}${f.cargo ? ` (${f.cargo})` : ''}` : (funcionarios.length === 0 ? 'Carregando...' : funcionarioId);
+                    })()
+                  : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
+              {funcionarios.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.nome} {f.cargo ? `(${f.cargo})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">CID</label>
+          <Input
+            placeholder="Ex: J01"
+            value={cid}
+            onChange={(e) => setCid(e.target.value)}
+            className="bg-[#18181b] border-[#3f3f46] text-white uppercase"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Dias de Afastamento</label>
+          <Input
+            type="number"
+            min={1}
+            value={dias}
+            onChange={(e) => setDias(parseInt(e.target.value) || 0)}
+            className="bg-[#18181b] border-[#3f3f46] text-white"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-zinc-300">Anexo do Atestado (Opcional)</label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="file"
+              accept=".pdf,image/*"
+              onChange={(e) => setArquivo(e.target.files?.[0] || null)}
+              className="bg-[#18181b] border-[#3f3f46] text-white file:text-white file:bg-[#27272a] file:border-none file:mr-4 file:px-4 file:py-1 file:rounded-md cursor-pointer"
+            />
+          </div>
+          {arquivo && <p className="text-xs text-muted-foreground mt-1">Anexo selecionado: {arquivo.name}</p>}
+        </div>
+      </div>
+    </StandardDialog>
   )
 }
