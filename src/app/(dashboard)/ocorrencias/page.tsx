@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable } from '@/components/ui/table'
 import { AlertTriangle, RefreshCw, CheckCircle2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { IconTile } from '@/components/ui/icon-tile'
 import { formatDate } from '@/lib/utils'
+import { toast } from 'sonner'
 
 export default function OcorrenciasPage() {
   const [dataFiltro, setDataFiltro] = useState('')
@@ -19,14 +20,34 @@ export default function OcorrenciasPage() {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   const fetchOcorrencias = async () => {
-    setLoading(true)
-    const { data, error } = await (supabase.from as any)('ocorrencias')
-      .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
-      .order('data', { ascending: false })
-    
-    if (data) setOcorrencias(data)
-    setLoading(false)
+    if (isMounted.current) setLoading(true)
+    try {
+      const { data, error } = await (supabase.from as any)('ocorrencias')
+        .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
+        .order('data', { ascending: false })
+      
+      if (error) throw error
+
+      if (isMounted.current) {
+        setOcorrencias(data || [])
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar ocorrências:', err)
+      toast.error('Erro ao carregar ocorrências: ' + (err.message || 'Erro de conexão'))
+      if (isMounted.current) setOcorrencias([])
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -99,55 +120,60 @@ export default function OcorrenciasPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-secondary border-b border-border">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-muted-foreground font-semibold">Data</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Aluno</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Turma</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Tipo / Gravidade</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Descrição</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Registro por</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Status (Pais)</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ocorrencias.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Nenhuma ocorrência disciplinar registrada.
-                </TableCell>
-              </TableRow>
-            )}
-            {ocorrencias.map((oco) => (
-              <TableRow key={oco.id} className="border-b border-border hover:bg-hoverCustom transition-colors">
-                <TableCell className="text-muted-foreground text-sm font-normal whitespace-nowrap">{formatDate(oco.data)}</TableCell>
-                <TableCell className="text-foreground font-semibold text-sm">{oco.alunos?.nome}</TableCell>
-                <TableCell className="text-muted-foreground text-sm font-normal">{oco.turmas?.nome}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1 items-start">
-                    <span className="text-sm font-medium text-foreground">{oco.tipo}</span>
-                    <Badge variant="outline" className={`text-xs font-semibold ${getGravidadeColor(oco.gravidade)}`}>
-                      {oco.gravidade}
-                    </Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm font-normal max-w-[250px] truncate" title={oco.descricao}>
-                  {oco.descricao}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm font-normal">{oco.funcionarios?.nome || '-'}</TableCell>
-                <TableCell>
-                  <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.status_pais)}`}>
-                    {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4 text-success" />}
-                    {oco.status_pais}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={ocorrencias}
+        keyExtractor={(oco) => oco.id}
+        loading={loading}
+        loadingMessage="Carregando ocorrências..."
+        emptyMessage="Nenhuma ocorrência disciplinar registrada."
+        columns={[
+          {
+            header: "Data",
+            accessor: (oco) => formatDate(oco.data),
+            className: "text-muted-foreground text-sm font-normal whitespace-nowrap",
+          },
+          {
+            header: "Aluno",
+            accessor: (oco) => oco.alunos?.nome,
+            className: "text-foreground font-semibold text-sm",
+          },
+          {
+            header: "Turma",
+            accessor: (oco) => oco.turmas?.nome,
+            className: "text-muted-foreground text-sm font-normal",
+          },
+          {
+            header: "Tipo / Gravidade",
+            accessor: (oco) => (
+              <div className="flex flex-col gap-1 items-start">
+                <span className="text-sm font-medium text-foreground">{oco.tipo}</span>
+                <Badge variant="outline" className={`text-xs font-semibold ${getGravidadeColor(oco.gravidade)}`}>
+                  {oco.gravidade}
+                </Badge>
+              </div>
+            ),
+          },
+          {
+            header: "Descrição",
+            accessor: (oco) => oco.descricao,
+            className: "text-muted-foreground text-sm font-normal max-w-[250px] truncate",
+          },
+          {
+            header: "Registro por",
+            accessor: (oco) => oco.funcionarios?.nome || '-',
+            className: "text-muted-foreground text-sm font-normal",
+          },
+          {
+            header: "Status (Pais)",
+            accessor: (oco) => (
+              <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.status_pais)}`}>
+                {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                {oco.status_pais}
+              </span>
+            ),
+          }
+        ]}
+      />
     </div>
   )
 }

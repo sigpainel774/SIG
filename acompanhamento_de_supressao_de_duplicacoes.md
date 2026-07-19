@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
  
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~22,2%
-* **Linhas de Código Removidas/Otimizadas:** ~1150
-* **Redução Acumulada do Projeto:** ~3,28%
+* **Percentual Atual de Duplicação:** ~20,5%
+* **Linhas de Código Removidas/Otimizadas:** ~1375
+* **Redução Acumulada do Projeto:** ~3,92%
  
 ---
  
@@ -22,7 +22,7 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
  
 | Grupo | Descrição | Status | Linhas Estimadas Economizadas | Impacto Real |
 |---|---|---|---|---|
-| **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~570 | ~360 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>`. |
+| **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~650 | ~415 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>` (incluindo Anexos, Confirmação de Senha e Reset). |
 | **Grupo 2** | `useState` de campos pessoais (Aluno ↔ Funcionário) | ✅ Concluído | ~400 | ~267 linhas puras removidas. Lógicas de inicialização, reset e masks centralizadas via hook `usePessoaForm`. |
 | **Grupo 3** | Cabeçalho de Impressão Municipal | ✅ Concluído | ~360 | ~115 linhas puras removidas. Simetria física de logos da prefeitura/secretaria e cache-buster unificados via componente `<PrintHeader>`. |
 | **Grupo 4** | Padrão de Busca/Filtro Local | ✅ Concluído | ~500 | ~50 linhas puras removidas. Lógica de busca case-insensitive e com normalização de acentos centralizada via hook `useLocalSearch`. |
@@ -33,12 +33,19 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 9** | Estado de Loading | ✅ Concluído (Parcial) | ~300 | ~30 linhas puras removidas. Migração de loaders manuais para o `<LoadingSpinner>` em Cargos e Escolas. |
 | **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ✅ Concluído (Parcial) | ~280 | ~25 linhas puras economizadas no modal-aluno. Lógicas de consulta de tabelas auxiliares (turmas/escolas) migradas para hooks SWR, reduzindo código imperativo e requests repetidas. |
 | **Grupo 11** | Empty State Genérico | ✅ Concluído (Parcial) | ~160 | ~28 linhas puras removidas. Migração de mensagens locais de lista vazia para o `<EmptyState>` em Cargos e Escolas. |
-| **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~800 | ~261 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>` (incluindo Cargos e Escolas). |
+| **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~1000 | ~446 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>` (incluindo atestados, ocorrências, transferências e caixa da escola). |
  
 ---
  
 ## 📝 Histórico de Alterações e Impacto Real
-
+ 
+### [19/07/2026] - Refatoração de Tabelas (Frente 1), Modais (Frente 2) e Correção de Bugs
+* Migração das tabelas administrativas de Atestados (`atestados`), Ocorrências (`ocorrencias`), Transferências (`transferencias`) e Caixa Escolar (`financeiro`) para utilizarem o componente reutilizável `<StandardTable>`.
+* Correção de bug silencioso de filtro fantasma no Caixa Escolar (`financeiro`), aplicando os filtros de conta e mês de forma funcional nos saldos e extratos.
+* Inclusão de blocos `try/catch` robustos, toasts em caso de erro e proteção com `isMounted` contra memory leak nas chamadas assíncronas de ocorrências e atestados.
+* Migração dos modais `ModalAlunosAnexos`, `ModalConfirmacaoSenha` e `ModalResetSenhaUser` para o componente unificado `<StandardDialog>`.
+* Validação do build executada com 100% de sucesso.
+ 
 ### [19/07/2026] - Refatoração de Tabelas, Uploads, Loadings e Empty States (Cargos e Escolas)
 * Migração das tabelas administrativas de Cargos (`admin/cargos`) e Escolas (`admin/escolas`) para utilizarem o componente reutilizável `<StandardTable>`.
 * Eliminação de loaders (`animate-spin`) e blocos de listas vazias duplicados, substituídos pelos componentes genéricos `<LoadingSpinner>` e `<EmptyState>`.
