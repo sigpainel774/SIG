@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -76,7 +76,7 @@ export function ModalNovaOcorrencia({
         .insert({
           aluno_id: alunoId,
           turma_id: turmaId,
-          escola_id: escolaId,
+          escola_id: schoolIdFallback, // O original usa escolaId recebido nas props
           tipo: tipo.trim(),
           gravidade: gravidade,
           descricao: descricao.trim(),
@@ -98,70 +98,18 @@ export function ModalNovaOcorrencia({
     }
   }
 
+  // Correção rápida: no original o valor inserido usa a prop 'escolaId'
+  const schoolIdFallback = escolaId || null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px] bg-[#121214] border-[#26262a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold">Registrar Ocorrência Disciplinar</DialogTitle>
-          <DialogDescription className="text-zinc-400 text-xs">
-            Preencha os detalhes da ocorrência do aluno abaixo.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          {/* Tipo de Ocorrência */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Tipo de Ocorrência *</label>
-            <Input
-              placeholder="Ex: Atraso, Indisciplina, Falta de Material..."
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Gravidade */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-zinc-300">Gravidade</label>
-              <Select value={gravidade} onValueChange={(val) => setGravidade(val ?? 'Leve')}>
-                <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10 text-sm">
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
-                  <SelectItem value="Leve">Leve</SelectItem>
-                  <SelectItem value="Média">Média</SelectItem>
-                  <SelectItem value="Grave">Grave</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Data */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-zinc-300">Data *</label>
-              <Input
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                className="bg-[#18181b] border-[#2a2a2a] text-white focus-visible:ring-[#3ea6ff] h-10 text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Descrição */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Descrição Detalhada *</label>
-            <Textarea
-              placeholder="Descreva o ocorrido de forma objetiva..."
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              rows={4}
-              className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] text-sm resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="pt-2 border-t border-[#26262a] mt-2 flex gap-3">
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Registrar Ocorrência Disciplinar"
+      description="Preencha os detalhes da ocorrência do aluno abaixo."
+      maxWidth="sm:max-w-[450px]"
+      footer={
+        <>
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
@@ -176,8 +124,61 @@ export function ModalNovaOcorrencia({
           >
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {/* Tipo de Ocorrência */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-zinc-300">Tipo de Ocorrência *</label>
+          <Input
+            placeholder="Ex: Atraso, Indisciplina, Falta de Material..."
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 text-sm"
+          />
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="grid grid-cols-2 gap-4">
+          {/* Gravidade */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-zinc-300">Gravidade</label>
+            <Select value={gravidade} onValueChange={(val) => setGravidade(val ?? 'Leve')}>
+              <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10 text-sm">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+                <SelectItem value="Leve">Leve</SelectItem>
+                <SelectItem value="Média">Média</SelectItem>
+                <SelectItem value="Grave">Grave</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-zinc-300">Data *</label>
+            <Input
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="bg-[#18181b] border-[#2a2a2a] text-white focus-visible:ring-[#3ea6ff] h-10 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Descrição */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-zinc-300">Descrição Detalhada *</label>
+          <Textarea
+            placeholder="Descreva o ocorrido de forma objetiva..."
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            rows={4}
+            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] text-sm resize-none"
+          />
+        </div>
+      </div>
+    </StandardDialog>
   )
 }

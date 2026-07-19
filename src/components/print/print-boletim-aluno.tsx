@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { PrintHeader } from '@/components/print/print-header'
 
 export interface BoletimMateriaData {
   id: string
@@ -216,33 +217,18 @@ export function PrintBoletimAluno({
       >
         <div>
           {/* Cabeçalho */}
-          <div className="flex items-center justify-between pb-4 border-b-2 border-black mb-6">
-            <div className="flex items-center gap-2 max-w-[180px] shrink-0">
-              <img
-                src={getCacheBustedUrl(logoPrefeituraUrl)}
-                alt="Logo Prefeitura"
-                className="doc-header-logo-prefeitura"
-                onError={(e) => {
-                  e.currentTarget.src = '/img/brasaoSapeaçu.png'
-                }}
-              />
-            </div>
-            <div className="text-center flex-1 px-4">
-              <h1 className="text-sm font-bold text-gray-800 uppercase tracking-wider">{escolaNome}</h1>
-              <p className="text-xs font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
-              <p className="text-[10px] text-gray-500">Ano Letivo {turma.ano_letivo}</p>
-            </div>
-            <div className="text-right max-w-[180px] flex items-center justify-end shrink-0">
-              <img
-                src={escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : getCacheBustedUrl(logoSecretariaUrl)}
-                alt="Logo Escola"
-                className="doc-header-logo-prefeitura"
-                onError={(e) => {
-                  e.currentTarget.src = '/img/logo-secretaria.png'
-                }}
-              />
-            </div>
-          </div>
+          <PrintHeader
+            escolaLogoUrl={escolaLogoUrl || undefined}
+            escolaNome={escolaNome}
+            className="pb-4 border-b-2 border-black mb-6"
+            centerContent={
+              <>
+                <h1 className="text-sm font-bold text-gray-800 uppercase tracking-wider">{escolaNome}</h1>
+                <p className="text-xs font-bold text-gray-600">BOLETIM ESCOLAR INDIVIDUAL</p>
+                <p className="text-[10px] text-gray-500">Ano Letivo {turma.ano_letivo}</p>
+              </>
+            }
+          />
 
           {/* Dados do Aluno */}
           <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-55 p-3 rounded border border-gray-200">

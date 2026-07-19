@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { PrintHeader } from '@/components/print/print-header'
 import { Loader2, Printer, X, ExternalLink } from 'lucide-react'
 import QRCode from 'qrcode'
 import { createClient } from '@/lib/supabaseClient'
@@ -173,29 +174,9 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
       <div className="flex flex-col justify-between min-h-[130mm] h-auto border border-gray-400 p-4 rounded-lg bg-white print:border-none print:p-0 print:h-[130mm]">
         <div>
           {/* Cabeçalho */}
-          <div className="flex items-center justify-between pb-1.5 border-b border-black mb-2">
-            <div className="flex items-center gap-2 max-w-[180px]">
-              <img 
-                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)} 
-                alt="Prefeitura de Sapeaçu" 
-                className="doc-header-logo-prefeitura"
-              />
-            </div>
-
-            <div className="text-center flex-1 px-1">
-              <h2 className="text-[10px] font-extrabold tracking-wider text-gray-800 uppercase leading-none">ESTADO DA BAHIA</h2>
-              <h3 className="text-[11px] font-black text-gray-900 uppercase">PREFEITURA MUNICIPAL DE SAPEAÇU</h3>
-              <p className="text-[8.5px] font-bold text-gray-600">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
-            </div>
-
-            <div className="text-right max-w-[180px]">
-              <img 
-                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)} 
-                alt="Secretaria de Educação" 
-                className="doc-header-logo-secretaria"
-              />
-            </div>
-          </div>
+          <PrintHeader
+            className="pb-1.5 border-b border-black mb-2"
+          />
 
           {/* Título */}
           <div className="text-center bg-gray-100 py-0.5 rounded border border-gray-300 mb-1.5">

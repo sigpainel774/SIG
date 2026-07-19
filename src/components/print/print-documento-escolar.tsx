@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { PrintHeader } from '@/components/print/print-header'
 import { Printer, X, Loader2, Award, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -404,29 +405,12 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       >
         <div>
           {/* Cabeçalho Oficial da Prefeitura/SME */}
-          <div className="flex items-center justify-between pb-3 border-b border-black mb-4">
-            <div className="flex items-center gap-2 max-w-[180px] shrink-0">
-              <img
-                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`)}
-                alt="Prefeitura de Sapeaçu"
-                className="doc-header-logo-prefeitura"
-              />
-            </div>
-
-            <div className="text-center flex-1 px-3">
-              <h2 className="text-[11px] font-extrabold tracking-wider text-gray-800 uppercase leading-none">ESTADO DA BAHIA</h2>
-              <h3 className="text-[13px] font-black text-gray-900 uppercase mt-0.5">PREFEITURA MUNICIPAL DE SAPEAÇU</h3>
-              <p className="text-[10px] font-bold text-gray-600 mt-0.5">SECRETARIA MUNICIPAL DE EDUCAÇÃO</p>
-            </div>
-
-            <div className="text-right max-w-[180px] shrink-0">
-              <img
-                src={getCacheBustedUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`)}
-                alt="Secretaria de Educação"
-                className="doc-header-logo-prefeitura"
-              />
-            </div>
-          </div>
+          <PrintHeader
+            className="pb-3 border-b border-black mb-4"
+            estado="ESTADO DA BAHIA"
+            municipio="PREFEITURA MUNICIPAL DE SAPEAÇU"
+            secretaria="SECRETARIA MUNICIPAL DE EDUCAÇÃO"
+          />
 
           {/* Sub-Cabeçalho com Logo da Escola (Se Houver) */}
           <div className="flex flex-col items-center text-center space-y-1 mb-3">
