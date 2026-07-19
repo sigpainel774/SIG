@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { PrintHeader } from '@/components/print/print-header'
 
 interface RelatorioNecessidadesProps {
   selectedEscola: any
@@ -173,22 +173,12 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
         {/* Ficha para Impressão */}
         <div className="print-portal-container bg-card border border-border rounded-2xl p-8 max-w-4xl mx-auto shadow-md space-y-8 text-foreground print:border-none print:shadow-none print:p-0">
           
-          {/* Cabeçalho do Relatório */}
-          <div className="flex justify-between items-start border-b border-border pb-6">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full no-print">
-                Fase 1 - Homologação
-              </span>
-              <h2 className="text-2xl font-black mt-2">RELATÓRIO DE NECESSIDADES ESPECIAIS (AEE)</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Secretaria Municipal de Educação e Cultura • Unidade: {selectedAluno.escolas?.nome || 'Não informada'}
-              </p>
-            </div>
-            <div className="text-right text-xs text-muted-foreground">
-              <p>Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
-              <p>Perfil: {funcionario?.nome ?? 'Servidor'}</p>
-            </div>
-          </div>
+          {/* Cabeçalho Oficial do Relatório */}
+          <PrintHeader
+            escolaNome={selectedAluno.escolas?.nome ?? 'Unidade Escolar'}
+            docTitulo="RELATÓRIO DE NECESSIDADES ESPECIAIS (AEE)"
+            docSubtitulo={`Gerado em: ${new Date().toLocaleDateString('pt-BR')} — Servidor: ${funcionario?.nome ?? 'Sistema'}`}
+          />
 
           {/* Identificação do Aluno */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-1/50 p-4 rounded-xl border border-border/50">

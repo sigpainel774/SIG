@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Printer, GraduationCap, AlertTriangle, CalendarCheck, Users } from 'lucide-react'
 import { NotaRecord } from '@/hooks/useRelatorioNotas'
-
+import { PrintHeader } from '@/components/print/print-header'
 import { Escola } from '@/store/useSchoolStore'
 
 interface SchoolDetailedReportProps {
@@ -254,27 +254,13 @@ export function SchoolDetailedReport({
       </div>
 
       {/* Cabeçalho de Impressão (Fidelidade Visual A4) */}
-      <div className="hidden print:flex print:items-center print:justify-between print:border-b-2 print:border-black print:pb-4 print:mb-6 w-full">
-        <div className="flex items-center gap-4">
-          <img
-            src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png?t=${Date.now()}`}
-            alt="Brasão"
-            className="w-16 h-16 object-contain"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-black">Estado da Bahia</h2>
-            <h1 className="text-lg font-black uppercase text-black">Prefeitura Municipal de Sapeaçú</h1>
-            <p className="text-xs font-semibold text-gray-700">Secretaria Municipal de Educação, Cultura e Esporte</p>
-            <p className="text-xs font-bold text-gray-900 mt-1">Unidade Escolar: {school.nome}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-3 py-1 rounded-full border border-gray-300">
-            Documento Oficial da Rede
-          </span>
-          <p className="text-[10px] text-gray-600 mt-1">Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
-        </div>
+      <div className="hidden print:block w-full">
+        <PrintHeader
+          escolaNome={school.nome}
+          escolaLogoUrl={school.logo_url ?? undefined}
+          docTitulo="RELATÓRIO ANALÍTICO DA UNIDADE ESCOLAR"
+          docSubtitulo={`Documento Oficial da Rede — Gerado em: ${new Date().toLocaleDateString('pt-BR')}`}
+        />
       </div>
 
       {/* Indicadores Locais da Escola */}

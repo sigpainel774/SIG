@@ -30,6 +30,8 @@ function getPalette(nome: string) {
   return PALETTES[Math.abs(hash) % PALETTES.length]
 }
 
+const sessionTimestamp = Date.now()
+
 export function gerarFichaFuncionarioHtml(
   f: any,
   logoPrefeituraUrl: string,
@@ -43,8 +45,9 @@ export function gerarFichaFuncionarioHtml(
 ): string {
   const initials = getInitials(f.nome)
   const palette = getPalette(f.nome)
+  const fotoCleanUrl = f.foto_url ? (f.foto_url.startsWith('data:') ? f.foto_url : `${f.foto_url.split('?')[0]}?t=${sessionTimestamp}`) : ''
   const fotoCell = f.foto_url
-    ? `<img src="${f.foto_url}?t=${Date.now()}" class="foto-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+    ? `<img src="${fotoCleanUrl}" class="foto-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
        <div class="foto-initials" style="display:none; background:${palette.bg}; color:${palette.text};">${initials}</div>`
     : `<div class="foto-initials" style="background:${palette.bg}; color:${palette.text};">${initials}</div>`
 
@@ -132,7 +135,8 @@ export function gerarFichaFuncionarioHtml(
           }
           .header-logo-dir {
             height: 48px;
-            width: 60px;
+            width: auto;
+            max-width: 140px;
             object-fit: contain;
             margin-left: 15px;
           }

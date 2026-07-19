@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { FileText, X, Printer } from 'lucide-react'
+import { X, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PrintHeader } from '@/components/print/print-header'
+
+// Constant timestamp for anti-flickering cache busting on signature URLs
+const sessionTimestamp = Date.now()
 
 interface AuditLog {
   id: string
@@ -101,16 +105,19 @@ export function PrintRelatorioAssinaturas({ logs, onClose }: PrintRelatorioAssin
       <div className="w-[210mm] min-h-[297mm] bg-white text-black p-10 font-sans shadow-2xl rounded-lg print:shadow-none print:rounded-none print:p-0 print:w-full print:min-h-0">
         
         {/* Cabeçalho do Relatório */}
-        <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
-          <div>
-            <h1 className="text-xl font-bold uppercase tracking-tight">Sapeaçu — Secretaria de Educação</h1>
-            <h2 className="text-base font-semibold text-gray-700 uppercase mt-0.5">Relatório de Auditoria de Assinaturas Digitais</h2>
-            <p className="text-xs text-gray-500 mt-1">Gerado em: {new Date().toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="text-right">
-            <BadgeReport text="Auditoria Global" />
-            <p className="text-xs text-gray-500 mt-2 font-medium">Registros: {logs.length}</p>
-          </div>
+        <PrintHeader
+          centerContent={
+            <div>
+              <h1 className="text-sm font-bold uppercase tracking-tight">Secretaria Municipal de Educação</h1>
+              <h2 className="text-base font-black text-gray-900 uppercase mt-0.5">Relatório de Auditoria de Assinaturas Digitais</h2>
+              <p className="text-xs text-gray-500 mt-1">Gerado em: {new Date().toLocaleString('pt-BR')}</p>
+            </div>
+          }
+        />
+
+        <div className="flex justify-between items-center mb-4">
+          <BadgeReport text="Auditoria Global" />
+          <p className="text-xs text-gray-500 font-medium">Registros: {logs.length}</p>
         </div>
 
         {/* Tabela de logs */}
@@ -132,6 +139,8 @@ export function PrintRelatorioAssinaturas({ logs, onClose }: PrintRelatorioAssin
               const sigUrl = log.new_data?.url || log.old_data?.url
               const isResp = log.entity === 'alunos_assinatura_responsavel'
               
+              const cleanSigUrl = sigUrl ? (sigUrl.startsWith('data:') ? sigUrl : `${sigUrl.split('?')[0]}?t=${sessionTimestamp}`) : null
+
               return (
                 <tr key={log.id} className="border-b border-gray-300 hover:bg-gray-50">
                   <td className="py-2 px-1 font-semibold text-black">
@@ -161,10 +170,10 @@ export function PrintRelatorioAssinaturas({ logs, onClose }: PrintRelatorioAssin
                     {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
                   </td>
                   <td className="py-1 px-1 text-center align-middle">
-                    {sigUrl ? (
+                    {cleanSigUrl ? (
                       <div className="inline-block border border-gray-300 rounded bg-zinc-50 p-0.5">
                         <img 
-                          src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                          src={cleanSigUrl} 
                           alt="Assinatura" 
                           className="max-h-8 max-w-[80px] object-contain filter brightness-90 contrast-125"
                         />
