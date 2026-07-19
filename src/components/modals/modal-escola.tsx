@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Building2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
+import { FileUpload } from '@/components/ui/file-upload'
 
 interface EscolaToEdit {
   id?: string
@@ -40,6 +41,8 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
   const [ativo, setAtivo] = useState(true)
   const [logoUrl, setLogoUrl] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [fileObject, setFileObject] = useState<File | null>(null)
+  const sessionTimestamp = useRef(Date.now()).current
 
   useEffect(() => {
     if (escolaToEdit) {
@@ -48,31 +51,35 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setTipo(escolaToEdit.tipo || 'MUNICIPAL')
       setAtivo(escolaToEdit.ativo !== false)
       setLogoUrl(escolaToEdit.logo_url || '')
+      setFileObject(null)
     } else {
       setNome('')
       setInep('')
       setTipo('MUNICIPAL')
       setAtivo(true)
       setLogoUrl('')
+      setFileObject(null)
     }
   }, [escolaToEdit, open])
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleLogoUpload = async (file: File | null) => {
+    if (!file) {
+      setLogoUrl('')
+      return
+    }
 
     setUploading(true)
     const supabase = createClient()
     const fileExt = file.name.split('.').pop()
     const fileName = `escola_${Date.now()}.${fileExt}`
-    toast.loading('Enviando logo da escola...')
+    const toastId = toast.loading('Enviando logo da escola...')
 
     try {
       const { data, error } = await supabase.storage
         .from('logos')
         .upload(fileName, file, { cacheControl: '31536000' })
 
-      toast.dismiss()
+      toast.dismiss(toastId)
 
       if (error) {
         toast.error(`Erro no upload: ${error.message}`)
@@ -86,7 +93,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setLogoUrl(publicData.publicUrl)
       toast.success('Logo enviada com sucesso!')
     } catch (err: any) {
-      toast.dismiss()
+      toast.dismiss(toastId)
       toast.error(`Erro no upload: ${err.message}`)
     } finally {
       setUploading(false)
@@ -201,48 +208,17 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
           {/* Campo Logo da Escola */}
           <div className="space-y-2">
             <Label className="text-xs text-[#aaa]">Logo da Escola</Label>
-            <div className="flex items-center gap-4 bg-[#18181a] border border-[#27272a] p-3 rounded-xl">
-              <div className="w-16 h-16 rounded-xl border border-[#27272a] bg-[#121214] flex items-center justify-center overflow-hidden shrink-0">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <Building2 className="w-8 h-8 text-zinc-500" />
-                )}
-              </div>
-              <div className="space-y-1.5 flex-1">
-                <input
-                  type="file"
-                  id="logo-upload"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('logo-upload')?.click()}
-                    disabled={uploading}
-                    className="bg-[#222] hover:bg-[#333] border-[#333] text-xs h-8 px-3 text-white hover:text-white"
-                  >
-                    {uploading ? 'Enviando...' : logoUrl ? 'Alterar Logo' : 'Escolher Logo'}
-                  </Button>
-                  {logoUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setLogoUrl('')}
-                      disabled={uploading}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs h-8 px-3"
-                    >
-                      Remover
-                    </Button>
-                  )}
-                </div>
-                <p className="text-[10px] text-zinc-500">Imagens PNG, JPG ou WebP de até 5MB.</p>
-              </div>
-            </div>
+            <FileUpload
+              accept="image/*"
+              maxSizeMB={5}
+              file={fileObject}
+              onChange={(file) => {
+                setFileObject(file)
+                handleLogoUpload(file)
+              }}
+              label="Escolher Logo da Escola"
+              previewUrl={logoUrl ? (logoUrl.startsWith('data:') ? logoUrl : `${logoUrl}?t=${sessionTimestamp}`) : null}
+            />
           </div>
 
           <div className="flex items-center gap-2 pt-2">

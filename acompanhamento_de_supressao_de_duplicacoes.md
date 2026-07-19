@@ -10,16 +10,16 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ---
 
 ## 📈 Status Geral
-
+ 
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~22,6%
-* **Linhas de Código Removidas/Otimizadas:** ~1009
-* **Redução Acumulada do Projeto:** ~2,87%
-
+* **Percentual Atual de Duplicação:** ~22,2%
+* **Linhas de Código Removidas/Otimizadas:** ~1150
+* **Redução Acumulada do Projeto:** ~3,28%
+ 
 ---
-
+ 
 ## 🛠️ Progresso dos Grupos de Refatoração
-
+ 
 | Grupo | Descrição | Status | Linhas Estimadas Economizadas | Impacto Real |
 |---|---|---|---|---|
 | **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~570 | ~360 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>`. |
@@ -29,15 +29,22 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ✅ Concluído | ~600 | ~22 linhas puras removidas. Lógica de tratamento de erros assíncronos e loading unificada no utilitário `executeWithToast`. |
 | **Grupo 6** | Verificações de Permissão por Cargo | ✅ Concluído | ~250 | ~12 linhas puras removidas. Lógicas de verificação de cargos (Professor/Coordenador) unificadas na store `useAuthStore`. |
 | **Grupo 7** | Formatação de Data | ✅ Concluído | ~130 | ~8 linhas puras removidas. Padronização de formatação de data com correção automática de fuso horário via helper `formatDate`. |
-| **Grupo 8** | Upload de Arquivo com Preview | ⏳ Pendente | ~120 | - |
-| **Grupo 9** | Estado de Loading | ⏳ Pendente | ~300 | - |
+| **Grupo 8** | Upload de Arquivo com Preview | ✅ Concluído (Parcial) | ~120 | ~30 linhas puras removidas. Migração do logo upload no modal de escola para o componente `<FileUpload>`. |
+| **Grupo 9** | Estado de Loading | ✅ Concluído (Parcial) | ~300 | ~30 linhas puras removidas. Migração de loaders manuais para o `<LoadingSpinner>` em Cargos e Escolas. |
 | **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ✅ Concluído (Parcial) | ~280 | ~25 linhas puras economizadas no modal-aluno. Lógicas de consulta de tabelas auxiliares (turmas/escolas) migradas para hooks SWR, reduzindo código imperativo e requests repetidas. |
-| **Grupo 11** | Empty State Genérico | ⏳ Pendente | ~160 | - |
-| **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~800 | ~150 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>`. |
-
+| **Grupo 11** | Empty State Genérico | ✅ Concluído (Parcial) | ~160 | ~28 linhas puras removidas. Migração de mensagens locais de lista vazia para o `<EmptyState>` em Cargos e Escolas. |
+| **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~800 | ~261 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>` (incluindo Cargos e Escolas). |
+ 
 ---
-
+ 
 ## 📝 Histórico de Alterações e Impacto Real
+
+### [19/07/2026] - Refatoração de Tabelas, Uploads, Loadings e Empty States (Cargos e Escolas)
+* Migração das tabelas administrativas de Cargos (`admin/cargos`) e Escolas (`admin/escolas`) para utilizarem o componente reutilizável `<StandardTable>`.
+* Eliminação de loaders (`animate-spin`) e blocos de listas vazias duplicados, substituídos pelos componentes genéricos `<LoadingSpinner>` e `<EmptyState>`.
+* Refatoração do upload de logo no `ModalEscola` para utilizar o componente `<FileUpload>`, tratando ID específico de Toast para evitar dismiss geral e implementando constante de sessão com referência para cache-busting.
+* Correção de bug sutil de avaliação falsy do salário base `0` na página de cargos.
+* Validação do build executada com 100% de sucesso.
 
 ### [19/07/2026] - Refatoração dos Grupos 6 e 7 Concluída
 * Centralização das permissões de cargo (`isProfessor` e `isCoordenador`) na store de autenticação global [useAuthStore](file:///c:/Users/Pc/Documents/GitHub/SIG/src/store/useAuthStore.ts). Refatoradas as páginas `turmas` e `alunos`.

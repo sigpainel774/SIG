@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ModalEscola } from '@/components/modals/modal-escola'
 import { ModalConfigAnexosEscola } from '@/components/modals/modal-config-anexos-escola'
@@ -30,6 +30,14 @@ export default function AdminEscolasPage() {
   const [configAnexosOpen, setConfigAnexosOpen] = useState(false)
   const [escolaParaAnexos, setEscolaParaAnexos] = useState<any | null>(null)
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   const loadEscolas = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -38,7 +46,14 @@ export default function AdminEscolasPage() {
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
-    if (data) setEscolas(data)
+    if (!isMounted.current) return
+
+    if (error) {
+      console.error('Erro ao carregar escolas:', error)
+      toast.error('Erro ao carregar lista de escolas.')
+    } else if (data) {
+      setEscolas(data)
+    }
     setLoading(false)
   }
 
@@ -84,6 +99,76 @@ export default function AdminEscolasPage() {
 
   const escolasFiltradas = useLocalSearch(escolas, searchTerm, ['nome', 'inep'])
 
+  const columns: TableColumn<any>[] = [
+    {
+      header: 'Código',
+      className: 'text-purple-400 font-mono font-bold w-24',
+      accessor: (escola) => escola.codigo !== undefined && escola.codigo !== null ? String(escola.codigo).padStart(2, '0') : '-'
+    },
+    {
+      header: 'Nome da Escola',
+      accessor: (escola) => <span className="font-medium text-white">{escola.nome}</span>
+    },
+    {
+      header: 'INEP',
+      accessor: (escola) => <span className="text-[#aaa]">{escola.inep ?? '-'}</span>
+    },
+    {
+      header: 'Tipo',
+      accessor: (escola) => (
+        <Badge variant="outline" className="text-xs bg-gray-500/20 text-gray-300 border-gray-500/30">
+          {escola.tipo ?? 'MUNICIPAL'}
+        </Badge>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: (escola) => (
+        <Badge variant="outline" className={`text-xs ${escola.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+          {escola.ativo !== false ? 'ATIVO' : 'INATIVO'}
+        </Badge>
+      )
+    },
+    {
+      header: 'Ações',
+      headClassName: 'text-right w-36',
+      className: 'text-right',
+      accessor: (escola) => (
+        <div className="flex justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              setEscolaParaAnexos(escola)
+              setConfigAnexosOpen(true)
+            }}
+            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            title="Configurar Anexos Padrão"
+          >
+            <Paperclip className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleEditarEscola(escola)}
+            className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+            title="Editar"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleExcluirEscola(escola)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            title="Excluir (Lixeira)"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )
+    }
+  ]
 
   return (
     <div className="space-y-6">
@@ -123,78 +208,15 @@ export default function AdminEscolasPage() {
       </div>
 
       {/* Tabela */}
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold w-24">Código</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Nome da Escola</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">INEP</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Tipo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Status</TableHead>
-              <TableHead className="text-right text-[#ccc] font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {escolasFiltradas.map((escola) => (
-              <TableRow key={escola.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                <TableCell className="text-purple-400 font-mono font-bold">{escola.codigo !== undefined && escola.codigo !== null ? String(escola.codigo).padStart(2, '0') : '-'}</TableCell>
-                <TableCell className="font-medium text-white">{escola.nome}</TableCell>
-                <TableCell className="text-[#aaa]">{escola.inep || '-'}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs bg-gray-500/20 text-gray-300 border-gray-500/30">
-                    {escola.tipo || 'MUNICIPAL'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={`text-xs ${escola.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
-                    {escola.ativo !== false ? 'ATIVO' : 'INATIVO'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setEscolaParaAnexos(escola)
-                        setConfigAnexosOpen(true)
-                      }}
-                      className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                      title="Configurar Anexos Padrão"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleEditarEscola(escola)}
-                      className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
-                      title="Editar"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleExcluirEscola(escola)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                      title="Excluir (Lixeira)"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {escolasFiltradas.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-[#aaa]">Nenhuma escola encontrada.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={escolasFiltradas}
+        columns={columns}
+        keyExtractor={(escola) => escola.id}
+        loading={loading}
+        loadingMessage="Carregando escolas da rede..."
+        emptyMessage="Nenhuma escola encontrada."
+        className="border-[#3f3f46]"
+      />
 
       {/* Modal de Criar / Editar */}
       <ModalEscola
