@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { StandardTable } from '@/components/ui/table'
+
 
 interface Prazo {
   id?: string
@@ -493,60 +495,54 @@ export default function AdminIndicadoresPage() {
               Auditoria de Lançamento por Unidade Escolar
             </h3>
 
-            <div className="rounded-xl border border-[#27272a] overflow-hidden bg-black/20">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#18181b] border-b border-[#27272a] text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    <th className="p-3">Nome da Escola</th>
-                    <th className="p-3 text-center">Total Alunos</th>
-                    <th className="p-3 text-center">Alunos s/ Notas</th>
-                    <th className="p-3 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#27272a] text-sm">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-zinc-500">
-                        <Loader2 className="w-5 h-5 animate-spin mx-auto text-purple-500 mb-2" />
-                        Calculando métricas...
-                      </td>
-                    </tr>
-                  ) : escolasStatus.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-6 text-center text-zinc-500">
-                        Nenhuma escola encontrada na rede.
-                      </td>
-                    </tr>
+            <StandardTable
+              data={escolasStatus}
+              columns={[
+                {
+                  header: 'Nome da Escola',
+                  className: 'font-semibold text-white',
+                  accessor: (esc) => esc.nome
+                },
+                {
+                  header: 'Total Alunos',
+                  headClassName: 'text-center',
+                  className: 'text-center text-zinc-300',
+                  accessor: (esc) => esc.alunosCont
+                },
+                {
+                  header: 'Alunos s/ Notas',
+                  headClassName: 'text-center',
+                  className: 'text-center',
+                  accessor: (esc) => (
+                    <span className={esc.pendentesCont > 0 ? 'text-amber-500 font-bold' : 'text-zinc-500'}>
+                      {esc.pendentesCont}
+                    </span>
+                  )
+                },
+                {
+                  header: 'Status',
+                  headClassName: 'text-center',
+                  className: 'text-center',
+                  accessor: (esc) => esc.pendentesCont === 0 ? (
+                    <span className="text-[10px] font-extrabold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      Concluído
+                    </span>
                   ) : (
-                    escolasStatus.map((esc, i) => (
-                      <tr key={i} className="hover:bg-zinc-800/10">
-                        <td className="p-3 font-semibold text-white">{esc.nome}</td>
-                        <td className="p-3 text-center text-zinc-300">{esc.alunosCont}</td>
-                        <td className="p-3 text-center">
-                          <span className={esc.pendentesCont > 0 ? 'text-amber-500 font-bold' : 'text-zinc-500'}>
-                            {esc.pendentesCont}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center">
-                          {esc.pendentesCont === 0 ? (
-                            <span className="text-[10px] font-extrabold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                              Concluído
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/35 text-amber-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                              Pendente
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/35 text-amber-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      Pendente
+                    </span>
+                  )
+                }
+              ]}
+              keyExtractor={(esc, i) => esc.id ?? `esc-${i}`}
+              loading={loading}
+              loadingMessage="Calculando métricas..."
+              emptyMessage="Nenhuma escola encontrada na rede."
+            />
           </div>
         </div>
       </div>
     </div>
   )
 }
+

@@ -119,6 +119,10 @@ export interface FuncionarioFormContextType {
   setLongitude: (v: number | null) => void
   formatCPF: (v: string) => string
   formatCEP: (v: string) => string
+  isCpfValid: boolean
+  isFetchingCep: boolean
+  consultarCep: (cepInput?: string) => Promise<void>
+
 
   // Emprego
   cargo: string

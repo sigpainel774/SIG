@@ -126,7 +126,7 @@ export interface TableColumn<T> {
 export interface StandardTableProps<T> {
   data: T[]
   columns: TableColumn<T>[]
-  keyExtractor: (item: T, index: number) => string
+  keyExtractor?: (item: T, index: number) => string
   emptyMessage?: string
   loading?: boolean
   loadingMessage?: string
@@ -138,7 +138,7 @@ export interface StandardTableProps<T> {
 export function StandardTable<T,>({
   data,
   columns,
-  keyExtractor,
+  keyExtractor = (item: any, index: number) => item?.id ?? item?.uuid ?? item?.key ?? `row-${index}`,
   emptyMessage = "Nenhum registro encontrado.",
   loading = false,
   loadingMessage = "Carregando dados...",
@@ -146,6 +146,7 @@ export function StandardTable<T,>({
   tableClassName,
   rowClassName,
 }: StandardTableProps<T>) {
+
   return (
     <div className={cn("rounded-2xl border border-borderCustom overflow-hidden bg-[#121212] shadow-md", className)}>
       <Table className={tableClassName}>

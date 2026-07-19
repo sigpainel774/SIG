@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MiniMapa } from '@/components/map/MapWrapper'
+import { Loader2, Search } from 'lucide-react'
 
 export function SecaoEndereco() {
   const {
@@ -19,7 +20,9 @@ export function SecaoEndereco() {
     areaDiferenciada, setAreaDiferenciada,
     latitude, setLatitude,
     longitude, setLongitude,
-    endereco, setEndereco
+    endereco, setEndereco,
+    isFetchingCep,
+    consultarCep
   } = useAlunoForm()
 
   return (
@@ -51,13 +54,31 @@ export function SecaoEndereco() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <Label className="text-xs text-gray-300">CEP</Label>
-            <Input 
-              value={cep} 
-              onChange={(e) => setCep(e.target.value)} 
-              placeholder="44540000" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
-            />
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-gray-300">CEP</Label>
+              {isFetchingCep && (
+                <span className="text-[10px] text-sky-400 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Buscando...
+                </span>
+              )}
+            </div>
+            <div className="relative mt-1">
+              <Input 
+                value={cep} 
+                onChange={(e) => setCep(e.target.value)} 
+                placeholder="44540-000" 
+                className="bg-[#121212] border-[#2a2a2a] text-white pr-8" 
+              />
+              <button
+                type="button"
+                onClick={() => consultarCep && consultarCep()}
+                disabled={isFetchingCep}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                title="Consultar CEP nos Correios"
+              >
+                {isFetchingCep ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" /> : <Search className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
           <div>
             <Label className="text-xs text-gray-300">Bairro / Localidade</Label>
@@ -70,6 +91,7 @@ export function SecaoEndereco() {
           </div>
           <div>
             <Label className="text-xs text-gray-300">Cidade</Label>
+
             <Input 
               value={cidadeEnd} 
               onChange={(e) => setCidadeEnd(e.target.value)} 

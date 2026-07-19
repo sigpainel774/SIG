@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { Bell, ShieldAlert, Sliders, Loader2, Info } from 'lucide-react'
+
 
 interface ModalConfiguracoesNotificacoesProps {
   open: boolean
@@ -20,6 +22,12 @@ interface ConfigRule {
   enviar_web: boolean
 }
 
+interface UserLevelItem {
+  label: string
+  nivel: number | null
+  cargo: string | null
+}
+
 export function ModalConfiguracoesNotificacoes({
   open,
   onOpenChange
@@ -28,7 +36,7 @@ export function ModalConfiguracoesNotificacoes({
   const [updating, setUpdating] = useState(false)
   const [rules, setRules] = useState<ConfigRule[]>([])
 
-  const userLevels = [
+  const userLevels: UserLevelItem[] = [
     { label: 'Nível 1 — Gestor Macro (Prefeito/Secretário)', nivel: 1, cargo: null },
     { label: 'Nível 2 — Diretor Escolar', nivel: 2, cargo: null },
     { label: 'Nível 3 — Vice-Diretor', nivel: 3, cargo: null },
@@ -36,6 +44,7 @@ export function ModalConfiguracoesNotificacoes({
     { label: 'Nível 5 — Chefe de Setor', nivel: 5, cargo: null },
     { label: 'Professores (Cargo c/ "Professor")', nivel: null, cargo: '%Professor%' }
   ]
+
 
   const notificationTypes = [
     { key: 'transferencia', label: 'Transferências' },
@@ -157,48 +166,41 @@ export function ModalConfiguracoesNotificacoes({
     >
 
         <div className="space-y-4 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-zinc-400 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-              <span>Carregando configurações...</span>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[#27272a] overflow-hidden bg-black/20">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#18181b] border-b border-[#27272a] text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    <th className="p-3.5 pl-4">Nível / Cargo</th>
-                    {notificationTypes.map(t => (
-                      <th key={t.key} className="p-3.5 text-center">{t.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#27272a] text-sm">
-                  {userLevels.map((level, idx) => (
-                    <tr key={idx} className="hover:bg-zinc-800/10">
-                      <td className="p-3.5 pl-4 font-medium text-white">{level.label}</td>
-                      {notificationTypes.map(type => {
-                        const checked = isChecked(level.nivel, level.cargo, type.key)
-                        return (
-                          <td key={type.key} className="p-3.5 text-center">
-                            <div className="flex justify-center">
-                              <ToggleSwitch 
-                                checked={checked} 
-                                disabled={updating}
-                                onChange={() => handleToggle(level.nivel, level.cargo, type.key, checked)}
-                              />
-                            </div>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <StandardTable
+            data={userLevels}
+            loading={loading}
+            loadingMessage="Carregando configurações..."
+            columns={[
+              {
+                header: 'Nível / Cargo',
+                headClassName: 'pl-4',
+                className: 'pl-4 font-medium text-white',
+                accessor: (level) => level.label
+              },
+              ...notificationTypes.map((type): TableColumn<UserLevelItem> => ({
+                header: type.label,
+                headClassName: 'text-center',
+                className: 'text-center',
+                accessor: (level) => {
+
+                  const checked = isChecked(level.nivel, level.cargo, type.key)
+                  return (
+                    <div className="flex justify-center">
+                      <ToggleSwitch 
+                        checked={checked} 
+                        disabled={updating}
+                        onChange={() => handleToggle(level.nivel, level.cargo, type.key, checked)}
+                      />
+                    </div>
+                  )
+                }
+              }))
+            ]}
+            keyExtractor={(level, idx) => `${level.nivel ?? level.cargo ?? idx}`}
+          />
 
           <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-3 flex gap-2.5 items-start text-xs text-zinc-400 leading-normal">
+
             <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
             <p>
               As alterações feitas nesta matriz entram em vigor imediatamente para todos os funcionários da rede. Desativar uma linha impedirá que o sistema realize o envio físico daquele tipo de aviso no menu de notificações dos usuários correspondentes.

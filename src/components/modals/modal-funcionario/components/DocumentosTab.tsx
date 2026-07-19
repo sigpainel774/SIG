@@ -5,10 +5,14 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { MiniMapa } from '@/components/map/MapWrapper'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
+import { Loader2, Search } from 'lucide-react'
 
 export function DocumentosTab() {
   const {
     cpf, setCpf,
+    isCpfValid,
+    isFetchingCep,
+    consultarCep,
     rg, setRg,
     nis, setNis,
     logradouro, setLogradouro,
@@ -32,12 +36,21 @@ export function DocumentosTab() {
       <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Documentação Básica</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label>CPF</Label>
+          <div className="flex items-center justify-between">
+            <Label>CPF</Label>
+            {cpf.trim().length > 0 && (
+              <span className={`text-[10px] font-semibold ${isCpfValid ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isCpfValid ? '✓ Válido' : '✕ Inválido'}
+              </span>
+            )}
+          </div>
           <Input
             value={cpf}
             onChange={(e) => setCpf(formatCPF(e.target.value))}
             placeholder="000.000.000-00"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className={`bg-[#181818] border-borderCustom text-white mt-1 ${
+              cpf.trim().length > 0 && !isCpfValid ? 'border-rose-500/60 focus:border-rose-500' : ''
+            }`}
           />
         </div>
         <div>
@@ -81,15 +94,34 @@ export function DocumentosTab() {
           />
         </div>
         <div>
-          <Label>CEP</Label>
-          <Input
-            value={cep}
-            onChange={(e) => setCep(formatCEP(e.target.value))}
-            placeholder="44350-000"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
-          />
+          <div className="flex items-center justify-between">
+            <Label>CEP</Label>
+            {isFetchingCep && (
+              <span className="text-[10px] text-sky-400 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> Buscando...
+              </span>
+            )}
+          </div>
+          <div className="relative mt-1">
+            <Input
+              value={cep}
+              onChange={(e) => setCep(formatCEP(e.target.value))}
+              placeholder="44350-000"
+              className="bg-[#181818] border-borderCustom text-white pr-8"
+            />
+            <button
+              type="button"
+              onClick={() => consultarCep && consultarCep()}
+              disabled={isFetchingCep}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              title="Consultar CEP nos Correios"
+            >
+              {isFetchingCep ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" /> : <Search className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>

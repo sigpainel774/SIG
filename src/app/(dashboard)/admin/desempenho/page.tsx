@@ -18,10 +18,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'sonner'
+
 
 // Auxiliares para formatação de valores e cores
 const getRatingColor = (rating: string) => {
@@ -324,43 +326,37 @@ export default function DesempenhoPage() {
           </div>
           <p className="text-xs text-slate-400">Telas que demoram mais para renderizar no cliente (ordenadas por latência no período).</p>
           
-          <div className="rounded-xl border border-[#232326] bg-[#17171a] overflow-hidden">
-            <Table>
-              <TableHeader className="bg-[#1e1e24] border-b border-[#232326]">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="text-slate-300 font-semibold">Rota (Tela)</TableHead>
-                  <TableHead className="text-slate-300 font-semibold text-right">Tempo Médio</TableHead>
-                  <TableHead className="text-slate-300 font-semibold text-right">Amostras</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dashboardStats.route_metrics.map((r, i) => (
-                  <TableRow key={i} className="border-b border-[#232326]/50 hover:bg-[#202024]/40 transition-colors">
-                    <TableCell className="font-mono text-xs text-slate-300">
-                      {r.pathname}
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      <span className={r.avg_value > 1000 ? 'text-rose-400' : r.avg_value > 300 ? 'text-amber-400' : 'text-emerald-400'}>
-                        {formatMetricValue('ROUTE_CHANGE_MS', r.avg_value)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-slate-400 text-xs">
-                      {r.sample_count}
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                {dashboardStats.route_metrics.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-slate-500">
-                      Nenhum registro de rota encontrado neste período.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <StandardTable
+            data={dashboardStats.route_metrics}
+            columns={[
+              {
+                header: 'Rota (Tela)',
+                className: 'font-mono text-xs text-slate-300',
+                accessor: (r) => r.pathname
+              },
+              {
+                header: 'Tempo Médio',
+                headClassName: 'text-right',
+                className: 'text-right font-bold',
+                accessor: (r) => (
+                  <span className={r.avg_value > 1000 ? 'text-rose-400' : r.avg_value > 300 ? 'text-amber-400' : 'text-emerald-400'}>
+                    {formatMetricValue('ROUTE_CHANGE_MS', r.avg_value)}
+                  </span>
+                )
+              },
+              {
+                header: 'Amostras',
+                headClassName: 'text-right',
+                className: 'text-right text-slate-400 text-xs',
+                accessor: (r) => r.sample_count
+              }
+            ]}
+            keyExtractor={(r, i) => `${r.pathname}-${i}`}
+            loading={loading}
+            emptyMessage="Nenhum registro de rota encontrado neste período."
+          />
         </div>
+
 
         {/* Right: Análise por Fatores (Hardware e Conexão) */}
         <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-5">
