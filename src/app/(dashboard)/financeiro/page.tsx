@@ -5,13 +5,11 @@ import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet, Inbox } from 'lucide-react'
+import { StandardTable } from '@/components/ui/table'
+import { Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { ModalLancamentoFinanceiro } from '@/components/ModalLancamentoFinanceiro'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { EmptyState } from '@/components/ui/empty-state'
 
 export default function FinanceiroPage() {
   const [contaFiltro, setContaFiltro] = useState('todas')
@@ -47,12 +45,33 @@ export default function FinanceiroPage() {
     fetchTransacoes()
   }, [escolaAtivaId])
 
-  // Cálculo dinâmico dos totais a partir dos dados do banco
+  // Filtragem local baseada nos filtros de conta e mês
+  const transacoesFiltradas = useMemo(() => {
+    return transacoes.filter((t) => {
+      // Filtro de conta
+      let matchConta = true
+      if (contaFiltro === 'caixa') {
+        matchConta = t.conta === 'Caixa Escolar'
+      } else if (contaFiltro === 'brasil') {
+        matchConta = t.conta === 'Conta do Brasil'
+      }
+
+      // Filtro de mês (formato YYYY-MM comparando com data YYYY-MM-DD)
+      let matchMes = true
+      if (mesFiltro) {
+        matchMes = t.data && t.data.startsWith(mesFiltro)
+      }
+
+      return matchConta && matchMes
+    })
+  }, [transacoes, contaFiltro, mesFiltro])
+
+  // Cálculo dinâmico dos totais a partir das transações filtradas
   const { totalReceitas, totalDespesas, saldoTotal } = useMemo(() => {
     let receitas = 0
     let despesas = 0
 
-    transacoes.forEach((t) => {
+    transacoesFiltradas.forEach((t) => {
       const val = Number(t.valor) || 0
       if (t.tipo === 'Receita') {
         receitas += val
@@ -66,7 +85,7 @@ export default function FinanceiroPage() {
       totalDespesas: despesas,
       saldoTotal: receitas - despesas
     }
-  }, [transacoes])
+  }, [transacoesFiltradas])
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -147,78 +166,79 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#3f3f46] bg-[#181818] overflow-hidden shadow-md">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h3 className="font-semibold text-white">Extrato de Movimentações</h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-white text-lg">Extrato de Movimentações</h3>
         </div>
-        <Table>
-          <TableHeader className="bg-[#1f1f1f]">
-            <TableRow className="border-[#222] hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-medium">Data</TableHead>
-              <TableHead className="text-[#ccc] font-medium">Tipo</TableHead>
-              <TableHead className="text-[#ccc] font-medium">Descrição</TableHead>
-              <TableHead className="text-[#ccc] font-medium">Categoria</TableHead>
-              <TableHead className="text-[#ccc] font-medium">Conta / Verba</TableHead>
-              <TableHead className="text-[#ccc] font-medium text-right">Valor</TableHead>
-              <TableHead className="text-[#ccc] font-medium text-center">Comprovante</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-8">
-                  <LoadingSpinner size="sm" variant="highlight" placement="inline" label="Carregando extrato financeiro..." />
-                </TableCell>
-              </TableRow>
-            ) : transacoes.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-12">
-                  <EmptyState
-                    title="Sem movimentações"
-                    description="Nenhuma transação financeira foi registrada para esta escola."
-                    icon={Inbox}
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              transacoes.map((t) => (
-                <TableRow key={t.id} className="border-[#222] hover:bg-[#1f1f1f]">
-                  <TableCell className="text-[#eee]">{t.data ? new Date(t.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
-                  <TableCell>
-                    {t.tipo === 'Receita' ? (
-                      <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded-md text-[11px] font-bold">RECEITA</span>
-                    ) : (
-                      <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-[11px] font-bold">DESPESA</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-[#eee] font-medium">{t.descricao}</TableCell>
-                  <TableCell className="text-[#aaa]">{t.categoria || '-'}</TableCell>
-                  <TableCell className="text-[#aaa]">{t.conta || '-'}</TableCell>
-                  <TableCell className={`text-right font-semibold ${t.tipo === 'Receita' ? 'text-green-400' : 'text-red-400'}`}>
-                    {t.tipo === 'Receita' ? '+' : '-'} {formatCurrency(Number(t.valor) || 0)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {t.comprovante_url ? (
-                      <a href={t.comprovante_url} target="_blank" rel="noreferrer">
-                        <Button variant="ghost" size="sm" className="h-7 border border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 text-xs cursor-pointer">
-                          Ver Anexo
-                        </Button>
-                      </a>
-                    ) : (
-                      <span className="text-[#555] text-xs">Sem anexo</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[#aaa] hover:text-white cursor-pointer">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <StandardTable
+          data={transacoesFiltradas}
+          keyExtractor={(t) => t.id}
+          loading={loading}
+          loadingMessage="Carregando extrato financeiro..."
+          emptyMessage="Nenhuma transação financeira foi registrada para esta escola."
+          columns={[
+            {
+              header: "Data",
+              accessor: (t) => t.data ? new Date(t.data).toLocaleDateString('pt-BR') : '-',
+            },
+            {
+              header: "Tipo",
+              accessor: (t) => t.tipo === 'Receita' ? (
+                <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded-md text-[11px] font-bold">RECEITA</span>
+              ) : (
+                <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-[11px] font-bold">DESPESA</span>
+              ),
+            },
+            {
+              header: "Descrição",
+              accessor: (t) => t.descricao,
+              className: "font-medium text-white",
+            },
+            {
+              header: "Categoria",
+              accessor: (t) => t.categoria || '-',
+              className: "text-zinc-400",
+            },
+            {
+              header: "Conta / Verba",
+              accessor: (t) => t.conta || '-',
+              className: "text-zinc-400",
+            },
+            {
+              header: "Valor",
+              accessor: (t) => (
+                <span className={`font-semibold ${t.tipo === 'Receita' ? 'text-green-400' : 'text-red-400'}`}>
+                  {t.tipo === 'Receita' ? '+' : '-'} {formatCurrency(Number(t.valor) || 0)}
+                </span>
+              ),
+              className: "text-right",
+              headClassName: "text-right",
+            },
+            {
+              header: "Comprovante",
+              accessor: (t) => t.comprovante_url ? (
+                <a href={t.comprovante_url} target="_blank" rel="noreferrer">
+                  <Button variant="ghost" size="sm" className="h-7 border border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 text-xs cursor-pointer">
+                    Ver Anexo
+                  </Button>
+                </a>
+              ) : (
+                <span className="text-[#555] text-xs">Sem anexo</span>
+              ),
+              className: "text-center",
+              headClassName: "text-center",
+            },
+            {
+              header: "",
+              accessor: () => (
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-[#aaa] hover:text-white cursor-pointer">
+                  <Download className="w-4 h-4" />
+                </Button>
+              ),
+              className: "text-right",
+            }
+          ]}
+        />
       </div>
 
       <ModalLancamentoFinanceiro 
