@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -101,96 +95,92 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Briefcase className="w-5 h-5 text-amber-500" />
-            {cargoToEdit ? 'Editar Cargo' : 'Criar Novo Cargo'}
-          </DialogTitle>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={cargoToEdit ? 'Editar Cargo' : 'Criar Novo Cargo'}
+      maxWidth="sm:max-w-md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label className="text-xs text-[#aaa]">Nome do Cargo *</Label>
+          <Input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Ex: Coordenador Pedagógico"
+            className="bg-[#18181a] border-[#27272a] text-white mt-1"
+            required
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-[#aaa]">Nome do Cargo *</Label>
-            <Input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Ex: Coordenador Pedagógico"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-[#aaa]">Nível Hierárquico</Label>
-              <select
-                value={nivel}
-                onChange={(e) => setNivel(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
-              >
-                <option value="1">Nível 1 (Direção Geral)</option>
-                <option value="2">Nível 2 (Gestão / Coordenação)</option>
-                <option value="3">Nível 3 (Corpo Docente / Técnico)</option>
-                <option value="4">Nível 4 (Apoio Operacional)</option>
-              </select>
-            </div>
-
-            <div>
-              <Label className="text-xs text-[#aaa]">Salário Base (R$)</Label>
-              <Input
-                value={salarioBase}
-                onChange={(e) => setSalarioBase(e.target.value)}
-                placeholder="Ex: 3500.00"
-                className="bg-[#18181a] border-[#27272a] text-white mt-1"
-              />
-            </div>
+            <Label className="text-xs text-[#aaa]">Nível Hierárquico</Label>
+            <select
+              value={nivel}
+              onChange={(e) => setNivel(e.target.value)}
+              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+            >
+              <option value="1">Nível 1 (Direção Geral)</option>
+              <option value="2">Nível 2 (Gestão / Coordenação)</option>
+              <option value="3">Nível 3 (Corpo Docente / Técnico)</option>
+              <option value="4">Nível 4 (Apoio Operacional)</option>
+            </select>
           </div>
 
           <div>
-            <Label className="text-xs text-[#aaa]">Descrição / Atribuições</Label>
+            <Label className="text-xs text-[#aaa]">Salário Base (R$)</Label>
             <Input
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Descrição sucinta das atribuições do cargo"
+              value={salarioBase}
+              onChange={(e) => setSalarioBase(e.target.value)}
+              placeholder="Ex: 3500.00"
               className="bg-[#18181a] border-[#27272a] text-white mt-1"
             />
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="cargoAtivo"
-              checked={ativo}
-              onChange={(e) => setAtivo(e.target.checked)}
-              className="w-4 h-4 accent-amber-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
-            />
-            <label htmlFor="cargoAtivo" className="text-sm text-slate-300 font-medium cursor-pointer">
-              Cargo Ativo para Lotação
-            </label>
-          </div>
+        <div>
+          <Label className="text-xs text-[#aaa]">Descrição / Atribuições</Label>
+          <Input
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Descrição sucinta das atribuições do cargo"
+            className="bg-[#18181a] border-[#27272a] text-white mt-1"
+          />
+        </div>
 
-          <DialogFooter className="gap-2 pt-4 border-t border-[#27272a]">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-amber-600 text-white hover:bg-amber-700 font-semibold gap-2"
-            >
-              <Save className="w-4 h-4" />
-              {loading ? 'Salvando...' : cargoToEdit ? 'Atualizar' : 'Criar Cargo'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex items-center gap-2 pt-2">
+          <input
+            type="checkbox"
+            id="cargoAtivo"
+            checked={ativo}
+            onChange={(e) => setAtivo(e.target.checked)}
+            className="w-4 h-4 accent-amber-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
+          />
+          <label htmlFor="cargoAtivo" className="text-sm text-slate-300 font-medium cursor-pointer">
+            Cargo Ativo para Lotação
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t border-[#27272a] mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="bg-amber-600 text-white hover:bg-amber-700 font-semibold gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {loading ? 'Salvando...' : cargoToEdit ? 'Atualizar' : 'Criar Cargo'}
+          </Button>
+        </div>
+      </form>
+    </StandardDialog>
   )
 }

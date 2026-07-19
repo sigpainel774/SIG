@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   Building2,
@@ -10,10 +10,8 @@ import {
   ArrowLeftRight,
   ClipboardList,
   X,
-  ArrowLeft,
   RefreshCw,
   Users,
-  CheckCircle2,
   Clock,
   Printer,
   Loader2
@@ -26,6 +24,9 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
+import { KPICard } from '@/components/KPICard'
+import { FrequenciaBar } from '@/components/FrequenciaBar'
+import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
 
 interface KPIData {
   totalAlunos: number
@@ -37,185 +38,18 @@ interface KPIData {
   atividadesPendentesSecretaria: number
 }
 
-function KPICard({
-  icon: Icon,
-  label,
-  value,
-  subLabel,
-  color = 'blue',
-  loading,
-  href,
-}: {
-  icon: any
-  label: string
-  value: number | string
-  subLabel?: string
-  color?: 'blue' | 'amber' | 'emerald' | 'violet' | 'rose'
-  loading?: boolean
-  href?: string
-}) {
-  const colors = {
-    blue:    { bg: 'bg-[#1b253b]', text: 'text-[#3ea6ff]', border: 'border-[#3ea6ff]/20' },
-    amber:   { bg: 'bg-[#2c1a0e]', text: 'text-amber-400', border: 'border-amber-500/20' },
-    emerald: { bg: 'bg-[#0d1f18]', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-    violet:  { bg: 'bg-[#1e1b2e]', text: 'text-violet-400', border: 'border-violet-500/20' },
-    rose:    { bg: 'bg-[#1f0d0d]', text: 'text-rose-400', border: 'border-rose-500/20' },
-  }
-  const c = colors[color]
-
-  const content = (
-    <Card className={cn(
-      'bg-surface-1 border-borderCustom rounded-2xl p-5 flex flex-col gap-3 shadow-sm',
-      href && 'hover:border-highlight/40 hover:bg-surface-2 transition-all duration-200 cursor-pointer'
-    )}>
-      <div className="flex items-center justify-between">
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', c.bg, 'border', c.border)}>
-          <Icon className={cn('w-5 h-5', c.text)} />
-        </div>
-        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
-      </div>
-      {loading ? (
-        <div className="h-8 w-16 bg-muted/20 rounded animate-pulse" />
-      ) : (
-        <p className="text-3xl font-bold text-foreground tabular-nums">{value}</p>
-      )}
-      {subLabel && !loading && (
-        <p className="text-xs text-muted-foreground">{subLabel}</p>
-      )}
-    </Card>
-  )
-
-  if (href) return <Link href={href}>{content}</Link>
-  return content
-}
-
-function FrequenciaBar({ feitas, total, loading }: { feitas: number; total: number; loading: boolean }) {
-  const pct = total > 0 ? Math.round((feitas / total) * 100) : 0
-  return (
-    <Card className="bg-surface-1 border-borderCustom rounded-2xl p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-semibold text-foreground">Frequência de Hoje</span>
-        </div>
-        {!loading && (
-          <span className={cn(
-            'text-sm font-bold tabular-nums',
-            pct >= 80 ? 'text-emerald-400' : pct >= 50 ? 'text-amber-400' : 'text-rose-400'
-          )}>
-            {pct}%
-          </span>
-        )}
-      </div>
-      {loading ? (
-        <div className="space-y-2">
-          <div className="h-3 bg-muted/20 rounded-full animate-pulse" />
-          <div className="h-3 w-1/2 bg-muted/20 rounded animate-pulse" />
-        </div>
-      ) : (
-        <>
-          <div className="w-full bg-muted/20 rounded-full h-2.5 overflow-hidden">
-            <div
-              className={cn(
-                'h-2.5 rounded-full transition-all duration-700',
-                pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500'
-              )}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {feitas} de {total} turmas registraram presença hoje
-          </p>
-        </>
-      )}
-    </Card>
-  )
-}
-
-function getSchoolIconProps(escola: any) {
-  if (escola.logo_url) {
-    const logoSrc = escola.logo_url.startsWith('data:') 
-      ? escola.logo_url 
-      : `${escola.logo_url}${escola.logo_url.includes('?') ? '&' : '?'}t=${Date.now()}`
-
-    return {
-      style: {},
-      content: (
-        <img
-          src={logoSrc}
-          alt={escola.nome}
-          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-        />
-      )
-    }
-  }
-
-  const nomeLower = escola.nome.toLowerCase()
-  
-  if (nomeLower.includes('moisés alves') || nomeLower.includes('moises alves')) {
-    return {
-      style: { backgroundColor: '#1d4ed8' },
-      content: <span className="text-white font-extrabold text-2xl tracking-tight select-none">EMV</span>
-    }
-  }
-  
-  if (nomeLower.includes('teste 1')) {
-    return {
-      style: { backgroundColor: '#4f46e5' },
-      content: <span className="text-white font-extrabold text-4xl select-none">1</span>
-    }
-  }
-
-  if (nomeLower.includes('teste 2')) {
-    return {
-      style: { backgroundColor: '#c2410c' },
-      content: <span className="text-white font-extrabold text-4xl select-none">2</span>
-    }
-  }
-
-  if (nomeLower.includes('eraldo tinoco')) {
-    return {
-      style: { backgroundColor: '#1b4e9b' },
-      content: <Building2 className="w-10 h-10 text-white" />
-    }
-  }
-
-  // Fallback para as outras escolas sem logo
-  const words = escola.nome
-    .replace(/(municipal|colégio|colegio|escola|centro|educacional|de|da|do|para)/gi, '')
-    .trim()
-    .split(/\s+/)
-  const initials = words
-    .map((w: string) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 3)
-
-  const colors = [
-    '#1d4ed8', // blue
-    '#059669', // emerald
-    '#7c3aed', // violet
-    '#db2777', // pink
-    '#d97706', // amber
-    '#dc2626', // red
-    '#0891b2'  // cyan
-  ]
-  const charCodeSum = escola.nome.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)
-  const bgStyle = { backgroundColor: colors[charCodeSum % colors.length] }
-
-  return {
-    style: bgStyle,
-    content: initials ? (
-      <span className="text-white font-extrabold text-xl select-none">{initials}</span>
-    ) : (
-      <Building2 className="w-10 h-10 text-white" />
-    )
-  }
-}
 
 export default function HomePage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
   const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+
+  const isMounted = useRef(true)
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   const isProfessor = acessos.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
@@ -252,7 +86,7 @@ export default function HomePage() {
   const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
   const fetchKpis = useCallback(async (escolaId: string) => {
-    setLoadingKpi(true)
+    if (isMounted.current) setLoadingKpi(true)
     const supabase = createClient()
     const hoje = new Date().toISOString().split('T')[0]
     const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
@@ -320,19 +154,23 @@ export default function HomePage() {
       // Turmas únicas com frequência hoje
       const turmasComFreq = new Set((turmasHoje ?? []).map((f: any) => f.turma_id)).size
 
-      setKpi({
-        totalAlunos: totalAlunos ?? 0,
-        totalTurmas: totalTurmas ?? 0,
-        ocorrenciasMes: ocorrenciasMes ?? 0,
-        transferenciasPendentes: transferenciasPendentes ?? 0,
-        turmasComFrequenciaHoje: turmasComFreq,
-        totalTurmasAtivas: todasTurmas?.length ?? 0,
-        atividadesPendentesSecretaria: atividadesPendentes ?? 0,
-      })
+      if (isMounted.current) {
+        setKpi({
+          totalAlunos: totalAlunos ?? 0,
+          totalTurmas: totalTurmas ?? 0,
+          ocorrenciasMes: ocorrenciasMes ?? 0,
+          transferenciasPendentes: transferenciasPendentes ?? 0,
+          turmasComFrequenciaHoje: turmasComFreq,
+          totalTurmasAtivas: todasTurmas?.length ?? 0,
+          atividadesPendentesSecretaria: atividadesPendentes ?? 0,
+        })
+      }
     } catch (err) {
       console.error('Erro ao carregar KPIs:', err)
     } finally {
-      setLoadingKpi(false)
+      if (isMounted.current) {
+        setLoadingKpi(false)
+      }
     }
   }, [])
 
@@ -345,7 +183,7 @@ export default function HomePage() {
   // Buscar estatísticas rápidas por escola para professores multi-lotados
   const fetchSchoolStats = useCallback(async () => {
     if (!funcionario?.id || vinculosAtivos.length === 0) return
-    setLoadingSchoolStats(true)
+    if (isMounted.current) setLoadingSchoolStats(true)
     const supabase = createClient() as any
     const hoje = new Date().toISOString().split('T')[0]
     
@@ -403,11 +241,15 @@ export default function HomePage() {
           }
         })
       )
-      setSchoolStats(stats)
+      if (isMounted.current) {
+        setSchoolStats(stats)
+      }
     } catch (err) {
       console.error('Erro ao buscar estatísticas das escolas:', err)
     } finally {
-      setLoadingSchoolStats(false)
+      if (isMounted.current) {
+        setLoadingSchoolStats(false)
+      }
     }
   }, [funcionario?.id, vinculosAtivos])
 
@@ -420,8 +262,10 @@ export default function HomePage() {
   // Buscar dados específicos do professor para a escola selecionada
   const fetchTeacherDashboard = useCallback(async (escolaId: string) => {
     if (!funcionario?.id) return
-    setLoadingTeacherKpi(true)
-    setLoadingAulasHoje(true)
+    if (isMounted.current) {
+      setLoadingTeacherKpi(true)
+      setLoadingAulasHoje(true)
+    }
     const supabase = createClient() as any
     const hoje = new Date().toISOString().split('T')[0]
 
@@ -468,7 +312,9 @@ export default function HomePage() {
         .order('horario_inicio')
 
       if (ahError) throw ahError
-      setAulasHoje(aulasHojeData || [])
+      if (isMounted.current) {
+        setAulasHoje(aulasHojeData || [])
+      }
 
       // 4. Chamadas Pendentes Hoje
       const aulasAtivas = (aulasHojeData || []).filter((a: any) => a.status !== 'cancelado')
@@ -500,17 +346,21 @@ export default function HomePage() {
 
       if (atError) throw atError
 
-      setTeacherKpi({
-        totalTurmas: tIds.length,
-        totalAlunos,
-        chamadasPendentes: chamadasPendentesCount,
-        atividadesImpressao: atividadesCount ?? 0
-      })
+      if (isMounted.current) {
+        setTeacherKpi({
+          totalTurmas: tIds.length,
+          totalAlunos,
+          chamadasPendentes: chamadasPendentesCount,
+          atividadesImpressao: atividadesCount ?? 0
+        })
+      }
     } catch (err) {
       console.error('Erro ao buscar dados do painel do professor:', err)
     } finally {
-      setLoadingTeacherKpi(false)
-      setLoadingAulasHoje(false)
+      if (isMounted.current) {
+        setLoadingTeacherKpi(false)
+        setLoadingAulasHoje(false)
+      }
     }
   }, [funcionario?.id])
 
