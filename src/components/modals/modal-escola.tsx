@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -150,16 +144,34 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Building2 className="w-5 h-5 text-purple-400" />
-            {escolaToEdit ? 'Editar Unidade Escolar' : 'Cadastrar Nova Unidade Escolar'}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={escolaToEdit ? 'Editar Unidade Escolar' : 'Cadastrar Nova Unidade Escolar'}
+      maxWidth="sm:max-w-md"
+      footer={
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="form-escola"
+            disabled={loading || uploading}
+            className="bg-purple-600 text-white hover:bg-purple-700 font-semibold gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {loading ? 'Salvando...' : escolaToEdit ? 'Atualizar' : 'Cadastrar'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="form-escola" onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-3">
               <Label className="text-xs text-[#aaa]">Nome Completo da Escola *</Label>
@@ -234,26 +246,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             </label>
           </div>
 
-          <DialogFooter className="gap-2 pt-4 border-t border-[#27272a]">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || uploading}
-              className="bg-purple-600 text-white hover:bg-purple-700 font-semibold gap-2"
-            >
-              <Save className="w-4 h-4" />
-              {loading ? 'Salvando...' : escolaToEdit ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

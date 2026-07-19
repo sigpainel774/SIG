@@ -1,14 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
@@ -144,17 +137,24 @@ export function ModalConfiguracoesNotificacoes({
   )
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] bg-[#121214] border border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Sliders className="w-5 h-5 text-purple-400" />
-            Configuração de Notificações
-          </DialogTitle>
-          <DialogDescription className="text-zinc-400 text-xs mt-1">
-            Selecione quais tipos de notificações no painel cada nível ou cargo de usuário da rede receberá.
-          </DialogDescription>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Configuração de Notificações"
+      description="Selecione quais tipos de notificações no painel cada nível ou cargo de usuário da rede receberá."
+      maxWidth="sm:max-w-[700px]"
+      footer={
+        <div className="flex justify-end w-full pt-2 border-t border-[#27272a]">
+          <Button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold cursor-pointer"
+          >
+            Concluir
+          </Button>
+        </div>
+      }
+    >
 
         <div className="space-y-4 py-4">
           {loading ? (
@@ -205,17 +205,6 @@ export function ModalConfiguracoesNotificacoes({
             </p>
           </div>
         </div>
-
-        <DialogFooter className="pt-2 border-t border-[#27272a]">
-          <Button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold cursor-pointer"
-          >
-            Concluir
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

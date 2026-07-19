@@ -329,12 +329,14 @@ export default function AdminDispositivosPage() {
       />
 
       {/* Modal Criar / Editar */}
-      <ModalDispositivo
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        dispositivoToEdit={dispositivoToEdit}
-        onSuccess={loadDispositivos}
-      />
+      {modalOpen && (
+        <ModalDispositivo
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          dispositivoToEdit={dispositivoToEdit}
+          onSuccess={loadDispositivos}
+        />
+      )}
     </div>
   )
 }

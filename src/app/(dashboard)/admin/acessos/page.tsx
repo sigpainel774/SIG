@@ -7,13 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
@@ -281,38 +275,37 @@ export default function AdminAcessosPage() {
       />
 
       {/* Modal de Confirmação para Excluir Acesso */}
-      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-[#18181b] border-[#3f3f46] text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-rose-400">
-              <AlertTriangle className="w-5 h-5 text-rose-500" />
-              Remover Acesso do Usuário
-            </DialogTitle>
-          </DialogHeader>
-
+      {confirmDeleteOpen && (
+        <StandardDialog
+          open={confirmDeleteOpen}
+          onOpenChange={setConfirmDeleteOpen}
+          title="Remover Acesso do Usuário"
+          maxWidth="sm:max-w-[400px]"
+          footer={
+            <div className="flex justify-end gap-2 w-full pt-2 border-t border-[#3f3f46]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmDeleteOpen(false)}
+                className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExcluirAcesso}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                Confirmar Exclusão
+              </Button>
+            </div>
+          }
+        >
           <p className="text-zinc-300 text-sm leading-relaxed">
             Tem certeza que deseja remover permanentemente o nível de acesso do usuário <strong className="text-white">{itemParaExcluir?.funcionario}</strong>?
           </p>
-
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmDeleteOpen(false)}
-              className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleExcluirAcesso}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
-            >
-              Confirmar Exclusão
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </StandardDialog>
+      )}
     </div>
   )
 }

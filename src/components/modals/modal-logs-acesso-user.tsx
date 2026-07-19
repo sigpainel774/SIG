@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -64,17 +59,24 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
   }, [open, userEmail])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2.5 text-white">
-            <Activity className="w-5 h-5 text-sky-400" />
-            Logs de Acesso: <span className="text-sky-400">{userName || userEmail}</span>
-          </DialogTitle>
-          <p className="text-xs text-zinc-400 mt-1">
-            Histórico recente de autenticação e acessos da conta <strong className="text-white">{userEmail}</strong>.
-          </p>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Logs de Acesso: ${userName || userEmail || 'Usuário'}`}
+      description={`Histórico recente de autenticação e acessos da conta ${userEmail ?? ''}.`}
+      maxWidth="sm:max-w-2xl"
+      footer={
+        <div className="flex justify-end w-full pt-2 border-t border-[#27272a]">
+          <Button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-medium"
+          >
+            Fechar
+          </Button>
+        </div>
+      }
+    >
 
         <div className="space-y-4 py-2">
           <div className="rounded-xl border border-[#27272a] bg-[#18181b] overflow-hidden max-h-[350px] overflow-y-auto">
@@ -132,18 +134,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
               </TableBody>
             </Table>
           </div>
-
-          <div className="flex justify-end pt-2">
-            <Button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-medium"
-            >
-              Fechar
-            </Button>
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

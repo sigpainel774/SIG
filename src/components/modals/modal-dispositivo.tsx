@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,16 +145,34 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <MonitorSmartphone className="w-5 h-5 text-sky-500" />
-            {dispositivoToEdit ? 'Editar Dispositivo' : 'Cadastrar Dispositivo'}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={dispositivoToEdit ? 'Editar Dispositivo' : 'Cadastrar Dispositivo'}
+      maxWidth="sm:max-w-md"
+      footer={
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="form-dispositivo"
+            disabled={loading}
+            className="bg-sky-600 text-white hover:bg-sky-700 font-semibold gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {loading ? 'Salvando...' : dispositivoToEdit ? 'Atualizar' : 'Cadastrar'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="form-dispositivo" onSubmit={handleSubmit} className="space-y-4 py-2">
           <div>
             <Label className="text-xs text-[#aaa]">Nome do Dispositivo *</Label>
             <Input
@@ -273,26 +285,7 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
             </select>
           </div>
 
-          <DialogFooter className="gap-2 pt-4 border-t border-[#27272a]">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-sky-600 text-white hover:bg-sky-700 font-semibold gap-2"
-            >
-              <Save className="w-4 h-4" />
-              {loading ? 'Salvando...' : dispositivoToEdit ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

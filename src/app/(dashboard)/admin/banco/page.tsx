@@ -19,13 +19,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { toast } from 'sonner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -327,15 +321,32 @@ export default function AdminBancoPage() {
       </div>
 
       {/* ── Confirmation Dialog ── */}
-      <Dialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
-        <DialogContent className="sm:max-w-[420px] bg-[#18181b] border-[#3f3f46] text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-rose-400">
-              <AlertTriangle className="w-5 h-5 text-rose-500" />
-              Confirmar Exclusão Definitiva
-            </DialogTitle>
-          </DialogHeader>
-
+      {confirmAction && (
+        <StandardDialog
+          open={!!confirmAction}
+          onOpenChange={() => setConfirmAction(null)}
+          title="Confirmar Exclusão Definitiva"
+          maxWidth="sm:max-w-[420px]"
+          footer={
+            <div className="flex justify-end gap-2 w-full pt-2 border-t border-[#3f3f46]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmAction(null)}
+                className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExecuteHardDelete}
+                className="bg-rose-700 hover:bg-rose-800 text-white font-bold"
+              >
+                Confirmar Exclusão
+              </Button>
+            </div>
+          }
+        >
           <div className="space-y-3">
             <p className="text-zinc-300 text-sm leading-relaxed">
               Você está prestes a executar:{' '}
@@ -350,26 +361,8 @@ export default function AdminBancoPage() {
               </p>
             </div>
           </div>
-
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmAction(null)}
-              className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleExecuteHardDelete}
-              className="bg-rose-700 hover:bg-rose-800 text-white font-bold"
-            >
-              Confirmar Exclusão
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </StandardDialog>
+      )}
     </div>
   )
 }

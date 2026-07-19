@@ -1,9 +1,6 @@
 'use client'
 
-import { 
-  Dialog, 
-  DialogContent,
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { CheckCircle } from 'lucide-react'
 
@@ -20,22 +17,30 @@ export function ModalSucesso({ open = false, onOpenChange, message = 'Alteraçõ
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[350px] bg-[#121212] border-green-500 text-center p-6 border shadow-2xl">
+    <StandardDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Sucesso!"
+      maxWidth="sm:max-w-[350px]"
+      footer={
+        <div className="w-full pt-2">
+          <Button
+            onClick={() => handleOpenChange(false)}
+            className="w-full bg-green-500 text-black hover:bg-green-600 font-bold"
+          >
+            OK
+          </Button>
+        </div>
+      }
+    >
+      <div className="text-center">
         <div className="flex justify-center mb-4 mt-2">
           <CheckCircle className="w-12 h-12 text-green-500" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Sucesso!</h2>
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
           {message}
         </p>
-        <Button
-          onClick={() => handleOpenChange(false)}
-          className="w-full bg-green-500 text-black hover:bg-green-600 font-bold"
-        >
-          OK
-        </Button>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </StandardDialog>
   )
 }

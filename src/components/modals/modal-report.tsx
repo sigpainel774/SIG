@@ -1,13 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -108,16 +102,34 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
     <>
       {/* ES-7 corrigido: Dialog e controlado via open/onOpenChange; trigger externo renderizado diretamente */}
       {trigger}
-      <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-borderCustom text-foreground rounded-[18px] shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-            <Bug className="w-5 h-5 text-rose-500" />
-            Reportar Erro ou Sugestao
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+      <StandardDialog
+        open={activeOpen}
+        onOpenChange={handleOpenChange}
+        title="Reportar Erro ou Sugestão"
+        maxWidth="sm:max-w-md"
+        footer={
+          <div className="flex justify-end gap-2 w-full pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              className="bg-muted text-foreground border-border hover:bg-muted/80 rounded-lg cursor-pointer font-semibold"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="form-report"
+              disabled={loading}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2 cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              {loading ? 'Enviando...' : 'Enviar Reporte'}
+            </Button>
+          </div>
+        }
+      >
+        <form id="form-report" onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="flex gap-2">
             <Button
               type="button"
@@ -159,27 +171,8 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
             />
           </div>
 
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              className="bg-muted text-foreground border-border hover:bg-muted/80 rounded-lg cursor-pointer font-semibold"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2 cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-              {loading ? 'Enviando...' : 'Enviar Reporte'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-      </Dialog>
+      </StandardDialog>
     </>
   )
 }

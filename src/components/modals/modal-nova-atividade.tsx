@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -234,16 +228,44 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[560px] bg-[#141416] border-[#26262a] text-white p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-6 border-b border-[#26262a]">
-          <DialogTitle className="text-white flex items-center gap-2 text-lg font-bold">
-            <FileText className="w-5 h-5 text-[#3ea6ff]" />
-            Nova Atividade
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit}>
+    <StandardDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Nova Atividade"
+      maxWidth="sm:max-w-[560px]"
+      footer={
+        <div className="flex justify-end gap-3 w-full pt-4 border-t border-[#26262a]">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleOpenChange(false)}
+            disabled={loading}
+            className="text-zinc-400 hover:text-white hover:bg-[#26262a]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="form-nova-atividade"
+            disabled={loading}
+            className="bg-[#3ea6ff] hover:bg-[#0090ff] text-black font-bold gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {loadingMsg || 'Enviando...'}
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Enviar Atividade
+              </>
+            )}
+          </Button>
+        </div>
+      }
+    >
+      <form id="form-nova-atividade" onSubmit={handleSubmit}>
           <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
             {/* Escola (somente leitura) */}
             <div className="space-y-1.5">
@@ -384,36 +406,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
             </div>
           </div>
 
-          <DialogFooter className="p-6 border-t border-[#26262a] flex gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => handleOpenChange(false)}
-              disabled={loading}
-              className="text-zinc-400 hover:text-white hover:bg-[#26262a]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-[#3ea6ff] hover:bg-[#0090ff] text-black font-bold gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {loadingMsg || 'Enviando...'}
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Enviar Atividade
-                </>
-              )}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

@@ -219,12 +219,14 @@ export default function AdminEscolasPage() {
       />
 
       {/* Modal de Criar / Editar */}
-      <ModalEscola
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        escolaToEdit={escolaToEdit}
-        onSuccess={loadEscolas}
-      />
+      {modalOpen && (
+        <ModalEscola
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          escolaToEdit={escolaToEdit}
+          onSuccess={loadEscolas}
+        />
+      )}
 
       {/* Modal de Configurar Anexos Padrão */}
       {escolaParaAnexos && (

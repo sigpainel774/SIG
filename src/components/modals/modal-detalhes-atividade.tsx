@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -163,30 +158,22 @@ export function ModalDetalhesAtividade({
   if (!atividade) return null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] bg-[#141416] border-[#26262a] text-white p-0 gap-0 overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="p-6 border-b border-[#26262a]">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <ClipboardList className="w-5 h-5 text-[#3ea6ff] mt-0.5 shrink-0" />
-              <div>
-                <DialogTitle className="text-white text-lg font-bold leading-snug">
-                  {atividade.titulo ?? '—'}
-                </DialogTitle>
-                <p className="text-zinc-500 text-sm mt-1">
-                  Ano letivo: {atividade.ano_letivo ?? '—'}
-                </p>
-              </div>
-            </div>
-            <Badge
-              variant="outline"
-              className={`shrink-0 text-xs font-semibold px-2.5 py-1 ${statusInfo.class}`}
-            >
-              {statusInfo.label}
-            </Badge>
-          </div>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={atividade.titulo ?? 'Detalhes da Atividade'}
+      description={`Ano letivo: ${atividade.ano_letivo ?? '—'}`}
+      maxWidth="sm:max-w-[640px]"
+    >
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#26262a]">
+          <span className="text-xs text-zinc-400">Status da Atividade:</span>
+          <Badge
+            variant="outline"
+            className={`shrink-0 text-xs font-semibold px-2.5 py-1 ${statusInfo.class}`}
+          >
+            {statusInfo.label}
+          </Badge>
+        </div>
 
         <div className="overflow-y-auto max-h-[70vh]">
           {/* Informações */}
@@ -344,8 +331,7 @@ export function ModalDetalhesAtividade({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }
 
