@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
  
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~20,5%
-* **Linhas de Código Removidas/Otimizadas:** ~1375
-* **Redução Acumulada do Projeto:** ~3,92%
+* **Percentual Atual de Duplicação:** ~19,9%
+* **Linhas de Código Removidas/Otimizadas:** ~1467
+* **Redução Acumulada do Projeto:** ~4,19%
  
 ---
  
@@ -25,11 +25,11 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~650 | ~415 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>` (incluindo Anexos, Confirmação de Senha e Reset). |
 | **Grupo 2** | `useState` de campos pessoais (Aluno ↔ Funcionário) | ✅ Concluído | ~400 | ~267 linhas puras removidas. Lógicas de inicialização, reset e masks centralizadas via hook `usePessoaForm`. |
 | **Grupo 3** | Cabeçalho de Impressão Municipal | ✅ Concluído | ~360 | ~115 linhas puras removidas. Simetria física de logos da prefeitura/secretaria e cache-buster unificados via componente `<PrintHeader>`. |
-| **Grupo 4** | Padrão de Busca/Filtro Local | ✅ Concluído | ~500 | ~50 linhas puras removidas. Lógica de busca case-insensitive e com normalização de acentos centralizada via hook `useLocalSearch`. |
-| **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ✅ Concluído | ~600 | ~22 linhas puras removidas. Lógica de tratamento de erros assíncronos e loading unificada no utilitário `executeWithToast`. |
+| **Grupo 4** | Padrão de Busca/Filtro Local | ✅ Concluído | ~550 | ~75 linhas puras removidas. Lógica de busca case-insensitive e com normalização de acentos centralizada via hook `useLocalSearch` (incluindo alunos, funcionários, cargos e escolas). |
+| **Grupo 5** | Boilerplate de Toasts (Try/Catch/Finally) | ✅ Concluído | ~650 | ~44 linhas puras removidas. Lógica de tratamento de erros assíncronos e loading unificada no utilitário `executeWithToast` (incluindo funcionários e solicitações de liberação). |
 | **Grupo 6** | Verificações de Permissão por Cargo | ✅ Concluído | ~250 | ~12 linhas puras removidas. Lógicas de verificação de cargos (Professor/Coordenador) unificadas na store `useAuthStore`. |
 | **Grupo 7** | Formatação de Data | ✅ Concluído | ~130 | ~8 linhas puras removidas. Padronização de formatação de data com correção automática de fuso horário via helper `formatDate`. |
-| **Grupo 8** | Upload de Arquivo com Preview | ✅ Concluído (Parcial) | ~120 | ~30 linhas puras removidas. Migração do logo upload no modal de escola para o componente `<FileUpload>`. |
+| **Grupo 8** | Upload de Arquivo com Preview | ✅ Concluído (Parcial) | ~150 | ~65 linhas puras removidas. Migração do logo upload no modal de escola e unificação de upload/sanitização no modal de anexos do aluno. |
 | **Grupo 9** | Estado de Loading | ✅ Concluído (Parcial) | ~300 | ~30 linhas puras removidas. Migração de loaders manuais para o `<LoadingSpinner>` em Cargos e Escolas. |
 | **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ✅ Concluído (Parcial) | ~280 | ~25 linhas puras economizadas no modal-aluno. Lógicas de consulta de tabelas auxiliares (turmas/escolas) migradas para hooks SWR, reduzindo código imperativo e requests repetidas. |
 | **Grupo 11** | Empty State Genérico | ✅ Concluído (Parcial) | ~160 | ~28 linhas puras removidas. Migração de mensagens locais de lista vazia para o `<EmptyState>` em Cargos e Escolas. |
@@ -39,6 +39,12 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
  
 ## 📝 Histórico de Alterações e Impacto Real
  
+### [19/07/2026] - Refatoração de Buscas, Toasts e Uploads (Frentes 3, 4 e 5) + Correção de Bugs
+* Migração das listagens de Alunos e Funcionários para utilizarem a busca resiliente a acentos e case-insensitive por meio do hook centralizado `useLocalSearch`.
+* Substituição de blocos try/catch e loaders manuais por chamadas unificadas no utilitário `executeWithToast` nas mutações de responder liberação e desligar funcionários.
+* Centralização da sanitização de nomes de arquivos e extensão do Supabase Storage no modal de anexos do aluno e no formulário de dados do funcionário.
+* Validação do build executada com 100% de sucesso.
+
 ### [19/07/2026] - Refatoração de Tabelas (Frente 1), Modais (Frente 2) e Correção de Bugs
 * Migração das tabelas administrativas de Atestados (`atestados`), Ocorrências (`ocorrencias`), Transferências (`transferencias`) e Caixa Escolar (`financeiro`) para utilizarem o componente reutilizável `<StandardTable>`.
 * Correção de bug silencioso de filtro fantasma no Caixa Escolar (`financeiro`), aplicando os filtros de conta e mês de forma funcional nos saldos e extratos.

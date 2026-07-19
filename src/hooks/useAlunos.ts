@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { executeWithToast } from '@/lib/action-handler'
 
 export interface Aluno {
   id: string
@@ -167,26 +169,24 @@ export function useAlunos() {
   ) => {
     const supabase = createClient()
 
-    try {
-      const { error } = await (supabase.from('solicitacoes_edicao_aluno' as any) as any)
-        .update({
-          status,
-          aprovado_por: funcionario?.id ?? null,
-          respondido_em: new Date().toISOString(),
-        } as any)
-        .eq('id', id)
-
-      if (error) throw error
-
-      toast.success(
-        `Solicitação ${status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso!`
-      )
-      carregarSolicitacoes()
-      carregarAlunos()
-    } catch (err: any) {
-      toast.error(`Erro ao responder solicitação: ${err.message}`)
-      console.error(err)
-    }
+    await executeWithToast({
+      action: async () => {
+        const { error } = await (supabase.from('solicitacoes_edicao_aluno' as any) as any)
+          .update({
+            status,
+            aprovado_por: funcionario?.id ?? null,
+            respondido_em: new Date().toISOString(),
+          } as any)
+          .eq('id', id)
+        if (error) throw error
+      },
+      successMessage: `Solicitação ${status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso!`,
+      errorMessage: 'Erro ao responder solicitação',
+      onSuccess: () => {
+        carregarSolicitacoes()
+        carregarAlunos()
+      }
+    })
   }
 
   /* ── Carregar ao montar e ao trocar de escola ────────────────── */
@@ -197,17 +197,12 @@ export function useAlunos() {
   }, [escolaAtivaId])
 
   /* ── Filtro por busca ───────────────────────────────────────── */
-  const alunosFiltrados = useMemo(
-    () =>
-      alunos.filter(
-        (aluno) =>
-          aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (aluno.numero_matricula && aluno.numero_matricula.includes(searchTerm)) ||
-          (aluno.cpf && aluno.cpf.includes(searchTerm)) ||
-          (aluno.inep && aluno.inep.includes(searchTerm))
-      ),
-    [alunos, searchTerm]
-  )
+  const alunosFiltrados = useLocalSearch(alunos, searchTerm, [
+    'nome',
+    'numero_matricula',
+    'cpf',
+    'inep',
+  ])
 
   return {
     alunos,

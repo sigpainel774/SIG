@@ -100,6 +100,24 @@ export function ModalAlunosAnexos({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, aluno?.id])
 
+  // Helper centralizado para upload de arquivo no Supabase Storage
+  const uploadFileToStorage = async (file: File): Promise<string> => {
+    const sanitizedFileName = file.name.replace(/[^\w.-]/g, '_')
+    const filePath = `${aluno.id}/${Date.now()}_${sanitizedFileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('alunos-anexos')
+      .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('alunos-anexos')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  }
+
   // Upload de anexo personalizado
   const handleUpload = async () => {
     if (!novoNome.trim()) {
@@ -113,18 +131,7 @@ export function ModalAlunosAnexos({
 
     setUploading(true)
     try {
-      const sanitizedFileName = novoArquivo.name.replace(/[^\w.-]/g, '_')
-      const filePath = `${aluno.id}/${Date.now()}_${sanitizedFileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('alunos-anexos')
-        .upload(filePath, novoArquivo)
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('alunos-anexos')
-        .getPublicUrl(filePath)
+      const publicUrl = await uploadFileToStorage(novoArquivo)
 
       const { error: dbError } = await supabase
         .from('alunos_anexos')
@@ -155,18 +162,7 @@ export function ModalAlunosAnexos({
   const handleUploadPadrao = async (nomePadrao: string, file: File) => {
     setUploadingPadraoName(nomePadrao)
     try {
-      const sanitizedFileName = file.name.replace(/[^\w.-]/g, '_')
-      const filePath = `${aluno.id}/${Date.now()}_${sanitizedFileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('alunos-anexos')
-        .upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('alunos-anexos')
-        .getPublicUrl(filePath)
+      const publicUrl = await uploadFileToStorage(file)
 
       const { error: dbError } = await supabase
         .from('alunos_anexos')
@@ -191,18 +187,7 @@ export function ModalAlunosAnexos({
   const handleAtualizarArquivo = async (anexoId: string, file: File, nomeAnexo: string) => {
     setLoading(true)
     try {
-      const sanitizedFileName = file.name.replace(/[^\w.-]/g, '_')
-      const filePath = `${aluno.id}/${Date.now()}_${sanitizedFileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('alunos-anexos')
-        .upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('alunos-anexos')
-        .getPublicUrl(filePath)
+      const publicUrl = await uploadFileToStorage(file)
 
       const { error: dbError } = await supabase
         .from('alunos_anexos')
