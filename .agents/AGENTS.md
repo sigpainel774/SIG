@@ -37,6 +37,7 @@
 
 - **Evitar strings inválidas como fallback**: Ao passar IDs para colunas do tipo UUID no banco de dados, nunca utilize strings de fallback descritivas como 'sys-admin', 'root' ou 'system' quando o ID original for indefinido ou o usuário não possuir um ID de registro (como pode ocorrer com o superadmin raiz). O Postgres rejeitará a inserção/atualização com erro de tipo (`invalid input syntax for type uuid`).
 - **Evitar envio de Strings Vazias ("")**: Formulários e inputs não devem enviar strings vazias para colunas do tipo UUID. Certifique-se de tratar a string vazia convertendo-a para `null` ou um valor UUID válido antes de persistir no banco.
+- **Validação de UUIDs em RPCs e Notificações**: Sempre valide o formato e a existência de UUIDs (ex: `solicitante_id` ou `destinatario_id`) antes de repassá-los a funções do Postgres (RPCs), sob o risco de travar a transação silenciosamente devido a erro de tipagem no Postgres.
 - **Usar null**: Sempre utilize `null` como fallback seguro para UUIDs inexistentes (`id: funcionario?.id ?? null`), garantindo que o tipo da coluna no banco aceite valores nulos caso o registro não tenha dono específico.
 <!-- END:uuid-fallback-rule -->
 
@@ -44,6 +45,7 @@
 # Exclusões em Cascata e RLS
 
 - **Verificar RLS em tabelas filhas**: Ao planejar ou executar a exclusão de registros que possuem relacionamentos `ON DELETE CASCADE`, sempre verifique se existem políticas de RLS ativas nas tabelas filhas. A exclusão em cascata aciona as políticas de exclusão (`DELETE` ou `ALL`) nas tabelas dependentes, e restrições nelas podem bloquear toda a transação ou causar erros inesperados (ex: infinite recursion).
+- **Políticas de Update/Delete Indiretos (Anexos/Soft-deletes)**: Fluxos secundários (ex: atualizar/soft-deletar comprovantes em `alunos_anexos` durante aprovação de transferências) requerem permissões explícitas de RLS nas tabelas secundárias para o usuário executor. Certifique-se de que a política RLS da tabela secundária dê cobertura para atualizações acionadas em cadeia, ou isole em triggers/RPCs de segurança.
 <!-- END:rls-cascade-rule -->
 
 <!-- BEGIN:rls-creation-rule -->
@@ -170,6 +172,7 @@
 - **Tabelas de Listagem (StandardTable)**: Novas listagens tabulares devem utilizar o componente genérico `<StandardTable>` (de `src/components/ui/table.tsx`). Ele já fornece spinners de carregamento, tratamento estilizado para estados vazios (Empty States) e design denso consistente.
 - **Formulários de Dados Pessoais (usePessoaForm)**: Novas telas ou modais que lidem com cadastro ou edição de dados pessoais e endereço (alunos, funcionários, responsáveis, etc.) devem utilizar o hook `usePessoaForm` (de `src/hooks/usePessoaForm.ts`) para unificar os estados de controle, inicializações, resets e máscaras (ex: CPF e CEP).
 - **Cabeçalhos de Documentos Oficiais (PrintHeader)**: Qualquer novo layout de visualização de impressão ou documento oficial deve utilizar o componente `<PrintHeader>` (de `src/components/print/print-header.tsx`), assegurando a correta simetria física das logomarcas da prefeitura/secretaria e aplicação automatizada de query param timestamp para evitar cache do navegador.
-- **Carregamento de Dados Auxiliares (SWR)**: Evite utilizar hooks `useEffect` com lógica imperativa para buscar dados de tabelas auxiliares (ex: carregar listas de escolas, turmas ou cargos na abertura de um modal). Utilize hooks baseados em `useSWR` para obter carregamento declarativo, reativo e com cache automático compartilhado entre componentes.
 - **Prevenção de Memory Leaks & Race Conditions**: Ao implementar `useEffect` ou hooks customizados que realizam cargas assíncronas paralelas (como `Promise.all` buscando dados do Supabase) ou escutam canais em tempo real, sempre utilize uma flag de controle de montagem (`isMounted` via `useRef` ou flag local `active`) para evitar atualizações de estado (`setState`) em componentes desmontados ou fora de ordem. Isso previne warnings de memory leak e potenciais inconsistências de estado caso o componente seja fechado e reaberto rapidamente.
+- **Race Conditions em URL Params e Roteamento**: Eventos de efeito (`useEffect`) que detectam alterações em query parameters e realizam fetches baseados neles devem validar se o componente ainda está ativo ao finalizar.
+- **Sincronização em Guardas de Rota / Autenticação**: Validações assíncronas de nível de perfil (`is_superadmin`) seguidas de buscas automáticas por dados devem obrigatoriamente abortar execuções de estado subsequentes caso o usuário navegue para fora da rota antes da resolução da promise.
 <!-- END:refactoring-and-duplication-rules -->
