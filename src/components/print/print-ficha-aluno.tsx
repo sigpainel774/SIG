@@ -43,35 +43,36 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
   const dm = aluno.dados_matricula || {}
 
   useEffect(() => {
+    let active = true
     const fetchDados = async () => {
       const supabase = createClient()
       
       // 1. Unidade Escolar
-      const targetEscolaId = aluno.escola_id || dm.escolaId
+      const targetEscolaId = aluno.escola_id ?? dm.escolaId
       if (targetEscolaId) {
         const { data: esc } = await supabase
           .from('escolas')
           .select('nome')
           .eq('id', targetEscolaId)
           .single()
-        if (esc) {
+        if (esc && active) {
           setEscolaNome(esc.nome)
         }
       }
 
       // 2. Turma e Ano
-      const targetTurmaId = aluno.turma_id || dm.turmaIdAluno
+      const targetTurmaId = aluno.turma_id ?? dm.turmaIdAluno
       if (targetTurmaId) {
         const { data: tur } = await supabase
           .from('turmas')
           .select('nome, turno')
           .eq('id', targetTurmaId)
           .single()
-        if (tur) {
-          setTurnoVal(tur.turno || '')
+        if (tur && active) {
+          setTurnoVal(tur.turno ?? '')
           
           // Parse class name e.g. "6° A" or "6 - A"
-          const nomeTurma = tur.nome || ''
+          const nomeTurma = tur.nome ?? ''
           const regex = /^(\d+)(?:\s*[-°]?\s*)([a-zA-Z])$/i
           const match = nomeTurma.trim().match(regex)
           if (match) {
@@ -93,6 +94,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
     }
 
     fetchDados()
+    return () => { active = false }
   }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
 
   useEffect(() => {
@@ -175,7 +177,7 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
             centerContent={
               <>
                 <h1 className="text-base font-extrabold tracking-wider text-gray-800 uppercase">FICHA DE MATRÍCULA</h1>
-                <p className="text-xs font-bold text-gray-600">Ano Letivo {dm.anoLetivo || '2026'}</p>
+                <p className="text-xs font-bold text-gray-600">Ano Letivo {dm.anoLetivo ?? '2026'}</p>
               </>
             }
           />
@@ -186,17 +188,17 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <tr>
                 <td className="border border-black p-1 bg-gray-50/50 w-3/4">
                   <span className="font-bold block text-[9px] uppercase text-gray-700">Unidade Escolar</span>
-                  <span className="font-bold text-[11px]">{escolaNome || aluno.escola_nome || dm.escolaNome || 'Colégio Moisés Alves'}</span>
+                  <span className="font-bold text-[11px]">{escolaNome ?? aluno.escola_nome ?? dm.escolaNome ?? 'Colégio Moisés Alves'}</span>
                 </td>
                 <td className="border border-black p-1 bg-gray-50/50 w-1/4">
                   <span className="font-bold block text-[9px] uppercase text-gray-700">Localização da UE</span>
-                  <span>{dm.localizacaoUE || 'Zona Urbana'}</span>
+                  <span>{dm.localizacaoUE ?? 'Zona Urbana'}</span>
                 </td>
               </tr>
               <tr>
                 <td className="border border-black p-1">
                   <span className="font-bold block text-[9px] uppercase text-gray-700">Tipo de matrícula</span>
-                  <span>{dm.tipoMatricula || 'Renovação'}</span>
+                  <span>{dm.tipoMatricula ?? 'Renovação'}</span>
                 </td>
                 <td className="border border-black p-1">
                   <span className="font-bold block text-[9px] uppercase text-gray-700">Data</span>
@@ -338,15 +340,15 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
               <tr>
                 <td className="border border-black p-1 w-1/3">
                   <span className="font-bold block text-[9px] text-gray-700">Ano / Série / Etapa</span>
-                  <span className="font-bold">{aluno.serie || dm.serieAluno || turmaAno || '-'}</span>
+                  <span className="font-bold">{aluno.serie ?? dm.serieAluno ?? turmaAno ?? '-'}</span>
                 </td>
                 <td className="border border-black p-1 w-1/3">
                   <span className="font-bold block text-[9px] text-gray-700">Turno</span>
-                  <span>{dm.turnoAluno || turnoVal || '-'}</span>
+                  <span>{dm.turnoAluno ?? turnoVal ?? '-'}</span>
                 </td>
                 <td className="border border-black p-1 w-1/3">
                   <span className="font-bold block text-[9px] text-gray-700">Turma</span>
-                  <span>{dm.turmaAluno || turmaLetra || '-'}</span>
+                  <span>{dm.turmaAluno ?? turmaLetra ?? '-'}</span>
                 </td>
               </tr>
             </tbody>
