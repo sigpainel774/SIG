@@ -1,6 +1,6 @@
 'use client'
 
-import { Loader2, Printer, Pencil, Trash2 } from 'lucide-react'
+import { Loader2, Printer, Pencil, UserX } from 'lucide-react'
 
 export interface Funcionario {
   id: string
@@ -26,7 +26,7 @@ interface FuncionariosListProps {
   handleAbrirLotacoes: (func: Funcionario) => void
   handleImprimir: (funcId: string) => Promise<void>
   handleEditar: (func: Funcionario) => void
-  handleExcluir: (func: Funcionario) => Promise<void>
+  handleDesligar: (func: Funcionario) => Promise<void>
 }
 
 /* ── Helpers Locais de Formatação ───────────────────────────── */
@@ -68,7 +68,7 @@ export function FuncionariosList({
   handleAbrirLotacoes,
   handleImprimir,
   handleEditar,
-  handleExcluir
+  handleDesligar
 }: FuncionariosListProps) {
   return (
     <>
@@ -173,14 +173,14 @@ export function FuncionariosList({
                         <Pencil className="w-4 h-4" />
                       </button>
                     )}
-                    {/* Excluir */}
+                    {/* Desligar */}
                     {isEditMode && (
                       <button
-                        onClick={() => handleExcluir(func)}
-                        title="Excluir funcionário"
+                        onClick={() => handleDesligar(func)}
+                        title="Desligar funcionário"
                         className="w-9 h-9 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <UserX className="w-4 h-4" />
                       </button>
                     )}
                   </div>
