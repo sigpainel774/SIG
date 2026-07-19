@@ -31,6 +31,8 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
 import { IconTile } from '@/components/ui/icon-tile'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { executeWithToast } from '@/lib/action-handler'
 
 // Novos Componentes e Helpers
 import { FuncionariosQuickActions } from '@/components/funcionarios/FuncionariosQuickActions'
@@ -247,23 +249,19 @@ export default function FuncionariosPage() {
 
   /* ── Filtro ─────────────────────────────────────────────────── */
 
-  const funcsFiltrados = useMemo(() => {
-    return funcionarios.filter((f) => {
-      const matchBusca =
-        f.nome.toLowerCase().includes(busca.toLowerCase()) ||
-        f.email.toLowerCase().includes(busca.toLowerCase()) ||
-        (f.cpf ?? '').includes(busca) ||
-        (f.orgao ?? '').toLowerCase().includes(busca.toLowerCase())
+  const funcionariosBuscados = useLocalSearch(funcionarios, busca, ['nome', 'email', 'cpf', 'orgao'])
 
+  const funcsFiltrados = useMemo(() => {
+    return funcionariosBuscados.filter((f) => {
       const matchCargo = filtroCargo === 'todos' || f.cargo === filtroCargo
 
       const matchStatus =
         filtroStatus === 'todos' ||
         (f.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
 
-      return matchBusca && matchCargo && matchStatus
+      return matchCargo && matchStatus
     })
-  }, [funcionarios, busca, filtroCargo, filtroStatus])
+  }, [funcionariosBuscados, filtroCargo, filtroStatus])
 
   /* ── Ações dos cards ────────────────────────────────────────── */
 
@@ -284,20 +282,18 @@ export default function FuncionariosPage() {
     )
       return
 
-    try {
-      const { error } = await supabase
-        .from('funcionarios')
-        .update({ status: 'desligado' })
-        .eq('id', func.id)
-
-      if (error) throw error
-
-      toast.success(`Funcionário "${func.nome}" desligado com sucesso.`)
-      await carregarFuncionarios()
-    } catch (err) {
-      toast.error('Erro ao desligar funcionário.')
-      console.error(err)
-    }
+    await executeWithToast({
+      action: async () => {
+        const { error } = await supabase
+          .from('funcionarios')
+          .update({ status: 'desligado' })
+          .eq('id', func.id)
+        if (error) throw error
+      },
+      successMessage: `Funcionário "${func.nome}" desligado com sucesso.`,
+      errorMessage: 'Erro ao desligar funcionário',
+      onSuccess: carregarFuncionarios,
+    })
   }
 
   const handleImprimir = async (funcId: string) => {

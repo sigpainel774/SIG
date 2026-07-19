@@ -21,6 +21,14 @@ const generateUUID = (): string => {
   })
 }
 
+const sanitizeFileName = (name: string): { base: string; ext: string } => {
+  const parts = name.split('.')
+  const rawExt = parts.length > 1 ? parts.pop() : 'bin'
+  const ext = String(rawExt).replace(/[^\w-]/g, '').toLowerCase()
+  const base = parts.join('.').replace(/[^\w.-]/g, '_')
+  return { base, ext }
+}
+
 interface UseFuncionarioFormStatesProps {
   props: ModalFuncionarioProps
   isOpen: boolean
@@ -372,7 +380,7 @@ export function useFuncionarioFormStates({
     setLoading(true)
     const supabase = createClient()
     try {
-      const ext = file.name.split('.').pop()
+      const { ext } = sanitizeFileName(file.name)
       const path = `docs/${empId}/${docType}_${Date.now()}.${ext}`
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documentos')
@@ -439,7 +447,7 @@ export function useFuncionarioFormStates({
 
       // Upload da foto 3x4 se houver arquivo novo
       if (fotoFile) {
-        const ext = fotoFile.name.split('.').pop()
+        const { ext } = sanitizeFileName(fotoFile.name)
         const path = `${empId}/foto3x4_${Date.now()}.${ext}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('fotos-funcionarios')
