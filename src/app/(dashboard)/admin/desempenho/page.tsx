@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { 
   Gauge, 
@@ -20,7 +20,41 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'sonner'
+
+// Auxiliares para formatação de valores e cores
+const getRatingColor = (rating: string) => {
+  switch (rating) {
+    case 'good': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+    case 'needs-improvement': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+    case 'poor': return 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+    default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  }
+}
+
+const getMetricIcon = (name: string) => {
+  switch (name) {
+    case 'ROUTE_CHANGE_MS': return <TrendingUp className="w-4 h-4 text-violet-400" />
+    case 'LCP': return <Layers className="w-4 h-4 text-sky-400" />
+    case 'FID': return <Clock className="w-4 h-4 text-emerald-400" />
+    case 'TTFB': return <Wifi className="w-4 h-4 text-amber-400" />
+    default: return <Gauge className="w-4 h-4 text-gray-400" />
+  }
+}
+
+const getMetricLabel = (name: string) => {
+  switch (name) {
+    case 'ROUTE_CHANGE_MS': return 'Navegação entre Telas'
+    case 'TTFB': return 'Tempo até o 1º Byte (TTFB)'
+    case 'FCP': return 'Primeira Pintura (FCP)'
+    case 'LCP': return 'Maior Pintura (LCP)'
+    case 'FID': return 'Atraso de Entrada (FID)'
+    case 'INP': return 'Interação para Próxima Pintura'
+    case 'CLS': return 'Deslocamento de Layout (CLS)'
+    default: return name
+  }
+}
 
 export default function DesempenhoPage() {
   const supabase = createClient()
@@ -55,10 +89,18 @@ export default function DesempenhoPage() {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageSize] = useState<number>(20)
   const [totalLogsCount, setTotalLogsCount] = useState<number>(0)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   // Memoizar e encapsular loadData
   const loadData = useCallback(async () => {
-    setLoading(true)
+    if (isMounted.current) setLoading(true)
     try {
       // 1. Carregar estatísticas agregadas via RPC do Supabase
       const { data: statsData, error: statsError } = await supabase.rpc(
@@ -67,7 +109,7 @@ export default function DesempenhoPage() {
       )
       if (statsError) throw statsError
       
-      if (statsData) {
+      if (statsData && isMounted.current) {
         // Garantindo que arrays nulos venham como vazios
         const parsedData = (typeof statsData === 'string' ? JSON.parse(statsData) : statsData) as any
         setDashboardStats({
@@ -97,66 +139,45 @@ export default function DesempenhoPage() {
         .range(fromRange, toRange)
 
       if (logsError) throw logsError
-      setRecentLogs(logsData || [])
-      setTotalLogsCount(totalCount ?? 0)
-
+      if (isMounted.current) {
+        setRecentLogs(logsData || [])
+        setTotalLogsCount(totalCount || 0)
+      }
     } catch (err: any) {
-      console.error('Erro ao buscar dados de desempenho:', err)
-      toast.error('Erro ao atualizar painel de desempenho: ' + (err.message ?? err))
+      console.error('Erro ao carregar métricas de desempenho:', err)
+      toast.error('Erro ao carregar estatísticas: ' + (err.message || 'Erro de conexão'))
+      if (isMounted.current) setRecentLogs([])
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
-  }, [supabase, period, currentPage, pageSize])
+  }, [period, currentPage, pageSize, supabase])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  // Auto-refresh a cada 1 minuto se a aba estiver ativa/visível
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadData()
-      }
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [loadData])
-
   const handleCleanup = async () => {
-    if (!confirm('Deseja realmente limpar as métricas mais antigas que 30 dias?')) return
-    
-    setLoading(true)
+    const confirm = window.confirm('Deseja apagar os registros de performance anteriores a 30 dias?')
+    if (!confirm) return
+
+    if (isMounted.current) setLoading(true)
     try {
-      const { error } = await supabase.rpc('cleanup_performance_metrics')
+      const limitDate = new Date()
+      limitDate.setDate(limitDate.getDate() - 30)
+
+      const { error } = await supabase
+        .from('performance_metrics')
+        .delete()
+        .lt('created_at', limitDate.toISOString())
+
       if (error) throw error
+
       toast.success('Métricas antigas limpas com sucesso!')
-      setCurrentPage(1)
-      await loadData()
+      loadData()
     } catch (err: any) {
-      toast.error('Falha ao limpar histórico: ' + (err.message ?? err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Auxiliares para formatação de valores e cores
-  const getRatingColor = (rating: string) => {
-    switch (rating) {
-      case 'good': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-      case 'needs-improvement': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-      case 'poor': return 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-    }
-  }
-
-  const getMetricIcon = (name: string) => {
-    switch (name) {
-      case 'ROUTE_CHANGE_MS': return <TrendingUp className="w-4 h-4 text-violet-400" />
-      case 'LCP': return <Layers className="w-4 h-4 text-sky-400" />
-      case 'FID': return <Clock className="w-4 h-4 text-emerald-400" />
-      case 'TTFB': return <Wifi className="w-4 h-4 text-amber-400" />
-      default: return <Gauge className="w-4 h-4 text-gray-400" />
+      console.error('Erro ao limpar métricas antigas:', err)
+      toast.error('Erro ao limpar registros: ' + (err.message || 'Erro de conexão'))
+      if (isMounted.current) setLoading(false)
     }
   }
 
@@ -166,80 +187,65 @@ export default function DesempenhoPage() {
     return `${Math.round(value)}ms`
   }
 
-  const getMetricLabel = (name: string) => {
-    switch (name) {
-      case 'ROUTE_CHANGE_MS': return 'Navegação entre Telas'
-      case 'TTFB': return 'Tempo até o 1º Byte (TTFB)'
-      case 'FCP': return 'Primeira Pintura (FCP)'
-      case 'LCP': return 'Maior Pintura (LCP)'
-      case 'FID': return 'Atraso de Entrada (FID)'
-      case 'INP': return 'Interação para Próxima Pintura'
-      case 'CLS': return 'Deslocamento de Layout (CLS)'
-      default: return name
-    }
-  }
-
   return (
-    <div className="space-y-6 text-slate-100">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#232328]">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Gauge className="w-6 h-6 text-violet-500" /> Painel de Desempenho Global
-          </h2>
-          <p className="text-[#aaa] text-sm mt-1">Diagnóstico e monitoramento de velocidade e gargalos de processamento.</p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Seletor de Período */}
-          <div className="flex bg-[#121214] border border-[#27272a] rounded-lg p-1">
-            {[
-              { label: '24 Horas', value: 1 },
-              { label: '7 Dias', value: 7 },
-              { label: '30 Dias', value: 30 }
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  setPeriod(opt.value)
-                  setCurrentPage(1)
-                }}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  period === opt.value
-                    ? 'bg-violet-600 text-white shadow'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+    <div className="space-y-6">
+      <PageHeader
+        title="Painel de Desempenho Global"
+        description="Diagnóstico e monitoramento de velocidade e gargalos de processamento."
+        icon={Gauge}
+        iconVariant="primary"
+        backHref="/admin"
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Seletor de Período */}
+            <div className="flex bg-[#121214] border border-[#27272a] rounded-lg p-1">
+              {[
+                { label: '24 Horas', value: 1 },
+                { label: '7 Dias', value: 7 },
+                { label: '30 Dias', value: 30 }
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setPeriod(opt.value)
+                    setCurrentPage(1)
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                    period === opt.value
+                      ? 'bg-violet-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <Button 
+              variant="outline"
+              onClick={() => loadData()}
+              disabled={loading}
+              className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] h-10"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+
+            <Button 
+              variant="outline"
+              onClick={handleCleanup}
+              disabled={loading}
+              className="bg-[#2a0808] border-[#ef4444]/30 text-[#f87171] hover:bg-[#450a0a] h-10"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Limpar Antigos
+            </Button>
           </div>
-
-          <Button 
-            variant="outline"
-            onClick={() => loadData()}
-            disabled={loading}
-            className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024]"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-
-          <Button 
-            variant="outline"
-            onClick={handleCleanup}
-            disabled={loading}
-            className="bg-[#2a0808] border-[#ef4444]/30 text-[#f87171] hover:bg-[#450a0a]"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Limpar Antigos
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
         <Card className="bg-[#121214] border-[#232326] text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P95</CardDescription>

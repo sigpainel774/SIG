@@ -1,14 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogTrigger
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,17 +56,36 @@ export function ModalTransferirAluno({
   }
 
   return (
-    <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger render={trigger as any} />}
-      
-      <DialogContent className="sm:max-w-[450px] bg-[#18181b] border-[#3f3f46] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2 m-0 mt-0">
-            <ArrowRightLeft className="w-5 h-5 text-highlight" />
-            Solicitar Transferência
-          </DialogTitle>
-        </DialogHeader>
-        
+    <>
+      {trigger && (
+        <div onClick={() => handleOpenChange(true)} className="inline-block cursor-pointer">
+          {trigger}
+        </div>
+      )}
+      <StandardDialog
+        open={activeOpen}
+        onOpenChange={handleOpenChange}
+        title="Solicitar Transferência"
+        maxWidth="sm:max-w-[450px]"
+        footer={
+          <div className="flex justify-end gap-3 w-full">
+            <Button 
+              variant="ghost" 
+              onClick={() => handleOpenChange(false)}
+              className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSalvarTransferencia}
+              disabled={loading}
+              className="bg-highlight text-black hover:bg-highlight/90"
+            >
+              {loading ? 'Enviando...' : 'Solicitar Transferência'}
+            </Button>
+          </div>
+        }
+      >
         <p className="text-[#aaa] text-sm mb-4">
           Você está solicitando a transferência de <strong className="text-white">{alunoNome}</strong> para outra escola. A escola de destino precisará aprovar.
         </p>
@@ -115,24 +127,7 @@ export function ModalTransferirAluno({
             <span className="text-[11px] text-[#666]">Formatos aceitos: PDF, JPG, PNG.</span>
           </div>
         </div>
-
-        <DialogFooter className="mt-6 flex justify-end gap-3 sm:justify-end">
-          <Button 
-            variant="ghost" 
-            onClick={() => handleOpenChange(false)}
-            className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
-          >
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleSalvarTransferencia}
-            disabled={loading}
-            className="bg-highlight text-black hover:bg-highlight/90"
-          >
-            {loading ? 'Enviando...' : 'Solicitar Transferência'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </StandardDialog>
+    </>
   )
 }

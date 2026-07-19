@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -255,82 +249,13 @@ export function ModalTransferirFuncionario({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-[#18181b] border-[#3f3f46] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2 m-0">
-            <ArrowRightLeft className="w-5 h-5 text-sky-500" />
-            Solicitar Transferência (Funcionário)
-          </DialogTitle>
-        </DialogHeader>
-
-        <p className="text-[#aaa] text-xs mb-4">
-          Transfira ou solicite a movimentação de um funcionário ativo desta unidade escolar para outra escola da rede ou para fora do município.
-        </p>
-
-        <div className="space-y-4">
-          {/* Selecionar Funcionário */}
-          <div className="space-y-2">
-            <Label className="text-[#ccc] text-[13px]">Funcionário da Escola</Label>
-            <select
-              value={funcionarioSelecionadoId}
-              onChange={(e) => setFuncionarioSelecionadoId(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
-            >
-              <option value="">
-                {funcionarios.length === 0 ? 'Carregando funcionários...' : 'Selecione o funcionário...'}
-              </option>
-              {funcionarios.map(f => (
-                <option key={f.id} value={f.id}>{f.nome} ({f.cargo ?? 'Sem Cargo'})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Checkbox Fora da Rede */}
-          <div className="flex items-center gap-3 p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
-            <input 
-              type="checkbox" 
-              id="foraDaRedeFunc" 
-              checked={foraDaRede}
-              onChange={(e) => setForaDaRede(e.target.checked)}
-              className="w-4 h-4 accent-sky-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
-            />
-            <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-400 font-semibold cursor-pointer">
-              Transferência para FORA DA REDE MUNICIPAL (Desvincula e Arquiva)
-            </label>
-          </div>
-
-          {/* Selecionar Escola de Destino se não for Fora da Rede */}
-          {!foraDaRede && (
-            <div className="space-y-2">
-              <Label className="text-[#ccc] text-[13px]">Escola de Destino</Label>
-              <select
-                value={escolaDestinoId}
-                onChange={(e) => setEscolaDestinoId(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
-              >
-                <option value="">Selecione a escola destino...</option>
-                {escolas.map(e => (
-                  <option key={e.id} value={e.id}>{e.nome}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Motivo */}
-          <div className="space-y-2">
-            <Label className="text-[#ccc] text-[13px]">Motivo / Justificativa</Label>
-            <Textarea
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              className="w-full bg-[#121212] border-[#3f3f46] text-white resize-none text-sm"
-              rows={3}
-              placeholder="Digite o motivo da transferência ou portaria correspondente..."
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="mt-6 flex justify-end gap-3">
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Solicitar Transferência (Funcionário)"
+      maxWidth="sm:max-w-[480px]"
+      footer={
+        <div className="flex justify-end gap-3 w-full">
           <Button 
             variant="ghost" 
             onClick={() => onOpenChange(false)}
@@ -345,8 +270,74 @@ export function ModalTransferirFuncionario({
           >
             {loading ? 'Processando...' : 'Confirmar'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      }
+    >
+      <p className="text-[#aaa] text-xs mb-4">
+        Transfira ou solicite a movimentação de um funcionário ativo desta unidade escolar para outra escola da rede ou para fora do município.
+      </p>
+
+      <div className="space-y-4">
+        {/* Selecionar Funcionário */}
+        <div className="space-y-2">
+          <Label className="text-[#ccc] text-[13px]">Funcionário da Escola</Label>
+          <select
+            value={funcionarioSelecionadoId}
+            onChange={(e) => setFuncionarioSelecionadoId(e.target.value)}
+            className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
+          >
+            <option value="">
+              {funcionarios.length === 0 ? 'Carregando funcionários...' : 'Selecione o funcionário...'}
+            </option>
+            {funcionarios.map(f => (
+              <option key={f.id} value={f.id}>{f.nome} ({f.cargo ?? 'Sem Cargo'})</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Checkbox Fora da Rede */}
+        <div className="flex items-center gap-3 p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
+          <input 
+            type="checkbox" 
+            id="foraDaRedeFunc" 
+            checked={foraDaRede}
+            onChange={(e) => setForaDaRede(e.target.checked)}
+            className="w-4 h-4 accent-sky-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
+          />
+          <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-400 font-semibold cursor-pointer">
+            Transferência para FORA DA REDE MUNICIPAL (Desvincula e Arquiva)
+          </label>
+        </div>
+
+        {/* Selecionar Escola de Destino se não for Fora da Rede */}
+        {!foraDaRede && (
+          <div className="space-y-2">
+            <Label className="text-[#ccc] text-[13px]">Escola de Destino</Label>
+            <select
+              value={escolaDestinoId}
+              onChange={(e) => setEscolaDestinoId(e.target.value)}
+              className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
+            >
+              <option value="">Selecione a escola destino...</option>
+              {escolas.map(e => (
+                <option key={e.id} value={e.id}>{e.nome}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Motivo */}
+        <div className="space-y-2">
+          <Label className="text-[#ccc] text-[13px]">Motivo / Justificativa</Label>
+          <Textarea
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            className="w-full bg-[#121212] border-[#3f3f46] text-white resize-none text-sm"
+            rows={3}
+            placeholder="Digite o motivo da transferência ou portaria correspondente..."
+          />
+        </div>
+      </div>
+    </StandardDialog>
   )
 }

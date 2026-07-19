@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { StandardTable } from '@/components/ui/table'
-import { AlertTriangle, RefreshCw, CheckCircle2, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { PageHeader } from '@/components/ui/page-header'
+import { AlertTriangle, RefreshCw, CheckCircle2, Search } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { IconTile } from '@/components/ui/icon-tile'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
 
 export default function OcorrenciasPage() {
+  const [searchTerm, setSearchTerm] = useState('')
   const [dataFiltro, setDataFiltro] = useState('')
   const [gravidadeFiltro, setGravidadeFiltro] = useState('todas')
   const [ocorrencias, setOcorrencias] = useState<any[]>([])
@@ -54,6 +55,28 @@ export default function OcorrenciasPage() {
     fetchOcorrencias()
   }, [])
 
+  // 1. Aplica busca com acentuação e busca insensível a caixa alta/baixa
+  const ocorrenciasBuscadas = useLocalSearch(ocorrencias, searchTerm, (item, term) => {
+    const alunoNome = item.alunos?.nome ?? ''
+    const turmaNome = item.turmas?.nome ?? ''
+    const funcNome = item.funcionarios?.nome ?? ''
+    const tipo = item.tipo ?? ''
+    const descricao = item.descricao ?? ''
+
+    return [alunoNome, turmaNome, funcNome, tipo, descricao].some(val => 
+      val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term)
+    )
+  })
+
+  // 2. Aplica filtros secundários de data e gravidade de forma resiliente
+  const ocorrenciasFiltradas = useMemo(() => {
+    return ocorrenciasBuscadas.filter((item) => {
+      if (dataFiltro && item.data !== dataFiltro) return false
+      if (gravidadeFiltro !== 'todas' && item.gravidade !== gravidadeFiltro) return false
+      return true
+    })
+  }, [ocorrenciasBuscadas, dataFiltro, gravidadeFiltro])
+
   const getGravidadeColor = (gravidade: string) => {
     switch (gravidade) {
       case 'Alta': return 'bg-destructive/20 text-destructive border-destructive/30'
@@ -73,59 +96,62 @@ export default function OcorrenciasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
-        <div>
-          <div className="flex items-center gap-3">
-            <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <IconTile icon={AlertTriangle} variant="destructive" className="h-10 w-10 shrink-0" /> 
-              Gestão de Ocorrências
-            </h1>
+      <PageHeader
+        title="Gestão de Ocorrências"
+        description="Monitoramento disciplinar e pedagógico da escola."
+        icon={AlertTriangle}
+        iconVariant="destructive"
+        backHref="/home"
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por aluno, tipo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 w-[200px] bg-background border-border text-foreground text-xs h-10"
+              />
+            </div>
+
+            <Input 
+              type="date"
+              value={dataFiltro}
+              onChange={(e) => setDataFiltro(e.target.value)}
+              className="bg-background border-border text-foreground w-auto text-xs h-10"
+            />
+            
+            <Select value={gravidadeFiltro} onValueChange={(val) => val && setGravidadeFiltro(val)}>
+              <SelectTrigger className="w-[160px] bg-background border-border text-foreground text-xs h-10">
+                <SelectValue placeholder="Gravidade" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border text-foreground">
+                <SelectItem value="todas">Todas as Gravidades</SelectItem>
+                <SelectItem value="Baixa">Baixa</SelectItem>
+                <SelectItem value="Média">Média</SelectItem>
+                <SelectItem value="Alta">Alta</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button 
+              variant="outline" 
+              className="bg-background border-border text-foreground hover:bg-hoverCustom h-10"
+              onClick={fetchOcorrencias}
+              disabled={loading}
+              title="Recarregar ocorrências"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-          <p className="text-muted-foreground text-sm font-normal mt-2 ml-14">Monitoramento disciplinar e pedagógico da escola.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Input 
-            type="date"
-            value={dataFiltro}
-            onChange={(e) => setDataFiltro(e.target.value)}
-            className="bg-background border-border text-foreground w-auto"
-          />
-          
-          <Select value={gravidadeFiltro} onValueChange={(val) => val && setGravidadeFiltro(val)}>
-            <SelectTrigger className="w-[180px] bg-background border-border text-foreground">
-              <SelectValue placeholder="Gravidade" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border text-foreground">
-              <SelectItem value="todas">Todas as Gravidades</SelectItem>
-              <SelectItem value="Baixa">Baixa</SelectItem>
-              <SelectItem value="Média">Média</SelectItem>
-              <SelectItem value="Alta">Alta</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button 
-            variant="outline" 
-            className="bg-background border-border text-foreground hover:bg-hoverCustom"
-            onClick={fetchOcorrencias}
-            disabled={loading}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       <StandardTable
-        data={ocorrencias}
+        data={ocorrenciasFiltradas}
         keyExtractor={(oco) => oco.id}
         loading={loading}
         loadingMessage="Carregando ocorrências..."
-        emptyMessage="Nenhuma ocorrência disciplinar registrada."
+        emptyMessage="Nenhuma ocorrência disciplinar encontrada com os filtros selecionados."
         columns={[
           {
             header: "Data",
@@ -134,33 +160,33 @@ export default function OcorrenciasPage() {
           },
           {
             header: "Aluno",
-            accessor: (oco) => oco.alunos?.nome,
+            accessor: (oco) => oco.alunos?.nome ?? 'Sem nome',
             className: "text-foreground font-semibold text-sm",
           },
           {
             header: "Turma",
-            accessor: (oco) => oco.turmas?.nome,
+            accessor: (oco) => oco.turmas?.nome ?? 'Sem turma',
             className: "text-muted-foreground text-sm font-normal",
           },
           {
             header: "Tipo / Gravidade",
             accessor: (oco) => (
               <div className="flex flex-col gap-1 items-start">
-                <span className="text-sm font-medium text-foreground">{oco.tipo}</span>
+                <span className="text-sm font-medium text-foreground">{oco.tipo ?? '-'}</span>
                 <Badge variant="outline" className={`text-xs font-semibold ${getGravidadeColor(oco.gravidade)}`}>
-                  {oco.gravidade}
+                  {oco.gravidade ?? 'Não informada'}
                 </Badge>
               </div>
             ),
           },
           {
             header: "Descrição",
-            accessor: (oco) => oco.descricao,
+            accessor: (oco) => oco.descricao ?? '-',
             className: "text-muted-foreground text-sm font-normal max-w-[250px] truncate",
           },
           {
             header: "Registro por",
-            accessor: (oco) => oco.funcionarios?.nome || '-',
+            accessor: (oco) => oco.funcionarios?.nome ?? '-',
             className: "text-muted-foreground text-sm font-normal",
           },
           {
@@ -168,7 +194,7 @@ export default function OcorrenciasPage() {
             accessor: (oco) => (
               <span className={`flex items-center gap-1.5 text-sm font-medium ${getStatusPaisColor(oco.status_pais)}`}>
                 {oco.status_pais === 'Cientes' && <CheckCircle2 className="w-4 h-4 text-success" />}
-                {oco.status_pais}
+                {oco.status_pais ?? 'Não notificado'}
               </span>
             ),
           }
@@ -177,3 +203,4 @@ export default function OcorrenciasPage() {
     </div>
   )
 }
+

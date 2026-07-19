@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { StandardTable } from '@/components/ui/table'
-import { FilePlus, Search, CheckCircle2, Clock, Paperclip, ArrowLeft } from 'lucide-react'
+import { PageHeader } from '@/components/ui/page-header'
+import { FilePlus, Search, CheckCircle2, Clock, Paperclip } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { ModalAtestado } from '@/components/ModalAtestado'
@@ -79,38 +80,30 @@ export default function AtestadosPage() {
     const term = searchTerm.trim().toLowerCase()
     if (!term) return atestados
     return atestados.filter((item) => {
-      const nome = item.funcionarios?.nome?.toLowerCase() || ''
-      const cid = item.cid?.toLowerCase() || ''
+      const nome = (item.funcionarios?.nome ?? '').toLowerCase()
+      const cid = (item.cid ?? '').toLowerCase()
       return nome.includes(term) || cid.includes(term)
     })
   }, [atestados, searchTerm])
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
-        <div>
-          <div className="flex items-center gap-3">
-            <Link href="/funcionarios">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FilePlus className="w-6 h-6 text-emerald-500" /> 
-              Atestados Médicos
-            </h2>
-          </div>
-          <p className="text-[#aaa] text-sm mt-1">Controle de faltas justificadas e afastamentos de saúde.</p>
-        </div>
-        
-        <Button 
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <FilePlus className="w-4 h-4" />
-          Registrar Atestado
-        </Button>
-      </div>
+      <PageHeader
+        title="Atestados Médicos"
+        description="Controle de faltas justificadas e afastamentos de saúde."
+        icon={FilePlus}
+        iconVariant="success"
+        backHref="/funcionarios"
+        actions={
+          <Button 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <FilePlus className="w-4 h-4" />
+            Registrar Atestado
+          </Button>
+        }
+      />
 
       <div className="flex items-center gap-2 max-w-sm">
         <div className="relative flex-1">
