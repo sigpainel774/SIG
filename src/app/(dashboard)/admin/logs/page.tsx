@@ -7,8 +7,51 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { PageHeader } from '@/components/ui/page-header'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { toast } from 'sonner'
+
+function LogDiffButton({ log }: { log: any }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="text-[#3ea6ff] hover:bg-[#3ea6ff]/10 h-8 font-medium cursor-pointer"
+      >
+        <Eye className="w-4 h-4 mr-1.5" /> Diff
+      </Button>
+
+      {open && (
+        <StandardDialog
+          open={open}
+          onOpenChange={setOpen}
+          title={`Inspecionar Auditoria — ${log.action ?? 'N/A'}`}
+          maxWidth="sm:max-w-2xl"
+        >
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
+                <h4 className="text-rose-400 font-bold mb-2 text-sm">Dados Anteriores</h4>
+                <pre className="text-xs text-gray-300 overflow-x-auto max-h-[300px] scrollbar-thin">
+                  {JSON.stringify(log.old_data || {}, null, 2)}
+                </pre>
+              </div>
+              <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
+                <h4 className="text-emerald-400 font-bold mb-2 text-sm">Dados Novos</h4>
+                <pre className="text-xs text-gray-300 overflow-x-auto max-h-[300px] scrollbar-thin">
+                  {JSON.stringify(log.new_data || {}, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </StandardDialog>
+      )}
+    </>
+  )
+}
 
 export default function AdminLogsPage() {
   const supabase = createClient()
@@ -101,38 +144,7 @@ export default function AdminLogsPage() {
       header: 'Inspecionar',
       headClassName: 'text-center',
       className: 'text-center',
-      accessor: (log) => (
-        <Dialog>
-          <DialogTrigger>
-            <div className="text-[#3ea6ff] hover:bg-[#3ea6ff]/10 inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 py-2 cursor-pointer transition-colors">
-              <Eye className="w-4 h-4 mr-1.5" /> Diff
-            </div>
-          </DialogTrigger>
-          <DialogContent className="bg-[#121214] border-[#27272a] text-white max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                Inspecionar Auditoria: <Badge variant="outline">{log.action ?? 'N/A'}</Badge>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
-                  <h4 className="text-rose-400 font-bold mb-2 text-sm">Dados Anteriores</h4>
-                  <pre className="text-xs text-gray-300 overflow-x-auto">
-                    {JSON.stringify(log.old_data || {}, null, 2)}
-                  </pre>
-                </div>
-                <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
-                  <h4 className="text-emerald-400 font-bold mb-2 text-sm">Dados Novos</h4>
-                  <pre className="text-xs text-gray-300 overflow-x-auto">
-                    {JSON.stringify(log.new_data || {}, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )
+      accessor: (log) => <LogDiffButton log={log} />
     }
   ]
 

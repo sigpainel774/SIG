@@ -28,13 +28,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 
 export interface BugReport {
   id: string
@@ -472,19 +466,56 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Modal Detalhes & Responder Reporte */}
-      {selectedReport && (
-        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="sm:max-w-xl bg-[#121214] border-[#27272a] text-white">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold flex items-center gap-2 text-white">
-                {selectedReport.tipo === 'bug' ? (
-                  <Bug className="w-5 h-5 text-rose-500" />
-                ) : (
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                )}
-                Gerenciar Reporte ROOT
-              </DialogTitle>
-            </DialogHeader>
+      {selectedReport && modalOpen && (
+        <StandardDialog
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          title={`Gerenciar Reporte ROOT — ${selectedReport.titulo}`}
+          description={`Por: ${selectedReport.autor_nome ?? 'Usuário'} — ${selectedReport.escola ?? 'Escola'}`}
+          maxWidth="sm:max-w-xl"
+          footer={
+            <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-end w-full border-t border-[#27272a]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalOpen(false)}
+                className="bg-[#18181b] border-[#3f3f46] text-white hover:bg-[#27272a]"
+              >
+                Fechar
+              </Button>
+
+              <Button
+                type="button"
+                disabled={salvandoStatus}
+                onClick={() => handleUpdateStatus(selectedReport.id, 'em_analise', respostaInput)}
+                className="bg-sky-600 hover:bg-sky-700 text-white font-bold gap-1.5"
+              >
+                <AlertCircle className="w-4 h-4" />
+                Em Análise
+              </Button>
+
+              <Button
+                type="button"
+                disabled={salvandoStatus}
+                onClick={() => handleUpdateStatus(selectedReport.id, 'rejeitado', respostaInput)}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1.5"
+              >
+                <X className="w-4 h-4" />
+                Marcar Rejeitado
+              </Button>
+
+              <Button
+                type="button"
+                disabled={salvandoStatus}
+                onClick={() => handleUpdateStatus(selectedReport.id, 'resolvido', respostaInput)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                Marcar Resolvido
+              </Button>
+            </div>
+          }
+        >
 
             <div className="space-y-4 py-2">
               <div className="flex items-center justify-between bg-[#18181b] p-3 rounded-xl border border-[#27272a]">
@@ -519,50 +550,8 @@ export default function AdminReportsPage() {
                   className="bg-[#17171a] border-[#3f3f46] text-white focus:ring-[#0090ff] focus:border-[#0090ff] min-h-[90px] rounded-xl text-sm"
                 />
               </div>
-
-              <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-end border-t border-[#27272a]">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setModalOpen(false)}
-                  className="bg-[#18181b] border-[#3f3f46] text-white hover:bg-[#27272a]"
-                >
-                  Fechar
-                </Button>
-
-                <Button
-                  type="button"
-                  disabled={salvandoStatus}
-                  onClick={() => handleUpdateStatus(selectedReport.id, 'em_analise', respostaInput)}
-                  className="bg-sky-600 hover:bg-sky-700 text-white font-bold gap-1.5"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  Em Análise
-                </Button>
-
-                <Button
-                  type="button"
-                  disabled={salvandoStatus}
-                  onClick={() => handleUpdateStatus(selectedReport.id, 'rejeitado', respostaInput)}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1.5"
-                >
-                  <X className="w-4 h-4" />
-                  Marcar Rejeitado
-                </Button>
-
-                <Button
-                  type="button"
-                  disabled={salvandoStatus}
-                  onClick={() => handleUpdateStatus(selectedReport.id, 'resolvido', respostaInput)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  Marcar Resolvido
-                </Button>
-              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+        </StandardDialog>
       )}
     </div>
   )

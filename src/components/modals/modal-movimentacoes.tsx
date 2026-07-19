@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogTitle,
-  DialogClose
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Printer, X, ArrowRightLeft, Calendar, Building, ShieldCheck } from 'lucide-react'
 
@@ -95,43 +90,33 @@ export function ModalMovimentacoes({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[700px] bg-[#18181b] border-[#27272a] text-white p-0 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-[#141416] z-10 border-b border-[#27272a] px-6 py-4 flex justify-between items-center">
-          <div>
-            <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
-              <ArrowRightLeft className="w-5 h-5 text-[#38bdf8]" />
-              Histórico de Movimentações
-            </DialogTitle>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Servidor: <span className="text-white font-semibold">{nome}</span>
-            </p>
-          </div>
-          
-          <div className="flex gap-2 items-center">
-            {/* Botão de impressora para imprimir */}
-            <button
-              type="button" 
-              onClick={handlePrint}
-              title="Imprimir histórico"
-              className="w-9 h-9 rounded-full bg-white hover:bg-zinc-200 text-zinc-900 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
-            >
-              <Printer className="w-4.5 h-4.5 text-zinc-900" />
-            </button>
-
-            {/* Botão de X para fechar */}
-            <DialogClose render={
-              <button
-                type="button"
-                className="w-9 h-9 rounded-full bg-[#27272a] hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors shadow-sm cursor-pointer"
-                title="Fechar"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
-            } />
-          </div>
+    <StandardDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Histórico de Movimentações"
+      description={`Servidor: ${nome}`}
+      maxWidth="sm:max-w-[700px]"
+      footer={
+        <div className="flex justify-end gap-2 w-full pt-3 border-t border-[#27272a]">
+          <Button
+            type="button"
+            onClick={handlePrint}
+            className="bg-sky-600 hover:bg-sky-700 text-white font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Imprimir Histórico</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            className="bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] font-semibold cursor-pointer"
+          >
+            Fechar
+          </Button>
         </div>
+      }
+    >
         
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto space-y-5">
@@ -231,10 +216,9 @@ export function ModalMovimentacoes({
                 </div>
               ))
             )}
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </StandardDialog>
   )
 }
 

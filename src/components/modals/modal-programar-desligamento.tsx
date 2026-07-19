@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -117,21 +111,42 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <UserMinus className="w-5 h-5 text-rose-500" />
-            Programar Desligamento
-          </DialogTitle>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Programar Desligamento"
+      maxWidth="sm:max-w-[500px]"
+      footer={
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] h-10"
+          >
+            Cancelar
+          </Button>
+          {isEditMode && (
+            <Button
+              type="submit"
+              form="form-programar-desligamento"
+              disabled={saving || !vinculoId}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold h-10 gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Programar
+            </Button>
+          )}
+        </div>
+      }
+    >
 
         {loadingVinculo ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-rose-500" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <form id="form-programar-desligamento" onSubmit={handleSubmit} className="space-y-4 py-2">
             <div className="bg-[#18181a] border border-[#27272a] rounded-xl p-4 space-y-2">
               <div>
                 <span className="text-xs text-[#aaa] block">Funcionário</span>
@@ -172,29 +187,8 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
               />
             </div>
 
-            <DialogFooter className="pt-4 border-t border-[#27272a] gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] h-10"
-              >
-                Cancelar
-              </Button>
-              {isEditMode && (
-                <Button
-                  type="submit"
-                  disabled={saving || !vinculoId}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold h-10 gap-2"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Programar
-                </Button>
-              )}
-            </DialogFooter>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -126,19 +126,24 @@ function ArquivosContent() {
     <div className="space-y-6 max-w-7xl mx-auto min-w-0 pb-12">
       {/* Modal de Detalhes da Ficha Congelada */}
       {modalOpen && selectedArq && (
-        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="sm:max-w-[600px] bg-[#18181b] border border-[#3f3f46] text-white overflow-y-auto max-h-[90vh]">
-            <DialogHeader>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg font-bold text-white">Visualizar Ficha Histórica</DialogTitle>
-                <Badge variant="outline" className="text-xs bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold uppercase">
-                  {selectedArq.tipo}
-                </Badge>
-              </div>
-              <DialogDescription className="text-zinc-400 text-xs mt-1">
-                Visualização do snapshot dos dados gravados no momento em que o registro foi transferido ou arquivado.
-              </DialogDescription>
-            </DialogHeader>
+        <StandardDialog
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          title={`Visualizar Ficha Histórica — ${selectedArq.tipo}`}
+          description="Visualização do snapshot dos dados gravados no momento em que o registro foi transferido ou arquivado."
+          maxWidth="sm:max-w-[600px]"
+          footer={
+            <div className="flex justify-end w-full pt-3 border-t border-[#26262a]">
+              <Button 
+                variant="ghost" 
+                onClick={() => setModalOpen(false)}
+                className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+              >
+                Fechar Ficha
+              </Button>
+            </div>
+          }
+        >
 
             <div className="space-y-5 py-3">
               {/* Snapshot da Ficha */}
@@ -209,17 +214,7 @@ function ArquivosContent() {
               </div>
             </div>
 
-            <div className="mt-4 flex justify-end">
-              <Button 
-                variant="ghost" 
-                onClick={() => setModalOpen(false)}
-                className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
-              >
-                Fechar Ficha
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        </StandardDialog>
       )}
 
       {/* Título da Página */}

@@ -1,14 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -89,17 +82,37 @@ export function ModalConfigAnexosEscola({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-[#121214] border-[#27272a] text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Building2 className="w-5 h-5 text-purple-400" />
-            Configurar Anexos Padrão
-          </DialogTitle>
-          <DialogDescription className="text-zinc-400 text-xs mt-1">
-            Defina a lista de documentos padrão exigidos para os alunos de <span className="text-purple-400 font-semibold">{escola?.nome}</span>.
-          </DialogDescription>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Configurar Anexos Padrão"
+      description={`Defina a lista de documentos padrão exigidos para os alunos de ${escola?.nome ?? 'unidade escolar'}.`}
+      maxWidth="sm:max-w-[480px]"
+      footer={
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] cursor-pointer"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={loading}
+            className="bg-purple-600 text-white hover:bg-purple-700 font-semibold gap-2 cursor-pointer"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {loading ? 'Salvando...' : 'Salvar Configuração'}
+          </Button>
+        </div>
+      }
+    >
 
         <div className="space-y-4 py-3">
           {/* Form para Adicionar */}
@@ -155,30 +168,6 @@ export function ModalConfigAnexosEscola({
             </div>
           </div>
         </div>
-
-        <DialogFooter className="gap-2 pt-4 border-t border-[#27272a]">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] cursor-pointer"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-purple-600 text-white hover:bg-purple-700 font-semibold gap-2 cursor-pointer"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {loading ? 'Salvando...' : 'Salvar Configuração'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

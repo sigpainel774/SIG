@@ -1,13 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
-} from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,16 +44,27 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#121212] border border-amber-500/40 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-amber-400">
-            <ShieldAlert className="w-6 h-6 text-amber-400" />
-            Primeiro Acesso — Troca Obrigatória de Senha
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <StandardDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Primeiro Acesso — Troca Obrigatória de Senha"
+      description="Sua conta utilizou uma senha provisória enviada pela administração. Por motivos de segurança, cadastre sua senha definitiva para continuar."
+      maxWidth="sm:max-w-md"
+      footer={
+        <div className="flex justify-end w-full pt-4 border-t border-borderCustom">
+          <Button
+            type="submit"
+            form="form-primeiro-acesso"
+            disabled={loading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+          >
+            <Check className="w-4 h-4" />
+            {loading ? 'Salvando Senha...' : 'Salvar Nova Senha'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="form-primeiro-acesso" onSubmit={handleSubmit} className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
             Sua conta utilizou uma senha provisória enviada pela administração. Por motivos de segurança, cadastre sua senha definitiva para continuar.
           </p>
@@ -88,18 +93,7 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
             />
           </div>
 
-          <DialogFooter className="pt-4 border-t border-borderCustom">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
-            >
-              <Check className="w-4 h-4" />
-              {loading ? 'Salvando Senha...' : 'Salvar Nova Senha'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

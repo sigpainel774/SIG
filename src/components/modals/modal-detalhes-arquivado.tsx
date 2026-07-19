@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, User, Building, FileText, Info, CheckCircle, XCircle } from 'lucide-react'
@@ -52,19 +52,23 @@ export function ModalDetalhesArquivado({
   const detalhes = getDetalhesPayload()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-[#141416] border border-[#26262a] text-white overflow-y-auto max-h-[90vh]">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <DialogTitle className="text-lg font-bold text-white">Detalhes do Arquivamento</DialogTitle>
-            <Badge variant="outline" className="text-xs bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold uppercase">
-              {arquivado.tipo}
-            </Badge>
-          </div>
-          <DialogDescription className="text-zinc-400 text-xs mt-1">
-            Visualização completa do snapshot do registro e histórico de auditoria.
-          </DialogDescription>
-        </DialogHeader>
+    <StandardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Detalhes do Arquivamento — ${arquivado.tipo}`}
+      description="Visualização completa do snapshot do registro e histórico de auditoria."
+      maxWidth="sm:max-w-[600px]"
+      footer={
+        <div className="flex justify-end w-full pt-3 border-t border-[#26262a]">
+          <Button
+            onClick={() => onOpenChange(false)}
+            className="bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-xl text-xs font-semibold px-4 cursor-pointer"
+          >
+            Fechar
+          </Button>
+        </div>
+      }
+    >
 
         <div className="space-y-5 py-3">
           {/* Seção 1: Dados do Snapshot */}
@@ -161,15 +165,6 @@ export function ModalDetalhesArquivado({
           </div>
         </div>
 
-        <div className="flex justify-end pt-3 border-t border-[#26262a]">
-          <Button
-            onClick={() => onOpenChange(false)}
-            className="bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-xl text-xs font-semibold px-4 cursor-pointer"
-          >
-            Fechar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    </StandardDialog>
   )
 }

@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { restoreAction, purgeAction } from './actions'
 import { cn } from '@/lib/utils'
 import { PrintRelatorioAssinaturas } from '@/components/print/print-relatorio-assinaturas'
@@ -500,19 +500,23 @@ export default function AdminLixeiraPage() {
 
       {/* Grouped Student History Modal */}
       {selectedStudent && (
-        <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-          <DialogContent className="bg-[#121214] border border-[#26262a] text-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#3ea6ff]/40 to-transparent" />
-            
-            <DialogHeader className="pb-3 border-b border-[#26262a]">
-              <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <History className="w-5 h-5 text-[#3ea6ff]" />
-                <span>Histórico de Assinaturas do Aluno</span>
-              </DialogTitle>
-              <DialogDescription className="text-zinc-400 text-xs mt-1">
-                Linha do tempo de todas as coletas, atualizações e exclusões registradas.
-              </DialogDescription>
-            </DialogHeader>
+        <StandardDialog
+          open={!!selectedStudent}
+          onOpenChange={() => setSelectedStudent(null)}
+          title="Histórico de Assinaturas do Aluno"
+          description="Linha do tempo de todas as coletas, atualizações e exclusões registradas."
+          maxWidth="sm:max-w-2xl"
+          footer={
+            <div className="flex justify-end w-full pt-3.5 border-t border-[#26262a]">
+              <Button
+                onClick={() => setSelectedStudent(null)}
+                className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-semibold rounded-xl h-10 px-5 cursor-pointer text-xs"
+              >
+                Fechar Histórico
+              </Button>
+            </div>
+          }
+        >
 
             <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
               {/* Aluno Info Card */}
@@ -605,16 +609,7 @@ export default function AdminLixeiraPage() {
               </div>
             </div>
 
-            <div className="mt-6 pt-3.5 border-t border-[#26262a] flex justify-end">
-              <Button
-                onClick={() => setSelectedStudent(null)}
-                className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-semibold rounded-xl h-10 px-5 cursor-pointer text-xs"
-              >
-                Fechar Histórico
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        </StandardDialog>
       )}
     </div>
   )
