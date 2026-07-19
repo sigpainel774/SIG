@@ -6,7 +6,6 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -25,33 +24,45 @@ interface ModalReportProps {
   trigger?: React.ReactNode
 }
 
+const MAX_LOCAL_REPORTS = 30
+
 export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
-  const { funcionario } = useAuthStore()
-  const [isOpen, setIsOpen] = useState(false)
+  const { funcionario, vinculos } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [tipo, setTipo] = useState<'bug' | 'sugestao'>('bug')
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
 
-  const activeOpen = open !== undefined ? open : isOpen
+  // Gargalo #7 corrigido: sem estado fantasma isOpen
+  const activeOpen = open ?? false
+
+  const resetForm = () => {
+    setTitulo('')
+    setDescricao('')
+    setTipo('bug')
+  }
+
   const handleOpenChange = (val: boolean) => {
-    if (onOpenChange) onOpenChange(val)
-    setIsOpen(val)
+    // ES-5 corrigido: sempre resetar formulario ao fechar
+    if (!val) resetForm()
+    onOpenChange?.(val)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!titulo || !descricao) {
-      toast.error('Preencha o título e a descrição do reporte.')
+      toast.error('Preencha o titulo e a descricao do reporte.')
       return
     }
 
     setLoading(true)
     try {
       const supabase = createClient()
-      const autor_nome = funcionario?.nome || 'Servidor Escolar'
-      const autor_email = funcionario?.email || 'servidor@escola.br'
-      const escola = funcionario?.cargo || 'Escola Municipal'
+      const autor_nome = funcionario?.nome ?? 'Servidor Escolar'
+      // ES-3 corrigido: email null-safe, sem string ficticia
+      const autor_email = funcionario?.email ?? null
+      // ES-2 corrigido: escola via vinculos, nao via cargo
+      const escolaNome = vinculos.find(v => v.ativo)?.escolaNome ?? vinculos[0]?.escolaNome ?? null
 
       const reportPayload = {
         tipo,
@@ -59,50 +70,50 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
         descricao,
         autor_nome,
         autor_email,
-        escola,
+        escola: escolaNome,
         status: 'pendente'
       }
 
-      // 1. Tentar salvar no Supabase
+      // 1. Salvar no Supabase
       const { error } = await (supabase.from as any)('bug_reports').insert(reportPayload)
       if (error) {
         console.warn('Supabase insert warning, saving to local fallback:', error)
       }
 
-      // 2. Salvar também no localStorage para sincronização imediata
+      // 2. Salvar no localStorage com limite maximo de itens (ES-4 corrigido)
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('sig_bug_reports')
-        const existingList = stored ? JSON.parse(stored) : []
+        const existingList: unknown[] = stored ? JSON.parse(stored) : []
         const localItem = {
           id: crypto.randomUUID(),
           ...reportPayload,
           created_at: new Date().toISOString()
         }
-        existingList.unshift(localItem)
-        localStorage.setItem('sig_bug_reports', JSON.stringify(existingList))
+        const updatedList = [localItem, ...existingList].slice(0, MAX_LOCAL_REPORTS)
+        localStorage.setItem('sig_bug_reports', JSON.stringify(updatedList))
       }
 
-      toast.success('Reporte enviado com sucesso à administração!')
-      setTitulo('')
-      setDescricao('')
+      toast.success('Reporte enviado com sucesso a administracao!')
       handleOpenChange(false)
     } catch (err) {
       console.error('Erro ao enviar report:', err)
-      toast.success('Reporte enviado à equipe de desenvolvimento com sucesso!')
-      handleOpenChange(false)
+      // Gargalo #8 corrigido: toast.error no catch, nao toast.success
+      toast.error('Falha ao enviar o reporte. Tente novamente.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger render={trigger as any} />}
+    <>
+      {/* ES-7 corrigido: Dialog e controlado via open/onOpenChange; trigger externo renderizado diretamente */}
+      {trigger}
+      <Dialog open={activeOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-card border-borderCustom text-foreground rounded-[18px] shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
             <Bug className="w-5 h-5 text-rose-500" />
-            Reportar Erro ou Sugestão
+            Reportar Erro ou Sugestao
           </DialogTitle>
         </DialogHeader>
 
@@ -122,23 +133,23 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
               onClick={() => setTipo('sugestao')}
               className={`flex-1 gap-2 cursor-pointer ${tipo === 'sugestao' ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold' : 'border-borderCustom text-muted-foreground'}`}
             >
-              <Sparkles className="w-4 h-4" /> Sugestão
+              <Sparkles className="w-4 h-4" /> Sugestao
             </Button>
           </div>
 
           <div>
-            <Label className="text-foreground font-semibold text-xs">Título Resumido</Label>
+            <Label className="text-foreground font-semibold text-xs">Titulo Resumido</Label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Ex: Botão de impressão com erro na tela de alunos"
+              placeholder="Ex: Botao de impressao com erro na tela de alunos"
               className="bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary mt-1"
               required
             />
           </div>
 
           <div>
-            <Label className="text-foreground font-semibold text-xs">Descrição Detalhada</Label>
+            <Label className="text-foreground font-semibold text-xs">Descricao Detalhada</Label>
             <Textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
@@ -168,6 +179,7 @@ export function ModalReport({ open, onOpenChange, trigger }: ModalReportProps) {
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   )
 }

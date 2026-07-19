@@ -1,10 +1,41 @@
-# Planos Futuros
+# Planos Futuros & Status de Implementação
 
-Este arquivo armazena planos de implementação, ideias e melhorias que foram estruturados para execução futura.
+Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
+Atualizado automaticamente com o status real do repositório.
+
+**Última atualização:** 2026-07-18
+
+---
+
+## 🗺️ Painel de Status Geral
+
+| Plano | Status | Observação |
+|-------|--------|------------|
+| Integração Resend + Primeiro Acesso | ⏳ Pendente | Plano elaborado e salvo — código não iniciado; configuração SMTP é manual no Supabase |
+| Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — nenhum arquivo criado no repositório ainda |
+| Otimização `/configuracoes` (40KB → 8-12KB) | 🔍 Diagnóstico Pronto | 8 erros silenciosos identificados — **aguardando aprovação do usuário para execução** |
+| Tabs Geolocalização (Funcionários + Alunos) | ✅ Implementado | Sessão 2026-07-18 — `MapaAlunos.tsx` criado, `MapWrapper` e `relatorios/page.tsx` modificados |
+| Otimização Página de Ajuda | ✅ Implementado | Sessão 2026-07-18 — 8 gargalos + 7 erros silenciosos corrigidos |
+| Skill `otimizador` | ✅ Implementado | Sessão 2026-07-18 — skill criada em `.agents/skills/otimizador/` |
 
 ---
 
 ## 📌 Integração do Resend + Troca Obrigatória de Senha (Primeiro Acesso)
+
+> **Status:** ⏳ Pendente — Código não iniciado  
+> **Planejado em:** 2026-07-18  
+> **Pré-requisitos de código:** `[NEW] src/app/api/auth/complete-first-access/route.ts` · `[NEW] src/components/modals/first-access-modal.tsx` · `[MODIFY] src/app/(dashboard)/layout.tsx`  
+> **Pré-requisito do usuário:** Configuração manual do SMTP no painel Supabase (ver Passo 1 abaixo)
+
+### Checklist de Execução
+- [ ] Usuário configura SMTP com Resend no painel do Supabase
+- [ ] Usuário executa SQL de isenção dos usuários atuais (`primeiro_acesso = false`)
+- [ ] Criar Route Handler `complete-first-access`
+- [ ] Criar modal `first-access-modal.tsx` (bloqueante, sem botão fechar)
+- [ ] Integrar interceptação no `layout.tsx` do dashboard
+- [ ] Verificar com `npx tsc --noEmit`
+
+---
 
 ### 1. Integração do Resend (SMTP no Supabase)
 
@@ -76,6 +107,22 @@ Identificamos os seguintes riscos de erros lógicos, segurança ou UX (edge case
 ---
 
 ## 📌 Portal do Aluno / Responsáveis
+
+> **Status:** ⏳ Pendente — Nenhum arquivo criado no repositório  
+> **Planejado em:** 2026-07-18  
+> **Confirmado ausente:** `portal-aluno/`, `responsaveis/`, `ModalCadastroResponsavel`, Edge Functions `criar-responsavel` e `reset-senha-responsavel`  
+> **Tabelas de banco pendentes:** `public.responsaveis`, `public.responsaveis_alunos`, `public.responsavel_audit_log`
+
+### Checklist de Execução
+- [ ] Criar tabelas no Supabase (SQL na seção "Camada de Banco de Dados" abaixo)
+- [ ] Aplicar RLS em todas as tabelas novas
+- [ ] Criar Edge Function `criar-responsavel`
+- [ ] Criar Edge Function `reset-senha-responsavel`
+- [ ] Criar rotas Next.js: `portal-aluno/login`, `trocar-senha`, `dashboard`, `dashboard/[alunoId]`
+- [ ] Criar `ModalCadastroResponsavel.tsx`
+- [ ] Atualizar `proxy.ts` com proteção das rotas do portal
+- [ ] Verificar isolamento staff vs. portal (sem cross-access)
+- [ ] Executar plano de verificação (9 cenários documentados abaixo)
 
 > **Nota de versão:** Este plano substitui a versão anterior baseada em login CPF+OTP. O modelo de autenticação foi redesenhado para cadastro 100% presencial na secretaria, com login por email + senha via Supabase Auth.
 
@@ -387,3 +434,91 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 | Empty state em branco nas abas | Implementar componente de Empty State explícito em todas as abas |
 | Input de nota perdendo decimal | Estado local como `string`; conversão para `number` apenas no `onSave` |
 | Aluno acessível via ID na URL por outro responsável | RLS na tabela `notas`/`frequencias`/`ocorrencias` bloqueia no banco; proxy valida o vínculo |
+
+---
+
+## 📌 Otimização da Página `/configuracoes` (40KB → 8–12KB)
+
+> **Status:** 🔍 Diagnóstico Pronto — **Aguardando aprovação do usuário para execução**
+> **Planejado em:** 2026-07-18
+> **Problema identificado:** Render médio de **512ms** — `page.tsx` com 1.010 linhas / 40KB totalmente marcado como `'use client'`
+
+### Checklist de Execução
+- [ ] Converter `page.tsx` em Server Component (shell estático leve)
+- [ ] Criar `ConfiguracoesClient.tsx` com `'use client'` (apenas parte interativa)
+- [ ] Extrair `GradeCurricularTab.tsx` como componente separado
+- [ ] Extrair `PerfilTab.tsx` como componente separado
+- [ ] Aplicar `dynamic(() => import(...), { ssr: false })` para `SignaturePad` e `GradeCurricularTab`
+- [ ] Corrigir race condition no `useEffect` do `localFuncionario` (cleanup de desmontagem)
+- [ ] Remover non-null assertion `funcionario!` — adicionar guard de null antes do render
+- [ ] Corrigir `useEffect` do diretor: adicionar `activeTab` nas dependências
+- [ ] Corrigir `publicUrl` salvo sem remover `?t=timestamp` antes de persistir no banco
+- [ ] Verificar com `npx tsc --noEmit`
+
+### Diagnóstico de Causas-Raiz
+
+| # | Causa | Impacto |
+|---|-------|---------|
+| 1 | Bundle monolítico `'use client'` de 40KB | Next.js envia tudo ao cliente antes do primeiro render |
+| 2 | `SignaturePad` carregado incondicionalmente | Canvas pesado no bundle inicial |
+| 3 | `GradeCurricularTab` inline | Sub-tela com 3 queries inicializada junto com a página |
+| 4 | `useEffect` de fetch redundante do funcionário | Query extra a cada montagem |
+
+### Erros Silenciosos Identificados (8)
+
+#### 🔴 Críticos (3)
+1. **Race condition** — `setLocalFuncionario` chamado em componente desmontado (sem cleanup no `useEffect`). Pode causar warnings de memória e estado corrompido.
+2. **Crash silencioso Zustand** — `funcionario!` non-null assertion quando o store ainda não hidratou no cliente. Causa `TypeError` silencioso em caso de acesso rápido.
+3. **`useEffect` de diretor sem `activeTab`** — pode resetar a aba ativa do usuário inesperadamente ao recarregar dados.
+
+#### 🟡 Moderados (5)
+4. `import Card` não utilizado no bundle — contribui para o tamanho do chunk.
+5. `modulesList` e `toggleModule` sem funcionalidade real — UI decorativa ocupando estados e lógica.
+6. `publicUrl` salvo no banco **com** `?t=timestamp` (cache-buster contaminando a URL persistida).
+7. `setState` sem tipagem explícita (`as any` no Zustand) — bugs silenciosos de tipagem.
+8. Busca de matérias sem sanitização — vulnerável a input malicioso no `ilike`.
+
+### Resultado Esperado Pós-Otimização
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| Bundle enviado ao cliente | ~40KB | ~8–12KB |
+| Render médio | ~512ms | ~80–150ms |
+| Queries na montagem | 4+ | 1–2 (lazy nas abas) |
+
+---
+
+## ✅ Histórico de Implementações Concluídas
+
+
+### 2026-07-18
+
+#### Tabs de Geolocalização (Funcionários + Alunos)
+- **O que foi feito:** Refatoração do relatório de geolocalização para incluir interface com abas, permitindo alternar entre dados de geolocalização de funcionários e de alunos dentro do mesmo componente de relatório.
+- **Arquivos modificados:** Componente de relatório de geolocalização em `src/components/relatorios/`
+
+#### Otimização da Página de Ajuda (`/ajuda`)
+- **O que foi feito:** Auditoria completa com 8 gargalos e 7 erros silenciosos identificados e corrigidos.
+- **Correções aplicadas:**
+  - JSX pesado convertido para render functions `() => JSX` (lazy evaluation)
+  - Busca com campo `keywords[]` e `useMemo` (antes só filtrava título)
+  - `<ModalReport>` renderizado condicionalmente
+  - `animate-fadeIn` definida no `globals.css` (estava inexistente)
+  - Campo `escola` corrigido para usar `vinculos.find(v => v.ativo)?.escolaNome`
+  - `toast.error` no `catch` (era `toast.success` — bug silencioso)
+  - Formulário reseta ao fechar/cancelar
+  - `localStorage` limitado a 30 itens
+  - Estado fantasma `isOpen` removido
+  - `DialogTrigger` com API inválida corrigido para Base UI
+- **Arquivos modificados:** `src/app/(dashboard)/ajuda/page.tsx` · `src/components/modals/modal-report.tsx` · `src/app/globals.css`
+- **Verificação:** `npx tsc --noEmit` → Exit code 0
+
+#### Skill `otimizador` criada
+- **O que foi feito:** Skill de auditoria de performance criada em `.agents/skills/otimizador/SKILL.md` com 235 linhas de protocolo, incluindo SOP de 4 etapas, catálogo de 8 categorias de gargalos, 7 padrões de erros silenciosos, tabela de fontes de dados corretas do SIG e 8 padrões de correção com exemplos `ANTES/DEPOIS`.
+- **Ativada por:** "analisar gargalos", "otimizar", "auditar performance", "encontrar erros silenciosos"
+
+#### Tabs de Geolocalização (Funcionários + Alunos)
+- **O que foi feito:** Novo componente de mapa de alunos criado e integrado ao relatório de geolocalização com interface de abas.
+- **Arquivos criados/modificados:**
+  - `[NEW] src/components/map/MapaAlunos.tsx` — componente de mapa com filtro por escola/turma, DivIcon com iniciais/foto e popup com link Google Maps
+  - `[MODIFY] src/components/map/MapWrapper.tsx` — adicionado import dinâmico de `MapaAlunos` (sem SSR)
+  - `[MODIFY] src/app/(dashboard)/relatorios/page.tsx` — abas `funcionarios` / `alunos`, fetch de alunos geolocalizados por escola

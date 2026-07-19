@@ -82,14 +82,6 @@ export default function AdminArmazenamentoPage() {
   const [selectedType, setSelectedType] = useState<string>('ALL')
   const [sortBy, setSortBy] = useState<'size' | 'date'>('size')
 
-  // Redirecionar se não for ROOT admin (proteção client-side)
-  useEffect(() => {
-    if (funcionario && !funcionario.is_superadmin) {
-      toast.error('Acesso restrito a administradores ROOT.')
-      router.push('/home')
-    }
-  }, [funcionario, router])
-
   const loadStorageData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
@@ -113,14 +105,23 @@ export default function AdminArmazenamentoPage() {
       console.error(err)
       toast.error(err.message || 'Erro ao carregar metadados de armazenamento.')
     } finally {
-      setLoading(false)
+      if (!isRefresh) setLoading(false)
       setRefreshing(false)
     }
   }
 
+  // Guarda de rota + carga inicial consolidados:
+  // aguarda `funcionario` estar disponível antes de qualquer fetch
   useEffect(() => {
+    if (!funcionario) return // ainda carregando o perfil — aguarda
+    if (!funcionario.is_superadmin) {
+      toast.error('Acesso restrito a administradores ROOT.')
+      router.push('/home')
+      return
+    }
     loadStorageData()
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funcionario])
 
   // Lista única de buckets para filtro
   const bucketsList = useMemo(() => {
