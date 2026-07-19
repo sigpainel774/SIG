@@ -32,7 +32,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 import { useSchoolStore } from '@/store/useSchoolStore'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 
 export function Sidebar() {
@@ -343,29 +343,31 @@ export function Sidebar() {
         </>
       )}
 
-      {/* Warning Modal for school selection */}
-      <Dialog open={showSchoolWarningModal} onOpenChange={setShowSchoolWarningModal}>
-        <DialogContent className="sm:max-w-[450px] bg-card border border-borderCustom text-foreground p-6 rounded-2xl">
-          <DialogHeader className="space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-center text-lg font-bold">Escola Não Selecionada</DialogTitle>
-            <DialogDescription className="text-center text-sm text-muted-foreground">
-              Para acessar a seção de <strong>Turmas</strong>, é necessário selecionar uma escola ativa primeiro.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center pt-4">
+      {/* Modal de Alerta de Seleção de Escola padronizado com StandardDialog */}
+      <StandardDialog
+        open={showSchoolWarningModal}
+        onOpenChange={setShowSchoolWarningModal}
+        title="Escola Não Selecionada"
+        description="Para acessar a seção de Turmas, é necessário selecionar uma escola ativa primeiro."
+        maxWidth="sm:max-w-[450px]"
+        footer={
+          <div className="flex justify-center w-full pt-2">
             <Button
               type="button"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 px-6"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 px-6 cursor-pointer"
               onClick={() => setShowSchoolWarningModal(false)}
             >
               Entendido
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        }
+      >
+        <div className="flex flex-col items-center text-center py-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-2">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+        </div>
+      </StandardDialog>
     </>
   )
 }

@@ -4,14 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { Ban, AlertTriangle, PenTool } from 'lucide-react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
+import { Ban, PenTool } from 'lucide-react'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 
@@ -177,33 +171,31 @@ export default function LoginPage() {
         </form>
       </div>
 
-      {/* Pop-up de Usuário Suspenso conforme especificação exata */}
-      <Dialog open={suspendedModalOpen} onOpenChange={setSuspendedModalOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-[#18181b] border-[#3f3f46] text-white text-center">
-          <DialogHeader className="items-center">
-            <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mb-2">
-              <Ban className="w-7 h-7" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-white">
-              Acesso Suspenso
-            </DialogTitle>
-          </DialogHeader>
-
-          <p className="text-zinc-300 text-base py-3 leading-relaxed font-medium">
+      {/* Pop-up de Usuário Suspenso padronizado com StandardDialog */}
+      <StandardDialog
+        open={suspendedModalOpen}
+        onOpenChange={setSuspendedModalOpen}
+        title="Acesso Suspenso"
+        maxWidth="sm:max-w-[400px]"
+        footer={
+          <Button
+            type="button"
+            onClick={() => setSuspendedModalOpen(false)}
+            className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer"
+          >
+            Entendido
+          </Button>
+        }
+      >
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mb-1">
+            <Ban className="w-7 h-7" />
+          </div>
+          <p className="text-zinc-300 text-base leading-relaxed font-medium">
             Usuario suspenso, contate a administração
           </p>
-
-          <DialogFooter className="sm:justify-center">
-            <Button
-              type="button"
-              onClick={() => setSuspendedModalOpen(false)}
-              className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl"
-            >
-              Entendido
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </StandardDialog>
     </div>
   )
 }
