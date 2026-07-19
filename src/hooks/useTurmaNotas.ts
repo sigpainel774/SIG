@@ -25,6 +25,7 @@ export function useTurmaNotas({
 }: UseTurmaNotasProps) {
   const [notasState, setNotasState] = useState<Record<string, { nota1: string | number | null; nota2: string | number | null; nota3: string | number | null; nota4: string | number | null }>>({})
   const [recuperacoesState, setRecuperacoesState] = useState<Record<string, { nota: string | number | null }>>({})
+  const [calculosServidorState, setCalculosServidorState] = useState<Record<string, { m1: number | null; m2: number | null; m3: number | null; mediaFinal: number | null; mediaPosRec: number | null; situacao: string; todasUnidades: boolean; isElegivelRec: boolean }>>({})
   const [unidadesAtivas, setUnidadesAtivas] = useState<Record<string, number>>({})
   const [savingNotas, setSavingNotas] = useState<Record<string, boolean>>({})
 
@@ -32,12 +33,14 @@ export function useTurmaNotas({
   const { data: notasServidor, error: errorNotas, mutate: mutateNotasServidor } = useSWR(
     open && turma?.id ? ['notas-turma', turma.id] : null,
     async () => {
-      const [notasRes, recsRes] = await Promise.all([
+      const [notasRes, recsRes, calculosRes] = await Promise.all([
         supabase.from('notas').select('aluno_id, materia_id, unidade, nota1, nota2, nota3, nota4').eq('turma_id', turma.id),
-        supabase.from('recuperacoes_finais').select('aluno_id, materia_id, nota').eq('turma_id', turma.id)
+        supabase.from('recuperacoes_finais').select('aluno_id, materia_id, nota').eq('turma_id', turma.id),
+        supabase.from('boletins_consolidados').select('*').eq('turma_id', turma.id)
       ])
       if (notasRes.error) throw notasRes.error
       if (recsRes.error) throw recsRes.error
+      if (calculosRes.error) throw calculosRes.error
 
       const notasMap: typeof notasState = {}
       ;(notasRes.data || []).forEach((n: any) => {
@@ -54,7 +57,21 @@ export function useTurmaNotas({
         recMap[`${r.aluno_id}_${r.materia_id}`] = { nota: r.nota !== null ? String(r.nota) : null }
       })
 
-      return { notasMap, recMap }
+      const calculosMap: typeof calculosServidorState = {}
+      ;(calculosRes.data || []).forEach((c: any) => {
+        calculosMap[`${c.aluno_id}_${c.materia_id}`] = {
+          m1: c.m1 !== null ? Number(c.m1) : null,
+          m2: c.m2 !== null ? Number(c.m2) : null,
+          m3: c.m3 !== null ? Number(c.m3) : null,
+          mediaFinal: c.media_final !== null ? Number(c.media_final) : null,
+          mediaPosRec: c.media_pos_rec !== null ? Number(c.media_pos_rec) : null,
+          situacao: c.situacao ?? 'Sem Notas',
+          todasUnidades: !!c.todas_unidades,
+          isElegivelRec: !!c.is_elegivel_rec
+        }
+      })
+
+      return { notasMap, recMap, calculosMap }
     },
     { 
       revalidateOnFocus: false, 
@@ -73,6 +90,7 @@ export function useTurmaNotas({
     if (notasServidor && isMounted.current) {
       setNotasState(notasServidor.notasMap)
       setRecuperacoesState(notasServidor.recMap)
+      setCalculosServidorState(notasServidor.calculosMap || {})
     }
   }, [notasServidor])
 
@@ -170,11 +188,37 @@ export function useTurmaNotas({
       materias.forEach(mat => {
         const keyPrefix = `${aluno.id}_${mat.id}`
         
-        const n1Data = notasState[`${keyPrefix}_1`] || { nota1: null, nota2: null, nota3: null, nota4: null }
-        const n2Data = notasState[`${keyPrefix}_2`] || { nota1: null, nota2: null, nota3: null, nota4: null }
-        const n3Data = notasState[`${keyPrefix}_3`] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const nServidor = (notasServidor ?? { notasMap: {}, recMap: {} }) as any
+        
+        const keyU1 = `${keyPrefix}_1`
+        const keyU2 = `${keyPrefix}_2`
+        const keyU3 = `${keyPrefix}_3`
+        const keyRec = keyPrefix
 
-        const parseUnidade = (n: typeof n1Data) => {
+        const localN1 = notasState[keyU1] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const localN2 = notasState[keyU2] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const localN3 = notasState[keyU3] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const localRec = recuperacoesState[keyRec] || { nota: null }
+
+        const servN1 = nServidor.notasMap?.[keyU1] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const servN2 = nServidor.notasMap?.[keyU2] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const servN3 = nServidor.notasMap?.[keyU3] || { nota1: null, nota2: null, nota3: null, nota4: null }
+        const servRec = nServidor.recMap?.[keyRec] || { nota: null }
+
+        const isSujo = 
+          JSON.stringify(localN1) !== JSON.stringify(servN1) ||
+          JSON.stringify(localN2) !== JSON.stringify(servN2) ||
+          JSON.stringify(localN3) !== JSON.stringify(servN3) ||
+          JSON.stringify(localRec) !== JSON.stringify(servRec)
+
+        // Se o registro não foi modificado localmente e os cálculos do banco existem, usamos a View (Back-end)
+        if (!isSujo && calculosServidorState[keyPrefix]) {
+          res[keyPrefix] = calculosServidorState[keyPrefix]
+          return
+        }
+
+        // Caso contrário, roda a lógica híbrida local para feedback instantâneo de digitação (Front-end)
+        const parseUnidade = (n: typeof localN1) => {
           const v1 = n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null
           const v2 = n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null
           const v3 = n.nota3 !== null && n.nota3 !== '' ? Number(n.nota3) : null
@@ -193,9 +237,9 @@ export function useTurmaNotas({
           return parseFloat((soma / divisor).toFixed(1))
         }
 
-        const m1 = parseUnidade(n1Data)
-        const m2 = parseUnidade(n2Data)
-        const m3 = parseUnidade(n3Data)
+        const m1 = parseUnidade(localN1)
+        const m2 = parseUnidade(localN2)
+        const m3 = parseUnidade(localN3)
 
         const mediasValidas = [m1, m2, m3].filter((m): m is number => m !== null)
         const mediaFinal = mediasValidas.length === 0 
@@ -205,8 +249,7 @@ export function useTurmaNotas({
         const todasUnidades = m1 !== null && m2 !== null && m3 !== null
         const isElegivelRec = todasUnidades && mediaFinal !== null && mediaFinal < 5.0
 
-        const recData = recuperacoesState[keyPrefix] || { nota: null }
-        const notaRec = recData.nota !== null && recData.nota !== '' ? Number(recData.nota) : null
+        const notaRec = localRec.nota !== null && localRec.nota !== '' ? Number(localRec.nota) : null
 
         let mediaPosRec = mediaFinal
         if (mediaFinal !== null && todasUnidades && mediaFinal < 5.0) {
@@ -242,7 +285,7 @@ export function useTurmaNotas({
     })
 
     return res
-  }, [alunos, materias, notasState, recuperacoesState])
+  }, [alunos, materias, notasState, recuperacoesState, notasServidor, calculosServidorState])
 
   const handleSalvarNotas = async (materiaId: string) => {
     if (!escolaAtivaId) return
@@ -285,16 +328,16 @@ export function useTurmaNotas({
         const todasUnidades = calc.todasUnidades
         const mediaFinal = calc.mediaFinal
 
-        if (rec && rec.nota !== null && rec.nota !== '') {
-          if (todasUnidades && mediaFinal !== null && mediaFinal < 5.0) {
-            recUpserts.push({
-              aluno_id: aluno.id,
-              turma_id: turma.id,
-              materia_id: materiaId,
-              escola_id: escolaAtivaId ?? '',
-              nota: Number(rec.nota)
-            })
-          }
+        // Salva recuperação se o aluno for de fato elegível.
+        // Se a nota foi limpa ou o aluno não é mais elegível (ex: a média subiu), remove do banco.
+        if (rec && rec.nota !== null && rec.nota !== '' && todasUnidades && mediaFinal !== null && mediaFinal < 5.0) {
+          recUpserts.push({
+            aluno_id: aluno.id,
+            turma_id: turma.id,
+            materia_id: materiaId,
+            escola_id: escolaAtivaId ?? '',
+            nota: Number(rec.nota)
+          })
         } else {
           recDeletes.push(aluno.id)
         }
