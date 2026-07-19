@@ -7,7 +7,12 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { toast } from 'sonner'
-import { Save, Printer, X, Loader2, BookOpen, Star } from 'lucide-react'
+import { Save, Printer, Loader2 } from 'lucide-react'
+
+// Subcomponentes importados
+import { BoletimCapa } from './boletim/BoletimCapa'
+import { BoletimTabelaNotas } from './boletim/BoletimTabelaNotas'
+import { BoletimAssinaturas } from './boletim/BoletimAssinaturas'
 
 export interface BoletimMateriaData {
   id: string
@@ -92,8 +97,6 @@ export function PrintBoletimSapeacu({
 
   // Logos com Cache Busting
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-  const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
 
   const getCacheBustedUrl = (url: string) => {
     if (!url) return ''
@@ -105,19 +108,22 @@ export function PrintBoletimSapeacu({
   // Parsing automático da turma (ex: "6 - A" -> Ano: "6º ANO", Turma: "A")
   useEffect(() => {
     const nomeTurma = turma.nome
-    const match = nomeTurma.match(/^(\d+)(?:\s*[-°ºº]\s*)([A-Z])$/i)
-    if (match) {
-      setAnoEscolar(`${match[1]}º ANO`)
-      setTurmaNome(match[2].toUpperCase())
-    } else {
-      const numMatch = nomeTurma.match(/^(\d+)/)
-      const letterMatch = nomeTurma.match(/([A-Z])$/i)
-      setAnoEscolar(numMatch ? `${numMatch[1]}º ANO` : nomeTurma)
-      setTurmaNome(letterMatch ? letterMatch[1].toUpperCase() : '')
+    try {
+      const match = nomeTurma.match(/^(\d+)(?:\s*[-°ºº]\s*)([A-Z])$/i)
+      if (match) {
+        setAnoEscolar(`${match[1]}º ANO`)
+        setTurmaNome(match[2].toUpperCase())
+      } else {
+        const numMatch = nomeTurma.match(/^(\d+)/)
+        const letterMatch = nomeTurma.match(/([A-Z])$/i)
+        setAnoEscolar(numMatch ? `${numMatch[1]}º ANO` : nomeTurma)
+        setTurmaNome(letterMatch ? letterMatch[1].toUpperCase() : '')
+      }
+    } catch {
+      setAnoEscolar(nomeTurma)
+      setTurmaNome('')
     }
   }, [turma.nome])
-
-
 
   // Inicializar notasState e recsState a partir das props
   useEffect(() => {
@@ -144,6 +150,7 @@ export function PrintBoletimSapeacu({
 
     setNotasState(initialNotas)
     setRecsState(initialRecs)
+    setDataEmissao(new Date().toLocaleDateString('pt-BR'))
 
     return () => setMounted(false)
   }, [notas, recuperacoes])
@@ -300,7 +307,7 @@ export function PrintBoletimSapeacu({
   if (!mounted) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-start p-6 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
+    <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-start p-6 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container animate-in fade-in duration-200">
       <style>{`
         @media print {
           body > *:not(.print-portal-container) {
@@ -370,101 +377,12 @@ export function PrintBoletimSapeacu({
       <div className="space-y-8 my-10 print:my-0 print:space-y-0 text-black flex flex-col items-center">
         
         {/* PÁGINA 1: CAPA (A4 Paisagem, Metade Direita) */}
-        <div 
-          className="w-[297mm] h-[210mm] bg-white relative shadow-2xl rounded-sm overflow-hidden print:shadow-none print:rounded-none page-break border border-gray-200 print:border-none"
-          style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
-        >
-          {/* Linha tracejada indicando o meio para a dobra da folha (oculta na impressão) */}
-          <div className="absolute left-[148.5mm] top-0 bottom-0 border-l border-dashed border-gray-300 print:hidden z-10" />
-
-          {/* Metade Direita da Folha: A Capa */}
-          <div className="absolute right-0 top-0 w-[148.5mm] h-full flex flex-col justify-between items-center select-text font-sans">
-            
-            {/* Topo: Imagem top_boletim.png */}
-            <div className="w-full select-none">
-              <img
-                src={getCacheBustedUrl(`${supabaseUrl}/storage/v1/object/public/logos/top_boletim.png`)}
-                alt="Capa Boletim Topo"
-                className="w-full h-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-
-            {/* Centro: Logotipo / Selo Circular */}
-            <div className="flex flex-col items-center justify-center my-2">
-              {(() => {
-                const isMoises = escolaEditada.toLowerCase().includes('moises') || escolaEditada.toLowerCase().includes('moisés');
-                const hasLogo = isMoises || escolaLogoUrl;
-                const logoSrc = isMoises 
-                  ? '/img/logo-moises.png' 
-                  : (escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : '');
-
-                if (hasLogo) {
-                  return (
-                    <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex items-center justify-center p-2 bg-white relative shadow-inner overflow-hidden">
-                      <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none z-10" />
-                      <img
-                        src={logoSrc}
-                        alt="Logo Escola"
-                        className="w-full h-full object-contain rounded-full"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  );
-                }
-
-                // Fallback: Selo Circular Estilizado em CSS se não houver imagem
-                return (
-                  <div className="w-52 h-52 rounded-full border-4 border-[#0b4a8c] flex flex-col items-center justify-center p-5 bg-white relative shadow-inner">
-                    {/* Bordas internas finas circulares */}
-                    <div className="absolute inset-1 rounded-full border border-[#0b4a8c] pointer-events-none" />
-                    <div className="absolute inset-2.5 rounded-full border-2 border-double border-[#0b4a8c] pointer-events-none" />
-                    
-                    {/* Conteúdo do Selo */}
-                    <div className="flex flex-col items-center text-center justify-between h-full py-2 z-10 max-w-[155px]">
-                      <span className="text-[7.5px] font-extrabold uppercase text-[#0b4a8c] tracking-tight leading-none px-1">
-                        {escolaEditada.length > 55 ? escolaEditada.substring(0, 52) + '...' : escolaEditada}
-                      </span>
-                      
-                      <div className="flex flex-col items-center justify-center my-0.5">
-                        <span className="text-[12px] font-black uppercase text-[#0b4a8c] leading-none mb-1">
-                          {escolaEditada.split(' ').map(w => w[0]).filter(c => c === c.toUpperCase() && c.match(/[A-Z]/)).join('').substring(0, 7)}
-                        </span>
-                        <div className="w-10 h-[1.5px] bg-[#0b4a8c] mb-1.5" />
-                        <div className="flex gap-0.5 text-[#0b4a8c] mb-0.5">
-                          <Star className="w-2.5 h-2.5 fill-current" />
-                          <Star className="w-2.5 h-2.5 fill-current transform -translate-y-0.5" />
-                          <Star className="w-2.5 h-2.5 fill-current" />
-                        </div>
-                        <BookOpen className="w-9 h-9 text-[#185fa5] stroke-[2.5]" />
-                      </div>
-
-                      <span className="text-[7px] font-black uppercase text-[#0b4a8c] tracking-widest leading-none pt-0.5 border-t border-[#0b4a8c]/35 w-full">
-                        Sapeaçú - BA
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Base: Imagem bottom_boletim.png */}
-            <div className="w-full select-none">
-              <img
-                src={getCacheBustedUrl(`${supabaseUrl}/storage/v1/object/public/logos/bottom_boletim.png`)}
-                alt="Capa Boletim Base"
-                className="w-full h-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        <BoletimCapa
+          escolaEditada={escolaEditada}
+          escolaLogoUrl={escolaLogoUrl}
+          supabaseUrl={supabaseUrl}
+          getCacheBustedUrl={getCacheBustedUrl}
+        />
 
         {/* PÁGINA 2: O BOLETIM COM A TABELA (A4 Paisagem, Metade Direita) */}
         <div 
@@ -543,325 +461,39 @@ export function PrintBoletimSapeacu({
               </div>
 
               {/* Tabela de Notas */}
-              <table className="w-full border-collapse border border-black text-center font-bold text-[9px]">
-                <thead>
-
-                  {/* Linha 2: Cabeçalhos principais */}
-                  <tr style={{ backgroundColor: 'rgba(160, 190, 220, 1)' }} className="font-bold text-black text-[8.5px]">
-                    <th className="border border-black w-6"></th>
-                    <th className="border border-black px-1.5 py-0.5 text-left uppercase w-[38%]">
-                      Componentes Curriculares
-                    </th>
-                    <th className="border border-black py-0.5 w-[8%]">1º TRI</th>
-                    <th className="border border-black py-0.5 w-[8%]">2º TRI</th>
-                    <th className="border border-black py-0.5 w-[8%]">3º TRI</th>
-                    <th className="border border-black py-0.5 w-[10%]">TOTAL</th>
-                    <th className="border border-black py-0.5 w-[11%]">REC</th>
-                    <th className="border border-black py-0.5 w-[11%]">Média Final</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Seção BASE COMUM */}
-                  {(() => {
-                    const totalComum = materiasComuns.length
-                    return materiasComuns.length === 0 ? (
-                      <tr>
-                        <td
-                          rowSpan={1}
-                          style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                          className="border border-black p-1 font-black text-center text-[8.5px] uppercase w-5 leading-none shrink-0"
-                        >
-                          <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black select-none">
-                            Base Comum
-                          </div>
-                        </td>
-                        <td colSpan={7} className="border border-black p-1.5 text-center text-gray-500 italic font-normal text-[9px]">
-                          Nenhuma disciplina de Base Comum vinculada a esta turma.
-                        </td>
-                      </tr>
-                    ) : (
-                      materiasComuns.map((mat, index) => {
-                        const total = calcularTotal(mat.id)
-                        const mediaFinal = calcularMediaFinal(mat.id)
-                        return (
-                          <tr key={mat.id} className="text-[9px]">
-                            {index === 0 && (
-                              <td
-                                rowSpan={totalComum}
-                                style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                                className="border border-black font-black text-center text-[8.5px] uppercase w-5 leading-none select-none shrink-0"
-                              >
-                                <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black">
-                                  Base Comum
-                                </div>
-                              </td>
-                            )}
-                            <td className="border border-black px-1.5 py-0.5 text-left font-bold text-black uppercase truncate max-w-[125px]">
-                              {mat.nome}
-                            </td>
-                            
-                            {/* Trimestre 1 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_1`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 1, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Trimestre 2 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_2`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 2, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Trimestre 3 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_3`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 3, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-
-                            {/* TOTAL */}
-                            <td className="border border-black py-0.5 bg-slate-50 text-black">
-                              {total !== null ? total.toFixed(1) : '-'}
-                            </td>
-                            {/* Recuperação Final */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={recsState[mat.id] || ''}
-                                onChange={(e) => handleRecChange(mat.id, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Média Final */}
-                            <td className={`border border-black py-0.5 ${
-                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-950'
-                            }`}>
-                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )
-                  })()}
-
-                  {/* Seção DIVERSAS */}
-                  {(() => {
-                    const totalDiversas = materiasDiversas.length
-                    return materiasDiversas.length === 0 ? (
-                      <tr>
-                        <td
-                          rowSpan={1}
-                          style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                          className="border border-black p-1 font-black text-center text-[8.5px] uppercase w-5 leading-none shrink-0"
-                        >
-                          <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black select-none">
-                            Diversificada
-                          </div>
-                        </td>
-                        <td colSpan={7} className="border border-black p-1.5 text-center text-gray-500 italic font-normal text-[9px]">
-                          Nenhuma disciplina de Parte Diversificada vinculada a esta turma.
-                        </td>
-                      </tr>
-                    ) : (
-                      materiasDiversas.map((mat, index) => {
-                        const total = calcularTotal(mat.id)
-                        const mediaFinal = calcularMediaFinal(mat.id)
-                        return (
-                          <tr key={mat.id} className="text-[9px]">
-                            {index === 0 && (
-                              <td
-                                rowSpan={totalDiversas}
-                                style={{ backgroundColor: 'rgba(215, 230, 245, 1)' }}
-                                className="border border-black font-black text-center text-[8.5px] uppercase w-5 leading-none select-none shrink-0"
-                              >
-                                <div className="[writing-mode:vertical-lr] [transform:rotate(180deg)] mx-auto font-black">
-                                  Diversificada
-                                </div>
-                              </td>
-                            )}
-                            <td className="border border-black px-1.5 py-0.5 text-left font-bold text-black uppercase truncate max-w-[125px]">
-                              {mat.nome}
-                            </td>
-                            
-                            {/* Trimestre 1 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_1`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 1, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Trimestre 2 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_2`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 2, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Trimestre 3 */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={notasState[`${mat.id}_3`] || ''}
-                                onChange={(e) => handleNotaChange(mat.id, 3, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-
-                            {/* TOTAL */}
-                            <td className="border border-black py-0.5 bg-slate-50 text-black">
-                              {total !== null ? total.toFixed(1) : '-'}
-                            </td>
-                            {/* Recuperação Final */}
-                            <td className="border border-black p-0">
-                              <input
-                                type="text"
-                                value={recsState[mat.id] || ''}
-                                onChange={(e) => handleRecChange(mat.id, e.target.value)}
-                                disabled={!isEditMode}
-                                className="w-full text-center bg-transparent focus:outline-none font-bold text-black text-[9px] py-0.5"
-                              />
-                            </td>
-                            {/* Média Final */}
-                            <td className={`border border-black py-0.5 ${
-                              mediaFinal !== null && mediaFinal < 5.0 ? 'text-red-600 bg-red-50/10' : 'text-slate-955'
-                            }`}>
-                              {mediaFinal !== null ? mediaFinal.toFixed(1) : '-'}
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )
-                  })()}
-                </tbody>
-              </table>
-
-              {/* Legenda da Parte Diversificada */}
-              <div className="text-[7.5px] font-bold text-black uppercase mt-2 mb-1 text-left w-full">
-                <span className="block font-black text-[8px] mb-0.5">Legenda da Parte Diversificada</span>
-                <div className="flex gap-6 font-bold text-slate-800">
-                  <span>ED: Em Desenvolvimento</span>
-                  <span>AD: Adequado</span>
-                  <span>AV: Avançado</span>
-                </div>
-              </div>
-
-              {/* Seção de Assinatura dos Pais */}
-              <div className="w-full mt-2.5">
-                <div className="text-center font-black text-[8.5px] uppercase tracking-wider text-black mb-1">
-                  Assinatura dos pais ou responsáveis
-                </div>
-                <div className="border border-black rounded-sm w-full bg-white select-text">
-                  <div className="flex items-center text-[9px] font-bold border-b border-black h-7 px-2">
-                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">1º Trimestre:</span>
-                    <input
-                      type="text"
-                      value={assinaturaTrimestre1}
-                      onChange={(e) => setAssinaturaTrimestre1(e.target.value)}
-                      placeholder="Assinatura"
-                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
-                    />
-                  </div>
-                  <div className="flex items-center text-[9px] font-bold border-b border-black h-7 px-2">
-                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">2º Trimestre:</span>
-                    <input
-                      type="text"
-                      value={assinaturaTrimestre2}
-                      onChange={(e) => setAssinaturaTrimestre2(e.target.value)}
-                      placeholder="Assinatura"
-                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
-                    />
-                  </div>
-                  <div className="flex items-center text-[9px] font-bold h-7 px-2">
-                    <span className="uppercase text-[8px] mr-2 shrink-0 text-black">3º Trimestre:</span>
-                    <input
-                      type="text"
-                      value={assinaturaTrimestre3}
-                      onChange={(e) => setAssinaturaTrimestre3(e.target.value)}
-                      placeholder="Assinatura"
-                      className="flex-1 bg-transparent focus:outline-none text-[8.5px] font-bold py-0 h-full uppercase text-black"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Resultado Final */}
-              <div className="border border-black p-2 rounded-sm space-y-2 mt-2.5 bg-white select-text w-full">
-                <h3 className="text-center text-[8.5px] font-black uppercase tracking-wider text-black">
-                  Resultado Final
-                </h3>
-                
-                <div className="h-px bg-black w-full" />
-
-                <div className="space-y-2 text-[8.5px] font-bold text-black">
-                  <div className="flex items-center gap-1">
-                    <span className="uppercase text-[8px] shrink-0">O(A) aluno (a):</span>
-                    <input
-                      type="text"
-                      value={alunoRodape}
-                      onChange={(e) => setAlunoRodape(e.target.value)}
-                      className="flex-1 bg-transparent border-b border-black focus:outline-none uppercase font-bold text-black py-0 px-1 text-[8.5px]"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <span className="uppercase text-[8px] shrink-0">foi</span>
-                    <input
-                      type="text"
-                      value={fol}
-                      onChange={(e) => setFol(e.target.value)}
-                      className="w-48 bg-transparent border-b border-black focus:outline-none font-bold text-black py-0 px-1 text-[8.5px]"
-                    />
-                  </div>
-                </div>
-
-                {/* Linhas de Assinatura do Gestor e Data */}
-                <div className="flex justify-between items-end pt-3 px-2">
-                  <div className="text-center flex flex-col justify-end w-[45%]">
-                    <input
-                      type="text"
-                      value={gestorAssinatura}
-                      onChange={(e) => setGestorAssinatura(e.target.value)}
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-bold py-0 h-4 uppercase text-black"
-                    />
-                    <span className="text-[7px] uppercase font-bold text-black mt-1 block">Gestor(a)</span>
-                  </div>
-
-                  <div className="text-center flex flex-col justify-end w-[35%]">
-                    <input
-                      type="text"
-                      value={dataEmissao}
-                      onChange={(e) => setDataEmissao(e.target.value)}
-                      placeholder="__/__/____"
-                      className="w-full bg-transparent border-b border-black text-center focus:outline-none text-[8.5px] font-mono font-bold py-0 h-4 text-black"
-                    />
-                    <span className="text-[7px] uppercase font-bold text-black mt-1 block">Data</span>
-                  </div>
-                </div>
-              </div>
+              <BoletimTabelaNotas
+                isEditMode={isEditMode}
+                materiasComuns={materiasComuns}
+                materiasDiversas={materiasDiversas}
+                notasState={notasState}
+                recsState={recsState}
+                handleNotaChange={handleNotaChange}
+                handleRecChange={handleRecChange}
+                calcularTotal={calcularTotal}
+                calcularMediaFinal={calcularMediaFinal}
+              />
             </div>
+
+            {/* Rodapé e Canhoto */}
+            <BoletimAssinaturas
+              isEditMode={isEditMode}
+              dataEmissao={dataEmissao}
+              setDataEmissao={setDataEmissao}
+              gestorAssinatura={gestorAssinatura}
+              setGestorAssinatura={setGestorAssinatura}
+              fol={fol}
+              setFol={setFol}
+              alunoRodape={alunoRodape}
+              setAlunoRodape={setAlunoRodape}
+              assinaturaTrimestre1={assinaturaTrimestre1}
+              setAssinaturaTrimestre1={setAssinaturaTrimestre1}
+              assinaturaTrimestre2={assinaturaTrimestre2}
+              setAssinaturaTrimestre2={setAssinaturaTrimestre2}
+              assinaturaTrimestre3={assinaturaTrimestre3}
+              setAssinaturaTrimestre3={setAssinaturaTrimestre3}
+            />
           </div>
         </div>
-
       </div>
     </div>,
     document.body
