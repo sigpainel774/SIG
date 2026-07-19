@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const hoje = new Date().toISOString().split('T')[0]
+  // Formatar a data local respeitando o fuso horário de Brasília (UTC-3)
+  const hoje = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
   try {
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
       { count: ocorrenciasMes },
       { count: transferenciasPendentes },
       { count: atividadesPendentes },
-      { data: turmasHoje },
+      rpcTurmasHoje,
       { data: todasTurmas },
     ] = await Promise.all([
       // 1. Total de alunos ativos
@@ -65,12 +66,11 @@ export async function GET(req: NextRequest) {
         .eq('escola_id', escolaId)
         .in('status', ['recebida', 'em_impressao']),
 
-      // 6. Turmas com frequência registrada hoje (lista com duplicatas para calcular únicas)
-      supabase
-        .from('frequencias')
-        .select('turma_id')
-        .eq('escola_id', escolaId)
-        .eq('data', hoje),
+      // 6. Turmas com frequência registrada hoje (RPC)
+      (supabase as any).rpc('obter_turmas_com_frequencia_hoje', {
+        p_escola_id: escolaId,
+        p_data: hoje
+      }),
 
       // 7. Todas as turmas ativas (denominador para % de frequência)
       supabase
@@ -80,7 +80,8 @@ export async function GET(req: NextRequest) {
         .is('deleted_at', null),
     ])
 
-    const turmasComFreq = new Set((turmasHoje ?? []).map((f: { turma_id: string }) => f.turma_id)).size
+    if (rpcTurmasHoje.error) throw rpcTurmasHoje.error
+    const turmasComFreq = rpcTurmasHoje.data ?? 0
 
     return NextResponse.json({
       totalAlunos: totalAlunos ?? 0,

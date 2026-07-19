@@ -88,6 +88,7 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
             turmas (nome)
           `)
           .is('deleted_at', null)
+          .or('dados_matricula->>neeAluno.eq.Sim,dados_matricula->>deficienciaAluno.eq.Sim')
 
         if (selectedEscola) {
           query = query.eq('escola_id', selectedEscola.id)
@@ -96,13 +97,7 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
         const { data: dataAlunos, error: errAlunos } = await query
         if (errAlunos) throw errAlunos
 
-        // Filtra alunos que possuem NEE ou Deficiências marcadas na anamnese
-        const alunosFiltrados = (dataAlunos || []).filter((aluno: any) => {
-          const dm = aluno.dados_matricula as any || {}
-          return dm.neeAluno === 'Sim' || dm.deficienciaAluno === 'Sim'
-        })
-
-        setAlunos(alunosFiltrados)
+        setAlunos(dataAlunos || [])
       } catch (err: any) {
         console.error('Erro ao buscar dados de necessidades especiais:', err)
         setError('Ocorreu um erro ao carregar as informações do banco de dados.')
