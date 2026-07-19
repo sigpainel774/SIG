@@ -1,35 +1,27 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, memo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import useSWR from 'swr'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
 import { getProfessoresEscola, getCatalogoMaterias, getVinculosProfessores } from '@/lib/swrFetchers'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
-import { cn } from '@/lib/utils'
 import {
   Users,
   BookOpen,
   CalendarDays,
-  FileSpreadsheet,
-  User as UserIcon,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  RefreshCw,
-  Save,
-  Printer,
-  CheckCircle2,
-  XCircle,
-  Plus,
-  Trash2
+  FileSpreadsheet
 } from 'lucide-react'
 import { ModalDetalhesAluno } from './ModalDetalhesAluno'
+
+import { TabMateriasTurma } from './turmas/TabMateriasTurma'
+import { TabAlunosTurma } from './turmas/TabAlunosTurma'
+import { TabFrequenciasTurma } from './turmas/TabFrequenciasTurma'
+import { TabNotasTurma } from './turmas/TabNotasTurma'
+
 
 interface ModalDetalhesTurmaProps {
   open: boolean
@@ -888,518 +880,78 @@ export function ModalDetalhesTurma({
               </button>
             </div>
 
-            {/* ABA: MATÉRIAS */}
             {activeTab === 'materias' && (
-              <div className="space-y-4 mt-5">
-                {isEditMode ? (
-                  // PAINEL DE ALOCAÇÃO ADMINISTRATIVA (Exibido se o Modo de Edição estiver ativo)
-                  <div className="space-y-5">
-                    <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        Professores da Turma
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <select
-                            value={selectedProfId}
-                            onChange={(e) => setSelectedProfId(e.target.value)}
-                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
-                          >
-                            <option value="">-- Selecione um Professor --</option>
-                            {professoresEscola
-                              .filter(p => !vinculosProfessores.some(vp => vp.funcionario_id === p.id))
-                              .map((prof) => (
-                                <option key={prof.id} value={prof.id} className="bg-background text-foreground">
-                                  {prof.nome}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-                        <Button
-                          onClick={handleAddProfessor}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 h-10 text-xs rounded-lg"
-                        >
-                          Adicionar
-                        </Button>
-                      </div>
-
-                      {/* Lista de Professores Adicionados */}
-                      {vinculosProfessores.length > 0 ? (
-                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto pr-1">
-                          {vinculosProfessores.map((vp) => (
-                            <div key={vp.id} className="flex items-center justify-between bg-background p-2 rounded-lg border border-border">
-                              <span className="text-xs font-semibold text-foreground pl-1">{vp.funcionarios?.nome ?? 'Sem nome'}</span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
-                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground text-center py-1 font-medium">Nenhum professor alocado.</div>
-                      )}
-                    </div>
-
-                    <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
-                        <BookOpen className="w-4 h-4 text-muted-foreground" />
-                        Matérias da Turma
-                      </div>
-
-                      {/* Formulário de Adição (Dashed Container) */}
-                      <div className="border border-dashed border-border bg-background rounded-lg p-3 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <select
-                            value={novaMateriaNome}
-                            onChange={(e) => handleSelectMateriaCatalogo(e.target.value)}
-                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
-                          >
-                            <option value="" className="bg-background text-foreground">-- Selecione a Matéria --</option>
-                            {catalogoMaterias.length === 0 ? (
-                              <option value="" disabled className="bg-background text-foreground">Cadastre matérias nas Configurações</option>
-                            ) : (
-                              catalogoMaterias.map((m) => (
-                                <option key={m.id} value={m.nome} className="bg-background text-foreground">
-                                  {m.nome}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                          <select
-                            value={novaMateriaProfId}
-                            onChange={(e) => setNovaMateriaProfId(e.target.value)}
-                            className="w-full bg-background border border-border rounded-lg text-foreground px-3 h-10 text-xs focus:ring-1 focus:ring-primary outline-none"
-                          >
-                            <option value="" className="bg-background text-foreground">-- Selecione o Professor --</option>
-                            <option value="sem_professor" className="bg-background text-foreground">Sem professor</option>
-                            {vinculosProfessores.map((vp) => (
-                              <option key={vp.funcionario_id} value={vp.funcionario_id} className="bg-background text-foreground">
-                                {vp.funcionarios?.nome ?? 'Sem nome'}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="w-full bg-background border border-border rounded-lg text-muted-foreground px-3 h-10 text-xs flex items-center justify-between">
-                            <span>Base:</span>
-                            <span className={cn(
-                              "font-semibold uppercase text-[10px] px-2 py-0.5 rounded border",
-                              novaMateriaBaseCurricular === 'comum'
-                                ? "bg-primary/10 border-primary/20 text-primary"
-                                : "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
-                            )}>
-                              {novaMateriaBaseCurricular === 'comum' ? 'Comum' : 'Diversificada'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            onClick={handleAddMateria}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-auto gap-1 h-9 px-3 text-xs rounded-lg"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Adicionar Matéria
-                          </Button>
-                          <Button
-                            onClick={handleImportarMateriasDaGrade}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 w-9 p-0 text-xs rounded-lg flex items-center justify-center cursor-pointer"
-                            title="Importar todas as matérias da grade curricular"
-                          >
-                            T
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Lista de Matérias */}
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {materias.length === 0 ? (
-                          <div className="text-xs text-muted-foreground text-center py-2 font-medium">Nenhuma matéria cadastrada.</div>
-                        ) : (
-                          materias.map((mat) => (
-                            <div key={mat.id} className="flex items-center justify-between bg-background p-3 rounded-lg border border-border gap-3">
-                              <div className="flex flex-col min-w-0 flex-1 pr-2">
-                                <span className="text-xs font-bold text-foreground truncate">{mat.nome}</span>
-                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                  <div className="flex items-center gap-1">
-                                    <UserIcon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                    <select
-                                      value={mat.professor_id ?? 'sem_professor'}
-                                      onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
-                                      className="bg-background border border-border rounded text-foreground px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-primary outline-none max-w-[130px]"
-                                    >
-                                      <option value="sem_professor" className="bg-background text-foreground">Sem professor</option>
-                                      {vinculosProfessores.map((vp) => (
-                                        <option key={vp.funcionario_id} value={vp.funcionario_id} className="bg-background text-foreground">
-                                          {vp.funcionarios?.nome ?? 'Sem nome'}
-                                        </option>
-                                      ))}
-                                      {/* Caso o professor atual não esteja listado nos vínculos (prevenção de inconsistência) */}
-                                      {mat.professor_id && !vinculosProfessores.some(vp => vp.funcionario_id === mat.professor_id) && (
-                                        <option key={mat.professor_id} value={mat.professor_id} className="bg-background text-foreground">
-                                          {mat.funcionarios?.nome ?? 'Professor atual (Fora da Turma)'}
-                                        </option>
-                                      )}
-                                    </select>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <BookOpen className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                    <select
-                                      value={mat.base_curricular ?? 'comum'}
-                                      onChange={(e) => handleUpdateMateriaBase(mat.id, e.target.value)}
-                                      className="bg-background border border-border rounded text-foreground px-2 py-0.5 text-[11px] focus:ring-1 focus:ring-primary outline-none"
-                                    >
-                                      <option value="comum" className="bg-background text-foreground">Base Comum</option>
-                                      <option value="diversificada" className="bg-background text-foreground">Base Diversificada</option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveMateria(mat.id)}
-                                className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex-shrink-0 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // DIÁRIO SIMPLES (Exibido no modo de leitura comum)
-                  <div className="space-y-3">
-                    {loading ? (
-                      <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando matérias...</div>
-                    ) : materias.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-muted-foreground font-medium">Nenhuma matéria vinculada a esta turma.</div>
-                    ) : (
-                      materias.map((mat) => (
-                        <div
-                          key={mat.id}
-                          className="bg-card border border-border hover:border-primary/50 shadow-[0_2px_10px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 rounded-xl p-4 flex items-center justify-between h-13 transition-all duration-200 text-foreground cursor-pointer"
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-foreground">{mat.nome}</span>
-                            <span className="text-[10px] text-muted-foreground mt-0.5">
-                              {mat.base_curricular === 'diversificada' ? 'Base Diversificada' : 'Base Comum'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <UserIcon className="w-4 h-4 text-muted-foreground/60" />
-                            <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
+              <TabMateriasTurma
+                isEditMode={isEditMode}
+                loading={loading}
+                materias={materias}
+                professoresEscola={professoresEscola}
+                vinculosProfessores={vinculosProfessores}
+                catalogoMaterias={catalogoMaterias}
+                selectedProfId={selectedProfId}
+                setSelectedProfId={setSelectedProfId}
+                novaMateriaNome={novaMateriaNome}
+                setNovaMateriaNome={setNovaMateriaNome}
+                novaMateriaProfId={novaMateriaProfId}
+                setNovaMateriaProfId={setNovaMateriaProfId}
+                novaMateriaBaseCurricular={novaMateriaBaseCurricular}
+                setNovaMateriaBaseCurricular={setNovaMateriaBaseCurricular}
+                handleAddProfessor={handleAddProfessor}
+                handleRemoveProfessor={handleRemoveProfessor}
+                handleSelectMateriaCatalogo={handleSelectMateriaCatalogo}
+                handleAddMateria={handleAddMateria}
+                handleImportarMateriasDaGrade={handleImportarMateriasDaGrade}
+                handleRemoveMateria={handleRemoveMateria}
+                handleUpdateMateriaProfessor={handleUpdateMateriaProfessor}
+                handleUpdateMateriaBase={handleUpdateMateriaBase}
+              />
             )}
 
-            {/* ABA: ALUNOS */}
             {activeTab === 'alunos' && (
-              <div className="space-y-4 mt-5">
-                {/* Campo de Busca */}
-                <div className="relative">
-                  <Input
-                    type="search"
-                    placeholder="Buscar aluno..."
-                    value={searchAluno}
-                    onChange={(e) => setSearchAluno(e.target.value)}
-                    className="bg-background border-border text-foreground placeholder-muted-foreground h-10 text-sm rounded-xl pl-3 focus-visible:ring-primary"
-                  />
-                </div>
-
-                {/* Lista */}
-                {loading ? (
-                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando alunos...</div>
-                ) : filteredAlunos.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Nenhum aluno encontrado.</div>
-                ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                    {filteredAlunos.map((aluno) => (
-                      <div
-                        key={aluno.id}
-                        onClick={() => setSelectedAluno(aluno)}
-                        className="bg-card border border-border hover:border-primary/40 shadow-[0_2px_10px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 p-3 rounded-xl flex items-center gap-3.5 cursor-pointer transition-all duration-200 text-foreground"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {aluno.foto_url ? (
-                            <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-                          ) : (
-                            aluno.nome.substring(0, 2).toUpperCase()
-                          )}
-                        </div>
-                        <span className="text-sm font-semibold text-foreground truncate">{aluno.nome}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <TabAlunosTurma
+                loading={loading}
+                alunos={alunos}
+                setSelectedAluno={setSelectedAluno}
+              />
             )}
 
-            {/* ABA: FREQUÊNCIA */}
             {activeTab === 'frequencia' && (
-              <div className="space-y-4 mt-5">
-                {/* Controles de Data e Matéria */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center bg-background border border-border rounded-xl overflow-hidden h-10">
-                    <button
-                      onClick={() => alterarData(-1)}
-                      className="p-2.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    >
-                      <ChevronLeft className="w-4.5 h-4.5" />
-                    </button>
-                    <input
-                      type="date"
-                      value={dataFreq}
-                      onChange={(e) => setDataFreq(e.target.value)}
-                      className="bg-transparent text-sm text-primary font-bold text-center w-36 outline-none px-2 focus:ring-0 cursor-pointer"
-                    />
-                    <button
-                      onClick={() => alterarData(1)}
-                      className="p-2.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    >
-                      <ChevronRight className="w-4.5 h-4.5" />
-                    </button>
-                  </div>
-
-                  <select
-                    value={selectedMateriaId}
-                    onChange={(e) => {
-                      setSelectedMateriaId(e.target.value)
-                      setSelectedAgendaAulaId(null) // Reseta se trocar matéria manualmente
-                    }}
-                    disabled={!!initialMateriaId}
-                    className="h-10 rounded-xl border border-border bg-background text-foreground px-3.5 text-xs font-semibold focus:outline-none cursor-pointer outline-none"
-                  >
-                    <option value="" disabled className="bg-background text-foreground">-- Selecione a Matéria --</option>
-                    {materias.map((m) => (
-                      <option key={m.id} value={m.id} className="bg-background text-foreground">
-                        {m.nome}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => mutateFrequencias()}
-                    className="bg-muted text-foreground border border-border hover:bg-muted/80 rounded-xl px-3.5 h-10 gap-1.5 text-xs font-semibold cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Atualizar
-                  </Button>
-                </div>
-
-                {/* Lista com Presença/Falta */}
-                {loading || loadingFreq ? (
-                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Carregando diário de presenças...</div>
-                ) : alunos.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-muted-foreground font-medium">Sem alunos matriculados nesta turma.</div>
-                ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                    {alunos.map((aluno) => {
-                      const status = frequencias[aluno.id] // true = Presente, false = Falta, undefined = Pendente
-                      return (
-                        <div
-                          key={aluno.id}
-                          className="bg-card border border-border shadow-[0_2px_10px_rgba(15,23,42,0.04)] p-3 rounded-xl flex items-center justify-between text-foreground"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-9 h-9 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {aluno.foto_url ? (
-                                <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-                              ) : (
-                                aluno.nome.substring(0, 2).toUpperCase()
-                              )}
-                            </div>
-                            <span className="text-sm font-semibold text-foreground truncate pr-2">{aluno.nome}</span>
-                          </div>
-
-                          {/* Botões Presente / Falta */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleLancarFrequencia(aluno.id, true)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                                status === true
-                                  ? 'bg-green-500/10 text-green-500 border-green-500/30'
-                                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
-                              }`}
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Presente
-                            </button>
-                            <button
-                              onClick={() => handleLancarFrequencia(aluno.id, false)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                                status === false
-                                  ? 'bg-red-500/10 text-red-500 border-red-500/30'
-                                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
-                              }`}
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              Falta
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+              <TabFrequenciasTurma
+                alunos={alunos}
+                materias={materias}
+                selectedMateriaId={selectedMateriaId}
+                setSelectedMateriaId={setSelectedMateriaId}
+                setSelectedAgendaAulaId={setSelectedAgendaAulaId}
+                initialMateriaId={initialMateriaId}
+                dataFreq={dataFreq}
+                setDataFreq={setDataFreq}
+                loading={loading}
+                loadingFreq={loadingFreq}
+                frequencias={frequencias}
+                handleLancarFrequencia={handleLancarFrequencia}
+                mutateFrequencias={mutateFrequencias}
+              />
             )}
 
-            {/* ABA: NOTAS */}
             {activeTab === 'notas' && (
-              <div className="space-y-4 mt-5">
-                <div className="space-y-3 w-full">
-                  {loading ? (
-                    <div className="text-center py-10 text-xs text-muted-foreground font-medium bg-card border border-border rounded-xl">
-                      Carregando notas...
-                    </div>
-                  ) : materias.length === 0 ? (
-                    <div className="text-center py-10 text-xs text-muted-foreground font-medium bg-card border border-border rounded-xl p-4">
-                      Nenhuma matéria vinculada a esta turma. Cadastre as matérias na aba "Matérias" para poder lançar notas.
-                    </div>
-                  ) : (
-                    materias.map((mat) => {
-                      const isOpen = materiaAberta === mat.id
-                      const unidAtiva = unidadesAtivas[mat.id] || 1
-                      const isSaving = savingNotas[mat.id] || false
-
-                      return (
-                        <div
-                          key={mat.id}
-                          className="border border-border bg-card rounded-xl overflow-hidden shadow-[0_2px_10px_rgba(15,23,42,0.04)]"
-                        >
-                          <button
-                            onClick={() => setMateriaAberta(isOpen ? null : mat.id)}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-foreground border-b border-border bg-muted/20 flex items-center justify-between cursor-pointer"
-                          >
-                            <span className="flex items-center gap-2">
-                              <BookOpen className="w-4.5 h-4.5 text-muted-foreground" />
-                              {mat.nome}
-                            </span>
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                          </button>
-                          
-                          {isOpen && (
-                            <div className="p-4 bg-background space-y-4">
-                              {/* Controles de Lançamento por Unidade e Botões de Ação */}
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3.5">
-                                {/* Tabs de Unidade */}
-                                <div className="flex gap-1.5 bg-muted border border-border p-1 rounded-lg">
-                                  {[1, 2, 3].map(u => (
-                                    <button
-                                      key={u}
-                                      onClick={() => setUnidadesAtivas(prev => ({ ...prev, [mat.id]: u }))}
-                                      className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
-                                        unidAtiva === u
-                                          ? 'bg-primary text-primary-foreground'
-                                          : 'text-muted-foreground hover:text-foreground'
-                                      }`}
-                                    >
-                                      {u}ª Unidade
-                                    </button>
-                                  ))}
-                                </div>
-
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => mutateNotasServidor()}
-                                    className="bg-muted text-foreground border border-border hover:bg-muted/80 rounded-lg h-9 gap-1 text-xs font-semibold cursor-pointer"
-                                  >
-                                    <RefreshCw className="w-3.5 h-3.5" />
-                                    Atualizar
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    disabled={isSaving}
-                                    onClick={() => handleSalvarNotas(mat.id)}
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-9 gap-1 text-xs rounded-lg cursor-pointer"
-                                  >
-                                    <Save className="w-3.5 h-3.5" />
-                                    {isSaving ? 'Salvando...' : 'Salvar Notas'}
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Tabela de Notas */}
-                              <div className="overflow-x-auto border border-border rounded-xl bg-muted/5">
-                                <table className="w-full text-left border-collapse min-w-[500px]">
-                                  <thead>
-                                    <tr className="border-b border-border text-[10.5px] text-muted-foreground font-semibold uppercase bg-muted/30">
-                                      <th className="p-3">Aluno</th>
-                                      <th className="p-3 w-16 text-center">Nota 1</th>
-                                      <th className="p-3 w-16 text-center">Nota 2</th>
-                                      <th className="p-3 w-16 text-center">Nota 3</th>
-                                      <th className="p-3 w-16 text-center">Nota 4</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-muted/20">Média Unid.</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-muted/40">Média Final</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-muted/60">Recup. Final</th>
-                                      <th className="p-3 w-20 text-center font-bold bg-muted/70">Média Pós-Rec</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {alunos.length === 0 ? (
-                                      <tr>
-                                        <td colSpan={8} className="p-8 text-center text-xs text-muted-foreground font-medium">
-                                          Nenhum aluno matriculado nesta turma.
-                                        </td>
-                                      </tr>
-                                    ) : (
-                                      alunos.map(aluno => {
-                                        const key = `${aluno.id}_${mat.id}`
-                                        const calc = calculosNotas[key] ?? defaultCalculos
-                                        const mediaUnid = unidAtiva === 1 ? calc.m1 : unidAtiva === 2 ? calc.m2 : calc.m3
-                                        const keyNota = `${key}_${unidAtiva}`
-                                        const n = notasState[keyNota] || { nota1: null, nota2: null, nota3: null }
-                                        const rec = recuperacoesState[key] || { nota: null }
-
-                                        return (
-                                          <RowAlunoNotas
-                                            key={aluno.id}
-                                            alunoId={aluno.id}
-                                            alunoNome={aluno.nome}
-                                            materiaId={mat.id}
-                                            unidAtiva={unidAtiva}
-                                            nota1={n.nota1 !== null ? String(n.nota1) : null}
-                                            nota2={n.nota2 !== null ? String(n.nota2) : null}
-                                            nota3={n.nota3 !== null ? String(n.nota3) : null}
-                                            nota4={n.nota4 !== null ? String(n.nota4) : null}
-                                            recNota={rec.nota !== null ? String(rec.nota) : null}
-                                            mediaUnid={mediaUnid}
-                                            mediaFinal={calc.mediaFinal}
-                                            mediaPosRec={calc.mediaPosRec}
-                                            situacao={calc.situacao}
-                                            isElegivelRec={calc.isElegivelRec}
-                                            onNotaChange={handleNotaChange}
-                                            onRecuperacaoChange={handleRecuperacaoChange}
-                                          />
-                                        )
-                                      })
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
+              <TabNotasTurma
+                loading={loading}
+                materias={materias}
+                alunos={alunos}
+                materiaAberta={materiaAberta}
+                setMateriaAberta={setMateriaAberta}
+                unidadesAtivas={unidadesAtivas}
+                setUnidadesAtivas={setUnidadesAtivas}
+                notasState={notasState}
+                recuperacoesState={recuperacoesState}
+                savingNotas={savingNotas}
+                calculosNotas={calculosNotas}
+                defaultCalculos={defaultCalculos}
+                mutateNotasServidor={mutateNotasServidor}
+                handleSalvarNotas={handleSalvarNotas}
+                handleNotaChange={handleNotaChange}
+                handleRecuperacaoChange={handleRecuperacaoChange}
+              />
             )}
           </div>
         </DialogContent>
@@ -1418,171 +970,3 @@ export function ModalDetalhesTurma({
   )
 }
 
-interface RowAlunoNotasProps {
-  alunoId: string
-  alunoNome: string
-  materiaId: string
-  unidAtiva: number
-  nota1: string | null
-  nota2: string | null
-  nota3: string | null
-  nota4: string | null
-  recNota: string | null
-  mediaUnid: number | null
-  mediaFinal: number | null
-  mediaPosRec: number | null
-  situacao: string
-  isElegivelRec: boolean
-  onNotaChange: (
-    alunoId: string,
-    materiaId: string,
-    unidade: number,
-    campo: 'nota1' | 'nota2' | 'nota3' | 'nota4',
-    valor: string
-  ) => void
-  onRecuperacaoChange: (
-    alunoId: string,
-    materiaId: string,
-    valor: string
-  ) => void
-}
-
-const RowAlunoNotas = memo(
-  function RowAlunoNotas({
-    alunoId,
-    alunoNome,
-    materiaId,
-    unidAtiva,
-    nota1,
-    nota2,
-    nota3,
-    nota4,
-    recNota,
-    mediaUnid,
-    mediaFinal,
-    mediaPosRec,
-    situacao,
-    isElegivelRec,
-    onNotaChange,
-    onRecuperacaoChange
-  }: RowAlunoNotasProps) {
-    return (
-      <tr className="border-b border-border last:border-0 hover:bg-muted/30 text-xs text-foreground">
-        <td className="p-3 font-semibold text-foreground">{alunoNome}</td>
-        
-        {/* Nota 1 */}
-        <td className="p-2 text-center">
-          <input
-            type="text"
-            value={nota1 ?? ''}
-            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota1', e.target.value)}
-            placeholder="-"
-            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
-          />
-        </td>
-
-        {/* Nota 2 */}
-        <td className="p-2 text-center">
-          <input
-            type="text"
-            value={nota2 ?? ''}
-            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota2', e.target.value)}
-            placeholder="-"
-            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
-          />
-        </td>
-
-        {/* Nota 3 */}
-        <td className="p-2 text-center">
-          <input
-            type="text"
-            value={nota3 ?? ''}
-            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota3', e.target.value)}
-            placeholder="-"
-            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
-          />
-        </td>
-
-        {/* Nota 4 */}
-        <td className="p-2 text-center">
-          <input
-            type="text"
-            value={nota4 ?? ''}
-            onChange={(e) => onNotaChange(alunoId, materiaId, unidAtiva, 'nota4', e.target.value)}
-            placeholder="-"
-            className="w-11 h-8 bg-background border border-border text-center rounded focus:outline-none focus:border-primary text-xs font-semibold text-foreground"
-          />
-        </td>
-
-        {/* Média Unidade */}
-        <td className="p-3 text-center bg-muted/10 font-bold">
-          {mediaUnid !== null ? (
-            <span className={mediaUnid < 6 ? 'text-red-500' : 'text-green-500'}>
-              {mediaUnid}
-            </span>
-          ) : '-'}
-        </td>
-
-        {/* Média Final */}
-        <td className="p-3 text-center bg-muted/20 font-bold text-sm">
-          {mediaFinal !== null ? (
-            <span className={mediaFinal < 5 ? 'text-red-500' : 'text-green-500'}>
-              {mediaFinal}
-            </span>
-          ) : '-'}
-        </td>
-
-        {/* Recuperação Final */}
-        <td className="p-2 text-center bg-yellow-500/5">
-          <input
-            type="text"
-            value={recNota ?? ''}
-            onChange={(e) => onRecuperacaoChange(alunoId, materiaId, e.target.value)}
-            disabled={!isElegivelRec}
-            placeholder={isElegivelRec ? "-" : "N/A"}
-            className={`w-11 h-8 text-center rounded focus:outline-none focus:border-yellow-500 text-xs font-semibold text-foreground ${
-              isElegivelRec 
-                ? 'bg-background border border-yellow-500/50' 
-                : 'bg-muted/40 border border-border text-muted-foreground cursor-not-allowed'
-            }`}
-          />
-        </td>
-
-        {/* Média Pós-Rec / Situação */}
-        <td className="p-3 text-center bg-muted/30 font-bold">
-          {mediaPosRec !== null ? (
-            <div className="flex flex-col items-center">
-              <span className={mediaPosRec < 5 ? 'text-red-500' : 'text-green-500'}>
-                {mediaPosRec}
-              </span>
-              <span className={`text-[9px] uppercase mt-0.5 font-bold ${
-                situacao.startsWith('Aprovado') ? 'text-green-600' : 
-                situacao === 'Em Recuperação' ? 'text-yellow-600' : 'text-red-600'
-              }`}>
-                {situacao}
-              </span>
-            </div>
-          ) : '-'}
-        </td>
-      </tr>
-    )
-  },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.alunoId === nextProps.alunoId &&
-      prevProps.alunoNome === nextProps.alunoNome &&
-      prevProps.materiaId === nextProps.materiaId &&
-      prevProps.unidAtiva === nextProps.unidAtiva &&
-      prevProps.nota1 === nextProps.nota1 &&
-      prevProps.nota2 === nextProps.nota2 &&
-      prevProps.nota3 === nextProps.nota3 &&
-      prevProps.nota4 === nextProps.nota4 &&
-      prevProps.recNota === nextProps.recNota &&
-      prevProps.mediaUnid === nextProps.mediaUnid &&
-      prevProps.mediaFinal === nextProps.mediaFinal &&
-      prevProps.mediaPosRec === nextProps.mediaPosRec &&
-      prevProps.situacao === nextProps.situacao &&
-      prevProps.isElegivelRec === nextProps.isElegivelRec
-    )
-  }
-)
