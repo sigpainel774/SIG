@@ -25,9 +25,20 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { ModalFuncionario } from '@/components/modals/modal-funcionario'
-import { ModalGestaoLotacoes } from '@/components/modals/modal-gestao-lotacoes'
-import { PermissoesView } from '@/components/PermissoesView'
+import dynamic from 'next/dynamic'
+
+const ModalFuncionario = dynamic(
+  () => import('@/components/modals/modal-funcionario').then((mod) => mod.ModalFuncionario),
+  { ssr: false }
+)
+const ModalGestaoLotacoes = dynamic(
+  () => import('@/components/modals/modal-gestao-lotacoes').then((mod) => mod.ModalGestaoLotacoes),
+  { ssr: false }
+)
+const PermissoesView = dynamic(
+  () => import('@/components/PermissoesView').then((mod) => mod.PermissoesView),
+  { ssr: false }
+)
 import { createClient } from '@/lib/supabaseClient'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'

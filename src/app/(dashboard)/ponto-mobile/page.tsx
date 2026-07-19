@@ -7,6 +7,7 @@ import { MapPin, Clock, AlertTriangle, CheckCircle2, RefreshCw, LogIn, LogOut, C
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { StandardTable } from '@/components/ui/table'
 
 interface RegistroPonto {
   id: string
@@ -257,44 +258,37 @@ export default function PontoMobilePage() {
           Registros Recentes
         </h2>
 
-        <div className="bg-[#121212] border border-borderCustom rounded-2xl overflow-hidden shadow-md">
-          {loadingRegistros ? (
-            <div className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-highlight" />
-              <span>Carregando seus registros...</span>
-            </div>
-          ) : registros.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
-              Nenhuma batida de ponto registrada até o momento.
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-borderCustom text-xs text-muted-foreground uppercase tracking-wider bg-[#0d0d0d]">
-                  <th className="p-3.5 font-semibold">Horário e Data</th>
-                  <th className="p-3.5 font-semibold">Tipo</th>
-                  <th className="p-3.5 font-semibold">Status GPS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-borderCustom text-sm">
-                {registros.map((reg) => (
-                  <tr key={reg.id} className="hover:bg-hoverCustom/50 transition-colors">
-                    <td className="p-3.5 font-mono text-white text-xs">{reg.horario}</td>
-                    <td className="p-3.5">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-highlight/10 text-highlight border border-highlight/20">
-                        {reg.tipo}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-xs text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{reg.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <StandardTable
+          data={registros}
+          keyExtractor={(reg) => reg.id}
+          loading={loadingRegistros}
+          loadingMessage="Carregando seus registros..."
+          emptyMessage="Nenhuma batida de ponto registrada até o momento."
+          columns={[
+            {
+              header: "Horário e Data",
+              accessor: (reg) => reg.horario,
+              className: "font-mono text-white text-xs",
+            },
+            {
+              header: "Tipo",
+              accessor: (reg) => (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-highlight/10 text-highlight border border-highlight/20">
+                  {reg.tipo}
+                </span>
+              ),
+            },
+            {
+              header: "Status GPS",
+              accessor: (reg) => (
+                <span className="text-xs text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{reg.status}</span>
+                </span>
+              ),
+            }
+          ]}
+        />
       </div>
     </div>
   )
