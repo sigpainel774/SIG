@@ -178,3 +178,13 @@
 - **Uso Estrito de Coalescência Nula (??) para Fallbacks**: Para campos de banco de dados, variáveis de formulário ou dados de perfil que possam estar legítimos mas vazios, sempre prefira o operador `??` em vez de `||` para fallbacks de exibição ou atribuição de strings. O operador `||` sobrescreve indevidamente strings vazias `""` ou valores falsy válidos.
 - **Tratamento Visível de Erros (Toasts de Erro no Catch)**: Todo bloco `catch` de carregamento de dados críticos ou de modificações (inserts/updates/deletes) no Supabase ou endpoints internos deve notificar visualmente o usuário através de um `toast.error('Erro amigável ao usuário')` além de registrar os detalhes técnicos no `console.error(err)`. Evite omitir toasts em blocos catch de chamadas secundárias.
 <!-- END:refactoring-and-duplication-rules -->
+
+<!-- BEGIN:blindagem-erros-silenciosos-recorrentes -->
+# Blindagem contra Erros Silenciosos e Bugs Recorrentes
+
+- **Prevenção de Flickering em Componentes com Imagens Dinâmicas**: Nunca gere timestamps dinâmicos (`Date.now()`) diretamente no corpo da renderização ou em `useEffect` locais para fazer o cache-busting de imagens que são recarregadas frequentemente no mesmo escopo (como logos e assinaturas). Isso causa flickering visual irritante ao usuário. Utilize uma constante de sessão (`sessionTimestamp`) definida no escopo do arquivo ou módulo para manter a URL idêntica entre re-renderizações.
+- **Validação Estrita de UUIDs em Cadeia de Notificação/Eventos**: Antes de submeter dados a funções SQL ou disparar RPCs de notificação que esperam tipos UUID (`solicitante_id`, `destinatario_id`, etc.), valide ativamente se o ID é uma string UUID válida e não vazia.
+- **Prevenção de Reset Involuntário de Abas e Estados de UX**: Ao sincronizar hooks ou componentes usando `useEffect`, certifique-se de que a aba ativa (`activeTab`) ou a navegação do usuário não seja resetada involuntariamente devido a efeitos colaterais de re-renderizadores do componente pai. Utilize referências (`useRef`) para verificar o estado anterior e execute resets de estado somente sob transições explícitas de abertura/fechamento.
+- **Validação de Propriedades Interpoladas no JSX**: Evite strings hardcoded ou interpolações incorretas em tags JSX que possam renderizar chaves literais como texto (ex: `"{item.nome}"` em vez de `{item.nome}`).
+<!-- END:blindagem-erros-silenciosos-recorrentes -->
+
