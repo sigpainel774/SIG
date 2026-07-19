@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { MonitorSmartphone, Plus, Edit, Trash2, RefreshCw, Search, Building2, User, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
+import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { ModalDispositivo } from '@/components/modals/modal-dispositivo'
 import { toast } from 'sonner'
@@ -27,21 +28,35 @@ export default function AdminDispositivosPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [dispositivoToEdit, setDispositivoToEdit] = useState<any | null>(null)
 
-  const loadDispositivos = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('dispositivos')
-      .select('*, escolas(nome), funcionarios(nome)')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
+  const isMounted = useRef(true)
 
-    if (error) {
-      console.error('Erro ao carregar dispositivos:', error)
-      toast.error('Erro ao carregar dispositivos.')
-    } else if (data) {
-      setDispositivos(data)
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
     }
-    setLoading(false)
+  }, [])
+
+  const loadDispositivos = async () => {
+    if (isMounted.current) setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('dispositivos')
+        .select('*, escolas(nome), funcionarios(nome)')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      if (isMounted.current) {
+        setDispositivos(data || [])
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar dispositivos:', err)
+      toast.error('Erro ao carregar dispositivos: ' + (err.message || 'Erro de conexão'))
+      if (isMounted.current) setDispositivos([])
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -226,29 +241,29 @@ export default function AdminDispositivosPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <MonitorSmartphone className="w-6 h-6 text-sky-500" /> Dispositivos
-          </h2>
-          <p className="text-[#aaa] text-sm mt-1">Gestão de tablets, totens e celulares da rede.</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={loadDispositivos}
-            disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button onClick={handleNovoDispositivo} className="bg-sky-600 text-white hover:bg-sky-700">
-            <Plus className="w-4 h-4 mr-2" /> Novo Dispositivo
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Gestão de Dispositivos"
+        description="Gestão de tablets, totens e celulares da rede."
+        icon={MonitorSmartphone}
+        iconVariant="primary"
+        backHref="/admin"
+        actions={
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={loadDispositivos}
+              disabled={loading}
+              className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+              title="Recarregar dispositivos"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={handleNovoDispositivo} className="bg-sky-600 text-white hover:bg-sky-700 h-10">
+              <Plus className="w-4 h-4 mr-2" /> Novo Dispositivo
+            </Button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabaseClient'
 import { ArrowLeftRight, Save, X, Search, FileUp, School, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
+import { useTransferForm } from '@/hooks/useTransferForm'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { arquivarAluno } from '@/lib/audit/archive-agent'
@@ -21,11 +23,18 @@ export default function TransferenciaAlunoPage() {
   const [loadingAlunos, setLoadingAlunos] = useState(false)
   const [alunoSelecionado, setAlunoSelecionado] = useState<any>(null)
   const [showSugestoes, setShowSugestoes] = useState(false)
-  const [escolas, setEscolas] = useState<any[]>([])
   
-  const [destinoId, setDestinoId] = useState('')
-  const [foraDaRede, setForaDaRede] = useState(false)
-  const [motivo, setMotivo] = useState('')
+  const {
+    escolas,
+    loadingEscolas,
+    escolaDestinoId: destinoId,
+    setEscolaDestinoId: setDestinoId,
+    foraRede: foraDaRede,
+    setForaRede: setForaDaRede,
+    motivo,
+    setMotivo,
+    validateTransferForm
+  } = useTransferForm()
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
@@ -93,26 +102,9 @@ export default function TransferenciaAlunoPage() {
     return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
   }).slice(0, 10)
 
-  useEffect(() => {
-    // Carrega escolas ativas para o select de destino (exceto a escola atual)
-    const loadEscolas = async () => {
-      const { data } = await supabase
-        .from('escolas')
-        .select('id, nome')
-        .is('deleted_at', null)
-        .eq('ativo', true)
-        .order('nome', { ascending: true })
-      if (data) {
-        setEscolas(data.filter(e => e.id !== escolaAtivaId))
-      }
-    }
-    loadEscolas()
-  }, [escolaAtivaId, supabase])
-
   const handleSubmeter = async () => {
     if (!alunoSelecionado) return toast.error('Selecione um aluno')
-    if (!motivo) return toast.error('Descreva o motivo da transferência')
-    if (!foraDaRede && !destinoId) return toast.error('Selecione a escola de destino ou marque "Fora da Rede"')
+    if (!validateTransferForm()) return
     if (!funcionario) return toast.error('Usuário não autenticado')
 
     setLoading(true)
@@ -123,7 +115,7 @@ export default function TransferenciaAlunoPage() {
           supabase,
           aluno: alunoSelecionado,
           motivo: `TRANSFERENCIA_FORA_REDE: ${motivo}`,
-          escolaOrigemId: alunoSelecionado.escola_id || undefined, // Mitigação: usar escola_id do aluno ao invés da ativa do usuário
+          escolaOrigemId: alunoSelecionado.escola_id || undefined,
           arquivadoPor: { id: funcionario.id, name: funcionario.nome, email: funcionario.email }
         })
         if (res.success) {
@@ -138,8 +130,8 @@ export default function TransferenciaAlunoPage() {
           .from('transferencias_alunos')
           .insert({
             aluno_id: alunoSelecionado.id,
-            escola_origem_id: alunoSelecionado.escola_id, // Mitigação: usar escola_id do aluno ao invés da ativa do usuário
-            escola_destino_id: destinoId || null, // Mitigação: converter string vazia para null para evitar erro de UUID
+            escola_origem_id: alunoSelecionado.escola_id,
+            escola_destino_id: destinoId || null,
             solicitante_id: funcionario.id,
             motivo,
             fora_da_rede: false,
@@ -203,12 +195,13 @@ export default function TransferenciaAlunoPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="pb-4 border-b border-[#3f3f46]">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <ArrowLeftRight className="w-6 h-6 text-sky-500" /> Solicitar Transferência
-        </h2>
-        <p className="text-[#aaa] text-sm mt-1">Transfira um aluno para outra escola da rede ou para fora do município.</p>
-      </div>
+      <PageHeader
+        title="Solicitar Transferência"
+        description="Transfira um aluno para outra escola da rede ou para fora do município."
+        icon={ArrowLeftRight}
+        iconVariant="primary"
+        backHref="/transferencias"
+      />
 
       <div className="bg-[#121212] border border-[#3f3f46] p-6 rounded-xl space-y-6">
         

@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
  
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~19,9%
-* **Linhas de Código Removidas/Otimizadas:** ~1467
-* **Redução Acumulada do Projeto:** ~4,19%
+* **Percentual Atual de Duplicação:** ~13,8%
+* **Linhas de Código Removidas/Otimizadas:** ~2062
+* **Redução Acumulada do Projeto:** ~6,03%
  
 ---
  
@@ -22,7 +22,7 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
  
 | Grupo | Descrição | Status | Linhas Estimadas Economizadas | Impacto Real |
 |---|---|---|---|---|
-| **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~650 | ~415 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>` (incluindo Anexos, Confirmação de Senha e Reset). |
+| **Grupo 1** | Estruturas de Dialog/Modal | ✅ Concluído | ~650 | ~630 linhas puras removidas. Lógicas de estilização de modal escura densa, breakpoints responsivos e controle de Dialog unificados via componente `<StandardDialog>` (incluindo Aluno, Funcionário, Turma, Transferências, Anexos, Confirmação de Senha e Reset). |
 | **Grupo 2** | `useState` de campos pessoais (Aluno ↔ Funcionário) | ✅ Concluído | ~400 | ~267 linhas puras removidas. Lógicas de inicialização, reset e masks centralizadas via hook `usePessoaForm`. |
 | **Grupo 3** | Cabeçalho de Impressão Municipal | ✅ Concluído | ~360 | ~115 linhas puras removidas. Simetria física de logos da prefeitura/secretaria e cache-buster unificados via componente `<PrintHeader>`. |
 | **Grupo 4** | Padrão de Busca/Filtro Local | ✅ Concluído | ~550 | ~75 linhas puras removidas. Lógica de busca case-insensitive e com normalização de acentos centralizada via hook `useLocalSearch` (incluindo alunos, funcionários, cargos e escolas). |
@@ -39,6 +39,12 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
  
 ## 📝 Histórico de Alterações e Impacto Real
  
+### [19/07/2026] - Refatoração de Cascas de Modais / Dialogs (Frente 2)
+* Migração das cascas externas de 6 modais críticos (`ModalDetalhesAluno`, `ModalTurma`, `ModalAluno` (index), `ModalFuncionario` (index), `ModalTransferirAluno` e `ModalTransferirFuncionario`) para utilizarem o componente unificado `<StandardDialog>`.
+* Padronização de botões de controle, títulos e fechamentos. Utilização de `form` HTML5 associado no footer externo para submissão dos formulários sem quebrar o lifecycle de sub-abas.
+* Tratamento e mitigação de bugs silenciosos mapeados (evitado fechamento acidental em formulários extensos e removidos botões "X" duplicados de cabeçalho).
+* Validação do build executada com 100% de sucesso.
+
 ### [19/07/2026] - Refatoração de Buscas, Toasts e Uploads (Frentes 3, 4 e 5) + Correção de Bugs
 * Migração das listagens de Alunos e Funcionários para utilizarem a busca resiliente a acentos e case-insensitive por meio do hook centralizado `useLocalSearch`.
 * Substituição de blocos try/catch e loaders manuais por chamadas unificadas no utilitário `executeWithToast` nas mutações de responder liberação e desligar funcionários.

@@ -3,6 +3,8 @@
 import { HardDrive, RefreshCw, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { useAdminStorage } from '@/hooks/useAdminStorage'
 
 import { StorageBreakdown } from './components/StorageBreakdown'
@@ -42,11 +44,8 @@ export default function AdminArmazenamentoPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <RefreshCw className="w-10 h-10 text-purple-500 animate-spin" />
-        <p className="text-[#8e8e93] font-medium text-sm animate-pulse">
-          Analisando volumes e medindo espaço em disco...
-        </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <LoadingSpinner label="Analisando volumes e medindo espaço em disco..." />
       </div>
     )
   }
@@ -68,30 +67,24 @@ export default function AdminArmazenamentoPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#232328]">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <HardDrive className="w-7 h-7 text-purple-500" />
-            Armazenamento do Servidor
-          </h2>
-          <p className="text-[#aaa] text-sm mt-1">
-            Análise detalhada do uso do Supabase Storage por escolas, buckets e formatos.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Armazenamento do Servidor"
+        description="Análise detalhada do uso do Supabase Storage por escolas, buckets e formatos."
+        icon={HardDrive}
+        iconVariant="primary"
+        backHref="/admin"
+        actions={
           <Button
             onClick={() => loadStorageData(true)}
             disabled={refreshing}
             variant="outline"
-            className="border-[#2a2a2a] hover:bg-[#272727] text-white cursor-pointer"
+            className="border-[#2a2a2a] hover:bg-[#272727] text-white cursor-pointer h-10"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Sincronizando...' : 'Atualizar Dados'}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Métricas Principais (Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">

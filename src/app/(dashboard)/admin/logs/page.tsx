@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Activity, RefreshCw, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StandardTable, TableColumn } from '@/components/ui/table'
+import { PageHeader } from '@/components/ui/page-header'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 export default function AdminLogsPage() {
   const supabase = createClient()
@@ -14,22 +16,41 @@ export default function AdminLogsPage() {
   const [loading, setLoading] = useState(false)
   const [filterEntity, setFilterEntity] = useState('ALL')
 
-  const loadLogs = async () => {
-    setLoading(true)
-    let query = supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
+  const isMounted = useRef(true)
 
-    if (filterEntity !== 'ALL') {
-      query = query.eq('entity', filterEntity)
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
     }
+  }, [])
 
-    const { data, error } = await query
-    if (data) setLogs(data)
-    if (error) console.error(error)
-    setLoading(false)
+  const loadLogs = async () => {
+    if (isMounted.current) setLoading(true)
+    try {
+      let query = supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (filterEntity !== 'ALL') {
+        query = query.eq('entity', filterEntity)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+
+      if (isMounted.current) {
+        setLogs(data || [])
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar logs de auditoria:', err)
+      toast.error('Erro ao buscar logs de auditoria: ' + (err.message || 'Erro de conexão'))
+      if (isMounted.current) setLogs([])
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -52,7 +73,7 @@ export default function AdminLogsPage() {
       header: 'Data',
       accessor: (log) => (
         <span className="text-[#aaa] whitespace-nowrap">
-          {new Date(log.created_at).toLocaleString('pt-BR')}
+          {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
         </span>
       )
     },
@@ -61,9 +82,9 @@ export default function AdminLogsPage() {
       accessor: (log) => (
         <div className="flex flex-col gap-1 items-start">
           <Badge variant="outline" className={`text-xs font-semibold ${getActionColor(log.action)}`}>
-            {log.action}
+            {log.action ?? 'N/A'}
           </Badge>
-          <span className="text-sm text-gray-300 uppercase">{log.entity}</span>
+          <span className="text-sm text-gray-300 uppercase">{log.entity ?? 'Geral'}</span>
         </div>
       )
     },
@@ -71,8 +92,8 @@ export default function AdminLogsPage() {
       header: 'Usuário Responsável',
       accessor: (log) => (
         <div className="flex flex-col">
-          <span className="text-sm text-gray-300">{log.user_name || 'Sistema'}</span>
-          <span className="text-xs text-gray-500">{log.user_email || '-'}</span>
+          <span className="text-sm text-gray-300 font-medium">{log.user_name ?? 'Sistema / Automático'}</span>
+          <span className="text-xs text-gray-500">{log.user_email ?? '-'}</span>
         </div>
       )
     },
@@ -90,7 +111,7 @@ export default function AdminLogsPage() {
           <DialogContent className="bg-[#121214] border-[#27272a] text-white max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
-                Inspecionar Auditoria: <Badge variant="outline">{log.action}</Badge>
+                Inspecionar Auditoria: <Badge variant="outline">{log.action ?? 'N/A'}</Badge>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
@@ -117,44 +138,47 @@ export default function AdminLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Activity className="w-6 h-6 text-purple-500" /> Trilha de Auditoria Global
-          </h2>
-          <p className="text-[#aaa] text-sm mt-1">Histórico completo de alterações de dados no sistema.</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <select 
-            value={filterEntity} 
-            onChange={(e) => setFilterEntity(e.target.value)}
-            className="bg-[#121212] border border-[#3f3f46] text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
-          >
-            <option value="ALL">Todos os Módulos</option>
-            <option value="alunos">Alunos</option>
-            <option value="funcionarios">Funcionários</option>
-            <option value="turmas">Turmas</option>
-          </select>
+      <PageHeader
+        title="Trilha de Auditoria Global"
+        description="Histórico completo de alterações de dados no sistema."
+        icon={Activity}
+        iconVariant="primary"
+        backHref="/admin"
+        actions={
+          <div className="flex items-center gap-3">
+            <select 
+              value={filterEntity} 
+              onChange={(e) => setFilterEntity(e.target.value)}
+              className="bg-[#121212] border border-[#3f3f46] text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 cursor-pointer"
+            >
+              <option value="ALL">Todos os Módulos</option>
+              <option value="alunos">Alunos</option>
+              <option value="funcionarios">Funcionários</option>
+              <option value="turmas">Turmas</option>
+            </select>
 
-          <Button 
-            variant="outline"
-            onClick={loadLogs}
-            disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+            <Button 
+              variant="outline"
+              onClick={loadLogs}
+              disabled={loading}
+              className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+              title="Recarregar logs"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        }
+      />
 
       <StandardTable
         data={logs}
         columns={columns}
         keyExtractor={(log) => log.id}
         loading={loading}
+        loadingMessage="Carregando logs de auditoria..."
         emptyMessage="Nenhum log de auditoria encontrado."
       />
     </div>
   )
 }
+
