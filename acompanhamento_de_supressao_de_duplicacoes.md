@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
 
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~26,2%
-* **Linhas de Código Removidas/Otimizadas:** ~417
-* **Redução Acumulada do Projeto:** ~1,19%
+* **Percentual Atual de Duplicação:** ~25,9%
+* **Linhas de Código Removidas/Otimizadas:** ~442
+* **Redução Acumulada do Projeto:** ~1,26%
 
 ---
 
@@ -31,13 +31,18 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 7** | Formatação de Data | ⏳ Pendente | ~130 | - |
 | **Grupo 8** | Upload de Arquivo com Preview | ⏳ Pendente | ~120 | - |
 | **Grupo 9** | Estado de Loading | ⏳ Pendente | ~300 | - |
-| **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ⏳ Pendente | ~280 | - |
+| **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ✅ Concluído (Parcial) | ~280 | ~25 linhas puras economizadas no modal-aluno. Lógicas de consulta de tabelas auxiliares (turmas/escolas) migradas para hooks SWR, reduzindo código imperativo e requests repetidas. |
 | **Grupo 11** | Empty State Genérico | ⏳ Pendente | ~160 | - |
 | **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~800 | ~150 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>`. |
 
 ---
 
 ## 📝 Histórico de Alterações e Impacto Real
+
+### [19/07/2026] - Refatoração do Grupo 10 (Parcial) Concluída
+* Eliminação de efeitos imperativos de carregamento de turmas/escolas em `AlunoFormContext.tsx` do modal do aluno, substituídos por hooks SWR reativos e declarativos.
+* Adição de proteção com flag `active` no observer de assinatura do funcionário em `SecaoAssinaturas.tsx` para evitar vazamentos de memória (memory leaks) em fechamentos rápidos.
+* Validação do build executada com 100% de sucesso.
 
 ### [18/07/2026] - Refatoração do Grupo 12 Concluída
 * Criação do componente genérico `<StandardTable>` em `src/components/ui/table.tsx` com tratamento unificado de loading spinner, mensagens de empty state e estilos padrões.

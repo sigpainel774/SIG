@@ -13,7 +13,7 @@ Atualizado automaticamente com o status real do repositório.
 |-------|--------|------------|
 | Integração Resend + Primeiro Acesso | ⏳ Pendente | Plano elaborado e salvo — código não iniciado; configuração SMTP é manual no Supabase |
 | Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — nenhum arquivo criado no repositório ainda |
-| Otimização `/configuracoes` (40KB → 8-12KB) | 🔍 Diagnóstico Pronto | 8 erros silenciosos identificados — **aguardando aprovação do usuário para execução** |
+| Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
 | Tabs Geolocalização (Funcionários + Alunos) | ✅ Implementado | Sessão 2026-07-18 — `MapaAlunos.tsx` criado, `MapWrapper` e `relatorios/page.tsx` modificados |
@@ -442,21 +442,21 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 
 ## 📌 Otimização da Página `/configuracoes` (40KB → 8–12KB)
 
-> **Status:** 🔍 Diagnóstico Pronto — **Aguardando aprovação do usuário para execução**
+> **Status:** ✅ Implementado
 > **Planejado em:** 2026-07-18
 > **Problema identificado:** Render médio de **512ms** — `page.tsx` com 1.010 linhas / 40KB totalmente marcado como `'use client'`
 
 ### Checklist de Execução
-- [ ] Converter `page.tsx` em Server Component (shell estático leve)
-- [ ] Criar `ConfiguracoesClient.tsx` com `'use client'` (apenas parte interativa)
-- [ ] Extrair `GradeCurricularTab.tsx` como componente separado
-- [ ] Extrair `PerfilTab.tsx` como componente separado
-- [ ] Aplicar `dynamic(() => import(...), { ssr: false })` para `SignaturePad` e `GradeCurricularTab`
-- [ ] Corrigir race condition no `useEffect` do `localFuncionario` (cleanup de desmontagem)
-- [ ] Remover non-null assertion `funcionario!` — adicionar guard de null antes do render
-- [ ] Corrigir `useEffect` do diretor: adicionar `activeTab` nas dependências
-- [ ] Corrigir `publicUrl` salvo sem remover `?t=timestamp` antes de persistir no banco
-- [ ] Verificar com `npx tsc --noEmit`
+- [x] Converter `page.tsx` em Server Component (shell estático leve)
+- [x] Criar `ConfiguracoesClient.tsx` com `'use client'` (apenas parte interativa)
+- [x] Extrair `GradeCurricularTab.tsx` como componente separado
+- [x] Extrair `PerfilTab.tsx` como componente separado
+- [x] Aplicar `dynamic(() => import(...), { ssr: false })` para `SignaturePad` e `GradeCurricularTab`
+- [x] Corrigir race condition no `useEffect` do `localFuncionario` (cleanup de desmontagem)
+- [x] Remover non-null assertion `funcionario!` — adicionar guard de null antes do render
+- [x] Corrigir `useEffect` do diretor: adicionar `activeTab` nas dependências
+- [x] Corrigir `publicUrl` salvo sem remover `?t=timestamp` antes de persistir no banco
+- [x] Verificar com `npx tsc --noEmit`
 
 ### Diagnóstico de Causas-Raiz
 
