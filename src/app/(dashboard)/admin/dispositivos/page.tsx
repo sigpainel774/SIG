@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { MonitorSmartphone, Plus, Edit, Trash2, RefreshCw, Search, Building2, User, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ModalDispositivo } from '@/components/modals/modal-dispositivo'
 import { toast } from 'sonner'
@@ -122,6 +122,108 @@ export default function AdminDispositivosPage() {
     })
   }, [dispositivosBuscados, filterStatus, filterTipo])
 
+  const columns: TableColumn<any>[] = [
+    {
+      header: 'Dispositivo',
+      accessor: (disp) => (
+        <div>
+          <div className="font-medium text-white">{disp.nome}</div>
+          {disp.identificador && <div className="text-xs text-[#aaa] mt-0.5">{disp.identificador}</div>}
+        </div>
+      )
+    },
+    {
+      header: 'Tipo',
+      accessor: (disp) => (
+        <Badge variant="outline" className={`text-xs ${
+          disp.tipo === 'TOTEM' ? 'bg-sky-500/20 text-sky-400 border-sky-500/30' : 
+          disp.tipo === 'TABLET' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : 
+          'bg-slate-500/20 text-slate-300 border-slate-500/30'
+        }`}>
+          {disp.tipo}
+        </Badge>
+      )
+    },
+    {
+      header: 'Alocação',
+      accessor: (disp) => disp.escola_id && disp.escolas ? (
+        <div className="flex items-center gap-1.5 text-sm text-white">
+          <Building2 className="w-3.5 h-3.5 text-purple-400" />
+          {disp.escolas.nome}
+        </div>
+      ) : disp.funcionario_id && disp.funcionarios ? (
+        <div className="flex items-center gap-1.5 text-sm text-white">
+          <User className="w-3.5 h-3.5 text-amber-400" />
+          {disp.funcionarios.nome}
+        </div>
+      ) : (
+        <span className="text-sm text-[#555]">Não alocado</span>
+      )
+    },
+    {
+      header: 'Visto por Último',
+      accessor: (disp) => (
+        <span className="text-[#aaa] text-sm">
+          {disp.ultima_conexao 
+            ? new Date(disp.ultima_conexao).toLocaleString('pt-BR') 
+            : 'Nunca conectou'}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: (disp) => (
+        <div className="relative inline-block group">
+          <select
+            value={disp.status || 'ATIVO'}
+            onChange={(e) => changeStatus(disp.id, e.target.value)}
+            className={`appearance-none bg-transparent outline-none cursor-pointer pr-5 pl-2 py-1 rounded border text-xs font-semibold ${
+              disp.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20' : 
+              disp.status === 'MANUTENÇÃO' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20' : 
+              'bg-rose-500/10 text-rose-500 border-rose-500/30 hover:bg-rose-500/20'
+            }`}
+          >
+            <option value="ATIVO" className="bg-[#18181a] text-emerald-500">ATIVO</option>
+            <option value="MANUTENÇÃO" className="bg-[#18181a] text-amber-500">MANUTENÇÃO</option>
+            <option value="BLOQUEADO" className="bg-[#18181a] text-rose-500">BLOQUEADO</option>
+          </select>
+          <ChevronDown className={`w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+            disp.status === 'ATIVO' ? 'text-emerald-500' : 
+            disp.status === 'MANUTENÇÃO' ? 'text-amber-500' : 
+            'text-rose-500'
+          }`} />
+        </div>
+      )
+    },
+    {
+      header: 'Ações',
+      className: 'text-right',
+      headClassName: 'text-right',
+      accessor: (disp) => (
+        <div className="flex justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleEditarDispositivo(disp)}
+            className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+            title="Editar Dispositivo"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleExcluirDispositivo(disp)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            title="Excluir Dispositivo (Lixeira)"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )
+    }
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -203,109 +305,13 @@ export default function AdminDispositivosPage() {
         </select>
       </div>
 
-      {/* Tabela */}
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold">Dispositivo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Tipo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Alocação</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Visto por Último</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Status</TableHead>
-              <TableHead className="text-right text-[#ccc] font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {dispositivosFiltrados.map((disp) => (
-              <TableRow key={disp.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                <TableCell>
-                  <div className="font-medium text-white">{disp.nome}</div>
-                  {disp.identificador && <div className="text-xs text-[#aaa] mt-0.5">{disp.identificador}</div>}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={`text-xs ${
-                    disp.tipo === 'TOTEM' ? 'bg-sky-500/20 text-sky-400 border-sky-500/30' : 
-                    disp.tipo === 'TABLET' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : 
-                    'bg-slate-500/20 text-slate-300 border-slate-500/30'
-                  }`}>
-                    {disp.tipo}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {disp.escola_id && disp.escolas ? (
-                    <div className="flex items-center gap-1.5 text-sm text-white">
-                      <Building2 className="w-3.5 h-3.5 text-purple-400" />
-                      {disp.escolas.nome}
-                    </div>
-                  ) : disp.funcionario_id && disp.funcionarios ? (
-                    <div className="flex items-center gap-1.5 text-sm text-white">
-                      <User className="w-3.5 h-3.5 text-amber-400" />
-                      {disp.funcionarios.nome}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-[#555]">Não alocado</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-[#aaa] text-sm">
-                  {disp.ultima_conexao 
-                    ? new Date(disp.ultima_conexao).toLocaleString('pt-BR') 
-                    : 'Nunca conectou'}
-                </TableCell>
-                <TableCell>
-                  <div className="relative inline-block group">
-                    <select
-                      value={disp.status || 'ATIVO'}
-                      onChange={(e) => changeStatus(disp.id, e.target.value)}
-                      className={`appearance-none bg-transparent outline-none cursor-pointer pr-5 pl-2 py-1 rounded border text-xs font-semibold ${
-                        disp.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20' : 
-                        disp.status === 'MANUTENÇÃO' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20' : 
-                        'bg-rose-500/10 text-rose-500 border-rose-500/30 hover:bg-rose-500/20'
-                      }`}
-                    >
-                      <option value="ATIVO" className="bg-[#18181a] text-emerald-500">ATIVO</option>
-                      <option value="MANUTENÇÃO" className="bg-[#18181a] text-amber-500">MANUTENÇÃO</option>
-                      <option value="BLOQUEADO" className="bg-[#18181a] text-rose-500">BLOQUEADO</option>
-                    </select>
-                    <ChevronDown className={`w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none ${
-                      disp.status === 'ATIVO' ? 'text-emerald-500' : 
-                      disp.status === 'MANUTENÇÃO' ? 'text-amber-500' : 
-                      'text-rose-500'
-                    }`} />
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleEditarDispositivo(disp)}
-                      className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
-                      title="Editar Dispositivo"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleExcluirDispositivo(disp)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                      title="Excluir Dispositivo (Lixeira)"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {dispositivosFiltrados.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-[#aaa]">Nenhum dispositivo encontrado.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={dispositivosFiltrados}
+        columns={columns}
+        keyExtractor={(disp) => disp.id}
+        loading={loading}
+        emptyMessage="Nenhum dispositivo encontrado."
+      />
 
       {/* Modal Criar / Editar */}
       <ModalDispositivo

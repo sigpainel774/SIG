@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { restoreAction, purgeAction } from './actions'
 import { cn } from '@/lib/utils'
@@ -239,6 +239,137 @@ export default function AdminLixeiraPage() {
     return `${device} — ${browser}`
   }
 
+  const trashColumns: TableColumn<any>[] = [
+    {
+      header: 'Tabela',
+      accessor: (item) => (
+        <Badge variant="outline" className="text-xs font-semibold bg-zinc-500/10 text-zinc-400 border-zinc-500/20 uppercase">
+          {item.table_name}
+        </Badge>
+      )
+    },
+    {
+      header: 'Registro',
+      accessor: (item) => <span className="text-white font-medium">{item.record_summary}</span>
+    },
+    {
+      header: 'Excluído por',
+      accessor: (item) => (
+        <div className="flex flex-col">
+          <span className="text-sm text-zinc-200 font-medium">{item.deleted_by_name}</span>
+          <span className="text-xs text-zinc-500">{item.deleted_by_email}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Data da Exclusão',
+      accessor: (item) => (
+        <span className="text-zinc-400 whitespace-nowrap">
+          {new Date(item.deleted_at).toLocaleString('pt-BR')}
+        </span>
+      )
+    },
+    {
+      header: 'Ações ROOT',
+      className: 'text-right',
+      headClassName: 'text-right',
+      accessor: (item) => (
+        <div className="space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleRestore(item)}
+            className="border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 rounded-xl h-8 text-xs font-semibold"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+            Restaurar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handlePurge(item)}
+            className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+            Expurgar
+          </Button>
+        </div>
+      )
+    }
+  ]
+
+  const signatureColumns: TableColumn<any>[] = [
+    {
+      header: 'Aluno / ID',
+      accessor: (student) => (
+        <div>
+          <div className="font-semibold text-white">{student.studentName}</div>
+          <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{student.studentId}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Assinatura Responsável',
+      className: 'text-center',
+      headClassName: 'text-center',
+      accessor: (student) => student.respUrl ? (
+        <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
+          <img 
+            src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+            alt="Assinatura Responsável" 
+            className="max-h-7 max-w-[80px] object-contain"
+          />
+        </div>
+      ) : (
+        <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+          Pendente
+        </Badge>
+      )
+    },
+    {
+      header: 'Assinatura Funcionário',
+      className: 'text-center',
+      headClassName: 'text-center',
+      accessor: (student) => student.funcUrl ? (
+        <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
+          <img 
+            src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+            alt="Assinatura Funcionário" 
+            className="max-h-7 max-w-[80px] object-contain"
+          />
+        </div>
+      ) : (
+        <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+          Pendente
+        </Badge>
+      )
+    },
+    {
+      header: 'Última Atividade',
+      accessor: (student) => (
+        <span className="text-zinc-400 whitespace-nowrap">
+          {student.lastUpdate ? new Date(student.lastUpdate).toLocaleString('pt-BR') : '-'}
+        </span>
+      )
+    },
+    {
+      header: 'Ações',
+      className: 'text-right',
+      headClassName: 'text-right',
+      accessor: (student) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setSelectedStudent(student)}
+          className="hover:bg-[#202024] text-zinc-400 hover:text-white rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer inline-flex"
+          title="Ver Histórico Completo"
+        >
+          <History className="w-4 h-4 text-[#3ea6ff]" />
+        </Button>
+      )
+    }
+  ]
+
   return (
     <div className="space-y-6">
       {/* Top Header Bar */}
@@ -316,68 +447,13 @@ export default function AdminLixeiraPage() {
 
       {/* Content Area */}
       {activeTab === 'trash' ? (
-        <div className="rounded-2xl border border-[#26262a] bg-[#121214] overflow-hidden shadow-xl">
-          <Table>
-            <TableHeader className="bg-[#18181b] border-b border-[#26262a]">
-              <TableRow className="border-none hover:bg-transparent">
-                <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Tabela</TableHead>
-                <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Registro</TableHead>
-                <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Excluído por</TableHead>
-                <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Data da Exclusão</TableHead>
-                <TableHead className="text-right text-zinc-300 font-bold uppercase tracking-wider text-xs">Ações ROOT</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id} className="border-b border-[#1c1c1f] hover:bg-[#18181b] transition-colors">
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs font-semibold bg-zinc-500/10 text-zinc-400 border-zinc-500/20 uppercase">
-                      {item.table_name}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-white font-medium">{item.record_summary}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-zinc-200 font-medium">{item.deleted_by_name}</span>
-                      <span className="text-xs text-zinc-500">{item.deleted_by_email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-zinc-400 whitespace-nowrap">
-                    {new Date(item.deleted_at).toLocaleString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRestore(item)}
-                      className="border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 rounded-xl h-8 text-xs font-semibold"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                      Restaurar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handlePurge(item)}
-                      className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
-                    >
-                      <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                      Expurgar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              
-              {items.length === 0 && !loading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12 text-zinc-500 font-medium">
-                    Nenhum registro pendente na lixeira.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <StandardTable
+          data={items}
+          columns={trashColumns}
+          keyExtractor={(item) => item.id}
+          loading={loading}
+          emptyMessage="Nenhum registro pendente na lixeira."
+        />
       ) : (
         <div className="space-y-4">
           {/* Search and Filter Row */}
@@ -404,84 +480,13 @@ export default function AdminLixeiraPage() {
             </select>
           </div>
 
-          {/* Audit Logs Table */}
-          <div className="rounded-2xl border border-[#26262a] bg-[#121214] overflow-hidden shadow-xl">
-            <Table>
-              <TableHeader className="bg-[#18181b] border-b border-[#26262a]">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Aluno / ID</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs text-center">Assinatura Responsável</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs text-center">Assinatura Funcionário</TableHead>
-                  <TableHead className="text-zinc-300 font-bold uppercase tracking-wider text-xs">Última Atividade</TableHead>
-                  <TableHead className="text-right text-zinc-300 font-bold uppercase tracking-wider text-xs">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents.map((student) => {
-                  return (
-                    <TableRow key={student.studentId} className="border-b border-[#1c1c1f] hover:bg-[#18181b] transition-colors">
-                      <TableCell className="font-semibold text-white">
-                        <div>{student.studentName}</div>
-                        <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{student.studentId}</div>
-                      </TableCell>
-                      <TableCell className="align-middle text-center">
-                        {student.respUrl ? (
-                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
-                            <img 
-                              src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
-                              alt="Assinatura Responsável" 
-                              className="max-h-7 max-w-[80px] object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
-                            Pendente
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-middle text-center">
-                        {student.funcUrl ? (
-                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
-                            <img 
-                              src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
-                              alt="Assinatura Funcionário" 
-                              className="max-h-7 max-w-[80px] object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
-                            Pendente
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-zinc-400 whitespace-nowrap">
-                        {student.lastUpdate ? new Date(student.lastUpdate).toLocaleString('pt-BR') : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setSelectedStudent(student)}
-                          className="hover:bg-[#202024] text-zinc-400 hover:text-white rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer"
-                          title="Ver Histórico Completo"
-                        >
-                          <History className="w-4 h-4 text-[#3ea6ff]" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-                
-                {filteredStudents.length === 0 && !sigLogsLoading && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-zinc-500 font-medium">
-                      Nenhum registro de assinatura encontrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <StandardTable
+            data={filteredStudents}
+            columns={signatureColumns}
+            keyExtractor={(student) => student.studentId}
+            loading={sigLogsLoading}
+            emptyMessage="Nenhum registro de assinatura encontrado."
+          />
         </div>
       )}
 
