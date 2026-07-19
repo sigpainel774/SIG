@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { ArchiveRestore, RefreshCw, Undo2, Trash2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { reverterArquivado, excluirDefinitivamenteArquivado } from '@/lib/audit/archive-agent'
@@ -39,10 +39,6 @@ export default function AdminArquivadosPage() {
     if (!confirm) return
 
     setLoading(true)
-    // Usar supabaseAdmin normalmente requer backend (Route Handler).
-    // Como estamos no cliente, chamamos o reverterArquivado que usará o client logado,
-    // garantindo que ele tenha permissões ou chamando uma API real.
-    // Para fins do design da interface (agente), passamos o cliente Supabase do frontend.
     const res = await reverterArquivado({
       supabaseAdmin: supabase, 
       arquivadoId: arq.id,
@@ -79,6 +75,82 @@ export default function AdminArquivadosPage() {
     setLoading(false)
   }
 
+  const columns: TableColumn<any>[] = [
+    {
+      header: 'Tipo',
+      accessor: (arq) => (
+        <Badge variant="outline" className="text-xs bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+          {arq.tipo}
+        </Badge>
+      ),
+      className: 'w-24'
+    },
+    {
+      header: 'Dados Arquivados',
+      accessor: (arq) => (
+        <>
+          <div className="font-medium text-white">{arq.payload_completo?.nome || 'Registro sem nome'}</div>
+          <div className="text-xs text-[#aaa]">Origem: {arq.escolas?.nome || 'N/A'}</div>
+        </>
+      )
+    },
+    {
+      header: 'Motivo / Status',
+      accessor: (arq) => (
+        <>
+          <div className="text-sm text-white">{arq.motivo}</div>
+          <Badge variant="outline" className={`text-[10px] mt-1 ${
+            arq.status === 'ARQUIVADO' ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' :
+            arq.status === 'REVERTIDO' ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' :
+            'bg-rose-500/20 text-rose-500 border-rose-500/30'
+          }`}>
+            {arq.status}
+          </Badge>
+        </>
+      )
+    },
+    {
+      header: 'Data',
+      accessor: (arq) => (
+        <>
+          <div className="text-sm text-[#aaa]">
+            {new Date(arq.created_at).toLocaleDateString('pt-BR')}
+          </div>
+          <div className="text-xs text-[#777]">
+            por {arq.funcionarios?.nome?.split(' ')[0]}
+          </div>
+        </>
+      )
+    },
+    {
+      header: 'Ações',
+      accessor: (arq) => (
+        <div className="flex justify-end gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSelectedArq(arq)} 
+            className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10" 
+            title="Ver Detalhes"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          {arq.status === 'ARQUIVADO' && (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => handleReverter(arq)} className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" title="Reverter">
+                <Undo2 className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handlePurge(arq)} className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir Definitivamente">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+      className: 'text-right'
+    }
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
@@ -101,80 +173,13 @@ export default function AdminArquivadosPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold">Tipo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Dados Arquivados</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Motivo / Status</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Data</TableHead>
-              <TableHead className="text-right text-[#ccc] font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {arquivados.map((arq) => (
-              <TableRow key={arq.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                <TableCell>
-                  <Badge variant="outline" className="text-xs bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                    {arq.tipo}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-white">{arq.payload_completo?.nome || 'Registro sem nome'}</div>
-                  <div className="text-xs text-[#aaa]">Origem: {arq.escolas?.nome || 'N/A'}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm text-white">{arq.motivo}</div>
-                  <Badge variant="outline" className={`text-[10px] mt-1 ${
-                    arq.status === 'ARQUIVADO' ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' :
-                    arq.status === 'REVERTIDO' ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' :
-                    'bg-rose-500/20 text-rose-500 border-rose-500/30'
-                  }`}>
-                    {arq.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm text-[#aaa]">
-                    {new Date(arq.created_at).toLocaleDateString('pt-BR')}
-                  </div>
-                  <div className="text-xs text-[#777]">
-                    por {arq.funcionarios?.nome?.split(' ')[0]}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setSelectedArq(arq)} 
-                      className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10" 
-                      title="Ver Detalhes"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {arq.status === 'ARQUIVADO' && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => handleReverter(arq)} className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" title="Reverter">
-                          <Undo2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handlePurge(arq)} className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir Definitivamente">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {arquivados.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-[#aaa]">Nenhum registro arquivado.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={arquivados}
+        columns={columns}
+        keyExtractor={(arq) => arq.id}
+        loading={loading}
+        emptyMessage="Nenhum registro arquivado."
+      />
 
       {selectedArq && (
         <ModalDetalhesArquivado
