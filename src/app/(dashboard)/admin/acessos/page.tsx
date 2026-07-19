@@ -6,7 +6,7 @@ import { KeyRound, RefreshCw, Pause, Trash2, Search, ShieldCheck, Check, X, Aler
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { 
   Dialog, 
   DialogContent, 
@@ -165,6 +165,77 @@ export default function AdminAcessosPage() {
     return matchNivel && matchStatus
   })
 
+  const columns: TableColumn<AcessoItem>[] = [
+    {
+      header: 'FUNCIONARIO',
+      accessor: (item) => <span className="font-bold text-white text-sm whitespace-nowrap">{item.funcionario}</span>
+    },
+    {
+      header: 'EMAIL',
+      accessor: (item) => <span className="text-zinc-400 text-sm whitespace-nowrap">{item.email}</span>
+    },
+    {
+      header: 'ESCOLA / ORGAO',
+      accessor: (item) => (
+        <span className={`text-sm whitespace-nowrap ${item.escola === 'Geral' ? 'italic text-zinc-400' : 'text-zinc-200'}`}>
+          {item.escola}
+        </span>
+      )
+    },
+    {
+      header: 'NIVEL',
+      accessor: (item) => renderNivelBadge(item.nivel)
+    },
+    {
+      header: 'STATUS',
+      accessor: (item) => {
+        const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
+        return isPausado ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-[11px] font-extrabold tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#71717a]" />
+            {item.status}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#052e16] border border-[#166534] text-[#4ade80] text-[11px] font-extrabold tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
+            ATIVO
+          </span>
+        )
+      }
+    },
+    {
+      header: 'ACOES',
+      className: 'text-right pr-6',
+      headClassName: 'text-right pr-6',
+      accessor: (item) => {
+        const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
+        return (
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+            {/* Botão 1: Pausar / Alternar Acesso */}
+            <button
+              type="button"
+              onClick={() => handleTogglePausa(item)}
+              className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+              title={isPausado ? 'Reativar Acesso' : 'Pausar Acesso'}
+            >
+              <Pause className="w-4 h-4" />
+            </button>
+
+            {/* Botão 2: Excluir Acesso */}
+            <button
+              type="button"
+              onClick={() => handleConfirmExcluir(item)}
+              className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+              title="Excluir Acesso"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )
+      }
+    }
+  ]
+
   return (
     <div className="space-y-5 max-w-7xl mx-auto pb-10">
       {/* Filtros Superiores exatamente conforme Layout da Imagem */}
@@ -201,115 +272,13 @@ export default function AdminAcessosPage() {
         </div>
       </div>
 
-      {/* Container da Tabela com visual fiel ao screenshot */}
-      <div className="bg-[#121214] border border-[#232328] rounded-2xl overflow-hidden shadow-2xl">
-        <Table>
-          <TableHeader className="bg-[#0e0e11] border-b border-[#232328]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4 pl-6">
-                FUNCIONARIO
-              </TableHead>
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4">
-                EMAIL
-              </TableHead>
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4">
-                ESCOLA / ORGAO
-              </TableHead>
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4">
-                NIVEL
-              </TableHead>
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4">
-                STATUS
-              </TableHead>
-              <TableHead className="text-zinc-400 font-extrabold text-[11px] tracking-wider uppercase py-4 pr-6 text-right">
-                ACOES
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {acessosFiltrados.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-zinc-400 text-sm">
-                  Nenhum registro de acesso encontrado.
-                </TableCell>
-              </TableRow>
-            ) : (
-              acessosFiltrados.map((item) => {
-                const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
-                const isGeral = item.escola === 'Geral'
-
-                return (
-                  <TableRow 
-                    key={item.id} 
-                    className="border-b border-[#1c1c20] hover:bg-[#18181c] transition-colors"
-                  >
-                    {/* FUNCIONARIO */}
-                    <TableCell className="py-4 pl-6 font-bold text-white text-sm whitespace-nowrap">
-                      {item.funcionario}
-                    </TableCell>
-
-                    {/* EMAIL */}
-                    <TableCell className="py-4 text-zinc-400 text-sm whitespace-nowrap">
-                      {item.email}
-                    </TableCell>
-
-                    {/* ESCOLA / ORGAO */}
-                    <TableCell className={`py-4 text-sm whitespace-nowrap ${isGeral ? 'italic text-zinc-400' : 'text-zinc-200'}`}>
-                      {item.escola}
-                    </TableCell>
-
-                    {/* NIVEL */}
-                    <TableCell className="py-4 whitespace-nowrap">
-                      {renderNivelBadge(item.nivel)}
-                    </TableCell>
-
-                    {/* STATUS */}
-                    <TableCell className="py-4 whitespace-nowrap">
-                      {isPausado ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-[11px] font-extrabold tracking-wide uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#71717a]" />
-                          {item.status}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#052e16] border border-[#166534] text-[#4ade80] text-[11px] font-extrabold tracking-wide uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
-                          ATIVO
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* ACOES (Dois botões quadrados vermelhos por linha) */}
-                    <TableCell className="py-4 pr-6 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Botão 1: Pausar / Alternar Acesso */}
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePausa(item)}
-                          className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                          title={isPausado ? 'Reativar Acesso' : 'Pausar Acesso'}
-                        >
-                          <Pause className="w-4 h-4" />
-                        </button>
-
-                        {/* Botão 2: Excluir Acesso */}
-                        <button
-                          type="button"
-                          onClick={() => handleConfirmExcluir(item)}
-                          className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                          title="Excluir Acesso"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={acessosFiltrados}
+        columns={columns}
+        keyExtractor={(item) => item.id}
+        loading={loading}
+        emptyMessage="Nenhum registro de acesso encontrado."
+      />
 
       {/* Modal de Confirmação para Excluir Acesso */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>

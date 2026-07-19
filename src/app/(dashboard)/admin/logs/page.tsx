@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { Activity, RefreshCw, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function AdminLogsPage() {
@@ -47,6 +47,74 @@ export default function AdminLogsPage() {
     }
   }
 
+  const columns: TableColumn<any>[] = [
+    {
+      header: 'Data',
+      accessor: (log) => (
+        <span className="text-[#aaa] whitespace-nowrap">
+          {new Date(log.created_at).toLocaleString('pt-BR')}
+        </span>
+      )
+    },
+    {
+      header: 'Ação / Módulo',
+      accessor: (log) => (
+        <div className="flex flex-col gap-1 items-start">
+          <Badge variant="outline" className={`text-xs font-semibold ${getActionColor(log.action)}`}>
+            {log.action}
+          </Badge>
+          <span className="text-sm text-gray-300 uppercase">{log.entity}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Usuário Responsável',
+      accessor: (log) => (
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-300">{log.user_name || 'Sistema'}</span>
+          <span className="text-xs text-gray-500">{log.user_email || '-'}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Inspecionar',
+      headClassName: 'text-center',
+      className: 'text-center',
+      accessor: (log) => (
+        <Dialog>
+          <DialogTrigger>
+            <div className="text-[#3ea6ff] hover:bg-[#3ea6ff]/10 inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 py-2 cursor-pointer transition-colors">
+              <Eye className="w-4 h-4 mr-1.5" /> Diff
+            </div>
+          </DialogTrigger>
+          <DialogContent className="bg-[#121214] border-[#27272a] text-white max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                Inspecionar Auditoria: <Badge variant="outline">{log.action}</Badge>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
+                  <h4 className="text-rose-400 font-bold mb-2 text-sm">Dados Anteriores</h4>
+                  <pre className="text-xs text-gray-300 overflow-x-auto">
+                    {JSON.stringify(log.old_data || {}, null, 2)}
+                  </pre>
+                </div>
+                <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
+                  <h4 className="text-emerald-400 font-bold mb-2 text-sm">Dados Novos</h4>
+                  <pre className="text-xs text-gray-300 overflow-x-auto">
+                    {JSON.stringify(log.new_data || {}, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )
+    }
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
@@ -80,81 +148,13 @@ export default function AdminLogsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
-            <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="text-[#ccc] font-semibold">Data</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Ação / Módulo</TableHead>
-              <TableHead className="text-[#ccc] font-semibold">Usuário Responsável</TableHead>
-              <TableHead className="text-[#ccc] font-semibold text-center">Inspecionar</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {logs.map((log) => (
-              <TableRow key={log.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors">
-                <TableCell className="text-[#aaa] whitespace-nowrap">
-                  {new Date(log.created_at).toLocaleString('pt-BR')}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1 items-start">
-                    <Badge variant="outline" className={`text-xs font-semibold ${getActionColor(log.action)}`}>
-                      {log.action}
-                    </Badge>
-                    <span className="text-sm text-gray-300 uppercase">{log.entity}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-300">{log.user_name || 'Sistema'}</span>
-                    <span className="text-xs text-gray-500">{log.user_email || '-'}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <Dialog>
-                    <DialogTrigger>
-                      <div className="text-[#3ea6ff] hover:bg-[#3ea6ff]/10 inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 py-2 cursor-pointer transition-colors">
-                        <Eye className="w-4 h-4 mr-1.5" /> Diff
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="bg-[#121214] border-[#27272a] text-white max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl">
-                          Inspecionar Auditoria: <Badge variant="outline">{log.action}</Badge>
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
-                            <h4 className="text-rose-400 font-bold mb-2 text-sm">Dados Anteriores</h4>
-                            <pre className="text-xs text-gray-300 overflow-x-auto">
-                              {JSON.stringify(log.old_data || {}, null, 2)}
-                            </pre>
-                          </div>
-                          <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl">
-                            <h4 className="text-emerald-400 font-bold mb-2 text-sm">Dados Novos</h4>
-                            <pre className="text-xs text-gray-300 overflow-x-auto">
-                              {JSON.stringify(log.new_data || {}, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            ))}
-            
-            {logs.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-12 text-[#aaa]">
-                  Nenhum log de auditoria encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StandardTable
+        data={logs}
+        columns={columns}
+        keyExtractor={(log) => log.id}
+        loading={loading}
+        emptyMessage="Nenhum log de auditoria encontrado."
+      />
     </div>
   )
 }
