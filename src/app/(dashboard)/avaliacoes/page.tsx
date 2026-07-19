@@ -104,9 +104,9 @@ function AvaliacoesContent() {
     ? acessos.find((a) => a.escola_id === escolaAtivaId)?.nivel ?? 99
     : 99
 
-  const isProfessor = nivelNaEscola === 5 || funcionario?.cargo?.toLowerCase().includes('professor')
+  const isProfessor = nivelNaEscola === 4 || nivelNaEscola === 5 || funcionario?.cargo?.toLowerCase().includes('professor')
   const isSecretario = nivelNaEscola === 3
-  const isDiretoria = nivelNaEscola === 2 || nivelNaEscola === 4 || isGlobalAdmin
+  const isDiretoria = nivelNaEscola === 2 || isGlobalAdmin
 
   // Definir aba ativa inicial com base no perfil
   useEffect(() => {
@@ -299,11 +299,13 @@ function AvaliacoesContent() {
         matchTab = ['recebida', 'em_impressao'].includes(at.status)
       } else if (activeTab === 'impressas_entregues') {
         matchTab = ['impressa', 'entregue_professor'].includes(at.status)
+      } else if (activeTab === 'minhas_atividades') {
+        matchTab = at.professor_id === funcionario?.id
       }
 
       return matchBusca && matchTrimestre && matchStatus && matchTab
     })
-  }, [atividades, busca, filtroTrimestre, filtroStatus, activeTab])
+  }, [atividades, busca, filtroTrimestre, filtroStatus, activeTab, funcionario?.id])
 
   const abrirDetalhes = (at: any) => {
     setAtividadeSelecionada(at)

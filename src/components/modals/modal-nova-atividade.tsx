@@ -181,31 +181,43 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
       setLoadingMsg('Notificando secretaria...')
 
-      // 5. Buscar secretários ativos da escola
-      const { data: secretarios } = await (supabase as any)
+      // 5. Buscar secretários (nivel=3) e diretores (nivel=2) como fallback
+      const { data: acessosReceptores } = await (supabase as any)
         .from('acessos_usuarios')
-        .select('funcionarios(id, nome)')
+        .select('nivel, funcionarios(id, nome)')
         .eq('escola_id', escolaAtivaId)
-        .eq('nivel', 3)
         .eq('ativo', true)
+        .in('nivel', [2, 3])
 
-      const secretariosValidos = (secretarios ?? [])
-        .map((s: any) => s.funcionarios)
-        .filter((f: any) => f?.id)
+      const acessosValidos = (acessosReceptores ?? [])
+        .filter((s: any) => s.funcionarios?.id)
 
-      if (secretariosValidos.length > 0) {
+      // Preferir secretários; se não houver nenhum, notificar diretores
+      const secretariosNivel3 = acessosValidos.filter((s: any) => s.nivel === 3)
+      const receptores = secretariosNivel3.length > 0
+        ? secretariosNivel3
+        : acessosValidos.filter((s: any) => s.nivel === 2)
+
+      if (receptores.length > 0) {
         const grupoId = crypto.randomUUID()
         const turmaNome = turmaData?.nome ?? 'turma'
         const materiaNome = materia?.nome ?? 'disciplina'
+        const destinatarioLabel = secretariosNivel3.length > 0 ? 'secretaria' : 'direção'
 
-        await (supabase as any).rpc('criar_notificacoes', {
-          p_destinatarios: secretariosValidos.map((sec: any) => sec.id),
+        const { error: notifError } = await (supabase as any).rpc('criar_notificacoes', {
+          p_destinatarios: receptores.map((s: any) => s.funcionarios.id),
           p_title: 'Nova Atividade Recebida',
           p_message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
           p_type: 'atividade_secretaria',
           p_link: `/avaliacoes?tab=central&id=${atividadeId}`,
           p_grupo_id: grupoId
         })
+
+        if (notifError) {
+          console.error(`Erro ao notificar ${destinatarioLabel}:`, notifError)
+        }
+      } else {
+        console.warn('Nenhum secretário ou diretor ativo encontrado para notificar nesta escola.')
       }
 
       toast.success('Atividade enviada com sucesso!')
