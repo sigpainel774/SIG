@@ -138,7 +138,7 @@ function AvaliacoesContent() {
       const supabase = createClient()
       const { data, error } = await (supabase as any)
         .from('atividades_secretaria')
-        .select('*, funcionarios(nome), turmas(nome), materias(nome)')
+        .select('*, funcionarios!professor_id(nome), turmas(nome), materias(nome)')
         .eq('id', idParam)
         .maybeSingle()
 
@@ -168,7 +168,7 @@ function AvaliacoesContent() {
 
     let query = (supabase as any)
       .from('atividades_secretaria')
-      .select('*, funcionarios(nome), turmas(nome), materias(nome)')
+      .select('*, funcionarios!professor_id(nome), turmas(nome), materias(nome)')
       .order('created_at', { ascending: false })
 
     // Filtros de nível de acesso
