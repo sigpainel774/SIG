@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { createClient } from '@/lib/supabaseClient'
+import { toast } from 'sonner'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { KPICard } from '@/components/KPICard'
 import { FrequenciaBar } from '@/components/FrequenciaBar'
@@ -87,90 +87,16 @@ export default function HomePage() {
 
   const fetchKpis = useCallback(async (escolaId: string) => {
     if (isMounted.current) setLoadingKpi(true)
-    const supabase = createClient()
-    const hoje = new Date().toISOString().split('T')[0]
-    const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-
     try {
-      const [
-        { count: totalAlunos },
-        { count: totalTurmas },
-        { count: ocorrenciasMes },
-        { count: transferenciasPendentes },
-        { count: atividadesPendentes },
-        { data: turmasHoje },
-        { data: todasTurmas },
-      ] = await Promise.all([
-        // 1. Total de alunos ativos
-        supabase
-          .from('alunos')
-          .select('id', { count: 'exact', head: true })
-          .eq('escola_id', escolaId)
-          .is('deleted_at', null),
-
-        // 2. Total de turmas ativas
-        supabase
-          .from('turmas')
-          .select('id', { count: 'exact', head: true })
-          .eq('escola_id', escolaId)
-          .is('deleted_at', null),
-
-        // 3. Ocorrências do mês
-        supabase
-          .from('ocorrencias')
-          .select('id', { count: 'exact', head: true })
-          .eq('escola_id', escolaId)
-          .gte('created_at', inicioMes),
-
-        // 4. Transferências pendentes (escola como destino)
-        supabase
-          .from('transferencias_alunos')
-          .select('id', { count: 'exact', head: true })
-          .eq('escola_destino_id', escolaId)
-          .eq('status', 'pendente'),
-
-        // 5. Atividades pendentes de impressão
-        (supabase as any)
-          .from('atividades_secretaria')
-          .select('id', { count: 'exact', head: true })
-          .eq('escola_id', escolaId)
-          .in('status', ['recebida', 'em_impressao']),
-
-        // 6. Turmas que registraram frequência hoje
-        supabase
-          .from('frequencias')
-          .select('turma_id')
-          .eq('escola_id', escolaId)
-          .eq('data', hoje),
-
-        // 7. Todas as turmas (para denominar a % de frequência)
-        supabase
-          .from('turmas')
-          .select('id')
-          .eq('escola_id', escolaId)
-          .is('deleted_at', null),
-      ])
-
-      // Turmas únicas com frequência hoje
-      const turmasComFreq = new Set((turmasHoje ?? []).map((f: any) => f.turma_id)).size
-
-      if (isMounted.current) {
-        setKpi({
-          totalAlunos: totalAlunos ?? 0,
-          totalTurmas: totalTurmas ?? 0,
-          ocorrenciasMes: ocorrenciasMes ?? 0,
-          transferenciasPendentes: transferenciasPendentes ?? 0,
-          turmasComFrequenciaHoje: turmasComFreq,
-          totalTurmasAtivas: todasTurmas?.length ?? 0,
-          atividadesPendentesSecretaria: atividadesPendentes ?? 0,
-        })
-      }
+      const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: KPIData = await res.json()
+      if (isMounted.current) setKpi(data)
     } catch (err) {
-      console.error('Erro ao carregar KPIs:', err)
+      console.error('[home] Erro ao carregar KPIs gerenciais:', err)
+      toast.error('Não foi possível carregar os indicadores da escola.')
     } finally {
-      if (isMounted.current) {
-        setLoadingKpi(false)
-      }
+      if (isMounted.current) setLoadingKpi(false)
     }
   }, [])
 
@@ -184,72 +110,22 @@ export default function HomePage() {
   const fetchSchoolStats = useCallback(async () => {
     if (!funcionario?.id || vinculosAtivos.length === 0) return
     if (isMounted.current) setLoadingSchoolStats(true)
-    const supabase = createClient() as any
-    const hoje = new Date().toISOString().split('T')[0]
-    
-    const stats: Record<string, { turmas: number; aulasHoje: number; chamadasPendentes: number }> = {}
-
     try {
-      await Promise.all(
-        vinculosAtivos.map(async (v) => {
-          const escolaId = v.escola_id
-          
-          // 1. Contagem de turmas vinculadas ao professor nesta escola
-          const { data: vtData } = await supabase
-            .from('vinculos_turmas')
-            .select('turma_id')
-            .eq('funcionario_id', funcionario.id)
-            .eq('escola_id', escolaId)
-          
-          const tIds = (vtData || []).map((vt: any) => vt.turma_id)
-          const turmasCount = tIds.length
-
-          // 2. Aulas hoje
-          const { data: aulasHojeData } = await supabase
-            .from('agenda_aulas')
-            .select('id, materia_id')
-            .eq('professor_id', funcionario.id)
-            .eq('escola_id', escolaId)
-            .eq('data', hoje)
-            .neq('status', 'cancelado')
-
-          const aulasHojeCount = aulasHojeData?.length ?? 0
-
-          // 3. Chamadas pendentes
-          let chamadasPendentesCount = 0
-          if (aulasHojeCount > 0) {
-            const { data: freqData } = await supabase
-              .from('frequencias')
-              .select('agenda_aula_id, materia_id')
-              .eq('escola_id', escolaId)
-              .eq('data', hoje)
-
-            const frequenciasLancadas = new Set(
-              (freqData || []).map((f: any) => f.agenda_aula_id || f.materia_id)
-            )
-
-            const pendentes = (aulasHojeData || []).filter(
-              (aula: any) => !frequenciasLancadas.has(aula.id) && !frequenciasLancadas.has(aula.materia_id)
-            )
-            chamadasPendentesCount = pendentes.length
-          }
-
-          stats[escolaId] = {
-            turmas: turmasCount,
-            aulasHoje: aulasHojeCount,
-            chamadasPendentes: chamadasPendentesCount
-          }
-        })
+      const escolaIds = vinculosAtivos
+        .map((v) => v.escola_id)
+        .filter((id): id is string => Boolean(id))
+      const escolaIdsParam = encodeURIComponent(JSON.stringify(escolaIds))
+      const res = await fetch(
+        `/api/home/school-stats?funcionarioId=${funcionario.id}&escolaIds=${escolaIdsParam}`
       )
-      if (isMounted.current) {
-        setSchoolStats(stats)
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const { stats } = await res.json()
+      if (isMounted.current) setSchoolStats(stats ?? {})
     } catch (err) {
-      console.error('Erro ao buscar estatísticas das escolas:', err)
+      console.error('[home] Erro ao buscar estatísticas das escolas:', err)
+      toast.error('Não foi possível carregar os dados das escolas.')
     } finally {
-      if (isMounted.current) {
-        setLoadingSchoolStats(false)
-      }
+      if (isMounted.current) setLoadingSchoolStats(false)
     }
   }, [funcionario?.id, vinculosAtivos])
 
@@ -266,96 +142,19 @@ export default function HomePage() {
       setLoadingTeacherKpi(true)
       setLoadingAulasHoje(true)
     }
-    const supabase = createClient() as any
-    const hoje = new Date().toISOString().split('T')[0]
-
     try {
-      // 1. Minhas Turmas
-      const { data: vtData, error: vtError } = await supabase
-        .from('vinculos_turmas')
-        .select('turma_id')
-        .eq('funcionario_id', funcionario.id)
-        .eq('escola_id', escolaId)
-
-      if (vtError) throw vtError
-      const tIds = (vtData || []).map((vt: any) => vt.turma_id)
-
-      // 2. Meus Alunos
-      let totalAlunos = 0
-      if (tIds.length > 0) {
-        const { count, error: aluError } = await supabase
-          .from('alunos')
-          .select('id', { count: 'exact', head: true })
-          .in('turma_id', tIds)
-          .is('deleted_at', null)
-
-        if (aluError) throw aluError
-        totalAlunos = count ?? 0
-      }
-
-      // 3. Aulas Hoje
-      const { data: aulasHojeData, error: ahError } = await supabase
-        .from('agenda_aulas')
-        .select(`
-          id,
-          horario_inicio,
-          horario_fim,
-          status,
-          materia_id,
-          turma_id,
-          turmas:turma_id (nome),
-          materias:materia_id (nome)
-        `)
-        .eq('professor_id', funcionario.id)
-        .eq('escola_id', escolaId)
-        .eq('data', hoje)
-        .order('horario_inicio')
-
-      if (ahError) throw ahError
+      const res = await fetch(
+        `/api/home/teacher-kpis?escolaId=${escolaId}&funcionarioId=${funcionario.id}`
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const { kpi: tKpi, aulasHoje: aulas } = await res.json()
       if (isMounted.current) {
-        setAulasHoje(aulasHojeData || [])
-      }
-
-      // 4. Chamadas Pendentes Hoje
-      const aulasAtivas = (aulasHojeData || []).filter((a: any) => a.status !== 'cancelado')
-      let chamadasPendentesCount = 0
-      if (aulasAtivas.length > 0) {
-        const { data: freqData } = await supabase
-          .from('frequencias')
-          .select('agenda_aula_id, materia_id')
-          .eq('escola_id', escolaId)
-          .eq('data', hoje)
-
-        const frequenciasLancadas = new Set(
-          (freqData || []).map((f: any) => f.agenda_aula_id || f.materia_id)
-        )
-
-        const pendentes = aulasAtivas.filter(
-          (aula: any) => !frequenciasLancadas.has(aula.id) && !frequenciasLancadas.has(aula.materia_id)
-        )
-        chamadasPendentesCount = pendentes.length
-      }
-
-      // 5. Atividades Secretaria
-      const { count: atividadesCount, error: atError } = await supabase
-        .from('atividades_secretaria')
-        .select('id', { count: 'exact', head: true })
-        .eq('professor_id', funcionario.id)
-        .eq('escola_id', escolaId)
-        .in('status', ['recebida', 'em_impressao'])
-
-      if (atError) throw atError
-
-      if (isMounted.current) {
-        setTeacherKpi({
-          totalTurmas: tIds.length,
-          totalAlunos,
-          chamadasPendentes: chamadasPendentesCount,
-          atividadesImpressao: atividadesCount ?? 0
-        })
+        setTeacherKpi(tKpi ?? null)
+        setAulasHoje(aulas ?? [])
       }
     } catch (err) {
-      console.error('Erro ao buscar dados do painel do professor:', err)
+      console.error('[home] Erro ao buscar painel do professor:', err)
+      toast.error('Não foi possível carregar os dados do painel do docente.')
     } finally {
       if (isMounted.current) {
         setLoadingTeacherKpi(false)
