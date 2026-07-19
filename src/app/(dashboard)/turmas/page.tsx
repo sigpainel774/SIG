@@ -30,11 +30,11 @@ export default function TurmasPage() {
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
 
   const supabase = createClient() as any
-  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot } = useAuthStore()
+  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot, isProfessor: checkProfessor, isCoordenador: checkCoordenador } = useAuthStore()
   const { isEditMode: globalEditMode } = useEditModeStore()
 
-  const isProfessor = !!(acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor'))
-  const isCoordenador = !!funcionario?.cargo?.toLowerCase().includes('coordenador')
+  const isProfessor = checkProfessor()
+  const isCoordenador = checkCoordenador()
   const isEditMode = globalEditMode && !isProfessor && !isCoordenador
 
   const fetchTurmas = async () => {
@@ -47,8 +47,7 @@ export default function TurmasPage() {
     setLoading(true)
     const isAdmin = isAdminGlobalOrRoot()
     const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
-    const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
-      !funcionario?.cargo?.toLowerCase().includes('coordenador')
+    const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && !isCoordenador
 
     let query = supabase
       .from('turmas')

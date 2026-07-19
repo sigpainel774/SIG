@@ -7,6 +7,7 @@ import { UserCheck, RefreshCw, Eye, ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { formatDate } from '@/lib/utils'
 
 export default function AdminSolicitacoesPage() {
   const router = useRouter()
@@ -98,7 +99,7 @@ export default function AdminSolicitacoesPage() {
                   {sol.solicitante?.nome?.split(' ')[0]}
                 </TableCell>
                 <TableCell className="text-sm text-[#aaa]">
-                  {new Date(sol.created_at).toLocaleDateString('pt-BR')}
+                  {formatDate(sol.created_at)}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button 

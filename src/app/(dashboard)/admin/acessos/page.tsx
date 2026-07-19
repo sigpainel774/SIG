@@ -15,6 +15,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
 
 export interface AcessoItem {
   id: string
@@ -155,16 +156,13 @@ export default function AdminAcessosPage() {
   }
 
   // Filtragem dos itens da tabela
-  const acessosFiltrados = acessos.filter(item => {
-    const matchBusca = 
-      item.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.escola.toLowerCase().includes(searchTerm.toLowerCase())
+  const acessosBuscados = useLocalSearch(acessos, searchTerm, ['funcionario', 'email', 'escola'])
 
+  const acessosFiltrados = acessosBuscados.filter(item => {
     const matchNivel = filtroNivel === 'ALL' || item.nivel.toUpperCase().includes(filtroNivel.toUpperCase())
     const matchStatus = filtroStatus === 'ALL' || item.status.toUpperCase() === filtroStatus.toUpperCase()
 
-    return matchBusca && matchNivel && matchStatus
+    return matchNivel && matchStatus
   })
 
   return (

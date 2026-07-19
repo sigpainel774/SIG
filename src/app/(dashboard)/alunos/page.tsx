@@ -82,9 +82,9 @@ interface Aluno {
 }
 
 export default function AlunosPage() {
-  const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot, isProfessor: checkProfessor, isCoordenador: checkCoordenador } = useAuthStore()
 
-  const isProfessor = acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
+  const isProfessor = checkProfessor()
 
   if (isProfessor) {
     return (
@@ -185,8 +185,7 @@ export default function AlunosPage() {
     try {
       const isAdmin = isAdminGlobalOrRoot()
       const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
-      const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
-        !funcionario?.cargo?.toLowerCase().includes('coordenador')
+      const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && !checkCoordenador()
 
       let query = supabase.from('alunos').select('*, escolas(nome)').is('deleted_at', null)
       

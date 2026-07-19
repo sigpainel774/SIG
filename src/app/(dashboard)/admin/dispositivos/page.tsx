@@ -9,8 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { ModalDispositivo } from '@/components/modals/modal-dispositivo'
 import { toast } from 'sonner'
-import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { softDeleteToTrash } from '@/lib/audit/audit-agent'
+import { executeWithToast } from '@/lib/action-handler'
 
 export default function AdminDispositivosPage() {
   const supabase = createClient()
@@ -60,43 +62,41 @@ export default function AdminDispositivosPage() {
     const confirm = window.confirm(`Deseja realmente mover o dispositivo "${dispositivo.nome}" para a Lixeira Global?`)
     if (!confirm) return
 
-    setLoading(true)
-    const { success, error } = await softDeleteToTrash({
-      supabase,
-      tableName: 'dispositivos',
-      recordId: dispositivo.id,
-      recordSummary: dispositivo.nome,
-      recordPayload: dispositivo,
-      performedBy: {
-        id: funcionario?.id ?? null,
-        name: funcionario?.nome || 'Administrador',
-        email: funcionario?.email || 'admin@super.com'
+    await executeWithToast({
+      action: () => softDeleteToTrash({
+        supabase,
+        tableName: 'dispositivos',
+        recordId: dispositivo.id,
+        recordSummary: dispositivo.nome,
+        recordPayload: dispositivo,
+        performedBy: {
+          id: funcionario?.id ?? null,
+          name: funcionario?.nome || 'Administrador',
+          email: funcionario?.email || 'admin@super.com'
+        }
+      }),
+      setLoading,
+      successMessage: 'Dispositivo enviado para a Lixeira Global!',
+      errorMessage: 'Erro ao excluir dispositivo',
+      onSuccess: () => {
+        loadDispositivos()
       }
     })
-
-    if (!success) {
-      toast.error(`Erro ao excluir dispositivo: ${(error as any)?.message || 'Erro desconhecido'}`)
-    } else {
-      toast.success('Dispositivo enviado para a Lixeira Global!')
-      loadDispositivos()
-    }
-    setLoading(false)
   }
 
   const changeStatus = async (id: string, novoStatus: string) => {
-    setLoading(true)
-    const { error } = await supabase
-      .from('dispositivos')
-      .update({ status: novoStatus })
-      .eq('id', id)
-
-    if (error) {
-      toast.error(`Erro ao alterar status: ${error.message}`)
-    } else {
-      toast.success('Status atualizado com sucesso!')
-      loadDispositivos()
-    }
-    setLoading(false)
+    await executeWithToast({
+      action: async () => await supabase
+        .from('dispositivos')
+        .update({ status: novoStatus })
+        .eq('id', id),
+      setLoading,
+      successMessage: 'Status atualizado com sucesso!',
+      errorMessage: 'Erro ao alterar status',
+      onSuccess: () => {
+        loadDispositivos()
+      }
+    })
   }
 
   // KPIs
@@ -105,18 +105,22 @@ export default function AdminDispositivosPage() {
   const totalManutencao = dispositivos.filter(d => d.status === 'MANUTENÇÃO').length
   const totalBloqueados = dispositivos.filter(d => d.status === 'BLOQUEADO').length
 
+  const dispositivosBuscados = useLocalSearch(dispositivos, searchTerm, (d, term) => {
+    const normalize = (val: any) => String(val || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return normalize(d.nome).includes(term) ||
+      normalize(d.identificador).includes(term) ||
+      normalize(d.escolas?.nome).includes(term) ||
+      normalize(d.funcionarios?.nome).includes(term);
+  })
+
   const dispositivosFiltrados = useMemo(() => {
-    return dispositivos.filter(d => {
-      const matchSearch = d.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          d.identificador?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          d.escolas?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          d.funcionarios?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    return dispositivosBuscados.filter(d => {
       const matchStatus = filterStatus === 'TODOS' || d.status === filterStatus
       const matchTipo = filterTipo === 'TODOS' || d.tipo === filterTipo
       
-      return matchSearch && matchStatus && matchTipo
+      return matchStatus && matchTipo
     })
-  }, [dispositivos, searchTerm, filterStatus, filterTipo])
+  }, [dispositivosBuscados, filterStatus, filterTipo])
 
   return (
     <div className="space-y-6">
