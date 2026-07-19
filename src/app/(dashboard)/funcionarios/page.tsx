@@ -276,31 +276,26 @@ export default function FuncionariosPage() {
     setModalEditando(func)
   }
 
-  const handleExcluir = async (func: Funcionario) => {
+  const handleDesligar = async (func: Funcionario) => {
     if (
       !confirm(
-        `Deseja excluir o funcionário "${func.nome}"? Esta ação pode ser desfeita pela lixeira.`
+        `Deseja desligar o funcionário "${func.nome}"? Ele será desvinculado de todas as turmas, matérias e acessos.`
       )
     )
       return
 
     try {
-      await softDeleteToTrash({
-        supabase,
-        tableName: 'funcionarios',
-        recordId: func.id,
-        recordSummary: `${func.nome} (${func.email})`,
-        recordPayload: func,
-        performedBy: {
-          id: authFuncionario?.id ?? null,
-          name: authFuncionario?.nome ?? 'Sistema',
-          email: authFuncionario?.email ?? ''
-        }
-      })
-      toast.success(`Funcionário "${func.nome}" movido para a lixeira.`)
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ status: 'desligado' })
+        .eq('id', func.id)
+
+      if (error) throw error
+
+      toast.success(`Funcionário "${func.nome}" desligado com sucesso.`)
       await carregarFuncionarios()
     } catch (err) {
-      toast.error('Erro ao excluir funcionário.')
+      toast.error('Erro ao desligar funcionário.')
       console.error(err)
     }
   }
@@ -585,7 +580,7 @@ export default function FuncionariosPage() {
             handleAbrirLotacoes={handleAbrirLotacoes}
             handleImprimir={handleImprimir}
             handleEditar={handleEditar}
-            handleExcluir={handleExcluir}
+            handleDesligar={handleDesligar}
           />
         </>
       )}
