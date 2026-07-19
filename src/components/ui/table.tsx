@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -113,4 +114,88 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+}
+
+export interface TableColumn<T> {
+  header: React.ReactNode
+  accessor: (item: T, index: number) => React.ReactNode
+  className?: string
+  headClassName?: string
+}
+
+export interface StandardTableProps<T> {
+  data: T[]
+  columns: TableColumn<T>[]
+  keyExtractor: (item: T, index: number) => string
+  emptyMessage?: string
+  loading?: boolean
+  loadingMessage?: string
+  className?: string
+  tableClassName?: string
+  rowClassName?: string | ((item: T, index: number) => string)
+}
+
+export function StandardTable<T,>({
+  data,
+  columns,
+  keyExtractor,
+  emptyMessage = "Nenhum registro encontrado.",
+  loading = false,
+  loadingMessage = "Carregando dados...",
+  className,
+  tableClassName,
+  rowClassName,
+}: StandardTableProps<T>) {
+  return (
+    <div className={cn("rounded-2xl border border-borderCustom overflow-hidden bg-[#121212] shadow-md", className)}>
+      <Table className={tableClassName}>
+        <TableHeader>
+          <TableRow className="border-b border-borderCustom bg-[#0d0d0d] text-zinc-400 hover:bg-transparent">
+            {columns.map((col, index) => (
+              <TableHead
+                key={index}
+                className={cn("p-3.5 font-semibold text-xs uppercase tracking-wider text-muted-foreground", col.headClassName)}
+              >
+                {col.header}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={columns.length} className="p-8 text-center text-zinc-500">
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-highlight" />
+                  <span>{loadingMessage}</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : data.length === 0 ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={columns.length} className="p-8 text-center text-xs text-muted-foreground">
+                {emptyMessage}
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((item, index) => {
+              const customRowClass = typeof rowClassName === "function" ? rowClassName(item, index) : rowClassName
+              return (
+                <TableRow
+                  key={keyExtractor(item, index)}
+                  className={cn("hover:bg-hoverCustom/30 transition-colors border-b border-borderCustom/50", customRowClass)}
+                >
+                  {columns.map((col, colIndex) => (
+                    <TableCell key={colIndex} className={cn("p-3.5", col.className)}>
+                      {col.accessor(item, index)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  )
 }

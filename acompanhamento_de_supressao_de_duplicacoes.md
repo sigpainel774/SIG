@@ -12,9 +12,9 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 ## 📈 Status Geral
 
 * **Percentual Inicial de Duplicação (Estimado):** ~28,5% (~10.000 linhas)
-* **Percentual Atual de Duplicação:** ~27,7%
-* **Linhas de Código Removidas/Otimizadas:** ~267
-* **Redução Acumulada do Projeto:** ~0,76%
+* **Percentual Atual de Duplicação:** ~26,2%
+* **Linhas de Código Removidas/Otimizadas:** ~417
+* **Redução Acumulada do Projeto:** ~1,19%
 
 ---
 
@@ -33,11 +33,17 @@ Este documento serve para monitorar o progresso na eliminação de código dupli
 | **Grupo 9** | Estado de Loading | ⏳ Pendente | ~300 | - |
 | **Grupo 10** | `useEffect` de Dados ao Abrir Modal | ⏳ Pendente | ~280 | - |
 | **Grupo 11** | Empty State Genérico | ⏳ Pendente | ~160 | - |
-| **Grupo 12** | Scaffold de Tabelas standard | ⏳ Pendente | ~800 | - |
+| **Grupo 12** | Scaffold de Tabelas standard | ✅ Concluído | ~800 | ~150 linhas puras removidas. Lógicas de layout, cabeçalho, carregamento e empty state padronizadas via componente genérico `<StandardTable>`. |
 
 ---
 
 ## 📝 Histórico de Alterações e Impacto Real
+
+### [18/07/2026] - Refatoração do Grupo 12 Concluída
+* Criação do componente genérico `<StandardTable>` em `src/components/ui/table.tsx` com tratamento unificado de loading spinner, mensagens de empty state e estilos padrões.
+* Refatoração e eliminação de tabelas cruas repetitivas nas telas `ponto-mobile/page.tsx`, `configuracoes/GradeCurricularTab.tsx` e `alunos/page.tsx`.
+* Redução de código redundante e acoplamento nos renders de listagem.
+* Validação do build executada com 100% de sucesso.
 
 ### [14/07/2026] - Refatoração do Grupo 2 Concluída
 * Criação do hook `usePessoaForm` unificando mais de 30 states duplicados de informações pessoais e endereço.

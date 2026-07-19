@@ -14,8 +14,11 @@ Atualizado automaticamente com o status real do repositório.
 | Integração Resend + Primeiro Acesso | ⏳ Pendente | Plano elaborado e salvo — código não iniciado; configuração SMTP é manual no Supabase |
 | Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — nenhum arquivo criado no repositório ainda |
 | Otimização `/configuracoes` (40KB → 8-12KB) | 🔍 Diagnóstico Pronto | 8 erros silenciosos identificados — **aguardando aprovação do usuário para execução** |
+| Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
+| Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
 | Tabs Geolocalização (Funcionários + Alunos) | ✅ Implementado | Sessão 2026-07-18 — `MapaAlunos.tsx` criado, `MapWrapper` e `relatorios/page.tsx` modificados |
 | Otimização Página de Ajuda | ✅ Implementado | Sessão 2026-07-18 — 8 gargalos + 7 erros silenciosos corrigidos |
+| Otimização de Telas e Listagens (Alunos/Funcionários) | ✅ Implementado | Sessão 2026-07-18 — Imports dinâmicos (`dynamic` sem SSR) para modais pesados e try/catch com toasts |
 | Skill `otimizador` | ✅ Implementado | Sessão 2026-07-18 — skill criada em `.agents/skills/otimizador/` |
 
 ---
@@ -492,6 +495,28 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 
 ### 2026-07-18
 
+#### Refatoração e Otimização da Ficha de Aluno (`modal-aluno.tsx`)
+- **O que foi feito:** Refatoração de todo o modal de aluno (90KB → ~6KB re-export), separando a lógica em componentes modulares e isolando o estado e o polling de assinatura.
+- **Correções aplicadas:**
+  - Criado o contexto `AlunoFormContext.tsx` e o hook `useAlunoForm` para centralizar dados.
+  - Isolado o polling de assinatura digital via celular em `useAlunoSignaturePolling.ts`.
+  - Divididas as 13 seções em 5 subcomponentes de seções (`SecaoIdentificacao.tsx`, `SecaoMatricula.tsx`, `SecaoEndereco.tsx`, `SecaoSaude.tsx`, `SecaoAssinaturas.tsx`).
+  - Corrigido o bug de concorrência que misturava a justificativa de atraso vacinal geral com a vacina COVID-19.
+  - Corrigida a brecha de segurança que deixava o código temporário de assinatura órfão ativo no Supabase caso o modal fosse fechado por fora.
+  - Corrigido o memory leak ao desmontar o modal durante lazy-loading de imagem.
+- **Arquivos criados/modificados:**
+  - `[MODIFY] src/components/modals/modal-aluno.tsx` (re-export limpo)
+  - `[NEW] src/components/modals/modal-aluno/types.ts`
+  - `[NEW] src/components/modals/modal-aluno/index.tsx`
+  - `[NEW] src/components/modals/modal-aluno/context/AlunoFormContext.tsx`
+  - `[NEW] src/components/modals/modal-aluno/hooks/useAlunoSignaturePolling.ts`
+  - `[NEW] src/components/modals/modal-aluno/components/SecaoIdentificacao.tsx`
+  - `[NEW] src/components/modals/modal-aluno/components/SecaoMatricula.tsx`
+  - `[NEW] src/components/modals/modal-aluno/components/SecaoEndereco.tsx`
+  - `[NEW] src/components/modals/modal-aluno/components/SecaoSaude.tsx`
+  - `[NEW] src/components/modals/modal-aluno/components/SecaoAssinaturas.tsx`
+
+
 #### Tabs de Geolocalização (Funcionários + Alunos)
 - **O que foi feito:** Refatoração do relatório de geolocalização para incluir interface com abas, permitindo alternar entre dados de geolocalização de funcionários e de alunos dentro do mesmo componente de relatório.
 - **Arquivos modificados:** Componente de relatório de geolocalização em `src/components/relatorios/`
@@ -522,3 +547,30 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
   - `[NEW] src/components/map/MapaAlunos.tsx` — componente de mapa com filtro por escola/turma, DivIcon com iniciais/foto e popup com link Google Maps
   - `[MODIFY] src/components/map/MapWrapper.tsx` — adicionado import dinâmico de `MapaAlunos` (sem SSR)
   - `[MODIFY] src/app/(dashboard)/relatorios/page.tsx` — abas `funcionarios` / `alunos`, fetch de alunos geolocalizados por escola
+
+#### Refatoração e Otimização do Modal de Funcionário (`modal-funcionario.tsx`)
+- **O que foi feito:** Refatoração de todo o modal de funcionário (85KB → export leve), estruturando a lógica em abas modulares separadas e centralizando estados/ações em um contexto React compartilhado para reduzir retrabalho e consumo de memória.
+- **Correções aplicadas:**
+  - Criado o contexto `FuncionarioFormContext.tsx` para agrupar estados do formulário e handlers de salvamento.
+  - Criados os subcomponentes de abas: `PessoaisTab.tsx`, `SaudeTab.tsx`, `EscolaridadeTab.tsx`, `EmpregoTab.tsx`, `DocumentosTab.tsx`, `AnexosTab.tsx`.
+  - Corrigido o bug na seleção múltipla de "Outros Cursos" na aba de Escolaridade.
+  - Implementada a persistência e visualização correta de documentos obrigatórios via Supabase Storage.
+- **Arquivos criados/modificados:**
+  - `[MODIFY] src/components/modals/modal-funcionario.tsx` (re-export limpo)
+  - `[NEW] src/components/modals/modal-funcionario/types.ts`
+  - `[NEW] src/components/modals/modal-funcionario/index.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/context/FuncionarioFormContext.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/PessoaisTab.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/SaudeTab.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/EscolaridadeTab.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/EmpregoTab.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/DocumentosTab.tsx`
+  - `[NEW] src/components/modals/modal-funcionario/components/AnexosTab.tsx`
+
+#### Otimização de Performance e Tratamento de Erros nas Páginas de Listagem (`alunos` e `funcionarios`)
+- **O que foi feito:** Adicionado imports dinâmicos (`next/dynamic` com `{ ssr: false }`) para todos os modais e componentes pesados de impressão nas páginas `/alunos` e `/funcionarios`, economizando significativamente o chunk inicial de download do cliente.
+- **Correções aplicadas:**
+  - Envolvido o carregamento de dados em blocos `try-catch-finally` robustos e adicionado feedback visual via `toast.error` em caso de falha de conexão ou autenticação nas listagens de alunos e funcionários.
+- **Arquivos modificados:**
+  - `[MODIFY] src/app/(dashboard)/alunos/page.tsx`
+  - `[MODIFY] src/app/(dashboard)/funcionarios/page.tsx`

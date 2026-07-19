@@ -27,16 +27,34 @@ import {
   Hash
 } from 'lucide-react'
 import Link from 'next/link'
-import { ModalAluno } from '@/components/modals/modal-aluno'
-import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
-import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
-import { ModalJustificativaArquivamento } from '@/components/modals/modal-justificativa-arquivamento'
-import { ModalAlunosAnexos } from '@/components/modals/modal-alunos-anexos'
+import dynamic from 'next/dynamic'
+
+const ModalAluno = dynamic(
+  () => import('@/components/modals/modal-aluno').then((mod) => mod.ModalAluno),
+  { ssr: false }
+)
+const PrintFichaAluno = dynamic(
+  () => import('@/components/print/print-ficha-aluno').then((mod) => mod.PrintFichaAluno),
+  { ssr: false }
+)
+const PrintComprovanteMatricula = dynamic(
+  () => import('@/components/print/print-comprovante-matricula').then((mod) => mod.PrintComprovanteMatricula),
+  { ssr: false }
+)
+const ModalJustificativaArquivamento = dynamic(
+  () => import('@/components/modals/modal-justificativa-arquivamento').then((mod) => mod.ModalJustificativaArquivamento),
+  { ssr: false }
+)
+const ModalAlunosAnexos = dynamic(
+  () => import('@/components/modals/modal-alunos-anexos').then((mod) => mod.ModalAlunosAnexos),
+  { ssr: false }
+)
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { IconTile } from '@/components/ui/icon-tile'
+import { StandardTable } from '@/components/ui/table'
 
 interface Aluno {
   id: string
@@ -164,47 +182,54 @@ export default function AlunosPage() {
     const supabase = createClient()
     setLoading(true)
     
-    const isAdmin = isAdminGlobalOrRoot()
-    const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
-    const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
-      !funcionario?.cargo?.toLowerCase().includes('coordenador')
+    try {
+      const isAdmin = isAdminGlobalOrRoot()
+      const isDiretor = acessos.some(a => a.nivel === 2 && a.ativo)
+      const isSecretario = acessos.some(a => a.nivel === 3 && a.ativo) && 
+        !funcionario?.cargo?.toLowerCase().includes('coordenador')
 
-    let query = supabase.from('alunos').select('*, escolas(nome)').is('deleted_at', null)
-    
-    if (!isAdmin && escolaAtivaId) {
-      if (isDiretor || isSecretario) {
-        query = query.eq('escola_id', escolaAtivaId)
-      } else {
-        // Professor ou Coordenador: só vê alunos das suas turmas
-        const { data: vTurmas } = await supabase
-          .from('vinculos_turmas')
-          .select('turma_id')
-          .eq('funcionario_id', funcionario?.id || '')
-          .eq('escola_id', escolaAtivaId)
-
-        const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)
-        if (ids.length > 0) {
-          query = query.eq('escola_id', escolaAtivaId).in('turma_id', ids) as typeof query
+      let query = supabase.from('alunos').select('*, escolas(nome)').is('deleted_at', null)
+      
+      if (!isAdmin && escolaAtivaId) {
+        if (isDiretor || isSecretario) {
+          query = query.eq('escola_id', escolaAtivaId)
         } else {
-          setAlunos([])
-          setLoading(false)
-          return
+          // Professor ou Coordenador: só vê alunos das suas turmas
+          const { data: vTurmas } = await supabase
+            .from('vinculos_turmas')
+            .select('turma_id')
+            .eq('funcionario_id', funcionario?.id || '')
+            .eq('escola_id', escolaAtivaId)
+
+          const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)
+          if (ids.length > 0) {
+            query = query.eq('escola_id', escolaAtivaId).in('turma_id', ids) as typeof query
+          } else {
+            setAlunos([])
+            return
+          }
         }
+      } else if (isAdmin && escolaAtivaId) {
+        // Se for admin global e tiver escola selecionada, filtra por ela
+        query = query.eq('escola_id', escolaAtivaId)
       }
-    } else if (isAdmin && escolaAtivaId) {
-      // Se for admin global e tiver escola selecionada, filtra por ela
-      query = query.eq('escola_id', escolaAtivaId)
+      
+      const { data, error } = await query.order('nome', { ascending: true })
+      if (error) throw error
+
+      if (data) {
+        const mapped = (data as any[]).map((aluno: any) => ({
+          ...aluno,
+          escola_nome: aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola'
+        }))
+        setAlunos(mapped)
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar alunos:', err)
+      toast.error('Erro ao carregar lista de alunos. Verifique sua conexão.')
+    } finally {
+      setLoading(false)
     }
-    
-    const { data } = await query.order('nome', { ascending: true })
-    if (data) {
-      const mapped = (data as any[]).map((aluno: any) => ({
-        ...aluno,
-        escola_nome: aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola'
-      }))
-      setAlunos(mapped)
-    }
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -325,50 +350,66 @@ export default function AlunosPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300 border-collapse">
-                <thead>
-                  <tr className="border-b border-[#26262a] text-zinc-500 font-bold uppercase text-[10px]">
-                    <th className="py-2 px-3">Aluno</th>
-                    <th className="py-2 px-3">Escola</th>
-                    <th className="py-2 px-3">Solicitante</th>
-                    <th className="py-2 px-3">Justificativa</th>
-                    <th className="py-2 px-3 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {solicitacoes.map((sol) => (
-                    <tr key={sol.id} className="border-b border-[#26262a]/50 hover:bg-[#18181b]/50">
-                      <td className="py-3 px-3 font-bold text-white">{sol.alunos?.nome}</td>
-                      <td className="py-3 px-3 text-zinc-400">{sol.alunos?.escolas?.nome || 'Escola Principal'}</td>
-                      <td className="py-3 px-3 font-medium text-[#3ea6ff]">{sol.solicitante?.nome || 'Funcionário'}</td>
-                      <td className="py-3 px-3 text-zinc-300 italic max-w-xs truncate" title={sol.justificativa}>
-                        "{sol.justificativa}"
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="inline-flex gap-1.5 justify-end w-full">
-                          <Button
-                            onClick={() => handleResponderSolicitacao(sol.id, 'aprovado')}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
-                          >
-                            <Check className="w-3 h-3" />
-                            Liberar
-                          </Button>
-                          <Button
-                            onClick={() => handleResponderSolicitacao(sol.id, 'rejeitado')}
-                            variant="ghost"
-                            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
-                          >
-                            <XCircle className="w-3 h-3" />
-                            Recusar
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardTable
+              data={solicitacoes}
+              keyExtractor={(sol) => sol.id}
+              className="border-none bg-transparent shadow-none rounded-none"
+              columns={[
+                {
+                  header: "Aluno",
+                  accessor: (sol) => sol.alunos?.nome,
+                  className: "py-3 px-3 font-bold text-white",
+                  headClassName: "py-2 px-3 text-zinc-500 font-bold uppercase text-[10px] border-none bg-transparent"
+                },
+                {
+                  header: "Escola",
+                  accessor: (sol) => sol.alunos?.escolas?.nome || 'Escola Principal',
+                  className: "py-3 px-3 text-zinc-400",
+                  headClassName: "py-2 px-3 text-zinc-500 font-bold uppercase text-[10px] border-none bg-transparent"
+                },
+                {
+                  header: "Solicitante",
+                  accessor: (sol) => sol.solicitante?.nome || 'Funcionário',
+                  className: "py-3 px-3 font-medium text-[#3ea6ff]",
+                  headClassName: "py-2 px-3 text-zinc-500 font-bold uppercase text-[10px] border-none bg-transparent"
+                },
+                {
+                  header: "Justificativa",
+                  accessor: (sol) => (
+                    <span className="italic max-w-xs truncate block" title={sol.justificativa}>
+                      "{sol.justificativa}"
+                    </span>
+                  ),
+                  className: "py-3 px-3 text-zinc-300",
+                  headClassName: "py-2 px-3 text-zinc-500 font-bold uppercase text-[10px] border-none bg-transparent"
+                },
+                {
+                  header: "Ações",
+                  accessor: (sol) => (
+                    <div className="inline-flex gap-1.5 justify-end w-full">
+                      <Button
+                        onClick={() => handleResponderSolicitacao(sol.id, 'aprovado')}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <Check className="w-3 h-3" />
+                        Liberar
+                      </Button>
+                      <Button
+                        onClick={() => handleResponderSolicitacao(sol.id, 'rejeitado')}
+                        variant="ghost"
+                        className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Recusar
+                      </Button>
+                    </div>
+                  ),
+                  className: "py-3 px-3 text-right",
+                  headClassName: "py-2 px-3 text-zinc-500 font-bold uppercase text-[10px] text-right border-none bg-transparent"
+                }
+              ]}
+              rowClassName="border-b border-[#26262a]/50 hover:bg-[#18181b]/50"
+            />
           </div>
         )}
 

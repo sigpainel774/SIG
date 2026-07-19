@@ -22,6 +22,7 @@ import { SchoolSelector } from '@/components/SchoolSelector'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { StandardTable } from '@/components/ui/table'
 
 export default function GradeCurricularTab() {
   const { escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
@@ -335,76 +336,72 @@ export default function GradeCurricularTab() {
 
           {/* Listagem */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-2xl border border-borderCustom overflow-hidden bg-card">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-borderCustom bg-[#121214] text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    <th className="p-4 font-medium">Nome da Matéria</th>
-                    <th className="p-4 font-medium">Base Curricular</th>
-                    <th className="p-4 font-medium text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-borderCustom text-sm">
-                  {materias.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-8 text-center text-zinc-500">
-                        {loading ? (
-                          <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                        ) : (
-                          'Nenhuma matéria cadastrada nesta escola.'
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    materias.map((mat) => (
-                      <tr key={mat.id} className="hover:bg-hoverCustom/30 transition-colors">
-                        <td className="p-4 font-medium text-foreground">{mat.nome}</td>
-                        <td className="p-4">
-                          <span className={cn(
-                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border',
-                            mat.base_curricular === 'comum'
-                              ? 'bg-blue-500/10 border-blue-500/20 text-[#185FA5] dark:text-[#3ea6ff]'
-                              : 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400'
-                          )}>
-                            {mat.base_curricular === 'comum' ? 'Base Comum' : 'Base Diversificada'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex justify-end items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingId(mat.id)
-                                setEditingNome(mat.nome)
-                                setEditingBase(mat.base_curricular)
-                              }}
-                              className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
-                              disabled={loading}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                if (confirm(`Tem certeza que deseja excluir a matéria "${mat.nome}"?`)) {
-                                  handleDeleteMateria(mat.id, mat.nome)
-                                }
-                              }}
-                              className="h-8 w-8 p-0 text-rose-400 hover:text-rose-300"
-                              disabled={loading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <StandardTable
+              data={materias}
+              keyExtractor={(mat) => mat.id}
+              loading={loading && materias.length === 0}
+              loadingMessage="Carregando matérias..."
+              emptyMessage="Nenhuma matéria cadastrada nesta escola."
+              className="bg-card"
+              columns={[
+                {
+                  header: "Nome da Matéria",
+                  accessor: (mat) => mat.nome,
+                  className: "p-4 font-medium text-foreground",
+                  headClassName: "p-4",
+                },
+                {
+                  header: "Base Curricular",
+                  accessor: (mat) => (
+                    <span className={cn(
+                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                      mat.base_curricular === 'comum'
+                        ? 'bg-blue-500/10 border-blue-500/20 text-[#185FA5] dark:text-[#3ea6ff]'
+                        : 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400'
+                    )}>
+                      {mat.base_curricular === 'comum' ? 'Base Comum' : 'Base Diversificada'}
+                    </span>
+                  ),
+                  className: "p-4",
+                  headClassName: "p-4",
+                },
+                {
+                  header: "Ações",
+                  accessor: (mat) => (
+                    <div className="flex justify-end items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(mat.id)
+                          setEditingNome(mat.nome)
+                          setEditingBase(mat.base_curricular)
+                        }}
+                        className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                        disabled={loading}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm(`Tem certeza que deseja excluir a matéria "${mat.nome}"?`)) {
+                            handleDeleteMateria(mat.id, mat.nome)
+                          }
+                        }}
+                        className="h-8 w-8 p-0 text-rose-400 hover:text-rose-300 cursor-pointer"
+                        disabled={loading}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ),
+                  className: "p-4 text-right",
+                  headClassName: "p-4 text-right",
+                }
+              ]}
+            />
           </div>
         </div>
       )}
