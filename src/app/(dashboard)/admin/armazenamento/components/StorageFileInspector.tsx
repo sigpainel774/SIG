@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StandardTable, TableColumn } from '@/components/ui/table'
 import { 
   Search, 
   Building2, 
@@ -15,6 +15,7 @@ import {
   File as FileIcon
 } from 'lucide-react'
 import { MappedFile, SchoolStat } from '@/hooks/useAdminStorage'
+
 
 // Helper para formatar tamanho de arquivos
 function formatBytes(bytes: number, decimals = 2) {
@@ -173,88 +174,92 @@ export function StorageFileInspector({
         </div>
 
         {/* Tabela do Inspetor */}
-        <div className="border border-[#2a2a2a] rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader className="bg-[#17171a]">
-              <TableRow className="border-b border-[#2a2a2a] hover:bg-transparent">
-                <TableHead className="text-white font-bold text-xs uppercase">Arquivo</TableHead>
-                <TableHead className="text-white font-bold text-xs uppercase w-48">Bucket</TableHead>
-                <TableHead className="text-white font-bold text-xs uppercase w-56">Proprietário / Escola</TableHead>
-                <TableHead className="text-white font-bold text-xs uppercase text-right w-36">Tamanho</TableHead>
-                <TableHead className="text-white font-bold text-xs uppercase text-center w-24">Link</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFiles.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-[#8e8e93] text-sm">
-                    Nenhum arquivo correspondente aos filtros aplicados.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredFiles.map(file => {
-                  let TypeIcon = FileIcon
-                  let typeColor = 'text-slate-400 bg-slate-500/10'
-                  if (file.type === 'images') {
-                    TypeIcon = ImageIcon
-                    typeColor = 'text-purple-400 bg-purple-500/10'
-                  } else if (file.type === 'docs') {
-                    TypeIcon = FileText
-                    typeColor = 'text-amber-400 bg-amber-500/10'
-                  } else if (file.type === 'videos') {
-                    TypeIcon = VideoIcon
-                    typeColor = 'text-rose-400 bg-rose-500/10'
-                  }
+        <StandardTable<MappedFile>
+          data={filteredFiles}
+          columns={[
+            {
+              header: 'Arquivo',
+              className: 'py-3 max-w-[280px] md:max-w-[400px]',
+              accessor: (file: MappedFile) => {
+                let TypeIcon = FileIcon
+                let typeColor = 'text-slate-400 bg-slate-500/10'
+                if (file.type === 'images') {
+                  TypeIcon = ImageIcon
+                  typeColor = 'text-purple-400 bg-purple-500/10'
+                } else if (file.type === 'docs') {
+                  TypeIcon = FileText
+                  typeColor = 'text-amber-400 bg-amber-500/10'
+                } else if (file.type === 'videos') {
+                  TypeIcon = VideoIcon
+                  typeColor = 'text-rose-400 bg-rose-500/10'
+                }
 
-                  return (
-                    <TableRow key={file.id} className="border-b border-[#202024] hover:bg-[#1a1a1f] transition-colors">
-                      <TableCell className="py-3 max-w-[280px] md:max-w-[400px]">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`p-2 rounded-lg shrink-0 ${typeColor}`}>
-                            <TypeIcon className="w-4 h-4" />
-                          </div>
-                          <div className="truncate flex flex-col min-w-0">
-                            <span className="font-bold text-white truncate text-[13px]" title={file.name}>
-                              {file.name.split('/').pop() ?? file.name}
-                            </span>
-                            <span className="text-[10px] text-[#8e8e93] truncate mt-0.5" title={file.name}>
-                              Caminho: {file.name}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <span className="font-mono text-xs text-[#8e8e93] bg-[#202024] border border-[#2a2a2a] px-2 py-0.5 rounded">
-                          {file.bucketId}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <span className="text-xs font-semibold text-white">
-                          {file.escolaId ? file.escolaNome : 'Rede Compartilhada'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right py-3 font-bold text-white text-[13px]">
-                        {formatBytes(file.size)}
-                      </TableCell>
-                      <TableCell className="text-center py-3">
-                        <a
-                          href={getFilePublicUrl(file.bucketId, file.name)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
-                          title="Abrir arquivo em nova aba"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                return (
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`p-2 rounded-lg shrink-0 ${typeColor}`}>
+                      <TypeIcon className="w-4 h-4" />
+                    </div>
+                    <div className="truncate flex flex-col min-w-0">
+                      <span className="font-bold text-white truncate text-[13px]" title={file.name}>
+                        {file.name.split('/').pop() ?? file.name}
+                      </span>
+                      <span className="text-[10px] text-[#8e8e93] truncate mt-0.5" title={file.name}>
+                        Caminho: {file.name}
+                      </span>
+                    </div>
+                  </div>
+                )
+              }
+            },
+            {
+              header: 'Bucket',
+              headClassName: 'w-48',
+              className: 'py-3',
+              accessor: (file: MappedFile) => (
+                <span className="font-mono text-xs text-[#8e8e93] bg-[#202024] border border-[#2a2a2a] px-2 py-0.5 rounded">
+                  {file.bucketId}
+                </span>
+              )
+            },
+            {
+              header: 'Proprietário / Escola',
+              headClassName: 'w-56',
+              className: 'py-3',
+              accessor: (file: MappedFile) => (
+                <span className="text-xs font-semibold text-white">
+                  {file.escolaId ? file.escolaNome : 'Rede Compartilhada'}
+                </span>
+              )
+            },
+            {
+              header: 'Tamanho',
+              headClassName: 'text-right w-36',
+              className: 'text-right py-3 font-bold text-white text-[13px]',
+              accessor: (file: MappedFile) => formatBytes(file.size)
+            },
+            {
+              header: 'Link',
+              headClassName: 'text-center w-24',
+              className: 'text-center py-3',
+              accessor: (file: MappedFile) => (
+                <a
+                  href={getFilePublicUrl(file.bucketId, file.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                  title="Abrir arquivo em nova aba"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )
+            }
+          ]}
+          keyExtractor={(file: MappedFile) => file.id}
+          emptyMessage="Nenhum arquivo correspondente aos filtros aplicados."
+        />
+
       </CardContent>
     </Card>
   )
 }
+

@@ -200,6 +200,10 @@ export interface AlunoFormContextType {
   setAreaLocalizacao: (val: string) => void
   areaDiferenciada: string
   setAreaDiferenciada: (val: string) => void
+  isCpfValid: boolean
+  isFetchingCep: boolean
+  consultarCep: (cepInput?: string) => Promise<void>
   resetPessoais: () => void
   populatePessoais: (data: any) => void
 }
+

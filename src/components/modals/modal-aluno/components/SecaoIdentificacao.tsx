@@ -14,6 +14,7 @@ export function SecaoIdentificacao() {
     nascimento, setNascimento,
     censo, setCenso,
     cpf, setCpf,
+    isCpfValid,
     estadoCivil, setEstadoCivil,
     telefone, setTelefone,
     corRaca, setCorRaca,
@@ -108,15 +109,25 @@ export function SecaoIdentificacao() {
               />
             </div>
             <div>
-              <Label className="text-xs text-gray-300">CPF do Aluno</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-gray-300">CPF do Aluno</Label>
+                {cpf.trim().length > 0 && (
+                  <span className={`text-[10px] font-semibold ${isCpfValid ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {isCpfValid ? '✓ CPF Válido' : '✕ CPF Inválido'}
+                  </span>
+                )}
+              </div>
               <Input 
                 value={cpf} 
                 onChange={(e) => setCpf(e.target.value)} 
                 placeholder="000.000.000-00" 
-                className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+                className={`bg-[#121212] border-[#2a2a2a] text-white mt-1 ${
+                  cpf.trim().length > 0 && !isCpfValid ? 'border-rose-500/60 focus:border-rose-500' : ''
+                }`} 
               />
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
