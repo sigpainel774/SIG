@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { PrintHeader } from '@/components/print/print-header'
 
 interface PrintFichaProps {
   nome: string
@@ -14,6 +15,7 @@ interface PrintFichaProps {
   endereco?: string
   telefone?: string
   escola?: string
+  escolaLogoUrl?: string
 }
 
 export function PrintFicha({
@@ -27,7 +29,8 @@ export function PrintFicha({
   pai = 'José da Silva',
   endereco = 'Rua Principal, Nº 100 - Centro, Sapeaçu - BA',
   telefone = '(75) 99999-8888',
-  escola = 'Colégio Dr Eraldo Tinoco'
+  escola = 'Colégio Dr Eraldo Tinoco',
+  escolaLogoUrl
 }: Partial<PrintFichaProps>) {
   return (
     <div className="p-6 bg-white text-black max-w-3xl mx-auto rounded-xl border border-gray-300 shadow-sm print:shadow-none print:border-none print:p-0">
@@ -35,32 +38,45 @@ export function PrintFicha({
         <h2 className="text-lg font-bold text-slate-800">Visualização de Impressão — Ficha Cadastral</h2>
         <button 
           onClick={() => window.print()} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md cursor-pointer"
         >
           🖨️ Imprimir Ficha (A4)
         </button>
       </div>
 
       <div className="border border-black p-4 font-sans text-xs space-y-4">
-        <div className="flex justify-between items-center border-b border-black pb-3">
-          <div>
-            <h1 className="text-sm font-bold uppercase">Prefeitura Municipal de Sapeaçu</h1>
-            <h2 className="text-xs font-semibold text-gray-700">Secretaria de Educação</h2>
-            <p className="text-xs font-bold text-blue-900 mt-0.5">{escola}</p>
-          </div>
-          <div className="w-16 h-20 border border-black flex items-center justify-center bg-gray-100 text-[10px] text-gray-500 font-mono text-center">
-            {fotoUrl ? <img src={fotoUrl} alt={nome} className="w-full h-full object-cover" /> : 'Foto 3x4'}
-          </div>
-        </div>
+        {/* Header Oficial */}
+        <PrintHeader
+          escolaNome={escola}
+          escolaLogoUrl={escolaLogoUrl}
+          docTitulo="FICHA CADASTRAL DO ESTUDANTE"
+        />
 
-        <h3 className="font-bold text-xs uppercase bg-gray-200 p-1 border border-black">1. Identificação Básica</h3>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div><strong>Nome Completo:</strong> {nome}</div>
-          <div><strong>Data Nasc:</strong> {nascimento}</div>
-          <div><strong>CPF:</strong> {cpf}</div>
-          <div><strong>Código INEP (Censo):</strong> {inep}</div>
-          <div><strong>RG / Órgão:</strong> {rg}</div>
-          <div><strong>Telefone:</strong> {telefone}</div>
+        {/* Quadro com Foto e Identificação */}
+        <div className="flex justify-between items-start gap-4 pb-2 border-b border-gray-300">
+          <div className="flex-1 space-y-1">
+            <h3 className="font-bold text-xs uppercase bg-gray-200 p-1 border border-black">1. Identificação Básica</h3>
+            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+              <div><strong>Nome Completo:</strong> {nome}</div>
+              <div><strong>Data Nasc:</strong> {nascimento}</div>
+              <div><strong>CPF:</strong> {cpf}</div>
+              <div><strong>Código INEP (Censo):</strong> {inep}</div>
+              <div><strong>RG / Órgão:</strong> {rg}</div>
+              <div><strong>Telefone:</strong> {telefone}</div>
+            </div>
+          </div>
+
+          <div className="w-16 h-20 border border-black flex-shrink-0 flex items-center justify-center bg-gray-100 text-[10px] text-gray-500 font-mono text-center">
+            {fotoUrl ? (
+              <img 
+                src={fotoUrl.startsWith('data:') ? fotoUrl : `${fotoUrl.split('?')[0]}?t=${Date.now()}`} 
+                alt={nome} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              'Foto 3x4'
+            )}
+          </div>
         </div>
 
         <h3 className="font-bold text-xs uppercase bg-gray-200 p-1 border border-black">2. Filiação e Endereço</h3>

@@ -1,11 +1,13 @@
 'use client'
 
 import React from 'react'
+import { PrintHeader } from '@/components/print/print-header'
 
 interface PrintBoletimProps {
   nomeAluno: string
   matricula: string
   escola: string
+  escolaLogoUrl?: string
   turma: string
   anoLetivo: string
   notas: {
@@ -24,6 +26,7 @@ export function PrintBoletim({
   nomeAluno = 'João Silva',
   matricula = '2026-00123',
   escola = 'Colégio Dr Eraldo Tinoco',
+  escolaLogoUrl,
   turma = '9º Ano A - Matutino',
   anoLetivo = '2026',
   notas = [
@@ -58,7 +61,7 @@ export function PrintBoletim({
         <h2 className="text-lg font-bold text-slate-800">Visualização de Impressão — Boletim Escolar</h2>
         <button 
           onClick={handlePrint} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md cursor-pointer"
         >
           🖨️ Imprimir Boletim (A4)
         </button>
@@ -66,12 +69,12 @@ export function PrintBoletim({
 
       <div className="border border-black p-4 font-sans text-xs space-y-4">
         {/* Header Oficial */}
-        <div className="text-center border-b border-black pb-3">
-          <h1 className="text-base font-bold uppercase tracking-wide">Prefeitura Municipal de Sapeaçu</h1>
-          <h2 className="text-sm font-semibold text-gray-800">Secretaria Municipal de Educação</h2>
-          <p className="text-xs font-bold text-blue-900 mt-1">{escola}</p>
-          <p className="text-[10px] text-gray-600">BOLETIM ESCOLAR OFICIAL — ANO LETIVO {anoLetivo}</p>
-        </div>
+        <PrintHeader
+          escolaNome={escola}
+          escolaLogoUrl={escolaLogoUrl}
+          docTitulo="BOLETIM ESCOLAR OFICIAL"
+          docSubtitulo={`ANO LETIVO ${anoLetivo}`}
+        />
 
         {/* Dados do Aluno */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-gray-100 p-2 border border-gray-400 font-mono text-[11px]">
