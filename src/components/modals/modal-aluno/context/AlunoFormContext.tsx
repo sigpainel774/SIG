@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
+import useSWR from 'swr'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -23,8 +24,39 @@ export function AlunoFormProvider({ children, props, isOpen, setIsOpen }: AlunoF
   const { isEditMode } = useEditModeStore()
   const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const [loading, setLoading] = useState(false)
-  const [turmas, setTurmas] = useState<any[]>([])
-  const [escolas, setEscolas] = useState<any[]>([])
+
+  // Buscar turmas via useSWR
+  const { data: tData } = useSWR(isOpen ? 'catalogo_turmas_todas' : null, async () => {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('turmas')
+      .select('id, nome, ano_letivo, school_id:escola_id')
+      .is('deleted_at', null)
+    if (error) throw error
+    // Mapear school_id para escola_id para manter retrocompatibilidade com o banco se necessário, mas o select já traz escola_id.
+    // O select do censo e turmas seleciona `escola_id`.
+    return (data || []).map((t: any) => ({ ...t, escola_id: t.school_id }))
+  })
+
+  // Buscar escolas via useSWR
+  const { data: eData } = useSWR(isOpen ? 'catalogo_escolas_ativas' : null, async () => {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('escolas')
+      .select('id, nome')
+      .is('deleted_at', null)
+      .eq('ativo', true)
+      .order('nome', { ascending: true })
+    if (error) throw error
+    return data || []
+  })
+
+  const turmas = tData || []
+  const escolas = eData ? (
+    isAdminGlobalOrRoot() 
+      ? eData 
+      : (escolaAtivaId ? eData.filter(esc => esc.id === escolaAtivaId) : [])
+  ) : []
 
   // Hook para gerenciar os estados de dados pessoais e endereço
   const pessoaForm = usePessoaForm({
@@ -131,34 +163,6 @@ export function AlunoFormProvider({ children, props, isOpen, setIsOpen }: AlunoF
     setAssinaturaFuncionarioUrl
   })
 
-  // Carregar dados de turmas e escolas
-  const carregarDadosIniciais = async () => {
-    const supabase = createClient()
-    const { data: tData } = await supabase.from('turmas').select('id, nome, ano_letivo, escola_id').is('deleted_at', null)
-    if (tData) setTurmas(tData)
-
-    const { data: eData } = await supabase
-      .from('escolas')
-      .select('id, nome')
-      .is('deleted_at', null)
-      .eq('ativo', true)
-      .order('nome', { ascending: true })
-    if (eData) {
-      if (isAdminGlobalOrRoot()) {
-        setEscolas(eData)
-      } else if (escolaAtivaId) {
-        setEscolas(eData.filter(esc => esc.id === escolaAtivaId))
-      } else {
-        setEscolas([])
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (isOpen) {
-      carregarDadosIniciais()
-    }
-  }, [isOpen])
 
   // Preencher os dados quando o modal abre ou alunoEditar muda
   useEffect(() => {

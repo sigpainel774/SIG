@@ -28,6 +28,7 @@ export function SecaoAssinaturas() {
 
   // Lazy-load: só converte a assinatura do funcionário quando o usuário rola até a seção 13
   useEffect(() => {
+    let active = true
     const dm = alunoEditar?.dados_matricula
     const temAssinaturaSalva = dm?.assinatura_funcionario_url
     if (temAssinaturaSalva || !funcionario?.assinatura_url) return
@@ -42,14 +43,19 @@ export function SecaoAssinaturas() {
           loaded = true
           observer.disconnect()
           urlToBase64(funcionario.assinatura_url!)
-            .then(b64 => setNewSignatureFuncionario(b64))
+            .then(b64 => {
+              if (active) setNewSignatureFuncionario(b64)
+            })
             .catch(err => console.error('Erro ao converter assinatura do funcionário para base64:', err))
         }
       },
       { threshold: 0.1 }
     )
     observer.observe(sectionEl)
-    return () => observer.disconnect()
+    return () => {
+      active = false
+      observer.disconnect()
+    }
   }, [alunoEditar?.id, funcionario?.assinatura_url, signatureSectionRef])
 
   return (
