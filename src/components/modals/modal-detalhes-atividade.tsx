@@ -70,16 +70,17 @@ export function ModalDetalhesAtividade({
   atividade,
   onStatusChange,
 }: ModalDetalhesAtividadeProps) {
-  const { funcionario, acessos, escolaAtivaId } = useAuthStore()
+  const { funcionario, acessos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const { isEditMode } = useEditModeStore()
 
   const [historico, setHistorico] = useState<any[]>([])
   const [loadingHistorico, setLoadingHistorico] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState(false)
 
-  // Verificar se usuário é secretário (nível 3) na escola ativa
-  const isSecretario = acessos.some(
-    (a) => a.nivel === 3 && a.ativo && a.escola_id === escolaAtivaId,
+  const isGlobalAdmin = isAdminGlobalOrRoot?.() ?? false
+  // Verificar se usuário é secretário (nível 3), diretor (nível 2) ou admin global na escola ativa
+  const podeGerenciarStatus = isGlobalAdmin || acessos.some(
+    (a) => (a.nivel === 2 || a.nivel === 3) && a.ativo && a.escola_id === escolaAtivaId,
   )
 
   const statusAtual: StatusAtividade = atividade?.status ?? 'recebida'
@@ -135,13 +136,13 @@ export function ModalDetalhesAtividade({
         alterado_por_nome: funcionario.nome ?? 'Secretaria',
       })
 
-      // 3. Marcar notificação do grupo como processada (se for secretária)
-      if (isSecretario && atividade?.grupo_id) {
+      // 3. Marcar notificação do grupo como processada (se tiver permissão)
+      if (podeGerenciarStatus && atividade?.grupo_id) {
         await (supabase as any)
           .from('notifications')
           .update({
             processado_por: funcionario.id,
-            processado_por_nome: funcionario.nome ?? 'Secretaria',
+            processado_por_nome: funcionario.nome ?? 'Secretaria/Direção',
             processado_em: new Date().toISOString(),
           })
           .eq('grupo_id', atividade.grupo_id)
@@ -317,8 +318,8 @@ export function ModalDetalhesAtividade({
             </div>
           </div>
 
-          {/* Ação de status — só visível para secretária em isEditMode */}
-          {isEditMode && isSecretario && proximoStatusInfo && (
+          {/* Ação de status — só visível para secretária ou diretoria em isEditMode */}
+          {isEditMode && podeGerenciarStatus && proximoStatusInfo && (
             <div className="px-6 pb-6">
               <div className="rounded-lg border border-dashed border-[#3ea6ff]/30 bg-[#3ea6ff]/5 p-4">
                 <p className="text-xs text-zinc-400 mb-3">Avançar status desta atividade:</p>

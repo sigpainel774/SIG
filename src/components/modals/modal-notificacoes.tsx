@@ -59,18 +59,18 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
   const markAsRead = async (notif: any, e: React.MouseEvent) => {
     e.stopPropagation()
     const supabase = createClient()
-    const isSecretario = funcionario && acessos?.some((a: any) => a.nivel === 3 && a.ativo)
+    const podeProcessarGrupo = funcionario && acessos?.some((a: any) => (a.nivel === 2 || a.nivel === 3) && a.ativo)
     try {
       // Marcar a própria notificação como lida
       await supabase.from('notifications').update({ read: true }).eq('id', notif.id)
 
-      // Se for secretário e a notificação ainda não tiver processado_por, processar o grupo
-      if (isSecretario && notif.grupo_id && !notif.processado_por) {
+      // Se for secretário/diretor e a notificação ainda não tiver processado_por, processar o grupo
+      if (podeProcessarGrupo && notif.grupo_id && !notif.processado_por) {
         const { data, error } = await (supabase as any)
           .from('notifications')
           .update({
             processado_por: funcionario?.id ?? null,
-            processado_por_nome: funcionario?.nome ?? 'Secretário',
+            processado_por_nome: funcionario?.nome ?? 'Secretaria/Direção',
             processado_em: new Date().toISOString(),
           })
           .eq('grupo_id', notif.grupo_id)
