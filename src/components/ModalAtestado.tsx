@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Loader2 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { FileUpload } from '@/components/ui/file-upload'
 
 interface ModalAtestadoProps {
   open: boolean
@@ -30,52 +31,69 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
 
   useEffect(() => {
-    if (open && funcionarios.length === 0) {
+    let active = true
+
+    if (open) {
       const fetchFuncionarios = async () => {
         setLoadingFuncs(true)
-        
-        let query = supabase
-          .from('funcionarios')
-          .select('id, nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo)')
-          .is('deleted_at', null)
-          .order('nome')
+        try {
+          let query = supabase
+            .from('funcionarios')
+            .select('id, nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo)')
+            .is('deleted_at', null)
+            .order('nome')
 
-        if (escolaAtivaId) {
-          // Filtrar apenas funcionários vinculados à escola ativa
-          const { data: vincs } = await supabase
-            .from('vinculos_funcionarios')
-            .select('funcionario_id')
-            .eq('escola_id', escolaAtivaId)
-            .eq('ativo', true)
+          if (escolaAtivaId) {
+            // Filtrar apenas funcionários vinculados à escola ativa
+            const { data: vincs, error: vincsError } = await supabase
+              .from('vinculos_funcionarios')
+              .select('funcionario_id')
+              .eq('escola_id', escolaAtivaId)
+              .eq('ativo', true)
 
-          const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
-          if (ids.length > 0) {
-            query = query.in('id', ids) as typeof query
-          } else {
-            setFuncionarios([])
-            setLoadingFuncs(false)
-            return
-          }
-        }
+            if (vincsError) throw vincsError
 
-        const { data } = await query
-        if (data) {
-          const filtrados = data.filter((f: any) => {
-            if (escolaAtivaId) {
-              if (f.is_superadmin) return false
-              if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
-              const acessos = f.acessos_usuarios ?? []
-              if (acessos.some((a: any) => a.nivel === 1 && a.ativo)) return false
+            const ids = (vincs ?? []).map((v: any) => v.funcionario_id as string)
+            if (ids.length > 0) {
+              query = query.in('id', ids) as typeof query
+            } else {
+              if (active) {
+                setFuncionarios([])
+                setLoadingFuncs(false)
+              }
+              return
             }
-            return true
-          })
-          setFuncionarios(filtrados)
+          }
+
+          const { data, error } = await query
+          if (error) throw error
+
+          if (data && active) {
+            const filtrados = data.filter((f: any) => {
+              if (escolaAtivaId) {
+                if (f.is_superadmin) return false
+                if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+                const acessos = f.acessos_usuarios ?? []
+                if (acessos.some((a: any) => a.nivel === 1 && a.ativo)) return false
+              }
+              return true
+            })
+            setFuncionarios(filtrados)
+          }
+        } catch (err: any) {
+          toast.error('Erro ao carregar funcionários: ' + err.message)
+          console.error(err)
+        } finally {
+          if (active) setLoadingFuncs(false)
         }
-        setLoadingFuncs(false)
       }
       fetchFuncionarios()
     }
-  }, [open, funcionarios.length, supabase, escolaAtivaId])
+
+    return () => {
+      active = false
+    }
+  }, [open, supabase, escolaAtivaId])
 
   const handleSave = async () => {
     if (!funcionarioId || !cid || dias <= 0) {
@@ -164,7 +182,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
             className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
             disabled={loading}
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}
             {loading ? 'Salvando...' : 'Salvar Atestado'}
           </Button>
         </>
@@ -217,15 +235,12 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-zinc-300">Anexo do Atestado (Opcional)</label>
-          <div className="flex items-center gap-2">
-            <Input
-              type="file"
-              accept=".pdf,image/*"
-              onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-              className="bg-[#18181b] border-[#3f3f46] text-white file:text-white file:bg-[#27272a] file:border-none file:mr-4 file:px-4 file:py-1 file:rounded-md cursor-pointer"
-            />
-          </div>
-          {arquivo && <p className="text-xs text-muted-foreground mt-1">Anexo selecionado: {arquivo.name}</p>}
+          <FileUpload
+            file={arquivo}
+            onChange={setArquivo}
+            accept=".pdf,image/*"
+            label="Selecione ou arraste o comprovante (PDF/Imagem)"
+          />
         </div>
       </div>
     </StandardDialog>

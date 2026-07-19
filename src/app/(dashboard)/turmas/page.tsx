@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, GraduationCap, Users, ArrowLeft } from 'lucide-react'
+import { Plus, Search, GraduationCap, Users, ArrowLeft, Inbox } from 'lucide-react'
 import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { IconTile } from '@/components/ui/icon-tile'
@@ -210,9 +211,11 @@ export default function TurmasPage() {
           ))}
         </div>
       ) : filteredTurmas.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-xl bg-card/50">
-          Nenhuma turma encontrada.
-        </div>
+        <EmptyState
+          title="Sem turmas"
+          description="Nenhuma turma cadastrada ou encontrada com os filtros selecionados."
+          icon={Inbox}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {filteredTurmas.map((turma) => (

@@ -6,8 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet, Loader2 } from 'lucide-react'
+import { Plus, Settings2, Download, TrendingUp, TrendingDown, Wallet, Inbox } from 'lucide-react'
 import { ModalLancamentoFinanceiro } from '@/components/ModalLancamentoFinanceiro'
+import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from 'sonner'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function FinanceiroPage() {
   const [contaFiltro, setContaFiltro] = useState('todas')
@@ -16,20 +20,32 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true)
   const [isModalLancamentoOpen, setIsModalLancamentoOpen] = useState(false)
   const supabase = createClient()
+  const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
 
   const fetchTransacoes = async () => {
     setLoading(true)
-    const { data } = await (supabase.from as any)('transacoes_financeiras')
-      .select('*')
-      .order('data', { ascending: false })
-    
-    if (data) setTransacoes(data)
-    setLoading(false)
+    try {
+      let query = supabase.from('transacoes_financeiras').select('*')
+      
+      if (escolaAtivaId) {
+        query = query.eq('escola_id', escolaAtivaId)
+      }
+
+      const { data, error } = await query.order('data', { ascending: false })
+      
+      if (error) throw error
+      setTransacoes(data || [])
+    } catch (err: any) {
+      toast.error('Erro ao carregar transações financeiras: ' + err.message)
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
     fetchTransacoes()
-  }, [])
+  }, [escolaAtivaId])
 
   // Cálculo dinâmico dos totais a partir dos dados do banco
   const { totalReceitas, totalDespesas, saldoTotal } = useMemo(() => {
@@ -151,17 +167,18 @@ export default function FinanceiroPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-highlight" />
-                    <span>Carregando extrato financeiro...</span>
-                  </div>
+                <TableCell colSpan={8} className="py-8">
+                  <LoadingSpinner size="sm" variant="highlight" placement="inline" label="Carregando extrato financeiro..." />
                 </TableCell>
               </TableRow>
             ) : transacoes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  Nenhuma transação financeira registrada.
+                <TableCell colSpan={8} className="py-12">
+                  <EmptyState
+                    title="Sem movimentações"
+                    description="Nenhuma transação financeira foi registrada para esta escola."
+                    icon={Inbox}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
