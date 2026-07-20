@@ -39,7 +39,7 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, limparSessao, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
@@ -51,19 +51,10 @@ export function Sidebar() {
   const [showSchoolWarningModal, setShowSchoolWarningModal] = useState(false)
 
   const handleLogout = async () => {
-    try {
-      closeMobile()
-      setIsLoggingOut(true)
-      await supabase.auth.signOut()
-      limparSessao()
-      toast.success('Sessão encerrada com sucesso!')
-      router.push('/login')
-      router.refresh()
-    } catch (error) {
-      toast.error('Erro ao encerrar sessão')
-    } finally {
-      setIsLoggingOut(false)
-    }
+    closeMobile()
+    setIsLoggingOut(true)
+    toast.success('Sessão encerrada com sucesso!')
+    await logout(supabase)
   }
 
   const handleRefresh = async () => {

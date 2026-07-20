@@ -75,11 +75,12 @@ export default function LoginPage() {
 
       const status = funcCheck?.status?.toLowerCase()
       if (status === 'suspenso' || status === 'sem acesso') {
-        // Atualizar lista local de suspensos no localStorage
+        // Atualizar lista local de suspensos no localStorage com limite de itens
         if (typeof window !== 'undefined') {
+          const MAX_ITEMS = 50
           if (!localSuspended.includes(cleanEmail)) {
-            localSuspended.push(cleanEmail)
-            localStorage.setItem('sig_suspended_emails', JSON.stringify(localSuspended))
+            const updatedList = [cleanEmail, ...localSuspended].slice(0, MAX_ITEMS)
+            localStorage.setItem('sig_suspended_emails', JSON.stringify(updatedList))
           }
         }
 
@@ -164,31 +165,33 @@ export default function LoginPage() {
         </form>
       </div>
 
-      {/* Pop-up de Usuário Suspenso padronizado com StandardDialog */}
-      <StandardDialog
-        open={suspendedModalOpen}
-        onOpenChange={setSuspendedModalOpen}
-        title="Acesso Suspenso"
-        maxWidth="sm:max-w-[400px]"
-        footer={
-          <Button
-            type="button"
-            onClick={() => setSuspendedModalOpen(false)}
-            className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer"
-          >
-            Entendido
-          </Button>
-        }
-      >
-        <div className="flex flex-col items-center text-center space-y-3">
-          <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mb-1">
-            <Ban className="w-7 h-7" />
+      {/* Pop-up de Usuário Suspenso padronizado com StandardDialog (Montagem condicional) */}
+      {suspendedModalOpen && (
+        <StandardDialog
+          open={suspendedModalOpen}
+          onOpenChange={setSuspendedModalOpen}
+          title="Acesso Suspenso"
+          maxWidth="sm:max-w-[400px]"
+          footer={
+            <Button
+              type="button"
+              onClick={() => setSuspendedModalOpen(false)}
+              className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer"
+            >
+              Entendido
+            </Button>
+          }
+        >
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mb-1">
+              <Ban className="w-7 h-7" />
+            </div>
+            <p className="text-zinc-300 text-base leading-relaxed font-medium">
+              Usuario suspenso, contate a administração
+            </p>
           </div>
-          <p className="text-zinc-300 text-base leading-relaxed font-medium">
-            Usuario suspenso, contate a administração
-          </p>
-        </div>
-      </StandardDialog>
+        </StandardDialog>
+      )}
     </div>
   )
 }
