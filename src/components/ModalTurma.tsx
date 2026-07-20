@@ -162,7 +162,11 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                   <div className="flex-1">
                     <Select value={selectedProfId} onValueChange={(val) => setSelectedProfId(val ?? '')}>
                       <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
-                        <SelectValue placeholder="-- Selecione um Professor --" />
+                        <SelectValue placeholder="-- Selecione um Professor --">
+                          {selectedProfId
+                            ? (professoresEscola.find((prof: any) => prof.id === selectedProfId)?.nome || (professoresEscola.length === 0 ? 'Carregando...' : selectedProfId))
+                            : undefined}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
                         {professoresEscola.map((prof: any) => (

@@ -284,7 +284,11 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
               </Label>
               <Select value={turmaId} onValueChange={(v) => setTurmaId(v ?? '')}>
                 <SelectTrigger className="bg-[#1c1c1e] border-[#26262a] text-white focus:ring-[#3ea6ff]">
-                  <SelectValue placeholder="Selecione a turma" />
+                  <SelectValue placeholder="Selecione a turma">
+                    {turmaId
+                      ? (turmas.find((t) => t.id === turmaId)?.nome || (turmas.length === 0 ? 'Carregando...' : turmaId))
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#1c1c1e] border-[#26262a] text-white">
                   {turmas.length === 0 ? (
@@ -311,7 +315,11 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                 <SelectTrigger className="bg-[#1c1c1e] border-[#26262a] text-white focus:ring-[#3ea6ff] disabled:opacity-50">
                   <SelectValue
                     placeholder={!turmaId ? 'Selecione a turma primeiro' : 'Selecione a disciplina'}
-                  />
+                  >
+                    {materiaId
+                      ? (materias.find((m) => m.id === materiaId)?.nome || (materias.length === 0 ? 'Carregando...' : materiaId))
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#1c1c1e] border-[#26262a] text-white">
                   {materias.length === 0 ? (
