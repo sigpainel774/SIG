@@ -51,6 +51,14 @@ interface Escola {
   nome: string
 }
 
+interface FormVeiculoState {
+  placa: string
+  modelo: string
+  capacidade: string
+  status: string
+  motorista_id: string
+}
+
 /* ──────────────────────── Modal Veículo ──────────────────────── */
 
 interface ModalVeiculoProps {
@@ -64,7 +72,7 @@ interface ModalVeiculoProps {
 function ModalVeiculo({ open, onOpenChange, motoristas, onSaved, editando }: ModalVeiculoProps) {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormVeiculoState>({
     placa: '',
     modelo: '',
     capacidade: '40',
@@ -172,7 +180,7 @@ function ModalVeiculo({ open, onOpenChange, motoristas, onSaved, editando }: Mod
           </div>
           <div className="space-y-2">
             <Label className="text-zinc-300 text-sm">Status</Label>
-            <Select value={form.status} onValueChange={(v) => setForm((p) => ({ ...p, status: v }))}>
+            <Select value={form.status} onValueChange={(v: string | null) => setForm((p) => ({ ...p, status: v ?? 'ATIVO' }))}>
               <SelectTrigger className="bg-[#1a1a1d] border-[#3f3f46] text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -188,8 +196,8 @@ function ModalVeiculo({ open, onOpenChange, motoristas, onSaved, editando }: Mod
         <div className="space-y-2">
           <Label className="text-zinc-300 text-sm">Motorista Responsável</Label>
           <Select
-            value={form.motorista_id ?? ''}
-            onValueChange={(v) => setForm((p) => ({ ...p, motorista_id: v === '__none__' ? '' : v }))}
+            value={form.motorista_id || '__none__'}
+            onValueChange={(v: string | null) => setForm((p) => ({ ...p, motorista_id: (!v || v === '__none__') ? '' : v }))}
           >
             <SelectTrigger className="bg-[#1a1a1d] border-[#3f3f46] text-white">
               <SelectValue placeholder="Selecione um motorista (opcional)" />
@@ -209,6 +217,13 @@ function ModalVeiculo({ open, onOpenChange, motoristas, onSaved, editando }: Mod
 
 /* ──────────────────────── Modal Rota ──────────────────────── */
 
+interface FormRotaState {
+  nome: string
+  turno: string
+  veiculo_id: string
+  escola_id: string
+}
+
 interface ModalRotaProps {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -221,7 +236,7 @@ interface ModalRotaProps {
 function ModalRota({ open, onOpenChange, veiculos, escolas, onSaved, editando }: ModalRotaProps) {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormRotaState>({
     nome: '',
     turno: 'MANHA',
     veiculo_id: '',
@@ -306,7 +321,7 @@ function ModalRota({ open, onOpenChange, veiculos, escolas, onSaved, editando }:
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-zinc-300 text-sm">Turno</Label>
-            <Select value={form.turno} onValueChange={(v) => setForm((p) => ({ ...p, turno: v }))}>
+            <Select value={form.turno} onValueChange={(v: string | null) => setForm((p) => ({ ...p, turno: v ?? 'MANHA' }))}>
               <SelectTrigger className="bg-[#1a1a1d] border-[#3f3f46] text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -321,8 +336,8 @@ function ModalRota({ open, onOpenChange, veiculos, escolas, onSaved, editando }:
           <div className="space-y-2">
             <Label className="text-zinc-300 text-sm">Veículo Vinculado</Label>
             <Select
-              value={form.veiculo_id ?? ''}
-              onValueChange={(v) => setForm((p) => ({ ...p, veiculo_id: v === '__none__' ? '' : v }))}
+              value={form.veiculo_id || '__none__'}
+              onValueChange={(v: string | null) => setForm((p) => ({ ...p, veiculo_id: (!v || v === '__none__') ? '' : v }))}
             >
               <SelectTrigger className="bg-[#1a1a1d] border-[#3f3f46] text-white">
                 <SelectValue placeholder="Selecione (opcional)" />
@@ -342,8 +357,8 @@ function ModalRota({ open, onOpenChange, veiculos, escolas, onSaved, editando }:
         <div className="space-y-2">
           <Label className="text-zinc-300 text-sm">Escola Associada</Label>
           <Select
-            value={form.escola_id ?? ''}
-            onValueChange={(v) => setForm((p) => ({ ...p, escola_id: v === '__none__' ? '' : v }))}
+            value={form.escola_id || '__none__'}
+            onValueChange={(v: string | null) => setForm((p) => ({ ...p, escola_id: (!v || v === '__none__') ? '' : v }))}
           >
             <SelectTrigger className="bg-[#1a1a1d] border-[#3f3f46] text-white">
               <SelectValue placeholder="Selecione a escola (opcional)" />
@@ -384,7 +399,19 @@ export default function AdminTransportePage() {
       .from('veiculos')
       .select('*, funcionarios(nome)')
       .order('created_at', { ascending: false })
-    if (data) setVeiculos(data)
+    if (data) {
+      setVeiculos(
+        data.map((v: any) => ({
+          id: v.id,
+          placa: v.placa ?? '',
+          modelo: v.modelo ?? '',
+          capacidade: v.capacidade ?? 40,
+          status: v.status ?? 'ATIVO',
+          motorista_id: v.motorista_id ?? null,
+          funcionarios: v.funcionarios ?? null,
+        }))
+      )
+    }
     setLoading(false)
   }, [supabase])
 
@@ -394,7 +421,20 @@ export default function AdminTransportePage() {
       .from('rotas_transporte')
       .select('*, veiculos(modelo, placa), escolas(nome)')
       .order('created_at', { ascending: false })
-    if (data) setRotas(data)
+    if (data) {
+      setRotas(
+        data.map((r: any) => ({
+          id: r.id,
+          nome: r.nome ?? '',
+          turno: r.turno ?? 'MANHA',
+          ativo: r.ativo ?? true,
+          veiculo_id: r.veiculo_id ?? null,
+          escola_id: r.escola_id ?? null,
+          veiculos: r.veiculos ?? null,
+          escolas: r.escolas ?? null,
+        }))
+      )
+    }
     setLoading(false)
   }, [supabase])
 

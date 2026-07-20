@@ -262,7 +262,7 @@ const adminGroups: AdminGroup[] = [
 export default function AdminHubPage() {
   const router = useRouter()
   const supabase = createClient()
-  const { funcionario, limparSessao } = useAuthStore()
+  const { funcionario, logout } = useAuthStore()
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -284,17 +284,9 @@ export default function AdminHubPage() {
   }
 
   const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true)
-      await supabase.auth.signOut()
-      limparSessao()
-      toast.success('Sessão encerrada com sucesso!')
-      router.push('/login')
-      router.refresh()
-    } catch {
-      toast.error('Erro ao encerrar sessão')
-      setIsLoggingOut(false)
-    }
+    setIsLoggingOut(true)
+    toast.success('Sessão encerrada com sucesso!')
+    await logout(supabase)
   }
 
   const handleRefreshCache = () => {

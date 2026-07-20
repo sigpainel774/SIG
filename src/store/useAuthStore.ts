@@ -20,6 +20,7 @@ interface AuthState {
   setAuth: (func: Funcionario, acessos: AcessoUsuario[], vinculos?: VinculoFuncionario[]) => void;
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
+  logout: (supabase: any) => Promise<void>;
   isAdminGlobalOrRoot: () => boolean;
   isDiretor: () => boolean;
   isChefe: () => boolean;
@@ -40,6 +41,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     useSchoolStore.getState().selectEscolaById(escolaAtivaId)
   },
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
+  logout: async (supabase: any) => {
+    get().limparSessao()
+    if (supabase?.auth) {
+      supabase.auth.signOut().catch((err: any) => console.warn('Erro ao encerrar sessão Supabase:', err))
+    }
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+  },
   isAdminGlobalOrRoot: () => {
     const state = get();
     if (state.funcionario?.is_superadmin) return true;
