@@ -211,11 +211,27 @@ function AvaliacoesContent() {
     const pendentesImpressao = lista.filter((at) => ['recebida', 'em_impressao'].includes(at.status)).length
     const concluidas = lista.filter((at) => at.status === 'entregue_professor').length
 
+    if (lista.length === 0) {
+      setKpis({
+        totalMes,
+        pendentesImpressao,
+        concluidas,
+        tempoMedioImpressao: '—',
+        tempoMedioEntrega: '—',
+      })
+      return
+    }
+
+    // Evitar erro silencioso HTTP 414 (Request-URI Too Large) limitando a 100 atividades mais recentes
+    const listaLimitada = lista.slice(0, 100)
+    const atividadeIds = listaLimitada.map((at) => at.id)
+
     // Calcular tempo médio a partir do histórico
     const supabase = createClient()
     const { data: historicos } = await (supabase as any)
       .from('atividades_secretaria_historico')
-      .select('*')
+      .select('atividade_id, status_novo, alterado_em')
+      .in('atividade_id', atividadeIds)
       .order('alterado_em', { ascending: true })
 
     if (!historicos || (historicos as any[]).length === 0) {
