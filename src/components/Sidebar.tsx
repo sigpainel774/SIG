@@ -137,16 +137,9 @@ export function Sidebar() {
   ]
 
   const getIsActive = (href: string): boolean => {
-    if (href === '/configuracoes') return pathname === '/configuracoes' || pathname === '/perfil' || pathname === '/permissoes'
-    if (href === '/avaliacoes') return pathname.startsWith('/avaliacoes')
-    if (href === '/transferencias') return pathname.startsWith('/transferencias')
-    if (href === '/turmas') return pathname === '/turmas'
-    if (href === '/matriculas') return pathname === '/matriculas'
-    if (href === '/ocorrencias') return pathname === '/ocorrencias'
-    if (href === '/arquivos') return pathname === '/arquivos'
-    if (href === '/documentos') return pathname === '/documentos'
-    if (href === '/painel-chefe') return pathname === '/painel-chefe'
-    return pathname === href
+    if (href === '/home') return pathname === '/home' || pathname === '/'
+    if (href === '/configuracoes') return pathname.startsWith('/configuracoes') || pathname.startsWith('/perfil') || pathname.startsWith('/permissoes')
+    return pathname.startsWith(href)
   }
 
   const NavLink = ({ item }: { item: MenuItem }) => {
