@@ -119,14 +119,24 @@ export default function DocumentosPage() {
     loadTurmas()
   }, [escolaAtivaId])
 
-  // Buscar alunos da escola ativa
+  // Buscar alunos da escola ativa sob demanda (Autocomplete com debounce e limit)
   useEffect(() => {
     if (!escolaAtivaId) {
       setAlunos([])
+      setLoadingAlunos(false)
       return
     }
 
-    const loadAlunos = async () => {
+    const termoLimpo = buscaAluno.trim()
+    // Só buscar se tiver ao menos 2 caracteres digitados ou se uma turma específica estiver selecionada
+    if (termoLimpo.length < 2 && turmaFiltroId === 'all') {
+      setAlunos([])
+      setLoadingAlunos(false)
+      return
+    }
+
+    let cancelled = false
+    const timer = setTimeout(async () => {
       setLoadingAlunos(true)
       const supabase = createClient()
       const isAdmin = isAdminGlobalOrRoot()
@@ -161,8 +171,10 @@ export default function DocumentosPage() {
           if (ids.length > 0) {
             query = query.eq('escola_id', escolaAtivaId).in('turma_id', ids) as typeof query
           } else {
-            setAlunos([])
-            setLoadingAlunos(false)
+            if (!cancelled) {
+              setAlunos([])
+              setLoadingAlunos(false)
+            }
             return
           }
         }
@@ -170,37 +182,38 @@ export default function DocumentosPage() {
         query = query.eq('escola_id', escolaAtivaId)
       }
 
-      const { data, error } = await query.order('nome', { ascending: true })
-      if (error) {
-        console.error('Erro ao carregar alunos:', error)
-        toast.error('Erro ao carregar lista de alunos.')
-      } else if (data) {
-        setAlunos(data)
+      // Filtro de turma
+      if (turmaFiltroId !== 'all') {
+        query = query.eq('turma_id', turmaFiltroId)
       }
-      setLoadingAlunos(false)
+
+      // Filtro de termo digitado (ES-4: Sanitização)
+      if (termoLimpo.length >= 2) {
+        const termSanitizado = termoLimpo.replace(/[%_\(\)]/g, '')
+        query = query.or(`nome.ilike.%${termSanitizado}%,numero_matricula.ilike.%${termSanitizado}%,cpf.ilike.%${termSanitizado}%,inep.ilike.%${termSanitizado}%`)
+      }
+
+      const { data, error } = await query.order('nome', { ascending: true }).limit(15)
+
+      if (!cancelled) {
+        if (error) {
+          console.error('Erro ao buscar alunos:', error)
+          toast.error('Erro ao realizar busca de alunos.')
+          setAlunos([])
+        } else if (data) {
+          setAlunos(data)
+        }
+        setLoadingAlunos(false)
+      }
+    }, 300) // 300ms debounce
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
     }
+  }, [buscaAluno, turmaFiltroId, escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot])
 
-    loadAlunos()
-  }, [escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot])
-
-  // Filtrar lista com base na digitação e/ou turma
-  const sugestoesAlunos = alunos.filter((aluno) => {
-    // Filtro por turma
-    if (turmaFiltroId !== 'all' && aluno.turma_id !== turmaFiltroId) {
-      return false
-    }
-
-    // Se buscaAluno estiver vazio, só mostramos se a turma estiver selecionada (como lista rápida da turma)
-    if (!buscaAluno) {
-      return turmaFiltroId !== 'all'
-    }
-
-    const buscaNormalizada = normalizeString(buscaAluno)
-    const nomeNormalizado = normalizeString(aluno.nome || '')
-    const idNormalizado = normalizeString(aluno.id || '')
-
-    return nomeNormalizado.includes(buscaNormalizada) || idNormalizado.includes(buscaNormalizada)
-  }).slice(0, 10)
+  const sugestoesAlunos = alunos
 
   // Checar se já existe um documento emitido deste tipo para o aluno (Histórico)
   const checarHistoricoRapido = useCallback(async () => {

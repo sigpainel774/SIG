@@ -67,56 +67,44 @@ export default function AdminIndicadoresPage() {
       
       setPrazos(prazosData ?? [])
 
-      // Setar data limite padrão se já existir para a unidade 1
-      const prazoU1 = prazosData?.find((p: any) => p.unidade === 1)
-      if (prazoU1) {
-        setDataLimite(prazoU1.data_limite)
+      // Setar data limite padrão se já existir para a unidade selecionada
+      const prazoAtual = prazosData?.find((p: any) => p.unidade === unidadeSel)
+      if (prazoAtual) {
+        setDataLimite(prazoAtual.data_limite)
       } else {
         setDataLimite('')
       }
 
-      // 2. Carregar informações para calcular indicadores
-      const { data: escolas } = await supabase.from('escolas').select('id, nome').is('deleted_at', null)
-      const { data: alunos } = await supabase.from('alunos').select('id, escola_id').is('deleted_at', null)
-      const { data: materias } = await supabase.from('materias').select('id')
-      const { data: notas } = await supabase.from('notas').select('aluno_id, escola_id, unidade')
+      // 2. Carregar indicadores via RPC compilada no Supabase (O(1) no cliente)
+      const { data: rpcData, error: rpcErr } = await (supabase as any).rpc(
+        'get_indicadores_pendencias_notas',
+        { p_unidade: unidadeSel }
+      )
 
-      if (!escolas) return
+      if (rpcErr) throw rpcErr
 
-      const activeUnit = unidadeSel
-      const totalMaterias = materias?.length ?? 0
+      if (rpcData) {
+        let totalAl = 0
+        let totalPend = 0
 
-      // Mapear pendências por escola
-      let totalAl = 0
-      let totalPend = 0
+        const statusMapeado: EscolaStatus[] = (rpcData as any[]).map((r: any) => {
+          const alCont = Number(r.total_alunos ?? 0)
+          const pendCont = Number(r.alunos_pendentes ?? 0)
+          totalAl += alCont
+          totalPend += pendCont
 
-      const statusMapeado: EscolaStatus[] = escolas.map((esc: any) => {
-        const alunosEscola = alunos?.filter((a: any) => a.escola_id === esc.id) ?? []
-        totalAl += alunosEscola.length
-
-        // Conta quantos alunos desta escola NÃO têm todas as notas lançadas para a unidade selecionada
-        let alunosPendentes = 0
-        alunosEscola.forEach((al: any) => {
-          const notasAluno = notas?.filter((n: any) => n.aluno_id === al.id && n.unidade === activeUnit) ?? []
-          // Se tiver menos notas do que matérias, há pendência
-          if (notasAluno.length < totalMaterias) {
-            alunosPendentes++
+          return {
+            id: r.escola_id,
+            nome: r.escola_nome,
+            alunosCont: alCont,
+            pendentesCont: pendCont
           }
         })
 
-        totalPend += alunosPendentes
-
-        return {
-          id: esc.id,
-          nome: esc.nome,
-          alunosCont: alunosEscola.length,
-          pendentesCont: alunosPendentes
-        }
-      })
-
-      setEscolasStatus(statusMapeado)
-      setTotalAlunos(totalAl)
-      setTotalPendentes(totalPend)
+        setEscolasStatus(statusMapeado)
+        setTotalAlunos(totalAl)
+        setTotalPendentes(totalPend)
+      }
     } catch (err: any) {
       console.error(err)
       toast.error('Erro ao carregar dados dos indicadores.')
@@ -244,9 +232,16 @@ export default function AdminIndicadoresPage() {
             }
           } else if (r.cargo_pattern && f.cargo) {
             // Regra por cargo (ex: Professor)
-            const regex = new RegExp(r.cargo_pattern.replace(/%/g, '.*'), 'i')
-            if (regex.test(f.cargo)) {
-              idsParaNotificar.add(f.id)
+            try {
+              const patternClean = (r.cargo_pattern || '').replace(/%/g, '.*')
+              const regex = new RegExp(patternClean, 'i')
+              if (f.cargo && regex.test(f.cargo)) {
+                idsParaNotificar.add(f.id)
+              }
+            } catch {
+              if (f.cargo && r.cargo_pattern && f.cargo.toLowerCase().includes(r.cargo_pattern.replace(/%/g, '').toLowerCase())) {
+                idsParaNotificar.add(f.id)
+              }
             }
           }
         })
@@ -259,7 +254,7 @@ export default function AdminIndicadoresPage() {
       }
 
       // 3. Inserir notificações em lote (lotes para mitigar concorrência)
-      const dataPrazoFormat = new Date(prazo.data_limite).toLocaleDateString('pt-BR')
+      const dataPrazoFormat = prazo.data_limite ? prazo.data_limite.split('-').reverse().join('/') : ''
       const msg = `O prazo limite para fechamento da ${unidadeSel}ª Unidade é dia ${dataPrazoFormat}. Existem notas pendentes de lançamento na rede.`
       
       const { error } = await supabase.rpc('criar_notificacoes', {

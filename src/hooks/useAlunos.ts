@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
@@ -47,15 +47,19 @@ export function useAlunos() {
   const {
     funcionario,
     escolaAtivaId,
+    vinculos,
     acessos,
     isAdminGlobalOrRoot,
-    isProfessor: checkProfessor,
     isCoordenador: checkCoordenador,
   } = useAuthStore()
 
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(20)
+  const [totalCount, setTotalCount] = useState(0)
+
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoLiberacao[]>([])
   const [carregandoSolicitacoes, setCarregandoSolicitacoes] = useState(false)
 
@@ -65,10 +69,15 @@ export function useAlunos() {
     return () => { isMounted.current = false }
   }, [])
 
-  /* ── Carregar Alunos ─────────────────────────────────────────── */
-  const carregarAlunos = async () => {
+  // ES-6: Resetar a página para 1 sempre que o termo de busca ou escola mudar
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, escolaAtivaId])
+
+  /* ── Carregar Alunos (Paginação e Filtros no Servidor) ──────── */
+  const carregarAlunos = useCallback(async () => {
     const supabase = createClient()
-    setLoading(true)
+    if (isMounted.current) setLoading(true)
 
     try {
       const isAdmin = isAdminGlobalOrRoot()
@@ -78,7 +87,7 @@ export function useAlunos() {
 
       let query = supabase
         .from('alunos')
-        .select('*, escolas(nome)')
+        .select('*, escolas(nome)', { count: 'exact' })
         .is('deleted_at', null)
 
       if (!isAdmin && escolaAtivaId) {
@@ -98,7 +107,11 @@ export function useAlunos() {
               .eq('escola_id', escolaAtivaId)
               .in('turma_id', ids) as typeof query
           } else {
-            if (isMounted.current) setAlunos([])
+            if (isMounted.current) {
+              setAlunos([])
+              setTotalCount(0)
+              setLoading(false)
+            }
             return
           }
         }
@@ -106,16 +119,35 @@ export function useAlunos() {
         query = query.eq('escola_id', escolaAtivaId)
       }
 
-      const { data, error } = await query.order('nome', { ascending: true })
+      // ES-4: Sanitização de caracteres especiais antes de passar ao PostgREST
+      const termLimpo = searchTerm.trim().replace(/[%_\(\)]/g, '')
+      if (termLimpo) {
+        query = query.or(
+          `nome.ilike.%${termLimpo}%,numero_matricula.ilike.%${termLimpo}%,cpf.ilike.%${termLimpo}%,inep.ilike.%${termLimpo}%`
+        )
+      }
+
+      const from = (page - 1) * pageSize
+      const to = page * pageSize - 1
+
+      const { data, count, error } = await query
+        .order('nome', { ascending: true })
+        .range(from, to)
+
       if (error) throw error
 
-      if (data && isMounted.current) {
-        const mapped = (data as any[]).map((aluno: any) => ({
-          ...aluno,
-          escola_nome:
-            aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola',
-        }))
-        setAlunos(mapped)
+      if (isMounted.current) {
+        if (data) {
+          const mapped = (data as any[]).map((aluno: any) => ({
+            ...aluno,
+            escola_nome:
+              aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola',
+          }))
+          setAlunos(mapped)
+        } else {
+          setAlunos([])
+        }
+        setTotalCount(count ?? 0)
       }
     } catch (err: any) {
       console.error('Erro ao carregar alunos:', err)
@@ -125,10 +157,10 @@ export function useAlunos() {
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }
+  }, [page, pageSize, searchTerm, escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot, checkCoordenador])
 
   /* ── Carregar Solicitações de Liberação ──────────────────────── */
-  const carregarSolicitacoes = async () => {
+  const carregarSolicitacoes = useCallback(async () => {
     const isDiretor = acessos.some((a) => a.nivel === 2 && a.ativo)
     const isAdmin = isAdminGlobalOrRoot()
 
@@ -160,7 +192,7 @@ export function useAlunos() {
     } finally {
       if (isMounted.current) setCarregandoSolicitacoes(false)
     }
-  }
+  }, [escolaAtivaId, acessos, isAdminGlobalOrRoot])
 
   /* ── Responder Solicitação ───────────────────────────────────── */
   const handleResponderSolicitacao = async (
@@ -189,24 +221,22 @@ export function useAlunos() {
     })
   }
 
-  /* ── Carregar ao montar e ao trocar de escola ────────────────── */
+  /* ── Carregar ao alterar dependências ────────────────────────── */
   useEffect(() => {
     carregarAlunos()
-    carregarSolicitacoes()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [escolaAtivaId])
+  }, [carregarAlunos])
 
-  /* ── Filtro por busca ───────────────────────────────────────── */
-  const alunosFiltrados = useLocalSearch(alunos, searchTerm, [
-    'nome',
-    'numero_matricula',
-    'cpf',
-    'inep',
-  ])
+  useEffect(() => {
+    carregarSolicitacoes()
+  }, [carregarSolicitacoes])
 
   return {
     alunos,
-    alunosFiltrados,
+    alunosFiltrados: alunos, // O servidor já realiza a filtragem
+    totalCount,
+    page,
+    setPage,
+    pageSize,
     loading,
     searchTerm,
     setSearchTerm,
