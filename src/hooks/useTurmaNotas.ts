@@ -295,6 +295,13 @@ export function useTurmaNotas({
       setSavingNotas(prev => ({ ...prev, [materiaId]: true }))
     }
 
+    const oldData = notasServidor
+    if (oldData) {
+      const newNotasMap = { ...oldData.notasMap, ...notasState }
+      const newRecMap = { ...oldData.recMap, ...recuperacoesState }
+      mutateNotasServidor({ ...oldData, notasMap: newNotasMap, recMap: newRecMap }, false)
+    }
+
     try {
       const upserts = alunos.map(aluno => {
         const key = `${aluno.id}_${materiaId}_${unidade}`
@@ -365,6 +372,7 @@ export function useTurmaNotas({
     } catch (err: any) {
       console.error('Erro ao salvar notas/recuperações:', err)
       toast.error('Erro ao salvar notas: ' + err.message)
+      if (oldData) mutateNotasServidor(oldData, false)
     } finally {
       if (isMounted.current) {
         setSavingNotas(prev => ({ ...prev, [materiaId]: false }))

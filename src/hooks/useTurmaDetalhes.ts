@@ -103,7 +103,8 @@ export function useTurmaDetalhes({
   // 2. Professores da Escola (apenas em modo de edição)
   const { data: professoresEscolaData, error: errorProfs } = useSWR(
     open && isEditMode && escolaAtivaId ? ['professores-escola', escolaAtivaId] : null,
-    () => getProfessoresEscola(supabase, escolaAtivaId ?? '')
+    () => getProfessoresEscola(supabase, escolaAtivaId ?? ''),
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 300000 }
   )
   const professoresEscola: any[] = (professoresEscolaData as any[]) ?? []
 
@@ -116,7 +117,8 @@ export function useTurmaDetalhes({
   // 3. Catálogo de Matérias (apenas em modo de edição)
   const { data: catalogoMateriasData, error: errorCatalogo } = useSWR(
     open && isEditMode && escolaAtivaId ? ['catalogo-materias', escolaAtivaId] : null,
-    () => getCatalogoMaterias(supabase, escolaAtivaId ?? '')
+    () => getCatalogoMaterias(supabase, escolaAtivaId ?? ''),
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 600000 }
   )
   const catalogoMaterias: any[] = (catalogoMateriasData as any[]) ?? []
 
@@ -129,7 +131,8 @@ export function useTurmaDetalhes({
   // 4. Vínculos de Professores na Turma (apenas em modo de edição)
   const { data: vinculosProfessoresData, error: errorVinculos, mutate: mutateVinculos } = useSWR(
     open && isEditMode && turma?.id ? ['vinculos-professores', turma.id] : null,
-    () => getVinculosProfessores(supabase, turma.id)
+    () => getVinculosProfessores(supabase, turma.id),
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   )
   const vinculosProfessores: any[] = (vinculosProfessoresData as any[]) ?? []
 

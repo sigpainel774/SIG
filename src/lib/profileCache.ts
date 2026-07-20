@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache'
+import { cache } from 'react'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import type { VinculoFuncionario } from '@/store/useAuthStore'
 import type { Database } from '@/types/supabase'
@@ -14,8 +15,8 @@ export type PerfilCache = {
 
 /**
  * Busca o perfil completo do funcionário (dados, acessos e vínculos) com cache
- * de servidor (Next.js unstable_cache). O cache é armazenado por userId com
- * TTL de 1 hora e pode ser invalidado explicitamente via revalidateTag.
+ * de servidor de escopo duplo (React cache para deduplicação por request e
+ * Next.js unstable_cache com TTL de 1 hora entre requests).
  *
  * Usa Promise.all para buscar acessos e vínculos em paralelo, reduzindo latência
  * no cache miss de ~2 roundtrips sequenciais para ~1 roundtrip paralelo.
@@ -24,7 +25,7 @@ export type PerfilCache = {
  * @param email  - E-mail do usuário (usado para localizar o funcionário)
  * @returns PerfilCache | null (null = funcionário órfão, sem registro na tabela)
  */
-export async function getPerfilUsuario(
+export const getPerfilUsuario = cache(async function getPerfilUsuario(
   userId: string,
   email: string
 ): Promise<PerfilCache | null> {
@@ -101,4 +102,4 @@ export async function getPerfilUsuario(
       tags: [`perfil-${userId}`],
     }
   )()
-}
+})
