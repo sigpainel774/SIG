@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   Download,
-  Printer,
   ArrowRight,
   Loader2,
   ClipboardList,
@@ -223,12 +222,11 @@ export function ModalDetalhesAtividade({
                     {atividade.arquivo_nome ?? 'arquivo'}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="shrink-0">
                   <a
                     href={atividade.arquivo_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    download
                   >
                     <Button
                       variant="outline"
@@ -236,18 +234,9 @@ export function ModalDetalhesAtividade({
                       className="border-[#26262a] bg-transparent text-zinc-300 hover:text-white hover:bg-[#26262a] gap-2"
                     >
                       <Download className="w-4 h-4" />
-                      Download
+                      Visualizar Arquivo
                     </Button>
                   </a>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(atividade.arquivo_url, '_blank')}
-                    className="border-[#26262a] bg-transparent text-zinc-300 hover:text-white hover:bg-[#26262a] gap-2"
-                  >
-                    <Printer className="w-4 h-4" />
-                    Imprimir
-                  </Button>
                 </div>
               </div>
             )}
