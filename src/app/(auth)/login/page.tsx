@@ -35,10 +35,9 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // 1. Verificar previamente se o e-mail está na lista local ou no banco como suspenso
       const cleanEmail = email.trim().toLowerCase()
 
-      // Verificar no localStorage se o usuário foi marcado como suspenso
+      // 1. Verificação rápida síncrona no localStorage (sem custo de rede)
       let localSuspended: string[] = []
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('sig_suspended_emails')
@@ -49,64 +48,58 @@ export default function LoginPage() {
         }
       }
 
-      const isLocalSuspended = localSuspended.includes(cleanEmail)
-
-      // Verificar no Supabase funcionarios
-      let isDbSuspended = false
-      try {
-        const { data: func } = await supabase
-          .from('funcionarios')
-          .select('status')
-          .ilike('email', cleanEmail)
-          .maybeSingle()
-        
-        if (func?.status && (
-          func.status.toLowerCase() === 'suspenso' || 
-          func.status.toLowerCase() === 'sem acesso'
-        )) {
-          isDbSuspended = true
-        }
-      } catch (err) {
-        console.warn('Erro ao consultar status no banco:', err)
-      }
-
-      if (isLocalSuspended || isDbSuspended) {
+      if (localSuspended.includes(cleanEmail)) {
         setLoading(false)
         setSuspendedModalOpen(true)
         return
       }
 
-      // 2. Realizar autenticação via Supabase Auth
+      // 2. Realizar autenticação direta via Supabase Auth (Single RTT)
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       })
 
-      if (error) {
+      if (error || !data.user) {
         toast.error('Erro ao fazer login. Verifique as credenciais.')
         setLoading(false)
         return
       }
 
-      // 3. Após login, re-verificar no perfil se a conta está suspensa
+      // 3. Após autenticação bem-sucedida, validar o status do funcionário no banco (com permissão RLS do usuário autenticado)
       const { data: funcCheck } = await supabase
         .from('funcionarios')
         .select('status')
-        .eq('email', data.user.email || '')
+        .eq('email', data.user.email || cleanEmail)
         .maybeSingle()
 
-      if (funcCheck?.status && (
-        funcCheck.status.toLowerCase() === 'suspenso' || 
-        funcCheck.status.toLowerCase() === 'sem acesso'
-      )) {
+      const status = funcCheck?.status?.toLowerCase()
+      if (status === 'suspenso' || status === 'sem acesso') {
+        // Atualizar lista local de suspensos no localStorage
+        if (typeof window !== 'undefined') {
+          if (!localSuspended.includes(cleanEmail)) {
+            localSuspended.push(cleanEmail)
+            localStorage.setItem('sig_suspended_emails', JSON.stringify(localSuspended))
+          }
+        }
+
         await supabase.auth.signOut()
         setLoading(false)
         setSuspendedModalOpen(true)
         return
       }
 
-      toast.success('Login bem sucedido!')
-      window.location.href = '/'
+      // Se a conta estiver ativa, garantir remoção do cache local de suspensos caso estivesse presente anteriormente
+      if (typeof window !== 'undefined' && localSuspended.includes(cleanEmail)) {
+        const updatedList = localSuspended.filter((item) => item !== cleanEmail)
+        localStorage.setItem('sig_suspended_emails', JSON.stringify(updatedList))
+      }
+
+      toast.success('Login bem-sucedido!')
+
+      // Atualizar o estado da rota e navegar sem recarregar toda a janela
+      router.refresh()
+      router.push('/')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao realizar login.')
