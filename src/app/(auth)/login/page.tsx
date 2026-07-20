@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { Ban, PenTool, Loader2 } from 'lucide-react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Logo } from '@/components/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -122,18 +121,13 @@ export default function LoginPage() {
         </Button>
       </div>
 
-      {/* Logo da Prefeitura acima do modal */}
-      <div className="mb-6 flex justify-center animate-fade-in">
-        <img
-          src="/img/logo-spe.png"
-          alt="Sapeaçu Painel Escolar"
-          className="h-32 w-auto object-contain transition-all hover:scale-105"
-        />
-      </div>
-
       <div className="w-full max-w-[420px] p-8 sm:p-10 bg-[#161616] border border-[#242424] rounded-[24px] shadow-2xl space-y-6">
         <div className="flex flex-col items-center justify-center gap-3">
-          <Logo variant="icon" className="w-14 h-14" />
+          <img
+            src="/img/logo-login-novo.png"
+            alt="Brasão Sapeaçu"
+            className="w-14 h-14 object-contain"
+          />
           <h1 className="text-2xl sm:text-[26px] font-bold text-white text-center tracking-tight">
             Sapeaçu Painel Escolar
           </h1>

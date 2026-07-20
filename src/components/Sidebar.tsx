@@ -30,7 +30,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Logo } from './Logo'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
@@ -186,7 +185,11 @@ export function Sidebar() {
                 className="w-10 h-10 rounded-xl object-contain shrink-0 border border-sidebar-border p-1 bg-surface-1"
               />
             ) : (
-              <Logo variant="icon" className="w-10 h-10 shrink-0" />
+              <img
+                src="/img/logo-sidebar-novo.png"
+                alt="Painel Escolar"
+                className="w-10 h-10 object-contain shrink-0"
+              />
             )}
             <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground truncate">
               {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
