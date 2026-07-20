@@ -127,7 +127,7 @@ export default function LoginPage() {
         <img
           src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/logo-prefeitura-login.png"
           alt="Prefeitura de Sapeaçu"
-          className="h-32 w-auto object-contain brightness-105 drop-shadow-[0_4px_12px_rgba(56,159,255,0.15)] transition-all hover:scale-105"
+          className="h-32 w-auto object-contain transition-all hover:scale-105"
         />
       </div>
 
