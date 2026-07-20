@@ -14,7 +14,8 @@ interface SchoolDetailedReportProps {
   materias: any[]
   frequencias: any[]
   loading: boolean
-  onFilterChange: (filters: { turmaId?: string; materiaId?: string }) => void
+  periodo: string
+  onFilterChange: (filters: { turmaId?: string; materiaId?: string; periodo?: string }) => void
 }
 
 export function SchoolDetailedReport({
@@ -25,6 +26,7 @@ export function SchoolDetailedReport({
   materias,
   frequencias,
   loading,
+  periodo,
   onFilterChange
 }: SchoolDetailedReportProps) {
   const [selectedTurma, setSelectedTurma] = useState('todos')
@@ -32,8 +34,8 @@ export function SchoolDetailedReport({
   const [selectedUnidade, setSelectedUnidade] = useState('todos')
 
   useEffect(() => {
-    onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria })
-  }, [selectedTurma, selectedMateria, onFilterChange])
+    onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria, periodo })
+  }, [selectedTurma, selectedMateria, periodo, onFilterChange])
 
   // Lógica de cálculo de assiduidade de cada aluno
   const calcularAssiduidadeAluno = (alunoId: string) => {
@@ -241,6 +243,22 @@ export function SchoolDetailedReport({
               <option value="1">1º Trimestre</option>
               <option value="2">2º Trimestre</option>
               <option value="3">3º Trimestre</option>
+            </select>
+          </div>
+
+          {/* Seletor de Período (Frequência) */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Período de Frequência</label>
+            <select
+              value={periodo}
+              onChange={(e) => onFilterChange({ periodo: e.target.value })}
+              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[150px]"
+            >
+              <option value="7d">Últimos 7 dias</option>
+              <option value="30d">Últimos 30 dias</option>
+              <option value="trimestre">Trimestre (90 dias)</option>
+              <option value="ano">Ano Letivo</option>
+              <option value="todos">Todo o Período</option>
             </select>
           </div>
         </div>

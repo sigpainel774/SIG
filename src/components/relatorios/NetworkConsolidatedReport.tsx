@@ -10,6 +10,8 @@ interface NetworkConsolidatedReportProps {
   taxaAprovados: number
   taxaRisco: number
   loading: boolean
+  periodo: string
+  onFilterChange: (filters: { periodo: string }) => void
 }
 
 export function NetworkConsolidatedReport({
@@ -17,7 +19,9 @@ export function NetworkConsolidatedReport({
   mediaRede,
   taxaAprovados,
   taxaRisco,
-  loading
+  loading,
+  periodo,
+  onFilterChange
 }: NetworkConsolidatedReportProps) {
   
   if (loading) {
@@ -46,6 +50,27 @@ export function NetworkConsolidatedReport({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Barra de Filtros da Rede */}
+      <div className="bg-card border border-border rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between no-print">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">Consolidado Municipal</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase font-bold text-muted-foreground">Período de Frequência</label>
+          <select
+            value={periodo}
+            onChange={(e) => onFilterChange({ periodo: e.target.value })}
+            className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[150px]"
+          >
+            <option value="7d">Últimos 7 dias</option>
+            <option value="30d">Últimos 30 dias</option>
+            <option value="trimestre">Trimestre (90 dias)</option>
+            <option value="ano">Ano Letivo</option>
+            <option value="todos">Todo o Período</option>
+          </select>
+        </div>
+      </div>
+
       {/* Indicadores Principais (KPIs) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Média Geral */}

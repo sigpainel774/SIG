@@ -91,9 +91,33 @@ export function useRelatorioNotas(escolaId: string | null) {
     anoLetivo?: string
     turmaId?: string
     materiaId?: string
+    periodo?: string
   } = {}) => {
     setLoading(true)
     setError(null)
+    
+    const activePeriod = filters.periodo ?? '30d'
+    const getStartDate = (p: string) => {
+      const now = new Date()
+      if (p === '7d') {
+        now.setDate(now.getDate() - 7)
+        return now.toISOString().split('T')[0]
+      }
+      if (p === '30d') {
+        now.setDate(now.getDate() - 30)
+        return now.toISOString().split('T')[0]
+      }
+      if (p === 'trimestre') {
+        now.setDate(now.getDate() - 90)
+        return now.toISOString().split('T')[0]
+      }
+      if (p === 'ano') {
+        return `${now.getFullYear()}-01-01`
+      }
+      return null
+    }
+    const startDate = getStartDate(activePeriod)
+
     try {
       if (escolaId) {
         // --- VISÃO DA ESCOLA (DIRETOR) ---
@@ -138,6 +162,9 @@ export function useRelatorioNotas(escolaId: string | null) {
         if (filters.turmaId && filters.turmaId !== 'todos') {
           queryFreqs = queryFreqs.eq('turma_id', filters.turmaId)
         }
+        if (startDate) {
+          queryFreqs = queryFreqs.gte('data', startDate)
+        }
 
         const { data: FreqsData, error: errFreqs } = await queryFreqs
         if (errFreqs) throw errFreqs
@@ -146,12 +173,19 @@ export function useRelatorioNotas(escolaId: string | null) {
       } else {
         // --- VISÃO CONSOLIDADA (REDE) ---
         // Buscar todas as escolas, turmas, alunos, notas e frequências para agregarmos
+        let queryFreqs = supabase
+          .from('frequencias')
+          .select('aluno_id, escola_id, presenca, data')
+        if (startDate) {
+          queryFreqs = queryFreqs.gte('data', startDate)
+        }
+
         const [escolasRes, turmasRes, alunosRes, notasRes, freqsRes] = await Promise.all([
           supabase.from('escolas').select('id, nome').is('deleted_at', null),
           supabase.from('turmas').select('id, escola_id').is('deleted_at', null),
           supabase.from('alunos').select('id, escola_id').is('deleted_at', null),
           supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3, nota4'),
-          supabase.from('frequencias').select('aluno_id, escola_id, presenca')
+          queryFreqs
         ])
 
         if (escolasRes.error) throw escolasRes.error
@@ -289,10 +323,7 @@ export function useRelatorioNotas(escolaId: string | null) {
     }
   }, [escolaId])
 
-  // Atualizar sempre que mudar a escola selecionada
-  useEffect(() => {
-    fetchPedagogicoData()
-  }, [escolaId, fetchPedagogicoData])
+  // O carregamento inicial e atualizações são gerenciados pelo componente pai chamando refetch() com filtros.
 
   return {
     loading,
