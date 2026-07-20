@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useRelatorioNotas } from '@/hooks/useRelatorioNotas'
 import { NetworkConsolidatedReport } from './NetworkConsolidatedReport'
 import { SchoolDetailedReport } from './SchoolDetailedReport'
@@ -16,7 +16,10 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
   const [filters, setFilters] = useState<{
     turmaId?: string
     materiaId?: string
-  }>({})
+    periodo: string
+  }>({
+    periodo: '30d' // Padrão 30 dias para não sobrecarregar
+  })
 
   // Instanciar o hook passando a escola ativa
   const {
@@ -34,11 +37,25 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
     refetch
   } = useRelatorioNotas(selectedEscola?.id ?? null)
 
-  // Callback acionado quando filtros mudam no componente filho
-  const handleFilterChange = useCallback((newFilters: { turmaId?: string; materiaId?: string }) => {
-    setFilters(newFilters)
-    refetch(newFilters)
-  }, [refetch])
+  // Recarregar os dados do relatório sempre que escola ou filtros (como periodo) mudarem
+  useEffect(() => {
+    refetch(filters)
+  }, [selectedEscola, filters.periodo, refetch])
+
+  // Callback acionado quando filtros mudam nos componentes filhos
+  const handleFilterChange = useCallback((newFilters: { turmaId?: string; materiaId?: string; periodo?: string }) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newFilters
+    }))
+    // Se mudou algum filtro estrutural que precise de refetch imediato:
+    if (newFilters.turmaId !== undefined || newFilters.materiaId !== undefined || newFilters.periodo !== undefined) {
+      refetch({
+        ...filters,
+        ...newFilters
+      })
+    }
+  }, [refetch, filters])
 
   if (error) {
     return (
@@ -58,6 +75,8 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
           taxaAprovados={taxaAprovados}
           taxaRisco={taxaRisco}
           loading={loading}
+          periodo={filters.periodo}
+          onFilterChange={handleFilterChange}
         />
       ) : (
         <SchoolDetailedReport
@@ -68,6 +87,7 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
           materias={materias}
           frequencias={frequencias}
           loading={loading}
+          periodo={filters.periodo}
           onFilterChange={handleFilterChange}
         />
       )}
