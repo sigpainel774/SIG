@@ -25,29 +25,37 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
   const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const [loading, setLoading] = useState(false)
 
-  // Buscar turmas via useSWR
-  const { data: tData } = useSWR(isOpen ? 'catalogo_turmas_todas' : null, async () => {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('turmas')
-      .select('id, nome, ano_letivo, school_id:escola_id')
-      .is('deleted_at', null)
-    if (error) throw error
-    return (data || []).map((t: any) => ({ ...t, school_id: t.escola_id })) // Map compatível
-  })
+  // Buscar turmas via useSWR com cache estendido
+  const { data: tData } = useSWR(
+    isOpen ? 'catalogo_turmas_todas' : null,
+    async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('turmas')
+        .select('id, nome, ano_letivo, school_id:escola_id')
+        .is('deleted_at', null)
+      if (error) throw error
+      return (data || []).map((t: any) => ({ ...t, school_id: t.escola_id })) // Map compatível
+    },
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 600000 }
+  )
 
-  // Buscar escolas via useSWR
-  const { data: eData } = useSWR(isOpen ? 'catalogo_escolas_ativas' : null, async () => {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('escolas')
-      .select('id, nome')
-      .is('deleted_at', null)
-      .eq('ativo', true)
-      .order('nome', { ascending: true })
-    if (error) throw error
-    return data || []
-  })
+  // Buscar escolas via useSWR com cache estendido
+  const { data: eData } = useSWR(
+    isOpen ? 'catalogo_escolas_ativas' : null,
+    async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('escolas')
+        .select('id, nome')
+        .is('deleted_at', null)
+        .eq('ativo', true)
+        .order('nome', { ascending: true })
+      if (error) throw error
+      return data || []
+    },
+    { revalidateOnFocus: false, revalidateIfStale: false, dedupingInterval: 600000 }
+  )
 
   const turmas = tData || []
   const escolas = eData ? (

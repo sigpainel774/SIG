@@ -1,14 +1,16 @@
 import { Building2 } from 'lucide-react'
 import React from 'react'
 
-// Usamos um timestamp estável por sessão para evitar flickering de imagens
-const sessionTimestamp = typeof window !== 'undefined' ? Date.now() : 0
-
 export function getSchoolIconProps(escola: any) {
+  if (!escola) {
+    return {
+      style: {},
+      content: <Building2 className="w-8 h-8 text-white" />
+    }
+  }
+
   if (escola.logo_url) {
-    const logoSrc = escola.logo_url.startsWith('data:') 
-      ? escola.logo_url 
-      : `${escola.logo_url}${escola.logo_url.includes('?') ? '&' : '?'}t=${sessionTimestamp}`
+    const logoSrc = escola.logo_url
 
     return {
       style: {},
