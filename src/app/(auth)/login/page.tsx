@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { Ban, PenTool } from 'lucide-react'
+import { Ban, PenTool, Loader2 } from 'lucide-react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
@@ -122,6 +122,15 @@ export default function LoginPage() {
         </Button>
       </div>
 
+      {/* Logo da Prefeitura acima do modal */}
+      <div className="mb-6 flex justify-center animate-fade-in">
+        <img
+          src="/img/logo-prefeitura.png"
+          alt="Prefeitura de Sapeaçu"
+          className="h-16 w-auto object-contain brightness-105 drop-shadow-[0_4px_12px_rgba(56,159,255,0.15)] transition-all hover:scale-105"
+        />
+      </div>
+
       <div className="w-full max-w-[420px] p-8 sm:p-10 bg-[#161616] border border-[#242424] rounded-[24px] shadow-2xl space-y-6">
         <div className="flex flex-col items-center justify-center gap-3">
           <Logo variant="icon" className="w-14 h-14" />
@@ -139,7 +148,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-13 px-4 py-3 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-base outline-none focus:ring-2 focus:ring-[#389fff] transition-all"
+              disabled={loading}
+              className="w-full h-13 px-4 py-3 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-base outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -151,16 +161,24 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-13 px-4 py-3 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-base outline-none focus:ring-2 focus:ring-[#389fff] transition-all"
+              disabled={loading}
+              className="w-full h-13 px-4 py-3 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-base outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-13 mt-2 bg-[#389fff] hover:bg-[#288ffa] active:scale-[0.99] text-black font-bold text-base rounded-xl cursor-pointer transition-all shadow-lg flex items-center justify-center"
+            className="w-full h-13 mt-2 bg-[#389fff] hover:bg-[#288ffa] active:scale-[0.99] text-black font-bold text-base rounded-xl cursor-pointer transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Entrando...</span>
+              </>
+            ) : (
+              'Entrar'
+            )}
           </button>
         </form>
       </div>
