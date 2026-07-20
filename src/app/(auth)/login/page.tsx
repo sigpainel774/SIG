@@ -125,8 +125,8 @@ export default function LoginPage() {
       {/* Logo da Prefeitura acima do modal */}
       <div className="mb-6 flex justify-center animate-fade-in">
         <img
-          src="https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/logo-prefeitura-login.png"
-          alt="Prefeitura de Sapeaçu"
+          src="/img/logo-spe.png"
+          alt="Sapeaçu Painel Escolar"
           className="h-32 w-auto object-contain transition-all hover:scale-105"
         />
       </div>
