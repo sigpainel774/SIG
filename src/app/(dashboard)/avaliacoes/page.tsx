@@ -153,6 +153,7 @@ function AvaliacoesContent() {
           professor_nome: data.funcionarios?.nome ?? '—',
           turma_nome: data.turmas?.nome ?? '—',
           materia_name: data.materias?.nome ?? '—',
+          materia_nome: data.materias?.nome ?? '—',
         }
         setAtividadeSelecionada(formatado)
         setDetalhesOpen(true)
@@ -191,6 +192,7 @@ function AvaliacoesContent() {
         professor_nome: at.funcionarios?.nome ?? '—',
         turma_nome: at.turmas?.nome ?? '—',
         materia_name: at.materias?.nome ?? '—',
+        materia_nome: at.materias?.nome ?? '—',
       }))
 
       setAtividades(formatado)

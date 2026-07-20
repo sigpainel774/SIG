@@ -181,7 +181,7 @@ export function ModalDetalhesAtividade({
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <InfoRow label="Professor" value={atividade.professor_nome ?? atividade.professor_id ?? '—'} />
               <InfoRow label="Turma" value={atividade.turma_nome ?? atividade.turma_id ?? '—'} />
-              <InfoRow label="Disciplina" value={atividade.materia_nome ?? atividade.materia_id ?? '—'} />
+              <InfoRow label="Disciplina" value={atividade.materia_nome ?? atividade.materia_name ?? atividade.materia_id ?? '—'} />
               <InfoRow
                 label="Data de Aplicação"
                 value={

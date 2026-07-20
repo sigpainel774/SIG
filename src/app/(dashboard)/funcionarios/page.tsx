@@ -112,7 +112,7 @@ export default function FuncionariosPage() {
           ? `
           id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
           endereco, latitude, longitude,
-          vinculos_funcionarios!vinculos_funcionarios_funcionario_id_fkey!inner(escola_id, cargo, ativo, escolas(nome)),
+          vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
           : `
