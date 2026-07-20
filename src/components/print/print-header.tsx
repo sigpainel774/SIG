@@ -43,7 +43,7 @@ export function PrintHeader({
   secretaria = "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
   timestamp,
   className,
-  logoClassName = "h-14 w-auto max-w-[160px] object-contain",
+  logoClassName = "doc-header-logo-prefeitura",
   centerClassName,
 }: PrintHeaderProps) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
