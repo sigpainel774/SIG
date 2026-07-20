@@ -195,7 +195,7 @@ export function useTurmaMaterias({
     mutateTurmaData(
       (curr: any) => {
         if (!curr) return curr
-        const nomeProf = vinculosProfessores.find(vp => vp.funcionario_id === profIdVal)?.funcionarios?.nome || null
+        const nomeProf = professoresEscola.find(p => p.id === profIdVal)?.nome || null
         return {
           ...curr,
           materias: curr.materias.map((m: any) => 
@@ -213,6 +213,26 @@ export function useTurmaMaterias({
     )
 
     try {
+      if (profIdVal) {
+        const jaVinculado = vinculosProfessores.some(vp => vp.funcionario_id === profIdVal)
+        if (!jaVinculado) {
+          const { error: errorVinculo } = await supabase
+            .from('vinculos_turmas')
+            .insert({
+              funcionario_id: profIdVal,
+              turma_id: turma.id,
+              escola_id: escolaAtivaId,
+              tipo: 'professor'
+            })
+          if (errorVinculo) {
+            console.error('Erro ao criar vínculo automático do professor na turma:', errorVinculo)
+          } else {
+            toast.success('Professor vinculado à turma automaticamente!')
+            mutateVinculos()
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('materias')
         .update({ professor_id: profIdVal })

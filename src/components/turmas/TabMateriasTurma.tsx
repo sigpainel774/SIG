@@ -255,28 +255,15 @@ export function TabMateriasTurma({
                             <option value="sem_professor" className="bg-background text-foreground">
                               Sem professor
                             </option>
-                            {vinculosProfessores.map((vp) => (
+                            {professoresEscola.map((prof) => (
                               <option
-                                key={vp.funcionario_id}
-                                value={vp.funcionario_id}
+                                key={prof.id}
+                                value={prof.id}
                                 className="bg-background text-foreground"
                               >
-                                {vp.funcionarios?.nome ?? 'Sem nome'}
+                                {prof.nome}
                               </option>
                             ))}
-                            {mat.professor_id &&
-                              !vinculosProfessores.some(
-                                (vp) => vp.funcionario_id === mat.professor_id
-                              ) && (
-                                <option
-                                  key={mat.professor_id}
-                                  value={mat.professor_id}
-                                  className="bg-background text-foreground"
-                                >
-                                  {mat.funcionarios?.nome ??
-                                    'Professor atual (Fora da Turma)'}
-                                </option>
-                              )}
                           </select>
                         </div>
                         <div className="flex items-center gap-1">
