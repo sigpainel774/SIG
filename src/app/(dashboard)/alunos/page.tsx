@@ -51,6 +51,22 @@ export default function AlunosPage() {
   const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot, isProfessor: checkProfessor } =
     useAuthStore()
   const isProfessor = checkProfessor()
+  const { isEditMode } = useEditModeStore()
+
+  /* ── Hook de dados (Requerido no topo por conta das regras de hooks do React) ── */
+  const {
+    alunosFiltrados,
+    totalCount,
+    page,
+    setPage,
+    pageSize,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    carregarAlunos,
+    solicitacoes,
+    handleResponderSolicitacao,
+  } = useAlunos()
 
   /* ── Guard: Professores não acessam esta tela ─────────────── */
   if (isProfessor) {
@@ -79,19 +95,6 @@ export default function AlunosPage() {
       </div>
     )
   }
-
-  const { isEditMode } = useEditModeStore()
-
-  /* ── Hook de dados ────────────────────────────────────────── */
-  const {
-    alunosFiltrados,
-    loading,
-    searchTerm,
-    setSearchTerm,
-    carregarAlunos,
-    solicitacoes,
-    handleResponderSolicitacao,
-  } = useAlunos()
 
   /* ── Estados de modais locais ─────────────────────────────── */
   const [modalOpen, setModalOpen] = useState(false)
@@ -207,7 +210,7 @@ export default function AlunosPage() {
         <AlunosFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          totalFiltrado={alunosFiltrados.length}
+          totalFiltrado={totalCount}
         />
 
         {/* Lista de Cards */}
@@ -224,6 +227,40 @@ export default function AlunosPage() {
           onComprovante={setAlunoComprovanteImprimir}
           onArquivar={setAlunoArquivar}
         />
+
+        {/* Paginação (ES-5) */}
+        {totalCount > pageSize && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Mostrando <strong className="text-foreground">{Math.min(totalCount, (page - 1) * pageSize + 1)}</strong> a{' '}
+              <strong className="text-foreground">{Math.min(page * pageSize, totalCount)}</strong> de{' '}
+              <strong className="text-foreground">{totalCount}</strong> alunos
+            </p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1 || loading}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                className="bg-surface-1 border-borderCustom text-foreground hover:bg-hoverCustom disabled:opacity-50 text-xs cursor-pointer"
+              >
+                Anterior
+              </Button>
+              <span className="text-xs text-foreground font-medium">
+                Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= Math.ceil(totalCount / pageSize) || loading}
+                onClick={() => setPage((prev) => prev + 1)}
+                className="bg-surface-1 border-borderCustom text-foreground hover:bg-hoverCustom disabled:opacity-50 text-xs cursor-pointer"
+              >
+                Próxima
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
