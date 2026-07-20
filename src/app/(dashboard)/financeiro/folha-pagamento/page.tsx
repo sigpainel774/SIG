@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Banknote, Settings, CalendarRange, UserMinus, Coins, Eye, Loader2, RefreshCw } from 'lucide-react'
+import { Banknote, Settings, CalendarRange, UserMinus, Coins, Eye, Loader2, RefreshCw, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useFolhaPagamentoStore } from '@/store/useFolhaPagamentoStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -126,14 +126,21 @@ export default function FolhaPagamentoPage() {
     <div className="space-y-6">
       {/* Cabeçalho do Módulo */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#26262a]">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Banknote className="w-6 h-6 text-yellow-500" />
-            Folha de Pagamento — Painel Administrativo
-          </h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gestão contratual de funcionários, desligamentos programados e adicionais de salário.
-          </p>
+        <div className="flex items-center gap-3">
+          <Link href="/financeiro">
+            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-9 w-9 bg-surface-1">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Banknote className="w-6 h-6 text-yellow-500" />
+              Folha de Pagamento — Painel Administrativo
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Gestão contratual de funcionários, desligamentos programados e adicionais de salário.
+            </p>
+          </div>
         </div>
 
         {/* Atalhos rápidos */}
