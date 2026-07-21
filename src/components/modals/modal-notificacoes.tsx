@@ -24,13 +24,13 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
   const canManage = funcionario?.is_superadmin || isAdminGlobalOrRoot?.()
 
   const loadNotificacoes = async () => {
-    if (!funcionario?.id) return
+    if (!funcionario?.auth_user_id) return
     const supabase = createClient()
     
     let query = supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', funcionario.id)
+      .eq('user_id', funcionario.auth_user_id)
       .order('created_at', { ascending: false })
       .limit(10)
 
@@ -49,7 +49,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
 
   useEffect(() => {
     if (open) loadNotificacoes()
-  }, [open, filtro, funcionario?.id])
+  }, [open, filtro, funcionario?.auth_user_id])
 
   const markAsRead = async (notif: any, e: React.MouseEvent) => {
     e.stopPropagation()

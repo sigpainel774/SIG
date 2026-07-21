@@ -178,13 +178,13 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
       // 5. Buscar secretários (nivel=3) e diretores (nivel=2) como fallback
       const { data: acessosReceptores } = await (supabase as any)
         .from('acessos_usuarios')
-        .select('nivel, funcionarios(id, nome)')
+        .select('nivel, funcionarios(id, nome, auth_user_id)')
         .eq('escola_id', escolaAtivaId)
         .eq('ativo', true)
         .in('nivel', [2, 3])
 
       const acessosValidos = (acessosReceptores ?? [])
-        .filter((s: any) => s.funcionarios?.id)
+        .filter((s: any) => s.funcionarios?.auth_user_id)
 
       // Preferir secretários; se não houver nenhum, notificar diretores
       const secretariosNivel3 = acessosValidos.filter((s: any) => s.nivel === 3)
@@ -198,17 +198,26 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         const materiaNome = materia?.nome ?? 'disciplina'
         const destinatarioLabel = secretariosNivel3.length > 0 ? 'secretaria' : 'direção'
 
-        const { error: notifError } = await (supabase as any).rpc('criar_notificacoes', {
-          p_destinatarios: receptores.map((s: any) => s.funcionarios.id),
-          p_title: 'Nova Atividade Recebida',
-          p_message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
-          p_type: 'atividade_secretaria',
-          p_link: `/avaliacoes?tab=central&id=${atividadeId}`,
-          p_grupo_id: grupoId
-        })
+        // Garantir que passamos UUIDs válidos e não nulos do auth.users
+        const destinatariosIds = Array.from(new Set(
+          receptores
+            .map((s: any) => s.funcionarios.auth_user_id)
+            .filter((id: string | null | undefined): id is string => !!id && id.trim() !== '')
+        ))
 
-        if (notifError) {
-          console.error(`Erro ao notificar ${destinatarioLabel}:`, notifError)
+        if (destinatariosIds.length > 0) {
+          const { error: notifError } = await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: destinatariosIds,
+            p_title: 'Nova Atividade Recebida',
+            p_message: `Professor ${funcionario.nome ?? 'Professor'} enviou uma atividade para ${turmaNome} — ${materiaNome}`,
+            p_type: 'atividade_secretaria',
+            p_link: `/avaliacoes?tab=central&id=${atividadeId}`,
+            p_grupo_id: grupoId
+          })
+
+          if (notifError) {
+            console.error(`Erro ao notificar ${destinatarioLabel}:`, notifError)
+          }
         }
       } else {
         console.warn('Nenhum secretário ou diretor ativo encontrado para notificar nesta escola.')
