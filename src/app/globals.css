@@ -280,14 +280,14 @@
 
 /* Classes para padronizar e ajustar o tamanho dos logos nos cabeçalhos de documentos oficiais */
 .doc-header-logo-prefeitura {
-  height: 4.5rem !important; /* ~72px, dando destaque adequado */
+  height: 5.4rem !important; /* Aumentado para dar destaque ao nome da prefeitura */
   width: auto !important;
   max-width: 200px !important;
   object-fit: contain !important;
 }
 
 .doc-header-logo-secretaria {
-  height: 4.5rem !important; /* ~72px, igualado à logo da prefeitura para manter simetria física */
+  height: 3.6rem !important; /* Reduzido para equilibrar visualmente com o tamanho do texto da prefeitura */
   width: auto !important;
   max-width: 200px !important;
   object-fit: contain !important;

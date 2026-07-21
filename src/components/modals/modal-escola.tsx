@@ -18,6 +18,9 @@ interface EscolaToEdit {
   ativo?: boolean | null
   logo_url?: string | null
   codigo?: number | null
+  localizacao?: string | null
+  latitude?: number | null
+  longitude?: number | null
 }
 
 interface ModalEscolaProps {
@@ -36,6 +39,9 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
   const [logoUrl, setLogoUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [fileObject, setFileObject] = useState<File | null>(null)
+  const [localizacao, setLocalizacao] = useState('URBANA')
+  const [latitude, setLatitude] = useState('')
+  const [longitude, setLongitude] = useState('')
   const sessionTimestamp = useRef(Date.now()).current
 
   useEffect(() => {
@@ -46,6 +52,9 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setAtivo(escolaToEdit.ativo !== false)
       setLogoUrl(escolaToEdit.logo_url || '')
       setFileObject(null)
+      setLocalizacao(escolaToEdit.localizacao || 'URBANA')
+      setLatitude(escolaToEdit.latitude !== undefined && escolaToEdit.latitude !== null ? String(escolaToEdit.latitude) : '')
+      setLongitude(escolaToEdit.longitude !== undefined && escolaToEdit.longitude !== null ? String(escolaToEdit.longitude) : '')
     } else {
       setNome('')
       setInep('')
@@ -53,6 +62,9 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setAtivo(true)
       setLogoUrl('')
       setFileObject(null)
+      setLocalizacao('URBANA')
+      setLatitude('')
+      setLongitude('')
     }
   }, [escolaToEdit, open])
 
@@ -104,6 +116,9 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
     setLoading(true)
     const supabase = createClient()
 
+    const latNum = latitude.trim() ? parseFloat(latitude.replace(',', '.')) : null
+    const lngNum = longitude.trim() ? parseFloat(longitude.replace(',', '.')) : null
+
     try {
       if (escolaToEdit?.id) {
         const { error } = await supabase
@@ -113,8 +128,11 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             inep: inep.trim() || null,
             tipo,
             ativo,
-            logo_url: logoUrl || null
-          })
+            logo_url: logoUrl || null,
+            localizacao,
+            latitude: isNaN(latNum as any) ? null : latNum,
+            longitude: isNaN(lngNum as any) ? null : lngNum
+          } as any)
           .eq('id', escolaToEdit.id)
 
         if (error) throw error
@@ -127,7 +145,10 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             inep: inep.trim() || null,
             tipo,
             ativo,
-            logo_url: logoUrl || null
+            logo_url: logoUrl || null,
+            localizacao,
+            latitude: isNaN(latNum as any) ? null : latNum,
+            longitude: isNaN(lngNum as any) ? null : lngNum
           } as any)
 
         if (error) throw error
@@ -214,6 +235,43 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
                 <option value="ESTADUAL">ESTADUAL</option>
                 <option value="PRIVADA">PRIVADA</option>
               </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <Label className="text-xs text-[#aaa]">Localização da UE</Label>
+              <select
+                value={localizacao}
+                onChange={(e) => setLocalizacao(e.target.value)}
+                className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+              >
+                <option value="URBANA">URBANA</option>
+                <option value="RURAL">RURAL</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-[#aaa]">Latitude</Label>
+              <Input
+                type="text"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                placeholder="Ex: -12.9714"
+                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-[#aaa]">Longitude</Label>
+              <Input
+                type="text"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                placeholder="Ex: -38.5014"
+                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              />
             </div>
           </div>
 
