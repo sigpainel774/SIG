@@ -152,7 +152,10 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
             <div 
               key={notif.id} 
               className={`p-3 rounded-lg border flex gap-3 cursor-pointer transition-colors group ${notif.read ? 'bg-transparent border-transparent hover:bg-[#27272a]' : 'bg-[#27272a]/50 border-[#3ea6ff]/30 hover:bg-[#27272a]'}`}
-              onClick={() => {
+              onClick={async (e) => {
+                if (!notif.read) {
+                  await markAsRead(notif, e)
+                }
                 if (notif.link) {
                   router.push(notif.link)
                   handleOpenChange(false)

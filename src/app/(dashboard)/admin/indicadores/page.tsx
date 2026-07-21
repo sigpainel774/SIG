@@ -207,7 +207,7 @@ export default function AdminIndicadoresPage() {
       // 2. Buscar funcionários ativos
       const { data: funcionarios } = await supabase
         .from('funcionarios')
-        .select('id, nome, cargo')
+        .select('id, nome, cargo, auth_user_id')
         .is('deleted_at', null)
 
       if (!funcionarios) return
@@ -218,17 +218,19 @@ export default function AdminIndicadoresPage() {
         .select('funcionario_id, nivel')
         .eq('ativo', true)
 
-      // Identificar quais funcionários devem receber com base nas regras
+      // Identificar quais funcionários devem receber com base nas regras (apenas com auth_user_id válido)
       const idsParaNotificar = new Set<string>()
 
       funcionarios.forEach((f: any) => {
+        if (!f.auth_user_id) return
+
         const acessoFunc = acessos?.filter((a: any) => a.funcionario_id === f.id) ?? []
         
         regras.forEach((r: any) => {
           if (r.nivel !== null) {
             // Regra por nível administrativo
             if (acessoFunc.some((a: any) => a.nivel === r.nivel)) {
-              idsParaNotificar.add(f.id)
+              idsParaNotificar.add(f.auth_user_id)
             }
           } else if (r.cargo_pattern && f.cargo) {
             // Regra por cargo (ex: Professor)
@@ -236,11 +238,11 @@ export default function AdminIndicadoresPage() {
               const patternClean = (r.cargo_pattern || '').replace(/%/g, '.*')
               const regex = new RegExp(patternClean, 'i')
               if (f.cargo && regex.test(f.cargo)) {
-                idsParaNotificar.add(f.id)
+                idsParaNotificar.add(f.auth_user_id)
               }
             } catch {
               if (f.cargo && r.cargo_pattern && f.cargo.toLowerCase().includes(r.cargo_pattern.replace(/%/g, '').toLowerCase())) {
-                idsParaNotificar.add(f.id)
+                idsParaNotificar.add(f.auth_user_id)
               }
             }
           }
