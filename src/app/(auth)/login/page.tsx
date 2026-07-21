@@ -124,7 +124,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px] p-8 sm:p-10 bg-[#161616] border border-[#242424] rounded-[24px] shadow-2xl space-y-6">
         <div className="flex flex-col items-center justify-center gap-3">
           <img
-            src="/img/logo-login-novo.png"
+            src="/img/brasao-login.jpg"
             alt="Brasão Sapeaçu"
             className="w-14 h-14 object-contain"
           />
