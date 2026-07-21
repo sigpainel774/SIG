@@ -12,8 +12,7 @@ import {
   Clock,
   CheckCircle2,
   Filter,
-  Download,
-  Printer
+  Download
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -541,27 +540,16 @@ function AvaliacoesContent() {
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
                         {at.arquivo_url && (
-                          <>
-                            <a href={at.arquivo_url} target="_blank" rel="noopener noreferrer" download>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-[#26262a]"
-                                title="Download do arquivo"
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                            </a>
+                          <a href={at.arquivo_url} target="_blank" rel="noopener noreferrer">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => window.open(at.arquivo_url, '_blank')}
                               className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-[#26262a]"
-                              title="Imprimir"
+                              title="Visualizar arquivo"
                             >
-                              <Printer className="w-4 h-4" />
+                              <Download className="w-4 h-4" />
                             </Button>
-                          </>
+                          </a>
                         )}
                       </div>
                     </TableCell>

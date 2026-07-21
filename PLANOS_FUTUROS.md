@@ -13,6 +13,7 @@ Atualizado automaticamente com o status real do repositório.
 |-------|--------|------------|
 | Integração Resend + Primeiro Acesso | ⏳ Pendente | Plano elaborado e salvo — código não iniciado; configuração SMTP é manual no Supabase |
 | Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — nenhum arquivo criado no repositório ainda |
+| Assistente de IA para Logs de Auditoria | ⏳ Pendente | Assistente de IA para responder perguntas sobre o histórico de alterações no sistema com base nos logs de auditoria |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -574,3 +575,19 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 - **Arquivos modificados:**
   - `[MODIFY] src/app/(dashboard)/alunos/page.tsx`
   - `[MODIFY] src/app/(dashboard)/funcionarios/page.tsx`
+  - [MODIFY] Tabela de Status Geral (Histórico de Implementações)
+
+---
+
+## 📌 Assistente de IA de Auditoria (Audit Logs)
+
+> **Status:** ⏳ Pendente — Proposto em 2026-07-20  
+> **Planejado em:** 2026-07-20  
+> **Objetivo:** Criar um mini assistente integrado ao painel administrativo capaz de responder perguntas em linguagem natural sobre o histórico de alterações no sistema (ex: "quem desativou o vínculo da secretária?", "quando a turma X foi alterada?").
+> **Tabelas de banco envolvidas:** `public.audit_logs`
+
+### Checklist de Execução
+- [ ] Modelar a API de busca/filtragem de dados estruturados na tabela `public.audit_logs`.
+- [ ] Criar endpoint seguro `/api/admin/audit-chat` para receber a pergunta do administrador, filtrar os logs relevantes do período/entidade e alimentar o LLM com o contexto necessário.
+- [ ] Desenvolver a interface visual do mini assistente de chat no painel administrativo (`src/app/(dashboard)/admin/page.tsx`).
+- [ ] Garantir conformidade com as regras de permissões (apenas usuários de nível elevado como Superadmin ou Direção devem ter acesso a esses dados sensíveis de auditoria).
