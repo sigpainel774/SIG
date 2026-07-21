@@ -131,7 +131,7 @@ export function ModalDetalhesAtividade({
       })
 
       // 3. Marcar notificação do grupo como processada (se tiver permissão)
-      if (podeGerenciarStatus && atividade?.grupo_id) {
+      if (podeGerenciarStatus && atividade?.grupo_id && atividade.grupo_id.trim() !== '') {
         await (supabase as any)
           .from('notifications')
           .update({
@@ -294,8 +294,8 @@ export function ModalDetalhesAtividade({
             </div>
           </div>
 
-          {/* Ação de status — só visível para secretária ou diretoria em isEditMode */}
-          {isEditMode && podeGerenciarStatus && proximoStatusInfo && (
+          {/* Ação de status — só visível para secretária ou diretoria */}
+          {podeGerenciarStatus && proximoStatusInfo && (
             <div className="px-6 pb-6">
               <div className="rounded-lg border border-dashed border-[#3ea6ff]/30 bg-[#3ea6ff]/5 p-4">
                 <p className="text-xs text-zinc-400 mb-3">Avançar status desta atividade:</p>

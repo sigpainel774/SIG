@@ -36,14 +36,14 @@ export function Header() {
   }, [pathname])
 
   useEffect(() => {
-    if (!funcionario?.id) return
+    if (!funcionario?.auth_user_id) return
     const supabase = createClient()
 
     const fetchUnreadCount = async () => {
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', funcionario.id as string)
+        .eq('user_id', funcionario.auth_user_id as string)
         .eq('read', false)
       
       if (!error && count !== null) {
@@ -61,7 +61,7 @@ export function Header() {
           event: 'INSERT', 
           schema: 'public', 
           table: 'notifications', 
-          filter: `user_id=eq.${funcionario.id as string}` 
+          filter: `user_id=eq.${funcionario.auth_user_id as string}` 
         },
         (payload: any) => {
           setUnreadCount((prev) => prev + 1)
@@ -73,7 +73,7 @@ export function Header() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [funcionario?.id])
+  }, [funcionario?.auth_user_id])
 
   const handleToggleClick = () => {
     if (!isEditMode) {
