@@ -29,6 +29,8 @@ export interface PrintHeaderProps {
   // Classes CSS extras para flexibilidade
   className?: string
   logoClassName?: string
+  logoPrefeituraClassName?: string
+  logoSecretariaClassName?: string
   centerClassName?: string
 }
 
@@ -43,7 +45,9 @@ export function PrintHeader({
   secretaria = "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
   timestamp,
   className,
-  logoClassName = "doc-header-logo-prefeitura",
+  logoClassName,
+  logoPrefeituraClassName,
+  logoSecretariaClassName,
   centerClassName,
 }: PrintHeaderProps) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
@@ -61,6 +65,9 @@ export function PrintHeader({
 
   const nomeExibicaoEscola = escolaNome ?? "Secretaria Municipal de Educação"
 
+  const resolvedLogoPrefeituraClass = logoPrefeituraClassName ?? logoClassName ?? "doc-header-logo-prefeitura"
+  const resolvedLogoSecretariaClass = logoSecretariaClassName ?? logoClassName ?? "doc-header-logo-secretaria"
+
   return (
     <div className={cn("flex items-center justify-between pb-3 border-b-2 border-black mb-4 shrink-0 w-full", className)}>
       {/* Logo Prefeitura (Esquerda) */}
@@ -68,7 +75,7 @@ export function PrintHeader({
         <img
           src={getCacheBustedUrl(logoPrefeituraUrl)}
           alt="Prefeitura de Sapeaçu"
-          className={logoClassName}
+          className={resolvedLogoPrefeituraClass}
           onError={(e) => {
             if (e.currentTarget.dataset.failed) return
             e.currentTarget.dataset.failed = 'true'
@@ -110,7 +117,7 @@ export function PrintHeader({
         <img
           src={escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : getCacheBustedUrl(logoSecretariaUrl)}
           alt={nomeExibicaoEscola}
-          className={logoClassName}
+          className={resolvedLogoSecretariaClass}
           onError={(e) => {
             if (e.currentTarget.dataset.failed) return
             e.currentTarget.dataset.failed = 'true'
