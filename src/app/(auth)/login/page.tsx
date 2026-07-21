@@ -68,7 +68,7 @@ export default function LoginPage() {
       // 3. Após autenticação bem-sucedida, validar o status do funcionário no banco (com permissão RLS do usuário autenticado)
       const { data: funcCheck } = await supabase
         .from('funcionarios')
-        .select('status')
+        .select('status, primeiro_acesso')
         .eq('email', data.user.email || cleanEmail)
         .maybeSingle()
 
@@ -93,6 +93,14 @@ export default function LoginPage() {
       if (typeof window !== 'undefined' && localSuspended.includes(cleanEmail)) {
         const updatedList = localSuspended.filter((item) => item !== cleanEmail)
         localStorage.setItem('sig_suspended_emails', JSON.stringify(updatedList))
+      }
+
+      if (funcCheck?.primeiro_acesso) {
+        toast.success('Primeiro acesso! Por favor, altere sua senha.')
+        router.refresh()
+        router.push('/primeiro-acesso')
+        setLoading(false)
+        return
       }
 
       toast.success('Login bem-sucedido!')

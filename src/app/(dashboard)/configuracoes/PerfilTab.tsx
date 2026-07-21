@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Lock, ChevronDown, Save, Info } from 'lucide-react'
+import { User, Lock, ChevronDown, Save, Info, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabaseClient'
+import { toast } from 'sonner'
 
 interface PerfilTabProps {
   nome: string
@@ -63,6 +65,46 @@ function ProfileField({
 
 export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [updating, setUpdating] = useState(false)
+  const supabase = createClient()
+
+  const handleUpdatePassword = async () => {
+    if (novaSenha.length < 6) {
+      toast.error('A senha deve conter no mínimo 6 caracteres.')
+      return
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      toast.error('As senhas não coincidem.')
+      return
+    }
+
+    setUpdating(true)
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: novaSenha,
+      })
+
+      if (error) {
+        toast.error(`Erro ao atualizar senha: ${error.message}`)
+        setUpdating(false)
+        return
+      }
+
+      toast.success('Senha atualizada com sucesso!')
+      setNovaSenha('')
+      setConfirmarSenha('')
+      setShowPassword(false)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro inesperado ao atualizar a senha.')
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-200">
@@ -117,24 +159,47 @@ export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProp
 
         {showPassword && (
           <div className="mt-5 grid gap-4">
-            <div>
-              <label className="mb-2 block text-sm text-muted-foreground">Senha Atual</label>
-              <Input type="password" placeholder="Digite sua senha atual" className="bg-input" />
-            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm text-muted-foreground">Nova Senha</label>
-                <Input type="password" placeholder="Mínimo 6 caracteres" className="bg-input" />
+                <Input
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  disabled={updating}
+                  className="bg-input"
+                />
               </div>
               <div>
                 <label className="mb-2 block text-sm text-muted-foreground">Confirmar Nova Senha</label>
-                <Input type="password" placeholder="Digite a nova senha novamente" className="bg-input" />
+                <Input
+                  type="password"
+                  placeholder="Digite a nova senha novamente"
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  disabled={updating}
+                  className="bg-input"
+                />
               </div>
             </div>
             <div className="flex justify-end">
-              <Button className="bg-highlight text-background hover:bg-highlight/90 font-medium">
-                <Save className="mr-2 h-4 w-4" />
-                Atualizar Senha
+              <Button
+                onClick={handleUpdatePassword}
+                disabled={updating}
+                className="bg-highlight text-background hover:bg-highlight/90 font-medium"
+              >
+                {updating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Atualizar Senha
+                  </>
+                )}
               </Button>
             </div>
           </div>
