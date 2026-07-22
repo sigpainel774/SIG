@@ -69,7 +69,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
           <Button
             type="submit"
             form="aluno-form"
-            disabled={loading || isFichaBloqueada}
+            disabled={loading}
             className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
           >
             {loading ? 'Salvando...' : (
