@@ -67,6 +67,7 @@ export function ModalGestaoLotacoes({
     handleMoverFuncionario,
     handleRemoverLotacao,
     handleSolicitarTransferencia,
+    handleAtualizarCargoLotacao,
   } = useGestaoLotacoes({ open, funcionarioInicial })
 
   const lotacaoNaMinhaEscola = selecionado?.lotacoes.find(
@@ -156,34 +157,57 @@ export function ModalGestaoLotacoes({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {selecionado.lotacoes.map((lot) => (
-                        <div
-                          key={lot.id}
-                          className="flex items-center justify-between bg-[#1a1a1e] border border-[#26262a] rounded-xl px-4 py-3"
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-[#3ea6ff]">
-                              {lot.escolaNome ?? 'Escola não encontrada'}
-                            </p>
-                            <p className="text-xs text-zinc-400">{lot.cargo ?? 'Cargo não definido'}</p>
+                      {selecionado.lotacoes.map((lot) => {
+                        const podeGerenciarLotacao = isGlobalAdmin || lot.escola_id === escolaAtivaId
+                        const cargoExibido = lot.cargo ?? selecionado.cargo ?? ''
+                        return (
+                          <div
+                            key={lot.id}
+                            className="flex items-center justify-between bg-[#1a1a1e] border border-[#26262a] rounded-xl px-4 py-3 gap-4"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-[#3ea6ff] truncate">
+                                {lot.escolaNome ?? 'Escola não encontrada'}
+                              </p>
+                              {podeGerenciarLotacao ? (
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-zinc-400 font-medium shrink-0">Cargo/Função na UE:</span>
+                                  <select
+                                    value={cargoExibido}
+                                    onChange={(e) => handleAtualizarCargoLotacao(lot.id, e.target.value)}
+                                    disabled={salvando}
+                                    className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded px-2 py-1 outline-none focus:border-[#3ea6ff] cursor-pointer"
+                                  >
+                                    <option value="">Selecione o cargo...</option>
+                                    {cargos.map((c) => (
+                                      <option key={c.id} value={c.nome}>
+                                        {c.nome}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-zinc-400 mt-0.5">{cargoExibido || 'Cargo não definido'}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                                Ativa
+                              </span>
+                              {isGlobalAdmin && (
+                                <button
+                                  onClick={() => handleRemoverLotacao(lot)}
+                                  disabled={salvando}
+                                  className="w-7 h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
+                                  title="Remover lotação"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                              Ativa
-                            </span>
-                            {isGlobalAdmin && (
-                              <button
-                                onClick={() => handleRemoverLotacao(lot)}
-                                disabled={salvando}
-                                className="w-7 h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
-                                title="Remover lotação"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
