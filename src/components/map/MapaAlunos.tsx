@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Search } from 'lucide-react';
 
@@ -115,10 +115,21 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           ref={mapRef}
           className="w-full h-full"
         >
-          <TileLayer
-            attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="Mapa de Ruas">
+              <TileLayer
+                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Satélite">
+              <TileLayer
+                attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                maxZoom={19}
+              />
+            </LayersControl.BaseLayer>
+          </LayersControl>
           {alunosFiltrados.map((aluno) => {
             const icone = criarIconeCustomizado(aluno.nome);
             const iniciais = obterIniciais(aluno.nome);
