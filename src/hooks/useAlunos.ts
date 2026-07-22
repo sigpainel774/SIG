@@ -95,10 +95,19 @@ export function useAlunos() {
           query = query.eq('escola_id', escolaAtivaId)
         } else {
           // Professor ou Coordenador: só vê alunos das suas turmas
+          if (!funcionario?.id) {
+            if (isMounted.current) {
+              setAlunos([])
+              setTotalCount(0)
+              setLoading(false)
+            }
+            return
+          }
+
           const { data: vTurmas } = await supabase
             .from('vinculos_turmas')
             .select('turma_id')
-            .eq('funcionario_id', funcionario?.id ?? '')
+            .eq('funcionario_id', funcionario.id)
             .eq('escola_id', escolaAtivaId)
 
           const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)

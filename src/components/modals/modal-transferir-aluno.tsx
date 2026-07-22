@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import useSWR from 'swr'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +36,24 @@ export function ModalTransferirAluno({
   const [arquivos, setArquivos] = useState<FileList | null>(null)
 
   const activeOpen = open !== undefined ? open : isOpen
+
+  // Buscar escolas ativas reais do Supabase
+  const { data: escolas = [] } = useSWR(
+    activeOpen ? 'escolas_ativas_transferencia' : null,
+    async () => {
+      const { createClient } = await import('@/lib/supabaseClient')
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('escolas')
+        .select('id, nome')
+        .is('deleted_at', null)
+        .eq('ativo', true)
+        .order('nome', { ascending: true })
+      if (error) throw error
+      return data || []
+    }
+  )
+
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
     setIsOpen(val)
@@ -47,7 +66,6 @@ export function ModalTransferirAluno({
     }
 
     setLoading(true)
-    // Simulação do request ao banco para registrar a transferência
     setTimeout(() => {
       setLoading(false)
       toast.success(`Solicitação enviada! A escola de destino precisará aprovar.`)
@@ -98,9 +116,11 @@ export function ModalTransferirAluno({
                 <SelectValue placeholder="Selecione a escola de destino..." />
               </SelectTrigger>
               <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
-                <SelectItem value="escola_1">Escola Municipal Eraldo Tinoco</SelectItem>
-                <SelectItem value="escola_2">Centro Educacional de Sapeaçu</SelectItem>
-                <SelectItem value="escola_3">Escola Rural Boa Vista</SelectItem>
+                {escolas
+                  .filter((e: any) => e.id !== escolaOrigemId)
+                  .map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

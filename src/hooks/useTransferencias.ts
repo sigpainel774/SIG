@@ -55,7 +55,7 @@ export function useTransferencias() {
           alunos(nome, cpf),
           origem:escola_origem_id(nome),
           destino:escola_destino_id(nome),
-          solicitante:solicitante_id(nome)
+          solicitante:solicitante_id(id, nome, auth_user_id)
         `)
         .or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
         .order('created_at', { ascending: false })
@@ -68,7 +68,7 @@ export function useTransferencias() {
           funcionarios(nome, cpf, cargo, auth_user_id),
           origem:escola_origem_id(nome),
           destino:escola_destino_id(nome),
-          solicitante:solicitante_id(nome)
+          solicitante:solicitante_id(id, nome, auth_user_id)
         `)
         .or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
         .order('created_at', { ascending: false })
@@ -246,10 +246,10 @@ export function useTransferencias() {
           })
         }
 
-        // Enviar notificação se solicitante_id for UUID válido
-        if (transferenciaSelecionada.solicitante_id) {
+        const solicitanteTarget = transferenciaSelecionada.solicitante?.auth_user_id || transferenciaSelecionada.solicitante_id
+        if (solicitanteTarget) {
           await (supabase as any).rpc('criar_notificacoes', {
-            p_destinatarios: [transferenciaSelecionada.solicitante_id],
+            p_destinatarios: [solicitanteTarget],
             p_title: `Transferência de Aluno ${statusDestino}`,
             p_message: `O pedido de transferência do aluno ${transferenciaSelecionada.alunos?.nome ?? 'Aluno'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
             p_type: aceitar ? 'SUCCESS' : 'ERROR',

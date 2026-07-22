@@ -288,7 +288,11 @@ export function useTurmaNotas({
   }, [alunos, materias, notasState, recuperacoesState, notasServidor, calculosServidorState])
 
   const handleSalvarNotas = async (materiaId: string) => {
-    if (!escolaAtivaId) return
+    const targetEscolaId = escolaAtivaId || turma?.escola_id
+    if (!targetEscolaId) {
+      toast.error('Escola não identificada para salvar as notas.')
+      return
+    }
     const unidade = unidadesAtivas[materiaId] || 1
     
     if (isMounted.current) {
@@ -310,7 +314,7 @@ export function useTurmaNotas({
           aluno_id: aluno.id,
           turma_id: turma.id,
           materia_id: materiaId,
-          escola_id: escolaAtivaId ?? '',
+          escola_id: targetEscolaId,
           unidade: unidade,
           nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
           nota2: n.nota2 !== null && n.nota2 !== '' ? Number(n.nota2) : null,
@@ -342,7 +346,7 @@ export function useTurmaNotas({
             aluno_id: aluno.id,
             turma_id: turma.id,
             materia_id: materiaId,
-            escola_id: escolaAtivaId ?? '',
+            escola_id: targetEscolaId,
             nota: Number(rec.nota)
           })
         } else {
