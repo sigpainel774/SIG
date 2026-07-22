@@ -165,9 +165,26 @@ export function useTransferencias() {
         if (updateError) throw updateError
 
         if (aceitar) {
+          const { data: currentStudent } = await supabase
+            .from('alunos')
+            .select('dados_matricula')
+            .eq('id', transferenciaSelecionada.aluno_id)
+            .single()
+
+          const updatedDm = {
+            ...((currentStudent?.dados_matricula as Record<string, any>) || {}),
+            escolaId: transferenciaSelecionada.escola_destino_id,
+            turmaIdAluno: null,
+            turmaAluno: ''
+          }
+
           const { error: studentUpdateError } = await supabase
             .from('alunos')
-            .update({ escola_id: transferenciaSelecionada.escola_destino_id })
+            .update({
+              escola_id: transferenciaSelecionada.escola_destino_id,
+              turma_id: null,
+              dados_matricula: updatedDm
+            })
             .eq('id', transferenciaSelecionada.aluno_id)
 
           if (studentUpdateError) throw studentUpdateError

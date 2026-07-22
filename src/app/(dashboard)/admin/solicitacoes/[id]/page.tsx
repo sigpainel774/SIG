@@ -62,9 +62,26 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
 
       // Se aceitar, atualizar o aluno (mudar escola_id) e arquivar ficha completa
       if (aceitar && solicitacao.escola_destino_id) {
+        const { data: currentStudent } = await supabase
+          .from('alunos')
+          .select('dados_matricula')
+          .eq('id', solicitacao.aluno_id)
+          .single()
+
+        const updatedDm = {
+          ...((currentStudent?.dados_matricula as Record<string, any>) || {}),
+          escolaId: solicitacao.escola_destino_id,
+          turmaIdAluno: null,
+          turmaAluno: ''
+        }
+
         const { error: alunoError } = await supabase
           .from('alunos')
-          .update({ escola_id: solicitacao.escola_destino_id })
+          .update({
+            escola_id: solicitacao.escola_destino_id,
+            turma_id: null,
+            dados_matricula: updatedDm
+          })
           .eq('id', solicitacao.aluno_id)
           
         if (alunoError) throw alunoError

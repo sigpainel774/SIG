@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { usePessoaForm } from '@/hooks/usePessoaForm'
+import { logAudit } from '@/lib/audit/audit-agent'
 import { useAlunoSignaturePolling } from './useAlunoSignaturePolling'
 import { AlunoFormContextType, ModalAlunoProps } from '../types'
 
@@ -22,7 +23,7 @@ interface UseAlunoFormStatesProps {
 export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormStatesProps): AlunoFormContextType {
   const { alunoEditar, onSuccess } = props
   const { isEditMode } = useEditModeStore()
-  const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, acessos, escolaAtivaId, isAdminGlobalOrRoot, isDiretor } = useAuthStore()
   const [loading, setLoading] = useState(false)
 
   // Buscar turmas via useSWR com cache estendido
@@ -181,6 +182,17 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         }
         return
       }
+
+      // Diretores (Nível 2) e Admin/Root (Nível 1) possuem liberação automática permanente para edição
+      const isDiretorOuAdmin = isAdminGlobalOrRoot() || isDiretor() || (acessos || []).some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)
+      if (isDiretorOuAdmin) {
+        if (active) {
+          setIsEdicaoLiberada(true)
+          setSolicitacaoPendente(false)
+        }
+        return
+      }
+
       const supabase = createClient()
       const { data: rawSol } = await (supabase
         .from('solicitacoes_edicao_aluno' as any) as any)
@@ -546,6 +558,27 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           .update(payload)
           .eq('id', alunoEditar.id)
         if (error) throw error
+
+        await logAudit({
+          supabase,
+          action: 'UPDATE',
+          entity: 'alunos',
+          entityId: alunoEditar.id,
+          oldData: {
+            nome: alunoEditar.nome,
+            turma_id: alunoEditar.turma_id,
+            escola_id: alunoEditar.escola_id,
+            dados_matricula: alunoEditar.dados_matricula
+          },
+          newData: payload,
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome ?? 'Usuário',
+            email: funcionario?.email ?? 'sem-email@sig.com',
+            cargo: funcionario?.cargo ?? undefined
+          }
+        })
+
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
         const { data: insertedData, error } = await (supabase.from('alunos') as any)
@@ -554,6 +587,21 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           .single()
         if (error) throw error
         savedAlunoId = insertedData.id
+
+        await logAudit({
+          supabase,
+          action: 'CREATE',
+          entity: 'alunos',
+          entityId: savedAlunoId,
+          newData: payload,
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome ?? 'Usuário',
+            email: funcionario?.email ?? 'sem-email@sig.com',
+            cargo: funcionario?.cargo ?? undefined
+          }
+        })
+
         toast.success('Aluno cadastrado com sucesso!')
 
         let hasNewSigs = false

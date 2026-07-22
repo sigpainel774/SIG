@@ -3,7 +3,7 @@
 Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
 Atualizado automaticamente com o status real do repositório.
 
-**Última atualização:** 2026-07-18
+**Última atualização:** 2026-07-22
 
 ---
 
@@ -11,9 +11,11 @@ Atualizado automaticamente com o status real do repositório.
 
 | Plano | Status | Observação |
 |-------|--------|------------|
-| Integração Resend + Primeiro Acesso | ⏳ Pendente | Plano elaborado e salvo — código não iniciado; configuração SMTP é manual no Supabase |
-| Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — nenhum arquivo criado no repositório ainda |
-| Assistente de IA para Logs de Auditoria | ⏳ Pendente | Assistente de IA para responder perguntas sobre o histórico de alterações no sistema com base nos logs de auditoria |
+| Integração Resend + Primeiro Acesso | ✅ Implementado | Sessão 2026-07-21 — Tela `/primeiro-acesso`, integração no `proxy.ts`, `PerfilTab.tsx` e `login/page.tsx` |
+| Verificação QR Code / Crachá de Funcionário | ✅ Implementado | Sessão 2026-07-20 — Rota pública `/verificar/funcionario/[id]` com validação instantânea |
+| Ajuste de Mapas e Geolocalização | ✅ Implementado | Sessão 2026-07-22 — Tiles Leaflet atualizados com fallbacks resilientes (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`) |
+| Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — aguardando início do desenvolvimento |
+| Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -26,18 +28,17 @@ Atualizado automaticamente com o status real do repositório.
 
 ## 📌 Integração do Resend + Troca Obrigatória de Senha (Primeiro Acesso)
 
-> **Status:** ⏳ Pendente — Código não iniciado  
-> **Planejado em:** 2026-07-18  
-> **Pré-requisitos de código:** `[NEW] src/app/api/auth/complete-first-access/route.ts` · `[NEW] src/components/modals/first-access-modal.tsx` · `[MODIFY] src/app/(dashboard)/layout.tsx`  
-> **Pré-requisito do usuário:** Configuração manual do SMTP no painel Supabase (ver Passo 1 abaixo)
+> **Status:** ✅ Implementado  
+> **Concluído em:** 2026-07-21  
+> **Arquivos criados/modificados:** `[NEW] src/app/(auth)/primeiro-acesso/page.tsx` · `[MODIFY] src/proxy.ts` · `[MODIFY] src/app/(auth)/login/page.tsx` · `[MODIFY] src/app/(dashboard)/configuracoes/PerfilTab.tsx`  
 
 ### Checklist de Execução
-- [ ] Usuário configura SMTP com Resend no painel do Supabase
-- [ ] Usuário executa SQL de isenção dos usuários atuais (`primeiro_acesso = false`)
-- [ ] Criar Route Handler `complete-first-access`
-- [ ] Criar modal `first-access-modal.tsx` (bloqueante, sem botão fechar)
-- [ ] Integrar interceptação no `layout.tsx` do dashboard
-- [ ] Verificar com `npx tsc --noEmit`
+- [x] Usuário configura SMTP com Resend no painel do Supabase
+- [x] Usuário executa SQL de isenção dos usuários atuais (`primeiro_acesso = false`)
+- [x] Criar página `/primeiro-acesso` (bloqueante, sem botão fechar)
+- [x] Integrar interceptação no `proxy.ts` e redirecionamento no login
+- [x] Integrar troca de senha no `PerfilTab.tsx`
+- [x] Verificar com `npx tsc --noEmit`
 
 ---
 
@@ -492,6 +493,41 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 ---
 
 ## ✅ Histórico de Implementações Concluídas
+
+
+### 2026-07-22
+
+#### Resiliência e Ajustes nos Componentes de Mapas (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`)
+- **O que foi feito:** Atualizados os componentes de mapa Leaflet para utilizar fallbacks resilientes de tiles, corrigindo problemas de carregamento de camadas de mapa em conexões lentas ou com bloqueio de CDN.
+- **Arquivos modificados:**
+  - `[MODIFY] src/components/map/MapaAlunos.tsx`
+  - `[MODIFY] src/components/map/MapaAuditoria.tsx`
+  - `[MODIFY] src/components/map/MapaGlobal.tsx`
+  - `[MODIFY] src/components/map/MiniMapa.tsx`
+
+
+### 2026-07-21
+
+#### Troca Obrigatória de Senha no Primeiro Acesso (`/primeiro-acesso`)
+- **O que foi feito:** Criada a tela dedicada de primeiro acesso (`src/app/(auth)/primeiro-acesso/page.tsx`), com validação de senha forte, interceptação via `src/proxy.ts` e integração com a aba de perfil do usuário.
+- **Arquivos criados/modificados:**
+  - `[NEW] src/app/(auth)/primeiro-acesso/page.tsx`
+  - `[MODIFY] src/proxy.ts`
+  - `[MODIFY] src/app/(auth)/login/page.tsx`
+  - `[MODIFY] src/app/(dashboard)/configuracoes/PerfilTab.tsx`
+
+
+### 2026-07-20
+
+#### Verificação Pública de Crachá/QR Code de Funcionário (`/verificar/funcionario/[id]`)
+- **O que foi feito:** Criada rota pública para consulta e verificação de autenticidade de crachás e QR Codes de servidores municipais.
+- **Arquivos criados/modificados:**
+  - `[NEW] src/app/verificar/funcionario/[id]/page.tsx`
+  - `[MODIFY] src/app/(dashboard)/avaliacoes/page.tsx`
+
+#### Ajustes na Central de Notificações e Atividades da Secretaria
+- **O que foi feito:** Correção e aprimoramento dos modais de atividade pedagógica e envio/histórico de notificações.
+- **Arquivos modificados:** `modal-notificacoes.tsx` · `modal-nova-atividade.tsx` · `modal-detalhes-atividade.tsx` · `historico-notificacoes/page.tsx` · `Header.tsx`
 
 
 ### 2026-07-18
