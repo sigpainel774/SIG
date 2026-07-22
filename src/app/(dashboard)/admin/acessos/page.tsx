@@ -69,16 +69,22 @@ export default function AdminAcessosPage() {
   }, [])
 
   // Alternar pausa do acesso (Botão 1)
-  const handleTogglePausa = (item: AcessoItem) => {
+  const handleTogglePausa = async (item: AcessoItem) => {
     const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
     const novoStatus = isPausado ? 'ATIVO' : 'PAUSADO'
 
     setAcessos(prev => prev.map(a => a.id === item.id ? { ...a, status: novoStatus } : a))
 
-    if (isPausado) {
-      toast.success(`Acesso de ${item.funcionario} reativado com sucesso!`)
-    } else {
+    if (!isPausado) {
+      // Ao pausar, remove automaticamente como diretor_id responsável de qualquer escola
+      await supabase
+        .from('escolas')
+        .update({ diretor_id: null })
+        .eq('diretor_id', item.id)
+
       toast.warning(`Acesso de ${item.funcionario} pausado temporariamente.`)
+    } else {
+      toast.success(`Acesso de ${item.funcionario} reativado com sucesso!`)
     }
   }
 
@@ -88,8 +94,15 @@ export default function AdminAcessosPage() {
     setConfirmDeleteOpen(true)
   }
 
-  const handleExcluirAcesso = () => {
+  const handleExcluirAcesso = async () => {
     if (!itemParaExcluir) return
+
+    // Ao excluir o acesso, remove automaticamente como diretor_id responsável de qualquer escola
+    await supabase
+      .from('escolas')
+      .update({ diretor_id: null })
+      .eq('diretor_id', itemParaExcluir.id)
+
     setAcessos(prev => prev.filter(a => a.id !== itemParaExcluir.id))
     toast.error(`Acesso de ${itemParaExcluir.funcionario} removido do sistema.`)
     setConfirmDeleteOpen(false)
