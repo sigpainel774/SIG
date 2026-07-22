@@ -182,7 +182,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     }
   }
 
-  // Recorte Inteligente (Auto-Crop)
+  // Recorte Inteligente (Auto-Crop) com rotação automática de 90° se for mais alta que larga no mobile
   const getCroppedBase64 = (): string | null => {
     const canvas = canvasRef.current
     if (!canvas) return null
@@ -231,16 +231,42 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
 
     if (cropW <= 0 || cropH <= 0) return null
 
-    // Cria canvas temporário para o recorte
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = cropW
-    tempCanvas.height = cropH
-    const tempCtx = tempCanvas.getContext('2d')
+    // Se no mobile a assinatura desenhada for mais ALTA do que LARGA (escreveu de cima pra baixo no celular em pé),
+    // nós rotacionamos ela em 90 graus no sentido horário (+90deg) para ficar perfeitamente na horizontal!
+    const shouldRotate = isPortraitMobile && cropH > cropW * 1.1
 
-    if (tempCtx) {
-      // Desenha o trecho recortado no novo canvas
-      tempCtx.putImageData(ctx.getImageData(minX, minY, cropW, cropH), 0, 0)
-      return tempCanvas.toDataURL('image/png')
+    const tempCanvas = document.createElement('canvas')
+    
+    if (shouldRotate) {
+      // Quando rotaciona 90 graus, a nova largura vira a antiga altura
+      tempCanvas.width = cropH
+      tempCanvas.height = cropW
+      const tempCtx = tempCanvas.getContext('2d')
+      if (tempCtx) {
+        // Translada e rotaciona +90 graus (sentido horário)
+        tempCtx.translate(cropH, 0)
+        tempCtx.rotate(Math.PI / 2)
+        
+        // Extrai a área desenhada
+        const subData = ctx.getImageData(minX, minY, cropW, cropH)
+        const rawCropCanvas = document.createElement('canvas')
+        rawCropCanvas.width = cropW
+        rawCropCanvas.height = cropH
+        const rawCtx = rawCropCanvas.getContext('2d')
+        if (rawCtx) {
+          rawCtx.putImageData(subData, 0, 0)
+          tempCtx.drawImage(rawCropCanvas, 0, 0)
+          return tempCanvas.toDataURL('image/png')
+        }
+      }
+    } else {
+      tempCanvas.width = cropW
+      tempCanvas.height = cropH
+      const tempCtx = tempCanvas.getContext('2d')
+      if (tempCtx) {
+        tempCtx.putImageData(ctx.getImageData(minX, minY, cropW, cropH), 0, 0)
+        return tempCanvas.toDataURL('image/png')
+      }
     }
 
     return null
@@ -294,7 +320,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
   }, [])
 
   // Classes css do container do modal
-  const modalClasses = "w-full h-full md:w-[750px] md:h-[480px] bg-[#121214] border border-transparent md:border-[#26262a] md:rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+  const modalClasses = "w-[96vw] max-w-[750px] h-[90vh] max-h-[520px] bg-[#121214] border border-[#26262a] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 
   return (
     <div className="space-y-2 w-full">
@@ -359,48 +385,23 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
 
       {isModalOpen && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden p-2 sm:p-4">
-          {/* Se estiver no celular em formato retrato (vertical), solicita girar o celular para ter espaço de verdade */}
-          {isPortraitMobile ? (
-            <div className="w-full max-w-sm bg-[#121214] border border-[#26262a] rounded-2xl p-6 shadow-2xl text-center space-y-5 flex flex-col items-center relative z-10 m-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#3ea6ff]/20 rounded-full blur-xl animate-pulse" />
-                <div className="relative p-4 bg-[#18181b] border border-[#27272a] rounded-full text-[#3ea6ff]">
-                  <Smartphone className="w-10 h-10 transition-transform duration-1000 ease-in-out" style={{ transform: 'rotate(90deg)' }} />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-extrabold text-white tracking-tight">Gire o Celular na Horizontal</h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Para desenhar sua assinatura com espaço suficiente e precisão, deite o celular na horizontal (modo Paisagem).
+          <div className={modalClasses}>
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-[#3ea6ff]" />
+                  {label}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {isPortraitMobile
+                    ? 'Escreva na vertical com espaço total. O sistema ajusta e desentorta a assinatura automaticamente!'
+                    : 'Desenhe sua assinatura no quadro abaixo.'}
                 </p>
               </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleClose}
-                className="w-full text-zinc-400 hover:text-white border border-[#27272a] rounded-xl h-10 text-xs font-semibold cursor-pointer"
-              >
-                Cancelar
-              </Button>
             </div>
-          ) : (
-            <div className={modalClasses}>
-              {/* Header */}
-              <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <PenTool className="w-4 h-4 text-[#3ea6ff]" />
-                    {label}
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    Desenhe sua assinatura no quadro abaixo.
-                  </p>
-                </div>
-              </div>
 
-              {/* Canvas Area */}
+            {/* Canvas Area */}
             <div className="flex-1 min-h-0 relative bg-white rounded-xl overflow-hidden border border-zinc-300 shadow-inner flex items-center justify-center">
               <canvas
                 ref={canvasRef}
@@ -455,7 +456,6 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
               </div>
             </div>
           </div>
-        )}
         </div>,
         document.body
       )}
