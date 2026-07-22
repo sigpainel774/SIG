@@ -278,6 +278,21 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     setIsModalOpen(false)
   }
 
+  // Detectar orientação portrait no mobile
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false)
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768
+      const isVert = window.innerHeight > window.innerWidth
+      setIsPortraitMobile(isMobile && isVert)
+    }
+
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    return () => window.removeEventListener('resize', checkOrientation)
+  }, [])
+
   // Classes css do container do modal
   const modalClasses = "w-full h-full md:w-[750px] md:h-[480px] bg-[#121214] border border-transparent md:border-[#26262a] md:rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 
@@ -357,6 +372,16 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                 </p>
               </div>
             </div>
+
+            {/* Alerta Mobile para Girar para Paisagem */}
+            {isPortraitMobile && (
+              <div className="mb-2 p-2.5 bg-[#3ea6ff]/10 border border-[#3ea6ff]/30 rounded-xl flex items-center gap-2 text-xs text-[#3ea6ff]">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#3ea6ff] shrink-0" />
+                <span>
+                  <strong>Dica de espaço:</strong> Gire o celular para a horizontal (Paisagem) para desenhar com mais espaço!
+                </span>
+              </div>
+            )}
 
             {/* Canvas Area */}
             <div className="flex-1 min-h-0 relative bg-white rounded-xl overflow-hidden border border-zinc-300 shadow-inner flex items-center justify-center">
