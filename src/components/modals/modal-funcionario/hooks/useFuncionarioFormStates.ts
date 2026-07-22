@@ -471,9 +471,11 @@ export function useFuncionarioFormStates({
         ? `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${ufResidencia}`
         : null
 
+      const cleanEmail = email.trim().toLowerCase()
+
       const basePayload = {
-        id: empId,
         nome,
+        email: cleanEmail,
         cpf: cpf || null,
         cargo: cargo || null,
         status,
@@ -543,7 +545,21 @@ export function useFuncionarioFormStates({
         data_preenchimento: dataPreenchimento || null,
       }
 
+      // Verificar se o e-mail já existe no banco de dados
+      const { data: existingFunc } = await supabase
+        .from('funcionarios')
+        .select('id, email, auth_user_id')
+        .eq('email', cleanEmail)
+        .maybeSingle()
+
       if (isEditing && funcionario) {
+        // Se estiver editando e o e-mail pertencer a OUTRO funcionário
+        if (existingFunc && existingFunc.id !== funcionario.id) {
+          toast.error('Este e-mail já está cadastrado para outro funcionário no sistema.')
+          setLoading(false)
+          return
+        }
+
         const { error } = await supabase
           .from('funcionarios')
           .update(basePayload)
@@ -575,33 +591,68 @@ export function useFuncionarioFormStates({
           await invalidarCachePerfil(authUserId)
         }
       } else {
-        const cleanEmail = email.trim().toLowerCase()
-        const { error } = await supabase
-          .from('funcionarios')
-          .insert({ ...basePayload, email: cleanEmail, is_superadmin: false })
-        if (error) throw error
+        // Se não estiver editando (novo cadastro), mas o funcionário já existir no Supabase por e-mail
+        const targetId = existingFunc ? existingFunc.id : empId
 
-        // Criar vínculo de funcionário na escola logada automaticamente
-        if (escolaId) {
-          const { error: vincError } = await supabase
-            .from('vinculos_funcionarios')
-            .insert({
-              funcionario_id: empId,
-              escola_id: escolaId,
-              cargo: cargo || null,
-              ativo: true,
-              data_inicio: new Date().toISOString().split('T')[0]
-            })
-          if (vincError) console.error('Erro ao vincular escola:', vincError)
+        if (existingFunc) {
+          // Atualiza a ficha do funcionário que já havia sido criado no Supabase
+          const { error } = await supabase
+            .from('funcionarios')
+            .update(basePayload)
+            .eq('id', targetId)
+          if (error) throw error
+        } else {
+          // Cria novo registro de funcionário
+          const { error } = await supabase
+            .from('funcionarios')
+            .insert({ ...basePayload, id: empId, is_superadmin: false })
+          if (error) throw error
         }
 
-        toast.success('Funcionário cadastrado e vinculado com sucesso!')
+        // Criar ou garantir vínculo de funcionário na escola logada automaticamente
+        if (escolaId) {
+          const { data: existingVinc } = await supabase
+            .from('vinculos_funcionarios')
+            .select('id')
+            .eq('funcionario_id', targetId)
+            .eq('escola_id', escolaId)
+            .maybeSingle()
+
+          if (!existingVinc) {
+            const { error: vincError } = await supabase
+              .from('vinculos_funcionarios')
+              .insert({
+                funcionario_id: targetId,
+                escola_id: escolaId,
+                cargo: cargo || null,
+                ativo: true,
+                data_inicio: new Date().toISOString().split('T')[0]
+              })
+            if (vincError) console.error('Erro ao vincular escola:', vincError)
+          } else {
+            await supabase
+              .from('vinculos_funcionarios')
+              .update({ ativo: true, cargo: cargo || null })
+              .eq('id', existingVinc.id)
+          }
+        }
+
+        if (existingFunc) {
+          toast.success('Ficha cadastral atualizada e vinculada ao funcionário do Supabase!')
+        } else {
+          toast.success('Funcionário cadastrado e vinculado com sucesso!')
+        }
       }
 
       handleOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (err: any) {
-      toast.error(`Erro ao salvar funcionário: ${err.message}`)
+      console.error('Erro ao salvar funcionário:', err)
+      if (err.code === '23505' || err.message?.includes('duplicate key') || err.message?.includes('funcionarios_email_key')) {
+        toast.error('Este e-mail já está cadastrado para outro funcionário no sistema.')
+      } else {
+        toast.error(`Erro ao salvar funcionário: ${err.message}`)
+      }
     } finally {
       setLoading(false)
     }
