@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { ModalReport } from '@/components/modals/modal-report'
 import type { LucideIcon } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 // Gargalo #1 corrigido: conteudo como render function () => JSX.
 // O JSX so e avaliado/alocado quando o usuario expande o painel.
@@ -33,6 +34,7 @@ interface Diretriz {
   icon: LucideIcon
   titulo: string
   keywords: string[]
+  apenasNivel1?: boolean
   conteudo: () => React.ReactNode
 }
 
@@ -251,28 +253,73 @@ const diretrizes: Diretriz[] = [
         </p>
       </div>
     )
+  },
+  {
+    id: 'd14_gestao_diretores',
+    icon: UserCog,
+    apenasNivel1: true,
+    titulo: 'Gestão, Inativação e Substituição de Diretores (Nível 1 / Root)',
+    keywords: ['diretor', 'gestao', 'inativar', 'remover', 'trocar', 'transferir', 'assinatura', 'diretor_id', 'lotacao', 'oficial', 'nivel 1', 'root'],
+    conteudo: () => (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Guia exclusivo de nível administrativo central para substituição, inativação e transferência de diretores escolares:
+        </p>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">1. Integridade dos Dados da Escola</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Ao inativar ou substituir um diretor, <strong>nenhum dado de estudante, turma, nota ou frequência é perdido</strong>. Todos os registros pertencem à unidade escolar (ID da Escola) e permanecem 100% preservados.
+        </p>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">2. Inativação vs Exclusão</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          No menu <em>Servidores/Funcionários</em> ou no painel de <em>Acessos</em>, utilize a opção de <strong>Pausar/Inativar</strong> o diretor antigo. Isso revoga imediatamente o acesso dele ao painel, mantendo toda a trilha de auditoria dos documentos assinados por ele no passado.
+        </p>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">3. Definição do Diretor Oficial e Assinaturas Automatizadas</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          O sistema não promove automaticamente o próximo diretor por antiguidade. Para que os comprovantes e atestados passem a sair com o nome e assinatura do novo gestor:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
+          <li>Acesse <strong>Configurações da Escola</strong>.</li>
+          <li>No campo <strong>Diretor Responsável</strong>, selecione o novo diretor da unidade.</li>
+          <li>Cadastre a imagem da assinatura em <strong>Assinatura do Diretor</strong>.</li>
+        </ul>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">4. Transferência de Lotação entre Escolas</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Para mover um diretor de uma escola para outra:
+        </p>
+        <ol className="list-decimal pl-5 space-y-1.5 text-xs text-muted-foreground">
+          <li>Acesse <strong>Gestão de Lotações / Transferências</strong> e transfira a lotação do servidor para a escola de destino.</li>
+          <li>Nas <strong>Configurações</strong> de ambas as escolas, atualize o campo <em>Diretor Responsável</em>: na escola antiga, vincule o substituto; na escola nova, vincule o diretor transferido.</li>
+        </ol>
+      </div>
+    )
   }
 ]
 
 export default function AjudaPage() {
   const [busca, setBusca] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  // Gargalo #3 corrigido: modal montado condicionalmente
   const [reportModalOpen, setReportModalOpen] = useState(false)
+
+  const { isAdminGlobalOrRoot } = useAuthStore()
+  const isNivel1 = isAdminGlobalOrRoot()
 
   const toggleDiretriz = (id: string) => {
     setExpandedId(prev => (prev === id ? null : id))
   }
 
-  // ES-6 + Gargalo #2 corrigidos: useMemo + busca por keywords reais do conteudo
   const diretrizesFiltradas = useMemo(() => {
     const q = busca.toLowerCase().trim()
-    if (!q) return diretrizes
-    return diretrizes.filter(d =>
+    const disponiveis = diretrizes.filter(d => !d.apenasNivel1 || isNivel1)
+    if (!q) return disponiveis
+    return disponiveis.filter(d =>
       d.titulo.toLowerCase().includes(q) ||
       d.keywords.some(kw => kw.includes(q))
     )
-  }, [busca])
+  }, [busca, isNivel1])
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto selection:bg-primary/30 selection:text-foreground pb-12">
