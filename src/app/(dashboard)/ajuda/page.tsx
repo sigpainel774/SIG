@@ -294,6 +294,16 @@ const diretrizes: Diretriz[] = [
           <li>Acesse <strong>Gestão de Lotações / Transferências</strong> e transfira a lotação do servidor para a escola de destino.</li>
           <li>Nas <strong>Configurações</strong> de ambas as escolas, atualize o campo <em>Diretor Responsável</em>: na escola antiga, vincule o substituto; na escola nova, vincule o diretor transferido.</li>
         </ol>
+
+        <h4 className="text-foreground font-bold text-xs uppercase tracking-wider mt-4">5. Desvinculação Automática do Diretor Responsável</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Para evitar que escolas continuem associadas a gestores inativos ou transferidos:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground">
+          <li>Ao <strong>Pausar</strong> ou <strong>Excluir</strong> o acesso de um diretor no painel <em>Admin &gt; Acessos</em>, a chave <em>diretor_id</em> da escola é zerada automaticamente.</li>
+          <li>Ao <strong>Remover</strong> ou <strong>Mover</strong> a lotação do diretor na <em>Gestão de Lotações</em>, o vínculo com a escola de origem é limpo automaticamente.</li>
+          <li>No modal de edição da escola, o seletor <em>Diretor Responsável</em> volta automaticamente para <strong>"-- Nenhum Diretor Selecionado --"</strong> até que um novo gestor Nível 2 seja atribuído.</li>
+        </ul>
       </div>
     )
   }

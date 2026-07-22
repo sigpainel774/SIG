@@ -33,7 +33,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       const supabase = createClient()
       const { data, error } = await supabase
         .from('turmas')
-        .select('id, nome, ano_letivo, school_id:escola_id')
+        .select('id, nome, ano_letivo, escola_id')
         .is('deleted_at', null)
       if (error) throw error
       return (data || []).map((t: any) => ({ ...t, school_id: t.escola_id })) // Map compatível

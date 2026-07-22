@@ -67,7 +67,7 @@ export function SecaoMatricula() {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
-              {turmas.filter(t => t.escola_id === escolaId).map((t) => (
+              {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
                 <SelectItem key={t.id} value={t.id}>{t.nome} ({t.ano_letivo})</SelectItem>
               ))}
             </SelectContent>
@@ -111,7 +111,7 @@ export function SecaoMatricula() {
               onValueChange={(val) => {
                 setSerie(val || '')
                 if (val) {
-                  const selectedTurma = turmas.find(t => t.nome === val && t.escola_id === escolaId)
+                  const selectedTurma = turmas.find(t => t.nome === val && (t.escola_id || t.school_id) === escolaId)
                   if (selectedTurma) {
                     setTurmaId(selectedTurma.id)
                   }
@@ -124,10 +124,10 @@ export function SecaoMatricula() {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
-                {turmas.filter(t => t.escola_id === escolaId).map((t) => (
+                {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
                   <SelectItem key={t.id} value={t.nome}>{t.nome} ({t.ano_letivo})</SelectItem>
                 ))}
-                {turmas.filter(t => t.escola_id === escolaId).length === 0 && (
+                {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).length === 0 && (
                   <div className="p-2 text-xs text-zinc-500 text-center">Nenhuma turma cadastrada</div>
                 )}
               </SelectContent>
