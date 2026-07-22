@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { PenTool, Trash2, RefreshCw, X, Check, Loader2 } from 'lucide-react'
+import { PenTool, Trash2, RefreshCw, X, Check, Loader2, Smartphone } from 'lucide-react'
 import { Button } from './button'
 import { cn, urlToBase64 } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -358,32 +358,49 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
       </div>
 
       {isModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-hidden p-4">
-          <div className={modalClasses}>
-            {/* Header */}
-            <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <PenTool className="w-4 h-4 text-[#3ea6ff]" />
-                  {label}
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Desenhe sua assinatura no quadro abaixo.
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden p-2 sm:p-4">
+          {/* Se estiver no celular em formato retrato (vertical), solicita girar o celular para ter espaço de verdade */}
+          {isPortraitMobile ? (
+            <div className="w-full max-w-sm bg-[#121214] border border-[#26262a] rounded-2xl p-6 shadow-2xl text-center space-y-5 flex flex-col items-center relative z-10 m-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#3ea6ff]/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative p-4 bg-[#18181b] border border-[#27272a] rounded-full text-[#3ea6ff]">
+                  <Smartphone className="w-10 h-10 transition-transform duration-1000 ease-in-out" style={{ transform: 'rotate(90deg)' }} />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-extrabold text-white tracking-tight">Gire o Celular na Horizontal</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Para desenhar sua assinatura com espaço suficiente e precisão, deite o celular na horizontal (modo Paisagem).
                 </p>
               </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClose}
+                className="w-full text-zinc-400 hover:text-white border border-[#27272a] rounded-xl h-10 text-xs font-semibold cursor-pointer"
+              >
+                Cancelar
+              </Button>
             </div>
-
-            {/* Alerta Mobile para Girar para Paisagem */}
-            {isPortraitMobile && (
-              <div className="mb-2 p-2.5 bg-[#3ea6ff]/10 border border-[#3ea6ff]/30 rounded-xl flex items-center gap-2 text-xs text-[#3ea6ff]">
-                <RefreshCw className="w-4 h-4 animate-spin text-[#3ea6ff] shrink-0" />
-                <span>
-                  <strong>Dica de espaço:</strong> Gire o celular para a horizontal (Paisagem) para desenhar com mais espaço!
-                </span>
+          ) : (
+            <div className={modalClasses}>
+              {/* Header */}
+              <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <PenTool className="w-4 h-4 text-[#3ea6ff]" />
+                    {label}
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Desenhe sua assinatura no quadro abaixo.
+                  </p>
+                </div>
               </div>
-            )}
 
-            {/* Canvas Area */}
+              {/* Canvas Area */}
             <div className="flex-1 min-h-0 relative bg-white rounded-xl overflow-hidden border border-zinc-300 shadow-inner flex items-center justify-center">
               <canvas
                 ref={canvasRef}
@@ -438,6 +455,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
               </div>
             </div>
           </div>
+        )}
         </div>,
         document.body
       )}
