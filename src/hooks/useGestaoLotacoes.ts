@@ -127,7 +127,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
               id: v.id,
               funcionario_id: v.funcionario_id ?? '',
               escola_id: v.school_id ?? '',
-              cargo: v.cargo ?? null,
+              cargo: v.cargo ?? f.cargo ?? null,
               ativo: v.ativo,
               data_inicio: v.data_inicio ?? null,
               escolaNome: v.school_id ? (escolaMap[v.school_id] ?? 'Escola desconhecida') : undefined,
@@ -146,7 +146,8 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
             if (fRaw?.is_superadmin) return false
             if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
             const acessosList = fRaw?.acessos_usuarios ?? []
-            if (acessosList.some((a: any) => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
+            // Ocultar nível 1 e nível 2 de OUTRAS escolas, permitindo nível 2 da escola atual
+            if (acessosList.some((a: any) => a.ativo && (a.nivel === 1 || (a.nivel === 2 && a.escola_id !== escolaAtivaId)))) return false
           }
 
           if (escolaAtivaId) {
@@ -453,6 +454,47 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
   }
 
+  const handleAtualizarCargoLotacao = async (lotacaoId: string, novoCargo: string) => {
+    if (!selecionado || !lotacaoId || !novoCargo) {
+      toast.error('Selecione o novo cargo.')
+      return
+    }
+    setSalvando(true)
+    try {
+      const { error } = await supabase
+        .from('vinculos_funcionarios')
+        .update({ cargo: novoCargo })
+        .eq('id', lotacaoId)
+      if (error) throw error
+
+      await supabase
+        .from('funcionarios')
+        .update({ cargo: novoCargo })
+        .eq('id', selecionado.id)
+
+      await logAudit({
+        supabase,
+        action: 'UPDATE',
+        entity: 'vinculos_funcionarios',
+        entityId: lotacaoId,
+        newData: { cargo: novoCargo },
+        performedBy: performer,
+      })
+
+      toast.success('Cargo da lotação atualizado com sucesso!')
+
+      if (selecionado?.auth_user_id) {
+        await invalidarCacheHelper(selecionado.auth_user_id)
+      }
+
+      await carregar()
+    } catch (err: unknown) {
+      toast.error(`Erro ao atualizar cargo da lotação: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      if (isMounted.current) setSalvando(false)
+    }
+  }
+
   return {
     funcionarios,
     escolas,
@@ -474,6 +516,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     handleMoverFuncionario,
     handleRemoverLotacao,
     handleSolicitarTransferencia,
+    handleAtualizarCargoLotacao,
     carregar,
   }
 }

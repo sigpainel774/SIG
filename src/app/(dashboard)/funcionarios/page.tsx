@@ -169,7 +169,7 @@ export default function FuncionariosPage() {
             }
           }
           if (isDirUser) {
-            // Se for diretor (nível 2), só deve enxergar nível 3 para baixo, portanto oculta superadmin, root, nível 1 e nível 2
+            // Se for diretor (nível 2), oculta superadmin, root, nível 1 e nível 2 de outras escolas
             if (f.is_superadmin) return false
             if (
               f.nome?.toLowerCase() === 'root' ||
@@ -180,11 +180,12 @@ export default function FuncionariosPage() {
             const acessosList =
               (f.acessos_usuarios as Array<{
                 nivel: number | null
+                escola_id?: string | null
                 ativo: boolean
               }>) ?? []
             if (
               acessosList.some(
-                (a) => (a.nivel === 1 || a.nivel === 2) && a.ativo
+                (a) => a.ativo && (a.nivel === 1 || (a.nivel === 2 && a.escola_id !== escolaId))
               )
             ) {
               return false

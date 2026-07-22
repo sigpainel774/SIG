@@ -549,6 +549,25 @@ export function useFuncionarioFormStates({
           .update(basePayload)
           .eq('id', funcionario.id)
         if (error) throw error
+
+        // Sincronizar o cargo no vínculo de lotação ativo
+        if (cargo) {
+          let vincQuery = supabase
+            .from('vinculos_funcionarios')
+            .update({ cargo })
+            .eq('funcionario_id', funcionario.id)
+            .eq('ativo', true)
+
+          if (escolaId) {
+            vincQuery = vincQuery.eq('escola_id', escolaId)
+          }
+
+          const { error: vincErr } = await vincQuery
+          if (vincErr) {
+            console.error('Erro ao sincronizar vínculo de lotação:', vincErr)
+          }
+        }
+
         toast.success('Funcionário atualizado com sucesso!')
 
         if (authUserId) {
