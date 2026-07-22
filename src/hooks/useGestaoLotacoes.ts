@@ -276,6 +276,15 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
          .eq('id', origemId)
       if (deactivateError) throw deactivateError
 
+      // Limpa automaticamente o diretor_id da escola de origem se o funcionário for o diretor cadastrado
+      if (selecionado?.id && lotacaoOrigem?.escola_id) {
+        await supabase
+          .from('escolas')
+          .update({ diretor_id: null })
+          .eq('id', lotacaoOrigem.escola_id)
+          .eq('diretor_id', selecionado.id)
+      }
+
       const { error: insertError } = await supabase.from('vinculos_funcionarios').insert({
         funcionario_id: selecionado.id,
         escola_id: destinoEscolaId,
@@ -317,6 +326,15 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
         .eq('id', lotacao.id)
       if (error) throw error
+
+      // Limpa automaticamente o diretor_id da escola se o funcionário for o diretor cadastrado
+      if (selecionado?.id && lotacao.escola_id) {
+        await supabase
+          .from('escolas')
+          .update({ diretor_id: null })
+          .eq('id', lotacao.escola_id)
+          .eq('diretor_id', selecionado.id)
+      }
 
       await logAudit({
         supabase,

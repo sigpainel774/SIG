@@ -54,18 +54,24 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       const supabase = createClient()
       const { data, error } = await supabase
         .from('funcionarios')
-        .select('id, nome, cargo')
+        .select('id, nome, cargo, acessos_usuarios(nivel, ativo)')
         .is('deleted_at', null)
         .order('nome', { ascending: true })
       if (active && data) {
-        setDiretores(data)
+        const diretoresFiltrados = data.filter((f: any) => {
+          const temAcessoNivel2 = Array.isArray(f.acessos_usuarios) && f.acessos_usuarios.some((a: any) => a.nivel === 2 && a.ativo !== false)
+          const temCargoDiretor = f.cargo ? f.cargo.toUpperCase().includes('DIRETOR') : false
+          const isAtual = escolaToEdit?.diretor_id === f.id
+          return temAcessoNivel2 || temCargoDiretor || isAtual
+        })
+        setDiretores(diretoresFiltrados)
       }
     }
     fetchDiretores()
     return () => {
       active = false
     }
-  }, [open])
+  }, [open, escolaToEdit?.diretor_id])
 
   useEffect(() => {
     if (escolaToEdit) {
