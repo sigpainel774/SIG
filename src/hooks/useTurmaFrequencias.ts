@@ -83,7 +83,11 @@ export function useTurmaFrequencias({
   }
 
   const handleLancarFrequencia = async (alunoId: string, presenca: boolean) => {
-    if (!escolaAtivaId) return
+    const targetEscolaId = escolaAtivaId || turma?.escola_id
+    if (!targetEscolaId) {
+      toast.error('Escola não identificada para lançar frequência.')
+      return
+    }
     if (!selectedMateriaId) {
       toast.error('Selecione uma matéria antes de lançar a frequência.')
       return
@@ -103,7 +107,7 @@ export function useTurmaFrequencias({
         .upsert({
           aluno_id: alunoId,
           turma_id: turma.id,
-          escola_id: escolaAtivaId ?? '',
+          escola_id: targetEscolaId,
           data: dataFreq,
           presenca: presenca,
           materia_id: selectedMateriaId,

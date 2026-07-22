@@ -544,11 +544,8 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         latitude: pessoaForm.latitude ?? null,
         longitude: pessoaForm.longitude ?? null,
         serie: serie || null,
+        escola_id: escolaId || alunoEditar?.escola_id || null,
         dados_matricula: dadosMatriculaObj
-      }
-
-      if (!alunoEditar?.id) {
-        payload.escola_id = escolaId || null
       }
 
       let savedAlunoId = alunoEditar?.id
