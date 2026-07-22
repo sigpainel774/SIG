@@ -21,6 +21,7 @@ interface EscolaToEdit {
   localizacao?: string | null
   latitude?: number | null
   longitude?: number | null
+  diretor_id?: string | null
 }
 
 interface ModalEscolaProps {
@@ -42,7 +43,29 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
   const [localizacao, setLocalizacao] = useState('URBANA')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
+  const [diretores, setDiretores] = useState<any[]>([])
+  const [diretorId, setDiretorId] = useState('')
   const sessionTimestamp = useRef(Date.now()).current
+
+  useEffect(() => {
+    if (!open) return
+    let active = true
+    const fetchDiretores = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('funcionarios')
+        .select('id, nome, cargo')
+        .is('deleted_at', null)
+        .order('nome', { ascending: true })
+      if (active && data) {
+        setDiretores(data)
+      }
+    }
+    fetchDiretores()
+    return () => {
+      active = false
+    }
+  }, [open])
 
   useEffect(() => {
     if (escolaToEdit) {
@@ -55,6 +78,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setLocalizacao(escolaToEdit.localizacao || 'URBANA')
       setLatitude(escolaToEdit.latitude !== undefined && escolaToEdit.latitude !== null ? String(escolaToEdit.latitude) : '')
       setLongitude(escolaToEdit.longitude !== undefined && escolaToEdit.longitude !== null ? String(escolaToEdit.longitude) : '')
+      setDiretorId(escolaToEdit.diretor_id || '')
     } else {
       setNome('')
       setInep('')
@@ -65,6 +89,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       setLocalizacao('URBANA')
       setLatitude('')
       setLongitude('')
+      setDiretorId('')
     }
   }, [escolaToEdit, open])
 
@@ -131,7 +156,8 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             logo_url: logoUrl || null,
             localizacao,
             latitude: isNaN(latNum as any) ? null : latNum,
-            longitude: isNaN(lngNum as any) ? null : lngNum
+            longitude: isNaN(lngNum as any) ? null : lngNum,
+            diretor_id: diretorId || null
           } as any)
           .eq('id', escolaToEdit.id)
 
@@ -148,7 +174,8 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
             logo_url: logoUrl || null,
             localizacao,
             latitude: isNaN(latNum as any) ? null : latNum,
-            longitude: isNaN(lngNum as any) ? null : lngNum
+            longitude: isNaN(lngNum as any) ? null : lngNum,
+            diretor_id: diretorId || null
           } as any)
 
         if (error) throw error
@@ -212,6 +239,22 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
                 disabled
               />
             </div>
+          </div>
+
+          <div>
+            <Label className="text-xs text-[#aaa]">Diretor Responsável (Assinatura Oficial)</Label>
+            <select
+              value={diretorId}
+              onChange={(e) => setDiretorId(e.target.value)}
+              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1 focus:border-purple-500"
+            >
+              <option value="">-- Nenhum Diretor Selecionado --</option>
+              {diretores.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nome} {d.cargo ? `(${d.cargo})` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
