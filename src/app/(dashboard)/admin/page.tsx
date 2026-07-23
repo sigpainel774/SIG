@@ -300,11 +300,11 @@ export default function AdminHubPage() {
   return (
     <div className="space-y-6 select-none -mt-3">
       {/* ── Top Header Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#232328] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         {/* Title + ROOT badge */}
         <div className="flex items-center gap-3">
-          <ShieldCheck className="w-7 h-7 text-white stroke-[2.2]" />
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <ShieldCheck className="w-7 h-7 text-foreground stroke-[2.2]" />
+          <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
             Sapeaçu — Administração do Sistema
             <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
               ROOT
@@ -314,10 +314,10 @@ export default function AdminHubPage() {
 
         {/* User Status & Actions */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-[#17171a] px-3 py-1.5 rounded-xl border border-[#27272a]">
-            <User className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-card px-3 py-1.5 rounded-xl border border-border">
+            <User className="w-4 h-4 text-muted-foreground" />
             <span>
-              Logado como: <strong className="text-white">{userEmail}</strong>
+              Logado como: <strong className="text-foreground">{userEmail}</strong>
             </span>
           </div>
 
@@ -329,7 +329,7 @@ export default function AdminHubPage() {
             <span>Atualizar Cache</span>
           </button>
 
-          <ThemeSwitcher buttonClassName="bg-[#17171a] border border-[#27272a] hover:bg-[#202024] text-slate-300" />
+          <ThemeSwitcher buttonClassName="bg-card border border-border hover:bg-muted text-foreground" />
 
           <button
             onClick={handleLogout}
@@ -355,20 +355,20 @@ export default function AdminHubPage() {
           return (
             <div
               key={group.id}
-              className="bg-[#121214] border border-[#232326] rounded-2xl shadow-xl overflow-hidden"
+              className="bg-card border border-border rounded-2xl shadow-md overflow-hidden"
             >
               {/* Group Header */}
               <button
                 onClick={() => toggleGroup(group.id)}
                 aria-expanded={isOpen}
-                className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-muted/50 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
                   <GroupIcon
                     className={cn('w-5 h-5 shrink-0', group.headerColor)}
                     strokeWidth={2}
                   />
-                  <span className="text-white font-bold text-sm md:text-base tracking-wide">
+                  <span className="text-foreground font-bold text-sm md:text-base tracking-wide">
                     {group.label}
                   </span>
                   <span
@@ -381,7 +381,7 @@ export default function AdminHubPage() {
                   </span>
                 </div>
 
-                <div className="text-[#555] group-hover:text-[#888] transition-colors shrink-0">
+                <div className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0">
                   {isOpen ? (
                     <ChevronDown className="w-4 h-4" />
                   ) : (
@@ -408,7 +408,7 @@ export default function AdminHubPage() {
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => e.key === 'Enter' && router.push(item.path)}
-                          className="bg-[#17171a] hover:bg-[#202024] border border-[#27272a] hover:border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm min-h-[110px]"
+                          className="bg-background hover:bg-muted/70 border border-border hover:border-foreground/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm min-h-[110px]"
                         >
                           <div className="mb-2.5 flex items-center justify-center">
                             <ItemIcon
@@ -419,10 +419,10 @@ export default function AdminHubPage() {
                               strokeWidth={1.8}
                             />
                           </div>
-                          <h3 className="font-bold text-white text-[13px] leading-snug">
+                          <h3 className="font-bold text-foreground text-[13px] leading-snug">
                             {item.title}
                           </h3>
-                          <p className="text-[11px] text-[#8e8e93] font-normal mt-0.5 leading-tight">
+                          <p className="text-[11px] text-muted-foreground font-normal mt-0.5 leading-tight">
                             {item.subtitle}
                           </p>
                         </div>

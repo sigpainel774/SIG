@@ -135,7 +135,7 @@ export default function OcorrenciasPage() {
 
             <Button 
               variant="outline" 
-              className="bg-background border-border text-foreground hover:bg-hoverCustom h-10"
+              className="bg-background border-border text-foreground hover:bg-accent hover:text-accent-foreground h-10"
               onClick={fetchOcorrencias}
               disabled={loading}
               title="Recarregar ocorrências"

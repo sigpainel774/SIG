@@ -148,10 +148,10 @@ export function StandardTable<T,>({
 }: StandardTableProps<T>) {
 
   return (
-    <div className={cn("rounded-2xl border border-borderCustom overflow-hidden bg-[#121212] shadow-md", className)}>
+    <div className={cn("rounded-2xl border border-border overflow-hidden bg-card text-card-foreground shadow-sm", className)}>
       <Table className={tableClassName}>
         <TableHeader>
-          <TableRow className="border-b border-borderCustom bg-[#0d0d0d] text-zinc-400 hover:bg-transparent">
+          <TableRow className="border-b border-border bg-muted/60 text-muted-foreground hover:bg-transparent">
             {columns.map((col, index) => (
               <TableHead
                 key={index}
@@ -165,9 +165,9 @@ export function StandardTable<T,>({
         <TableBody>
           {loading ? (
             <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={columns.length} className="p-8 text-center text-zinc-500">
+              <TableCell colSpan={columns.length} className="p-8 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-highlight" />
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   <span>{loadingMessage}</span>
                 </div>
               </TableCell>
@@ -184,7 +184,7 @@ export function StandardTable<T,>({
               return (
                 <TableRow
                   key={keyExtractor(item, index)}
-                  className={cn("hover:bg-hoverCustom/30 transition-colors border-b border-borderCustom/50", customRowClass)}
+                  className={cn("hover:bg-muted/50 transition-colors border-b border-border/60", customRowClass)}
                 >
                   {columns.map((col, colIndex) => (
                     <TableCell key={colIndex} className={cn("p-3.5", col.className)}>
