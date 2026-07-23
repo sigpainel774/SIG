@@ -27,7 +27,7 @@ const HEADER_LABELS = [
   'ENDERECO', 'ENDEREÇO', 'ENDERECO POR EXTENSO', 'ENDEREÇO POR EXTENSO', 'RESIDENCIA'
 ]
 
-function isHeaderLabel(val: string | null | undefined): boolean {
+export function isHeaderLabel(val: string | null | undefined): boolean {
   if (!val) return true
   const upper = val.trim().toUpperCase().replace(/[:._\-\–]/g, '')
   return HEADER_LABELS.some((label) => upper === label || upper === label.replace(/\s+/g, ''))
@@ -42,12 +42,10 @@ export function parseDateToISO(dateStr: string | null | undefined): string | nul
   const cleaned = dateStr.trim()
   if (!cleaned) return null
 
-  // Já no formato YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
     return cleaned
   }
 
-  // Formato DD/MM/YYYY ou DD-MM-YYYY
   const brMatch = cleaned.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
   if (brMatch) {
     const day = brMatch[1].padStart(2, '0')
@@ -56,7 +54,6 @@ export function parseDateToISO(dateStr: string | null | undefined): string | nul
     return `${year}-${month}-${day}`
   }
 
-  // Formato extenso (ex: 15 de agosto de 2012)
   const meses: Record<string, string> = {
     janeiro: '01', fev: '02', fevereiro: '02', marco: '03', março: '03',
     abril: '04', maio: '05', junho: '06', julho: '07', agosto: '08',
@@ -74,62 +71,173 @@ export function parseDateToISO(dateStr: string | null | undefined): string | nul
   return null
 }
 
-/**
- * Remove sufixos e rótulos comuns (ex: "Nome: João" -> "João")
- */
 function cleanFieldValue(val: string | undefined): string {
   if (!val) return ''
   const cleaned = val
-    .replace(/^([A-Z0-9\s._\-–:]+):\s*/i, '') // Remove rótulo inicial como "NOME DO ALUNO:"
+    .replace(/^([A-Z0-9\s._\-–:]+):\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
   return isHeaderLabel(cleaned) ? '' : cleaned
 }
 
 /**
- * Processa o arquivo .docx lendo células do quadro (A1 a A8) e utilizando fallback por Regex.
+ * Processa um documento Word (.docx) varrendo todas as linhas e colunas das tabelas.
+ * Retorna uma lista de alunos extraídos (suporta tabelas com múltiplos alunos por linha ou tabelas chave-valor).
  */
-export async function parseDocxStudentFile(file: File): Promise<ExtractedStudentData> {
+export async function parseDocxStudentFile(file: File): Promise<ExtractedStudentData[]> {
   const arrayBuffer = await file.arrayBuffer()
 
-  // 1. Extração do HTML da tabela do Word e Texto Bruto
   const htmlResult = await mammoth.convertToHtml({ arrayBuffer })
   const textResult = await mammoth.extractRawText({ arrayBuffer })
 
   const rawHtml = htmlResult.value || ''
   const rawText = textResult.value || ''
 
-  let nome = ''
-  let data_nascimento: string | null = null
-  let telefone: string | null = null
-  let rg: string | null = null
-  let cpf: string | null = null
-  let nis: string | null = null
-  let cartao_sus: string | null = null
-  let endereco: string | null = null
-  let nome_mae: string | null = null
-  let nome_pai: string | null = null
+  const extractedStudents: ExtractedStudentData[] = []
 
-  // 2. Tentar extrair da estrutura da tabela HTML (td/tr)
-  const cellMatches: string[] = []
   if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
     try {
       const parser = new DOMParser()
       const doc = parser.parseFromString(rawHtml, 'text/html')
-      const cells = doc.querySelectorAll('td')
-      cells.forEach((cell) => {
-        const text = (cell.textContent || '').trim()
-        if (text) {
-          cellMatches.push(text)
+      const tables = doc.querySelectorAll('table')
+
+      tables.forEach((table) => {
+        const rows = Array.from(table.querySelectorAll('tr'))
+        if (rows.length === 0) return
+
+        // ── CASO A: Tabela Multilinhas com Colunas (Ex: Linha 0 = Cabeçalhos, Linhas 1..N = Alunos) ──
+        const headerRow = rows[0]
+        const headerCells = Array.from(headerRow.querySelectorAll('th, td')).map((c) =>
+          (c.textContent || '').trim().toUpperCase()
+        )
+
+        // Verificar se a primeira linha define colunas
+        const isMultiRowColumnTable =
+          headerCells.length >= 2 && headerCells.some((h) => isHeaderLabel(h))
+
+        if (isMultiRowColumnTable && rows.length > 1) {
+          // Mapear índices das colunas
+          let colNome = headerCells.findIndex((h) => h.includes('NOME') || h.includes('ALUNO'))
+          let colNasc = headerCells.findIndex((h) => h.includes('NASC') || h.includes('DATA'))
+          let colTel = headerCells.findIndex((h) => h.includes('TEL') || h.includes('CONTATO') || h.includes('CEL'))
+          let colRg = headerCells.findIndex((h) => h.includes('RG') || h.includes('IDENT'))
+          let colCpf = headerCells.findIndex((h) => h.includes('CPF'))
+          let colNis = headerCells.findIndex((h) => h.includes('NIS'))
+          let colSus = headerCells.findIndex((h) => h.includes('SUS'))
+          let colEnd = headerCells.findIndex((h) => h.includes('END') || h.includes('RESID'))
+
+          // Fallback por ordem de colunas A1 a A8 se não achou pelos nomes
+          if (colNome === -1) colNome = 0
+          if (colNasc === -1 && headerCells.length > 1) colNasc = 1
+          if (colTel === -1 && headerCells.length > 2) colTel = 2
+          if (colRg === -1 && headerCells.length > 3) colRg = 3
+          if (colCpf === -1 && headerCells.length > 4) colCpf = 4
+          if (colNis === -1 && headerCells.length > 5) colNis = 5
+          if (colSus === -1 && headerCells.length > 6) colSus = 6
+          if (colEnd === -1 && headerCells.length > 7) colEnd = 7
+
+          // Varrer cada linha de dados (da linha 1 em diante)
+          for (let r = 1; r < rows.length; r++) {
+            const dataRowCells = Array.from(rows[r].querySelectorAll('td, th')).map((c) =>
+              (c.textContent || '').trim()
+            )
+            if (dataRowCells.length === 0) continue
+
+            const rawNome = cleanFieldValue(dataRowCells[colNome])
+            if (!rawNome || isHeaderLabel(rawNome)) continue // Pula se não tiver nome ou for outro cabeçalho
+
+            const rawNasc = cleanFieldValue(dataRowCells[colNasc])
+            const rawTel = cleanFieldValue(dataRowCells[colTel])
+            const rawRg = cleanFieldValue(dataRowCells[colRg])
+            const rawCpf = cleanFieldValue(dataRowCells[colCpf])
+            const rawNis = cleanFieldValue(dataRowCells[colNis])
+            const rawSus = cleanFieldValue(dataRowCells[colSus])
+            const rawEnd = cleanFieldValue(dataRowCells[colEnd])
+
+            let score = 30
+            if (rawNasc) score += 20
+            if (rawCpf) score += 15
+            if (rawRg) score += 10
+            if (rawTel) score += 10
+            if (rawEnd) score += 15
+
+            extractedStudents.push({
+              fileName: file.name,
+              nome: rawNome,
+              data_nascimento: parseDateToISO(rawNasc),
+              telefone: rawTel || null,
+              rg: rawRg || null,
+              cpf: rawCpf || null,
+              nis: rawNis || null,
+              cartao_sus: rawSus || null,
+              endereco: rawEnd || null,
+              confidenceScore: Math.min(score, 100),
+              rawText
+            })
+          }
+          return
+        }
+
+        // ── CASO B: Tabela Chave-Valor de 2 Colunas (Linha a Linha) ──
+        let singleNome = ''
+        let singleNasc: string | null = null
+        let singleTel: string | null = null
+        let singleRg: string | null = null
+        let singleCpf: string | null = null
+        let singleNis: string | null = null
+        let singleSus: string | null = null
+        let singleEnd: string | null = null
+
+        rows.forEach((row) => {
+          const cells = Array.from(row.querySelectorAll('td')).map((c) => (c.textContent || '').trim())
+          if (cells.length >= 2) {
+            const label = cells[0].toUpperCase()
+            const val = cleanFieldValue(cells[1])
+
+            if (!val || isHeaderLabel(val)) return
+
+            if (label.includes('NOME') || label.includes('ALUNO')) singleNome = val
+            else if (label.includes('NASC')) singleNasc = parseDateToISO(val)
+            else if (label.includes('TEL') || label.includes('CONTATO') || label.includes('CEL')) singleTel = val
+            else if (label.includes('RG') || label.includes('IDENT')) singleRg = val
+            else if (label.includes('CPF')) singleCpf = val
+            else if (label.includes('NIS')) singleNis = val
+            else if (label.includes('SUS')) singleSus = val
+            else if (label.includes('END') || label.includes('RESID')) singleEnd = val
+          }
+        })
+
+        if (singleNome && !isHeaderLabel(singleNome)) {
+          let score = 30
+          if (singleNasc) score += 20
+          if (singleCpf) score += 15
+          if (singleRg) score += 10
+          if (singleTel) score += 10
+          if (singleEnd) score += 15
+
+          extractedStudents.push({
+            fileName: file.name,
+            nome: singleNome,
+            data_nascimento: singleNasc,
+            telefone: singleTel,
+            rg: singleRg,
+            cpf: singleCpf,
+            nis: singleNis,
+            cartao_sus: singleSus,
+            endereco: singleEnd,
+            confidenceScore: Math.min(score, 100),
+            rawText
+          })
         }
       })
     } catch (e) {
-      console.warn('Erro ao ler DOM da tabela do Word:', e)
+      console.warn('Erro ao processar estrutura DOM de tabelas:', e)
     }
   }
 
-  // Se não tiver DOMParser ou poucas células, faz parse por Regex
-  if (cellMatches.length === 0) {
+  // ── CASO C: Parse Sequencial ou Regex (Se não encontrou alunos em tabelas HTML estruturadas) ──
+  if (extractedStudents.length === 0) {
+    const cellMatches: string[] = []
     const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi
     let match: RegExpExecArray | null
     while ((match = tdRegex.exec(rawHtml)) !== null) {
@@ -138,147 +246,69 @@ export async function parseDocxStudentFile(file: File): Promise<ExtractedStudent
         cellMatches.push(text)
       }
     }
-  }
 
-  // 3. Mapeamento A1-A8 na estrutura de tabela
-  if (cellMatches.length > 0) {
-    let startOffset = 0
+    if (cellMatches.length > 0) {
+      let startOffset = 0
+      if (isHeaderLabel(cellMatches[0]) || cellMatches[0].toUpperCase().includes('FICHA')) {
+        if (cellMatches.length >= 16 && isHeaderLabel(cellMatches[1])) {
+          startOffset = 8
+        } else {
+          startOffset = 1
+        }
+      }
 
-    // Se a célula 0 for o rótulo "NOME" ou "NOME DO ALUNO" ou um cabeçalho genérico,
-    // significa que a primeira linha/bloco contém os cabeçalhos. Os dados reais começam na célula seguinte ou linha de baixo.
-    if (isHeaderLabel(cellMatches[0]) || cellMatches[0].toUpperCase().includes('FICHA')) {
-      // Se houver 16 ou mais células (8 de cabeçalho + 8 de dados), a linha de dados começa no índice 8
-      if (cellMatches.length >= 16 && isHeaderLabel(cellMatches[1])) {
-        startOffset = 8
-      } else {
-        // Se a primeira célula for só um título genérico (ex: "FICHA DO ALUNO"), pula 1 célula
-        startOffset = 1
+      const getCell = (idx: number) => cellMatches[startOffset + idx] || ''
+
+      const rawA1 = cleanFieldValue(getCell(0))
+      const rawA2 = cleanFieldValue(getCell(1))
+      const rawA3 = cleanFieldValue(getCell(2))
+      const rawA4 = cleanFieldValue(getCell(3))
+      const rawA5 = cleanFieldValue(getCell(4))
+      const rawA6 = cleanFieldValue(getCell(5))
+      const rawA7 = cleanFieldValue(getCell(6))
+      const rawA8 = cleanFieldValue(getCell(7))
+
+      let nome = rawA1 && !isHeaderLabel(rawA1) ? rawA1 : ''
+      let data_nascimento = rawA2 && !isHeaderLabel(rawA2) ? parseDateToISO(rawA2) : null
+      let telefone = rawA3 && !isHeaderLabel(rawA3) ? rawA3 : null
+      let rg = rawA4 && !isHeaderLabel(rawA4) ? rawA4 : null
+      let cpf = rawA5 && !isHeaderLabel(rawA5) ? rawA5 : null
+      let nis = rawA6 && !isHeaderLabel(rawA6) ? rawA6 : null
+      let cartao_sus = rawA7 && !isHeaderLabel(rawA7) ? rawA7 : null
+      let endereco = rawA8 && !isHeaderLabel(rawA8) ? rawA8 : null
+
+      // Regex fallback se nome faltou
+      if (!nome || isHeaderLabel(nome)) {
+        const nomeMatch = rawText.match(/(?:Nome(?:\s+do\s+aluno)?|Aluno|Estudante):\s*([^\r\n]+)/i)
+        if (nomeMatch && !isHeaderLabel(nomeMatch[1])) {
+          nome = nomeMatch[1].trim()
+        }
+      }
+
+      if (nome && !isHeaderLabel(nome)) {
+        let score = 30
+        if (data_nascimento) score += 20
+        if (cpf) score += 15
+        if (rg) score += 10
+        if (telefone) score += 10
+        if (endereco) score += 15
+
+        extractedStudents.push({
+          fileName: file.name,
+          nome,
+          data_nascimento,
+          telefone,
+          rg,
+          cpf,
+          nis,
+          cartao_sus,
+          endereco,
+          confidenceScore: Math.min(score, 100),
+          rawText
+        })
       }
     }
-
-    const getCell = (idx: number) => cellMatches[startOffset + idx] || ''
-
-    // Mapeamento A1 a A8 (ou linha de dados)
-    const rawA1 = cleanFieldValue(getCell(0)) // A1: Nome
-    const rawA2 = cleanFieldValue(getCell(1)) // A2: Data de Nascimento
-    const rawA3 = cleanFieldValue(getCell(2)) // A3: Contato
-    const rawA4 = cleanFieldValue(getCell(3)) // A4: RG
-    const rawA5 = cleanFieldValue(getCell(4)) // A5: CPF
-    const rawA6 = cleanFieldValue(getCell(5)) // A6: NIS
-    const rawA7 = cleanFieldValue(getCell(6)) // A7: SUS
-    const rawA8 = cleanFieldValue(getCell(7)) // A8: Endereço
-
-    if (rawA1 && !isHeaderLabel(rawA1)) nome = rawA1
-    if (rawA2 && !isHeaderLabel(rawA2)) data_nascimento = parseDateToISO(rawA2)
-    if (rawA3 && !isHeaderLabel(rawA3)) telefone = rawA3
-    if (rawA4 && !isHeaderLabel(rawA4)) rg = rawA4
-    if (rawA5 && !isHeaderLabel(rawA5)) cpf = rawA5
-    if (rawA6 && !isHeaderLabel(rawA6)) nis = rawA6
-    if (rawA7 && !isHeaderLabel(rawA7)) cartao_sus = rawA7
-    if (rawA8 && !isHeaderLabel(rawA8)) endereco = rawA8
   }
 
-  // 4. Fallback com Expressões Regulares caso algum campo esteja vazio ou fosse apenas rótulo
-  if (!nome || isHeaderLabel(nome)) {
-    const nomeMatch = rawText.match(/(?:Nome(?:\s+do\s+aluno)?|Aluno|Estudante):\s*([^\r\n]+)/i)
-    if (nomeMatch && !isHeaderLabel(nomeMatch[1])) {
-      nome = nomeMatch[1].trim()
-    }
-  }
-
-  if (!data_nascimento) {
-    const dtMatch = rawText.match(/(?:Data\s+de\s+nascimento|Nascimento|Data\s+Nasc\.?):\s*([^\r\n]+)/i)
-    if (dtMatch && !isHeaderLabel(dtMatch[1])) {
-      data_nascimento = parseDateToISO(dtMatch[1])
-    }
-  }
-
-  if (!telefone || isHeaderLabel(telefone)) {
-    const telMatch = rawText.match(/(?:Contato|Telefone|Celular|WhatsApp):\s*([^\r\n]+)/i)
-    if (telMatch && !isHeaderLabel(telMatch[1])) {
-      telefone = telMatch[1].trim()
-    }
-  }
-
-  if (!rg || isHeaderLabel(rg)) {
-    const rgMatch = rawText.match(/(?:RG|Identidade):\s*([^\r\n]+)/i)
-    if (rgMatch && !isHeaderLabel(rgMatch[1])) {
-      rg = rgMatch[1].trim()
-    }
-  }
-
-  if (!cpf || isHeaderLabel(cpf)) {
-    const cpfMatch = rawText.match(/(?:CPF):\s*([^\r\n]+)/i)
-    if (cpfMatch && !isHeaderLabel(cpfMatch[1])) {
-      cpf = cpfMatch[1].trim()
-    }
-  }
-
-  if (!nis || isHeaderLabel(nis)) {
-    const nisMatch = rawText.match(/(?:NIS):\s*([^\r\n]+)/i)
-    if (nisMatch && !isHeaderLabel(nisMatch[1])) {
-      nis = nisMatch[1].trim()
-    }
-  }
-
-  if (!cartao_sus || isHeaderLabel(cartao_sus)) {
-    const susMatch = rawText.match(/(?:SUS|Cartão\s+SUS):\s*([^\r\n]+)/i)
-    if (susMatch && !isHeaderLabel(susMatch[1])) {
-      cartao_sus = susMatch[1].trim()
-    }
-  }
-
-  if (!endereco || isHeaderLabel(endereco)) {
-    const endMatch = rawText.match(/(?:Endereço(?:\s+por\s+extenso)?|Residência):\s*([^\r\n]+)/i)
-    if (endMatch && !isHeaderLabel(endMatch[1])) {
-      endereco = endMatch[1].trim()
-    }
-  }
-
-  // Busca adicional para filiação (se constar no documento Word)
-  const maeMatch = rawText.match(/(?:Mãe|Nome\s+da\s+Mãe|Genitora):\s*([^\r\n]+)/i)
-  if (maeMatch && !isHeaderLabel(maeMatch[1])) {
-    nome_mae = maeMatch[1].trim()
-  }
-
-  const paiMatch = rawText.match(/(?:Pai|Nome\s+do\s+Pai|Genitor):\s*([^\r\n]+)/i)
-  if (paiMatch && !isHeaderLabel(paiMatch[1])) {
-    nome_pai = paiMatch[1].trim()
-  }
-
-  // Se o nome ainda não tiver sido capturado, procura a primeira linha que não seja rótulo de cabeçalho
-  if (!nome || isHeaderLabel(nome)) {
-    const lines = rawText
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => Boolean(l) && !isHeaderLabel(l))
-    if (lines.length > 0) {
-      nome = lines[0]
-    }
-  }
-
-  // Cálculo do grau de confiança de captura (0 a 100%)
-  let score = 0
-  if (nome && !isHeaderLabel(nome)) score += 30
-  if (data_nascimento) score += 20
-  if (cpf && !isHeaderLabel(cpf)) score += 15
-  if (rg && !isHeaderLabel(rg)) score += 10
-  if (telefone && !isHeaderLabel(telefone)) score += 10
-  if (endereco && !isHeaderLabel(endereco)) score += 15
-
-  return {
-    fileName: file.name,
-    nome: nome && !isHeaderLabel(nome) ? nome : 'ALUNO NÃO IDENTIFICADO',
-    data_nascimento,
-    telefone: telefone && !isHeaderLabel(telefone) ? telefone : null,
-    rg: rg && !isHeaderLabel(rg) ? rg : null,
-    cpf: cpf && !isHeaderLabel(cpf) ? cpf : null,
-    nis: nis && !isHeaderLabel(nis) ? nis : null,
-    cartao_sus: cartao_sus && !isHeaderLabel(cartao_sus) ? cartao_sus : null,
-    endereco: endereco && !isHeaderLabel(endereco) ? endereco : null,
-    nome_mae: nome_mae && !isHeaderLabel(nome_mae) ? nome_mae : null,
-    nome_pai: nome_pai && !isHeaderLabel(nome_pai) ? nome_pai : null,
-    confidenceScore: Math.min(score, 100),
-    rawText
-  }
+  return extractedStudents
 }
