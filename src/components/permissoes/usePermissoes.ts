@@ -61,7 +61,7 @@ export function usePermissoes() {
     const supabase = createClient()
     const { data: permData } = await supabase
       .from('funcionarios')
-      .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo)')
+      .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo, escolas(nome))')
 
     if (permData) {
       const formatados: RegistroPermissao[] = []
@@ -81,6 +81,10 @@ export function usePermissoes() {
           }
         }
 
+        const nomeEscolaVinculo = (f.vinculos_funcionarios ?? []).find(
+          (v: any) => v.ativo && v.escolas?.nome
+        )?.escolas?.nome
+
         const acessos = f.acessos_usuarios ?? []
         if (acessos.length > 0) {
           acessos.forEach((ac: any) => {
@@ -99,7 +103,7 @@ export function usePermissoes() {
               email: f.email ?? f.nome,
               nivel: nomeNivel,
               nivelNum,
-              escola: ac.escolas?.nome ?? 'Sem Lotação',
+              escola: ac.escolas?.nome ?? nomeEscolaVinculo ?? 'Sem Lotação',
               escolaId: ac.escola_id ?? null,
               status: f.status || 'ativo',
             })
@@ -118,7 +122,7 @@ export function usePermissoes() {
                 email: f.email ?? f.nome,
                 nivel: nivelLabel(null),
                 nivelNum: null,
-                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? 'Escola Atual',
+                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? nomeEscolaVinculo ?? 'Escola Atual',
                 escolaId: schoolIdToUse,
                 status: f.status || 'ativo',
               })
@@ -137,7 +141,7 @@ export function usePermissoes() {
                 email: f.email ?? f.nome,
                 nivel: nivelLabel(null),
                 nivelNum: null,
-                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? 'Escola Atual',
+                escola: escolasLista.find(e => e.id === schoolIdToUse)?.nome ?? nomeEscolaVinculo ?? 'Escola Atual',
                 escolaId: schoolIdToUse,
                 status: f.status || 'ativo',
               })
@@ -153,7 +157,7 @@ export function usePermissoes() {
               email: f.email ?? f.nome,
               nivel: nomeNivel,
               nivelNum: null,
-              escola: 'Sem Lotação',
+              escola: nomeEscolaVinculo ?? 'Sem Lotação',
               escolaId: null,
               status: f.status || 'ativo',
             })

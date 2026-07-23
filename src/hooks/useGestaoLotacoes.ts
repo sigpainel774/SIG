@@ -238,6 +238,13 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
       })
       if (error) throw error
 
+      // Sincronizar acessos_usuarios caso exista registro com escola_id null
+      await supabase
+        .from('acessos_usuarios')
+        .update({ escola_id: escolaId })
+        .eq('funcionario_id', selecionado.id)
+        .is('escola_id', null)
+
       await logAudit({
         supabase,
         action: 'CREATE',
