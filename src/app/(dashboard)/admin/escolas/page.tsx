@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, FileSpreadsheet } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, FileSpreadsheet, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
@@ -11,6 +11,7 @@ import { ModalEscola } from '@/components/modals/modal-escola'
 import { ModalConfigAnexosEscola } from '@/components/modals/modal-config-anexos-escola'
 import { ModalConfigSecretario } from '@/components/modals/modal-config-secretario'
 import { ModalImportarFichasDocx } from '@/components/modals/modal-importar-fichas-docx'
+import { ModalGerenciarFilaImpressao } from '@/components/modals/modal-gerenciar-fila-impressao'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -34,6 +35,7 @@ export default function AdminEscolasPage() {
 
   const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
   const [importDocxOpen, setImportDocxOpen] = useState(false)
+  const [filaImpressaoOpen, setFilaImpressaoOpen] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -189,6 +191,14 @@ export default function AdminEscolasPage() {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline"
+            onClick={() => setFilaImpressaoOpen(true)}
+            className="bg-[#121214] border-[#3f3f46] text-amber-400 hover:text-amber-300 hover:bg-[#202024] font-semibold"
+            title="Gerenciar e Excluir Atividades na Fila de Impressão"
+          >
+            <Printer className="w-4 h-4 mr-2 text-amber-400" /> Fila de Impressão
+          </Button>
+          <Button 
+            variant="outline"
             onClick={() => setImportDocxOpen(true)}
             className="bg-[#121214] border-[#3f3f46] text-emerald-400 hover:text-emerald-300 hover:bg-[#202024] font-semibold"
             title="Importar Fichas de Alunos via arquivos DOCX"
@@ -273,6 +283,14 @@ export default function AdminEscolasPage() {
           open={importDocxOpen}
           onOpenChange={setImportDocxOpen}
           onSuccess={loadEscolas}
+        />
+      )}
+
+      {/* Modal de Gerenciamento da Fila de Impressão */}
+      {filaImpressaoOpen && (
+        <ModalGerenciarFilaImpressao
+          open={filaImpressaoOpen}
+          onOpenChange={setFilaImpressaoOpen}
         />
       )}
     </div>
