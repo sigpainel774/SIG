@@ -120,11 +120,25 @@ export default function MiniMapa({
     if (!localAddress.trim()) return;
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(localAddress)}`,
+      const termoOriginal = localAddress.trim();
+      
+      // 1. Tenta buscar exatamente o que o usuário digitou (permite qualquer cidade do Brasil)
+      let response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(termoOriginal)}`,
         { headers: { 'Accept-Language': 'pt-BR' } }
       );
-      const data = await response.json();
+      let data = await response.json();
+
+      // 2. Se não encontrou e o usuário não especificou outra cidade/UF, tenta com o contexto de Sapeaçu
+      if ((!data || data.length === 0) && !termoOriginal.toLowerCase().includes('sapeaçu') && !termoOriginal.toLowerCase().includes('sapeacu')) {
+        const termoSapeacu = `${termoOriginal}, Sapeaçu, BA`;
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(termoSapeacu)}`,
+          { headers: { 'Accept-Language': 'pt-BR' } }
+        );
+        data = await response.json();
+      }
+
       if (data && data.length > 0) {
         const newLat = parseFloat(data[0].lat);
         const newLng = parseFloat(data[0].lon);
@@ -134,7 +148,7 @@ export default function MiniMapa({
         onCoordinatesChange(newLat, newLng);
         mapRef.current?.setView([newLat, newLng], 16);
       } else {
-        if (!silent) alert('Endereço não encontrado no mapa. Tente digitar de outra forma ou arraste o marcador manualmente.');
+        if (!silent) alert('Endereço não encontrado no mapa. Tente digitar com nome da cidade/UF ou arraste o marcador manualmente.');
       }
     } catch (error) {
       if (!silent) console.error('Erro ao buscar o endereço:', error);

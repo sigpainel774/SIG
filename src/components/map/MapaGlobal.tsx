@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Search } from 'lucide-react';
+import { Search, MapPin } from 'lucide-react';
 
 export interface FuncionarioMapeado {
   id: string;
@@ -35,29 +35,28 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     );
   }, [busca, funcionarios]);
 
-  // 2. Coordenadas padrão de Sapeaçu - BA e cálculo do centro médio
-  const centroMedio = useMemo((): [number, number] => {
-    // Se não houver funcionários com coordenadas, padrão é Sapeaçu, BA
-    if (funcionariosFiltrados.length === 0) return [-12.9875, -39.0911];
-    
-    const somaLat = funcionariosFiltrados.reduce((acc, curr) => acc + curr.latitude, 0);
-    const somaLng = funcionariosFiltrados.reduce((acc, curr) => acc + curr.longitude, 0);
-    return [
-      somaLat / funcionariosFiltrados.length,
-      somaLng / funcionariosFiltrados.length,
-    ];
-  }, [funcionariosFiltrados]);
+  // 2. Coordenadas padrão de Sapeaçu - BA
+  const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.9875, -39.0911], []);
 
-  // Centraliza o mapa dinamicamente quando o filtro ou os dados mudam
+  // Lógica para centralizar o mapa em Sapeaçu por padrão ou quando a busca for limpa
   useEffect(() => {
     if (mapRef.current) {
-      if (funcionariosFiltrados.length > 0) {
-        mapRef.current.setView(centroMedio, 13);
+      if (busca.trim() !== '' && funcionariosFiltrados.length > 0) {
+        // Se houver busca ativa por texto, centraliza no primeiro resultado filtrado
+        const primeiro = funcionariosFiltrados[0];
+        mapRef.current.setView([primeiro.latitude, primeiro.longitude], 15);
       } else {
-        mapRef.current.setView([-12.9875, -39.0911], 13);
+        // Por padrão (sem busca ou ao abrir), o mapa sempre foca em Sapeaçu - BA
+        mapRef.current.setView(SAPEACU_CENTER, 13);
       }
     }
-  }, [centroMedio, funcionariosFiltrados.length]);
+  }, [busca, funcionariosFiltrados, SAPEACU_CENTER]);
+
+  const recentralizarSapeacu = () => {
+    if (mapRef.current) {
+      mapRef.current.setView(SAPEACU_CENTER, 13);
+    }
+  };
 
   // 3. Helper para gerar iniciais do nome
   const obterIniciais = (nome: string) => {
@@ -101,22 +100,33 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Campo de Filtro Dinâmico */}
-      <div className="flex gap-2 items-center bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
-        <Search className="w-5 h-5 text-slate-500" />
-        <input
-          type="text"
-          placeholder="Filtrar por nome, cargo ou escola..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder-slate-500"
-        />
+      {/* Campo de Filtro Dinâmico e Botão de Recentralizar */}
+      <div className="flex flex-wrap gap-2 items-center justify-between bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
+        <div className="flex flex-1 items-center gap-2 min-w-[200px]">
+          <Search className="w-5 h-5 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Filtrar por nome, cargo ou escola..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder-slate-500"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={recentralizarSapeacu}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+          title="Centralizar visualização do mapa em Sapeaçu - BA"
+        >
+          <MapPin className="w-4 h-4" />
+          Centralizar Sapeaçu
+        </button>
       </div>
 
       {/* Container Principal do Mapa */}
       <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-[#26304d] bg-[#182030] shadow-md z-0">
         <MapContainer
-          center={centroMedio}
+          center={SAPEACU_CENTER}
           zoom={13}
           ref={mapRef}
           className="w-full h-full"

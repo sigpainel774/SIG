@@ -237,22 +237,22 @@ export function DocumentosTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-zinc-300">Latitude (Ex: -12.748201)</Label>
+            <Label className="text-xs text-zinc-300">Latitude (Ex: -12.987500)</Label>
             <Input
               type="text"
               value={latitudeStr}
               onChange={(e) => setLatitudeStr(e.target.value)}
-              placeholder="-12.748201"
+              placeholder="-12.987500"
               className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
             />
           </div>
           <div>
-            <Label className="text-xs text-zinc-300">Longitude (Ex: -39.049102)</Label>
+            <Label className="text-xs text-zinc-300">Longitude (Ex: -39.091100)</Label>
             <Input
               type="text"
               value={longitudeStr}
               onChange={(e) => setLongitudeStr(e.target.value)}
-              placeholder="-39.049102"
+              placeholder="-39.091100"
               className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
             />
           </div>
