@@ -148,12 +148,14 @@ export function ModalImportarFichasDocx({
       }
 
       try {
-        const extracted = await parseDocxStudentFile(file)
-        newStudents.push({
-          ...extracted,
-          id: `doc_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
-          isSaved: false,
-          isSaving: false
+        const extractedList = await parseDocxStudentFile(file)
+        extractedList.forEach((extracted, stIdx) => {
+          newStudents.push({
+            ...extracted,
+            id: `doc_${Date.now()}_${i}_${stIdx}_${Math.random().toString(36).substr(2, 5)}`,
+            isSaved: false,
+            isSaving: false
+          })
         })
       } catch (err: any) {
         console.error(`Erro ao ler arquivo ${file.name}:`, err)
