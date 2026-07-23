@@ -73,6 +73,22 @@ export default function AdminAcessosPage() {
     const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
     const novoStatus = isPausado ? 'ATIVO' : 'PAUSADO'
 
+    if (isPausado && item.nivel.toUpperCase().includes('DIRETOR')) {
+      // Checar se a escola do funcionário já possui diretor ativo
+      const { data: vincData } = await supabase
+        .from('vinculos_funcionarios')
+        .select('escola_id, escolas(id, diretor_id, nome)')
+        .eq('funcionario_id', item.id)
+        .limit(1)
+        .maybeSingle()
+
+      const escola = (vincData?.escolas as any)
+      if (escola?.diretor_id && escola.diretor_id !== item.id) {
+        toast.error(`Não é possível reativar: a escola "${escola.nome}" já possui outro diretor ativo. Desvincule o gestor atual primeiro.`)
+        return
+      }
+    }
+
     setAcessos(prev => prev.map(a => a.id === item.id ? { ...a, status: novoStatus } : a))
 
     if (!isPausado) {
