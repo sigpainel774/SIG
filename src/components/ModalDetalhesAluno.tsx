@@ -29,6 +29,7 @@ export function ModalDetalhesAluno({
 
   const supabase = createClient()
   const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+  const isProfessor = useAuthStore((state) => state.isProfessor())
 
   const fetchStatsAndOcorrencias = async () => {
     if (!aluno?.id || !turma?.id) return
@@ -237,41 +238,43 @@ export function ModalDetalhesAluno({
           </div>
         </div>
 
-        {/* Contatos Rápidos */}
-        <div className="space-y-3 mt-6">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Phone className="w-4 h-4 text-muted-foreground" />
-            Contatos Rápidos
-          </h4>
-          
-          {contatos.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic py-1 pl-1">Nenhum telefone de contato cadastrado.</p>
-          ) : (
-            <div className="space-y-2">
-              {contatos.map((cont, index) => (
-                <div key={index} className="bg-surface-2 border border-borderCustom p-3 rounded-xl flex items-center justify-between">
-                  <div className="flex flex-col min-w-0 pr-2">
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">
-                      {cont.label}
-                    </span>
-                    <span className="text-sm font-bold text-foreground mt-1">
-                      {cont.numero}
-                    </span>
+        {/* Contatos Rápidos (Oculto para Professores) */}
+        {!isProfessor && (
+          <div className="space-y-3 mt-6">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Phone className="w-4 h-4 text-muted-foreground" />
+              Contatos Rápidos
+            </h4>
+            
+            {contatos.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic py-1 pl-1">Nenhum telefone de contato cadastrado.</p>
+            ) : (
+              <div className="space-y-2">
+                {contatos.map((cont, index) => (
+                  <div key={index} className="bg-surface-2 border border-borderCustom p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">
+                        {cont.label}
+                      </span>
+                      <span className="text-sm font-bold text-foreground mt-1">
+                        {cont.numero}
+                      </span>
+                    </div>
+                    <a
+                      href={formatarWhatsAppUrl(cont.numero)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-colors"
+                      title="Chamar no WhatsApp"
+                    >
+                      <MessageCircle className="w-5 h-5 fill-current" />
+                    </a>
                   </div>
-                  <a
-                    href={formatarWhatsAppUrl(cont.numero)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-colors"
-                    title="Chamar no WhatsApp"
-                  >
-                    <MessageCircle className="w-5 h-5 fill-current" />
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Últimas Ocorrências */}
         <div className="space-y-3 mt-6 border-t border-borderCustom pt-5">
