@@ -40,8 +40,8 @@ export default function MiniMapa({
   address,
   onAddressChange
 }: MiniMapaProps) {
-  const SAPEACU_LAT = -12.9875;
-  const SAPEACU_LNG = -39.0911;
+  const SAPEACU_LAT = -12.7299932;
+  const SAPEACU_LNG = -39.1858195;
 
   const hasInitialCoords =
     typeof initialLat === 'number' &&

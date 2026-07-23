@@ -308,7 +308,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
                 type="text"
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
-                placeholder="Ex: -12.9714"
+                placeholder="Ex: -12.729993"
                 className="bg-[#18181a] border-[#27272a] text-white mt-1"
               />
             </div>
@@ -318,7 +318,7 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
                 type="text"
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
-                placeholder="Ex: -38.5014"
+                placeholder="Ex: -39.185819"
                 className="bg-[#18181a] border-[#27272a] text-white mt-1"
               />
             </div>

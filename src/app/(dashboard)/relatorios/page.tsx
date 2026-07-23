@@ -87,7 +87,14 @@ export default function RelatoriosPage() {
           if (data) {
             const anyData = data as any[]
             const mapped = anyData
-              .filter(v => v.funcionarios?.latitude != null && v.funcionarios?.longitude != null)
+              .filter(v => 
+                v.funcionarios?.latitude != null && 
+                v.funcionarios?.longitude != null &&
+                Number(v.funcionarios.latitude) !== 0 &&
+                Number(v.funcionarios.longitude) !== 0 &&
+                !isNaN(Number(v.funcionarios.latitude)) &&
+                !isNaN(Number(v.funcionarios.longitude))
+              )
               .map(v => ({
                 id: v.funcionarios.id,
                 nome: v.funcionarios.nome,
@@ -145,15 +152,22 @@ export default function RelatoriosPage() {
 
           if (data) {
             const anyData = data as any[]
-            const mapped = anyData.map((a) => ({
-              id: a.id,
-              nome: a.nome,
-              foto_url: a.foto_url,
-              escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
-              turma: (a.turmas as any)?.nome ?? undefined,
-              latitude: Number(a.latitude),
-              longitude: Number(a.longitude),
-            }))
+            const mapped = anyData
+              .filter(a => 
+                Number(a.latitude) !== 0 && 
+                Number(a.longitude) !== 0 && 
+                !isNaN(Number(a.latitude)) && 
+                !isNaN(Number(a.longitude))
+              )
+              .map((a) => ({
+                id: a.id,
+                nome: a.nome,
+                foto_url: a.foto_url,
+                escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
+                turma: (a.turmas as any)?.nome ?? undefined,
+                latitude: Number(a.latitude),
+                longitude: Number(a.longitude),
+              }))
             setMapDataAlunos(mapped)
           }
         } catch (err) {
