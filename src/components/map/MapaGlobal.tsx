@@ -35,10 +35,10 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     );
   }, [busca, funcionarios]);
 
-  // 2. Calcula o centro geográfico médio dos pontos visíveis
+  // 2. Coordenadas padrão de Sapeaçu - BA e cálculo do centro médio
   const centroMedio = useMemo((): [number, number] => {
-    // If no employees, default to Brazil
-    if (funcionariosFiltrados.length === 0) return [-14.235004, -51.925282];
+    // Se não houver funcionários com coordenadas, padrão é Sapeaçu, BA
+    if (funcionariosFiltrados.length === 0) return [-12.9875, -39.0911];
     
     const somaLat = funcionariosFiltrados.reduce((acc, curr) => acc + curr.latitude, 0);
     const somaLng = funcionariosFiltrados.reduce((acc, curr) => acc + curr.longitude, 0);
@@ -50,8 +50,12 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
   // Centraliza o mapa dinamicamente quando o filtro ou os dados mudam
   useEffect(() => {
-    if (mapRef.current && funcionariosFiltrados.length > 0) {
-      mapRef.current.setView(centroMedio, 13);
+    if (mapRef.current) {
+      if (funcionariosFiltrados.length > 0) {
+        mapRef.current.setView(centroMedio, 13);
+      } else {
+        mapRef.current.setView([-12.9875, -39.0911], 13);
+      }
     }
   }, [centroMedio, funcionariosFiltrados.length]);
 

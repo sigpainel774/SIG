@@ -40,9 +40,20 @@ export default function MiniMapa({
   address,
   onAddressChange
 }: MiniMapaProps) {
-  const [lat, setLat] = useState<number>(initialLat || -14.235004);
-  const [lng, setLng] = useState<number>(initialLng || -51.925282);
-  const [zoom, setZoom] = useState<number>(initialLat && initialLng ? 16 : 4);
+  const SAPEACU_LAT = -12.9875;
+  const SAPEACU_LNG = -39.0911;
+
+  const hasInitialCoords =
+    typeof initialLat === 'number' &&
+    typeof initialLng === 'number' &&
+    !isNaN(initialLat) &&
+    !isNaN(initialLng) &&
+    initialLat !== 0 &&
+    initialLng !== 0;
+
+  const [lat, setLat] = useState<number>(hasInitialCoords ? initialLat! : SAPEACU_LAT);
+  const [lng, setLng] = useState<number>(hasInitialCoords ? initialLng! : SAPEACU_LNG);
+  const [zoom, setZoom] = useState<number>(hasInitialCoords ? 16 : 14);
   const [isSearching, setIsSearching] = useState(false);
   const [localAddress, setLocalAddress] = useState(address || '');
   
@@ -51,11 +62,23 @@ export default function MiniMapa({
 
   // Sincroniza estado interno caso o pai atualize as coordenadas
   useEffect(() => {
-    if (typeof initialLat === 'number' && typeof initialLng === 'number' && !isNaN(initialLat) && !isNaN(initialLng)) {
+    if (
+      typeof initialLat === 'number' &&
+      typeof initialLng === 'number' &&
+      !isNaN(initialLat) &&
+      !isNaN(initialLng) &&
+      initialLat !== 0 &&
+      initialLng !== 0
+    ) {
       setLat(initialLat);
       setLng(initialLng);
       setZoom(16);
       mapRef.current?.setView([initialLat, initialLng], 16);
+    } else if (!initialLat && !initialLng) {
+      setLat(SAPEACU_LAT);
+      setLng(SAPEACU_LNG);
+      setZoom(14);
+      mapRef.current?.setView([SAPEACU_LAT, SAPEACU_LNG], 14);
     }
   }, [initialLat, initialLng]);
 
