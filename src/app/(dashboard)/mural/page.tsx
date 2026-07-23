@@ -30,6 +30,43 @@ export default function MuralPage() {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [viewDate, setViewDate] = useState(() => new Date())
+  const [loadingBirthdays, setLoadingBirthdays] = useState(false)
+
+  const MONTH_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ]
+
+  const fetchBirthdaysForMonth = async (monthNum: number) => {
+    setLoadingBirthdays(true)
+    try {
+      const supabase = createClient()
+      const { data, error } = await (supabase as any).rpc('get_birthdays_of_month', { month_num: monthNum })
+      if (error) {
+        toast.error('Erro ao carregar aniversariantes: ' + error.message)
+      } else if (data) {
+        setBirthdays(data)
+      }
+    } catch (err: any) {
+      console.error('Erro ao buscar aniversariantes:', err)
+    } finally {
+      setLoadingBirthdays(false)
+    }
+  }
+
+  const handlePrevMonth = () => {
+    const next = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)
+    setViewDate(next)
+    fetchBirthdaysForMonth(next.getMonth() + 1)
+  }
+
+  const handleNextMonth = () => {
+    const next = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)
+    setViewDate(next)
+    fetchBirthdaysForMonth(next.getMonth() + 1)
+  }
+
   const fetchNotices = async () => {
     const supabase = createClient()
     const { data, error } = await supabase.from('comunicados')
@@ -49,7 +86,7 @@ export default function MuralPage() {
       setLoading(true)
 
       try {
-        const currentMonth = new Date().getMonth() + 1 // 1-based for PG
+        const currentMonth = viewDate.getMonth() + 1 // 1-based for PG
 
         const [comunicadosRes, birthdayRes] = await Promise.all([
           supabase.from('comunicados')
@@ -86,9 +123,8 @@ export default function MuralPage() {
   }, [selectedDate, notices])
 
   const calendarData = useMemo(() => {
-    const today = new Date()
-    const currentYear = today.getFullYear()
-    const currentMonth = today.getMonth() // 0-indexed
+    const currentYear = viewDate.getFullYear()
+    const currentMonth = viewDate.getMonth() // 0-indexed
 
     const firstDayDate = new Date(currentYear, currentMonth, 1)
     const firstDayOfWeek = firstDayDate.getDay() // 0 = Sunday, 1 = Monday, etc.
@@ -99,7 +135,7 @@ export default function MuralPage() {
     const days = Array.from({ length: totalDays }, (_, i) => i + 1)
 
     return { blanks, days }
-  }, [])
+  }, [viewDate])
 
   const handlePublicarComunicado = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -384,8 +420,35 @@ export default function MuralPage() {
 
           <Card className="border-borderCustom bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Aniversariantes do Mês</h2>
-              <CalendarDays className="h-5 w-5 text-highlight" />
+              <div>
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-highlight" />
+                  Aniversariantes
+                </h2>
+                <p className="text-xs font-medium text-highlight mt-0.5">
+                  {MONTH_NAMES[viewDate.getMonth()]} / {viewDate.getFullYear()}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePrevMonth}
+                  className="h-8 w-8 border-borderCustom bg-input text-foreground hover:bg-hoverCustom cursor-pointer"
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNextMonth}
+                  className="h-8 w-8 border-borderCustom bg-input text-foreground hover:bg-hoverCustom cursor-pointer"
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground">
               {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => (
@@ -409,10 +472,13 @@ export default function MuralPage() {
               })}
             </div>
             <div className="mt-5 space-y-2 border-t border-borderCustom pt-4">
-              {loading ? (
-                <p className="text-center text-xs text-muted-foreground">Carregando...</p>
+              {loading || loadingBirthdays ? (
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-highlight" />
+                  <span>Carregando...</span>
+                </div>
               ) : birthdays.length === 0 ? (
-                <p className="text-center text-xs text-muted-foreground">Nenhum aniversariante neste mês.</p>
+                <p className="text-center text-xs text-muted-foreground py-2">Nenhum aniversariante neste mês.</p>
               ) : (
                 birthdays.map((birthday, idx) => (
                   <div key={idx} className="rounded-lg bg-input p-3 text-sm border border-borderCustom/50">
