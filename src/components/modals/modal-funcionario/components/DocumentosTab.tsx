@@ -1,11 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { MiniMapa } from '@/components/map/MapWrapper'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
-import { Loader2, Search } from 'lucide-react'
+import { Loader2, Search, Navigation } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function DocumentosTab() {
   const {
@@ -25,9 +26,36 @@ export function DocumentosTab() {
     areaDiferenciada, setAreaDiferenciada,
     latitude, setLatitude,
     longitude, setLongitude,
+    latitudeStr, setLatitudeStr,
+    longitudeStr, setLongitudeStr,
     formatCPF,
     formatCEP,
   } = useFuncionarioForm()
+
+  const [capturandoGps, setCapturandoGps] = useState(false)
+
+  const handleCapturarGpsAtual = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      toast.error('Geolocalização não é suportada por este navegador.')
+      return
+    }
+
+    setCapturandoGps(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLatitudeStr(String(pos.coords.latitude))
+        setLongitudeStr(String(pos.coords.longitude))
+        toast.success('Coordenadas GPS capturadas!')
+        setCapturandoGps(false)
+      },
+      (err) => {
+        console.error('Erro ao obter GPS:', err)
+        toast.error('Não foi possível obter a localização. Verifique as permissões de GPS no seu navegador.')
+        setCapturandoGps(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   const fullAddress = logradouro ? `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${ufResidencia}` : ''
 
@@ -193,19 +221,57 @@ export function DocumentosTab() {
         </div>
       </div>
 
-      <div className="pt-2">
-        <Label className="text-xs text-zinc-400">Coordenadas de GPS Residencial (Opcional, clique ou arraste no mapa)</Label>
-        <div className="mt-2 h-[220px] w-full rounded-xl overflow-hidden border border-borderCustom relative z-10">
-          <MiniMapa
-            initialLat={latitude ?? undefined}
-            initialLng={longitude ?? undefined}
-            onCoordinatesChange={(lat, lng) => {
-              setLatitude(lat)
-              setLongitude(lng)
-            }}
-            address={fullAddress}
-            onAddressChange={() => {}}
-          />
+      <div className="pt-2 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-1.5">
+          <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Coordenadas de GPS Residencial</h3>
+          <button
+            type="button"
+            onClick={handleCapturarGpsAtual}
+            disabled={capturandoGps}
+            className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-md border border-sky-500/30 transition-colors w-fit cursor-pointer"
+          >
+            {capturandoGps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
+            {capturandoGps ? 'Obtendo GPS...' : 'Usar Minha Localização Atual'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-zinc-300">Latitude (Ex: -12.748201)</Label>
+            <Input
+              type="text"
+              value={latitudeStr}
+              onChange={(e) => setLatitudeStr(e.target.value)}
+              placeholder="-12.748201"
+              className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-zinc-300">Longitude (Ex: -39.049102)</Label>
+            <Input
+              type="text"
+              value={longitudeStr}
+              onChange={(e) => setLongitudeStr(e.target.value)}
+              placeholder="-39.049102"
+              className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs text-zinc-400">Visualização no Mapa (Clique ou arraste o pino para ajustar)</Label>
+          <div className="mt-1.5 h-[240px] w-full rounded-xl overflow-hidden border border-borderCustom relative z-10">
+            <MiniMapa
+              initialLat={latitude ?? undefined}
+              initialLng={longitude ?? undefined}
+              onCoordinatesChange={(lat, lng) => {
+                setLatitude(lat)
+                setLongitude(lng)
+              }}
+              address={fullAddress}
+              onAddressChange={() => {}}
+            />
+          </div>
         </div>
       </div>
     </div>

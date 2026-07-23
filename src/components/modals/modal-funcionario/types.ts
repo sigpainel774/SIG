@@ -117,6 +117,10 @@ export interface FuncionarioFormContextType {
   setLatitude: (v: number | null) => void
   longitude: number | null
   setLongitude: (v: number | null) => void
+  latitudeStr: string
+  setLatitudeStr: (v: string) => void
+  longitudeStr: string
+  setLongitudeStr: (v: string) => void
   formatCPF: (v: string) => string
   formatCEP: (v: string) => string
   isCpfValid: boolean
