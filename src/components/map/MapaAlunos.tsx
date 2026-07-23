@@ -35,9 +35,9 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
     );
   }, [busca, alunos]);
 
-  // 2. Calcula o centro geográfico médio dos pontos visíveis
+  // 2. Coordenadas padrão de Sapeaçu - BA e cálculo do centro médio
   const centroMedio = useMemo((): [number, number] => {
-    if (alunosFiltrados.length === 0) return [-14.235004, -51.925282];
+    if (alunosFiltrados.length === 0) return [-12.9875, -39.0911];
     const somaLat = alunosFiltrados.reduce((acc, curr) => acc + curr.latitude, 0);
     const somaLng = alunosFiltrados.reduce((acc, curr) => acc + curr.longitude, 0);
     return [
@@ -48,8 +48,12 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
   // Centraliza o mapa dinamicamente quando o filtro ou os dados mudam
   useEffect(() => {
-    if (mapRef.current && alunosFiltrados.length > 0) {
-      mapRef.current.setView(centroMedio, 13);
+    if (mapRef.current) {
+      if (alunosFiltrados.length > 0) {
+        mapRef.current.setView(centroMedio, 13);
+      } else {
+        mapRef.current.setView([-12.9875, -39.0911], 13);
+      }
     }
   }, [centroMedio, alunosFiltrados.length]);
 
