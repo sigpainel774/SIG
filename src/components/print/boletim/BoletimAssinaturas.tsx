@@ -3,6 +3,7 @@
 import React from 'react'
 
 interface BoletimAssinaturasProps {
+  secretarioNome?: string
   isEditMode: boolean
   dataEmissao: string
   setDataEmissao: (val: string) => void
@@ -21,6 +22,7 @@ interface BoletimAssinaturasProps {
 }
 
 export function BoletimAssinaturas({
+  secretarioNome,
   isEditMode,
   dataEmissao,
   setDataEmissao,
@@ -43,7 +45,9 @@ export function BoletimAssinaturas({
       <div className="grid grid-cols-12 text-[8px] font-bold gap-3 items-center">
         <div className="col-span-6 flex items-center border-b border-black py-0.5">
           <span className="uppercase text-[7.5px] mr-1 shrink-0 text-black">Secretário(a) de Educação:</span>
-          <span className="uppercase font-bold text-[8.5px] text-black">MARCUS ALANO CORREIA OLIVEIRA</span>
+          <span className="uppercase font-bold text-[8.5px] text-black">
+            {secretarioNome && secretarioNome.trim() !== '' ? secretarioNome : 'MARCUS ALANO CORREIA OLIVEIRA'}
+          </span>
         </div>
         <div className="col-span-3 flex items-center border-b border-black py-0.5">
           <span className="uppercase text-[7.5px] mr-1 shrink-0 text-black">Folha/Reg:</span>
@@ -123,7 +127,6 @@ export function BoletimAssinaturas({
               value={gestorAssinatura}
               onChange={(e) => setGestorAssinatura(e.target.value)}
               disabled={!isEditMode}
-              placeholder="Digite o nome do gestor"
               className="w-full bg-transparent focus:outline-none border-b border-dashed border-gray-400 text-center font-black text-[8px] uppercase py-0.5 text-black"
             />
             <span className="text-[6px] text-[#0b4a8c] font-black uppercase tracking-widest mt-1">

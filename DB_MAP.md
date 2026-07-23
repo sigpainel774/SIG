@@ -610,3 +610,12 @@ Lançamentos de gratificações e acréscimos na folha.
 ### 51. `public.alunos_ativos`
 View auxiliar contendo apenas os alunos matriculados não deletados logicamente.
 *(Estrutura espelho parcial da tabela `public.alunos`)*
+
+### 52. `public.configuracoes_rede`
+Parâmetros e dados gerais da Secretaria de Educação e da rede municipal.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `secretario_educacao`: `text` (Nome do titular da Secretaria, NOT NULL, Default: 'MARCUS ALANO CORREIA OLIVEIRA')
+*   `cargo_secretario`: `text` (Título do cargo, Default: 'Secretário(a) de Educação', Nullable)
+*   `nome_rede`: `text` (Nome do órgão da rede, Default: 'Secretaria Municipal de Educação de Sapeaçu', Nullable)
+*   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
