@@ -124,7 +124,21 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satélite">
+            <LayersControl.BaseLayer name="Google Satélite (Híbrido)">
+              <TileLayer
+                attribution="&copy; Google Maps"
+                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                maxZoom={20}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Google Satélite">
+              <TileLayer
+                attribution="&copy; Google Maps"
+                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                maxZoom={20}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Satélite (Esri)">
               <TileLayer
                 attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
