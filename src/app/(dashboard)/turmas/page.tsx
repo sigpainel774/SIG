@@ -21,9 +21,10 @@ import {
 } from '@/components/ui/select'
 
 export default function TurmasPage() {
+  const currentYear = new Date().getFullYear().toString()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterTurno, setFilterTurno] = useState('all')
-  const [filterAno, setFilterAno] = useState('all')
+  const [filterAno, setFilterAno] = useState(currentYear)
   const [turmas, setTurmas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -94,8 +95,10 @@ export default function TurmasPage() {
 
   // Lista dinâmica de anos letivos das turmas carregadas
   const anosDisponiveis = useMemo(() => {
-    const anos = turmas.map(t => t.ano_letivo)
-    return Array.from(new Set(anos)).sort((a, b) => b - a)
+    const anoAtualNum = new Date().getFullYear()
+    const anos = turmas.map(t => Number(t.ano_letivo)).filter(Boolean)
+    const setAnos = new Set([anoAtualNum, ...anos])
+    return Array.from(setAnos).sort((a, b) => b - a)
   }, [turmas])
 
   // Filtragem local das turmas
@@ -171,28 +174,33 @@ export default function TurmasPage() {
         </div>
 
         {/* Dropdown de Turnos */}
-        <div className="w-[200px]">
+        <div className="w-[160px]">
           <Select value={filterTurno} onValueChange={(val) => setFilterTurno(val ?? 'all')}>
             <SelectTrigger className="bg-background border-border text-foreground focus:ring-primary h-10 rounded-lg">
-              <SelectValue placeholder="Todos os Turnos" />
+              <SelectValue placeholder="Turno">
+                {filterTurno === 'all' ? 'Turno' : filterTurno}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border text-foreground">
-              <SelectItem value="all">Todos os Turnos</SelectItem>
+              <SelectItem value="all">Turno</SelectItem>
               <SelectItem value="Matutino">Matutino</SelectItem>
               <SelectItem value="Vespertino">Vespertino</SelectItem>
               <SelectItem value="Integral">Integral</SelectItem>
+              <SelectItem value="Noturno">Noturno</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Dropdown de Anos Letivos */}
-        <div className="w-[120px]">
+        <div className="w-[160px]">
           <Select value={filterAno} onValueChange={(val) => setFilterAno(val ?? 'all')}>
             <SelectTrigger className="bg-background border-border text-foreground focus:ring-primary h-10 rounded-lg">
-              <SelectValue placeholder="" />
+              <SelectValue placeholder="Ano Letivo">
+                {filterAno === 'all' ? 'Ano Letivo' : filterAno}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border text-foreground">
-              <SelectItem value="all">Todos os Anos</SelectItem>
+              <SelectItem value="all">Ano Letivo</SelectItem>
               {anosDisponiveis.map((ano) => (
                 <SelectItem key={ano} value={String(ano)}>
                   {ano}
