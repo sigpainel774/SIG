@@ -3,7 +3,7 @@
 Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
 Atualizado automaticamente com o status real do repositório.
 
-**Última atualização:** 2026-07-22
+**Última atualização:** 2026-07-23
 
 ---
 
@@ -11,6 +11,7 @@ Atualizado automaticamente com o status real do repositório.
 
 | Plano | Status | Observação |
 |-------|--------|------------|
+| Módulo Secretário de Educação & Limpeza Boletim | ✅ Implementado | Sessão 2026-07-23 — Tabela `configuracoes_rede`, modal `/admin/escolas`, integração boletim e remoção placeholder |
 | Integração Resend + Primeiro Acesso | ✅ Implementado | Sessão 2026-07-21 — Tela `/primeiro-acesso`, integração no `proxy.ts`, `PerfilTab.tsx` e `login/page.tsx` |
 | Verificação QR Code / Crachá de Funcionário | ✅ Implementado | Sessão 2026-07-20 — Rota pública `/verificar/funcionario/[id]` com validação instantânea |
 | Ajuste de Mapas e Geolocalização | ✅ Implementado | Sessão 2026-07-22 — Tiles Leaflet atualizados com fallbacks resilientes (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`) |

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import {
   ShieldCheck,
   RefreshCw,
@@ -327,6 +328,8 @@ export default function AdminHubPage() {
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Atualizar Cache</span>
           </button>
+
+          <ThemeSwitcher buttonClassName="bg-[#17171a] border border-[#27272a] hover:bg-[#202024] text-slate-300" />
 
           <button
             onClick={handleLogout}
