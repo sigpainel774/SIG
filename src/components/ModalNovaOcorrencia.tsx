@@ -111,16 +111,16 @@ export function ModalNovaOcorrencia({
       footer={
         <>
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => onOpenChange(false)}
-            className="flex-1 bg-transparent border border-[#2a2a2a] hover:bg-[#18181b] text-white h-10 text-sm font-semibold"
+            className="flex-1 bg-muted text-foreground border-border hover:bg-muted/80 h-10 text-sm font-semibold cursor-pointer"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={loading}
-            className="flex-1 bg-[#3ea6ff] hover:bg-[#0090ff] text-background font-bold h-10 text-sm"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-10 text-sm cursor-pointer"
           >
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
@@ -130,24 +130,24 @@ export function ModalNovaOcorrencia({
       <div className="space-y-4">
         {/* Tipo de Ocorrência */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-zinc-300">Tipo de Ocorrência *</label>
+          <label className="text-xs font-semibold text-foreground">Tipo de Ocorrência *</label>
           <Input
             placeholder="Ex: Atraso, Indisciplina, Falta de Material..."
             value={tipo}
             onChange={(e) => setTipo(e.target.value)}
-            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 text-sm"
+            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary h-10 text-sm"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           {/* Gravidade */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Gravidade</label>
+            <label className="text-xs font-semibold text-foreground">Gravidade</label>
             <Select value={gravidade} onValueChange={(val) => setGravidade(val ?? 'Leve')}>
-              <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10 text-sm">
+              <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10 text-sm">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="Leve">Leve</SelectItem>
                 <SelectItem value="Média">Média</SelectItem>
                 <SelectItem value="Grave">Grave</SelectItem>
@@ -157,25 +157,25 @@ export function ModalNovaOcorrencia({
 
           {/* Data */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Data *</label>
+            <label className="text-xs font-semibold text-foreground">Data *</label>
             <Input
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="bg-[#18181b] border-[#2a2a2a] text-white focus-visible:ring-[#3ea6ff] h-10 text-sm"
+              className="bg-input border-border text-foreground focus-visible:ring-primary h-10 text-sm"
             />
           </div>
         </div>
 
         {/* Descrição */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-zinc-300">Descrição Detalhada *</label>
+          <label className="text-xs font-semibold text-foreground">Descrição Detalhada *</label>
           <Textarea
             placeholder="Descreva o ocorrido de forma objetiva..."
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             rows={4}
-            className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] text-sm resize-none"
+            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary text-sm resize-none"
           />
         </div>
       </div>

@@ -81,14 +81,15 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold h-11 rounded-lg transition-colors"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 rounded-lg transition-colors cursor-pointer"
             >
               {loading ? 'Salvando...' : 'Salvar Turma'}
             </Button>
           ) : (
             <Button
               onClick={() => onOpenChange(false)}
-              className="w-full bg-[#27272a] hover:bg-[#3f3f46] text-white font-bold h-11 rounded-lg transition-colors"
+              variant="outline"
+              className="w-full bg-muted text-foreground border border-border hover:bg-muted/80 font-bold h-11 rounded-lg transition-colors cursor-pointer"
             >
               Fechar
             </Button>
@@ -100,23 +101,23 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         {/* Primeira Linha: Nome e Ano Letivo */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Nome da Turma *</label>
+            <label className="text-xs font-semibold text-foreground">Nome da Turma *</label>
             <Input
               placeholder="Ex: 1 - B"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               disabled={!isEditMode || loading}
-              className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary h-10 disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Ano Letivo *</label>
+            <label className="text-xs font-semibold text-foreground">Ano Letivo *</label>
             <Input
               type="number"
               value={anoLetivo}
               onChange={(e) => setAnoLetivo(parseInt(e.target.value) || 0)}
               disabled={!isEditMode || loading}
-              className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary h-10 disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -124,12 +125,12 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         {/* Segunda Linha: Turno e Capacidade */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Turno *</label>
+            <label className="text-xs font-semibold text-foreground">Turno *</label>
             <Select value={turno} onValueChange={(val) => setTurno(val ?? '')} disabled={!isEditMode || loading}>
-              <SelectTrigger className="bg-[#18181b] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed">
+              <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10 disabled:opacity-75 disabled:cursor-not-allowed">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#2a2a2a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="Matutino">Matutino</SelectItem>
                 <SelectItem value="Vespertino">Vespertino</SelectItem>
                 <SelectItem value="Integral">Integral</SelectItem>
@@ -137,13 +138,13 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Capacidade de Alunos</label>
+            <label className="text-xs font-semibold text-foreground">Capacidade de Alunos</label>
             <Input
               type="number"
               value={capacidade}
               onChange={(e) => setCapacidade(parseInt(e.target.value) || 0)}
               disabled={!isEditMode || loading}
-              className="bg-[#18181b] border-[#2a2a2a] text-white placeholder-zinc-500 focus-visible:ring-[#3ea6ff] h-10 disabled:opacity-75 disabled:cursor-not-allowed"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary h-10 disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -152,23 +153,23 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
         {turma && (
           <div className="space-y-5 mt-2">
             {/* Professores da Turma */}
-            <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
-                <Users className="w-4 h-4 text-zinc-400" />
+            <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
                 Professores da Turma
               </div>
               {isEditMode && (
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Select value={selectedProfId} onValueChange={(val) => setSelectedProfId(val ?? '')}>
-                      <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                      <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10">
                         <SelectValue placeholder="-- Selecione um Professor --">
                           {selectedProfId
                             ? (professoresEscola.find((prof: any) => prof.id === selectedProfId)?.nome || (professoresEscola.length === 0 ? 'Carregando...' : selectedProfId))
                             : undefined}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
+                      <SelectContent className="bg-popover border-border text-popover-foreground">
                         {professoresEscola.map((prof: any) => (
                           <SelectItem key={prof.id} value={prof.id}>
                             {prof.nome}
@@ -179,7 +180,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                   </div>
                   <Button
                     onClick={handleAddProfessor}
-                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold px-4 h-10"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 h-10 cursor-pointer"
                   >
                     <Plus className="w-4 h-4 mr-1" /> Alocar
                   </Button>
@@ -188,12 +189,12 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
 
               <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                 {vinculosProfessores.length === 0 ? (
-                  <div className="text-zinc-500 text-xs py-2 text-center">Nenhum professor alocado nesta turma.</div>
+                  <div className="text-muted-foreground text-xs py-2 text-center">Nenhum professor alocado nesta turma.</div>
                 ) : (
                   vinculosProfessores.map((vp: any) => (
-                    <div key={vp.id} className="flex justify-between items-center bg-[#121214] p-2.5 rounded-lg border border-[#222]">
-                      <div className="flex items-center gap-2 text-xs text-zinc-300">
-                        <User className="w-3.5 h-3.5 text-zinc-500" />
+                    <div key={vp.id} className="flex justify-between items-center bg-card p-2.5 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 text-xs text-foreground">
+                        <User className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{vp.funcionarios?.nome ?? 'Funcionário'}</span>
                       </div>
                       {isEditMode && (
@@ -201,7 +202,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveProfessor(vp.id, vp.funcionario_id)}
-                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -213,9 +214,9 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
             </div>
 
             {/* Disciplinas da Turma */}
-            <div className="border border-[#26262a] bg-[#161618] rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#26262a] pb-2">
-                <BookOpen className="w-4 h-4 text-zinc-400" />
+            <div className="border border-border bg-muted/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border pb-2">
+                <BookOpen className="w-4 h-4 text-muted-foreground" />
                 Matérias / Disciplinas
               </div>
 
@@ -223,10 +224,10 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Select onValueChange={(val) => handleSelectMateriaCatalogo((val as string) ?? '')}>
-                      <SelectTrigger className="bg-[#121214] border-[#2a2a2a] text-white focus:ring-[#3ea6ff] h-10">
+                      <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10">
                         <SelectValue placeholder="-- Selecionar Componente Curricular --" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#121214] border-[#2a2a2a] text-white">
+                      <SelectContent className="bg-popover border-border text-popover-foreground">
                         {catalogoMaterias.map((cat: any) => (
                           <SelectItem key={cat.id} value={cat.nome}>
                             {cat.nome}
@@ -237,7 +238,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                   </div>
                   <Button
                     onClick={handleAddMateria}
-                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold px-4 h-10"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 h-10 cursor-pointer"
                   >
                     <Plus className="w-4 h-4 mr-1" /> Adicionar
                   </Button>
@@ -246,12 +247,12 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
 
               <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                 {materias.length === 0 ? (
-                  <div className="text-zinc-500 text-xs py-2 text-center">Nenhuma matéria adicionada a esta turma.</div>
+                  <div className="text-muted-foreground text-xs py-2 text-center">Nenhuma matéria adicionada a esta turma.</div>
                 ) : (
                   materias.map((mat: any) => (
-                    <div key={mat.id} className="flex justify-between items-center bg-[#121214] p-2.5 rounded-lg border border-[#222]">
-                      <div className="flex items-center gap-2 text-xs text-zinc-300">
-                        <BookOpen className="w-3.5 h-3.5 text-zinc-500" />
+                    <div key={mat.id} className="flex justify-between items-center bg-card p-2.5 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 text-xs text-foreground">
+                        <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{mat.nome}</span>
                       </div>
                       {isEditMode && (
@@ -259,7 +260,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveMateria(mat.id)}
-                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

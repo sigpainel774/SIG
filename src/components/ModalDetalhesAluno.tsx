@@ -207,7 +207,8 @@ export function ModalDetalhesAluno({
         footer={
           <Button
             onClick={() => onOpenChange(false)}
-            className="w-full bg-[#27272a] hover:bg-[#3f3f46] text-white font-bold h-11 rounded-lg transition-colors"
+            variant="outline"
+            className="w-full bg-muted text-foreground border border-border hover:bg-muted/80 font-bold h-11 rounded-lg transition-colors cursor-pointer"
           >
             Fechar
           </Button>
