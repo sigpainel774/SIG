@@ -56,3 +56,17 @@ Ao converter recursos do projeto antigo (Vanilla HTML/CSS/JS) para este reposit�
 - **Projeto Supabase**: https://nijjizpcodnjhvqwjuso.supabase.co
 <!-- END:sig-project-urls -->
 
+<!-- BEGIN:verify-roadmap-rule -->
+# Verificação de Roadmap Antes de Executar Comandos
+
+Sempre que for executar comandos no projeto, verifique previamente o arquivo `roadmap.dp` (ou `ROADMAP.md` / `roadmap.md`) no repositório para consultar as diretrizes e status das tarefas.
+<!-- END:verify-roadmap-rule -->
+
+<!-- BEGIN:verify-design-preferences-rule -->
+# Consulta de Preferências de Design Antes de Alterar Visual
+
+Sempre que for alterar o visual do sistema, consulte previamente o arquivo `design_preferences.md` (ou `DESIGN_PREFERENCES.md`) para garantir conformidade com os padrões visuais e diretrizes de UI/UX do projeto.
+<!-- END:verify-design-preferences-rule -->
+
+
+
