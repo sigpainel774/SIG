@@ -55,6 +55,15 @@ const PrazoFrequenciaTab = dynamic(() => import('./PrazoFrequenciaTab').then((m)
   ),
 })
 
+const PrazoAtividadesTab = dynamic(() => import('./PrazoAtividadesTab').then((m) => ({ default: m.PrazoAtividadesTab })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
+
 // Fix #5 / P3: Dynamic import — GradeCurricularTab e suas queries só carregam ao clicar na aba
 const GradeCurricularTab = dynamic(() => import('./GradeCurricularTab'), {
   ssr: false,
@@ -72,7 +81,7 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia'
+type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades'
 
 export function ConfiguracoesClient() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
@@ -472,6 +481,33 @@ export function ConfiguracoesClient() {
             </div>
           </button>
         )}
+
+        {(isDiretor || isAdmin) && (
+          <button
+            onClick={() => setActiveTab('prazo-atividades')}
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+              activeTab === 'prazo-atividades'
+                ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            )}
+          >
+            <div
+              className={cn(
+                'p-3 rounded-xl',
+                activeTab === 'prazo-atividades'
+                  ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <CalendarClock className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Prazo de Atividades</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Antecedência mínima para envio de atividades à secretaria</p>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Conteúdo das abas */}
@@ -625,6 +661,12 @@ export function ConfiguracoesClient() {
       {activeTab === 'prazo-frequencia' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <PrazoFrequenciaTab />
+        </div>
+      )}
+
+      {activeTab === 'prazo-atividades' && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <PrazoAtividadesTab />
         </div>
       )}
     </div>
