@@ -116,24 +116,24 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           className="w-full h-full"
         >
           <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="Mapa de Ruas">
-              <TileLayer
-                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Google Satélite (Híbrido)">
+            <LayersControl.BaseLayer checked name="Google Satélite (Híbrido)">
               <TileLayer
                 attribution="&copy; Google Maps"
                 url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                 maxZoom={20}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Google Satélite">
+            <LayersControl.BaseLayer name="Google Satélite (Puro)">
               <TileLayer
                 attribution="&copy; Google Maps"
                 url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
                 maxZoom={20}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
+              <TileLayer
+                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Satélite (Esri)">
