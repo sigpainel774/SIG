@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Loader2,
   Save,
+  CalendarClock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -45,6 +46,15 @@ const SessoesAtivasTab = dynamic(() => import('./SessoesAtivasTab').then((m) => 
   ),
 })
 
+const PrazoFrequenciaTab = dynamic(() => import('./PrazoFrequenciaTab').then((m) => ({ default: m.PrazoFrequenciaTab })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
+
 // Fix #5 / P3: Dynamic import — GradeCurricularTab e suas queries só carregam ao clicar na aba
 const GradeCurricularTab = dynamic(() => import('./GradeCurricularTab'), {
   ssr: false,
@@ -62,7 +72,7 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias'
+type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia'
 
 export function ConfiguracoesClient() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
@@ -435,6 +445,33 @@ export function ConfiguracoesClient() {
             </div>
           </button>
         )}
+
+        {(isDiretor || isAdmin) && (
+          <button
+            onClick={() => setActiveTab('prazo-frequencia')}
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+              activeTab === 'prazo-frequencia'
+                ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            )}
+          >
+            <div
+              className={cn(
+                'p-3 rounded-xl',
+                activeTab === 'prazo-frequencia'
+                  ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <CalendarClock className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Prazo de Frequência</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Trava de dias limite para alteração de chamadas passadas</p>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Conteúdo das abas */}
@@ -582,6 +619,12 @@ export function ConfiguracoesClient() {
       {activeTab === 'materias' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <GradeCurricularTab />
+        </div>
+      )}
+
+      {activeTab === 'prazo-frequencia' && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <PrazoFrequenciaTab />
         </div>
       )}
     </div>
