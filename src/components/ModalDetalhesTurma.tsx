@@ -97,11 +97,11 @@ export function ModalDetalhesTurma({
       >
         {/* Abas Nativas do SIG */}
         <div>
-          <div className="bg-[#18181b] border border-[#26262a] p-1 rounded-xl w-full grid grid-cols-4 h-11 text-muted-foreground">
+          <div className="bg-muted/80 border border-border p-1 rounded-xl w-full grid grid-cols-4 h-11 text-muted-foreground">
             <button
               onClick={() => setActiveTab('materias')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'materias' ? 'bg-[#27272a] text-white shadow border border-[#3f3f46]' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
+                activeTab === 'materias' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -110,7 +110,7 @@ export function ModalDetalhesTurma({
             <button
               onClick={() => setActiveTab('alunos')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'alunos' ? 'bg-[#27272a] text-white shadow border border-[#3f3f46]' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
+                activeTab === 'alunos' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
               <Users className="w-4 h-4" />
@@ -119,7 +119,7 @@ export function ModalDetalhesTurma({
             <button
               onClick={() => setActiveTab('frequencia')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'frequencia' ? 'bg-[#27272a] text-white shadow border border-[#3f3f46]' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
+                activeTab === 'frequencia' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
               <CalendarDays className="w-4 h-4" />
@@ -128,7 +128,7 @@ export function ModalDetalhesTurma({
             <button
               onClick={() => setActiveTab('notas')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'notas' ? 'bg-[#27272a] text-white shadow border border-[#3f3f46]' : 'hover:text-foreground hover:bg-[#eef5ff] dark:hover:bg-primary/5'
+                activeTab === 'notas' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
