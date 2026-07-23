@@ -84,97 +84,102 @@
 }
 
 :root {
-  --background: #f4f7fb;
-  --foreground: #111827;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #111827;
+  --popover-foreground: #0f172a;
   --primary: #1D6FD6;
   --primary-foreground: #ffffff;
   --secondary: #f8fafc;
-  --secondary-foreground: #111827;
+  --secondary-foreground: #0f172a;
   --muted: #f8fafc;
   --muted-foreground: #64748b;
-  --accent: #f8fafc;
-  --accent-foreground: #111827;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
   --destructive: #ef4444;
-  --border: #dbe3ee;
-  --input: #dbe3ee;
+
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+
+  --border: rgba(15, 23, 42, 0.08);
+  --input: #f8fafc;
+  --input-bg: #f8fafc;
   --ring: #1D6FD6;
   --radius: 0.5rem;
   
-  --sidebar: #f2f5f9;
-  --sidebar-foreground: #475569;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #334155;
   --sidebar-primary: #1D6FD6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e6f0fb;
+  --sidebar-accent: #eff6ff;
   --sidebar-accent-foreground: #1D6FD6;
-  --sidebar-border: #dbe3ee;
+  --sidebar-border: rgba(15, 23, 42, 0.08);
   --sidebar-ring: #1D6FD6;
 
-  --border-custom: #dbe3ee;
+  --border-custom: rgba(15, 23, 42, 0.08);
   --hover-custom: #f8fafc;
-  --foreground-custom: #111827;
+  --foreground-custom: #0f172a;
   
   --surface-1: #ffffff;
   --surface-2: #f8fafc;
-  --surface-3: #eef3f8;
-  --text-primary-hard: #111827;
-  --input-bg: #fafbfc;
+  --surface-3: #f1f5f9;
+  --text-primary-hard: #0f172a;
 }
 
 .dark {
-  --background: #0d0f13;
+  --background: #0B0E14;
   --foreground: #f2f3f5;
 
-  --card: #171b21;
+  --card: #1A202C;
   --card-foreground: #f2f3f5;
 
-  --popover: #1d222a;
+  --popover: #1E2430;
   --popover-foreground: #f2f3f5;
 
   --primary: #3ea6ff;
-  --primary-foreground: #0d0f13;
+  --primary-foreground: #0B0E14;
 
-  --secondary: #1b1f26;
+  --secondary: #161C26;
   --secondary-foreground: #f2f3f5;
 
-  --muted: #1b1f26;
-  --muted-foreground: #97a1ae;
+  --muted: #161C26;
+  --muted-foreground: #94a3b8;
 
-  --accent: #1e232b;
+  --accent: #1E2430;
   --accent-foreground: #f2f3f5;
 
   --destructive: #ef4444;
 
-  /* NOVOS — não existiam antes */
   --success: #34d399;
   --success-foreground: #06281c;
   --warning: #f5a524;
   --warning-foreground: #2b1a02;
 
-  --border: #262c36;
-  --input: #12151a;
-  --input-bg: #12151a;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: #121621;
+  --input-bg: #121621;
   --ring: #3ea6ff;
 
-  --sidebar: #12151a;
+  --sidebar: #121621;
   --sidebar-foreground: #f2f3f5;
   --sidebar-primary: #3ea6ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b1f26;
+  --sidebar-accent: #1A202C;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #262c36;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #3ea6ff;
 
-  --border-custom: #262c36;
-  --hover-custom: #212630;
+  --border-custom: rgba(255, 255, 255, 0.08);
+  --hover-custom: #222938;
   --foreground-custom: #f2f3f5;
 
-  --surface-1: #12151a;
-  --surface-2: #171b21;
-  --surface-3: #1d222a;
+  --surface-1: #0B0E14;
+  --surface-2: #121621;
+  --surface-3: #1A202C;
 
   --text-primary-hard: #ffffff;
   --radius: 0.5rem;
@@ -197,15 +202,27 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Sombra sofisticada para cards no tema light */
+  /* Sombra multicamada e borda refinada para cards no tema light */
   :root [data-slot="card"] {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
-    border-color: #dbe3ee;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 16px -4px rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.08);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  /* Remove sombras extras nos cards no dark mode */
+  :root [data-slot="card"]:hover {
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 12px 24px -4px rgba(15, 23, 42, 0.08);
+    border-color: rgba(29, 111, 214, 0.3);
+  }
+
+  /* Sombras ambientais e bordas sutis para cards no dark mode */
   .dark [data-slot="card"] {
-    box-shadow: none;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dark [data-slot="card"]:hover {
+    border-color: rgba(62, 166, 255, 0.25);
   }
 
   /* Efeito de foco premium nos inputs no tema light */
