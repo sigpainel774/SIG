@@ -51,7 +51,7 @@ export default function MiniMapa({
 
   // Sincroniza estado interno caso o pai atualize as coordenadas
   useEffect(() => {
-    if (initialLat && initialLng) {
+    if (typeof initialLat === 'number' && typeof initialLng === 'number' && !isNaN(initialLat) && !isNaN(initialLng)) {
       setLat(initialLat);
       setLng(initialLng);
       setZoom(16);
