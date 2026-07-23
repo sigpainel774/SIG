@@ -6,7 +6,8 @@ import {
   ChevronRight,
   RefreshCw,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Lock
 } from 'lucide-react'
 
 interface TabFrequenciasTurmaProps {
@@ -21,6 +22,8 @@ interface TabFrequenciasTurmaProps {
   loading: boolean
   loadingFreq: boolean
   frequencias: Record<string, boolean>
+  isPrazoExpirado?: boolean
+  prazoFrequenciaDias?: number
   handleLancarFrequencia: (alunoId: string, presenca: boolean) => Promise<void>
   mutateFrequencias: () => any
 }
@@ -37,6 +40,8 @@ export function TabFrequenciasTurma({
   loading,
   loadingFreq,
   frequencias,
+  isPrazoExpirado = false,
+  prazoFrequenciaDias = 15,
   handleLancarFrequencia,
   mutateFrequencias
 }: TabFrequenciasTurmaProps) {
@@ -49,6 +54,16 @@ export function TabFrequenciasTurma({
 
   return (
     <div className="space-y-4 mt-5">
+      {/* Alerta de Bloqueio por Prazo Expirado */}
+      {isPrazoExpirado && (
+        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center gap-2.5 shadow-xs">
+          <Lock className="w-4 h-4 shrink-0 text-amber-500" />
+          <span>
+            <strong>Edição Bloqueada:</strong> O prazo limite de alteração de frequência para esta data expirou ({prazoFrequenciaDias} dias). Apenas a Direção e o Superadmin podem fazer alterações.
+          </span>
+        </div>
+      )}
+
       {/* Controles de Data e Matéria */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center bg-background border border-border rounded-xl overflow-hidden h-10">
@@ -144,22 +159,28 @@ export function TabFrequenciasTurma({
                 {/* Botões Presente / Falta */}
                 <div className="flex gap-2">
                   <button
+                    disabled={isPrazoExpirado}
                     onClick={() => handleLancarFrequencia(aluno.id, true)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                      status === true
-                        ? 'bg-green-500/10 text-green-500 border-green-500/30'
-                        : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      isPrazoExpirado
+                        ? 'opacity-50 cursor-not-allowed bg-muted border-border text-muted-foreground'
+                        : status === true
+                        ? 'bg-green-500/10 text-green-500 border-green-500/30 cursor-pointer'
+                        : 'bg-transparent text-muted-foreground border-border hover:bg-muted cursor-pointer'
                     }`}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Presente
                   </button>
                   <button
+                    disabled={isPrazoExpirado}
                     onClick={() => handleLancarFrequencia(aluno.id, false)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                      status === false
-                        ? 'bg-red-500/10 text-red-500 border-red-500/30'
-                        : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      isPrazoExpirado
+                        ? 'opacity-50 cursor-not-allowed bg-muted border-border text-muted-foreground'
+                        : status === false
+                        ? 'bg-red-500/10 text-red-500 border-red-500/30 cursor-pointer'
+                        : 'bg-transparent text-muted-foreground border-border hover:bg-muted cursor-pointer'
                     }`}
                   >
                     <XCircle className="w-3.5 h-3.5" />

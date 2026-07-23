@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { toast } from 'sonner'
 
+import { useAuthStore } from '@/store/useAuthStore'
+
 interface UseTurmaFrequenciasProps {
   open: boolean
   turma: any
@@ -52,6 +54,38 @@ export function useTurmaFrequencias({
     }
   )
 
+  // 6. Buscar prazo de limite em dias da rede
+  const { data: prazoFrequenciaDias = 15 } = useSWR(
+    open ? 'prazo_frequencia_dias' : null,
+    async () => {
+      const { data } = await (supabase.from as any)('configuracoes_rede')
+        .select('prazo_frequencia_dias')
+        .limit(1)
+        .maybeSingle()
+      return data?.prazo_frequencia_dias ?? 15
+    },
+    { revalidateOnFocus: false, dedupingInterval: 300000 }
+  )
+
+  // Checar se usuário logado é Diretor ou Superadmin (reativo com Zustand)
+  const isDiretor = useAuthStore((state) => state.isDiretor())
+  const isAdmin = useAuthStore((state) => state.isAdminGlobalOrRoot())
+  const isDiretorOuAdmin = isDiretor || isAdmin
+
+  // Calcular se o prazo limite expirou para esta data
+  const isPrazoExpirado = (() => {
+    if (prazoFrequenciaDias === 0) return false // 0 = Sem trava
+    if (isDiretorOuAdmin) return false // Direção/Superadmin isentos
+
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataAlvo = new Date(dataFreq + 'T00:00:00')
+    const diffMs = hoje.getTime() - dataAlvo.getTime()
+    const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    return diffDias > prazoFrequenciaDias
+  })()
+
   useEffect(() => {
     if (errorFreq) {
       toast.error('Erro ao buscar frequências: ' + errorFreq.message)
@@ -83,6 +117,11 @@ export function useTurmaFrequencias({
   }
 
   const handleLancarFrequencia = async (alunoId: string, presenca: boolean) => {
+    if (isPrazoExpirado) {
+      toast.error(`A alteração de frequência para esta data está bloqueada. O prazo limite é de ${prazoFrequenciaDias} dias. Entre em contato com a Direção.`)
+      return
+    }
+
     const targetEscolaId = escolaAtivaId || turma?.escola_id
     if (!targetEscolaId) {
       toast.error('Escola não identificada para lançar frequência.')
@@ -143,6 +182,8 @@ export function useTurmaFrequencias({
     setSelectedAgendaAulaId,
     frequencias,
     loadingFreq,
+    isPrazoExpirado,
+    prazoFrequenciaDias,
     alterarData,
     handleLancarFrequencia,
     mutateFrequencias

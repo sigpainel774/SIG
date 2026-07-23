@@ -218,6 +218,8 @@ export function useTurmaDetalhes({
     setSelectedAgendaAulaId: frequenciasHook.setSelectedAgendaAulaId,
     frequencias: frequenciasHook.frequencias,
     loadingFreq: frequenciasHook.loadingFreq,
+    isPrazoExpirado: frequenciasHook.isPrazoExpirado,
+    prazoFrequenciaDias: frequenciasHook.prazoFrequenciaDias,
     alterarData: frequenciasHook.alterarData,
     handleLancarFrequencia: frequenciasHook.handleLancarFrequencia,
     mutateFrequencias: frequenciasHook.mutateFrequencias,

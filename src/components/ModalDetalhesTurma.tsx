@@ -53,6 +53,8 @@ export function ModalDetalhesTurma({
     setSelectedAluno,
     isEditMode,
     frequencias,
+    isPrazoExpirado,
+    prazoFrequenciaDias,
     notasState,
     recuperacoesState,
     unidadesAtivas,
@@ -185,6 +187,8 @@ export function ModalDetalhesTurma({
                 loading={loading}
                 loadingFreq={loadingFreq}
                 frequencias={frequencias}
+                isPrazoExpirado={isPrazoExpirado}
+                prazoFrequenciaDias={prazoFrequenciaDias}
                 handleLancarFrequencia={handleLancarFrequencia}
                 mutateFrequencias={mutateFrequencias}
               />
