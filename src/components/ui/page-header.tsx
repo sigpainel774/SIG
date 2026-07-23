@@ -37,11 +37,11 @@ export function PageHeader({
   }
 
   return (
-    <div className={cn("flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#26262a]", className)}>
+    <div className={cn("flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border", className)}>
       <div className="flex items-start gap-3">
         {backHref ? (
           <Link href={backHref}>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white shrink-0 mt-1">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-muted shrink-0 mt-1">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
@@ -50,7 +50,7 @@ export function PageHeader({
             variant="ghost"
             size="icon"
             onClick={handleBack}
-            className="text-muted-foreground hover:text-white shrink-0 mt-1"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted shrink-0 mt-1"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -61,12 +61,12 @@ export function PageHeader({
             {icon && (
               <IconTile icon={icon} variant={iconVariant} className={cn("h-10 w-10 shrink-0 rounded-xl", iconClassName)} />
             )}
-            <h1 className="text-2xl font-bold text-white tracking-tight m-0">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight m-0">
               {title}
             </h1>
           </div>
           {description && (
-            <p className="text-sm font-normal mt-1 text-zinc-400">
+            <p className="text-sm font-normal mt-1 text-muted-foreground">
               {description}
             </p>
           )}
