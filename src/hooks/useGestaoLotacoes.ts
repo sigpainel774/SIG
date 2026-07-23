@@ -228,15 +228,39 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
+      const cargoFinal = cargoNome || selecionado.cargo || ''
+      const isCargoDiretor = cargoFinal.toUpperCase().includes('DIRETOR')
       const escolaNome = escolas.find((e) => e.id === escolaId)?.nome ?? escolaId
+
+      if (isCargoDiretor) {
+        const { data: escolaData } = await supabase
+          .from('escolas')
+          .select('diretor_id, nome')
+          .eq('id', escolaId)
+          .single()
+
+        if (escolaData?.diretor_id && escolaData.diretor_id !== selecionado.id) {
+          toast.error(`A escola "${escolaData.nome}" já possui um diretor ativo cadastrado. Desvincule/inative o gestor atual antes de adicionar um novo diretor.`)
+          if (isMounted.current) setSalvando(false)
+          return
+        }
+      }
+
       const { error } = await supabase.from('vinculos_funcionarios').insert({
         funcionario_id: selecionado.id,
         escola_id: escolaId,
-        cargo: cargoNome || selecionado.cargo || null,
+        cargo: cargoFinal || null,
         ativo: true,
         data_inicio: new Date().toISOString().split('T')[0],
       })
       if (error) throw error
+
+      if (isCargoDiretor) {
+        await supabase
+          .from('escolas')
+          .update({ diretor_id: selecionado.id })
+          .eq('id', escolaId)
+      }
 
       // Sincronizar acessos_usuarios caso exista registro com escola_id null
       await supabase
@@ -250,7 +274,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         action: 'CREATE',
         entity: 'vinculos_funcionarios',
         entityId: selecionado.id,
-        newData: { escola: escolaNome, cargo: cargoNome || selecionado.cargo },
+        newData: { escola: escolaNome, cargo: cargoFinal },
         performedBy: performer,
       })
 

@@ -144,6 +144,13 @@ export function ModalEscola({ open, onOpenChange, escolaToEdit, onSuccess }: Mod
       return
     }
 
+    // Exigência: Não pode haver diretor ativo para cadastrar novo diretor.
+    // Se a escola já possui um diretor e o usuário está tentando selecionar OUTRA pessoa diretamente:
+    if (escolaToEdit?.diretor_id && diretorId && diretorId !== escolaToEdit.diretor_id) {
+      toast.error('Esta escola já possui um diretor ativo. Defina como "-- Nenhum Diretor Selecionado --" e salve para desvincular o gestor atual antes de atribuir uma nova pessoa.')
+      return
+    }
+
     setLoading(true)
     const supabase = createClient()
 
