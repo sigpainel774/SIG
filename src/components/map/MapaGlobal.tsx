@@ -35,26 +35,32 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     );
   }, [busca, funcionarios]);
 
-  // 2. Coordenadas padrão de Sapeaçu - BA
-  const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.9875, -39.0911], []);
+  // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
+  const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
 
   // Lógica para centralizar o mapa em Sapeaçu por padrão ou quando a busca for limpa
   useEffect(() => {
     if (mapRef.current) {
+      // Invalida o tamanho do container Leaflet para prevenir mosaico cinza em trocas de aba
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 100);
+
       if (busca.trim() !== '' && funcionariosFiltrados.length > 0) {
         // Se houver busca ativa por texto, centraliza no primeiro resultado filtrado
         const primeiro = funcionariosFiltrados[0];
         mapRef.current.setView([primeiro.latitude, primeiro.longitude], 15);
       } else {
         // Por padrão (sem busca ou ao abrir), o mapa sempre foca em Sapeaçu - BA
-        mapRef.current.setView(SAPEACU_CENTER, 13);
+        mapRef.current.setView(SAPEACU_CENTER, 14);
       }
     }
   }, [busca, funcionariosFiltrados, SAPEACU_CENTER]);
 
   const recentralizarSapeacu = () => {
     if (mapRef.current) {
-      mapRef.current.setView(SAPEACU_CENTER, 13);
+      mapRef.current.invalidateSize();
+      mapRef.current.setView(SAPEACU_CENTER, 14);
     }
   };
 
@@ -127,7 +133,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-[#26304d] bg-[#182030] shadow-md z-0">
         <MapContainer
           center={SAPEACU_CENTER}
-          zoom={13}
+          zoom={14}
           ref={mapRef}
           className="w-full h-full"
         >
