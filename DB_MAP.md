@@ -619,3 +619,32 @@ Parâmetros e dados gerais da Secretaria de Educação e da rede municipal.
 *   `nome_rede`: `text` (Nome do órgão da rede, Default: 'Secretaria Municipal de Educação de Sapeaçu', Nullable)
 *   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
+### 53. `public.abastecimentos_veiculos`
+Registro de consumo de combustível, abastecimentos e hodômetro da frota escolar.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `veiculo_id`: `uuid` (FK -> `public.veiculos.id`, NOT NULL)
+*   `data`: `date` (NOT NULL, Default: `CURRENT_DATE`)
+*   `odometro_km`: `numeric` (Leitura do odômetro em KM, NOT NULL)
+*   `litros`: `numeric` (Volume em litros abastecidos, NOT NULL)
+*   `valor_total`: `numeric` (Valor total em R$, NOT NULL)
+*   `tipo_combustivel`: `text` (Default: 'DIESEL', NOT NULL)
+*   `posto_nota`: `text` (Identificação do posto ou número da Nota Fiscal, Nullable)
+*   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
+### 54. `public.manutencoes_veiculos`
+Histórico de revisões, oficinas e manutenções da frota.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `veiculo_id`: `uuid` (FK -> `public.veiculos.id`, NOT NULL)
+*   `data`: `date` (NOT NULL, Default: `CURRENT_DATE`)
+*   `tipo`: `text` (Default: 'PREVENTIVA', e.g. 'PREVENTIVA' ou 'CORRETIVA', NOT NULL)
+*   `odometro_km`: `numeric` (Odômetro na revisão, NOT NULL)
+*   `descricao`: `text` (Detalhamento do serviço/peças trocadas, NOT NULL)
+*   `valor_total`: `numeric` (Custo total da manutenção em R$, NOT NULL)
+*   `oficina_fornecedor`: `text` (Nome da oficina ou fornecedor, Nullable)
+*   `proxima_revisao_km`: `numeric` (KM previsto para a próxima revisão, Nullable)
+*   `proxima_revisao_data`: `date` (Data prevista para próxima revisão, Nullable)
+*   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
+

@@ -11,6 +11,7 @@ Atualizado automaticamente com o status real do repositório.
 
 | Plano | Status | Observação |
 |-------|--------|------------|
+| Módulo de Transporte Escolar Completo | ✅ Implementado | Sessão 2026-07-23 — Tabelas SQL, 5 abas em `/admin/transporte`, modais de combustível, manutenção e alocação de alunos |
 | Módulo Secretário de Educação & Limpeza Boletim | ✅ Implementado | Sessão 2026-07-23 — Tabela `configuracoes_rede`, modal `/admin/escolas`, integração boletim e remoção placeholder |
 | Integração Resend + Primeiro Acesso | ✅ Implementado | Sessão 2026-07-21 — Tela `/primeiro-acesso`, integração no `proxy.ts`, `PerfilTab.tsx` e `login/page.tsx` |
 | Verificação QR Code / Crachá de Funcionário | ✅ Implementado | Sessão 2026-07-20 — Rota pública `/verificar/funcionario/[id]` com validação instantânea |
