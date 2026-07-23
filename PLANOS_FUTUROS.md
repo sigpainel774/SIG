@@ -18,6 +18,7 @@ Atualizado automaticamente com o status real do repositório.
 | Ajuste de Mapas e Geolocalização | ✅ Implementado | Sessão 2026-07-22 — Tiles Leaflet atualizados com fallbacks resilientes (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`) |
 | Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — aguardando início do desenvolvimento |
 | Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
+| Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -629,3 +630,21 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 - [ ] Criar endpoint seguro `/api/admin/audit-chat` para receber a pergunta do administrador, filtrar os logs relevantes do período/entidade e alimentar o LLM com o contexto necessário.
 - [ ] Desenvolver a interface visual do mini assistente de chat no painel administrativo (`src/app/(dashboard)/admin/page.tsx`).
 - [ ] Garantir conformidade com as regras de permissões (apenas usuários de nível elevado como Superadmin ou Direção devem ter acesso a esses dados sensíveis de auditoria).
+
+---
+
+## 📌 Módulo de Roteiro e Paradas de Transporte Escolar (Motoristas - Nível 6)
+
+> **Status:** ⏳ Pendente — Proposto em 2026-07-23  
+> **Planejado em:** 2026-07-23  
+> **Objetivo:** Desenvolver uma interface web/PWA mobile otimizada para motoristas escolares (contas de acesso Nível 6) para acompanhamento em tempo real do roteiro de transporte, visualização da sequência de paradas, lista de alunos por ponto de embarque/desembarque e registro do diário de bordo da viagem.
+> **Tabelas de banco envolvidas / propostas:** `public.rotas_transporte`, `public.veiculos`, `public.alunos_transporte`, `public.historico_viagens_transporte` (nova)
+
+### Checklist de Execução
+- [ ] **Modelagem e RLS**: Configurar políticas de RLS no Supabase liberando acesso de leitura/escrita condicionado a contas de Nível 6 (`acessos_usuarios.nivel = 6`) apenas para as rotas e veículos atribuídos ao motorista autenticado (`veiculos.motorista_id = funcionario.id`).
+- [ ] **Interface Mobile / PWA para Motoristas**: Criar visualização dedicada responsiva com botões de alto contraste, tipografia adaptada para uso mobile e operação facilitada no veículo.
+- [ ] **Sequenciamento de Roteiro e Paradas**: Exibir o itinerário sequencial das paradas (`pontos_parada` jsonb) da rota vinculada com horários previstos e integração com Google Maps / Waze (deep links de navegação GPS).
+- [ ] **Lista e Checklist de Alunos por Parada**: Exibir a relação de alunos alocados em cada ponto (`public.alunos_transporte`), com opção de marcar presença/embarque e desembarque no ponto da escola ou residência.
+- [ ] **Diário de Bordo & Leitura de Hodômetro**: Modal/Formulário rápido para o motorista registrar o início da viagem (quilometragem inicial), intercorrências no percurso (ex: atrasos, desvios) e finalização da viagem (quilometragem final e confirmação de chegada).
+- [ ] **Histórico e Relatórios de Viagem**: Tabela `public.historico_viagens_transporte` para auditoria de horários cumpridos, total de alunos transportados por dia/turno e acompanhamento pela gestão de transporte (Nível 1 a 5 / Admin).
+

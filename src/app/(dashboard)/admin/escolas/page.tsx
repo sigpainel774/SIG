@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ModalEscola } from '@/components/modals/modal-escola'
 import { ModalConfigAnexosEscola } from '@/components/modals/modal-config-anexos-escola'
 import { ModalConfigSecretario } from '@/components/modals/modal-config-secretario'
+import { ModalImportarFichasDocx } from '@/components/modals/modal-importar-fichas-docx'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -32,6 +33,7 @@ export default function AdminEscolasPage() {
   const [escolaParaAnexos, setEscolaParaAnexos] = useState<any | null>(null)
 
   const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
+  const [importDocxOpen, setImportDocxOpen] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -187,6 +189,14 @@ export default function AdminEscolasPage() {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline"
+            onClick={() => setImportDocxOpen(true)}
+            className="bg-[#121214] border-[#3f3f46] text-emerald-400 hover:text-emerald-300 hover:bg-[#202024] font-semibold"
+            title="Importar Fichas de Alunos via arquivos DOCX"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" /> Importar Fichas (DOCX)
+          </Button>
+          <Button 
+            variant="outline"
             onClick={() => setConfigSecretarioOpen(true)}
             className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold"
             title="Configurar Titular da Secretaria de Educação"
@@ -254,6 +264,15 @@ export default function AdminEscolasPage() {
         <ModalConfigSecretario
           open={configSecretarioOpen}
           onOpenChange={setConfigSecretarioOpen}
+        />
+      )}
+
+      {/* Modal de Importação de Fichas DOCX */}
+      {importDocxOpen && (
+        <ModalImportarFichasDocx
+          open={importDocxOpen}
+          onOpenChange={setImportDocxOpen}
+          onSuccess={loadEscolas}
         />
       )}
     </div>
