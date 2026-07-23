@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Menu, School, Sun, Moon, Monitor } from 'lucide-react'
+import { Bell, Menu, School } from 'lucide-react'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
 import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -11,14 +11,9 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { Logo } from './Logo'
 import { useSchoolStore } from '@/store/useSchoolStore'
-import { useTheme } from 'next-themes'
-import { usePathname } from 'next/navigation'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 export function Header() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
-  const pathname = usePathname()
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario } = useAuthStore()
   const { toggleMobile } = useSidebarStore()
@@ -26,14 +21,6 @@ export function Header() {
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    setThemeMenuOpen(false)
-  }, [pathname])
 
   useEffect(() => {
     if (!funcionario?.auth_user_id) return
@@ -117,67 +104,7 @@ export function Header() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-4 shrink-0">
-          {/* Seletor de Tema */}
-          {mounted && (
-            <div className="relative">
-              <button
-                onClick={() => setThemeMenuOpen(!themeMenuOpen)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer flex items-center justify-center"
-                title="Alterar Tema"
-              >
-                {theme === 'light' && <Sun className="w-5 h-5 text-amber-500" />}
-                {theme === 'dark' && <Moon className="w-5 h-5 text-blue-400" />}
-                {theme === 'system' && <Monitor className="w-5 h-5" />}
-              </button>
-
-              {themeMenuOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setThemeMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-36 rounded-xl border border-borderCustom bg-card p-1 shadow-lg z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150">
-                    <button
-                      onClick={() => {
-                        setTheme('light')
-                        setThemeMenuOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-hoverCustom transition-colors text-left cursor-pointer ${
-                        theme === 'light' ? 'text-[#185FA5] dark:text-[#3ea6ff] font-semibold' : 'text-foregroundCustom'
-                      }`}
-                    >
-                      <Sun className="w-4 h-4 text-amber-500" />
-                      <span>Claro</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTheme('dark')
-                        setThemeMenuOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-hoverCustom transition-colors text-left cursor-pointer ${
-                        theme === 'dark' ? 'text-[#185FA5] dark:text-[#3ea6ff] font-semibold' : 'text-foregroundCustom'
-                      }`}
-                    >
-                      <Moon className="w-4 h-4 text-blue-400" />
-                      <span>Escuro</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTheme('system')
-                        setThemeMenuOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-hoverCustom transition-colors text-left cursor-pointer ${
-                        theme === 'system' ? 'text-[#185FA5] dark:text-[#3ea6ff] font-semibold' : 'text-foregroundCustom'
-                      }`}
-                    >
-                      <Monitor className="w-4 h-4" />
-                      <span>Sistema</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          <ThemeSwitcher />
 
           {/* Notification Bell */}
           <button

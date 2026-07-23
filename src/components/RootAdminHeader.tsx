@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowLeft, Home } from 'lucide-react'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 export function RootAdminHeader() {
   const pathname = usePathname()
@@ -30,7 +31,8 @@ export function RootAdminHeader() {
           <span className="text-sm font-medium">Voltar</span>
         </button>
       </div>
-      <div>
+      <div className="flex items-center gap-2">
+        <ThemeSwitcher buttonClassName="border border-[#7c3aed]/20 bg-[#141416]" />
         <button
           onClick={() => router.push('/admin')}
           className="flex items-center gap-2 bg-[#7c3aed]/10 text-[#a78bfa] hover:bg-[#7c3aed]/20 border border-[#7c3aed]/30 px-3 py-1.5 rounded-lg transition-colors text-sm font-semibold"
