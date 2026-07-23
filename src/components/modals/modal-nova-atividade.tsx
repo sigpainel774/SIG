@@ -25,7 +25,7 @@ interface ModalNovaAtividadeProps {
 }
 
 export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaAtividadeProps) {
-  const { funcionario, escolaAtivaId } = useAuthStore()
+  const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
 
   const [loading, setLoading] = useState(false)
@@ -33,6 +33,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
   const [turmas, setTurmas] = useState<any[]>([])
   const [materias, setMaterias] = useState<any[]>([])
+  const [prazoMinimoDias, setPrazoMinimoDias] = useState<number>(5)
 
   const [turmaId, setTurmaId] = useState('')
   const [materiaId, setMateriaId] = useState('')
@@ -41,6 +42,44 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
   const [dataAplicacao, setDataAplicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [arquivo, setArquivo] = useState<File | null>(null)
+
+  const isGlobalAdmin = isAdminGlobalOrRoot?.() ?? false
+  const nivelNaEscola = escolaAtivaId
+    ? acessos.find((a) => a.escola_id === escolaAtivaId)?.nivel ?? 99
+    : 99
+  const isDiretoria = nivelNaEscola === 2 || isGlobalAdmin
+
+  // Carregar prazo mínimo configurado pela direção
+  useEffect(() => {
+    if (!open) return
+    let active = true
+    const loadPrazoConfig = async () => {
+      const supabase = createClient()
+      const { data } = await (supabase as any)
+        .from('configuracoes_rede')
+        .select('prazo_envio_atividades_dias')
+        .limit(1)
+        .maybeSingle()
+      if (active && data) {
+        setPrazoMinimoDias(data.prazo_envio_atividades_dias ?? 5)
+      }
+    }
+    loadPrazoConfig()
+    return () => {
+      active = false
+    }
+  }, [open])
+
+  // Função utilitária para calcular data mínima em formato YYYY-MM-DD (local timezone safe)
+  const getMinDataAplicacaoStr = (dias: number) => {
+    if (dias <= 0) return ''
+    const d = new Date()
+    d.setDate(d.getDate() + dias)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
 
   // Carregar turmas vinculadas ao professor
   useEffect(() => {
@@ -115,6 +154,18 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
     if (!dataAplicacao) { toast.error('Informe a data de aplicação.'); return }
     if (!arquivo) { toast.error('Selecione um arquivo para envio.'); return }
     if (!escolaAtivaId || !funcionario?.id) { toast.error('Sessão inválida. Recarregue a página.'); return }
+
+    // Validar antecedência mínima exigida pela direção (isenta diretores e admins)
+    if (!isDiretoria && prazoMinimoDias > 0) {
+      const minDateStr = getMinDataAplicacaoStr(prazoMinimoDias)
+      if (minDateStr && dataAplicacao < minDateStr) {
+        const [y, m, d] = minDateStr.split('-')
+        toast.error(
+          `A direção exige antecedência mínima de ${prazoMinimoDias} dia(s) para o envio de atividades. A data de aplicação deve ser a partir de ${d}/${m}/${y}.`
+        )
+        return
+      }
+    }
 
     setLoading(true)
     setLoadingMsg('Enviando arquivo...')
@@ -380,9 +431,15 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                 <Input
                   type="date"
                   value={dataAplicacao}
+                  min={!isDiretoria && prazoMinimoDias > 0 ? getMinDataAplicacaoStr(prazoMinimoDias) : undefined}
                   onChange={(e) => setDataAplicacao(e.target.value)}
                   className="bg-[#1c1c1e] border-[#26262a] text-white focus-visible:ring-[#3ea6ff]"
                 />
+                {!isDiretoria && prazoMinimoDias > 0 && (
+                  <p className="text-[11px] text-amber-400/90 font-medium">
+                    Prazo mínimo de envio: {prazoMinimoDias} dia(s) de antecedência.
+                  </p>
+                )}
               </div>
             </div>
 
