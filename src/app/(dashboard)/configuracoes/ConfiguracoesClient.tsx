@@ -7,6 +7,7 @@ import {
   User,
   PenTool,
   BookOpen,
+  ShieldCheck,
   Loader2,
   Save,
 } from 'lucide-react'
@@ -34,6 +35,16 @@ const SignaturePad = dynamic(
   }
 )
 
+// Dynamic import — SessoesAtivasTab só carrega ao clicar na aba
+const SessoesAtivasTab = dynamic(() => import('./SessoesAtivasTab').then((m) => ({ default: m.SessoesAtivasTab })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
+
 // Fix #5 / P3: Dynamic import — GradeCurricularTab e suas queries só carregam ao clicar na aba
 const GradeCurricularTab = dynamic(() => import('./GradeCurricularTab'), {
   ssr: false,
@@ -51,7 +62,7 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias'
+type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias'
 
 export function ConfiguracoesClient() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
@@ -319,6 +330,31 @@ export function ConfiguracoesClient() {
           </div>
         </button>
 
+        <button
+          onClick={() => setActiveTab('sessoes')}
+          className={cn(
+            'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+            activeTab === 'sessoes'
+              ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+              : 'bg-card border-borderCustom hover:bg-hoverCustom'
+          )}
+        >
+          <div
+            className={cn(
+              'p-3 rounded-xl',
+              activeTab === 'sessoes'
+                ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            <ShieldCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foregroundCustom text-base">Sessões Ativas</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Gerenciar conexões e dispositivos logados na sua conta</p>
+          </div>
+        </button>
+
         {(isDiretor || isAdmin) && (
           <button
             onClick={() => setActiveTab('assinatura-diretor')}
@@ -411,6 +447,10 @@ export function ConfiguracoesClient() {
           status={localFuncionario?.status ?? 'Ativo'}
           mounted={mounted}
         />
+      )}
+
+      {activeTab === 'sessoes' && (
+        <SessoesAtivasTab />
       )}
 
       {activeTab === 'assinatura-diretor' && (isDiretor || isAdmin) && (
