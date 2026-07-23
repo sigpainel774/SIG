@@ -78,6 +78,7 @@ export function PrintBoletimSapeacu({
   const [escolaEditada, setEscolaEditada] = useState(escolaNome)
 
   // Estados para assinaturas e rodapé
+  const [secretarioNome, setSecretarioNome] = useState('MARCUS ALANO CORREIA OLIVEIRA')
   const [fol, setFol] = useState('')
   const [alunoRodape, setAlunoRodape] = useState(aluno.nome)
   const [assinaturaTrimestre1, setAssinaturaTrimestre1] = useState('')
@@ -154,6 +155,30 @@ export function PrintBoletimSapeacu({
 
     return () => setMounted(false)
   }, [notas, recuperacoes])
+
+  // Buscar nome oficial do Secretário de Educação no Supabase
+  useEffect(() => {
+    let active = true
+    const fetchSecretario = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await (supabase as any)
+          .from('configuracoes_rede')
+          .select('secretario_educacao')
+          .eq('id', '00000000-0000-0000-0000-000000000001')
+          .maybeSingle()
+        if (active && data?.secretario_educacao) {
+          setSecretarioNome(data.secretario_educacao)
+        }
+      } catch (err) {
+        console.error('Erro ao carregar nome do Secretário de Educação:', err)
+      }
+    }
+    fetchSecretario()
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Separação de matérias
   const materiasComuns = materias.filter((m) => m.base_curricular === 'comum' || !m.base_curricular)
@@ -476,6 +501,7 @@ export function PrintBoletimSapeacu({
 
             {/* Rodapé e Canhoto */}
             <BoletimAssinaturas
+              secretarioNome={secretarioNome}
               isEditMode={isEditMode}
               dataEmissao={dataEmissao}
               setDataEmissao={setDataEmissao}
