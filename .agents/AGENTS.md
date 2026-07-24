@@ -186,6 +186,16 @@
 - **Validação Estrita de UUIDs em Cadeia de Notificação/Eventos**: Antes de submeter dados a funções SQL ou disparar RPCs de notificação que esperam tipos UUID (`solicitante_id`, `destinatario_id`, etc.), valide ativamente se o ID é uma string UUID válida e não vazia.
 - **Prevenção de Reset Involuntário de Abas e Estados de UX**: Ao sincronizar hooks ou componentes usando `useEffect`, certifique-se de que a aba ativa (`activeTab`) ou a navegação do usuário não seja resetada involuntariamente devido a efeitos colaterais de re-renderizadores do componente pai. Utilize referências (`useRef`) para verificar o estado anterior e execute resets de estado somente sob transições explícitas de abertura/fechamento.
 - **Validação de Propriedades Interpoladas no JSX**: Evite strings hardcoded ou interpolações incorretas em tags JSX que possam renderizar chaves literais como texto (ex: `"{item.nome}"` em vez de `{item.nome}`).
+- **Prevenção de Loops de Fetches e Polling Descontrolado (ES-1)**:
+  - Todo `useEffect` que executa chamadas assíncronas (`fetch` / Supabase) DEVE utilizar `AbortController` e/ou referência `isMounted` para cancelar a requisição em caso de re-disparo ou desmontagem.
+  - Toda derivação de dados usada em dependências de `useEffect` (ex: `vinculos.filter(...)`) DEVE ser memorizada com `useMemo` para evitar re-criações contínuas da referência de array e loops infinitos de requisições.
+- **Montagem Estritamente Condicional de Modais e Portais (ES-2)**:
+  - Modais, caixas de diálogo, popovers e portais pesados (como relatórios e visualizações de impressão) NUNCA devem ser mantidos montados incondicionalmente no DOM (`<Modal open={false} />`).
+  - Use sempre a sintaxe condicional `{isOpen && <Modal open={isOpen} ... />}` para garantir que instâncias, formulários e portais só inicializem na memória quando abertos.
+- **Memorização de Escopos Estáticos e Lazy Content (ES-3)**:
+  - Listas estáticas densas de conteúdo (como FAQs, manuais na Central de Ajuda ou menus de configuração) contendo JSX complexo não devem ser declaradas dentro da função render.
+  - Mova estruturas constantes para fora do componente ou converta para *render functions* `() => (<div>...</div>)` executadas sob demanda.
+
 <!-- BEGIN:multi-tenant-isolation-rule -->
 # Isolamento de Dados por Escola (Multi-Tenant Guard & tenant_id)
 
