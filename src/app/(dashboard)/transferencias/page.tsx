@@ -54,19 +54,21 @@ function TransferenciasContent() {
       )}
 
       {/* Modal de Avaliação de Pedido (Aprovar/Rejeitar) */}
-      <ModalAvaliarTransferencia
-        open={modalDecisaoOpen}
-        onOpenChange={setModalDecisaoOpen}
-        transferencia={transferenciaSelecionada}
-        activeTab={activeTab}
-        isEditMode={isEditMode}
-        isAdminGlobalOrRoot={isAdminGlobalOrRoot}
-        processing={processing}
-        justificativa={justificativa}
-        setJustificativa={setJustificativa}
-        onDecidir={handleDecidirTransferencia}
-        onReverter={handleReverterTransferencia}
-      />
+      {modalDecisaoOpen && transferenciaSelecionada && (
+        <ModalAvaliarTransferencia
+          open={modalDecisaoOpen}
+          onOpenChange={setModalDecisaoOpen}
+          transferencia={transferenciaSelecionada}
+          activeTab={activeTab}
+          isEditMode={isEditMode}
+          isAdminGlobalOrRoot={isAdminGlobalOrRoot}
+          processing={processing}
+          justificativa={justificativa}
+          setJustificativa={setJustificativa}
+          onDecidir={handleDecidirTransferencia}
+          onReverter={handleReverterTransferencia}
+        />
+      )}
 
       {/* Topo / Header */}
       <TransferenciasHeader

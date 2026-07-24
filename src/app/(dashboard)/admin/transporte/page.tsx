@@ -1241,44 +1241,54 @@ export default function AdminTransportePage() {
       )}
 
       {/* ── Modais ── */}
-      <ModalVeiculo
-        open={modalVeiculo}
-        onOpenChange={setModalVeiculo}
-        motoristas={motoristas}
-        onSaved={loadVeiculos}
-        editando={editandoVeiculo}
-      />
+      {modalVeiculo && (
+        <ModalVeiculo
+          open={modalVeiculo}
+          onOpenChange={setModalVeiculo}
+          motoristas={motoristas}
+          onSaved={loadVeiculos}
+          editando={editandoVeiculo}
+        />
+      )}
 
-      <ModalRota
-        open={modalRota}
-        onOpenChange={setModalRota}
-        veiculos={veiculos}
-        escolas={escolas}
-        motoristas={motoristas}
-        onSaved={loadRotas}
-        editando={editandoRota}
-      />
+      {modalRota && (
+        <ModalRota
+          open={modalRota}
+          onOpenChange={setModalRota}
+          veiculos={veiculos}
+          escolas={escolas}
+          motoristas={motoristas}
+          onSaved={loadRotas}
+          editando={editandoRota}
+        />
+      )}
 
-      <ModalAbastecimento
-        open={modalAbastecimentoOpen}
-        onOpenChange={setModalAbastecimentoOpen}
-        veiculos={veiculos}
-        onSuccess={loadAbastecimentos}
-      />
+      {modalAbastecimentoOpen && (
+        <ModalAbastecimento
+          open={modalAbastecimentoOpen}
+          onOpenChange={setModalAbastecimentoOpen}
+          veiculos={veiculos}
+          onSuccess={loadAbastecimentos}
+        />
+      )}
 
-      <ModalManutencao
-        open={modalManutencaoOpen}
-        onOpenChange={setModalManutencaoOpen}
-        veiculos={veiculos}
-        onSuccess={loadManutencoes}
-      />
+      {modalManutencaoOpen && (
+        <ModalManutencao
+          open={modalManutencaoOpen}
+          onOpenChange={setModalManutencaoOpen}
+          veiculos={veiculos}
+          onSuccess={loadManutencoes}
+        />
+      )}
 
-      <ModalAlocarAlunoTransporte
-        open={modalAlocarAlunoOpen}
-        onOpenChange={setModalAlocarAlunoOpen}
-        rotas={rotas}
-        onSuccess={loadAlunosTransporte}
-      />
+      {modalAlocarAlunoOpen && (
+        <ModalAlocarAlunoTransporte
+          open={modalAlocarAlunoOpen}
+          onOpenChange={setModalAlocarAlunoOpen}
+          rotas={rotas}
+          onSuccess={loadAlunosTransporte}
+        />
+      )}
     </div>
   )
 }

@@ -321,19 +321,23 @@ export default function FolhaPagamentoPage() {
       {/* Modais do Fluxo */}
       {selectedFunc && (
         <>
-          <ModalAdicionalSalario
-            open={isAdicionalOpen}
-            onOpenChange={setIsAdicionalOpen}
-            funcionarioId={selectedFunc.id}
-            funcionarioNome={selectedFunc.nome}
-          />
-          <ModalProgramarDesligamento
-            open={isDesligarOpen}
-            onOpenChange={setIsDesligarOpen}
-            funcionarioId={selectedFunc.id}
-            funcionarioNome={selectedFunc.nome}
-            onSuccess={fetchFuncionarios}
-          />
+          {isAdicionalOpen && (
+            <ModalAdicionalSalario
+              open={isAdicionalOpen}
+              onOpenChange={setIsAdicionalOpen}
+              funcionarioId={selectedFunc.id}
+              funcionarioNome={selectedFunc.nome}
+            />
+          )}
+          {isDesligarOpen && (
+            <ModalProgramarDesligamento
+              open={isDesligarOpen}
+              onOpenChange={setIsDesligarOpen}
+              funcionarioId={selectedFunc.id}
+              funcionarioNome={selectedFunc.nome}
+              onSuccess={fetchFuncionarios}
+            />
+          )}
         </>
       )}
     </div>
