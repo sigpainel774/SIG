@@ -17,7 +17,9 @@ import {
   PlusCircle, 
   Clock,
   Printer,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -37,6 +39,8 @@ interface AuditLogItem {
   new_data: any
 }
 
+const ITEMS_PER_PAGE = 20
+
 export default function CentralAtividadesPage() {
   const searchParams = useSearchParams()
   const urlLogId = searchParams.get('log_id')
@@ -51,6 +55,9 @@ export default function CentralAtividadesPage() {
   const [filtroAcao, setFiltroAcao] = useState<string>('todas')
   const [filtroEntidade, setFiltroEntidade] = useState<string>('todas')
   const [filtroPeriodo, setFiltroPeriodo] = useState<string>('7dias')
+
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState<number>(1)
 
   const isMounted = useRef(true)
 
@@ -75,7 +82,7 @@ export default function CentralAtividadesPage() {
       .from('audit_logs')
       .select('id, entity, entity_id, action, created_at, user_id, user_name, user_email, user_cargo, old_data, new_data, tenant_id, ip_address')
       .order('created_at', { ascending: false })
-      .limit(200)
+      .limit(1000)
 
     // Filtrar estritamente por Escola ativa quando selecionada
     if (targetEscolaId) {
@@ -128,6 +135,11 @@ export default function CentralAtividadesPage() {
     fetchLogs()
   }, [filtroPeriodo, filtroAcao, filtroEntidade, targetEscolaId])
 
+  // Resetar para a primeira página ao alterar qualquer filtro
+  useEffect(() => {
+    setPaginaAtual(1)
+  }, [busca, filtroAcao, filtroEntidade, filtroPeriodo, targetEscolaId])
+
   // Filtragem local por texto de busca + salvaguarda no cliente
   const logsFiltrados = useMemo(() => {
     return logs.filter((log) => {
@@ -157,6 +169,15 @@ export default function CentralAtividadesPage() {
       )
     })
   }, [logs, busca, targetEscolaId])
+
+  // Cálculos de Paginação
+  const totalItens = logsFiltrados.length
+  const totalPaginas = Math.ceil(totalItens / ITEMS_PER_PAGE) || 1
+
+  const logsPaginados = useMemo(() => {
+    const inicio = (paginaAtual - 1) * ITEMS_PER_PAGE
+    return logsFiltrados.slice(inicio, inicio + ITEMS_PER_PAGE)
+  }, [logsFiltrados, paginaAtual])
 
   // Renderizador de Ícone por Ação
   const getActionBadge = (action: string) => {
@@ -351,20 +372,58 @@ export default function CentralAtividadesPage() {
         </div>
       </div>
 
-      {/* Tabela de Atividades */}
-      <StandardTable
-        data={logsFiltrados}
-        columns={columns}
-        loading={loading}
-        loadingMessage="Buscando trilha de atividades..."
-        emptyMessage="Nenhuma atividade registrada no período selecionado."
-        rowClassName={(log) =>
-          log.id === urlLogId
-            ? 'bg-sky-500/10 border-l-4 border-l-sky-400 font-medium animate-pulse'
-            : ''
-        }
-      />
+      {/* Tabela de Atividades Paginada */}
+      <div className="space-y-3">
+        <StandardTable
+          data={logsPaginados}
+          columns={columns}
+          loading={loading}
+          loadingMessage="Buscando trilha de atividades..."
+          emptyMessage="Nenhuma atividade registrada no período selecionado."
+          rowClassName={(log) =>
+            log.id === urlLogId
+              ? 'bg-sky-500/10 border-l-4 border-l-sky-400 font-medium animate-pulse'
+              : ''
+          }
+        />
+
+        {/* Barra de Controles de Paginação */}
+        {!loading && totalItens > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-card border border-border rounded-xl px-4 py-3 text-xs text-muted-foreground no-print">
+            <div>
+              Exibindo <strong className="text-foreground">{(paginaAtual - 1) * ITEMS_PER_PAGE + 1}</strong> a <strong className="text-foreground">{Math.min(paginaAtual * ITEMS_PER_PAGE, totalItens)}</strong> de <strong className="text-foreground">{totalItens}</strong> atividades registradas
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                disabled={paginaAtual <= 1}
+                className="bg-surface-1 border-border text-foreground hover:bg-hoverCustom rounded-lg h-8 px-3 gap-1 cursor-pointer disabled:opacity-40"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+              </Button>
+
+              <span className="px-2 font-medium text-foreground">
+                Página <strong>{paginaAtual}</strong> de <strong>{totalPaginas}</strong>
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaAtual >= totalPaginas}
+                className="bg-surface-1 border-border text-foreground hover:bg-hoverCustom rounded-lg h-8 px-3 gap-1 cursor-pointer disabled:opacity-40"
+              >
+                Próximo <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
+
 
