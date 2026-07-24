@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { PrintHeader } from '@/components/print/print-header'
 
 export interface FrequenciaPrintData {
@@ -39,14 +40,44 @@ interface PrintDetalhesFrequenciaProps {
 }
 
 export function PrintDetalhesFrequencia({ data }: PrintDetalhesFrequenciaProps) {
-  if (!data) return null
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  if (!data || !mounted) return null
 
   // Formata a data para formato amigável DD/MM/YYYY
   const [ano, mes, dia] = data.data.split('-')
   const dataFormatada = `${dia}/${mes}/${ano}`
 
-  return (
+  return createPortal(
     <div className="print-portal-container hidden print:block bg-white text-black font-sans p-4">
+      <style>{`
+        @media print {
+          body > *:not(.print-portal-container) {
+            display: none !important;
+          }
+          .print-portal-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: white !important;
+            color: black !important;
+            display: block !important;
+            z-index: 99999 !important;
+          }
+          .page-break-inside-avoid {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+        }
+      `}</style>
+
       {/* Cabeçalho Oficial do Documento */}
       <PrintHeader
         escolaNome={data.escolaNome}
@@ -158,6 +189,8 @@ export function PrintDetalhesFrequencia({ data }: PrintDetalhesFrequenciaProps) 
         <span>Sistema de Gestão Escolar (SIG) — Relatório Oficial de Frequência</span>
         <span>Impresso em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
+
