@@ -455,7 +455,7 @@ Informativos do mural da escola.
 *   `title`, `body`, `target`: `text` (NOT NULL)
 *   `date`: `date` (NOT NULL)
 *   `criado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
-*   `anexo_url`, `anexo_name`: `text` (Nullable)
+*   `anexo_url`, `anexo_nome`: `text` (Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
 ### 38. `public.performance_metrics`
