@@ -70,7 +70,7 @@ export function PrintRelacaoAlunosFotos({
       />
 
       {/* Resumo da Turma */}
-      <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded px-3 py-1.5 mb-3 font-semibold text-[11px]">
+      <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded px-3 py-1.5 mb-3 print:py-0.5 print:px-2 print:mb-1.5 font-semibold text-[11px] print:text-[9.5px]">
         <span>Turma: <strong>{turma.nome}</strong></span>
         <span>Turno: <strong>{turma.turno ?? 'Não informado'}</strong></span>
         <span>Ano Letivo: <strong>{turma.ano_letivo ?? '-'}</strong></span>
@@ -83,16 +83,16 @@ export function PrintRelacaoAlunosFotos({
           Nenhum estudante matriculado nesta turma.
         </div>
       ) : (
-        <table className="w-full border-collapse border border-black text-[10px]">
+        <table className="w-full border-collapse border border-black text-[10px] print:text-[8.5px]">
           <thead>
             <tr className="bg-gray-200 text-black border-b border-black">
-              <th className="border border-black px-1 py-1 text-center w-12"></th>
-              <th className="border border-black px-2 py-1 text-left">Nome do Estudante</th>
-              <th className="border border-black px-2 py-1 text-center w-24">Data Nasc.</th>
-              <th className="border border-black px-2 py-1 text-left w-36">Mãe / Responsável</th>
-              <th className="border border-black px-1.5 py-1 text-center w-10">#</th>
-              <th className="border border-black px-2 py-1 text-center w-36">Assinatura</th>
-              <th className="border border-black px-2 py-1 text-center w-16">Visto</th>
+              <th className="border border-black px-1 py-1 print:py-0.5 text-center w-9 print:w-8"></th>
+              <th className="border border-black px-2 py-1 print:px-1.5 print:py-0.5 text-left">Nome do Estudante</th>
+              <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center w-24 print:w-20">Data Nasc.</th>
+              <th className="border border-black px-2 py-1 print:px-1.5 print:py-0.5 text-left w-36 print:w-32">Mãe / Responsável</th>
+              <th className="border border-black px-1.5 py-1 print:px-0.5 print:py-0.5 text-center w-10 print:w-8">#</th>
+              <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center w-36 print:w-28">Assinatura</th>
+              <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center w-16 print:w-12">Visto</th>
             </tr>
           </thead>
           <tbody>
@@ -113,8 +113,8 @@ export function PrintRelacaoAlunosFotos({
                   style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
                 >
                   {/* Foto Avatar Circular */}
-                  <td className="border border-black p-1 text-center align-middle">
-                    <div className="w-10 h-10 rounded-full border border-gray-400 bg-gray-200 overflow-hidden mx-auto flex items-center justify-center text-[10px] text-gray-500 font-semibold shrink-0">
+                  <td className="border border-black p-1 print:p-0.5 text-center align-middle">
+                    <div className="w-10 h-10 print:w-6 print:h-6 rounded-full border border-gray-400 bg-gray-200 overflow-hidden mx-auto flex items-center justify-center text-[10px] print:text-[7.5px] text-gray-500 font-semibold shrink-0">
                       {hasValidPhoto ? (
                         <img
                           src={getCacheBustedUrl(aluno.foto_url)}
@@ -129,41 +129,41 @@ export function PrintRelacaoAlunosFotos({
                   </td>
 
                   {/* Nome do Aluno e Detalhes Multilinha */}
-                  <td className="border border-black px-2 py-1 text-left align-middle">
-                    <div className="font-bold text-[11px] text-black">
+                  <td className="border border-black px-2 py-1 print:px-1.5 print:py-0.5 text-left align-middle">
+                    <div className="font-bold text-[11px] print:text-[9px] text-black leading-tight">
                       {aluno.nome?.toUpperCase()}
                     </div>
-                    <div className="text-[9px] text-gray-600 font-normal mt-0.5 flex flex-wrap items-center gap-x-4">
+                    <div className="text-[9px] print:text-[7.5px] text-gray-600 font-normal mt-0.5 print:mt-0 flex flex-wrap items-center gap-x-3 leading-tight">
                       <span>Matrícula: {aluno.matricula ?? '-'}</span>
                       <span>Nasc: {formatDataNascimento(aluno.data_nascimento)}</span>
                     </div>
-                    <div className="text-[9px] text-gray-600 font-normal">
+                    <div className="text-[9px] print:text-[7.5px] text-gray-600 font-normal leading-tight">
                       Mãe/Resp: {respNome}
                     </div>
                   </td>
 
                   {/* Data Nascimento */}
-                  <td className="border border-black px-2 py-1 text-center font-medium text-[10.5px]">
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center font-medium text-[10.5px] print:text-[8.5px]">
                     {formatDataNascimento(aluno.data_nascimento)}
                   </td>
 
                   {/* Responsável */}
-                  <td className="border border-black px-2 py-1 text-left text-[9.5px]">
+                  <td className="border border-black px-2 py-1 print:px-1.5 print:py-0.5 text-left text-[9.5px] print:text-[8px] truncate max-w-[140px]">
                     {respNome}
                   </td>
 
                   {/* Ordem (#) */}
-                  <td className="border border-black px-1 py-1 text-center font-bold text-[12px]">
+                  <td className="border border-black px-1 py-1 print:px-0.5 print:py-0.5 text-center font-bold text-[12px] print:text-[10px]">
                     {index + 1}
                   </td>
 
                   {/* Assinatura com Linha Pontilhada */}
-                  <td className="border border-black px-2 py-1 text-center align-middle">
-                    <span className="text-gray-400 font-mono text-[9px] tracking-widest">.......................</span>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center align-middle">
+                    <span className="text-gray-400 font-mono text-[9px] print:text-[7.5px] tracking-wider">.......................</span>
                   </td>
 
                   {/* Visto */}
-                  <td className="border border-black px-2 py-1 text-center w-16">
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-center w-16 print:w-12">
                   </td>
                 </tr>
               )
