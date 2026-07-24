@@ -1,9 +1,9 @@
-// SIG Sapeaçu — Service Worker v8
-// Estratégia Otimizada: Cache-First / SWR para Assets Estáticos, Network-First com Timeout Adaptativo e Cache de Páginas HTML.
+// SIG Sapeaçu — Service Worker v9
+// Estratégia Otimizada: Cache-First / SWR para Assets Estáticos, Network-First com Cache Fallback para Navegações HTML e Transições RSC.
 
-const CACHE_NAME = 'sig-sapeacu-v8';
-const STATIC_CACHE_NAME = 'sig-static-v8';
-const PAGES_CACHE_NAME = 'sig-pages-v8';
+const CACHE_NAME = 'sig-sapeacu-v9';
+const STATIC_CACHE_NAME = 'sig-static-v9';
+const PAGES_CACHE_NAME = 'sig-pages-v9';
 
 // Assets estáticos essenciais para o PWA (ícones, manifest e offline)
 const STATIC_ASSETS = [
@@ -72,6 +72,8 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.svg') ||
     url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.jpeg') ||
+    url.pathname.endsWith('.webp') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.endsWith('manifest.json')
   ) {
@@ -95,77 +97,91 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Requisições RSC do Next.js App Router em redes instáveis -> Devolver 503 limpo em caso de erro para não crashar o JSON parser
-  const isRscRequest = event.request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
+  // Identificação de requisição RSC (Next.js App Router internal navigation / prefetch)
+  const isRscRequest =
+    event.request.headers.get('RSC') === '1' ||
+    url.searchParams.has('_rsc') ||
+    event.request.headers.get('accept')?.includes('text/x-component');
+
+  // 2. Transições RSC (Next.js App Router) -> Network-First com Cache em PAGES_CACHE_NAME + Fallback de Dados
   if (isRscRequest) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
-          JSON.stringify({ error: 'Rede instável ou indisponível', status: 503 }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        );
-      })
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(PAGES_CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // 1º Fallback: Tentar resposta RSC exata em cache
+          const cachedRsc = await caches.match(event.request);
+          if (cachedRsc) return cachedRsc;
+
+          // 2º Fallback: Tentar buscar no cache ignorando query params dinâmicos se houver
+          const pagesCache = await caches.open(PAGES_CACHE_NAME);
+          const cachedKeys = await pagesCache.keys();
+          const matchedKey = cachedKeys.find(req => {
+            const reqUrl = new URL(req.url);
+            return reqUrl.pathname === url.pathname && (req.headers.get('RSC') === '1' || reqUrl.searchParams.has('_rsc'));
+          });
+          if (matchedKey) {
+            const matchedResponse = await pagesCache.match(matchedKey);
+            if (matchedResponse) return matchedResponse;
+          }
+
+          // 3º Fallback: Retornar 503 com Content-Type text/x-component para acionar navegação limpa / hard fallback do Next.js
+          return new Response('', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: {
+              'Content-Type': 'text/x-component',
+              'X-Nextjs-Matched-Path': url.pathname,
+            },
+          });
+        })
     );
     return;
   }
 
-  // 3. Navegação de páginas HTML -> Network First com Timeout Adaptativo (7s/10s) + Cache de Páginas + Fallback Offline
+  // 3. Navegação de páginas HTML -> Network-First SEM timeouts falsos quando online + Cache de Páginas + Fallback Offline
   const isHtmlNavigation =
     event.request.mode === 'navigate' &&
-    event.request.headers.get('accept')?.includes('text/html') &&
-    !isRscRequest;
+    event.request.headers.get('accept')?.includes('text/html');
 
   if (isHtmlNavigation) {
-    const effectiveType = self.navigator && (self.navigator as any).connection?.effectiveType;
-    const timeoutMs = (effectiveType === '2g' || effectiveType === 'slow-2g') ? 10000 : 7000;
-
     event.respondWith(
-      new Promise((resolve) => {
-        let isTimedOut = false;
-
-        const timer = setTimeout(async () => {
-          isTimedOut = true;
-          // Buscar primeiro no cache de páginas seguras visualizadas
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(PAGES_CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Se o fetch falhar (verdadeiramente offline ou falha de rede)
+          // 1º Tenta a versão em cache desta página específica
           const cachedPage = await caches.match(event.request);
-          if (cachedPage) {
-            return resolve(cachedPage);
-          }
+          if (cachedPage) return cachedPage;
+
+          // 2º Fallback para a página offline padrão do PWA
           const offlinePage = await caches.match('/offline.html');
-          if (offlinePage) {
-            return resolve(offlinePage);
-          }
-        }, timeoutMs);
+          if (offlinePage) return offlinePage;
 
-        fetch(event.request)
-          .then((networkResponse) => {
-            clearTimeout(timer);
-            if (!isTimedOut) {
-              if (networkResponse && networkResponse.status === 200) {
-                const responseToCache = networkResponse.clone();
-                caches.open(PAGES_CACHE_NAME).then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-              }
-              resolve(networkResponse);
-            }
-          })
-          .catch(async () => {
-            clearTimeout(timer);
-            const cachedPage = await caches.match(event.request);
-            if (cachedPage) return resolve(cachedPage);
-
-            const offlinePage = await caches.match('/offline.html');
-            if (offlinePage) return resolve(offlinePage);
-
-            resolve(
-              new Response(
-                '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem Conexão</title><style>body{background:#0f1117;color:#e8eaf6;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}h1{font-size:1.5rem}p{color:#8a8fa8;margin-top:.5rem}</style></head><body><div><h1>🔌 Conexão Lenta ou Indisponível</h1><p>Verifique sua conexão e tente novamente.</p><br><button onclick="location.reload()" style="background:#3b6cf4;color:#fff;border:none;border-radius:8px;padding:.6rem 1.5rem;cursor:pointer;font-size:.9rem">Tentar novamente</button></div></body></html>',
-                { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-              )
-            );
-          });
-      })
+          // 3º Fallback HTML inline caso o arquivo offline.html por algum motivo não esteja em cache
+          return new Response(
+            '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem Conexão</title><style>body{background:#0f1117;color:#e8eaf6;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}h1{font-size:1.5rem}p{color:#8a8fa8;margin-top:.5rem}</style></head><body><div><h1>🔌 Conexão Indisponível</h1><p>Não foi possível carregar a página. Verifique sua conexão e tente novamente.</p><br><button onclick="location.reload()" style="background:#3b6cf4;color:#fff;border:none;border-radius:8px;padding:.6rem 1.5rem;cursor:pointer;font-size:.9rem">Tentar novamente</button></div></body></html>',
+            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        })
     );
     return;
   }
 });
+
