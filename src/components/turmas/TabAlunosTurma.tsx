@@ -2,19 +2,25 @@
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Printer } from 'lucide-react'
+import { ModalImprimirRelacaoTurma } from '@/components/modals/modal-imprimir-relacao-turma'
 
 interface TabAlunosTurmaProps {
   loading: boolean
   alunos: any[]
   setSelectedAluno: (aluno: any) => void
+  turma?: any
 }
 
 export function TabAlunosTurma({
   loading,
   alunos,
-  setSelectedAluno
+  setSelectedAluno,
+  turma
 }: TabAlunosTurmaProps) {
   const [searchAluno, setSearchAluno] = useState('')
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
 
   const filteredAlunos = useMemo(() => {
     return alunos.filter((a) =>
@@ -24,15 +30,29 @@ export function TabAlunosTurma({
 
   return (
     <div className="space-y-4 mt-5">
-      {/* Campo de Busca */}
-      <div className="relative">
-        <Input
-          type="search"
-          placeholder="Buscar aluno..."
-          value={searchAluno}
-          onChange={(e) => setSearchAluno(e.target.value)}
-          className="bg-background border-border text-foreground placeholder-muted-foreground h-10 text-sm rounded-xl pl-3 focus-visible:ring-primary"
-        />
+      {/* Campo de Busca e Botão de Impressão */}
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Input
+            type="search"
+            placeholder="Buscar aluno..."
+            value={searchAluno}
+            onChange={(e) => setSearchAluno(e.target.value)}
+            className="bg-background border-border text-foreground placeholder-muted-foreground h-10 text-sm rounded-xl pl-3 focus-visible:ring-primary"
+          />
+        </div>
+
+        {turma && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsPrintModalOpen(true)}
+            className="bg-background border-border hover:bg-secondary text-foreground font-semibold gap-2 h-10 rounded-xl px-3 shrink-0"
+          >
+            <Printer className="w-4 h-4 text-primary" />
+            <span className="hidden sm:inline">Imprimir (Foto 3x4)</span>
+          </Button>
+        )}
       </div>
 
       {/* Lista */}
@@ -69,6 +89,15 @@ export function TabAlunosTurma({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Modal de Impressão */}
+      {turma && (
+        <ModalImprimirRelacaoTurma
+          open={isPrintModalOpen}
+          onOpenChange={setIsPrintModalOpen}
+          turma={turma}
+        />
       )}
     </div>
   )

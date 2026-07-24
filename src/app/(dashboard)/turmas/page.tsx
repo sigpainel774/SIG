@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, GraduationCap, Users, ArrowLeft, Inbox } from 'lucide-react'
+import { Plus, Search, GraduationCap, Users, ArrowLeft, Inbox, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
+import { ModalImprimirRelacaoTurma } from '@/components/modals/modal-imprimir-relacao-turma'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -29,6 +30,7 @@ export default function TurmasPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
 
   const supabase = createClient() as any
@@ -235,24 +237,41 @@ export default function TurmasPage() {
               }}
               className="bg-card border border-border hover:border-primary/40 rounded-xl p-5 flex flex-col space-y-4 relative cursor-pointer transition-all duration-200"
             >
-              {/* Opção de Editar no Card */}
-              {isEditMode && (
+              {/* Ações no Card (Imprimir e Editar) */}
+              <div className="absolute top-3.5 right-3.5 flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
+                  title="Imprimir Relação com Foto 3x4"
                   onClick={(e) => {
-                    e.stopPropagation() // impede de disparar o onClick do card de forma duplicada
+                    e.stopPropagation()
                     setSelectedTurma(turma)
-                    setIsModalOpen(true)
+                    setIsPrintModalOpen(true)
                   }}
-                  className="absolute top-4 right-4 text-primary hover:text-primary hover:bg-primary/10 h-8 font-semibold"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary h-8 px-2.5 rounded-lg gap-1 text-xs font-semibold"
                 >
-                  Editar
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Imprimir</span>
                 </Button>
-              )}
+
+                {isEditMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedTurma(turma)
+                      setIsModalOpen(true)
+                    }}
+                    className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-2.5 font-semibold text-xs rounded-lg"
+                  >
+                    Editar
+                  </Button>
+                )}
+              </div>
 
               {/* Cabeçalho do Card */}
-              <div className="space-y-2 pr-14">
+              <div className="space-y-2 pr-28">
                 <h3 className="text-base font-semibold text-foreground tracking-tight">
                   {turma.nome} <span className="text-muted-foreground font-normal text-sm">({turma.ano_letivo})</span>
                 </h3>
@@ -307,6 +326,13 @@ export default function TurmasPage() {
       <ModalDetalhesTurma
         open={isDetailsModalOpen}
         onOpenChange={setIsDetailsModalOpen}
+        turma={selectedTurma}
+      />
+
+      {/* Modal de Impressão da Relação de Alunos (Foto 3x4) */}
+      <ModalImprimirRelacaoTurma
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
         turma={selectedTurma}
       />
     </div>
