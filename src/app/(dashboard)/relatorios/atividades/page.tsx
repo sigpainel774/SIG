@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -12,22 +12,20 @@ import {
   Search, 
   Filter, 
   ArrowLeft, 
-  UserCheck, 
-  GraduationCap, 
-  FileText, 
   Eye, 
   Edit3, 
   PlusCircle, 
   Clock,
-  Printer
+  Printer,
+  Trash2
 } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface AuditLogItem {
   id: string
   created_at: string
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'READ' | string
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'READ' | 'PURGE' | 'RESTORE' | string
   entity: string
   entity_id: string
   tenant_id?: string | null
@@ -54,6 +52,15 @@ export default function CentralAtividadesPage() {
   const [filtroEntidade, setFiltroEntidade] = useState<string>('todas')
   const [filtroPeriodo, setFiltroPeriodo] = useState<string>('7dias')
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   useEffect(() => {
     loadEscolas()
   }, [loadEscolas])
@@ -61,31 +68,35 @@ export default function CentralAtividadesPage() {
   const targetEscolaId = selectedEscola?.id || urlEscolaId || null
 
   const fetchLogs = async () => {
-    setLoading(true)
+    if (isMounted.current) setLoading(true)
     const supabase = createClient()
 
     let query = supabase
       .from('audit_logs')
       .select('id, entity, entity_id, action, created_at, user_id, user_name, user_email, user_cargo, old_data, new_data, tenant_id, ip_address')
       .order('created_at', { ascending: false })
-      .limit(100)
+      .limit(200)
 
-    // SALVAGUARDA DE SEGURANÇA MULTI-TENANT: Filtrar estritamente por Escola ativa (suporta tenant_id e JSON legado)
+    // Filtrar estritamente por Escola ativa quando selecionada
     if (targetEscolaId) {
-      query = query.or(`tenant_id.eq.${targetEscolaId},new_data->>escola_id.eq.${targetEscolaId},old_data->>escola_id.eq.${targetEscolaId}`)
+      query = query.eq('tenant_id', targetEscolaId)
     }
 
-    // Aplicar filtro de período
-    const agora = new Date()
+    // Aplicar filtro de período (a partir das 00:00:00 do dia correspondente)
     if (filtroPeriodo === 'hoje') {
-      const inicioHoje = new Date(agora.setHours(0, 0, 0, 0)).toISOString()
-      query = query.gte('created_at', inicioHoje)
+      const inicioHoje = new Date()
+      inicioHoje.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', inicioHoje.toISOString())
     } else if (filtroPeriodo === '7dias') {
-      const ha7Dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      query = query.gte('created_at', ha7Dias)
+      const ha7Dias = new Date()
+      ha7Dias.setDate(ha7Dias.getDate() - 7)
+      ha7Dias.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', ha7Dias.toISOString())
     } else if (filtroPeriodo === '30dias') {
-      const ha30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      query = query.gte('created_at', ha30Dias)
+      const ha30Dias = new Date()
+      ha30Dias.setDate(ha30Dias.getDate() - 30)
+      ha30Dias.setHours(0, 0, 0, 0)
+      query = query.gte('created_at', ha30Dias.toISOString())
     }
 
     // Aplicar filtro de Ação
@@ -93,20 +104,23 @@ export default function CentralAtividadesPage() {
       query = query.eq('action', filtroAcao)
     }
 
-    // Aplicar filtro de Entidade
+    // Aplicar filtro de Entidade (usando ilike prefix para abranger alunos, alunos_anexos, etc.)
     if (filtroEntidade !== 'todas') {
-      query = query.eq('entity', filtroEntidade)
+      query = query.ilike('entity', `${filtroEntidade}%`)
     }
 
     try {
       const { data, error } = await query
       if (error) throw error
-      setLogs((data as AuditLogItem[]) ?? [])
-    } catch (err) {
+      if (isMounted.current) {
+        setLogs((data as AuditLogItem[]) ?? [])
+      }
+    } catch (err: any) {
       console.error('Erro ao carregar Central de Atividades:', err)
-      setLogs([])
+      toast.error('Erro ao carregar histórico de atividades: ' + (err.message || 'Falha de conexão'))
+      if (isMounted.current) setLogs([])
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }
 
@@ -114,34 +128,35 @@ export default function CentralAtividadesPage() {
     fetchLogs()
   }, [filtroPeriodo, filtroAcao, filtroEntidade, targetEscolaId])
 
-  // Filtragem local por texto de busca + SALVAGUARDA ESTRITA DE ESCOLA
-  const logsFiltrados = logs.filter((log) => {
-    // Salvaguarda adicional no cliente
-    if (targetEscolaId) {
-      const logEscolaId = log.tenant_id || log.new_data?.escola_id || log.old_data?.escola_id
-      if (logEscolaId && logEscolaId !== targetEscolaId) {
-        return false
+  // Filtragem local por texto de busca + salvaguarda no cliente
+  const logsFiltrados = useMemo(() => {
+    return logs.filter((log) => {
+      if (targetEscolaId) {
+        const logEscolaId = log.tenant_id || log.new_data?.escola_id || log.old_data?.escola_id
+        if (logEscolaId && logEscolaId !== targetEscolaId) {
+          return false
+        }
       }
-    }
 
-    if (!busca) return true
-    const termo = busca.toLowerCase()
-    const nomeUsuario = (log.user_name ?? '').toLowerCase()
-    const emailUsuario = (log.user_email ?? '').toLowerCase()
-    const cargoUsuario = (log.user_cargo ?? '').toLowerCase()
-    const entidade = (log.entity ?? '').toLowerCase()
-    const detalheOld = JSON.stringify(log.old_data ?? {}).toLowerCase()
-    const detalheNew = JSON.stringify(log.new_data ?? {}).toLowerCase()
+      if (!busca.trim()) return true
+      const termo = busca.toLowerCase().trim()
+      const nomeUsuario = (log.user_name ?? '').toLowerCase()
+      const emailUsuario = (log.user_email ?? '').toLowerCase()
+      const cargoUsuario = (log.user_cargo ?? '').toLowerCase()
+      const entidade = (log.entity ?? '').toLowerCase()
+      const detalheOld = JSON.stringify(log.old_data ?? {}).toLowerCase()
+      const detalheNew = JSON.stringify(log.new_data ?? {}).toLowerCase()
 
-    return (
-      nomeUsuario.includes(termo) ||
-      emailUsuario.includes(termo) ||
-      cargoUsuario.includes(termo) ||
-      entidade.includes(termo) ||
-      detalheOld.includes(termo) ||
-      detalheNew.includes(termo)
-    )
-  })
+      return (
+        nomeUsuario.includes(termo) ||
+        emailUsuario.includes(termo) ||
+        cargoUsuario.includes(termo) ||
+        entidade.includes(termo) ||
+        detalheOld.includes(termo) ||
+        detalheNew.includes(termo)
+      )
+    })
+  }, [logs, busca, targetEscolaId])
 
   // Renderizador de Ícone por Ação
   const getActionBadge = (action: string) => {
@@ -156,6 +171,13 @@ export default function CentralAtividadesPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
             <Edit3 className="w-3.5 h-3.5" /> Edição de Ficha
+          </span>
+        )
+      case 'DELETE':
+      case 'PURGE':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <Trash2 className="w-3.5 h-3.5" /> Exclusão / Arquivamento
           </span>
         )
       case 'READ':
@@ -204,7 +226,7 @@ export default function CentralAtividadesPage() {
       header: 'Módulo / Entidade',
       accessor: (log) => (
         <span className="text-xs font-mono font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md border border-border">
-          {log.entity === 'alunos' ? '🎓 Aluno' : log.entity === 'funcionarios' ? '👤 Funcionário' : log.entity}
+          {log.entity.startsWith('alunos') ? '🎓 Aluno' : log.entity.startsWith('funcionarios') ? '👤 Funcionário' : log.entity}
         </span>
       ),
     },
@@ -299,6 +321,7 @@ export default function CentralAtividadesPage() {
               <option value="todas">Todas as Ações</option>
               <option value="CREATE">Matrículas / Cadastros</option>
               <option value="UPDATE">Edições de Fichas</option>
+              <option value="DELETE">Exclusões / Arquivamentos</option>
               <option value="READ">Visualizações de Fichas</option>
             </select>
 
@@ -344,3 +367,4 @@ export default function CentralAtividadesPage() {
     </div>
   )
 }
+
