@@ -15,6 +15,58 @@ Contudo, encontrei três problemas que devem ser tratados antes de ampliar o uso
 2. As RPCs novas de painel são `SECURITY DEFINER` e não verificam internamente se o usuário pode consultar a escola/funcionário informado; combinadas com as rotas que aceitam IDs na URL, podem contornar o isolamento por RLS.
 3. A coleta de assinatura por código de quatro dígitos não tem unicidade, proteção contra tentativas ou token de servidor. Com muitos atendimentos simultâneos, pode colidir e, se a operação anônima estiver habilitada para fazê-la funcionar, abre uma superfície séria de exposição e alteração de dados.
 
+## Complemento validado no Supabase real (24/07/2026)
+
+O retrato do banco confirmou os principais riscos de autorização e elevou sua prioridade. O banco ainda está pequeno — cerca de **204 alunos**, **16 funcionários**, **232 logs de auditoria** e **12.729 métricas de desempenho** — portanto ele ainda não reproduz a carga de 3.000 alunos. Mesmo assim, já é possível ver que `performance_metrics` é a maior tabela do recorte analisado: **5,8 MB**, contra 616 kB de `audit_logs`.
+
+Em uma projeção apenas indicativa, mantendo a taxa atual de telemetria por colaborador, passar de 16 para 270 colaboradores pode levar as métricas para a ordem de **200 mil registros no mesmo período de retenção**. Isso não inviabiliza o Supabase, mas confirma a necessidade de amostragem/lote e índices guiados pelas consultas de percentil.
+
+### DB-1 — RLS ativo, porém várias tabelas continuam abertas para qualquer autenticado
+
+O banco tem RLS habilitado nas tabelas auditadas, mas há políticas permissivas, e políticas permissivas são combinadas por **OU** no PostgreSQL. Portanto, uma regra ampla pode anular uma regra específica existente na mesma tabela.
+
+Foram confirmadas políticas `dev_all_authenticated` com `FOR ALL` para `alunos`, `funcionarios`, `frequencias`, `notas`, `turmas`, `agenda_aulas`, `vinculos_turmas`, `atividades_secretaria`, abastecimentos e manutenções. Também há `Enable all for authenticated` com `USING true`/`WITH CHECK true` em `alunos_transporte`.
+
+**Impacto real:** qualquer pessoa autenticada consegue, via API pública do Supabase e seu próprio JWT, ler e alterar dados dessas tabelas sem que as regras específicas de escola, cargo ou turma sirvam como barreira efetiva. Para a rede planejada, isso deixa o isolamento entre escolas e perfis dependente apenas da interface, o que não é uma segurança válida.
+
+**Ação P0:** remover as políticas de desenvolvimento em produção, uma tabela por vez, depois de validar as políticas finais com matrizes de teste por papel. Não basta criar uma política restritiva nova; a ampla precisa ser removida.
+
+### DB-2 — assinatura pública está efetivamente exposta no banco
+
+O banco confirmou em `alunos` as políticas públicas `alunos_anon_select_signature` e `alunos_anon_update_signature`. Elas liberam qualquer registro que possua código temporário; a atualização usa `WITH CHECK true`. A política não verifica que o código apresentado pela pessoa corresponde ao registro a ser alterado nem limita quais colunas podem ser modificadas.
+
+Também existe `public_select_verificacao` com `USING true` na tabela `assinatura`, tornando a leitura pública de todos os registros possível no nível da tabela, e não apenas por um token específico.
+
+**Ação P0:** substituir essas políticas por uma rota de servidor baseada em desafio aleatório de uso único. A verificação pública deve consultar somente uma função/visão que receba o token e devolva os campos mínimos de validação; a tabela inteira não deve ter `SELECT` público.
+
+### DB-3 — três RPCs sensíveis são executáveis até por `anon`
+
+Foi confirmado que `obter_admin_dashboard_kpis`, `obter_multi_escolas_stats` e `obter_dados_boletim` são `SECURITY DEFINER`, não definem `search_path` próprio e possuem `anon_can_execute: true` e `authenticated_can_execute: true`. Isso torna o risco C-2 confirmado no banco real, não apenas uma hipótese de código.
+
+`get_performance_dashboard_stats` também é executável por `anon`, mas o código SQL analisado contém checagem de superadmin; ainda assim, a permissão deve ser reduzida para evitar chamadas inúteis e manter o contrato coerente.
+
+**Ação P0:** revogar `EXECUTE` de `PUBLIC`/`anon`, definir `SET search_path = public`, validar `auth.uid()` dentro de cada função e conceder execução apenas ao papel necessário. A autorização deve existir na função mesmo quando a rota API também a valida.
+
+### DB-4 — deriva de migrações entre repositório e produção
+
+O histórico retornado pelo Supabase não contém as migrações mais recentes do repositório para endurecimento de RLS/auditoria e RPCs de dashboard. Ao mesmo tempo, algumas políticas/funções equivalentes já existem no banco. Isso indica execução manual, histórico incompleto ou duas linhas de evolução diferentes.
+
+**Impacto:** um novo ambiente ou restauração pode ficar com regras diferentes da produção; e correções futuras podem falhar silenciosamente por assumirem uma migração já aplicada.
+
+**Ação P1:** inventariar o estado real, transformar as diferenças em uma migração idempotente revisada e registrar a implantação corretamente. Não marcar versões como aplicadas sem comparar o SQL efetivo.
+
+### DB-5 — índices confirmados: base boa, lacunas para as consultas de escala
+
+O banco já possui bons índices de agenda, frequência por escola/data e turma/data, auditoria por data, performance por rota/data e vínculos. As lacunas confirmadas são:
+
+- não há índice parcial `alunos(escola_id, nome)` para a lista paginada e autocomplete por escola;
+- não há índice composto `notifications(user_id, read)` para o contador não lido do cabeçalho;
+- `notas` só possui índice isolado por turma; relatórios por escola/aluno continuam sem índice composto apropriado;
+- `performance_metrics` não possui índice que comece por `metric_name` e data, padrão usado nas agregações por período;
+- transporte não tem índices de ordenação/filtro para históricos por data e vínculos por rota.
+
+Criar esses índices deve vir depois de confirmar os planos com `EXPLAIN (ANALYZE, BUFFERS)` e com uma massa de dados próxima ao ano letivo, mas eles já são candidatos fortes.
+
 ## Capacidade esperada
 
 | Cenário | Volume provável | Situação atual | Risco principal |
