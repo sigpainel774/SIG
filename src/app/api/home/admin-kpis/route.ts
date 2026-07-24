@@ -22,75 +22,20 @@ export async function GET(req: NextRequest) {
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
   try {
-    const [
-      { count: totalAlunos },
-      { count: totalTurmas },
-      { count: ocorrenciasMes },
-      { count: transferenciasPendentes },
-      { count: atividadesPendentes },
-      rpcTurmasHoje,
-      { data: todasTurmas },
-    ] = await Promise.all([
-      // 1. Total de alunos ativos
-      supabase
-        .from('alunos')
-        .select('id', { count: 'exact', head: true })
-        .eq('escola_id', escolaId)
-        .is('deleted_at', null),
+    const { data: kpiData, error: rpcError } = await (supabase as any).rpc('obter_admin_dashboard_kpis', {
+      p_escola_id: escolaId
+    })
 
-      // 2. Total de turmas ativas
-      supabase
-        .from('turmas')
-        .select('id', { count: 'exact', head: true })
-        .eq('escola_id', escolaId)
-        .is('deleted_at', null),
+    if (rpcError) throw rpcError
 
-      // 3. Ocorrências do mês
-      supabase
-        .from('ocorrencias')
-        .select('id', { count: 'exact', head: true })
-        .eq('escola_id', escolaId)
-        .gte('created_at', inicioMes),
-
-      // 4. Transferências pendentes (escola como destino)
-      supabase
-        .from('transferencias_alunos')
-        .select('id', { count: 'exact', head: true })
-        .eq('escola_destino_id', escolaId)
-        .eq('status', 'pendente'),
-
-      // 5. Atividades pendentes de impressão na secretaria
-      supabase
-        .from('atividades_secretaria')
-        .select('id', { count: 'exact', head: true })
-        .eq('escola_id', escolaId)
-        .in('status', ['recebida', 'em_impressao']),
-
-      // 6. Turmas com frequência registrada hoje (RPC)
-      (supabase as any).rpc('obter_turmas_com_frequencia_hoje', {
-        p_escola_id: escolaId,
-        p_data: hoje
-      }),
-
-      // 7. Todas as turmas ativas (denominador para % de frequência)
-      supabase
-        .from('turmas')
-        .select('id')
-        .eq('escola_id', escolaId)
-        .is('deleted_at', null),
-    ])
-
-    if (rpcTurmasHoje.error) throw rpcTurmasHoje.error
-    const turmasComFreq = rpcTurmasHoje.data ?? 0
-
-    return NextResponse.json({
-      totalAlunos: totalAlunos ?? 0,
-      totalTurmas: totalTurmas ?? 0,
-      ocorrenciasMes: ocorrenciasMes ?? 0,
-      transferenciasPendentes: transferenciasPendentes ?? 0,
-      turmasComFrequenciaHoje: turmasComFreq,
-      totalTurmasAtivas: todasTurmas?.length ?? 0,
-      atividadesPendentesSecretaria: atividadesPendentes ?? 0,
+    return NextResponse.json(kpiData ?? {
+      totalAlunos: 0,
+      totalTurmas: 0,
+      ocorrenciasMes: 0,
+      transferenciasPendentes: 0,
+      turmasComFrequenciaHoje: 0,
+      totalTurmasAtivas: 0,
+      atividadesPendentesSecretaria: 0,
     })
   } catch (err) {
     console.error('[api/home/admin-kpis] Erro:', err)

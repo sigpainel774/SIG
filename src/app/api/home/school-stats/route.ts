@@ -42,59 +42,14 @@ export async function GET(req: NextRequest) {
   const hoje = new Date().toISOString().split('T')[0]
 
   try {
-    // Processar todas as escolas em lote paralelo (M-1)
-    const statsEntries = await Promise.all(
-      escolaIdsValidos.map(async (escolaId) => {
-        // Agrupar consultas por escola em Promise.all paralelo
-        const [{ data: vtData }, { data: aulasHojeData }, { data: freqData }] = await Promise.all([
-          supabase
-            .from('vinculos_turmas')
-            .select('turma_id')
-            .eq('funcionario_id', funcionarioId)
-            .eq('escola_id', escolaId),
+    const { data: stats, error: rpcError } = await (supabase as any).rpc('obter_multi_escolas_stats', {
+      p_funcionario_id: funcionarioId,
+      p_escola_ids: escolaIdsValidos,
+    })
 
-          supabase
-            .from('agenda_aulas')
-            .select('id, materia_id')
-            .eq('professor_id', funcionarioId)
-            .eq('escola_id', escolaId)
-            .eq('data', hoje)
-            .neq('status', 'cancelado'),
+    if (rpcError) throw rpcError
 
-          supabase
-            .from('frequencias')
-            .select('agenda_aula_id, materia_id')
-            .eq('escola_id', escolaId)
-            .eq('data', hoje)
-        ])
-
-        const turmasCount = vtData?.length ?? 0
-        const aulasHojeCount = aulasHojeData?.length ?? 0
-
-        let chamadasPendentes = 0
-        if (aulasHojeCount > 0) {
-          const frequenciasLancadas = new Set(
-            (freqData ?? []).map(
-              (f: { agenda_aula_id: string | null; materia_id: string | null }) =>
-                f.agenda_aula_id ?? f.materia_id
-            )
-          )
-
-          chamadasPendentes = (aulasHojeData ?? []).filter(
-            (aula: { id: string; materia_id: string }) =>
-              !frequenciasLancadas.has(aula.id) && !frequenciasLancadas.has(aula.materia_id)
-          ).length
-        }
-
-        return [
-          escolaId,
-          { turmas: turmasCount, aulasHoje: aulasHojeCount, chamadasPendentes },
-        ] as const
-      })
-    )
-
-    const stats = Object.fromEntries(statsEntries)
-    return NextResponse.json({ stats })
+    return NextResponse.json({ stats: stats ?? {} })
   } catch (err) {
     console.error('[api/home/school-stats] Erro:', err)
     return NextResponse.json({ error: 'Erro interno ao buscar estatísticas das escolas' }, { status: 500 })

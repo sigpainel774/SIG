@@ -375,14 +375,25 @@
         </div>
       </div>
 
-      <!-- Botão -->
-      <button class="btn-retry" onclick="window.location.reload()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-        Tentar novamente
-      </button>
+      <!-- Botões de Ação -->
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+        <button class="btn-retry" onclick="window.location.reload()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Tentar novamente
+        </button>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
+          <button class="btn-secondary" onclick="continuarAguardando()" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.5rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.15s;">
+            Continuar aguardando
+          </button>
+          <button class="btn-secondary" onclick="voltarTelaAnterior()" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.5rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.15s;">
+            Voltar tela anterior
+          </button>
+        </div>
+      </div>
 
     </div>
 
@@ -392,6 +403,27 @@
   </div>
 
   <script>
+    function continuarAguardando() {
+      const badge = document.querySelector('.status-badge');
+      if (badge) {
+        badge.innerHTML = '<div class="status-dot"></div> RECONECTANDO...';
+        badge.style.borderColor = 'rgba(59,108,244,0.3)';
+        badge.style.background = 'rgba(59,108,244,0.12)';
+        badge.style.color = '#3b6cf4';
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+
+    function voltarTelaAnterior() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = '/home';
+      }
+    }
+
     // Tenta reconectar automaticamente a cada 8 segundos
     let attempts = 0;
     const interval = setInterval(() => {
