@@ -39,32 +39,30 @@ export function ModalImprimirRelacaoTurma({
     const fetchDados = async () => {
       setLoading(true)
       try {
-        // 1. Busca os alunos vinculados a esta turma
-        const { data: vinculosData, error: vinculosErr } = await supabase
-          .from('vinculos_turmas')
+        // 1. Busca os alunos vinculados a esta turma diretamente na tabela public.alunos
+        const { data: alunosData, error: alunosErr } = await supabase
+          .from('alunos')
           .select(`
-            aluno_id,
-            alunos (
-              id,
-              nome,
-              foto_url,
-              data_nascimento,
-              matricula,
-              nome_mae,
-              nome_responsavel
-            )
+            id,
+            nome,
+            foto_url,
+            data_nascimento,
+            numero_matricula,
+            nome_mae,
+            nome_responsavel
           `)
           .eq('turma_id', turma.id)
-          .not('aluno_id', 'is', null)
+          .is('deleted_at', null)
+          .order('nome', { ascending: true })
 
-        if (vinculosErr) {
-          console.error('Erro ao buscar alunos da turma:', vinculosErr)
+        if (alunosErr) {
+          console.error('Erro ao buscar alunos da turma:', alunosErr)
           toast.error('Erro ao carregar lista de estudantes para impressão.')
-        } else if (active && vinculosData) {
-          const listaFormatada: AlunoRelacaoItem[] = vinculosData
-            .map((v: any) => v.alunos)
-            .filter(Boolean)
-            .sort((a: any, b: any) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+        } else if (active && alunosData) {
+          const listaFormatada: AlunoRelacaoItem[] = alunosData.map((a: any) => ({
+            ...a,
+            matricula: a.numero_matricula || a.matricula || null
+          }))
 
           setAlunos(listaFormatada)
         }
@@ -114,7 +112,7 @@ export function ModalImprimirRelacaoTurma({
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg gap-2 rounded-xl h-10 px-5"
         >
           <Printer className="w-4 h-4" />
-          Imprimir Relação (Foto 3x4)
+          Imprimir Relação
         </Button>
 
         <Button

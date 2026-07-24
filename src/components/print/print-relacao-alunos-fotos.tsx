@@ -56,7 +56,7 @@ export function PrintRelacaoAlunosFotos({
       <PrintHeader
         escolaNome={escolaNome}
         escolaLogoUrl={escolaLogoUrl}
-        docTitulo="RELAÇÃO DE ESTUDANTES COM FOTO 3x4"
+        docTitulo="RELAÇÃO DE ESTUDANTES"
         docSubtitulo={`TURMA: ${turma.nome?.toUpperCase() || ''} • TURNO: ${turma.turno?.toUpperCase() || ''} • ANO LETIVO: ${turma.ano_letivo || ''}`}
         timestamp={sessionTimestamp}
       />

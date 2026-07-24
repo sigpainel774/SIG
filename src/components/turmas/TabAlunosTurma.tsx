@@ -50,7 +50,7 @@ export function TabAlunosTurma({
             className="bg-background border-border hover:bg-secondary text-foreground font-semibold gap-2 h-10 rounded-xl px-3 shrink-0"
           >
             <Printer className="w-4 h-4 text-primary" />
-            <span className="hidden sm:inline">Imprimir (Foto 3x4)</span>
+            <span className="hidden sm:inline">Imprimir Relação</span>
           </Button>
         )}
       </div>
