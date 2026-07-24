@@ -135,7 +135,7 @@ export function ModalImprimirRelacaoTurma({
       </div>
 
       {/* Conteúdo Imprimível / Pré-visualização */}
-      <div className="bg-white text-black w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-auto p-6 sm:p-10 print:p-0 print:shadow-none print:w-full print:max-w-none print:rounded-none">
+      <div className="bg-white text-black w-full max-w-6xl rounded-2xl shadow-2xl overflow-hidden my-auto p-6 sm:p-8 print:p-0 print:shadow-none print:w-full print:max-w-none print:rounded-none">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
