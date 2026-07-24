@@ -324,4 +324,12 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out forwards;
-}
+}
+
+/* Regra de isolamento para impressao de documentos e relatorios */
+@media print {
+  body > *:not(.print-portal-container) {
+    display: none !important;
+  }
+}
+

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { PrintHeader } from './print-header'
 
 const sessionTimestamp = Date.now()
@@ -12,7 +12,9 @@ export interface AlunoRelacaoItem {
   data_nascimento?: string | null
   matricula?: string | null
   nome_mae?: string | null
+  nome_pai?: string | null
   nome_responsavel?: string | null
+  dados_matricula?: any
 }
 
 export interface PrintRelacaoAlunosFotosProps {
@@ -32,6 +34,8 @@ export function PrintRelacaoAlunosFotos({
   escolaLogoUrl,
   alunos
 }: PrintRelacaoAlunosFotosProps) {
+  const [failedImageIds, setFailedImageIds] = useState<Record<string, boolean>>({})
+
   const getCacheBustedUrl = (url?: string | null) => {
     if (!url) return ''
     if (url.startsWith('data:')) return url
@@ -50,6 +54,10 @@ export function PrintRelacaoAlunosFotos({
     }
   }
 
+  const handleImageError = (id: string) => {
+    setFailedImageIds(prev => ({ ...prev, [id]: true }))
+  }
+
   return (
     <div className="w-full bg-white text-black p-4 text-xs font-sans print:p-0 leading-normal">
       {/* Cabeçalho Oficial */}
@@ -57,15 +65,15 @@ export function PrintRelacaoAlunosFotos({
         escolaNome={escolaNome}
         escolaLogoUrl={escolaLogoUrl}
         docTitulo="RELAÇÃO DE ESTUDANTES"
-        docSubtitulo={`TURMA: ${turma.nome?.toUpperCase() || ''} • TURNO: ${turma.turno?.toUpperCase() || ''} • ANO LETIVO: ${turma.ano_letivo || ''}`}
+        docSubtitulo={`TURMA: ${turma.nome?.toUpperCase() ?? ''} • TURNO: ${turma.turno?.toUpperCase() ?? 'NÃO INFORMADO'} • ANO LETIVO: ${turma.ano_letivo ?? ''}`}
         timestamp={sessionTimestamp}
       />
 
       {/* Resumo da Turma */}
       <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded px-3 py-1.5 mb-3 font-semibold text-[11px]">
         <span>Turma: <strong>{turma.nome}</strong></span>
-        <span>Turno: <strong>{turma.turno || 'Não informado'}</strong></span>
-        <span>Ano Letivo: <strong>{turma.ano_letivo || '-'}</strong></span>
+        <span>Turno: <strong>{turma.turno ?? 'Não informado'}</strong></span>
+        <span>Ano Letivo: <strong>{turma.ano_letivo ?? '-'}</strong></span>
         <span>Total de Estudantes: <strong>{alunos.length}</strong></span>
       </div>
 
@@ -88,10 +96,18 @@ export function PrintRelacaoAlunosFotos({
           </thead>
           <tbody>
             {alunos.map((aluno, index) => {
-              const respNome = aluno.nome_mae || aluno.nome_responsavel || '-'
+              const respNome =
+                (aluno.nome_mae && aluno.nome_mae.trim() !== '' ? aluno.nome_mae : null) ??
+                (aluno.nome_pai && aluno.nome_pai.trim() !== '' ? aluno.nome_pai : null) ??
+                (aluno.nome_responsavel && aluno.nome_responsavel.trim() !== '' ? aluno.nome_responsavel : null) ??
+                (aluno.dados_matricula?.responsavel_nome && aluno.dados_matricula.responsavel_nome.trim() !== '' ? aluno.dados_matricula.responsavel_nome : null) ??
+                '-'
+
+              const hasValidPhoto = aluno.foto_url && !failedImageIds[aluno.id]
+
               return (
                 <tr
-                  key={aluno.id || index}
+                  key={aluno.id ?? index}
                   className="border-b border-black align-middle"
                   style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
                 >
@@ -107,15 +123,16 @@ export function PrintRelacaoAlunosFotos({
                       style={{
                         width: '30mm',
                         height: '40mm',
-                        borderStyle: aluno.foto_url ? 'solid' : 'dashed',
-                        borderColor: aluno.foto_url ? '#000000' : '#9ca3af',
-                        backgroundColor: aluno.foto_url ? '#ffffff' : '#f9fafb',
+                        borderStyle: hasValidPhoto ? 'solid' : 'dashed',
+                        borderColor: hasValidPhoto ? '#000000' : '#9ca3af',
+                        backgroundColor: hasValidPhoto ? '#ffffff' : '#f9fafb',
                       }}
                     >
-                      {aluno.foto_url ? (
+                      {hasValidPhoto ? (
                         <img
                           src={getCacheBustedUrl(aluno.foto_url)}
                           alt={aluno.nome}
+                          onError={() => handleImageError(aluno.id)}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -165,3 +182,4 @@ export function PrintRelacaoAlunosFotos({
     </div>
   )
 }
+
