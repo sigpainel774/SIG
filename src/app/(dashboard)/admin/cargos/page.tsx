@@ -38,7 +38,7 @@ export default function AdminCargosPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('cargos')
-      .select('*')
+      .select('id, nome, nivel, descricao, salario_base, ativo, created_at')
       .is('deleted_at', null)
       .order('nivel', { ascending: true })
 

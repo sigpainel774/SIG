@@ -42,6 +42,7 @@ export default function AdminLixeiraPage() {
   const [activeTab, setActiveTab] = useState<'trash' | 'signatures'>('trash')
   
   // Signature history states
+  const [sessionTimestamp] = useState(() => Date.now())
   const [sigLogs, setSigLogs] = useState<any[]>([])
   const [sigLogsLoading, setSigLogsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -316,7 +317,7 @@ export default function AdminLixeiraPage() {
       accessor: (student) => student.respUrl ? (
         <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
           <img 
-            src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+            src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`} 
             alt="Assinatura Responsável" 
             className="max-h-7 max-w-[80px] object-contain"
           />
@@ -334,7 +335,7 @@ export default function AdminLixeiraPage() {
       accessor: (student) => student.funcUrl ? (
         <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
           <img 
-            src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+            src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`} 
             alt="Assinatura Funcionário" 
             className="max-h-7 max-w-[80px] object-contain"
           />
@@ -594,7 +595,7 @@ export default function AdminLixeiraPage() {
                           {sigUrl && !isDelete ? (
                             <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
                               <img 
-                                src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
                                 alt="Assinatura Auditada" 
                                 className="max-h-12 w-auto object-contain"
                               />

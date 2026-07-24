@@ -36,7 +36,7 @@ export default function AdminArquivadosPage() {
     try {
       const { data, error } = await supabase
         .from('arquivados')
-        .select('*, funcionarios!arquivado_por(nome), revertido_por:funcionarios!revertido_por(nome), excluido_por:funcionarios!excluido_por(nome), escolas(nome)')
+        .select('id, tipo, tabela_origem, motivo, referencia_id, created_at, status, arquivado_por, revertido_em, revertido_por, excluido_em, excluido_por, escola_origem_id, funcionarios!arquivado_por(nome), revertido_por:funcionarios!revertido_por(nome), excluido_por:funcionarios!excluido_por(nome), escolas(nome)')
         .order('created_at', { ascending: false })
 
       if (error) throw error
