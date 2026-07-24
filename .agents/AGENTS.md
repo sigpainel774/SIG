@@ -186,5 +186,13 @@
 - **Validação Estrita de UUIDs em Cadeia de Notificação/Eventos**: Antes de submeter dados a funções SQL ou disparar RPCs de notificação que esperam tipos UUID (`solicitante_id`, `destinatario_id`, etc.), valide ativamente se o ID é uma string UUID válida e não vazia.
 - **Prevenção de Reset Involuntário de Abas e Estados de UX**: Ao sincronizar hooks ou componentes usando `useEffect`, certifique-se de que a aba ativa (`activeTab`) ou a navegação do usuário não seja resetada involuntariamente devido a efeitos colaterais de re-renderizadores do componente pai. Utilize referências (`useRef`) para verificar o estado anterior e execute resets de estado somente sob transições explícitas de abertura/fechamento.
 - **Validação de Propriedades Interpoladas no JSX**: Evite strings hardcoded ou interpolações incorretas em tags JSX que possam renderizar chaves literais como texto (ex: `"{item.nome}"` em vez de `{item.nome}`).
-<!-- END:blindagem-erros-silenciosos-recorrentes -->
+<!-- BEGIN:multi-tenant-isolation-rule -->
+# Isolamento de Dados por Escola (Multi-Tenant Guard & tenant_id)
+
+- **Obrigatoriedade de Filtro de Escola**: Toda e qualquer busca, listagem, relatório ou hook que consulte tabelas do Supabase vinculadas a unidades escolares (`audit_logs`, `notifications`, `alunos`, `funcionarios`, `turmas`, `notas`, `frequencias`, `ocorrencias`, `atividades_secretaria`, etc.) DEVE obrigatoriamente verificar a escola ativa selecionada (`selectedEscola` do `useSchoolStore` ou `escolaAtivaId` do `useAuthStore` ou query param `escola_id`).
+- **Inclusão na Query Supabase**: Sempre que uma escola estiver selecionada, adicione rigorosamente o filtro `.eq('tenant_id', escolaId)` ou `.eq('escola_id', escolaId)` diretamente na instrução da query no banco de dados.
+- **Proibição de Queries Globais Vazadas**: NUNCA realize chamadas `.from(...).select('*')` sem filtro de escola em telas ou componentes acessíveis no contexto de uma unidade escolar. A visão global (sem filtro de escola) só é permitida quando o usuário estiver explicitamente na visão macro (sem nenhuma escola selecionada no header).
+- **Salvaguarda Dupla (Client-Side Guard)**: Além do filtro SQL no banco, implemente uma validação de segurança no mapa/filtro do componente para descartar qualquer registro retornado cujo `tenant_id` ou `escola_id` divirja da escola selecionada.
+<!-- END:multi-tenant-isolation-rule -->
+
 
