@@ -31,9 +31,10 @@ export default function HistoricoNotificacoesPage() {
     
     let query = supabase
       .from('notifications')
-      .select('*')
+      .select('id, user_id, title, message, type, link, read, created_at, processado_por_nome, processado_em')
       .eq('user_id', funcionario.auth_user_id)
       .order('created_at', { ascending: false })
+      .limit(50)
 
     if (status === 'nao_lidas') query = query.eq('read', false)
     if (status === 'lidas') query = query.eq('read', true)

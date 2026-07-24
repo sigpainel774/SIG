@@ -34,9 +34,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import { ModalAbastecimento } from '@/components/modals/modal-abastecimento'
-import { ModalManutencao } from '@/components/modals/modal-manutencao'
-import { ModalAlocarAlunoTransporte } from '@/components/modals/modal-alocar-aluno-transporte'
+import dynamic from 'next/dynamic'
+
+// Imports dinâmicos dos modais de transporte
+const ModalAbastecimento = dynamic(() => import('@/components/modals/modal-abastecimento').then(m => m.ModalAbastecimento), { ssr: false })
+const ModalManutencao = dynamic(() => import('@/components/modals/modal-manutencao').then(m => m.ModalManutencao), { ssr: false })
+const ModalAlocarAlunoTransporte = dynamic(() => import('@/components/modals/modal-alocar-aluno-transporte').then(m => m.ModalAlocarAlunoTransporte), { ssr: false })
 
 /* ──────────────────────────── Types ──────────────────────────── */
 

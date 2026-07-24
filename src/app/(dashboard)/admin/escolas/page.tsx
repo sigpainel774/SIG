@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { ModalEscola } from '@/components/modals/modal-escola'
-import { ModalConfigAnexosEscola } from '@/components/modals/modal-config-anexos-escola'
-import { ModalConfigSecretario } from '@/components/modals/modal-config-secretario'
-import { ModalImportarFichasDocx } from '@/components/modals/modal-importar-fichas-docx'
-import { ModalGerenciarFilaImpressao } from '@/components/modals/modal-gerenciar-fila-impressao'
+import dynamic from 'next/dynamic'
+
+// Imports dinâmicos de modais sob demanda
+const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').then(m => m.ModalEscola), { ssr: false })
+const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
+const ModalConfigSecretario = dynamic(() => import('@/components/modals/modal-config-secretario').then(m => m.ModalConfigSecretario), { ssr: false })
+const ModalImportarFichasDocx = dynamic(() => import('@/components/modals/modal-importar-fichas-docx').then(m => m.ModalImportarFichasDocx), { ssr: false })
+const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
+
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -49,7 +53,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('*')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, created_at')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 

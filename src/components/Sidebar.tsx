@@ -61,34 +61,26 @@ export function Sidebar() {
     if (isRefreshing) return
     setIsRefreshing(true)
     
-    toast.success('Atualizando e limpando cache...')
+    toast.success('Sincronizando dados e verificando atualizações...')
     
     try {
-      // 1. Limpa o Cache Storage da API de Caches do navegador (onde o PWA guarda arquivos)
-      if ('caches' in window) {
-        const cacheNames = await caches.keys()
-        await Promise.all(
-          cacheNames.map(name => caches.delete(name))
-        )
-      }
-      
-      // 2. Força a verificação de novas versões do Service Worker no servidor
+      // 1. Força a verificação de novas versões do Service Worker no servidor
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations()
         for (const registration of registrations) {
           await registration.update()
         }
       }
+      
+      // 2. Revalida dados das rotas do Next.js App Router
+      router.refresh()
     } catch (error) {
-      console.error('Erro ao atualizar cache do sistema:', error)
+      console.error('Erro ao sincronizar dados do sistema:', error)
     }
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    await new Promise(resolve => setTimeout(resolve, 600))
     closeMobile()
-    
-    // 3. Recarrega a página forçando o navegador a descartar o cache HTTP
-    window.location.reload()
+    setIsRefreshing(false)
   }
 
   type MenuItem = { href: string; label: string; icon: React.ElementType }

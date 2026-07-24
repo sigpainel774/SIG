@@ -23,13 +23,17 @@ export default function FinanceiroPage() {
   const fetchTransacoes = async () => {
     setLoading(true)
     try {
-      let query = supabase.from('transacoes_financeiras').select('*')
+      let query = supabase
+        .from('transacoes_financeiras')
+        .select('id, escola_id, tipo, descricao, categoria, conta, valor, data, comprovante_url, created_at')
       
       if (escolaAtivaId) {
         query = query.eq('escola_id', escolaAtivaId)
       }
 
-      const { data, error } = await query.order('data', { ascending: false })
+      const { data, error } = await query
+        .order('data', { ascending: false })
+        .limit(200)
       
       if (error) throw error
       setTransacoes(data || [])
