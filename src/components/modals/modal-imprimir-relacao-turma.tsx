@@ -48,8 +48,7 @@ export function ModalImprimirRelacaoTurma({
             foto_url,
             data_nascimento,
             numero_matricula,
-            nome_mae,
-            nome_responsavel
+            nome_mae
           `)
           .eq('turma_id', turma.id)
           .is('deleted_at', null)
@@ -70,13 +69,15 @@ export function ModalImprimirRelacaoTurma({
         // 2. Busca dados da Escola (se disponível)
         const escolaId = turma.escola_id
         if (escolaId) {
-          const { data: escolaData } = await supabase
+          const { data: escolaData, error: escolaErr } = await supabase
             .from('escolas')
             .select('nome, logo_url')
             .eq('id', escolaId)
-            .single()
+            .maybeSingle()
 
-          if (active && escolaData) {
+          if (escolaErr) {
+            console.error('Erro ao buscar dados da escola:', escolaErr)
+          } else if (active && escolaData) {
             setEscola(escolaData)
           }
         }
