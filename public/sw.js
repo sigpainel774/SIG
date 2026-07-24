@@ -1,8 +1,9 @@
-// SIG Sapeaçu — Service Worker v7
-// Estratégia Otimizada: Cache-First / SWR para Assets Estáticos, Network-First com Timeout para Navegação.
+// SIG Sapeaçu — Service Worker v8
+// Estratégia Otimizada: Cache-First / SWR para Assets Estáticos, Network-First com Timeout Adaptativo e Cache de Páginas HTML.
 
-const CACHE_NAME = 'sig-sapeacu-v7';
-const STATIC_CACHE_NAME = 'sig-static-v7';
+const CACHE_NAME = 'sig-sapeacu-v8';
+const STATIC_CACHE_NAME = 'sig-static-v8';
+const PAGES_CACHE_NAME = 'sig-pages-v8';
 
 // Assets estáticos essenciais para o PWA (ícones, manifest e offline)
 const STATIC_ASSETS = [
@@ -32,7 +33,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && key !== STATIC_CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== STATIC_CACHE_NAME && key !== PAGES_CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -94,30 +95,57 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navegação de páginas HTML -> Network First com Timeout de 3.5 segundos + Fallback Offline
+  // 2. Requisições RSC do Next.js App Router em redes instáveis -> Devolver 503 limpo em caso de erro para não crashar o JSON parser
+  const isRscRequest = event.request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
+  if (isRscRequest) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(
+          JSON.stringify({ error: 'Rede instável ou indisponível', status: 503 }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      })
+    );
+    return;
+  }
+
+  // 3. Navegação de páginas HTML -> Network First com Timeout Adaptativo (7s/10s) + Cache de Páginas + Fallback Offline
   const isHtmlNavigation =
     event.request.mode === 'navigate' &&
     event.request.headers.get('accept')?.includes('text/html') &&
-    !event.request.headers.get('RSC');
+    !isRscRequest;
 
   if (isHtmlNavigation) {
+    const effectiveType = self.navigator && (self.navigator as any).connection?.effectiveType;
+    const timeoutMs = (effectiveType === '2g' || effectiveType === 'slow-2g') ? 10000 : 7000;
+
     event.respondWith(
       new Promise((resolve) => {
         let isTimedOut = false;
 
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
           isTimedOut = true;
-          caches.match('/offline.html').then((offlinePage) => {
-            if (offlinePage) {
-              resolve(offlinePage);
-            }
-          });
-        }, 3500);
+          // Buscar primeiro no cache de páginas seguras visualizadas
+          const cachedPage = await caches.match(event.request);
+          if (cachedPage) {
+            return resolve(cachedPage);
+          }
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) {
+            return resolve(offlinePage);
+          }
+        }, timeoutMs);
 
         fetch(event.request)
           .then((networkResponse) => {
             clearTimeout(timer);
             if (!isTimedOut) {
+              if (networkResponse && networkResponse.status === 200) {
+                const responseToCache = networkResponse.clone();
+                caches.open(PAGES_CACHE_NAME).then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+              }
               resolve(networkResponse);
             }
           })

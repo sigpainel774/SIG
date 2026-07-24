@@ -290,52 +290,20 @@ export default function DocumentosPage() {
       try {
         const supabase = createClient()
         
-        // 1. Buscar a turma do aluno com turno e ano_letivo
-        const { data: turmaData, error: tErr } = await supabase
-          .from('turmas')
-          .select('id, nome, turno, ano_letivo')
-          .eq('id', alunoSelecionado.turma_id)
-          .maybeSingle()
+        // 1. Obter snapshot completo do boletim via RPC única (M-2)
+        const { data: rawData, error: rpcErr } = await (supabase as any).rpc('obter_dados_boletim', {
+          p_aluno_id: alunoSelecionado.id,
+          p_turma_id: alunoSelecionado.turma_id,
+          p_escola_id: alunoSelecionado.escola_id
+        })
 
-        if (tErr) throw tErr
-        if (!turmaData) throw new Error('Turma não encontrada para o aluno.')
-
-        // 2. Buscar escola do aluno
-        const { data: escolaData, error: eErr } = await supabase
-          .from('escolas')
-          .select('nome, logo_url')
-          .eq('id', alunoSelecionado.escola_id)
-          .maybeSingle()
-        if (eErr) throw eErr
-        
-        // 3. Buscar as matérias vinculadas a essa turma
-        const { data: materiasData, error: mErr } = await supabase
-          .from('materias')
-          .select('id, nome, base_curricular')
-          .eq('turma_id', alunoSelecionado.turma_id)
-
-        if (mErr) throw mErr
-
-        // 4. Buscar notas do aluno nessa turma
-        const { data: notasData, error: nErr } = await supabase
-          .from('notas')
-          .select('materia_id, unidade, nota1, nota2, nota3')
-          .eq('aluno_id', alunoSelecionado.id)
-          .eq('turma_id', alunoSelecionado.turma_id)
-
-        if (nErr) throw nErr
-
-        // 5. Buscar recuperacoes finais do aluno
-        const { data: recData, error: rErr } = await supabase
-          .from('recuperacoes_finais')
-          .select('materia_id, nota')
-          .eq('aluno_id', alunoSelecionado.id)
-          .eq('turma_id', alunoSelecionado.turma_id)
-
-        if (rErr) throw rErr
+        if (rpcErr) throw rpcErr
+        if (!rawData || !rawData.turma?.id) {
+          throw new Error('Turma ou dados do aluno não encontrados para emissão do boletim.')
+        }
 
         // Formatar notas
-        const formatadasNotas = (notasData ?? []).map((n: any) => ({
+        const formatadasNotas = (rawData.notas ?? []).map((n: any) => ({
           materia_id: n.materia_id,
           unidade: n.unidade,
           nota1: n.nota1 !== null && n.nota1 !== '' ? Number(n.nota1) : null,
@@ -344,21 +312,21 @@ export default function DocumentosPage() {
         }))
 
         // Formatar recuperações
-        const formatadasRec = (recData ?? []).map((r: any) => ({
+        const formatadasRec = (rawData.recuperacoes ?? []).map((r: any) => ({
           materia_id: r.materia_id,
           nota: r.nota !== null && r.nota !== '' ? Number(r.nota) : null
         }))
 
         setBoletimData({
           turma: {
-            id: turmaData.id,
-            nome: turmaData.nome,
-            turno: turmaData.turno,
-            ano_letivo: turmaData.ano_letivo
+            id: rawData.turma.id,
+            nome: rawData.turma.nome,
+            turno: rawData.turma.turno,
+            ano_letivo: rawData.turma.ano_letivo
           },
-          escolaNome: escolaData?.nome || 'Escola Não Identificada',
-          escolaLogoUrl: escolaData?.logo_url || null,
-          materias: materiasData || [],
+          escolaNome: rawData.escolaNome || 'Escola Não Identificada',
+          escolaLogoUrl: rawData.escolaLogoUrl || null,
+          materias: rawData.materias || [],
           notas: formatadasNotas,
           recuperacoes: formatadasRec
         })
