@@ -234,13 +234,17 @@ export function ModalAluno(props: ModalAlunoProps) {
   }
 
   return (
-    <AlunoFormProvider props={props} isOpen={activeOpen} setIsOpen={handleOpenChange}>
+    <>
       {props.trigger && (
         <div onClick={() => handleOpenChange(true)} className="inline-block cursor-pointer">
           {props.trigger}
         </div>
       )}
-      <ModalAlunoContent activeOpen={activeOpen} handleOpenChange={handleOpenChange} />
-    </AlunoFormProvider>
+      {activeOpen && (
+        <AlunoFormProvider props={props} isOpen={activeOpen} setIsOpen={handleOpenChange}>
+          <ModalAlunoContent activeOpen={activeOpen} handleOpenChange={handleOpenChange} />
+        </AlunoFormProvider>
+      )}
+    </>
   )
 }

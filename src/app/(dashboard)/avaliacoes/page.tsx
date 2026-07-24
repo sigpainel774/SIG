@@ -562,18 +562,22 @@ function AvaliacoesContent() {
       </Card>
 
       {/* ── MODAIS ── */}
-      <ModalNovaAtividade
-        open={novaAtividadeOpen}
-        onOpenChange={setNovaAtividadeOpen}
-        onSuccess={fetchAtividades}
-      />
+      {novaAtividadeOpen && (
+        <ModalNovaAtividade
+          open={novaAtividadeOpen}
+          onOpenChange={setNovaAtividadeOpen}
+          onSuccess={fetchAtividades}
+        />
+      )}
 
-      <ModalDetalhesAtividade
-        open={detalhesOpen}
-        onOpenChange={setDetalhesOpen}
-        atividade={atividadeSelecionada}
-        onStatusChange={fetchAtividades}
-      />
+      {detalhesOpen && (
+        <ModalDetalhesAtividade
+          open={detalhesOpen}
+          onOpenChange={setDetalhesOpen}
+          atividade={atividadeSelecionada}
+          onStatusChange={fetchAtividades}
+        />
+      )}
     </div>
   )
 }

@@ -117,12 +117,14 @@ export default function AlunosPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto min-w-0">
       {/* Modais */}
-      <ModalAluno
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        alunoEditar={alunoEditando}
-        onSuccess={carregarAlunos}
-      />
+      {modalOpen && (
+        <ModalAluno
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          alunoEditar={alunoEditando}
+          onSuccess={carregarAlunos}
+        />
+      )}
 
       {alunoImprimir && (
         <PrintFichaAluno

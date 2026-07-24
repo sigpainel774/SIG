@@ -315,26 +315,32 @@ export default function TurmasPage() {
       )}
 
       {/* Modal de Nova/Editar Turma */}
-      <ModalTurma
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        turma={selectedTurma}
-        onSuccess={fetchTurmas}
-      />
+      {isModalOpen && (
+        <ModalTurma
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          turma={selectedTurma}
+          onSuccess={fetchTurmas}
+        />
+      )}
 
       {/* Modal de Detalhes e Diário da Turma */}
-      <ModalDetalhesTurma
-        open={isDetailsModalOpen}
-        onOpenChange={setIsDetailsModalOpen}
-        turma={selectedTurma}
-      />
+      {isDetailsModalOpen && (
+        <ModalDetalhesTurma
+          open={isDetailsModalOpen}
+          onOpenChange={setIsDetailsModalOpen}
+          turma={selectedTurma}
+        />
+      )}
 
       {/* Modal de Impressão da Relação de Alunos (Foto 3x4) */}
-      <ModalImprimirRelacaoTurma
-        open={isPrintModalOpen}
-        onOpenChange={setIsPrintModalOpen}
-        turma={selectedTurma}
-      />
+      {isPrintModalOpen && (
+        <ModalImprimirRelacaoTurma
+          open={isPrintModalOpen}
+          onOpenChange={setIsPrintModalOpen}
+          turma={selectedTurma}
+        />
+      )}
     </div>
   )
 }

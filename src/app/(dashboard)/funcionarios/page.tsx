@@ -491,28 +491,34 @@ export default function FuncionariosPage() {
   return (
     <div className="space-y-5 pb-12">
       {/* Modal Novo Funcionário */}
-      <ModalFuncionario
-        open={modalNovoOpen}
-        onOpenChange={setModalNovoOpen}
-        onSuccess={carregarFuncionarios}
-      />
+      {modalNovoOpen && (
+        <ModalFuncionario
+          open={modalNovoOpen}
+          onOpenChange={setModalNovoOpen}
+          onSuccess={carregarFuncionarios}
+        />
+      )}
 
       {/* Modal Editar Funcionário */}
-      <ModalFuncionario
-        open={!!modalEditando}
-        onOpenChange={(v) => {
-          if (!v) setModalEditando(null)
-        }}
-        funcionario={modalEditando}
-        onSuccess={carregarFuncionarios}
-      />
+      {!!modalEditando && (
+        <ModalFuncionario
+          open={!!modalEditando}
+          onOpenChange={(v) => {
+            if (!v) setModalEditando(null)
+          }}
+          funcionario={modalEditando}
+          onSuccess={carregarFuncionarios}
+        />
+      )}
 
       {/* Modal Gestão de Lotações */}
-      <ModalGestaoLotacoes
-        open={modalLotacoesOpen}
-        onOpenChange={setModalLotacoesOpen}
-        funcionarioInicial={funcLotacaoInicial}
-      />
+      {modalLotacoesOpen && (
+        <ModalGestaoLotacoes
+          open={modalLotacoesOpen}
+          onOpenChange={setModalLotacoesOpen}
+          funcionarioInicial={funcLotacaoInicial}
+        />
+      )}
 
       {/* ── Header ────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 mb-2 pb-4 border-b border-border">
