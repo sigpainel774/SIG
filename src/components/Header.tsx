@@ -2,8 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Bell, Menu, School } from 'lucide-react'
-import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
-import { ModalNotificacoes } from '@/components/modals/modal-notificacoes'
+import dynamic from 'next/dynamic'
+
+const ModalConfirmacaoSenha = dynamic(
+  () => import('@/components/modals/modal-confirmacao-senha').then((mod) => mod.ModalConfirmacaoSenha),
+  { ssr: false }
+)
+const ModalNotificacoes = dynamic(
+  () => import('@/components/modals/modal-notificacoes').then((mod) => mod.ModalNotificacoes),
+  { ssr: false }
+)
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSidebarStore } from '@/store/useSidebarStore'

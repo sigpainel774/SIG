@@ -27,45 +27,35 @@ export function RotasTab({ onOpenNovo, onOpenEditar }: RotasTabProps) {
 
   const loadRotas = useCallback(async () => {
     setLoading(true)
-    const [{ data: rotasData, error: rotasErr }, { data: alunosData }] = await Promise.all([
-      (supabase as any)
-        .from('rotas_transporte')
-        .select('id, nome, turno, ativo, veiculo_id, escola_id, motorista_id, horario_partida, horario_retorno, created_at, veiculos(modelo, placa, capacidade), escolas(nome), funcionarios(nome)')
-        .order('created_at', { ascending: false }),
-      (supabase as any)
-        .from('alunos_transporte')
-        .select('rota_id')
-    ])
+    const { data: rotasData, error: rotasErr } = await (supabase as any)
+      .from('rotas_transporte')
+      .select('id, nome, turno, ativo, veiculo_id, escola_id, motorista_id, horario_partida, horario_retorno, created_at, veiculos(modelo, placa, capacidade), escolas(nome), funcionarios(nome), alunos_transporte(count)')
+      .order('created_at', { ascending: false })
 
     if (isMounted.current) {
       if (rotasErr) {
         console.error('Erro ao carregar rotas:', rotasErr)
       } else if (rotasData) {
-        const contagemAlunos: Record<string, number> = {}
-        if (alunosData) {
-          alunosData.forEach((a: any) => {
-            if (a.rota_id) {
-              contagemAlunos[a.rota_id] = (contagemAlunos[a.rota_id] || 0) + 1
+        setRotas(
+          rotasData.map((r: any) => {
+            const countArr = r.alunos_transporte
+            const totalAlunos = Array.isArray(countArr) && countArr.length > 0 ? (countArr[0]?.count ?? 0) : 0
+            return {
+              id: r.id,
+              nome: r.nome ?? '',
+              turno: r.turno ?? 'MANHA',
+              ativo: r.ativo ?? true,
+              veiculo_id: r.veiculo_id ?? null,
+              escola_id: r.escola_id ?? null,
+              motorista_id: r.motorista_id ?? null,
+              horario_partida: r.horario_partida ?? null,
+              horario_retorno: r.horario_retorno ?? null,
+              veiculos: r.veiculos ?? null,
+              escolas: r.escolas ?? null,
+              motoristas: r.funcionarios ?? null,
+              total_alunos: totalAlunos,
             }
           })
-        }
-
-        setRotas(
-          rotasData.map((r: any) => ({
-            id: r.id,
-            nome: r.nome ?? '',
-            turno: r.turno ?? 'MANHA',
-            ativo: r.ativo ?? true,
-            veiculo_id: r.veiculo_id ?? null,
-            escola_id: r.escola_id ?? null,
-            motorista_id: r.motorista_id ?? null,
-            horario_partida: r.horario_partida ?? null,
-            horario_retorno: r.horario_retorno ?? null,
-            veiculos: r.veiculos ?? null,
-            escolas: r.escolas ?? null,
-            motoristas: r.funcionarios ?? null,
-            total_alunos: contagemAlunos[r.id] || 0,
-          }))
         )
       }
       setLoading(false)

@@ -115,26 +115,47 @@ export default function MiniMapa({
     onCoordinatesChange(clickedLat, clickedLng);
   }, [onCoordinatesChange]);
 
-  // Geocodificação Nominatim
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const geocodeCacheRef = useRef<Map<string, { lat: number; lng: number }>>(new Map());
+
+  // Geocodificação Nominatim com AbortController e cache
   const handleGeocode = async (silent = false) => {
-    if (!localAddress.trim()) return;
+    const termoOriginal = localAddress.trim().toLowerCase();
+    if (!termoOriginal) return;
+
+    // 0. Verifica cache em memória
+    const cached = geocodeCacheRef.current.get(termoOriginal);
+    if (cached) {
+      setLat(cached.lat);
+      setLng(cached.lng);
+      setZoom(16);
+      onCoordinatesChange(cached.lat, cached.lng);
+      mapRef.current?.setView([cached.lat, cached.lng], 16);
+      return;
+    }
+
+    // Aborta requisição em andamento anterior se houver
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsSearching(true);
     try {
-      const termoOriginal = localAddress.trim();
-      
-      // 1. Tenta buscar exatamente o que o usuário digitou (permite qualquer cidade do Brasil)
+      // 1. Tenta buscar exatamente o que o usuário digitou
       let response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(termoOriginal)}`,
-        { headers: { 'Accept-Language': 'pt-BR' } }
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(localAddress.trim())}`,
+        { headers: { 'Accept-Language': 'pt-BR' }, signal: controller.signal }
       );
       let data = await response.json();
 
       // 2. Se não encontrou e o usuário não especificou outra cidade/UF, tenta com o contexto de Sapeaçu
-      if ((!data || data.length === 0) && !termoOriginal.toLowerCase().includes('sapeaçu') && !termoOriginal.toLowerCase().includes('sapeacu')) {
-        const termoSapeacu = `${termoOriginal}, Sapeaçu, BA`;
+      if ((!data || data.length === 0) && !termoOriginal.includes('sapeaçu') && !termoOriginal.includes('sapeacu')) {
+        const termoSapeacu = `${localAddress.trim()}, Sapeaçu, BA`;
         response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(termoSapeacu)}`,
-          { headers: { 'Accept-Language': 'pt-BR' } }
+          { headers: { 'Accept-Language': 'pt-BR' }, signal: controller.signal }
         );
         data = await response.json();
       }
@@ -142,6 +163,7 @@ export default function MiniMapa({
       if (data && data.length > 0) {
         const newLat = parseFloat(data[0].lat);
         const newLng = parseFloat(data[0].lon);
+        geocodeCacheRef.current.set(termoOriginal, { lat: newLat, lng: newLng });
         setLat(newLat);
         setLng(newLng);
         setZoom(16);
@@ -150,21 +172,30 @@ export default function MiniMapa({
       } else {
         if (!silent) alert('Endereço não encontrado no mapa. Tente digitar com nome da cidade/UF ou arraste o marcador manualmente.');
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
       if (!silent) console.error('Erro ao buscar o endereço:', error);
     } finally {
-      setIsSearching(false);
+      if (abortControllerRef.current === controller) {
+        setIsSearching(false);
+      }
     }
   };
 
-  // Debounce automático do endereço
+  // Debounce automático do endereço com cancelamento no unmount/redigitação
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (localAddress && localAddress.length > 10) {
+      if (localAddress && localAddress.trim().length > 10) {
         handleGeocode(true);
       }
-    }, 1200);
-    return () => clearTimeout(delayDebounceFn);
+    }, 1500);
+
+    return () => {
+      clearTimeout(delayDebounceFn);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [localAddress]);
 
   return (

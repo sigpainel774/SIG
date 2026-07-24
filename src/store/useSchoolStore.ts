@@ -20,9 +20,11 @@ export interface Escola {
 interface SchoolState {
   escolas: Escola[]
   selectedEscola: Escola | null
+  isLoaded: boolean
+  isLoading: boolean
   setSelectedEscola: (escola: Escola | null) => void
   selectEscolaById: (id: string | null) => void | Promise<void>
-  loadEscolas: () => Promise<void>
+  loadEscolas: (force?: boolean) => Promise<void>
 }
 
 export const useSchoolStore = create<SchoolState>()(
@@ -30,6 +32,8 @@ export const useSchoolStore = create<SchoolState>()(
     (set, get) => ({
       escolas: [],
       selectedEscola: null,
+      isLoaded: false,
+      isLoading: false,
       setSelectedEscola: (escola) => {
         if (get().selectedEscola?.id === (escola?.id ?? null)) return
         set({ selectedEscola: escola })
@@ -65,27 +69,33 @@ export const useSchoolStore = create<SchoolState>()(
           useAuthStore.getState().setEscolaAtivaId(id)
         }
       },
-      loadEscolas: async () => {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('escolas')
-          .select('*')
-          .is('deleted_at', null)
-          .eq('ativo', true)
-          .order('nome', { ascending: true })
-          
-        if (data) {
-          set({ escolas: data as Escola[] })
-          
-          const currentSelected = get().selectedEscola
-          if (currentSelected) {
-            const stillExists = data.find(e => e.id === currentSelected.id)
-            if (!stillExists) {
-              set({ selectedEscola: null })
-            } else {
-              set({ selectedEscola: stillExists as Escola })
+      loadEscolas: async (force = false) => {
+        if (!force && (get().isLoaded || get().isLoading)) return
+        set({ isLoading: true })
+        try {
+          const supabase = createClient()
+          const { data } = await supabase
+            .from('escolas')
+            .select('*')
+            .is('deleted_at', null)
+            .eq('ativo', true)
+            .order('nome', { ascending: true })
+            
+          if (data) {
+            set({ escolas: data as Escola[], isLoaded: true })
+            
+            const currentSelected = get().selectedEscola
+            if (currentSelected) {
+              const stillExists = data.find(e => e.id === currentSelected.id)
+              if (!stillExists) {
+                set({ selectedEscola: null })
+              } else {
+                set({ selectedEscola: stillExists as Escola })
+              }
             }
           }
+        } finally {
+          set({ isLoading: false })
         }
       }
     }),
