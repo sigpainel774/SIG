@@ -24,11 +24,25 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 
-// Import de componentes de impressão
-import { PrintComprovanteMatricula } from '@/components/print/print-comprovante-matricula'
-import { PrintFichaAluno } from '@/components/print/print-ficha-aluno'
-import { PrintDocumentoEscolar } from '@/components/print/print-documento-escolar'
-import { PrintBoletimSapeacu } from '@/components/print/print-boletim-sapeacu'
+import dynamic from 'next/dynamic'
+
+// Import dinâmico de componentes de impressão sob demanda
+const PrintComprovanteMatricula = dynamic(
+  () => import('@/components/print/print-comprovante-matricula').then((m) => m.PrintComprovanteMatricula),
+  { ssr: false }
+)
+const PrintFichaAluno = dynamic(
+  () => import('@/components/print/print-ficha-aluno').then((m) => m.PrintFichaAluno),
+  { ssr: false }
+)
+const PrintDocumentoEscolar = dynamic(
+  () => import('@/components/print/print-documento-escolar').then((m) => m.PrintDocumentoEscolar),
+  { ssr: false }
+)
+const PrintBoletimSapeacu = dynamic(
+  () => import('@/components/print/print-boletim-sapeacu').then((m) => m.PrintBoletimSapeacu),
+  { ssr: false }
+)
 
 export default function DocumentosPage() {
   const { funcionario, vinculos, acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()

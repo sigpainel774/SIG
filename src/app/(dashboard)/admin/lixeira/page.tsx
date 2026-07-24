@@ -53,12 +53,13 @@ export default function AdminLixeiraPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('trash_bin')
-      .select('*')
+      .select('id, table_name, record_id, record_summary, deleted_by_id, deleted_by_name, deleted_by_email, deleted_at, status, resolution_note')
       .eq('status', 'PENDING')
       .order('deleted_at', { ascending: false })
+      .limit(50)
 
     if (data) setItems(data)
-    if (error) console.error(error)
+    if (error) console.error('Erro ao carregar lixeira:', error)
     setLoading(false)
   }
 
@@ -66,13 +67,13 @@ export default function AdminLixeiraPage() {
     setSigLogsLoading(true)
     const { data, error } = await supabase
       .from('audit_logs')
-      .select('*')
+      .select('id, entity, entity_id, action, created_at, user_name, ip_address, new_data, old_data')
       .in('entity', ['alunos_assinatura_responsavel', 'alunos_assinatura_funcionario'])
       .order('created_at', { ascending: false })
-      .limit(300)
+      .limit(100)
 
     if (data) setSigLogs(data)
-    if (error) console.error(error)
+    if (error) console.error('Erro ao carregar histórico de assinaturas:', error)
     setSigLogsLoading(false)
   }
 

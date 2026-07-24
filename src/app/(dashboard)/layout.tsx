@@ -1,4 +1,6 @@
 import { ReactNode } from 'react'
+
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { Sidebar } from '@/components/Sidebar'
