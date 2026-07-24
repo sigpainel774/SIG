@@ -70,9 +70,9 @@ export default function CentralAtividadesPage() {
       .order('created_at', { ascending: false })
       .limit(200)
 
-    // SALVAGUARDA DE SEGURANÇA MULTI-TENANT: Filtrar estritamente por Escola ativa
+    // SALVAGUARDA DE SEGURANÇA MULTI-TENANT: Filtrar estritamente por Escola ativa (suporta tenant_id e JSON legado)
     if (targetEscolaId) {
-      query = query.eq('tenant_id', targetEscolaId)
+      query = query.or(`tenant_id.eq.${targetEscolaId},new_data->>escola_id.eq.${targetEscolaId},old_data->>escola_id.eq.${targetEscolaId}`)
     }
 
     // Aplicar filtro de período
