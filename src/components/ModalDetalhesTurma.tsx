@@ -171,6 +171,7 @@ export function ModalDetalhesTurma({
                 loading={loading}
                 alunos={alunos}
                 setSelectedAluno={setSelectedAluno}
+                turma={turma}
               />
             )}
 
