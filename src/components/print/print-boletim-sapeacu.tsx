@@ -369,7 +369,8 @@ export function PrintBoletimSapeacu({
 
       {/* Botões de Ação flutuantes */}
       <div className="fixed top-4 right-4 z-[100] flex gap-2 print:hidden">
-        {isEditMode && (
+        {/* Botão Salvar Notas temporariamente desativado a pedido do usuário */}
+        {false && isEditMode && (
           <button
             onClick={handleSaveNotas}
             disabled={salvando}

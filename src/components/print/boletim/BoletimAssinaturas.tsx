@@ -140,19 +140,18 @@ export function BoletimAssinaturas({
       </div>
 
       {/* Linha 3: Rodapé e Nome do Aluno no canhoto */}
-      <div className="flex justify-between items-center text-[7px] font-black text-gray-400 uppercase tracking-widest mt-2 border-t border-gray-200 pt-1">
-        <span>SIG Sapeaçu · Secretaria Municipal de Educação</span>
-        <div className="flex items-center gap-1">
-          <span>ALUNO (A):</span>
+      <div className="flex justify-between items-center text-[7px] font-black text-gray-400 uppercase tracking-widest mt-2 border-t border-gray-200 pt-1 gap-4">
+        <span className="shrink-0">SIG Sapeaçu · Secretaria Municipal de Educação</span>
+        <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+          <span className="shrink-0">ALUNO (A):</span>
           <input
             type="text"
             value={alunoRodape}
             onChange={(e) => setAlunoRodape(e.target.value)}
             disabled={!isEditMode}
-            className="bg-transparent focus:outline-none font-bold text-[7.5px] py-0 text-black uppercase w-32 border-b border-gray-300"
+            className="bg-transparent focus:outline-none font-bold text-[7.5px] py-0 text-black uppercase flex-1 border-b border-gray-300 min-w-0"
           />
         </div>
-        <span>BOLETIM DE RENDIMENTO ESCOLAR</span>
       </div>
     </div>
   )

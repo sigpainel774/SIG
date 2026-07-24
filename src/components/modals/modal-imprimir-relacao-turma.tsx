@@ -40,7 +40,7 @@ export function ModalImprimirRelacaoTurma({
       setLoading(true)
       try {
         // 1. Busca os alunos vinculados a esta turma diretamente na tabela public.alunos
-        const { data: alunosData, error: alunosErr } = await supabase
+        let query = supabase
           .from('alunos')
           .select(`
             id,
@@ -48,11 +48,18 @@ export function ModalImprimirRelacaoTurma({
             foto_url,
             data_nascimento,
             numero_matricula,
-            nome_mae
+            nome_mae,
+            nome_pai,
+            dados_matricula
           `)
           .eq('turma_id', turma.id)
           .is('deleted_at', null)
-          .order('nome', { ascending: true })
+
+        if (turma.escola_id) {
+          query = query.eq('escola_id', turma.escola_id)
+        }
+
+        const { data: alunosData, error: alunosErr } = await query.order('nome', { ascending: true })
 
         if (alunosErr) {
           console.error('Erro ao buscar alunos da turma:', alunosErr)
@@ -60,7 +67,7 @@ export function ModalImprimirRelacaoTurma({
         } else if (active && alunosData) {
           const listaFormatada: AlunoRelacaoItem[] = alunosData.map((a: any) => ({
             ...a,
-            matricula: a.numero_matricula || a.matricula || null
+            matricula: a.numero_matricula ?? a.matricula ?? null
           }))
 
           setAlunos(listaFormatada)
