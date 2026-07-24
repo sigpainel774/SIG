@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { 
   Gauge, 
@@ -18,12 +18,11 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { StandardTable, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-
+import { StandardTable } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'sonner'
-
 
 // Auxiliares para formatação de valores e cores
 const getRatingColor = (rating: string) => {
@@ -59,24 +58,25 @@ const getMetricLabel = (name: string) => {
 }
 
 export default function DesempenhoPage() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(false)
+  const [clearing, setClearing] = useState(false)
   
   // Período de análise em dias (1, 7, 30)
   const [period, setPeriod] = useState<number>(7)
 
   // Estatísticas agregadas da RPC
   const [dashboardStats, setDashboardStats] = useState<{
-    score: number
+    score: number | null
     total_samples: number
     p95: number
     p99: number
     cpu_stats: { cpu: string; avg: number; count: number }[]
     ram_stats: { ram: string; avg: number; count: number }[]
     network_stats: { type: string; avg: number; count: number }[]
-    route_metrics: { pathname: string; avg_value: number; sample_count: number }[]
+    route_metrics: { pathname: string; avg_value: number; p50?: number; p75?: number; p95?: number; sample_count: number }[]
   }>({
-    score: 100,
+    score: null,
     total_samples: 0,
     p95: 0,
     p99: 0,
@@ -100,7 +100,7 @@ export default function DesempenhoPage() {
     }
   }, [])
 
-  // Memoizar e encapsular loadData
+  // Carregar dados com tratamento defensivo
   const loadData = useCallback(async () => {
     if (isMounted.current) setLoading(true)
     try {
@@ -112,10 +112,9 @@ export default function DesempenhoPage() {
       if (statsError) throw statsError
       
       if (statsData && isMounted.current) {
-        // Garantindo que arrays nulos venham como vazios
         const parsedData = (typeof statsData === 'string' ? JSON.parse(statsData) : statsData) as any
         setDashboardStats({
-          score: Number(parsedData.score ?? 100),
+          score: parsedData.score !== null && parsedData.score !== undefined ? Number(parsedData.score) : null,
           total_samples: Number(parsedData.total_samples ?? 0),
           p95: Number(parsedData.p95 ?? 0),
           p99: Number(parsedData.p99 ?? 0),
@@ -126,7 +125,7 @@ export default function DesempenhoPage() {
         })
       }
 
-      // 2. Carregar histórico de logs recentes com paginação e seleção explícita de colunas
+      // 2. Carregar histórico de logs recentes com seleção explícita de colunas
       const limitDate = new Date()
       limitDate.setDate(limitDate.getDate() - period)
 
@@ -158,28 +157,28 @@ export default function DesempenhoPage() {
     loadData()
   }, [loadData])
 
+  // Limpeza de métricas executada no SERVIDOR (Route Handler)
   const handleCleanup = async () => {
-    const confirm = window.confirm('Deseja apagar os registros de performance anteriores a 30 dias?')
+    const confirm = window.confirm('Deseja expurgar do servidor os registros de performance anteriores a 30 dias?')
     if (!confirm) return
 
-    if (isMounted.current) setLoading(true)
+    if (isMounted.current) setClearing(true)
     try {
-      const limitDate = new Date()
-      limitDate.setDate(limitDate.getDate() - 30)
+      const res = await fetch('/api/admin/desempenho/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
 
-      const { error } = await supabase
-        .from('performance_metrics')
-        .delete()
-        .lt('created_at', limitDate.toISOString())
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Falha ao executar limpeza')
 
-      if (error) throw error
-
-      toast.success('Métricas antigas limpas com sucesso!')
+      toast.success(data.message || 'Expurgo de métricas antigas concluído com sucesso!')
       loadData()
     } catch (err: any) {
-      console.error('Erro ao limpar métricas antigas:', err)
-      toast.error('Erro ao limpar registros: ' + (err.message || 'Erro de conexão'))
-      if (isMounted.current) setLoading(false)
+      console.error('Erro ao executar expurgo no servidor:', err)
+      toast.error('Erro na limpeza: ' + (err.message || 'Erro de rede'))
+    } finally {
+      if (isMounted.current) setClearing(false)
     }
   }
 
@@ -226,7 +225,7 @@ export default function DesempenhoPage() {
             <Button 
               variant="outline"
               onClick={() => loadData()}
-              disabled={loading}
+              disabled={loading || clearing}
               className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] h-10"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -236,11 +235,11 @@ export default function DesempenhoPage() {
             <Button 
               variant="outline"
               onClick={handleCleanup}
-              disabled={loading}
+              disabled={loading || clearing}
               className="bg-[#2a0808] border-[#ef4444]/30 text-[#f87171] hover:bg-[#450a0a] h-10"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Limpar Antigos
+              <Trash2 className={`w-4 h-4 mr-2 ${clearing ? 'animate-spin' : ''}`} />
+              {clearing ? 'Expurgando...' : 'Limpar Antigos'}
             </Button>
           </div>
         }
@@ -248,6 +247,7 @@ export default function DesempenhoPage() {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1 */}
         <Card className="bg-[#121214] border-[#232326] text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P95</CardDescription>
@@ -283,30 +283,38 @@ export default function DesempenhoPage() {
           </CardContent>
         </Card>
 
-        {/* KPI 3 */}
+        {/* KPI 3 - Tratar Nullish para mitigar ES-3 */}
         <Card className="bg-[#121214] border-[#232326] text-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Score Geral de UX</CardDescription>
+            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Score Geral de Navegação</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
-              {dashboardStats.score}%
-              <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.score >= 85 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.score >= 70 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                {dashboardStats.score >= 85 ? 'Excelente' : dashboardStats.score >= 70 ? 'Regular' : 'Ruim'}
-              </span>
+              {dashboardStats.score !== null ? `${dashboardStats.score}%` : 'Sem dados'}
+              {dashboardStats.score !== null ? (
+                <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.score >= 85 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.score >= 70 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                  {dashboardStats.score >= 85 ? 'Excelente' : dashboardStats.score >= 70 ? 'Regular' : 'Ruim'}
+                </span>
+              ) : (
+                <span className="text-xs bg-gray-500/10 text-gray-400 px-2 py-0.5 rounded">
+                  Aguardando
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-500">Percentual de amostras qualificadas como "Bons".</p>
+            <p className="text-xs text-slate-500">
+              {dashboardStats.total_samples < 30 ? 'Amostragem baixa (< 30)' : 'Baseado em transições válidas no período.'}
+            </p>
           </CardContent>
         </Card>
 
         {/* KPI 4 */}
         <Card className="bg-[#121214] border-[#232326] text-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Total de Medições</CardDescription>
+            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Amostras de Navegação</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
               {dashboardStats.total_samples.toLocaleString()}
               <span className="text-xs bg-slate-500/10 text-slate-400 px-2 py-0.5 rounded">
-                Amostras
+                Navegações
               </span>
             </CardTitle>
           </CardHeader>
@@ -318,31 +326,43 @@ export default function DesempenhoPage() {
 
       {/* Main Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Ranking de Gargalos por Rota */}
+        {/* Left: Ranking de Gargalos por Rota com Percentis */}
         <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-violet-400" />
-            <h3 className="font-bold text-white text-lg">Tempo de Carregamento Médio por Rota</h3>
+            <h3 className="font-bold text-white text-lg">Tempo de Renderização por Rota</h3>
           </div>
-          <p className="text-xs text-slate-400">Telas que demoram mais para renderizar no cliente (ordenadas por latência no período).</p>
+          <p className="text-xs text-slate-400">Telas ordenadas por latência média no cliente (com percentis P50, P75 e P95).</p>
           
           <StandardTable
             data={dashboardStats.route_metrics}
             columns={[
               {
                 header: 'Rota (Tela)',
-                className: 'font-mono text-xs text-slate-300',
+                className: 'font-mono text-xs text-slate-300 max-w-[180px] truncate',
                 accessor: (r) => r.pathname
               },
               {
-                header: 'Tempo Médio',
+                header: 'P50',
                 headClassName: 'text-right',
-                className: 'text-right font-bold',
+                className: 'text-right font-mono text-xs text-slate-300',
+                accessor: (r) => `${r.p50 ?? Math.round(r.avg_value)}ms`
+              },
+              {
+                header: 'P95',
+                headClassName: 'text-right',
+                className: 'text-right font-mono text-xs font-bold',
                 accessor: (r) => (
-                  <span className={r.avg_value > 1000 ? 'text-rose-400' : r.avg_value > 300 ? 'text-amber-400' : 'text-emerald-400'}>
-                    {formatMetricValue('ROUTE_CHANGE_MS', r.avg_value)}
+                  <span className={(r.p95 ?? r.avg_value) > 1000 ? 'text-rose-400' : (r.p95 ?? r.avg_value) > 400 ? 'text-amber-400' : 'text-emerald-400'}>
+                    {`${r.p95 ?? Math.round(r.avg_value)}ms`}
                   </span>
                 )
+              },
+              {
+                header: 'Média',
+                headClassName: 'text-right',
+                className: 'text-right font-mono text-xs text-slate-400',
+                accessor: (r) => formatMetricValue('ROUTE_CHANGE_MS', r.avg_value)
               },
               {
                 header: 'Amostras',
@@ -356,7 +376,6 @@ export default function DesempenhoPage() {
             emptyMessage="Nenhum registro de rota encontrado neste período."
           />
         </div>
-
 
         {/* Right: Análise por Fatores (Hardware e Conexão) */}
         <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-5">
@@ -432,7 +451,7 @@ export default function DesempenhoPage() {
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
               <strong className="text-white block mb-0.5">Dica de Diagnóstico:</strong>
-              Se a latência geral de rota estiver abaixo de 300ms em conexões rápidas (Wi-Fi/4G) mas aumentar muito em 3G/2G, o gargalo é o tamanho dos payloads de dados e requisições HTTP redundantes.
+              Se a latência P95 de rota estiver abaixo de 300ms em conexões rápidas (Wi-Fi/4G) mas aumentar muito em 3G/2G, o gargalo é o tamanho dos payloads de dados e requisições HTTP redundantes.
             </div>
           </div>
         </div>
@@ -475,7 +494,7 @@ export default function DesempenhoPage() {
                       <span className="text-slate-500 font-semibold">Não logado</span>
                     )}
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-slate-400 max-w-[150px] truncate" title={log.pathname}>
+                  <TableCell className="font-mono text-xs text-slate-400 max-w-[180px] truncate" title={log.pathname}>
                     {log.pathname}
                   </TableCell>
                   <TableCell className="text-xs font-semibold whitespace-nowrap">
