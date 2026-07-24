@@ -42,7 +42,7 @@ export default function AdminAcessosPage() {
     try {
       const { data } = await supabase
         .from('funcionarios')
-        .select('*')
+        .select('id, nome, email, is_superadmin, cargo, status, auth_user_id, created_at')
         .order('nome', { ascending: true })
 
       if (data && data.length > 0) {

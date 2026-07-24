@@ -34,7 +34,7 @@ export default function OcorrenciasPage() {
     if (isMounted.current) setLoading(true)
     try {
       const { data, error } = await (supabase.from as any)('ocorrencias')
-        .select('*, alunos(nome), turmas(nome), funcionarios(nome)')
+        .select('id, aluno_id, turma_id, escola_id, tipo, gravidade, descricao, status_pais, data, registrado_por, created_at, alunos(nome), turmas(nome), funcionarios(nome)')
         .order('data', { ascending: false })
       
       if (error) throw error

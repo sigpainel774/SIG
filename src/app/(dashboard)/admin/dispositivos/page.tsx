@@ -42,7 +42,7 @@ export default function AdminDispositivosPage() {
     try {
       const { data, error } = await supabase
         .from('dispositivos')
-        .select('*, escolas(nome), funcionarios(nome)')
+        .select('id, nome, tipo, identificador, status, ultima_conexao, escola_id, funcionario_id, created_at, escolas(nome), funcionarios(nome)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
 

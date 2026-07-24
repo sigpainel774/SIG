@@ -157,7 +157,7 @@ export default function DocumentosPage() {
 
       let query = supabase
         .from('alunos')
-        .select('*, escolas(nome), turmas(nome)')
+        .select('id, nome, numero_matricula, cpf, inep, data_nascimento, nome_mae, escola_id, turma_id, foto_url, escolas(nome), turmas(nome)')
         .is('deleted_at', null)
 
       // Verificação de cargos e lotação
