@@ -35,10 +35,11 @@ export async function notificarDiretorEAuditar(params: LogAndNotifyParams) {
       linkCustom,
     } = params
 
-    // 1. Gravar Log de Auditoria
+    // 1. Gravar Log de Auditoria com salvaguarda de tenant_id (escola)
     const { data: auditLog, error: auditError } = await supabaseAdmin
       .from('audit_logs')
       .insert({
+        tenant_id: escolaId || null,
         user_id: executadoPor.id || null,
         user_name: executadoPor.name,
         user_email: executadoPor.email,
@@ -85,10 +86,11 @@ export async function notificarDiretorEAuditar(params: LogAndNotifyParams) {
           .single()
 
         if (funcData?.auth_user_id) {
-          // Inserir notificação para o Diretor usando supabaseAdmin (evita RLS)
+          // Inserir notificação para o Diretor usando supabaseAdmin (evita RLS) com salvaguarda de tenant_id
           const { error: notifError } = await supabaseAdmin
             .from('notifications')
             .insert({
+              tenant_id: escolaId,
               user_id: funcData.auth_user_id,
               title: titulo,
               message: mensagem,
