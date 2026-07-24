@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Building2,
@@ -39,6 +39,14 @@ interface KPIData {
   atividadesPendentesSecretaria: number
 }
 
+const ACESSO_RAPIDO_ITEMS = [
+  { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
+  { label: 'Turmas', icon: BookOpen, href: '/turmas' },
+  { label: 'Avaliações', icon: ClipboardList, href: '/avaliacoes' },
+  { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias', warn: true },
+  { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
+  { label: 'Funcionários', icon: Users, href: '/funcionarios' },
+] as const
 
 export default function HomePage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -52,13 +60,15 @@ export default function HomePage() {
     }
   }, [])
 
-  const isProfessor = acessos.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor')
-  const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
+  const vinculosAtivos = useMemo(() => vinculos?.filter((v) => v.ativo) || [], [vinculos])
+  const isProfessor = useMemo(
+    () => acessos.some(a => a.nivel === 4 || a.nivel === 5) || Boolean(funcionario?.cargo?.toLowerCase().includes('professor')),
+    [acessos, funcionario?.cargo]
+  )
   const isMultiLotadoDocente = isProfessor && vinculosAtivos.length > 1
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
-  const [loadingEscolas, setLoadingEscolas] = useState(false)
 
   // Estados para Professor
   interface TeacherKPIData {
@@ -87,14 +97,15 @@ export default function HomePage() {
 
   const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
-  const fetchKpis = useCallback(async (escolaId: string) => {
+  const fetchKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
     if (isMounted.current) setLoadingKpi(true)
     try {
-      const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`)
+      const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`, { signal })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: KPIData = await res.json()
       if (isMounted.current) setKpi(data)
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
       console.error('[home] Erro ao carregar KPIs gerenciais:', err)
       toast.error('Não foi possível carregar os indicadores da escola.')
     } finally {
@@ -104,12 +115,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (selectedEscola?.id) {
-      fetchKpis(selectedEscola.id)
+      const controller = new AbortController()
+      fetchKpis(selectedEscola.id, controller.signal)
+      return () => controller.abort()
     }
   }, [selectedEscola?.id, fetchKpis])
 
   // Buscar estatísticas rápidas por escola para professores multi-lotados
-  const fetchSchoolStats = useCallback(async () => {
+  const fetchSchoolStats = useCallback(async (signal?: AbortSignal) => {
     if (!funcionario?.id || vinculosAtivos.length === 0) return
     if (isMounted.current) setLoadingSchoolStats(true)
     try {
@@ -118,12 +131,14 @@ export default function HomePage() {
         .filter((id): id is string => Boolean(id))
       const escolaIdsParam = encodeURIComponent(JSON.stringify(escolaIds))
       const res = await fetch(
-        `/api/home/school-stats?funcionarioId=${funcionario.id}&escolaIds=${escolaIdsParam}`
+        `/api/home/school-stats?funcionarioId=${funcionario.id}&escolaIds=${escolaIdsParam}`,
+        { signal }
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const { stats } = await res.json()
       if (isMounted.current) setSchoolStats(stats ?? {})
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
       console.error('[home] Erro ao buscar estatísticas das escolas:', err)
       toast.error('Não foi possível carregar os dados das escolas.')
     } finally {
@@ -133,12 +148,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (isProfessor && vinculosAtivos.length > 0 && !selectedEscola) {
-      fetchSchoolStats()
+      const controller = new AbortController()
+      fetchSchoolStats(controller.signal)
+      return () => controller.abort()
     }
   }, [isProfessor, vinculosAtivos, selectedEscola, fetchSchoolStats])
 
   // Buscar dados específicos do professor para a escola selecionada
-  const fetchTeacherDashboard = useCallback(async (escolaId: string) => {
+  const fetchTeacherDashboard = useCallback(async (escolaId: string, signal?: AbortSignal) => {
     if (!funcionario?.id) return
     if (isMounted.current) {
       setLoadingTeacherKpi(true)
@@ -146,7 +163,8 @@ export default function HomePage() {
     }
     try {
       const res = await fetch(
-        `/api/home/teacher-kpis?escolaId=${escolaId}&funcionarioId=${funcionario.id}`
+        `/api/home/teacher-kpis?escolaId=${escolaId}&funcionarioId=${funcionario.id}`,
+        { signal }
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const { kpi: tKpi, aulasHoje: aulas } = await res.json()
@@ -154,7 +172,8 @@ export default function HomePage() {
         setTeacherKpi(tKpi ?? null)
         setAulasHoje(aulas ?? [])
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
       console.error('[home] Erro ao buscar painel do professor:', err)
       toast.error('Não foi possível carregar os dados do painel do docente.')
     } finally {
@@ -167,7 +186,9 @@ export default function HomePage() {
 
   useEffect(() => {
     if (selectedEscola?.id && isProfessor) {
-      fetchTeacherDashboard(selectedEscola.id)
+      const controller = new AbortController()
+      fetchTeacherDashboard(selectedEscola.id, controller.signal)
+      return () => controller.abort()
     }
   }, [selectedEscola?.id, isProfessor, fetchTeacherDashboard])
 
@@ -556,14 +577,7 @@ export default function HomePage() {
               Acesso Rápido
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {[
-                { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
-                { label: 'Turmas', icon: BookOpen, href: '/turmas' },
-                { label: 'Avaliações', icon: ClipboardList, href: '/avaliacoes' },
-                { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias', warn: true },
-                { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
-                { label: 'Funcionários', icon: Users, href: '/funcionarios' },
-              ].map((item) => {
+              {ACESSO_RAPIDO_ITEMS.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link key={item.href} href={item.href}>
@@ -572,7 +586,7 @@ export default function HomePage() {
                     )}>
                       <Icon className={cn(
                         'w-5 h-5 transition-colors',
-                        item.warn
+                        'warn' in item && item.warn
                           ? 'text-amber-400 group-hover:text-amber-300'
                           : 'text-[#3ea6ff] group-hover:text-highlight'
                       )} />
@@ -589,7 +603,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {selectedTurmaChamada && (
+      {isModalChamadaOpen && selectedTurmaChamada && (
         <ModalDetalhesTurma
           open={isModalChamadaOpen}
           onOpenChange={setIsModalChamadaOpen}
@@ -600,13 +614,15 @@ export default function HomePage() {
         />
       )}
 
-      <ModalDetalhesFrequenciaHoje
-        open={isModalFrequenciaOpen}
-        onOpenChange={setIsModalFrequenciaOpen}
-        escolaId={selectedEscola?.id}
-        escolaNome={selectedEscola?.nome}
-        escolaLogoUrl={selectedEscola?.logo_url}
-      />
+      {isModalFrequenciaOpen && (
+        <ModalDetalhesFrequenciaHoje
+          open={isModalFrequenciaOpen}
+          onOpenChange={setIsModalFrequenciaOpen}
+          escolaId={selectedEscola?.id}
+          escolaNome={selectedEscola?.nome}
+          escolaLogoUrl={selectedEscola?.logo_url}
+        />
+      )}
     </div>
   )
 }
