@@ -30,6 +30,7 @@ interface AuditLogItem {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'READ' | string
   entity: string
   entity_id: string
+  tenant_id?: string | null
   user_id: string | null
   user_name: string | null
   user_email: string | null
@@ -57,6 +58,8 @@ export default function CentralAtividadesPage() {
     loadEscolas()
   }, [loadEscolas])
 
+  const targetEscolaId = selectedEscola?.id || urlEscolaId || null
+
   const fetchLogs = async () => {
     setLoading(true)
     const supabase = createClient()
@@ -66,6 +69,11 @@ export default function CentralAtividadesPage() {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(200)
+
+    // SALVAGUARDA DE SEGURANÇA MULTI-TENANT: Filtrar estritamente por Escola ativa
+    if (targetEscolaId) {
+      query = query.eq('tenant_id', targetEscolaId)
+    }
 
     // Aplicar filtro de período
     const agora = new Date()
@@ -104,10 +112,18 @@ export default function CentralAtividadesPage() {
 
   useEffect(() => {
     fetchLogs()
-  }, [filtroPeriodo, filtroAcao, filtroEntidade])
+  }, [filtroPeriodo, filtroAcao, filtroEntidade, targetEscolaId])
 
-  // Filtragem local por texto de busca
+  // Filtragem local por texto de busca + SALVAGUARDA ESTRITA DE ESCOLA
   const logsFiltrados = logs.filter((log) => {
+    // Salvaguarda adicional no cliente
+    if (targetEscolaId) {
+      const logEscolaId = log.tenant_id || log.new_data?.escola_id || log.old_data?.escola_id
+      if (logEscolaId && logEscolaId !== targetEscolaId) {
+        return false
+      }
+    }
+
     if (!busca) return true
     const termo = busca.toLowerCase()
     const nomeUsuario = (log.user_name ?? '').toLowerCase()
@@ -240,6 +256,21 @@ export default function CentralAtividadesPage() {
             <Printer className="w-4 h-4" /> Imprimir Relatório
           </Button>
         </div>
+      </div>
+
+      {/* Banner de Isolamento e Contexto de Escola */}
+      <div className="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-3 h-3 rounded-full ${selectedEscola ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <span>
+            {selectedEscola ? (
+              <>Exibindo atividades <strong>exclusivas</strong> da unidade: <strong className="text-foreground">{selectedEscola.nome}</strong></>
+            ) : (
+              <>Visão Macro da Rede — Exibindo histórico global (Selecione uma escola no topo para isolar os dados)</>
+            )}
+          </span>
+        </div>
+        <span className="text-muted-foreground font-medium">Filtro de Segurança Multi-tenant Ativo</span>
       </div>
 
       {/* Barra de Filtros */}
