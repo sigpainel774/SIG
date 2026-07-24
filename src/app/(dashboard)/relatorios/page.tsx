@@ -11,6 +11,7 @@ import RelatorioOcorrencias from '@/components/relatorios/RelatorioOcorrencias'
 import { createClient } from '@/lib/supabaseClient'
 import { IconTile } from '@/components/ui/icon-tile'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 import { 
   BarChart3, 
   Printer, 
@@ -31,14 +32,16 @@ import {
   ShieldAlert,
   Search,
   Filter,
-  Download
+  Download,
+  Activity
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 export default function RelatoriosPage() {
+  const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
 
   useEffect(() => {
@@ -215,6 +218,13 @@ export default function RelatoriosPage() {
       title: 'Registros de Presença',
       description: 'Logs de ponto e ronda (App Mobile).',
       icon: Scan,
+      variant: 'primary' as const,
+    },
+    {
+      id: 'atividades' as const,
+      title: 'Central de Atividades',
+      description: 'Trilha de auditoria, matrículas, edições e acessos a fichas.',
+      icon: Activity,
       variant: 'primary' as const,
     },
     {
@@ -436,7 +446,13 @@ export default function RelatoriosPage() {
           return (
             <div
               key={card.id}
-              onClick={() => setActiveReport(card.id)}
+              onClick={() => {
+                if (card.id === 'atividades') {
+                  router.push(`/relatorios/atividades${selectedEscola ? `?escola_id=${selectedEscola.id}` : ''}`)
+                } else {
+                  setActiveReport(card.id)
+                }
+              }}
               className="relative overflow-hidden bg-card hover:bg-hoverCustom border border-border hover:border-primary/50 transition-all duration-200 cursor-pointer rounded-2xl p-6 md:p-7 pl-9 md:pl-10 flex flex-col justify-between group shadow-lg min-h-[160px]"
             >
               <span className={cn(
