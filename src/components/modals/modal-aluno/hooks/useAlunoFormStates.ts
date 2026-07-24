@@ -576,6 +576,28 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           }
         })
 
+        fetch('/api/audit/log-e-notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            escolaId: escolaId || alunoEditar?.escola_id,
+            titulo: 'Ficha de Aluno Alterada',
+            mensagem: `${funcionario?.nome ?? 'Secretaria'} editou a ficha do aluno ${pessoaForm.nome}.`,
+            tipoNotificacao: 'edicao_ficha',
+            entidade: 'alunos',
+            entidadeId: alunoEditar.id,
+            acao: 'UPDATE',
+            executadoPor: {
+              id: funcionario?.id ?? null,
+              name: funcionario?.nome ?? 'Usuário',
+              email: funcionario?.email ?? 'sem-email@sig.com',
+              cargo: funcionario?.cargo ?? undefined
+            },
+            oldData: { nome: alunoEditar.nome },
+            newData: { nome: pessoaForm.nome }
+          })
+        }).catch(err => console.error('Erro ao notificar diretor:', err))
+
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
         const { data: insertedData, error } = await (supabase.from('alunos') as any)
@@ -598,6 +620,27 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
             cargo: funcionario?.cargo ?? undefined
           }
         })
+
+        fetch('/api/audit/log-e-notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            escolaId: escolaId || payload.escola_id,
+            titulo: 'Nova Matrícula de Aluno',
+            mensagem: `${funcionario?.nome ?? 'Secretaria'} realizou a matrícula do aluno ${pessoaForm.nome}.`,
+            tipoNotificacao: 'matricula',
+            entidade: 'alunos',
+            entidadeId: savedAlunoId,
+            acao: 'CREATE',
+            executadoPor: {
+              id: funcionario?.id ?? null,
+              name: funcionario?.nome ?? 'Usuário',
+              email: funcionario?.email ?? 'sem-email@sig.com',
+              cargo: funcionario?.cargo ?? undefined
+            },
+            newData: { nome: pessoaForm.nome }
+          })
+        }).catch(err => console.error('Erro ao notificar diretor:', err))
 
         toast.success('Aluno cadastrado com sucesso!')
 

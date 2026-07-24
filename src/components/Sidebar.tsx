@@ -23,7 +23,8 @@ import {
   Archive,
   UserCheck,
   FileBadge,
-  Fingerprint
+  Fingerprint,
+  Activity
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -123,6 +124,7 @@ export function Sidebar() {
       label: 'GESTÃO ADMINISTRATIVA',
       items: [
         { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+        { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
         { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
         { href: '/funcionarios', label: 'Funcionários', icon: Users },
       ]

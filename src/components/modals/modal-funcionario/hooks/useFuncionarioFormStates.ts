@@ -586,6 +586,29 @@ export function useFuncionarioFormStates({
           }
         }
 
+        const loggedUser = useAuthStore.getState().funcionario
+        fetch('/api/audit/log-e-notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            escolaId: escolaId || null,
+            titulo: 'Ficha de Funcionário Alterada',
+            mensagem: `${loggedUser?.nome ?? 'Secretaria'} editou a ficha do funcionário ${nome}.`,
+            tipoNotificacao: 'edicao_ficha',
+            entidade: 'funcionarios',
+            entidadeId: funcionario.id,
+            acao: 'UPDATE',
+            executadoPor: {
+              id: loggedUser?.id ?? null,
+              name: loggedUser?.nome ?? 'Usuário',
+              email: loggedUser?.email ?? 'sem-email@sig.com',
+              cargo: loggedUser?.cargo ?? undefined
+            },
+            oldData: { nome: funcionario.nome },
+            newData: { nome, cargo }
+          })
+        }).catch(err => console.error('Erro ao notificar diretor:', err))
+
         toast.success('Funcionário atualizado com sucesso!')
 
         if (authUserId) {
@@ -638,6 +661,28 @@ export function useFuncionarioFormStates({
               .eq('id', existingVinc.id)
           }
         }
+
+        const loggedUser = useAuthStore.getState().funcionario
+        fetch('/api/audit/log-e-notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            escolaId: escolaId || null,
+            titulo: 'Novo Funcionário Vinculado',
+            mensagem: `${loggedUser?.nome ?? 'Secretaria'} cadastrou/vinculou o funcionário ${nome}.`,
+            tipoNotificacao: 'funcionario_matriculado',
+            entidade: 'funcionarios',
+            entidadeId: targetId,
+            acao: 'CREATE',
+            executadoPor: {
+              id: loggedUser?.id ?? null,
+              name: loggedUser?.nome ?? 'Usuário',
+              email: loggedUser?.email ?? 'sem-email@sig.com',
+              cargo: loggedUser?.cargo ?? undefined
+            },
+            newData: { nome, cargo }
+          })
+        }).catch(err => console.error('Erro ao notificar diretor:', err))
 
         if (existingFunc) {
           toast.success('Ficha cadastral atualizada e vinculada ao funcionário do Supabase!')
