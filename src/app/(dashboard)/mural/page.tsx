@@ -70,7 +70,7 @@ export default function MuralPage() {
   const fetchNotices = async () => {
     const supabase = createClient()
     const { data, error } = await supabase.from('comunicados')
-      .select('id, title, body, target, date, criado_por, anexo_url, anexo_name, created_at, criado_por:funcionarios(nome)')
+      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
       .order('date', { ascending: false })
 
     if (error) {
@@ -90,7 +90,7 @@ export default function MuralPage() {
 
         const [comunicadosRes, birthdayRes] = await Promise.all([
           supabase.from('comunicados')
-            .select('id, title, body, target, date, criado_por, anexo_url, anexo_name, created_at, criado_por:funcionarios(nome)')
+            .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
             .order('date', { ascending: false }),
           (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth })
         ])
