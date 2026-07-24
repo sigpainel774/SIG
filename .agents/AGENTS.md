@@ -190,8 +190,9 @@
   - Todo `useEffect` que executa chamadas assíncronas (`fetch` / Supabase) DEVE utilizar `AbortController` e/ou referência `isMounted` para cancelar a requisição em caso de re-disparo ou desmontagem.
   - Toda derivação de dados usada em dependências de `useEffect` (ex: `vinculos.filter(...)`) DEVE ser memorizada com `useMemo` para evitar re-criações contínuas da referência de array e loops infinitos de requisições.
 - **Montagem Estritamente Condicional de Modais e Portais (ES-2)**:
-  - Modais, caixas de diálogo, popovers e portais pesados (como relatórios e visualizações de impressão) NUNCA devem ser mantidos montados incondicionalmente no DOM (`<Modal open={false} />`).
-  - Use sempre a sintaxe condicional `{isOpen && <Modal open={isOpen} ... />}` para garantir que instâncias, formulários e portais só inicializem na memória quando abertos.
+  - Modais, caixas de diálogo, popovers e portais pesados (como Radix UI / Shadcn Dialog, relatórios e visualizações de impressão) NUNCA devem ser mantidos montados incondicionalmente no DOM (`<Modal open={false} />`).
+  - No React e Next.js App Router, passar `open={false}` apenas oculta visualmente o elemento do DOM, mas o engine do React continua executando a construção do JSX e todos os Hooks (`useState`, `useEffect`, seletores, contextos e subscrições) do componente filho no carregamento inicial da página.
+  - Use SEMPRE a sintaxe condicional `{isOpen && <Modal open={isOpen} ... />}` ou carregamento assíncrono sob demanda (`next/dynamic`) para garantir que o ciclo de vida do React e a carga de dados só ocorram quando o usuário solicitar explicitamente.
 - **Memorização de Escopos Estáticos e Lazy Content (ES-3)**:
   - Listas estáticas densas de conteúdo (como FAQs, manuais na Central de Ajuda ou menus de configuração) contendo JSX complexo não devem ser declaradas dentro da função render.
   - Mova estruturas constantes para fora do componente ou converta para *render functions* `() => (<div>...</div>)` executadas sob demanda.
