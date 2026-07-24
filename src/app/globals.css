@@ -328,8 +328,22 @@
 
 /* Regra de isolamento para impressao de documentos e relatorios */
 @media print {
+  @page {
+    size: landscape;
+    margin: 5mm 8mm;
+  }
+
   body > *:not(.print-portal-container) {
     display: none !important;
   }
+
+  .print-portal-container {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
 }
+
 
