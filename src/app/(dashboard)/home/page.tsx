@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { KPICard } from '@/components/KPICard'
 import { FrequenciaBar } from '@/components/FrequenciaBar'
+import { ModalDetalhesFrequenciaHoje } from '@/components/modals/ModalDetalhesFrequenciaHoje'
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
 
 interface KPIData {
@@ -78,6 +79,7 @@ export default function HomePage() {
   const [selectedTurmaChamada, setSelectedTurmaChamada] = useState<any | null>(null)
   const [selectedAulaChamada, setSelectedAulaChamada] = useState<any | null>(null)
   const [isModalChamadaOpen, setIsModalChamadaOpen] = useState(false)
+  const [isModalFrequenciaOpen, setIsModalFrequenciaOpen] = useState(false)
 
   useEffect(() => {
     loadEscolas()
@@ -512,6 +514,7 @@ export default function HomePage() {
               feitas={kpi?.turmasComFrequenciaHoje ?? 0}
               total={kpi?.totalTurmasAtivas ?? 0}
               loading={loadingKpi}
+              onClick={() => setIsModalFrequenciaOpen(true)}
             />
 
             {/* Atividades pendentes na secretaria */}
@@ -596,6 +599,14 @@ export default function HomePage() {
           initialData={new Date().toISOString().split('T')[0]}
         />
       )}
+
+      <ModalDetalhesFrequenciaHoje
+        open={isModalFrequenciaOpen}
+        onOpenChange={setIsModalFrequenciaOpen}
+        escolaId={selectedEscola?.id}
+        escolaNome={selectedEscola?.nome}
+        escolaLogoUrl={selectedEscola?.logo_url}
+      />
     </div>
   )
 }
