@@ -304,7 +304,7 @@
 }
 
 .doc-header-logo-secretaria {
-  height: 3.6rem !important; /* Reduzido para equilibrar visualmente com o tamanho do texto da prefeitura */
+  height: 5.4rem !important; /* Igualado ao tamanho do logo da prefeitura para simetria perfeita */
   width: auto !important;
   max-width: 200px !important;
   object-fit: contain !important;
