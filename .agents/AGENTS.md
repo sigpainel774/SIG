@@ -206,4 +206,9 @@
 - **Salvaguarda Dupla (Client-Side Guard)**: Além do filtro SQL no banco, implemente uma validação de segurança no mapa/filtro do componente para descartar qualquer registro retornado cujo `tenant_id` ou `escola_id` divirja da escola selecionada.
 <!-- END:multi-tenant-isolation-rule -->
 
+<!-- BEGIN:concise-technical-communication-rule -->
+# Comunicação Técnica Concisa & Economia de Tokens
 
+- **Objetividade & Conhecimento Técnico**: O usuário possui alto nível técnico. Respostas, diagnósticos e explicações devem ser extremamente diretos, focados e sem introduções ou teorias redundantes.
+- **Minimização de Tokens de Saída**: Ir direto à solução técnica, exibindo apenas códigos essenciais, comandos e respostas ultraconcisas para economizar tokens de geração.
+<!-- END:concise-technical-communication-rule -->

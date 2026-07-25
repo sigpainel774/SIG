@@ -1,18 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, ArrowLeft, Plus, AlertTriangle, UserPlus } from 'lucide-react'
+import { FileText, ArrowLeft, Plus, AlertTriangle, UserPlus, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ModalAluno } from '@/components/modals/modal-aluno'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useCheckPermissao } from '@/hooks/useCheckPermissao'
 import { toast } from 'sonner'
 
 export default function MatriculasPage() {
   const { isEditMode } = useEditModeStore()
+  const { temPermissao: podeRealizarMatricula } = useCheckPermissao('matriculas.realizar')
   const [modalOpen, setModalOpen] = useState(false)
 
   const handleNovaMatricula = () => {
+    if (!podeRealizarMatricula) {
+      toast.error('Você não possui permissão para realizar novas matrículas nesta escola.')
+      return
+    }
     if (!isEditMode) {
       toast.warning('Para realizar novas matrículas com assinaturas, por favor ative o Modo de Edição no topo da página.')
     }
@@ -58,20 +64,28 @@ export default function MatriculasPage() {
 
         <Button 
           onClick={handleNovaMatricula}
-          className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold gap-2 px-6 py-5 rounded-2xl cursor-pointer shadow-lg hover:shadow-xl transition-all duration-200 border-none text-base"
+          disabled={!podeRealizarMatricula}
+          className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold gap-2 px-6 py-5 rounded-2xl cursor-pointer shadow-lg hover:shadow-xl transition-all duration-200 border-none text-base disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
           <span>Iniciar Nova Matrícula</span>
         </Button>
 
-        {!isEditMode && (
+        {!podeRealizarMatricula ? (
+          <div className="mt-6 p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs text-center max-w-sm flex flex-col items-center gap-1.5 font-medium">
+            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+            <span>
+              Acesso Restrito: Seu perfil de Secretário nesta escola não possui o toggle de permissão para **Realizar / Renovar Matrículas**. Solicite a liberação ao Diretor.
+            </span>
+          </div>
+        ) : !isEditMode ? (
           <div className="mt-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs text-center max-w-sm flex flex-col items-center gap-1.5 font-medium">
             <AlertTriangle className="w-5 h-5 text-amber-500 animate-pulse shrink-0" />
             <span>
               Atenção: O **Modo de Edição** está desativado no painel. Ative-o no botão do topo da página para assinar digitalmente e salvar a ficha.
             </span>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

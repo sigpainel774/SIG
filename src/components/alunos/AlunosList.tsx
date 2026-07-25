@@ -16,6 +16,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { type Aluno } from '@/hooks/useAlunos'
+import { useCheckPermissao } from '@/hooks/useCheckPermissao'
 
 interface AlunosListProps {
   carregando: boolean
@@ -38,6 +39,10 @@ export function AlunosList({
   onComprovante,
   onArquivar,
 }: AlunosListProps) {
+  const { temPermissao: podeEditar } = useCheckPermissao('alunos.editar')
+  const { temPermissao: podeAnexos } = useCheckPermissao('alunos.anexos')
+  const { temPermissao: podeImprimirFicha } = useCheckPermissao('documentos.imprimir_ficha')
+  const { temPermissao: podeImprimirComprovante } = useCheckPermissao('documentos.imprimir_comprovante')
   if (carregando) {
     return (
       <div className="text-center py-16 bg-surface-1 rounded-2xl border border-borderCustom text-muted-foreground text-sm">
@@ -163,16 +168,18 @@ export function AlunosList({
 
             {/* ── Botões de Ação ── */}
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 pt-2">
-              <button
-                onClick={() => onAnexos(aluno)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
-                title="Anexos do Aluno"
-              >
-                <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="hidden sm:inline">Anexos</span>
-              </button>
+              {podeAnexos && (
+                <button
+                  onClick={() => onAnexos(aluno)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
+                  title="Anexos do Aluno"
+                >
+                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="hidden sm:inline">Anexos</span>
+                </button>
+              )}
 
-              {isEditMode && (
+              {isEditMode && podeEditar && (
                 <button
                   onClick={() => onEditar(aluno)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
@@ -184,25 +191,29 @@ export function AlunosList({
               )}
 
               {/* Imprimir Ficha */}
-              <button
-                onClick={() => onImprimir(aluno)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors cursor-pointer border-none shadow-sm"
-                title="Imprimir Ficha de Matrícula"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Imprimir Ficha</span>
-              </button>
+              {podeImprimirFicha && (
+                <button
+                  onClick={() => onImprimir(aluno)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors cursor-pointer border-none shadow-sm"
+                  title="Imprimir Ficha de Matrícula"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Imprimir Ficha</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => onComprovante(aluno)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
-                title="Imprimir Comprovante de Matrícula"
-              >
-                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="hidden sm:inline">Comprovante</span>
-              </button>
+              {podeImprimirComprovante && (
+                <button
+                  onClick={() => onComprovante(aluno)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-hoverCustom text-xs font-semibold transition-colors cursor-pointer"
+                  title="Imprimir Comprovante de Matrícula"
+                >
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="hidden sm:inline">Comprovante</span>
+                </button>
+              )}
 
-              {isEditMode && (
+              {isEditMode && podeEditar && (
                 <button
                   onClick={() => onArquivar(aluno)}
                   className="p-2 sm:px-3 sm:py-2 rounded-xl bg-transparent border border-border text-foreground hover:bg-destructive/10 hover:text-destructive text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"

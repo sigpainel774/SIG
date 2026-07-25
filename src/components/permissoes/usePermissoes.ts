@@ -30,6 +30,8 @@ export function usePermissoes() {
   // ── Estado: autenticação e modais ───────────────────────────────────────────
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false)
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
+  const [modalConfigOpen, setModalConfigOpen] = useState(false)
+  const [itemConfigurar, setItemConfigurar] = useState<RegistroPermissao | null>(null)
 
   // ── Estado: modo de visualização ────────────────────────────────────────────
   const [modoAtribuicao, setModoAtribuicao] = useState<'funcionario' | 'escola'>('funcionario')
@@ -61,7 +63,7 @@ export function usePermissoes() {
     const supabase = createClient()
     const { data: permData } = await supabase
       .from('funcionarios')
-      .select('id, nome, email, status, is_superadmin, acessos_usuarios(nivel, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo, escolas(nome))')
+      .select('id, nome, email, status, is_superadmin, acessos_usuarios(id, nivel, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo, escolas(nome))')
 
     if (permData) {
       const formatados: RegistroPermissao[] = []
@@ -99,6 +101,7 @@ export function usePermissoes() {
 
             formatados.push({
               id: f.id,
+              acessoId: ac.id,
               nome: f.nome,
               email: f.email ?? f.nome,
               nivel: nomeNivel,
@@ -437,6 +440,11 @@ export function usePermissoes() {
     toast.info(`Editando permissões de ${item.nome}`)
   }
 
+  const handleAbrirConfiguracao = (item: RegistroPermissao) => {
+    setItemConfigurar(item)
+    setModalConfigOpen(true)
+  }
+
   return {
     // refs
     autocompleteRef,
@@ -448,6 +456,11 @@ export function usePermissoes() {
     // modais
     modalSenhaOpen,
     setModalSenhaOpen,
+    modalConfigOpen,
+    setModalConfigOpen,
+    itemConfigurar,
+    setItemConfigurar,
+    handleAbrirConfiguracao,
     // modo
     modoAtribuicao,
     setModoAtribuicao,

@@ -11,6 +11,7 @@ interface PermissoesListProps {
   registrosAgrupadosPorEscola: Record<string, RegistroPermissao[]>
   isEditActive: boolean
   onClickEditCard: (item: RegistroPermissao, overrideModo?: 'funcionario') => void
+  onClickConfigurar?: (item: RegistroPermissao) => void
 }
 
 export function PermissoesList({
@@ -20,6 +21,7 @@ export function PermissoesList({
   registrosAgrupadosPorEscola,
   isEditActive,
   onClickEditCard,
+  onClickConfigurar,
 }: PermissoesListProps) {
   if (loading) {
     return (
@@ -47,6 +49,7 @@ export function PermissoesList({
             item={item}
             isEditActive={isEditActive}
             onClickEdit={() => onClickEditCard(item)}
+            onClickConfigurar={onClickConfigurar ? () => onClickConfigurar(item) : undefined}
           />
         ))}
       </div>
@@ -81,6 +84,7 @@ export function PermissoesList({
                   isEditActive={isEditActive}
                   compact
                   onClickEdit={() => onClickEditCard(item, 'funcionario')}
+                  onClickConfigurar={onClickConfigurar ? () => onClickConfigurar(item) : undefined}
                 />
               ))}
             </div>
