@@ -74,7 +74,8 @@ export default function RelatoriosPage() {
                 nome,
                 foto_url,
                 latitude,
-                longitude
+                longitude,
+                deleted_at
               )
             `)
             .eq('ativo', true)
@@ -93,6 +94,7 @@ export default function RelatoriosPage() {
               .filter(v => 
                 v.funcionarios?.latitude != null && 
                 v.funcionarios?.longitude != null &&
+                !v.funcionarios?.deleted_at &&
                 Number(v.funcionarios.latitude) !== 0 &&
                 Number(v.funcionarios.longitude) !== 0 &&
                 !isNaN(Number(v.funcionarios.latitude)) &&
@@ -143,6 +145,7 @@ export default function RelatoriosPage() {
               escolas (nome),
               turmas (nome)
             `)
+            .is('deleted_at', null)
             .not('latitude', 'is', null)
             .not('longitude', 'is', null)
 
