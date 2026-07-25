@@ -34,7 +34,7 @@ export const getPerfilUsuario = cache(async function getPerfilUsuario(
       // Busca o funcionário pelo email (case-insensitive)
       const { data: funcData, error: funcError } = await supabaseAdmin
         .from('funcionarios')
-        .select('*')
+        .select('id, nome, email, auth_user_id, cpf, cargo, foto_url, assinatura_url, primeiro_acesso, status, is_superadmin, data_nascimento, created_at')
         .ilike('email', email)
         .maybeSingle()
 
@@ -90,7 +90,7 @@ export const getPerfilUsuario = cache(async function getPerfilUsuario(
       }))
 
       return {
-        funcionario: funcData,
+        funcionario: funcData as unknown as Funcionario,
         acessos: (acessosRes.data || []) as AcessoUsuario[],
         vinculos,
       }

@@ -77,7 +77,7 @@ export default function AdminArquivadosPage() {
     const res = await reverterArquivado({
       supabaseAdmin: supabase, 
       arquivadoId: arq.id,
-      revertidoPor: { id: funcionario.id, name: funcionario.nome, email: funcionario.email }
+      revertidoPor: { id: funcionario.id ?? '', name: funcionario.nome ?? '', email: funcionario.email ?? '' }
     })
 
     if (res.success) {
@@ -98,7 +98,7 @@ export default function AdminArquivadosPage() {
     const res = await excluirDefinitivamenteArquivado({
       supabaseAdmin: supabase,
       arquivadoId: arq.id,
-      excluidoPor: { id: funcionario.id, name: funcionario.nome, email: funcionario.email }
+      excluidoPor: { id: funcionario.id ?? '', name: funcionario.nome ?? '', email: funcionario.email ?? '' }
     })
 
     if (res.success) {

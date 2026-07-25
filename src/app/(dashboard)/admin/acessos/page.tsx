@@ -40,25 +40,38 @@ export default function AdminAcessosPage() {
   const loadAcessos = async () => {
     setLoading(true)
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('funcionarios')
-        .select('id, nome, email, is_superadmin, cargo, status, auth_user_id, created_at')
+        .select('id, nome, email, is_superadmin, cargo, status, auth_user_id, created_at, vinculos_funcionarios(ativo, escolas(nome))')
         .order('nome', { ascending: true })
 
+      if (error) {
+        console.error('Erro ao buscar acessos:', error)
+        toast.error('Erro ao carregar lista de acessos do banco de dados.')
+        return
+      }
+
       if (data && data.length > 0) {
-        const dbItems: AcessoItem[] = data.map((f: any) => ({
-          id: f.id,
-          funcionario: f.nome,
-          email: f.email || f.nome,
-          escola: f.orgao || 'Colégio Moisés Alves',
-          nivel: f.is_superadmin ? 'ROOT' : (f.cargo?.toUpperCase() || 'PROFESSOR'),
-          status: f.status?.toUpperCase() || 'ATIVO'
-        }))
+        const dbItems: AcessoItem[] = data.map((f: any) => {
+          const vinculos = Array.isArray(f.vinculos_funcionarios) ? f.vinculos_funcionarios : []
+          const vinculoAtivo = vinculos.find((v: any) => v.ativo)?.escolas?.nome ?? vinculos[0]?.escolas?.nome
+          const escolaNome = vinculoAtivo ?? 'Sem escola vinculada'
+
+          return {
+            id: f.id,
+            funcionario: f.nome,
+            email: f.email ?? f.nome,
+            escola: escolaNome,
+            nivel: f.is_superadmin ? 'ROOT' : (f.cargo?.toUpperCase() ?? 'PROFESSOR'),
+            status: f.status?.toUpperCase() ?? 'ATIVO'
+          }
+        })
 
         setAcessos(dbItems)
       }
-    } catch (err) {
-      console.warn('Erro ao carregar acessos do banco, usando fallback:', err)
+    } catch (err: any) {
+      console.error('Erro ao carregar acessos:', err)
+      toast.error('Falha de conexão ao carregar lista de acessos.')
     } finally {
       setLoading(false)
     }

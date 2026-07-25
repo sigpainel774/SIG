@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -64,7 +65,7 @@ export function FuncionarioLotacaoList({
         : 'bg-[#1e1e22] text-zinc-400 hover:text-white hover:bg-[#252528]'
     }`
 
-  const timestamp = Date.now()
+  const [timestamp] = useState(() => Date.now())
 
   return (
     <div className="w-[310px] shrink-0 border-r border-[#26262a] flex flex-col overflow-hidden">

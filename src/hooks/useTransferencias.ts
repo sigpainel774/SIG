@@ -241,7 +241,7 @@ export function useTransferencias() {
             entity: 'alunos (TRANSFERENCIA)',
             entityId: transferenciaSelecionada.aluno_id,
             newData: { escola_id: transferenciaSelecionada.escola_destino_id },
-            performedBy: { id: funcionario.id, name: funcionario.nome, email: funcionario.email },
+            performedBy: { id: funcionario?.id ?? null, name: funcionario?.nome ?? '', email: funcionario?.email ?? '' },
             tenantId: transferenciaSelecionada.escola_origem_id
           })
         }
@@ -333,7 +333,7 @@ export function useTransferencias() {
               entity: 'funcionarios (TRANSFERENCIA)',
               entityId: transferenciaSelecionada.funcionario_id,
               newData: { escola_destino_id: transferenciaSelecionada.escola_destino_id },
-              performedBy: { id: funcionario.id, name: funcionario.nome, email: funcionario.email },
+              performedBy: { id: funcionario?.id ?? null, name: funcionario?.nome ?? '', email: funcionario?.email ?? '' },
               tenantId: transferenciaSelecionada.escola_origem_id
             })
           }

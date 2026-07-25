@@ -128,7 +128,7 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
           entity: 'alunos (TRANSFERENCIA)',
           entityId: solicitacao.aluno_id,
           newData: { escola_id: solicitacao.escola_destino_id },
-          performedBy: { id: funcionario.id, name: funcionario.nome, email: funcionario.email }
+          performedBy: { id: funcionario?.id ?? null, name: funcionario?.nome ?? '', email: funcionario?.email ?? '' }
         })
       }
 

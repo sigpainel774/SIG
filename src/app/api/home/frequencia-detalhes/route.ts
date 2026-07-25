@@ -48,38 +48,48 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // 2. Fetch active students count per turma
-    const { data: alunosData, error: alunosError } = await supabase
-      .from('alunos')
-      .select('id, turma_id')
-      .eq('escola_id', escolaId)
-      .is('deleted_at', null)
+    // 2. Busca paralela otimizada de alunos (apenas turma_id), matérias e frequências escopadas
+    const [alunosRes, materiasRes, freqRes] = await Promise.all([
+      supabase
+        .from('alunos')
+        .select('turma_id')
+        .eq('escola_id', escolaId)
+        .in('turma_id', turmaIds)
+        .is('deleted_at', null),
 
-    if (alunosError) throw alunosError
+      supabase
+        .from('materias')
+        .select(`
+          id,
+          nome,
+          turma_id,
+          professor_id,
+          funcionarios:professor_id (nome)
+        `)
+        .eq('escola_id', escolaId),
+
+      supabase
+        .from('frequencias')
+        .select('id, turma_id, materia_id, aluno_id, presenca, created_at')
+        .eq('escola_id', escolaId)
+        .eq('data', data)
+        .in('turma_id', turmaIds)
+    ])
+
+    if (alunosRes.error) throw alunosRes.error
+    if (materiasRes.error) throw materiasRes.error
+    if (freqRes.error) throw freqRes.error
 
     const alunosPorTurmaMap: Record<string, number> = {}
-    alunosData?.forEach((aluno) => {
+    alunosRes.data?.forEach((aluno) => {
       if (aluno.turma_id) {
         alunosPorTurmaMap[aluno.turma_id] = (alunosPorTurmaMap[aluno.turma_id] || 0) + 1
       }
     })
 
-    // 3. Fetch materias in school / turmas
-    const { data: materias, error: materiasError } = await supabase
-      .from('materias')
-      .select(`
-        id,
-        nome,
-        turma_id,
-        professor_id,
-        funcionarios:professor_id (nome)
-      `)
-      .eq('escola_id', escolaId)
-
-    if (materiasError) throw materiasError
-
+    const materias = materiasRes.data || []
     const materiasMap: Record<string, { id: string; nome: string; professorNome?: string | null; turma_id?: string | null }> = {}
-    materias?.forEach((m: any) => {
+    materiasRes.data?.forEach((m: any) => {
       const profNome = Array.isArray(m.funcionarios)
         ? m.funcionarios[0]?.nome
         : m.funcionarios?.nome
@@ -91,14 +101,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // 4. Fetch frequency records for selected date and school
-    const { data: frequencias, error: freqError } = await supabase
-      .from('frequencias')
-      .select('id, turma_id, materia_id, aluno_id, presenca, created_at')
-      .eq('escola_id', escolaId)
-      .eq('data', data)
-
-    if (freqError) throw freqError
+    const frequencias = freqRes.data || []
 
     // Group frequency records by turma_id -> materia_id (or 'geral' if null)
     // Structure: { [turma_id]: { [materia_id || 'geral']: { presencas, faltas, presencaSet: Set<aluno_id>, created_at } } }

@@ -3,6 +3,8 @@
 import React from 'react'
 import { PrintHeader } from '@/components/print/print-header'
 
+const sessionTimestamp = Date.now()
+
 interface PrintFichaProps {
   nome: string
   fotoUrl?: string
@@ -69,7 +71,7 @@ export function PrintFicha({
           <div className="w-16 h-20 border border-black flex-shrink-0 flex items-center justify-center bg-gray-100 text-[10px] text-gray-500 font-mono text-center">
             {fotoUrl ? (
               <img 
-                src={fotoUrl.startsWith('data:') ? fotoUrl : `${fotoUrl.split('?')[0]}?t=${Date.now()}`} 
+                src={fotoUrl.startsWith('data:') ? fotoUrl : `${fotoUrl.split('?')[0]}?t=${sessionTimestamp}`} 
                 alt={nome} 
                 className="w-full h-full object-cover" 
               />
