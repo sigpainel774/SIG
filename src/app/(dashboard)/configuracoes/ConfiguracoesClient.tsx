@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { getVersaoImagemUrl } from '@/lib/imageUtils'
 import { PerfilTab } from './PerfilTab'
 import { Database } from '@/types/supabase'
 
@@ -147,7 +148,7 @@ export function ConfiguracoesClient() {
     if (localFuncionario) {
       // Fix #4: exibe com cache-buster para evitar imagem obsoleta do browser
       const url = localFuncionario.assinatura_url
-      setAssinaturaPessoalUrl(url ? `${url.split('?')[0]}?t=${Date.now()}` : null)
+      setAssinaturaPessoalUrl(getVersaoImagemUrl(url))
     }
   }, [localFuncionario])
 
@@ -167,7 +168,7 @@ export function ConfiguracoesClient() {
       if (!cancelled && data?.assinatura_diretor_url) {
         // Fix #4: cache-buster na exibição
         const url = data.assinatura_diretor_url
-        setAssinaturaDiretorUrl(`${url.split('?')[0]}?t=${Date.now()}`)
+        setAssinaturaDiretorUrl(getVersaoImagemUrl(url))
       }
     }
 
@@ -234,7 +235,7 @@ export function ConfiguracoesClient() {
       if (dbErr) throw dbErr
 
       // Fix #4: exibe com cache-buster para o browser não usar versão antiga
-      setAssinaturaDiretorUrl(`${cleanUrl}?t=${Date.now()}`)
+      setAssinaturaDiretorUrl(getVersaoImagemUrl(cleanUrl, Date.now()))
       setNewDiretorSignature(null)
       toast.success('Assinatura global do diretor salva com sucesso!')
     } catch (err: any) {
@@ -285,7 +286,7 @@ export function ConfiguracoesClient() {
       if (dbErr) throw dbErr
 
       // Fix #4: exibe com cache-buster
-      setAssinaturaPessoalUrl(`${cleanUrl}?t=${Date.now()}`)
+      setAssinaturaPessoalUrl(getVersaoImagemUrl(cleanUrl, Date.now()))
 
       // Fix #2: spread seguro — só atualiza o Zustand se `funcionario` não for null
       if (funcionario) {
