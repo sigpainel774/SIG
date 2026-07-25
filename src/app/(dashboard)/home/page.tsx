@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useDashboardMetricsSWR } from '@/lib/swr/useSigSWR'
 import { toast } from 'sonner'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { KPICard } from '@/components/KPICard'
@@ -97,8 +98,25 @@ export default function HomePage() {
 
   const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
+  const activeEscolaId = selectedEscola?.id || escolaAtivaId
+  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(activeEscolaId)
+
+  useEffect(() => {
+    if (dashboardSwrMetrics) {
+      setKpi(prev => ({
+        totalAlunos: dashboardSwrMetrics.totalAlunos ?? prev?.totalAlunos ?? 0,
+        totalTurmas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmas ?? 0,
+        ocorrenciasMes: dashboardSwrMetrics.ocorrenciasMes ?? prev?.ocorrenciasMes ?? 0,
+        transferenciasPendentes: prev?.transferenciasPendentes ?? 0,
+        turmasComFrequenciaHoje: prev?.turmasComFrequenciaHoje ?? 0,
+        totalTurmasAtivas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmasAtivas ?? 0,
+        atividadesPendentesSecretaria: dashboardSwrMetrics.diariosPendentes ?? prev?.atividadesPendentesSecretaria ?? 0,
+      }))
+    }
+  }, [dashboardSwrMetrics])
+
   const fetchKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
-    if (isMounted.current) setLoadingKpi(true)
+    if (isMounted.current && !dashboardSwrMetrics) setLoadingKpi(true)
     try {
       const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`, { signal })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -107,11 +125,10 @@ export default function HomePage() {
     } catch (err: any) {
       if (err?.name === 'AbortError') return
       console.error('[home] Erro ao carregar KPIs gerenciais:', err)
-      toast.error('Não foi possível carregar os indicadores da escola.')
     } finally {
       if (isMounted.current) setLoadingKpi(false)
     }
-  }, [])
+  }, [dashboardSwrMetrics])
 
   useEffect(() => {
     if (selectedEscola?.id) {

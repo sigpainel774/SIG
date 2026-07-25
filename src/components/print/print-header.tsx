@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
+import { getVersaoImagemUrl } from '@/lib/imageUtils'
 
 // Timestamp fixo de sessão para evitar flickering e re-fetch de imagens dinâmicas durante re-renderizações
 const sessionTimestamp = Date.now()
@@ -54,13 +55,9 @@ export function PrintHeader({
   const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
   const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
 
-  const activeTimestamp = timestamp ?? sessionTimestamp
-
   const getCacheBustedUrl = (url?: string) => {
     if (!url) return ''
-    if (url.startsWith('data:')) return url
-    const cleanUrl = url.split('?')[0]
-    return `${cleanUrl}?t=${activeTimestamp}`
+    return getVersaoImagemUrl(url, timestamp) || ''
   }
 
   const nomeExibicaoEscola = escolaNome ?? "Secretaria Municipal de Educação"

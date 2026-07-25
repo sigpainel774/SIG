@@ -43,6 +43,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
   logout: async (supabase: any) => {
     get().limparSessao()
+
+    // Expurgo profundo de caches autenticados no navegador
+    if (typeof window !== 'undefined') {
+      try {
+        const { limparCacheIndexedDB } = require('@/lib/swr/indexedDBCache')
+        await limparCacheIndexedDB().catch(() => {})
+      } catch (e) {}
+
+      try {
+        const { mutate } = require('swr')
+        mutate(() => true, undefined, { revalidate: false }).catch(() => {})
+      } catch (e) {}
+
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => caches.delete(key))
+        }).catch(() => {})
+      }
+    }
+
     if (supabase?.auth) {
       supabase.auth.signOut().catch((err: any) => console.warn('Erro ao encerrar sessão Supabase:', err))
     }
