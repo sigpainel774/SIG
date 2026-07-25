@@ -16,6 +16,7 @@ interface SignaturePadProps {
 }
 
 export function SignaturePad({ label, value, onChange, isEditMode = true, globalSignatureUrl }: SignaturePadProps) {
+  const cacheBusterRef = useRef<number>(Date.now())
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -364,7 +365,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
         {value ? (
           <div className="p-3 w-full h-full flex flex-col items-center justify-center">
             <img
-              src={value.startsWith('data:') ? value : `${value}${value.includes('?') ? '&' : '?'}t=${Date.now()}`}
+              src={value.startsWith('data:') ? value : `${value}${value.includes('?') ? '&' : '?'}t=${cacheBusterRef.current}`}
               alt={`Assinatura ${label}`}
               className="max-h-[75px] w-auto object-contain select-none pointer-events-none"
             />

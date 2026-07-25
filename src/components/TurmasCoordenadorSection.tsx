@@ -55,19 +55,31 @@ export function TurmasCoordenadorSection({ funcionarioId, escolaId }: TurmasCoor
   }, [funcionarioId, escolaId])
 
   const handleSalvar = async () => {
+    if (!funcionarioId || !escolaId) {
+      toast.error('Identificador de funcionário ou escola inválido.')
+      return
+    }
     setSalvando(true)
     try {
       // Remover vínculos desmarcados
       const paraRemover = vinculos.filter(v => !selecionadas.includes(v.turma_id))
       if (paraRemover.length > 0) {
-        await supabase.from('vinculos_turmas').delete().in('id', paraRemover.map(v => v.id))
+        const { error: deleteError } = await supabase
+          .from('vinculos_turmas')
+          .delete()
+          .in('id', paraRemover.map(v => v.id))
+
+        if (deleteError) {
+          toast.error('Erro ao remover vínculo de turma antigo: ' + deleteError.message)
+          return
+        }
       }
 
       // Adicionar novos vínculos
       const existentes = vinculos.map(v => v.turma_id)
       const paraAdicionar = selecionadas.filter(id => !existentes.includes(id))
       if (paraAdicionar.length > 0) {
-        await supabase.from('vinculos_turmas').insert(
+        const { error: insertError } = await supabase.from('vinculos_turmas').insert(
           paraAdicionar.map(turmaId => ({
             funcionario_id: funcionarioId,
             escola_id: escolaId,
@@ -75,12 +87,22 @@ export function TurmasCoordenadorSection({ funcionarioId, escolaId }: TurmasCoor
             tipo: 'coordenador'
           }))
         )
+
+        if (insertError) {
+          toast.error('Erro ao adicionar vínculo de turma: ' + insertError.message)
+          return
+        }
       }
 
       toast.success('Turmas atualizadas com sucesso')
       
       // Recarregar os vínculos atualizados
-      const resVinculos = await supabase.from('vinculos_turmas').select('id, turma_id').eq('funcionario_id', funcionarioId).eq('escola_id', escolaId).eq('tipo', 'coordenador')
+      const resVinculos = await supabase
+        .from('vinculos_turmas')
+        .select('id, turma_id')
+        .eq('funcionario_id', funcionarioId)
+        .eq('escola_id', escolaId)
+        .eq('tipo', 'coordenador')
       setVinculos(resVinculos.data || [])
       
     } catch (err) {

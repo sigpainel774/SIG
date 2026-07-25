@@ -165,7 +165,7 @@ export function ModalTransferirFuncionario({
           entity: 'funcionarios (ARQUIVAMENTO FORA REDE)',
           entityId: funcionarioSelecionadoId,
           oldData: funcionarioObj,
-          performedBy: { id: usuarioLogado.id, name: usuarioLogado.nome, email: usuarioLogado.email },
+          performedBy: { id: usuarioLogado?.id ?? null, name: usuarioLogado?.nome ?? '', email: usuarioLogado?.email ?? '' },
           tenantId: escolaAtivaId || undefined
         })
 

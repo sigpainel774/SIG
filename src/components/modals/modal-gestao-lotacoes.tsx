@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import {
   MapPin,
@@ -74,7 +75,7 @@ export function ModalGestaoLotacoes({
     (l) => l.escola_id === escolaAtivaId && l.ativo
   )
 
-  const timestamp = Date.now()
+  const [timestamp] = useState(() => Date.now())
 
   return (
     <StandardDialog

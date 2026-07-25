@@ -173,6 +173,49 @@ export function useTurmaFrequencias({
     }
   }
 
+  const handleLancarFrequenciaLote = async (lancamentos: { alunoId: string; presenca: boolean }[]) => {
+    if (isPrazoExpirado) {
+      toast.error(`A alteração de frequência para esta data está bloqueada. O prazo limite é de ${prazoFrequenciaDias} dias.`)
+      return
+    }
+
+    const targetEscolaId = escolaAtivaId || turma?.escola_id
+    if (!targetEscolaId || !selectedMateriaId) {
+      toast.error('Escola ou matéria não identificada.')
+      return
+    }
+
+    const payload = lancamentos.map(l => ({
+      aluno_id: l.alunoId,
+      turma_id: turma.id,
+      escola_id: targetEscolaId,
+      materia_id: selectedMateriaId,
+      agenda_aula_id: selectedAgendaAulaId ?? null,
+      data: dataFreq,
+      presenca: l.presenca
+    }))
+
+    await mutateFrequencias(
+      (curr) => {
+        const next = { ...(curr || {}) }
+        lancamentos.forEach(l => { next[l.alunoId] = l.presenca })
+        return next
+      },
+      { revalidate: false }
+    )
+
+    try {
+      const { data, error } = await supabase.rpc('salvar_frequencias_lote', { p_frequencias: payload })
+      if (error) throw error
+      if (data && !data.success) throw new Error(data.error || 'Erro no lote')
+      toast.success(`${lancamentos.length} frequências registradas em lote.`)
+    } catch (err: any) {
+      console.error('Erro ao salvar frequências em lote:', err)
+      toast.error('Erro ao salvar lote de presenças: ' + err.message)
+      mutateFrequencias()
+    }
+  }
+
   return {
     dataFreq,
     setDataFreq,
@@ -186,6 +229,7 @@ export function useTurmaFrequencias({
     prazoFrequenciaDias,
     alterarData,
     handleLancarFrequencia,
+    handleLancarFrequenciaLote,
     mutateFrequencias
   }
 }

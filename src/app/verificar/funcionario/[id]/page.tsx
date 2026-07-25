@@ -19,6 +19,8 @@ interface PageProps {
   }>
 }
 
+const sessionTimestamp = Date.now()
+
 function maskCpf(cpf?: string | null): string {
   if (!cpf) return '—'
   const clean = cpf.replace(/\D/g, '')
@@ -96,7 +98,7 @@ export default async function VerificarFuncionarioPage({ params }: PageProps) {
               <div className="w-16 h-20 bg-zinc-800 border border-[#3e3e42] rounded-lg overflow-hidden flex items-center justify-center text-xl font-bold text-zinc-300 flex-shrink-0">
                 {funcionario.foto_url ? (
                   <img
-                    src={`${funcionario.foto_url.split('?')[0]}?t=${Date.now()}`}
+                    src={`${funcionario.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
                     alt={funcionario.nome}
                     className="w-full h-full object-cover"
                   />

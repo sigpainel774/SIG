@@ -13,11 +13,11 @@ export type VinculoFuncionario = {
 }
 
 interface AuthState {
-  funcionario: Funcionario | null;
+  funcionario: Funcionario | Partial<Funcionario> | null;
   acessos: AcessoUsuario[];
   vinculos: VinculoFuncionario[];
   escolaAtivaId: string | null;
-  setAuth: (func: Funcionario, acessos: AcessoUsuario[], vinculos?: VinculoFuncionario[]) => void;
+  setAuth: (func: Funcionario | any, acessos: AcessoUsuario[], vinculos?: VinculoFuncionario[]) => void;
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
   logout: (supabase: any) => Promise<void>;

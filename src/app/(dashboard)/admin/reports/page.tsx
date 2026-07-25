@@ -94,17 +94,25 @@ export default function AdminReportsPage() {
   ) => {
     setSalvandoStatus(true)
 
-    // Atualizar no Supabase
     try {
-      await (supabase.from as any)('bug_reports')
+      const { error } = await (supabase.from as any)('bug_reports')
         .update({ 
           status: novoStatus,
           resposta_root: resposta !== undefined ? resposta : undefined,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-    } catch (err) {
-      console.warn('Supabase update bypass:', err)
+
+      if (error) {
+        toast.error('Erro ao atualizar o chamado no banco de dados: ' + error.message)
+        setSalvandoStatus(false)
+        return
+      }
+    } catch (err: any) {
+      console.error('Erro ao atualizar reporte:', err)
+      toast.error('Falha de conexão ao atualizar chamado.')
+      setSalvandoStatus(false)
+      return
     }
 
     // Atualizar estado local
