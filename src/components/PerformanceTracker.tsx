@@ -17,6 +17,12 @@ interface NavigatorWithConnection extends Navigator {
   webkitConnection?: NetworkInformation
 }
 
+interface PendingNavigation {
+  startTime: number
+  targetPath: string
+  timeoutId: ReturnType<typeof setTimeout>
+}
+
 function getConnectionType(): string | null {
   if (typeof navigator === 'undefined') return null
   const nav = navigator as NavigatorWithConnection
@@ -49,32 +55,82 @@ export function PerformanceTracker() {
   const supabase = createClient()
   const { funcionario, escolaAtivaId } = useAuthStore()
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMounted = useRef(true)
+  const pendingNavigationRef = useRef<PendingNavigation | null>(null)
+  const prevPathnameRef = useRef<string | null>(null)
+
+  // Armazenar referências mutáveis para evitar dependências instáveis nos efeitos
+  const funcionarioRef = useRef(funcionario)
+  const escolaAtivaIdRef = useRef(escolaAtivaId)
+
+  useEffect(() => {
+    funcionarioRef.current = funcionario
+    escolaAtivaIdRef.current = escolaAtivaId
+  }, [funcionario, escolaAtivaId])
 
   useEffect(() => {
     isMounted.current = true
     return () => {
       isMounted.current = false
+      if (pendingNavigationRef.current?.timeoutId) {
+        clearTimeout(pendingNavigationRef.current.timeoutId)
+      }
     }
   }, [])
 
+  // Capturar intenções de navegação em memória com expiração de 10s e filtros
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
 
     const handleClick = (e: MouseEvent) => {
+      // Ignorar botões secundários, atalhos de navegação e eventos já prevenidos
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.defaultPrevented) return
+
       const target = e.target as HTMLElement
-      const anchor = target.closest('a[href]')
-      if (anchor) {
-        try {
-          performance.mark('route-start')
-        } catch {
-          // Ignora se a API de performance não estiver disponível
+      const anchor = target.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor) return
+
+      // Ignorar links de abertura em nova guia e downloads
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) return
+
+      const href = anchor.getAttribute('href')
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return
+
+      try {
+        const url = new URL(href, window.location.origin)
+
+        // Ignorar links externos
+        if (url.origin !== window.location.origin) return
+
+        // Ignorar se for a mesma rota atual (apenas âncora ou query param sem mudança de página)
+        if (url.pathname === window.location.pathname) return
+
+        // Cancelar expiração anterior se existir
+        if (pendingNavigationRef.current?.timeoutId) {
+          clearTimeout(pendingNavigationRef.current.timeoutId)
         }
+
+        // Agendar expiração (TTL de 10s) para descartar navegações abandonadas
+        const timeoutId = setTimeout(() => {
+          if (pendingNavigationRef.current?.timeoutId === timeoutId) {
+            pendingNavigationRef.current = null
+          }
+        }, 10000)
+
+        pendingNavigationRef.current = {
+          startTime: performance.now(),
+          targetPath: normalizePathname(url.pathname),
+          timeoutId,
+        }
+      } catch {
+        // Ignorar URLs malformadas
       }
     }
+
     document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+    }
   }, [])
 
   // Callback para Core Web Vitals
@@ -86,8 +142,8 @@ export function PerformanceTracker() {
       const normalizedPath = normalizePathname(pathname)
 
       const payload = {
-        funcionario_id: funcionario?.id ?? null,
-        escola_id: escolaAtivaId ?? null,
+        funcionario_id: funcionarioRef.current?.id ?? null,
+        escola_id: escolaAtivaIdRef.current ?? null,
         pathname: normalizedPath,
         metric_name: metric.name,
         metric_value: metric.value,
@@ -107,69 +163,64 @@ export function PerformanceTracker() {
         // Falha silenciosa intencional
       }
     },
-    [funcionario?.id, escolaAtivaId, pathname, supabase]
+    [pathname, supabase]
   )
 
   useReportWebVitals(handleWebVitals)
 
-  // Rastreamento de transição de rota com timing e normalização
+  // Medição executada exclusivamente quando pathname realmente muda
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    let durationMs: number | null = null
+    if (
+      pendingNavigationRef.current &&
+      prevPathnameRef.current !== null &&
+      prevPathnameRef.current !== pathname
+    ) {
+      const nav = pendingNavigationRef.current
+      pendingNavigationRef.current = null
+      clearTimeout(nav.timeoutId)
 
-    try {
-      const entries = performance.getEntriesByName('route-start', 'mark')
-      if (entries.length > 0) {
-        durationMs = performance.now() - entries[entries.length - 1].startTime
-        performance.clearMarks('route-start')
+      const durationMs = performance.now() - nav.startTime
+
+      if (durationMs > 0 && isMounted.current) {
+        const normalizedPath = normalizePathname(pathname)
+
+        const rating =
+          durationMs < 300 ? 'good'
+          : durationMs < 1000 ? 'needs-improvement'
+          : 'poor'
+
+        const payload = {
+          funcionario_id: funcionarioRef.current?.id ?? null,
+          escola_id: escolaAtivaIdRef.current ?? null,
+          pathname: normalizedPath,
+          metric_name: 'ROUTE_CHANGE_MS',
+          metric_value: durationMs,
+          rating,
+          connection_type: getConnectionType(),
+          device_memory: getDeviceMemory(),
+          hardware_concurrency: getHardwareConcurrency(),
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+        }
+
+        const saveMetric = async () => {
+          try {
+            const { error } = await supabase
+              .from('performance_metrics')
+              .insert(payload)
+            if (error) console.warn('[Perf] Erro ao salvar transição de rota:', error.message)
+          } catch {
+            // Falha silenciosa intencional
+          }
+        }
+
+        saveMetric()
       }
-    } catch {
-      // API não disponível
     }
 
-    if (durationMs === null || durationMs < 50) return
-
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
-    const normalizedPath = normalizePathname(pathname)
-
-    debounceRef.current = setTimeout(async () => {
-      // Mitigar ES-4: verificar se o componente ainda está montado antes de gravar
-      if (!isMounted.current) return
-
-      const rating =
-        durationMs! < 300 ? 'good'
-        : durationMs! < 1000 ? 'needs-improvement'
-        : 'poor'
-
-      const payload = {
-        funcionario_id: funcionario?.id ?? null,
-        escola_id: escolaAtivaId ?? null,
-        pathname: normalizedPath,
-        metric_name: 'ROUTE_CHANGE_MS',
-        metric_value: durationMs!,
-        rating,
-        connection_type: getConnectionType(),
-        device_memory: getDeviceMemory(),
-        hardware_concurrency: getHardwareConcurrency(),
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      }
-
-      try {
-        const { error } = await supabase
-          .from('performance_metrics')
-          .insert(payload)
-        if (error) console.warn('[Perf] Erro ao salvar transição de rota:', error.message)
-      } catch {
-        // Falha silenciosa intencional
-      }
-    }, 500)
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [pathname, funcionario?.id, escolaAtivaId, supabase])
+    prevPathnameRef.current = pathname
+  }, [pathname, supabase])
 
   return null
 }

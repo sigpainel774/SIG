@@ -14,6 +14,7 @@ export interface FuncionarioSimples {
 
 export interface RegistroPermissao {
   id: string
+  acessoId?: string
   nome: string
   email: string
   nivel: string

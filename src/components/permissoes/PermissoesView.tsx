@@ -3,6 +3,7 @@
 import { ArrowLeft, Shield, Users, School } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ModalConfirmacaoSenha } from '@/components/modals/modal-confirmacao-senha'
+import { ModalConfigurarAcessos } from './ModalConfigurarAcessos'
 import { usePermissoes } from './usePermissoes'
 import { PermissoesForm } from './PermissoesForm'
 import { PermissoesFilters } from './PermissoesFilters'
@@ -20,6 +21,10 @@ export function PermissoesView({ onBack }: PermissoesViewProps) {
     setModoAtribuicao,
     modalSenhaOpen,
     setModalSenhaOpen,
+    modalConfigOpen,
+    setModalConfigOpen,
+    itemConfigurar,
+    handleAbrirConfiguracao,
     escolas,
     loading,
     buscaLista,
@@ -38,7 +43,6 @@ export function PermissoesView({ onBack }: PermissoesViewProps) {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -59,7 +63,7 @@ export function PermissoesView({ onBack }: PermissoesViewProps) {
               Permissões
             </h1>
             <p className="text-sm text-zinc-400 mt-1">
-              Gerencie os níveis de acesso de cada funcionário por escola ou órgão.
+              Gerencie os níveis de acesso e permissões granulares por funcionário e escola.
             </p>
           </div>
         </div>
@@ -117,6 +121,7 @@ export function PermissoesView({ onBack }: PermissoesViewProps) {
           registrosAgrupadosPorEscola={registrosAgrupadosPorEscola}
           isEditActive={isEditActive}
           onClickEditCard={handleClickEditCard}
+          onClickConfigurar={handleAbrirConfiguracao}
         />
       </div>
 
@@ -126,6 +131,18 @@ export function PermissoesView({ onBack }: PermissoesViewProps) {
         onOpenChange={setModalSenhaOpen}
         onSuccess={() => setEditMode(true)}
       />
+
+      {/* Modal de Configurar Acessos Granulares do Secretário */}
+      {itemConfigurar && itemConfigurar.acessoId && (
+        <ModalConfigurarAcessos
+          open={modalConfigOpen}
+          onOpenChange={setModalConfigOpen}
+          acessoUsuarioId={itemConfigurar.acessoId}
+          funcionarioNome={itemConfigurar.nome}
+          escolaNome={itemConfigurar.escola}
+          funcionarioId={itemConfigurar.id}
+        />
+      )}
     </div>
   )
 }

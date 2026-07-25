@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useCheckPermissao } from '@/hooks/useCheckPermissao'
 import { createClient } from '@/lib/supabaseClient'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -98,13 +99,17 @@ function AvaliacoesContent() {
   })
 
   // Determinar perfis e permissões
+  const { temPermissao: podeVerFila } = useCheckPermissao('atividades.ver_fila')
+  const { temPermissao: podeImprimirAtividades } = useCheckPermissao('atividades.imprimir')
+  const { temPermissao: podeAtualizarStatusAtividades } = useCheckPermissao('atividades.atualizar_status')
+
   const isGlobalAdmin = isAdminGlobalOrRoot?.() ?? false
   const nivelNaEscola = escolaAtivaId
     ? acessos.find((a) => a.escola_id === escolaAtivaId)?.nivel ?? 99
     : 99
 
   const isProfessor = nivelNaEscola === 4 || nivelNaEscola === 5 || funcionario?.cargo?.toLowerCase().includes('professor')
-  const isSecretario = nivelNaEscola === 3
+  const isSecretario = nivelNaEscola === 3 && podeVerFila
   const isDiretoria = nivelNaEscola === 2 || isGlobalAdmin
 
   // Definir aba ativa inicial com base no perfil
