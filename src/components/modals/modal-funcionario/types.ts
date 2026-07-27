@@ -220,6 +220,10 @@ export interface FuncionarioFormContextType {
   setFotoPreview: (v: string | null) => void
   handleFotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 
+  // Lotações Sub-modal
+  lotacoesModalOpen: boolean
+  setLotacoesModalOpen: (v: boolean) => void
+
   // Métodos Globais
   handleSubmit: (e: React.FormEvent) => Promise<void>
   handleDocUpload: (e: React.ChangeEvent<HTMLInputElement>, docType: string, setter: (url: string) => void) => Promise<void>

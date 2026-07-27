@@ -3442,6 +3442,7 @@ export type Database = {
           escola_id: string | null
           funcionario_id: string | null
           id: string
+          modalidade_ensino: string | null
           tipo_vinculo: string | null
         }
         Insert: {
@@ -3454,6 +3455,7 @@ export type Database = {
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
+          modalidade_ensino?: string | null
           tipo_vinculo?: string | null
         }
         Update: {
@@ -3466,6 +3468,7 @@ export type Database = {
           escola_id?: string | null
           funcionario_id?: string | null
           id?: string
+          modalidade_ensino?: string | null
           tipo_vinculo?: string | null
         }
         Relationships: [

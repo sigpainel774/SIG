@@ -70,6 +70,7 @@ export function ModalGestaoLotacoes({
     handleSolicitarTransferencia,
     handleAtualizarCargoLotacao,
     handleAtualizarCargaHorariaLotacao,
+    handleAtualizarModalidadeLotacao,
   } = useGestaoLotacoes({ open, funcionarioInicial })
 
   const lotacaoNaMinhaEscola = selecionado?.lotacoes.find(
@@ -211,11 +212,24 @@ export function ModalGestaoLotacoes({
                                       <span className="text-[11px] text-zinc-400 font-medium">h/sem</span>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Modalidade:</span>
+                                    <select
+                                      value={lot.modalidade_ensino ?? 'Regular'}
+                                      onChange={(e) => handleAtualizarModalidadeLotacao(lot.id, e.target.value)}
+                                      disabled={salvando}
+                                      className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded px-2 py-1 outline-none focus:border-[#3ea6ff] cursor-pointer font-medium"
+                                    >
+                                      <option value="Regular">Regular</option>
+                                      <option value="EJA">EJA</option>
+                                    </select>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-3 text-xs text-zinc-400">
                                   <span>{cargoExibido || 'Cargo não definido'}</span>
                                   {lot.carga_horaria && <span>• {lot.carga_horaria}h/semana</span>}
+                                  <span>• Modalidade: {lot.modalidade_ensino ?? 'Regular'}</span>
                                 </div>
                               )}
                             </div>
