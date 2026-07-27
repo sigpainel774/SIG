@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      abastecimentos_veiculos: {
+        Row: {
+          created_at: string | null
+          data: string
+          id: string
+          litros: number
+          odometro_km: number
+          posto_nota: string | null
+          registrado_por: string | null
+          tipo_combustivel: string
+          valor_total: number
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: string
+          id?: string
+          litros: number
+          odometro_km: number
+          posto_nota?: string | null
+          registrado_por?: string | null
+          tipo_combustivel?: string
+          valor_total: number
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          id?: string
+          litros?: number
+          odometro_km?: number
+          posto_nota?: string | null
+          registrado_por?: string | null
+          tipo_combustivel?: string
+          valor_total?: number
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abastecimentos_veiculos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_veiculos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_veiculos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       access_logs: {
         Row: {
           created_at: string
@@ -123,6 +184,38 @@ export type Database = {
             columns: ["orgao_id"]
             isOneToOne: false
             referencedRelation: "orgaos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acessos_usuarios_permissoes: {
+        Row: {
+          acesso_usuario_id: string
+          created_at: string
+          id: string
+          permissao: string
+          permitido: boolean
+        }
+        Insert: {
+          acesso_usuario_id: string
+          created_at?: string
+          id?: string
+          permissao: string
+          permitido?: boolean
+        }
+        Update: {
+          acesso_usuario_id?: string
+          created_at?: string
+          id?: string
+          permissao?: string
+          permitido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acessos_usuarios_permissoes_acesso_usuario_id_fkey"
+            columns: ["acesso_usuario_id"]
+            isOneToOne: false
+            referencedRelation: "acessos_usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -461,6 +554,8 @@ export type Database = {
           aluno_id: string | null
           created_at: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           ponto_embarque: string | null
           rota_id: string | null
         }
@@ -468,6 +563,8 @@ export type Database = {
           aluno_id?: string | null
           created_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           ponto_embarque?: string | null
           rota_id?: string | null
         }
@@ -475,6 +572,8 @@ export type Database = {
           aluno_id?: string | null
           created_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           ponto_embarque?: string | null
           rota_id?: string | null
         }
@@ -1132,6 +1231,36 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_rede: {
+        Row: {
+          cargo_secretario: string | null
+          id: string
+          nome_rede: string | null
+          prazo_envio_atividades_dias: number
+          prazo_frequencia_dias: number | null
+          secretario_educacao: string
+          updated_at: string | null
+        }
+        Insert: {
+          cargo_secretario?: string | null
+          id?: string
+          nome_rede?: string | null
+          prazo_envio_atividades_dias?: number
+          prazo_frequencia_dias?: number | null
+          secretario_educacao?: string
+          updated_at?: string | null
+        }
+        Update: {
+          cargo_secretario?: string | null
+          id?: string
+          nome_rede?: string | null
+          prazo_envio_atividades_dias?: number
+          prazo_frequencia_dias?: number | null
+          secretario_educacao?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       desligamentos_programados: {
         Row: {
           created_at: string | null
@@ -1312,8 +1441,10 @@ export type Database = {
           endereco: string | null
           id: string
           inep: string | null
+          latitude: number | null
           localizacao: string | null
           logo_url: string | null
+          longitude: number | null
           modulos_ativos: string[] | null
           nome: string
           plano: string | null
@@ -1331,8 +1462,10 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          latitude?: number | null
           localizacao?: string | null
           logo_url?: string | null
+          longitude?: number | null
           modulos_ativos?: string[] | null
           nome: string
           plano?: string | null
@@ -1350,8 +1483,10 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          latitude?: number | null
           localizacao?: string | null
           logo_url?: string | null
+          longitude?: number | null
           modulos_ativos?: string[] | null
           nome?: string
           plano?: string | null
@@ -1488,6 +1623,7 @@ export type Database = {
       funcionarios: {
         Row: {
           altas_habilidades: boolean | null
+          apelido: string | null
           area_diferenciada: string | null
           area_residencia: string | null
           assinatura_url: string | null
@@ -1536,6 +1672,7 @@ export type Database = {
           latitude: number | null
           logradouro: string | null
           longitude: number | null
+          modalidade_ensino: string | null
           municipio_nascimento: string | null
           nacionalidade: string | null
           nacionalidade_especificacao: string | null
@@ -1559,6 +1696,7 @@ export type Database = {
           superior_instituicao: string | null
           superior_tipo_instituicao: string | null
           tea: boolean | null
+          telefone: string | null
           tipo_vinculo: string | null
           tipo_vinculo_especificacao: string | null
           uf_nascimento: string | null
@@ -1566,6 +1704,7 @@ export type Database = {
         }
         Insert: {
           altas_habilidades?: boolean | null
+          apelido?: string | null
           area_diferenciada?: string | null
           area_residencia?: string | null
           assinatura_url?: string | null
@@ -1614,6 +1753,7 @@ export type Database = {
           latitude?: number | null
           logradouro?: string | null
           longitude?: number | null
+          modalidade_ensino?: string | null
           municipio_nascimento?: string | null
           nacionalidade?: string | null
           nacionalidade_especificacao?: string | null
@@ -1637,6 +1777,7 @@ export type Database = {
           superior_instituicao?: string | null
           superior_tipo_instituicao?: string | null
           tea?: boolean | null
+          telefone?: string | null
           tipo_vinculo?: string | null
           tipo_vinculo_especificacao?: string | null
           uf_nascimento?: string | null
@@ -1644,6 +1785,7 @@ export type Database = {
         }
         Update: {
           altas_habilidades?: boolean | null
+          apelido?: string | null
           area_diferenciada?: string | null
           area_residencia?: string | null
           assinatura_url?: string | null
@@ -1692,6 +1834,7 @@ export type Database = {
           latitude?: number | null
           logradouro?: string | null
           longitude?: number | null
+          modalidade_ensino?: string | null
           municipio_nascimento?: string | null
           nacionalidade?: string | null
           nacionalidade_especificacao?: string | null
@@ -1715,6 +1858,7 @@ export type Database = {
           superior_instituicao?: string | null
           superior_tipo_instituicao?: string | null
           tea?: boolean | null
+          telefone?: string | null
           tipo_vinculo?: string | null
           tipo_vinculo_especificacao?: string | null
           uf_nascimento?: string | null
@@ -1853,6 +1997,73 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencoes_veiculos: {
+        Row: {
+          created_at: string | null
+          data: string
+          descricao: string
+          id: string
+          odometro_km: number
+          oficina_fornecedor: string | null
+          proxima_revisao_data: string | null
+          proxima_revisao_km: number | null
+          registrado_por: string | null
+          tipo: string
+          valor_total: number
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: string
+          descricao: string
+          id?: string
+          odometro_km: number
+          oficina_fornecedor?: string | null
+          proxima_revisao_data?: string | null
+          proxima_revisao_km?: number | null
+          registrado_por?: string | null
+          tipo?: string
+          valor_total?: number
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          descricao?: string
+          id?: string
+          odometro_km?: number
+          oficina_fornecedor?: string | null
+          proxima_revisao_data?: string | null
+          proxima_revisao_km?: number | null
+          registrado_por?: string | null
+          tipo?: string
+          valor_total?: number
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencoes_veiculos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_veiculos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_veiculos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
             referencedColumns: ["id"]
           },
         ]
@@ -2592,7 +2803,11 @@ export type Database = {
           ativo: boolean | null
           created_at: string | null
           escola_id: string | null
+          horario_partida: string | null
+          horario_retorno: string | null
           id: string
+          motorista_id: string | null
+          motorista_tarde_id: string | null
           nome: string
           pontos_parada: Json | null
           turno: string | null
@@ -2602,7 +2817,11 @@ export type Database = {
           ativo?: boolean | null
           created_at?: string | null
           escola_id?: string | null
+          horario_partida?: string | null
+          horario_retorno?: string | null
           id?: string
+          motorista_id?: string | null
+          motorista_tarde_id?: string | null
           nome: string
           pontos_parada?: Json | null
           turno?: string | null
@@ -2612,7 +2831,11 @@ export type Database = {
           ativo?: boolean | null
           created_at?: string | null
           escola_id?: string | null
+          horario_partida?: string | null
+          horario_retorno?: string | null
           id?: string
+          motorista_id?: string | null
+          motorista_tarde_id?: string | null
           nome?: string
           pontos_parada?: Json | null
           turno?: string | null
@@ -2624,6 +2847,34 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_transporte_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_transporte_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_transporte_motorista_tarde_id_fkey"
+            columns: ["motorista_tarde_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_transporte_motorista_tarde_id_fkey"
+            columns: ["motorista_tarde_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
           {
@@ -3183,6 +3434,7 @@ export type Database = {
       vinculos_funcionarios: {
         Row: {
           ativo: boolean
+          carga_horaria: number | null
           cargo: string | null
           created_at: string
           data_fim: string | null
@@ -3194,6 +3446,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          carga_horaria?: number | null
           cargo?: string | null
           created_at?: string
           data_fim?: string | null
@@ -3205,6 +3458,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          carga_horaria?: number | null
           cargo?: string | null
           created_at?: string
           data_fim?: string | null
@@ -3334,6 +3588,128 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boletins_calculados: {
+        Row: {
+          aluno_id: string | null
+          escola_id: string | null
+          is_elegivel_rec: boolean | null
+          m1: number | null
+          m2: number | null
+          m3: number | null
+          materia_id: string | null
+          media_final: number | null
+          media_pos_rec: number | null
+          nota_rec: number | null
+          situacao: string | null
+          todas_unidades: boolean | null
+          turma_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boletins_consolidados: {
+        Row: {
+          aluno_id: string | null
+          escola_id: string | null
+          is_elegivel_rec: boolean | null
+          m1: number | null
+          m2: number | null
+          m3: number | null
+          materia_id: string | null
+          media_final: number | null
+          media_pos_rec: number | null
+          nota_rec: number | null
+          situacao: string | null
+          todas_unidades: boolean | null
+          turma_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas_ativas"
             referencedColumns: ["id"]
           },
         ]
@@ -3475,6 +3851,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      efetivar_desligamento_rpc: {
+        Args: {
+          p_data_desligamento: string
+          p_desligamento_id: string
+          p_vinculo_id: string
+        }
+        Returns: undefined
+      }
       gerar_agenda_ano_letivo: {
         Args: {
           p_ano_letivo: number
@@ -3501,7 +3885,51 @@ export type Database = {
           role: string
         }[]
       }
+      get_dashboard_resumo: {
+        Args: { p_escola_id: string; p_funcionario_id?: string }
+        Returns: Json
+      }
       get_funcionario_id_from_auth: { Args: never; Returns: string }
+      get_indicadores_pendencias_frequencia: {
+        Args: { p_prazo_dias?: number }
+        Returns: {
+          data_aula: string
+          dias_decorridos: number
+          dias_restantes: number
+          diretor_auth_id: string
+          diretor_id: string
+          diretor_nome: string
+          escola_id: string
+          escola_nome: string
+          materia_id: string
+          materia_nome: string
+          professor_auth_id: string
+          professor_id: string
+          professor_nome: string
+          status_prazo: string
+          turma_id: string
+          turma_nome: string
+        }[]
+      }
+      get_indicadores_pendencias_notas: {
+        Args: { p_unidade: number }
+        Returns: {
+          alunos_pendentes: number
+          escola_id: string
+          escola_nome: string
+          total_alunos: number
+        }[]
+      }
+      get_my_active_sessions: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          ip: unknown
+          refreshed_at: string
+          user_agent: string
+        }[]
+      }
       get_performance_dashboard_stats: {
         Args: { period_days?: number }
         Returns: Json
@@ -3520,8 +3948,32 @@ export type Database = {
       is_diretor_da_escola: { Args: { escola_alvo: string }; Returns: boolean }
       is_superadmin_by_uid: { Args: never; Returns: boolean }
       is_superadmin_email: { Args: { user_email: string }; Returns: boolean }
+      obter_admin_dashboard_kpis: {
+        Args: { p_data?: string; p_escola_id: string; p_inicio_mes?: string }
+        Returns: Json
+      }
+      obter_dados_boletim: {
+        Args: { p_aluno_id: string; p_escola_id: string; p_turma_id: string }
+        Returns: Json
+      }
+      obter_multi_escolas_stats: {
+        Args: {
+          p_data?: string
+          p_escola_ids: string[]
+          p_funcionario_id: string
+        }
+        Returns: Json
+      }
+      obter_turmas_com_frequencia_hoje: {
+        Args: { p_data: string; p_escola_id: string }
+        Returns: number
+      }
       pode_atualizar_notificacao: {
         Args: { p_notif_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      pode_ler_funcionario: {
+        Args: { funcionario_id_alvo: string }
         Returns: boolean
       }
       processar_decisao_transferencia_lotacao: {
@@ -3537,7 +3989,20 @@ export type Database = {
         Args: { p_revertido_por_id: string; p_transferencia_id: string }
         Returns: undefined
       }
+      revoke_all_other_sessions: {
+        Args: { current_session_id: string }
+        Returns: number
+      }
+      revoke_my_session: {
+        Args: { target_session_id: string }
+        Returns: boolean
+      }
+      salvar_frequencias_lote: { Args: { p_frequencias: Json }; Returns: Json }
       tem_acesso_a_escola: { Args: { escola_alvo: string }; Returns: boolean }
+      tem_permissao: {
+        Args: { p_escola_id?: string; p_permissao: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

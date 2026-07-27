@@ -16,7 +16,7 @@ interface NovaLotacaoFormProps {
   escolas: Escola[]
   cargos: Cargo[]
   salvando: boolean
-  onAdicionarLotacao: (escolaId: string, cargoNome: string) => Promise<void>
+  onAdicionarLotacao: (escolaId: string, cargoNome: string, cargaHoraria?: number | string | null) => Promise<void>
 }
 
 export function NovaLotacaoForm({
@@ -27,12 +27,14 @@ export function NovaLotacaoForm({
 }: NovaLotacaoFormProps) {
   const [novaEscola, setNovaEscola] = useState('')
   const [novoCargo, setNovoCargo] = useState('')
+  const [novaCarga, setNovaCarga] = useState('')
 
   const handleSubmete = async () => {
     if (!novaEscola) return
-    await onAdicionarLotacao(novaEscola, novoCargo)
+    await onAdicionarLotacao(novaEscola, novoCargo, novaCarga ? parseInt(novaCarga, 10) : null)
     setNovaEscola('')
     setNovoCargo('')
+    setNovaCarga('')
   }
 
   return (
@@ -63,27 +65,41 @@ export function NovaLotacaoForm({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <label className="text-xs text-zinc-400">Cargo / Profissão:</label>
-        <Select
-          value={novoCargo}
-          onValueChange={(v) => setNovoCargo(v ?? '')}
-        >
-          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
-            <SelectValue placeholder="Selecione um cargo...">
-              {novoCargo
-                ? (cargos.find((c) => c.nome === novoCargo)?.nome || (cargos.length === 0 ? 'Carregando...' : novoCargo))
-                : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
-            {cargos.map((c) => (
-              <SelectItem key={c.id} value={c.nome}>
-                {c.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2 space-y-2">
+          <label className="text-xs text-zinc-400">Cargo / Profissão:</label>
+          <Select
+            value={novoCargo}
+            onValueChange={(v) => setNovoCargo(v ?? '')}
+          >
+            <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+              <SelectValue placeholder="Selecione um cargo...">
+                {novoCargo
+                  ? (cargos.find((c) => c.nome === novoCargo)?.nome || (cargos.length === 0 ? 'Carregando...' : novoCargo))
+                  : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+              {cargos.map((c) => (
+                <SelectItem key={c.id} value={c.nome}>
+                  {c.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs text-zinc-400">Carga (h):</label>
+          <input
+            type="number"
+            min={1}
+            max={80}
+            value={novaCarga}
+            onChange={(e) => setNovaCarga(e.target.value)}
+            placeholder="Ex: 40"
+            className="w-full bg-[#121216] border border-[#2e2e33] text-white text-sm h-9 rounded-md px-2.5 outline-none focus:border-[#3ea6ff]"
+          />
+        </div>
       </div>
       <Button
         onClick={handleSubmete}

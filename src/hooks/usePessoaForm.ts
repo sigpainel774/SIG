@@ -45,6 +45,7 @@ export function validateCPF(cpfValue: string): boolean {
 export function usePessoaForm(options?: PessoaFormOptions) {
   // Dados Pessoais / Identificação
   const [nome, setNome] = useState('')
+  const [apelido, setApelido] = useState('')
   const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
   const [censo, setCenso] = useState('')
@@ -167,6 +168,7 @@ export function usePessoaForm(options?: PessoaFormOptions) {
   // Função para limpar todos os estados do formulário
   const resetPessoais = () => {
     setNome('')
+    setApelido('')
     setEmail('')
     setCpf('')
     setCenso('')
@@ -201,6 +203,7 @@ export function usePessoaForm(options?: PessoaFormOptions) {
   const populatePessoais = (data: any) => {
     if (!data) return
     setNome(data.nome ?? '')
+    setApelido(data.apelido ?? '')
     setEmail(data.email ?? '')
     setCpf(data.cpf ? formatCPF(data.cpf) : '')
     setCenso(data.censo ?? data.inep ?? '')
@@ -250,6 +253,7 @@ export function usePessoaForm(options?: PessoaFormOptions) {
   return {
     // Estados básicos e setters
     nome, setNome,
+    apelido, setApelido,
     email, setEmail,
     cpf, setCpf: handleCpfChange,
     censo, setCenso,

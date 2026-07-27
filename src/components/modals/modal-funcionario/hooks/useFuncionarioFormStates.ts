@@ -67,6 +67,7 @@ export function useFuncionarioFormStates({
   // Hook para gerenciar os estados de dados pessoais e endereço
   const {
     nome, setNome,
+    apelido, setApelido,
     email, setEmail,
     cpf, setCpf,
     censo, setCenso,
@@ -119,6 +120,7 @@ export function useFuncionarioFormStates({
   const [funcaoEspec, setFuncaoEspec] = useState('')
   const [tipoVinculo, setTipoVinculo] = useState('Contratado')
   const [tipoVinculoEspec, setTipoVinculoEspec] = useState('')
+  const [modalidadeEnsino, setModalidadeEnsino] = useState('Regular')
   const [status, setStatus] = useState('ativo')
 
   // Saúde
@@ -222,6 +224,7 @@ export function useFuncionarioFormStates({
             setFuncaoEspec(data.funcao_especifica ?? '')
             setTipoVinculo(data.tipo_vinculo ?? 'Contratado')
             setTipoVinculoEspec(data.tipo_vinculo_especificacao ?? '')
+            setModalidadeEnsino(data.modalidade_ensino ?? 'Regular')
             setStatus(data.status ?? 'ativo')
             setPossuiDeficiencia(!!data.possui_deficiencia)
             setDeficiencias(data.deficiencias ?? [])
@@ -294,6 +297,7 @@ export function useFuncionarioFormStates({
         setFuncaoEspec('')
         setTipoVinculo('Contratado')
         setTipoVinculoEspec('')
+        setModalidadeEnsino('Regular')
         setStatus('ativo')
         setPossuiDeficiencia(false)
         setDeficiencias([])
@@ -507,6 +511,9 @@ export function useFuncionarioFormStates({
         uf_residencia: ufResidencia || null,
         area_residencia: areaResidencia || null,
         area_diferenciada: areaDiferenciada || null,
+        apelido: apelido?.trim() || null,
+        telefone: telefone?.trim() || null,
+        modalidade_ensino: modalidadeEnsino || 'Regular',
         funcao_especifica: funcaoEspec || null,
         tipo_vinculo: tipoVinculo || null,
         tipo_vinculo_especificacao: tipoVinculoEspec || null,
@@ -719,6 +726,7 @@ export function useFuncionarioFormStates({
     escolaInep,
     escolaLocalizacao,
     nome, setNome,
+    apelido, setApelido,
     email, setEmail,
     cpf, setCpf,
     censo, setCenso,
@@ -757,6 +765,7 @@ export function useFuncionarioFormStates({
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
+    modalidadeEnsino, setModalidadeEnsino,
     status, setStatus,
     possuiDeficiencia, setPossuiDeficiencia,
     deficiencias, setDeficiencias,
