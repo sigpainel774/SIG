@@ -521,7 +521,10 @@ export default function FuncionariosPage() {
       {modalLotacoesOpen && (
         <ModalGestaoLotacoes
           open={modalLotacoesOpen}
-          onOpenChange={setModalLotacoesOpen}
+          onOpenChange={(v) => {
+            setModalLotacoesOpen(v)
+            if (!v) carregarFuncionarios()
+          }}
           funcionarioInicial={funcLotacaoInicial}
         />
       )}
