@@ -74,7 +74,7 @@ export function FuncionarioLotacaoList({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
-            placeholder="Buscar por nome..."
+            placeholder="Buscar por nome, CPF ou cargo..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="pl-9 bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-9 text-sm"
