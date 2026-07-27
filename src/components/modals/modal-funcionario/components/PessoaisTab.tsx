@@ -8,6 +8,8 @@ import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 export function PessoaisTab() {
   const {
     nome, setNome,
+    apelido, setApelido,
+    telefone, setTelefone,
     censo, setCenso,
     email, setEmail,
     isEditing,
@@ -36,6 +38,27 @@ export function PessoaisTab() {
             required
           />
         </div>
+        <div>
+          <Label>Apelido / Conhecido por</Label>
+          <Input
+            value={apelido}
+            onChange={(e) => setApelido(e.target.value)}
+            placeholder="Ex: Zezinho, Prof. Léo"
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
+        </div>
+        <div>
+          <Label>Telefone / Celular</Label>
+          <Input
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            placeholder="(75) 99999-8888"
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label>Identificação CENSO (INEP)</Label>
           <Input

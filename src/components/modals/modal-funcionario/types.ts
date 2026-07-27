@@ -1,6 +1,7 @@
 export interface FuncionarioBasico {
   id: string
   nome: string
+  apelido?: string | null
   email: string
   cpf?: string | null
   cargo?: string | null
@@ -11,6 +12,8 @@ export interface FuncionarioBasico {
   endereco?: string | null
   latitude?: number | null
   longitude?: number | null
+  telefone?: string | null
+  modalidade_ensino?: string | null
 }
 
 export interface ModalFuncionarioProps {
@@ -65,6 +68,8 @@ export interface FuncionarioFormContextType {
   // Dados Pessoais & Endereço (Hook usePessoaForm)
   nome: string
   setNome: (v: string) => void
+  apelido: string
+  setApelido: (v: string) => void
   email: string
   setEmail: (v: string) => void
   cpf: string
@@ -137,6 +142,8 @@ export interface FuncionarioFormContextType {
   setTipoVinculo: (v: string) => void
   tipoVinculoEspec: string
   setTipoVinculoEspec: (v: string) => void
+  modalidadeEnsino: string
+  setModalidadeEnsino: (v: string) => void
   status: string
   setStatus: (v: string) => void
 

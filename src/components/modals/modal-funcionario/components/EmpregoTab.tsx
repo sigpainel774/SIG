@@ -11,6 +11,7 @@ export function EmpregoTab() {
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
+    modalidadeEnsino, setModalidadeEnsino,
     status, setStatus,
   } = useFuncionarioForm()
 
@@ -78,6 +79,17 @@ export function EmpregoTab() {
             placeholder="Qual outro tipo?"
             className="bg-[#181818] border-borderCustom text-white mt-1"
           />
+        </div>
+        <div>
+          <Label>Modalidade de Atuação / Ensino</Label>
+          <select
+            value={modalidadeEnsino}
+            onChange={(e) => setModalidadeEnsino(e.target.value)}
+            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
+          >
+            <option value="Regular">Regular (Ensino Regular)</option>
+            <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
+          </select>
         </div>
         <div>
           <Label>Status Funcional</Label>

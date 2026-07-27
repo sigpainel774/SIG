@@ -69,6 +69,7 @@ export function ModalGestaoLotacoes({
     handleRemoverLotacao,
     handleSolicitarTransferencia,
     handleAtualizarCargoLotacao,
+    handleAtualizarCargaHorariaLotacao,
   } = useGestaoLotacoes({ open, funcionarioInicial })
 
   const lotacaoNaMinhaEscola = selecionado?.lotacoes.find(
@@ -164,34 +165,61 @@ export function ModalGestaoLotacoes({
                         return (
                           <div
                             key={lot.id}
-                            className="flex items-center justify-between bg-[#1a1a1e] border border-[#26262a] rounded-xl px-4 py-3 gap-4"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#1a1a1e] border border-[#26262a] rounded-xl px-4 py-3 gap-3"
                           >
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 space-y-1.5">
                               <p className="text-sm font-semibold text-[#3ea6ff] truncate">
                                 {lot.escolaNome ?? 'Escola não encontrada'}
                               </p>
                               {podeGerenciarLotacao ? (
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-xs text-zinc-400 font-medium shrink-0">Cargo/Função na UE:</span>
-                                  <select
-                                    value={cargoExibido}
-                                    onChange={(e) => handleAtualizarCargoLotacao(lot.id, e.target.value)}
-                                    disabled={salvando}
-                                    className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded px-2 py-1 outline-none focus:border-[#3ea6ff] cursor-pointer"
-                                  >
-                                    <option value="">Selecione o cargo...</option>
-                                    {cargos.map((c) => (
-                                      <option key={c.id} value={c.nome}>
-                                        {c.nome}
-                                      </option>
-                                    ))}
-                                  </select>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Cargo:</span>
+                                    <select
+                                      value={cargoExibido}
+                                      onChange={(e) => handleAtualizarCargoLotacao(lot.id, e.target.value)}
+                                      disabled={salvando}
+                                      className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded px-2 py-1 outline-none focus:border-[#3ea6ff] cursor-pointer"
+                                    >
+                                      <option value="">Selecione o cargo...</option>
+                                      {cargos.map((c) => (
+                                        <option key={c.id} value={c.nome}>
+                                          {c.nome}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Carga Horária:</span>
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        max={80}
+                                        defaultValue={lot.carga_horaria ?? ''}
+                                        placeholder="Ex: 40"
+                                        onBlur={(e) => {
+                                          const val = e.target.value.trim()
+                                          const num = val ? parseInt(val, 10) : null
+                                          if (num !== (lot.carga_horaria ?? null)) {
+                                            handleAtualizarCargaHorariaLotacao(lot.id, num)
+                                          }
+                                        }}
+                                        disabled={salvando}
+                                        className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded w-16 px-2 py-1 outline-none focus:border-[#3ea6ff]"
+                                      />
+                                      <span className="text-[11px] text-zinc-400 font-medium">h/sem</span>
+                                    </div>
+                                  </div>
                                 </div>
                               ) : (
-                                <p className="text-xs text-zinc-400 mt-0.5">{cargoExibido || 'Cargo não definido'}</p>
+                                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                                  <span>{cargoExibido || 'Cargo não definido'}</span>
+                                  {lot.carga_horaria && <span>• {lot.carga_horaria}h/semana</span>}
+                                </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                               <span className="px-2.5 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
                                 Ativa
                               </span>

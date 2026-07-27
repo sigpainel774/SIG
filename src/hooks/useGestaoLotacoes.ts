@@ -23,6 +23,7 @@ export interface Lotacao {
   cargo: string | null
   ativo: boolean
   data_inicio: string | null
+  carga_horaria?: number | null
   escolaNome?: string
 }
 
@@ -97,7 +98,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
-          .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio')
+          .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio, carga_horaria')
           .eq('ativo', true),
       ])
 
@@ -130,6 +131,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
               cargo: v.cargo ?? f.cargo ?? null,
               ativo: v.ativo,
               data_inicio: v.data_inicio ?? null,
+              carga_horaria: v.carga_horaria ?? null,
               escolaNome: v.school_id ? (escolaMap[v.school_id] ?? 'Escola desconhecida') : undefined,
             })),
         }))
@@ -221,7 +223,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
   }
 
-  const handleAdicionarLotacao = async (escolaId: string, cargoNome: string) => {
+  const handleAdicionarLotacao = async (escolaId: string, cargoNome: string, cargaHorariaInput?: number | string | null) => {
     if (!selecionado || !escolaId) {
       toast.error('Selecione a escola de destino.')
       return
@@ -231,6 +233,10 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
       const cargoFinal = cargoNome || selecionado.cargo || ''
       const isCargoDiretor = cargoFinal.toUpperCase().includes('DIRETOR')
       const escolaNome = escolas.find((e) => e.id === escolaId)?.nome ?? escolaId
+      const parsedCarga = cargaHorariaInput !== null && cargaHorariaInput !== undefined && String(cargaHorariaInput).trim() !== ''
+        ? parseInt(String(cargaHorariaInput).replace(/\D/g, ''), 10)
+        : null
+      const finalCarga = isNaN(parsedCarga as number) ? null : parsedCarga
 
       if (isCargoDiretor) {
         const { data: escolaData } = await supabase
@@ -250,6 +256,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         funcionario_id: selecionado.id,
         escola_id: escolaId,
         cargo: cargoFinal || null,
+        carga_horaria: finalCarga,
         ativo: true,
         data_inicio: new Date().toISOString().split('T')[0],
       })
@@ -526,6 +533,44 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
   }
 
+  const handleAtualizarCargaHorariaLotacao = async (lotacaoId: string, cargaInput: number | string | null) => {
+    if (!selecionado || !lotacaoId) return
+    setSalvando(true)
+    try {
+      const parsedCarga = cargaInput !== null && cargaInput !== undefined && String(cargaInput).trim() !== ''
+        ? parseInt(String(cargaInput).replace(/\D/g, ''), 10)
+        : null
+      const finalCarga = isNaN(parsedCarga as number) ? null : parsedCarga
+
+      const { error } = await supabase
+        .from('vinculos_funcionarios')
+        .update({ carga_horaria: finalCarga })
+        .eq('id', lotacaoId)
+      if (error) throw error
+
+      await logAudit({
+        supabase,
+        action: 'UPDATE',
+        entity: 'vinculos_funcionarios',
+        entityId: lotacaoId,
+        newData: { carga_horaria: finalCarga },
+        performedBy: performer,
+      })
+
+      toast.success('Carga horária da lotação atualizada!')
+
+      if (selecionado?.auth_user_id) {
+        await invalidarCacheHelper(selecionado.auth_user_id)
+      }
+
+      await carregar()
+    } catch (err: unknown) {
+      toast.error(`Erro ao atualizar carga horária: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      if (isMounted.current) setSalvando(false)
+    }
+  }
+
   return {
     funcionarios,
     escolas,
@@ -548,6 +593,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     handleRemoverLotacao,
     handleSolicitarTransferencia,
     handleAtualizarCargoLotacao,
+    handleAtualizarCargaHorariaLotacao,
     carregar,
   }
 }

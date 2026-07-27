@@ -308,8 +308,8 @@ export function gerarFichaFuncionarioHtml(
                 <div class="section-title">Dados Pessoais</div>
                 <div class="grid-fields col-mix-3">
                   <div class="field">
-                    <span class="field-label">Nome Completo</span>
-                    <span class="field-value">${f.nome}</span>
+                    <span class="field-label">Nome Completo (Apelido)</span>
+                    <span class="field-value">${f.nome}${f.apelido ? ` (${f.apelido})` : ''}</span>
                   </div>
                   <div class="field">
                     <span class="field-label">Nascimento</span>
@@ -382,10 +382,14 @@ export function gerarFichaFuncionarioHtml(
                     <span class="field-value">${escolaInep}</span>
                   </div>
                 </div>
-                <div class="grid-fields col-3" style="border-top: 1px solid #eee; padding-top: 5px;">
+                <div class="grid-fields col-4" style="border-top: 1px solid #eee; padding-top: 5px;">
                   <div class="field">
                     <span class="field-label">Tipo de Localização</span>
                     <span class="field-value" style="text-transform: uppercase; font-size: 8.5px;">${escolaLocalizacao}</span>
+                  </div>
+                  <div class="field">
+                    <span class="field-label">Modalidade de Ensino</span>
+                    <span class="field-value" style="text-transform: uppercase; font-size: 8.5px;">${f.modalidade_ensino ?? 'Regular'}</span>
                   </div>
                   <div class="field">
                     <span class="field-label">Data de Admissão</span>
@@ -393,7 +397,7 @@ export function gerarFichaFuncionarioHtml(
                   </div>
                   <div class="field">
                     <span class="field-label">Carga Horária Semanal</span>
-                    <span class="field-value">${f.carga_horaria ? `${f.carga_horaria}h` : '—'}</span>
+                    <span class="field-value">${activeVinc?.carga_horaria ? `${activeVinc.carga_horaria}h` : (f.carga_horaria ? `${f.carga_horaria}h` : '—')}</span>
                   </div>
                 </div>
               </div>

@@ -48,6 +48,7 @@ import {
 export interface Funcionario {
   id: string
   nome: string
+  apelido?: string | null
   email: string
   cpf?: string | null
   cargo?: string | null
@@ -60,6 +61,8 @@ export interface Funcionario {
   endereco?: string | null
   latitude?: number | null
   longitude?: number | null
+  telefone?: string | null
+  modalidade_ensino?: string | null
 }
 
 export default function FuncionariosPage() {
@@ -110,14 +113,14 @@ export default function FuncionariosPage() {
       const selectFields =
         escolaId || !isAdminUser
           ? `
-          id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
-          endereco, latitude, longitude,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
           : `
-          id, nome, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
-          endereco, latitude, longitude,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
@@ -203,6 +206,7 @@ export default function FuncionariosPage() {
           return {
             id: f.id as string,
             nome: f.nome as string,
+            apelido: f.apelido as string | null,
             email: f.email as string,
             cpf: f.cpf as string | null,
             cargo: f.cargo as string | null,
@@ -214,7 +218,9 @@ export default function FuncionariosPage() {
             orgao: escola?.nome ?? null,
             endereco: f.endereco as string | null,
             latitude: f.latitude ? Number(f.latitude) : null,
-            longitude: f.longitude ? Number(f.longitude) : null
+            longitude: f.longitude ? Number(f.longitude) : null,
+            telefone: f.telefone as string | null,
+            modalidade_ensino: f.modalidade_ensino as string | null
           }
         })
 
@@ -250,7 +256,7 @@ export default function FuncionariosPage() {
 
   /* ── Filtro ─────────────────────────────────────────────────── */
 
-  const funcionariosBuscados = useLocalSearch(funcionarios, busca, ['nome', 'email', 'cpf', 'orgao'])
+  const funcionariosBuscados = useLocalSearch(funcionarios, busca, ['nome', 'email', 'cpf', 'orgao', 'apelido', 'telefone'])
 
   const funcsFiltrados = useMemo(() => {
     return funcionariosBuscados.filter((f) => {
