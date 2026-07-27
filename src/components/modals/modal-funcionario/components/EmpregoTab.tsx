@@ -13,6 +13,7 @@ export function EmpregoTab() {
     tipoVinculoEspec, setTipoVinculoEspec,
     modalidadeEnsino, setModalidadeEnsino,
     status, setStatus,
+    cargos,
   } = useFuncionarioForm()
 
   return (
@@ -26,23 +27,15 @@ export function EmpregoTab() {
             className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
           >
             <option value="">Selecione a função</option>
-            <option value="Auxiliar Administrativo">Auxiliar Administrativo</option>
-            <option value="Auxiliar de Sala">Auxiliar de Sala</option>
-            <option value="Auxiliar de Serviços Gerais">Auxiliar de Serviços Gerais</option>
-            <option value="Coordenador(a) Pedagógico">Coordenador(a) Pedagógico</option>
-            <option value="Diretor(a)">Diretor(a)</option>
-            <option value="Merendeira">Merendeira</option>
-            <option value="Monitor de Atividade Complementar">Monitor de Atividade Complementar</option>
-            <option value="Monitor(a) de área">Monitor(a) de área</option>
-            <option value="Nutricionista">Nutricionista</option>
-            <option value="Professor(a)">Professor(a)</option>
-            <option value="Psicólogo(a)">Psicólogo(a)</option>
-            <option value="Psicopedagogo(a)">Psicopedagogo(a)</option>
-            <option value="Secretária(o)">Secretária(o)</option>
-            <option value="Tecnólogo em Alimentos">Tecnólogo em Alimentos</option>
-            <option value="Vice-Diretor">Vice-Diretor</option>
-            <option value="Vigilante">Vigilante</option>
-            <option value="Zelador(a)">Zelador(a)</option>
+            {cargos.map((c) => (
+              <option key={c.id} value={c.nome}>
+                {c.nome}
+              </option>
+            ))}
+            {/* Fallback para cargos antigos não listados no banco */}
+            {cargo && !cargos.some(c => c.nome === cargo) && cargo !== 'Outro' && (
+              <option value={cargo}>{cargo}</option>
+            )}
             <option value="Outro">Outro (especificar)</option>
           </select>
         </div>
