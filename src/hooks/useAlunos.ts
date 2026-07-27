@@ -181,7 +181,7 @@ export function useAlunos() {
     try {
       let query = (supabase.from('solicitacoes_edicao_aluno' as any) as any)
         .select(
-          '*, alunos!inner(nome, escola_id, escolas(nome)), solicitante:funcionarios(nome)'
+          '*, alunos!inner(nome, escola_id, escolas(nome)), solicitante:funcionarios!solicitante_id(nome)'
         )
         .eq('status', 'pendente')
 
