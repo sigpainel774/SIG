@@ -180,14 +180,18 @@ export function useFuncionarioFormStates({
 
   // Load cargos
   useEffect(() => {
+    let isMounted = true
     const supabase = createClient()
     supabase
       .from('cargos')
       .select('id, nome')
       .order('nome')
       .then(({ data }) => {
-        if (data) setCargos(data)
+        if (isMounted && data) setCargos(data)
       })
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Load employee full details
