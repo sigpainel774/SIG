@@ -69,12 +69,37 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
       }
 
       if (cargoToEdit?.id) {
+        const oldNome = cargoToEdit.nome
+        const newNome = nome.trim()
+
         const { error } = await supabase
           .from('cargos')
           .update(payload)
           .eq('id', cargoToEdit.id)
 
         if (error) throw error
+
+        // Se o nome do cargo foi alterado, atualiza os registros existentes em cascata nas tabelas dependentes
+        if (oldNome && oldNome !== newNome) {
+          const [funcRes, vincRes] = await Promise.all([
+            supabase
+              .from('funcionarios')
+              .update({ cargo: newNome })
+              .eq('cargo', oldNome),
+            supabase
+              .from('vinculos_funcionarios')
+              .update({ cargo: newNome })
+              .eq('cargo', oldNome)
+          ])
+
+          if (funcRes.error) {
+            console.error('Erro ao propagar cargo em funcionarios:', funcRes.error)
+          }
+          if (vincRes.error) {
+            console.error('Erro ao propagar cargo em vinculos_funcionarios:', vincRes.error)
+          }
+        }
+
         toast.success('Cargo atualizado com sucesso!')
       } else {
         const { error } = await supabase
