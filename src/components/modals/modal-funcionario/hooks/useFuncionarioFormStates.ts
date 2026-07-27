@@ -117,6 +117,7 @@ export function useFuncionarioFormStates({
 
   // Emprego
   const [cargo, setCargo] = useState('')
+  const [cargaHoraria, setCargaHoraria] = useState('')
   const [funcaoEspec, setFuncaoEspec] = useState('')
   const [tipoVinculo, setTipoVinculo] = useState('Contratado')
   const [tipoVinculoEspec, setTipoVinculoEspec] = useState('')
@@ -210,6 +211,7 @@ export function useFuncionarioFormStates({
               vinculos_funcionarios(
                 escola_id,
                 cargo,
+                carga_horaria,
                 ativo,
                 escolas(nome, inep, localizacao)
               )
@@ -275,13 +277,16 @@ export function useFuncionarioFormStates({
             setObservacoes(data.observacoes ?? '')
             setDataPreenchimento(data.data_preenchimento ?? '')
 
-            // Escola vinculada ativa
-            const activeVinc = (data.vinculos_funcionarios as any[])?.find((v) => v.ativo)
+            // Escola vinculada ativa (priorizando a escola atual ou primeira ativa)
+            const activeVinc = (data.vinculos_funcionarios as any[])?.find((v) => v.ativo && v.escola_id === escolaId) || (data.vinculos_funcionarios as any[])?.find((v) => v.ativo)
             if (activeVinc) {
               setEscolaId(activeVinc.escola_id)
               setEscolaNome(activeVinc.escolas?.nome ?? '')
               setEscolaInep(activeVinc.escolas?.inep ?? '')
               setEscolaLocalizacao(activeVinc.escolas?.localizacao ?? '')
+              setCargaHoraria(activeVinc.carga_horaria ? String(activeVinc.carga_horaria) : '')
+            } else {
+              setCargaHoraria('')
             }
           }
         } catch (err) {
@@ -298,6 +303,7 @@ export function useFuncionarioFormStates({
         // Reset states
         resetPessoais()
         setCargo('')
+        setCargaHoraria('')
         setFuncaoEspec('')
         setTipoVinculo('Contratado')
         setTipoVinculoEspec('')
@@ -647,6 +653,8 @@ export function useFuncionarioFormStates({
 
         // Criar ou garantir vínculo de funcionário na escola logada automaticamente
         if (escolaId) {
+          const parsedCarga = cargaHoraria.trim() !== '' && !isNaN(Number(cargaHoraria.trim())) ? parseInt(cargaHoraria.trim(), 10) : null
+
           const { data: existingVinc } = await supabase
             .from('vinculos_funcionarios')
             .select('id')
@@ -661,6 +669,7 @@ export function useFuncionarioFormStates({
                 funcionario_id: targetId,
                 escola_id: escolaId,
                 cargo: cargo || null,
+                carga_horaria: parsedCarga,
                 ativo: true,
                 data_inicio: new Date().toISOString().split('T')[0]
               })
@@ -668,7 +677,7 @@ export function useFuncionarioFormStates({
           } else {
             await supabase
               .from('vinculos_funcionarios')
-              .update({ ativo: true, cargo: cargo || null })
+              .update({ ativo: true, cargo: cargo || null, carga_horaria: parsedCarga })
               .eq('id', existingVinc.id)
           }
         }
@@ -766,6 +775,7 @@ export function useFuncionarioFormStates({
     consultarCep,
 
     cargo, setCargo,
+    cargaHoraria, setCargaHoraria,
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,

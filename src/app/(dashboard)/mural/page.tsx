@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -215,6 +215,25 @@ export default function MuralPage() {
     setSalvando(false)
   }
 
+  const handleExcluirComunicado = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este comunicado?')) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('comunicados').delete().eq('id', id)
+
+      if (error) {
+        toast.error('Erro ao excluir comunicado: ' + error.message)
+      } else {
+        toast.success('Comunicado excluído com sucesso!')
+        fetchNotices()
+      }
+    } catch (err: any) {
+      toast.error('Falha ao excluir comunicado.')
+      console.error('Erro ao excluir comunicado:', err)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -366,9 +385,22 @@ export default function MuralPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
-                      <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
-                        {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
+                          {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                        </span>
+                        {podePublicar && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleExcluirComunicado(notice.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                            title="Excluir comunicado"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground whitespace-pre-line">{notice.body}</p>
                     

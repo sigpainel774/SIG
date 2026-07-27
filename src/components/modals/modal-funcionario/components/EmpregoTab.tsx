@@ -8,6 +8,7 @@ import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 export function EmpregoTab() {
   const {
     cargo, setCargo,
+    cargaHoraria, setCargaHoraria,
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
@@ -18,8 +19,8 @@ export function EmpregoTab() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={cargo === 'Outro' ? 'md:col-span-1' : 'md:col-span-2'}>
           <Label>Função / Cargo Principal na Escola</Label>
           <select
             value={cargo}
@@ -39,6 +40,20 @@ export function EmpregoTab() {
             <option value="Outro">Outro (especificar)</option>
           </select>
         </div>
+
+        <div>
+          <Label>Carga Horária (h/semana)</Label>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={cargaHoraria}
+            onChange={(e) => setCargaHoraria(e.target.value)}
+            placeholder="Ex: 20, 30, 40"
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
+        </div>
+
         <div className={cargo === 'Outro' ? 'block' : 'hidden'}>
           <Label>Especificar Função</Label>
           <Input
