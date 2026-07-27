@@ -50,6 +50,7 @@ export function useFuncionarioFormStates({
   const [cargos, setCargos] = useState<Cargo[]>([])
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [lotacoesModalOpen, setLotacoesModalOpen] = useState(false)
 
   const isEditing = !!funcionario
   const activeOpen = isOpen
@@ -212,6 +213,7 @@ export function useFuncionarioFormStates({
                 escola_id,
                 cargo,
                 carga_horaria,
+                modalidade_ensino,
                 ativo,
                 escolas(nome, inep, localizacao)
               )
@@ -284,7 +286,10 @@ export function useFuncionarioFormStates({
               setEscolaNome(activeVinc.escolas?.nome ?? '')
               setEscolaInep(activeVinc.escolas?.inep ?? '')
               setEscolaLocalizacao(activeVinc.escolas?.localizacao ?? '')
-              setCargaHoraria(activeVinc.carga_horaria ? String(activeVinc.carga_horaria) : '')
+              setCargaHoraria(activeVinc.carga_horaria !== null && activeVinc.carga_horaria !== undefined ? String(activeVinc.carga_horaria) : '')
+              if (activeVinc.modalidade_ensino) {
+                setModalidadeEnsino(activeVinc.modalidade_ensino)
+              }
             } else {
               setCargaHoraria('')
             }
@@ -585,22 +590,55 @@ export function useFuncionarioFormStates({
           .eq('id', funcionario.id)
         if (error) throw error
 
-        // Sincronizar o cargo no vínculo de lotação ativo
-        if (cargo) {
-          let vincQuery = supabase
+        // Sincronizar o cargo, carga horária (ex: 20h) e modalidade no vínculo de lotação ativo
+        const rawCargaDigits = cargaHoraria ? String(cargaHoraria).replace(/\D/g, '') : ''
+        const parsedCarga = rawCargaDigits.length > 0 && !isNaN(Number(rawCargaDigits))
+          ? parseInt(rawCargaDigits, 10)
+          : null
+
+        const currentEscolaId = escolaId || useAuthStore.getState().escolaAtivaId || null
+
+        if (currentEscolaId) {
+          const { data: existingVinc } = await supabase
             .from('vinculos_funcionarios')
-            .update({ cargo })
+            .select('id')
+            .eq('funcionario_id', funcionario.id)
+            .eq('escola_id', currentEscolaId)
+            .maybeSingle()
+
+          if (existingVinc) {
+            await supabase
+              .from('vinculos_funcionarios')
+              .update({
+                cargo: cargo || null,
+                carga_horaria: parsedCarga,
+                modalidade_ensino: modalidadeEnsino || 'Regular',
+                ativo: true
+              })
+              .eq('id', existingVinc.id)
+          } else {
+            await supabase
+              .from('vinculos_funcionarios')
+              .insert({
+                funcionario_id: funcionario.id,
+                escola_id: currentEscolaId,
+                cargo: cargo || null,
+                carga_horaria: parsedCarga,
+                modalidade_ensino: modalidadeEnsino || 'Regular',
+                ativo: true,
+                data_inicio: new Date().toISOString().split('T')[0]
+              })
+          }
+        } else {
+          await supabase
+            .from('vinculos_funcionarios')
+            .update({
+              cargo: cargo || null,
+              carga_horaria: parsedCarga,
+              modalidade_ensino: modalidadeEnsino || 'Regular'
+            })
             .eq('funcionario_id', funcionario.id)
             .eq('ativo', true)
-
-          if (escolaId) {
-            vincQuery = vincQuery.eq('escola_id', escolaId)
-          }
-
-          const { error: vincErr } = await vincQuery
-          if (vincErr) {
-            console.error('Erro ao sincronizar vínculo de lotação:', vincErr)
-          }
         }
 
         const loggedUser = useAuthStore.getState().funcionario
@@ -813,6 +851,8 @@ export function useFuncionarioFormStates({
     fotoFile, setFotoFile,
     fotoPreview, setFotoPreview,
     handleFotoChange,
+    lotacoesModalOpen,
+    setLotacoesModalOpen,
     handleSubmit,
     handleDocUpload,
     handleOpenChange

@@ -3,9 +3,15 @@
 import React, { useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2, Save, UserPlus, Camera } from 'lucide-react'
+import { Loader2, Save, UserPlus, Camera, Plus } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { ModalFuncionarioProps } from './types'
 import { FuncionarioFormProvider, useFuncionarioForm } from './context/FuncionarioFormContext'
+
+const ModalGestaoLotacoes = dynamic(
+  () => import('@/components/modals/modal-gestao-lotacoes').then((m) => m.ModalGestaoLotacoes),
+  { ssr: false }
+)
 
 // Sub-abas
 import { PessoaisTab } from './components/PessoaisTab'
@@ -20,6 +26,7 @@ function ModalFuncionarioContent() {
 
   const {
     isEditing,
+    empId,
     nome,
     loadingData,
     escolaNome,
@@ -28,6 +35,8 @@ function ModalFuncionarioContent() {
     fotoPreview,
     handleFotoChange,
     handleSubmit,
+    lotacoesModalOpen,
+    setLotacoesModalOpen,
   } = useFuncionarioForm()
 
   const tabClass = (tab: typeof activeTab) =>
@@ -94,22 +103,35 @@ function ModalFuncionarioContent() {
         </div>
 
         {/* Dados da Escola (Auto-preenchidos) */}
-        <div className="md:col-span-2 space-y-1.5 text-xs border-l border-zinc-800 pl-6">
-          <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Escolar Vinculada</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <div>
-              <span className="text-zinc-500 block">Nome da UE:</span>
-              <span className="font-medium text-zinc-200">{escolaNome || 'Sem vínculo ativo'}</span>
-            </div>
-            <div>
-              <span className="text-zinc-500 block">Código INEP:</span>
-              <span className="font-medium text-zinc-200">{escolaInep || '—'}</span>
-            </div>
-            <div className="col-span-2">
-              <span className="text-zinc-500">Localização da UE: </span>
-              <span className="font-medium text-zinc-200">{escolaLocalizacao || '—'}</span>
+        <div className="md:col-span-2 space-y-1.5 text-xs border-l border-zinc-800 pl-6 flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Escolar Vinculada</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div>
+                <span className="text-zinc-500 block">Nome da UE:</span>
+                <span className="font-medium text-zinc-200">{escolaNome || 'Sem vínculo ativo'}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 block">Código INEP:</span>
+                <span className="font-medium text-zinc-200">{escolaInep || '—'}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-zinc-500">Localização da UE: </span>
+                <span className="font-medium text-zinc-200">{escolaLocalizacao || '—'}</span>
+              </div>
             </div>
           </div>
+          {isEditing && empId && (
+            <Button
+              type="button"
+              onClick={() => setLotacoesModalOpen(true)}
+              className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold text-xs h-8 px-3 gap-1.5 shrink-0 cursor-pointer border-none"
+              title="Adicionar ou gerenciar lotações deste funcionário"
+            >
+              <Plus className="w-4 h-4" />
+              Lotação
+            </Button>
+          )}
         </div>
       </div>
 
@@ -132,6 +154,15 @@ function ModalFuncionarioContent() {
         {activeTab === 'escolaridade' && <EscolaridadeTab />}
         {activeTab === 'anexos' && <AnexosTab />}
       </div>
+
+      {/* Sub-modal de Gestão de Lotações */}
+      {lotacoesModalOpen && empId && (
+        <ModalGestaoLotacoes
+          open={lotacoesModalOpen}
+          onOpenChange={setLotacoesModalOpen}
+          funcionarioInicial={{ id: empId }}
+        />
+      )}
     </form>
   )
 }

@@ -16,7 +16,12 @@ interface NovaLotacaoFormProps {
   escolas: Escola[]
   cargos: Cargo[]
   salvando: boolean
-  onAdicionarLotacao: (escolaId: string, cargoNome: string, cargaHoraria?: number | string | null) => Promise<void>
+  onAdicionarLotacao: (
+    escolaId: string,
+    cargoNome: string,
+    cargaHoraria?: number | string | null,
+    modalidade?: string | null
+  ) => Promise<void>
 }
 
 export function NovaLotacaoForm({
@@ -28,13 +33,20 @@ export function NovaLotacaoForm({
   const [novaEscola, setNovaEscola] = useState('')
   const [novoCargo, setNovoCargo] = useState('')
   const [novaCarga, setNovaCarga] = useState('')
+  const [novaModalidade, setNovaModalidade] = useState('Regular')
 
   const handleSubmete = async () => {
     if (!novaEscola) return
-    await onAdicionarLotacao(novaEscola, novoCargo, novaCarga ? parseInt(novaCarga, 10) : null)
+    await onAdicionarLotacao(
+      novaEscola,
+      novoCargo,
+      novaCarga ? parseInt(novaCarga, 10) : null,
+      novaModalidade
+    )
     setNovaEscola('')
     setNovoCargo('')
     setNovaCarga('')
+    setNovaModalidade('Regular')
   }
 
   return (
@@ -44,7 +56,7 @@ export function NovaLotacaoForm({
         Nova Lotação
       </h4>
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400">Escola / Órgão:</label>
+        <label className="text-xs text-zinc-400 font-medium">Escola / Órgão:</label>
         <Select
           value={novaEscola}
           onValueChange={(v) => setNovaEscola(v ?? '')}
@@ -67,7 +79,7 @@ export function NovaLotacaoForm({
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-2 space-y-2">
-          <label className="text-xs text-zinc-400">Cargo / Profissão:</label>
+          <label className="text-xs text-zinc-400 font-medium">Cargo / Profissão:</label>
           <Select
             value={novoCargo}
             onValueChange={(v) => setNovoCargo(v ?? '')}
@@ -89,22 +101,41 @@ export function NovaLotacaoForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-xs text-zinc-400">Carga (h):</label>
+          <label className="text-xs text-zinc-400 font-medium">Carga (h):</label>
           <input
             type="number"
             min={1}
             max={80}
             value={novaCarga}
             onChange={(e) => setNovaCarga(e.target.value)}
-            placeholder="Ex: 40"
+            placeholder="Ex: 20"
             className="w-full bg-[#121216] border border-[#2e2e33] text-white text-sm h-9 rounded-md px-2.5 outline-none focus:border-[#3ea6ff]"
           />
         </div>
       </div>
+
+      <div className="space-y-2">
+        <label className="text-xs text-zinc-400 font-medium">Modalidade de Ensino:</label>
+        <Select
+          value={novaModalidade}
+          onValueChange={(v) => setNovaModalidade(v ?? 'Regular')}
+        >
+          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9 font-medium">
+            <SelectValue placeholder="Selecione a modalidade...">
+              {novaModalidade === 'EJA' ? 'EJA (Educação de Jovens e Adultos)' : 'Regular (Ensino Regular)'}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+            <SelectItem value="Regular">Regular (Ensino Regular)</SelectItem>
+            <SelectItem value="EJA">EJA (Educação de Jovens e Adultos)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         onClick={handleSubmete}
         disabled={salvando || !novaEscola}
-        className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9"
+        className="w-full bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold gap-2 h-9 cursor-pointer"
       >
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
         Adicionar Lotação

@@ -1,8 +1,8 @@
-'use client'
-
 import React from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { MapPin, Plus } from 'lucide-react'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 
 export function EmpregoTab() {
@@ -15,10 +15,34 @@ export function EmpregoTab() {
     modalidadeEnsino, setModalidadeEnsino,
     status, setStatus,
     cargos,
+    isEditing,
+    setLotacoesModalOpen,
   } = useFuncionarioForm()
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Botão '+' / Banner de Gestão de Lotações */}
+      {isEditing && (
+        <div className="bg-[#18181a] border border-borderCustom rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#3ea6ff] uppercase tracking-wider">
+              <MapPin className="w-4 h-4" />
+              Lotações e Vínculos Escolares
+            </div>
+            <Button
+              type="button"
+              onClick={() => setLotacoesModalOpen(true)}
+              className="bg-[#3ea6ff] hover:bg-[#0090ff] text-[#0f0f0f] font-bold text-xs h-8 px-3 gap-1.5 cursor-pointer border-none"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar Lotação
+            </Button>
+          </div>
+          <p className="text-xs text-zinc-400">
+            Adicione ou altere vínculos deste servidor em diferentes unidades escolares, ajustando a carga horária semanal (ex: 20h) e a modalidade (Regular ou EJA).
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={cargo === 'Outro' ? 'md:col-span-1' : 'md:col-span-2'}>
           <Label>Função / Cargo Principal na Escola</Label>

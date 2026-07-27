@@ -24,6 +24,7 @@ export interface Lotacao {
   ativo: boolean
   data_inicio: string | null
   carga_horaria?: number | null
+  modalidade_ensino?: string | null
   escolaNome?: string
 }
 
@@ -98,7 +99,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
-          .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio, carga_horaria')
+          .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio, carga_horaria, modalidade_ensino')
           .eq('ativo', true),
       ])
 
@@ -132,6 +133,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
               ativo: v.ativo,
               data_inicio: v.data_inicio ?? null,
               carga_horaria: v.carga_horaria ?? null,
+              modalidade_ensino: v.modalidade_ensino ?? f.modalidade_ensino ?? 'Regular',
               escolaNome: v.school_id ? (escolaMap[v.school_id] ?? 'Escola desconhecida') : undefined,
             })),
         }))
@@ -223,7 +225,12 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
   }
 
-  const handleAdicionarLotacao = async (escolaId: string, cargoNome: string, cargaHorariaInput?: number | string | null) => {
+  const handleAdicionarLotacao = async (
+    escolaId: string,
+    cargoNome: string,
+    cargaHorariaInput?: number | string | null,
+    modalidadeInput?: string | null
+  ) => {
     if (!selecionado || !escolaId) {
       toast.error('Selecione a escola de destino.')
       return
@@ -237,6 +244,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         ? parseInt(String(cargaHorariaInput).replace(/\D/g, ''), 10)
         : null
       const finalCarga = isNaN(parsedCarga as number) ? null : parsedCarga
+      const modalidadeFinal = modalidadeInput || 'Regular'
 
       if (isCargoDiretor) {
         const { data: escolaData } = await supabase
@@ -257,10 +265,17 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         escola_id: escolaId,
         cargo: cargoFinal || null,
         carga_horaria: finalCarga,
+        modalidade_ensino: modalidadeFinal,
         ativo: true,
         data_inicio: new Date().toISOString().split('T')[0],
       })
       if (error) throw error
+
+      // Atualiza também a modalidade_ensino no funcionário como fallback
+      await supabase
+        .from('funcionarios')
+        .update({ modalidade_ensino: modalidadeFinal })
+        .eq('id', selecionado.id)
 
       if (isCargoDiretor) {
         await supabase
@@ -571,6 +586,44 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
   }
 
+  const handleAtualizarModalidadeLotacao = async (lotacaoId: string, novaModalidade: string) => {
+    if (!selecionado || !lotacaoId || !novaModalidade) return
+    setSalvando(true)
+    try {
+      const { error } = await supabase
+        .from('vinculos_funcionarios')
+        .update({ modalidade_ensino: novaModalidade })
+        .eq('id', lotacaoId)
+      if (error) throw error
+
+      await supabase
+        .from('funcionarios')
+        .update({ modalidade_ensino: novaModalidade })
+        .eq('id', selecionado.id)
+
+      await logAudit({
+        supabase,
+        action: 'UPDATE',
+        entity: 'vinculos_funcionarios',
+        entityId: lotacaoId,
+        newData: { modalidade_ensino: novaModalidade },
+        performedBy: performer,
+      })
+
+      toast.success('Modalidade da lotação atualizada!')
+
+      if (selecionado?.auth_user_id) {
+        await invalidarCacheHelper(selecionado.auth_user_id)
+      }
+
+      await carregar()
+    } catch (err: unknown) {
+      toast.error(`Erro ao atualizar modalidade: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      if (isMounted.current) setSalvando(false)
+    }
+  }
+
   return {
     funcionarios,
     escolas,
@@ -594,6 +647,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     handleSolicitarTransferencia,
     handleAtualizarCargoLotacao,
     handleAtualizarCargaHorariaLotacao,
+    handleAtualizarModalidadeLotacao,
     carregar,
   }
 }
