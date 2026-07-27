@@ -166,9 +166,39 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           return true
         })
 
+      // Montar lista unificada de cargos (tabela de cargos + cargos presentes em funcionários e vínculos)
+      const cargosMap = new Map<string, Cargo>()
+      cargsData.forEach((c) => {
+        if (c.nome?.trim()) {
+          const key = c.nome.trim().toLowerCase()
+          if (!cargosMap.has(key)) {
+            cargosMap.set(key, { id: c.id, nome: c.nome.trim() })
+          }
+        }
+      })
+      funcsData.forEach((f: any) => {
+        if (f.cargo?.trim()) {
+          const key = f.cargo.trim().toLowerCase()
+          if (!cargosMap.has(key)) {
+            cargosMap.set(key, { id: `func-${key}`, nome: f.cargo.trim() })
+          }
+        }
+      })
+      vincsData.forEach((v: any) => {
+        if (v.cargo?.trim()) {
+          const key = v.cargo.trim().toLowerCase()
+          if (!cargosMap.has(key)) {
+            cargosMap.set(key, { id: `vinc-${key}`, nome: v.cargo.trim() })
+          }
+        }
+      })
+      const cargosOrdenados = Array.from(cargosMap.values()).sort((a, b) =>
+        a.nome.localeCompare(b.nome, 'pt-BR')
+      )
+
       setFuncionarios(lista)
       setEscolas(escsData)
-      setCargos(cargsData)
+      setCargos(cargosOrdenados)
 
       if (funcionarioInicial) {
         const found = lista.find((f) => f.id === funcionarioInicial.id)
@@ -204,15 +234,25 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }, [funcionarios])
 
   const funcsFiltrados = funcionarios.filter((f) => {
+    const buscaTrim = busca.trim().toLowerCase()
     const matchBusca =
-      f.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      f.email.toLowerCase().includes(busca.toLowerCase()) ||
-      (f.cpf ?? '').includes(busca)
-    const matchCargo = filtroCargo === 'todos' || f.cargo === filtroCargo
+      !buscaTrim ||
+      f.nome.toLowerCase().includes(buscaTrim) ||
+      f.email.toLowerCase().includes(buscaTrim) ||
+      (f.cpf ?? '').includes(buscaTrim) ||
+      (f.cargo ?? '').toLowerCase().includes(buscaTrim) ||
+      f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase().includes(buscaTrim))
+
+    const matchCargo =
+      filtroCargo === 'todos' ||
+      (f.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase() ||
+      f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase())
+
     const matchTab =
       tab === 'todos' ||
       (tab === 'sem_lotacao' && f.lotacoes.length === 0) ||
       (tab === 'lotados' && f.lotacoes.length > 0)
+
     return matchBusca && matchCargo && matchTab
   })
 
