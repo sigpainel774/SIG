@@ -28,8 +28,16 @@ import { ModalEscala } from '@/components/ModalEscala'
 import { HorariosSlotsSection } from '@/components/HorariosSlotsSection'
 import { GradeSemanalSection } from '@/components/GradeSemanalSection'
 
+const formatarDataBR = (dataStr: string | null | undefined) => {
+  if (!dataStr) return '-'
+  const clean = String(dataStr).split('T')[0]
+  const parts = clean.split('-')
+  if (parts.length !== 3) return dataStr
+  return `${parts[2]}/${parts[1]}/${parts[0]}`
+}
+
 export default function PainelChefePage() {
-  const { funcionario, isDiretor, isChefe, acessos } = useAuthStore()
+  const { funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, acessos } = useAuthStore()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'equipe' | 'escalas' | 'registros' | 'alertas' | 'horarios' | 'grade'>('equipe')
   const [busca, setBusca] = useState('')
@@ -37,11 +45,11 @@ export default function PainelChefePage() {
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
 
   useEffect(() => {
-    if (funcionario && !isDiretor() && !isChefe()) {
-      toast.error('Acesso restrito a Diretores (Nível 2) e Chefes de Equipe (Nível 5).')
+    if (funcionario && !isDiretor() && !isChefe() && !isAdminGlobalOrRoot()) {
+      toast.error('Acesso restrito a Administradores (Nível 1), Diretores (Nível 2) e Chefes de Equipe (Nível 5).')
       router.push('/home')
     }
-  }, [funcionario, isDiretor, isChefe, router])
+  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, router])
 
   const supabase = createClient()
   const [equipe, setEquipe] = useState<any[]>([])
@@ -49,11 +57,12 @@ export default function PainelChefePage() {
   const [alertas, setAlertas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchPainelData = async () => {
+  const fetchPainelData = async (isMountedRef = { current: true }) => {
     setLoading(true)
     const state = useAuthStore.getState()
     const isDir = state.isDiretor()
     const isCh = state.isChefe()
+    const isAdmin = state.isAdminGlobalOrRoot()
     const userId = state.funcionario?.id
 
     let cargos: string[] = []
@@ -65,7 +74,7 @@ export default function PainelChefePage() {
         .maybeSingle()
       if (data?.cargos_gerenciados && Array.isArray(data.cargos_gerenciados)) {
         cargos = data.cargos_gerenciados
-        setCargosGerenciados(cargos)
+        if (isMountedRef.current) setCargosGerenciados(cargos)
       }
     }
 
@@ -75,6 +84,8 @@ export default function PainelChefePage() {
       (supabase.from as any)('solicitacoes_rh').select('*, funcionarios(nome)').order('data', { ascending: false })
     ])
     
+    if (!isMountedRef.current) return
+
     if (funcRes.data) {
       let filteredEquipe = funcRes.data
       if (isDir) {
@@ -110,7 +121,11 @@ export default function PainelChefePage() {
   }
 
   useEffect(() => {
-    fetchPainelData()
+    const isMountedRef = { current: true }
+    fetchPainelData(isMountedRef)
+    return () => {
+      isMountedRef.current = false
+    }
   }, [])
 
   // Buscar cargos gerenciados pelo funcionário logado no ABAC
@@ -403,7 +418,7 @@ export default function PainelChefePage() {
                   escalas.map((esc) => (
                     <TableRow key={esc.id} className="border-borderCustom hover:bg-hoverCustom">
                       <TableCell className="font-semibold text-white">{esc.funcionarios?.nome || '-'}</TableCell>
-                      <TableCell className="font-mono text-xs text-white">{esc.data ? new Date(esc.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                      <TableCell className="font-mono text-xs text-white">{formatarDataBR(esc.data)}</TableCell>
                       <TableCell className="text-muted-foreground">{esc.turno || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{esc.escolas?.nome || '-'}</TableCell>
                       <TableCell>
@@ -460,7 +475,7 @@ export default function PainelChefePage() {
                 <Card key={alerta.id} className="bg-[#121212] border-borderCustom p-5 space-y-3 shadow-md">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">{alerta.funcionarios?.nome || 'Servidor'}</span>
-                    <span className="text-xs font-mono text-muted-foreground">{alerta.data ? new Date(alerta.data).toLocaleDateString('pt-BR') : '-'}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{formatarDataBR(alerta.data)}</span>
                   </div>
                   <div>
                     <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 rounded-full text-xs font-bold border border-rose-500/20">
