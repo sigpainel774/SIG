@@ -136,6 +136,8 @@ export interface FuncionarioFormContextType {
   // Emprego
   cargo: string
   setCargo: (v: string) => void
+  cargaHoraria: string
+  setCargaHoraria: (v: string) => void
   funcaoEspec: string
   setFuncaoEspec: (v: string) => void
   tipoVinculo: string
