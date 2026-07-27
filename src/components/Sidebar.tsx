@@ -39,7 +39,7 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola } = useSchoolStore()
@@ -224,16 +224,17 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {menuGroups.map((group, groupIndex) => {
           const filteredItems = group.items.filter((item) => {
-            if (isProfessor) {
+            const isAdmin = isAdminGlobalOrRoot()
+            if (!isAdmin && isProfessor) {
               const permitidos = ['/home', '/mural', '/alunos', '/turmas', '/avaliacoes']
               return permitidos.includes(item.href)
             }
-            if (isChefe()) {
+            if (!isAdmin && isChefe()) {
               const permitidos = ['/home', '/mural', '/painel-chefe']
               return permitidos.includes(item.href)
             }
             if (item.href === '/painel-chefe') {
-              return isDiretor() || isChefe()
+              return isDiretor() || isChefe() || isAdmin
             }
             return true
           })
