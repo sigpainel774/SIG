@@ -23,12 +23,18 @@ export interface ExcelSheetGroup {
 }
 
 /**
- * Converte valor de data vindo do Excel (serial numérico ou string DD/MM/YYYY) para ISO YYYY-MM-DD.
+ * Converte valor de data vindo do Excel (serial numérico, objeto Date ou string DD/MM/YYYY) para ISO YYYY-MM-DD.
  */
 export function convertExcelDateToISO(val: any): string | undefined {
   if (val === undefined || val === null || val === '') return undefined
 
-  // Caso 1: Serial Numérico do Excel (ex: 40983)
+  // Caso 1: Objeto Date nativo
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return undefined
+    return val.toISOString().split('T')[0]
+  }
+
+  // Caso 2: Serial Numérico do Excel (ex: 40983)
   if (typeof val === 'number') {
     if (isNaN(val) || val <= 0) return undefined
     // Época do Excel começa em 1899-12-30 (25569 dias antes da época Unix)
@@ -40,8 +46,8 @@ export function convertExcelDateToISO(val: any): string | undefined {
   const strVal = String(val).trim()
   if (!strVal) return undefined
 
-  // Caso 2: String DD/MM/YYYY ou DD-MM-YYYY
-  const brMatch = strVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  // Caso 3: String DD/MM/YYYY ou DD-MM-YYYY (com suporte a hora opcional)
+  const brMatch = strVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+.*)?$/)
   if (brMatch) {
     const day = brMatch[1].padStart(2, '0')
     const month = brMatch[2].padStart(2, '0')
@@ -49,8 +55,8 @@ export function convertExcelDateToISO(val: any): string | undefined {
     return `${year}-${month}-${day}`
   }
 
-  // Caso 3: String YYYY-MM-DD
-  const isoMatch = strVal.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/)
+  // Caso 4: String YYYY-MM-DD (com suporte a hora opcional)
+  const isoMatch = strVal.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+.*)?$/)
   if (isoMatch) {
     const year = isoMatch[1]
     const month = isoMatch[2].padStart(2, '0')
@@ -62,7 +68,7 @@ export function convertExcelDateToISO(val: any): string | undefined {
 }
 
 /**
- * Limpa e formata CPF preservando zeros à esquerda quando o Excel removeu o primeiro digito.
+ * Limpa e formata CPF preservando zeros à esquerda quando o Excel removeu o primeiro dígito.
  */
 export function sanitizeCPF(val: any): string | undefined {
   if (val === undefined || val === null || val === '') return undefined
@@ -87,10 +93,23 @@ function cleanString(val: any): string | undefined {
 }
 
 /**
+ * Palavras-chave de cabeçalho para ignorar se a linha 8 for o próprio título da coluna
+ */
+const HEADER_KEYWORDS = [
+  'NOME',
+  'NOME DO ALUNO',
+  'NOME COMPLETO',
+  'NOME DO ESTUDANTE',
+  'ALUNO',
+  'STUDENT NAME',
+  'NOME DA CRIANÇA'
+]
+
+/**
  * Lê uma planilha Excel (ArrayBuffer) e extrai os alunos de todas as pastas/abas a partir da linha 8 (B8).
  */
 export function parseExcelStudentWorkbook(fileBuffer: ArrayBuffer): ExcelSheetGroup[] {
-  const workbook = XLSX.read(fileBuffer, { type: 'array', cellDates: false })
+  const workbook = XLSX.read(fileBuffer, { type: 'array', cellDates: true })
   const result: ExcelSheetGroup[] = []
 
   for (let sIdx = 0; sIdx < workbook.SheetNames.length; sIdx++) {
@@ -115,6 +134,9 @@ export function parseExcelStudentWorkbook(fileBuffer: ArrayBuffer): ExcelSheetGr
 
       // Se o Nome do Aluno (Coluna B) estiver vazio, ignora esta linha
       if (!nomeClean) continue
+
+      // Se o Nome for um título de cabeçalho (ex: "NOME DO ALUNO"), ignora esta linha
+      if (HEADER_KEYWORDS.includes(nomeClean.toUpperCase())) continue
 
       // Coluna C = index 2 (Data Nasc)
       const dataNascISO = convertExcelDateToISO(row[2])
