@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface AlunoMapeado {
   id: string;
@@ -13,6 +14,7 @@ export interface AlunoMapeado {
   foto_url?: string;
   latitude: number;
   longitude: number;
+  modalidade?: string;
 }
 
 interface MapaAlunosProps {
@@ -21,19 +23,27 @@ interface MapaAlunosProps {
 
 export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [busca, setBusca] = useState('');
+  const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const mapRef = useRef<L.Map>(null);
 
-  // 1. Filtra alunos baseado no input de pesquisa
+  // 1. Filtra alunos baseado no input de pesquisa e modalidade
   const alunosFiltrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
-    if (!termo) return alunos;
-    return alunos.filter(
-      (a) =>
+    return alunos.filter((a) => {
+      // Filtro de modalidade
+      if (filtroModalidade === 'eja' && a.modalidade !== 'EJA') return false;
+      if (filtroModalidade === 'regular' && a.modalidade === 'EJA') return false;
+
+      // Filtro de texto
+      if (!termo) return true;
+      return (
         a.nome.toLowerCase().includes(termo) ||
         a.escola.toLowerCase().includes(termo) ||
-        (a.turma && a.turma.toLowerCase().includes(termo))
-    );
-  }, [busca, alunos]);
+        (a.turma && a.turma.toLowerCase().includes(termo)) ||
+        (a.modalidade && a.modalidade.toLowerCase().includes(termo))
+      );
+    });
+  }, [busca, filtroModalidade, alunos]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -75,13 +85,18 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
       .toUpperCase();
   };
 
-  // 4. Criação do Pino DivIcon Customizado (verde esmeralda para alunos)
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string) => {
+  // 4. Criação do Pino DivIcon Customizado (verde esmeralda para regular, roxo para EJA)
+  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
     const iniciais = obterIniciais(nome);
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
         ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
         : '';
+
+    const isEJA = modalidade === 'EJA';
+    const bgGradient = isEJA
+      ? 'linear-gradient(135deg, #a855f7, #7e22ce)'
+      : 'linear-gradient(135deg, #34d399, #059669)';
 
     return L.divIcon({
       className: 'custom-div-icon',
@@ -90,7 +105,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #34d399, #059669);
+          background: ${bgGradient};
           color: #ffffff;
           font-weight: 700;
           font-size: 13px;
@@ -114,8 +129,8 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Campo de Filtro Dinâmico e Botão de Recentralizar */}
-      <div className="flex flex-wrap gap-2 items-center justify-between bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
+      {/* Campo de Filtro Dinâmico, Seletor EJA/Regular e Botão de Recentralizar */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
         <div className="flex flex-1 items-center gap-2 min-w-[200px]">
           <Search className="w-5 h-5 text-slate-500" />
           <input
@@ -126,6 +141,50 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder-slate-500"
           />
         </div>
+
+        {/* Seletor de Filtro de Modalidade (Todos, Regular, EJA) */}
+        <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+          <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+            <Filter className="w-3 h-3" /> Ensino:
+          </span>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('todos')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'todos'
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('regular')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'regular'
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            Regular
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('eja')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'eja'
+                ? "bg-purple-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            EJA
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={recentralizarSapeacu}
@@ -175,7 +234,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {alunosFiltrados.map((aluno) => {
-            const icone = criarIconeCustomizado(aluno.nome, aluno.foto_url);
+            const icone = criarIconeCustomizado(aluno.nome, aluno.foto_url, aluno.modalidade);
             const iniciais = obterIniciais(aluno.nome);
 
             return (
@@ -193,24 +252,47 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                           <img
                             src={aluno.foto_url}
                             alt={aluno.nome}
-                            className="w-full h-full rounded-full object-cover border-2 border-emerald-500 absolute inset-0 z-10"
+                            className={cn(
+                              "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
+                              aluno.modalidade === 'EJA' ? "border-purple-500" : "border-emerald-500"
+                            )}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
-                          <div className="w-full h-full rounded-full bg-gradient-to-br from-emerald-600 to-emerald-400 text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0">
+                          <div className={cn(
+                            "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
+                            aluno.modalidade === 'EJA'
+                              ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                              : "bg-gradient-to-br from-emerald-600 to-emerald-400"
+                          )}>
                             {iniciais}
                           </div>
                         </div>
                       ) : (
-                        <div className="w-[48px] h-[48px] rounded-full bg-gradient-to-br from-emerald-600 to-emerald-400 text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700">
+                        <div className={cn(
+                          "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
+                          aluno.modalidade === 'EJA'
+                            ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                            : "bg-gradient-to-br from-emerald-600 to-emerald-400"
+                        )}>
                           {iniciais}
                         </div>
                       )}
                       <div>
-                        <strong className="text-sm block text-white leading-tight">
-                          {aluno.nome}
-                        </strong>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <strong className="text-sm block text-white leading-tight">
+                            {aluno.nome}
+                          </strong>
+                          <span className={cn(
+                            "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                            aluno.modalidade === 'EJA'
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                          )}>
+                            {aluno.modalidade ?? 'Regular'}
+                          </span>
+                        </div>
                         {aluno.turma && (
                           <span className="text-xs text-emerald-400 block mt-0.5">
                             Turma: {aluno.turma}
@@ -241,7 +323,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
-        <strong className="text-emerald-400">{alunosFiltrados.length}</strong> aluno(s) encontrado(s) de um total de{' '}
+        <strong className="text-emerald-400">{alunosFiltrados.length}</strong> aluno(s) encontrado(s) {filtroModalidade !== 'todos' ? `[Filtro: ${filtroModalidade.toUpperCase()}]` : ''} de um total de{' '}
         {alunos.length}. Clique em um pino para detalhes.
       </p>
     </div>
