@@ -343,19 +343,25 @@ export function FuncionariosList({
                         <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/50">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
                             {/* Avatar circular */}
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
-                            >
-                              {func.foto_url ? (
-                                <img
-                                  src={func.foto_url}
-                                  alt={func.nome}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                getInitials(func.nome)
-                              )}
-                            </div>
+                            {(() => {
+                              const isEja = (func.modalidade_ensino || '').trim().toUpperCase() === 'EJA'
+                              const avatarBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]'
+                              return (
+                                <div
+                                  className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${avatarBorder} ${palette.bg} ${palette.text}`}
+                                >
+                                  {func.foto_url ? (
+                                    <img
+                                      src={func.foto_url}
+                                      alt={func.nome}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    getInitials(func.nome)
+                                  )}
+                                </div>
+                              )
+                            })()}
 
                             {/* Nome + badges */}
                             <div className="min-w-0 flex-1">

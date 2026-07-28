@@ -11,6 +11,7 @@ export interface FuncionarioMapeado {
   cargo: string;
   escola: string;
   foto_url?: string;
+  modalidade_ensino?: string;
   latitude: number;
   longitude: number;
 }
@@ -76,8 +77,10 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   };
 
   // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string) => {
+  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
     const iniciais = obterIniciais(nome);
+    const isEja = (modalidade || '').trim().toUpperCase() === 'EJA';
+    const borderColor = isEja ? '#f97316' : '#3ea6ff';
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
         ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
@@ -90,14 +93,14 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #38bdf8, #0284c7);
+          background: linear-gradient(135deg, ${borderColor}, #0284c7);
           color: #ffffff;
           font-weight: 700;
           font-size: 13px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 3px solid #1e293b;
+          border: 3px solid ${borderColor};
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
           overflow: hidden;
           position: relative;
@@ -175,8 +178,10 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {funcionariosFiltrados.map((func) => {
-            const icone = criarIconeCustomizado(func.nome, func.foto_url);
+            const icone = criarIconeCustomizado(func.nome, func.foto_url, func.modalidade_ensino);
             const iniciais = obterIniciais(func.nome);
+            const isEja = (func.modalidade_ensino || '').trim().toUpperCase() === 'EJA';
+            const popupAvatarBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]';
             
             return (
               <Marker
@@ -193,18 +198,18 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                           <img
                             src={func.foto_url}
                             alt={func.nome}
-                            className="w-full h-full rounded-full object-cover border-2 border-sky-500 absolute inset-0 z-10"
+                            className={`w-full h-full rounded-full object-cover ${popupAvatarBorder} absolute inset-0 z-10`}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                           {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
-                          <div className="w-full h-full rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0">
+                          <div className={`w-full h-full rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center ${popupAvatarBorder} absolute inset-0 z-0`}>
                             {iniciais}
                           </div>
                         </div>
                       ) : (
-                        <div className="w-[48px] h-[48px] rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700">
+                        <div className={`w-[48px] h-[48px] rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center shrink-0 ${popupAvatarBorder}`}>
                           {iniciais}
                         </div>
                       )}
