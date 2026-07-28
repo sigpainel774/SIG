@@ -44,6 +44,7 @@ interface ModalImportarExcelProps {
 interface StudentItemState extends ExtractedExcelStudentData {
   isSaved: boolean
   isSaving: boolean
+  savedInSchoolId?: string
   errorMessage?: string
 }
 
@@ -193,9 +194,17 @@ export function ModalImportarExcel({
         .eq('escola_id', escolaId)
         .is('deleted_at', null)
 
-      if (error || !existingAlunos || existingAlunos.length === 0) return currentSheets
+      if (error || !existingAlunos || existingAlunos.length === 0) {
+        return currentSheets.map((group) => ({
+          ...group,
+          students: group.students.map((st) => ({
+            ...st,
+            isSaved: st.savedInSchoolId === escolaId
+          }))
+        }))
+      }
 
-      const existingNames = new Set(existingAlunos.map((a) => normalizeStr(a.nome)))
+      const existingNames = new Set(existingAlunos.map((a) => normalizeStr(a.nome)).filter((n) => n.length >= 3))
       const existingCPFs = new Set(existingAlunos.filter((a) => Boolean(a.cpf)).map((a) => (a.cpf as string).replace(/\D/g, '')))
       const existingINEPs = new Set(existingAlunos.filter((a) => Boolean(a.inep)).map((a) => (a.inep as string).trim()))
 
@@ -209,10 +218,12 @@ export function ModalImportarExcel({
           const cleanInep = st.inep ? st.inep.trim() : ''
 
           const isAlreadyInDB: boolean = Boolean(
-            (normNome && existingNames.has(normNome)) ||
+            (normNome && normNome.length >= 3 && existingNames.has(normNome)) ||
             (cleanCpf && existingCPFs.has(cleanCpf)) ||
             (cleanInep && existingINEPs.has(cleanInep))
           )
+
+          const finalSavedState = Boolean(st.savedInSchoolId === escolaId || isAlreadyInDB)
 
           if (isAlreadyInDB && !st.isSaved) {
             duplicateCount++
@@ -220,13 +231,13 @@ export function ModalImportarExcel({
 
           return {
             ...st,
-            isSaved: Boolean(st.isSaved || isAlreadyInDB)
+            isSaved: finalSavedState
           }
         })
       }))
 
       if (duplicateCount > 0) {
-        toast.info(`${duplicateCount} aluno(s) já cadastrado(s) na escola foram identificados e serão pulados automaticamente.`)
+        toast.info(`${duplicateCount} aluno(s) já cadastrado(s) na escola foram identificados e serão pulados.`)
       }
 
       return updatedSheets
