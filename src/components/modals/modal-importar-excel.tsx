@@ -24,7 +24,9 @@ import {
   FolderTree,
   UserCheck,
   Sparkles,
-  Layers
+  Layers,
+  Calendar,
+  Clock
 } from 'lucide-react'
 import {
   parseExcelStudentWorkbook,
@@ -47,6 +49,8 @@ interface StudentItemState extends ExtractedExcelStudentData {
 
 interface SheetGroupState {
   sheetName: string
+  anoSerie: string // ex: '1º Ano', '2º Ano', '3º Ano'
+  turno: string // ex: 'Matutino', 'Vespertino', 'Noturno', 'Integral'
   students: StudentItemState[]
 }
 
@@ -144,6 +148,30 @@ export function ModalImportarExcel({
     setCurrentIndex(0)
   }, [activeSheetIndex])
 
+  // Função auxiliar para autodetectar o ano/série a partir do nome da aba
+  const detectAnoSerie = (sheetName: string): string => {
+    const name = sheetName.toUpperCase()
+    if (name.includes('1')) return '1º Ano'
+    if (name.includes('2')) return '2º Ano'
+    if (name.includes('3')) return '3º Ano'
+    if (name.includes('4')) return '4º Ano'
+    if (name.includes('5')) return '5º Ano'
+    if (name.includes('6')) return '6º Ano'
+    if (name.includes('7')) return '7º Ano'
+    if (name.includes('8')) return '8º Ano'
+    if (name.includes('9')) return '9º Ano'
+    return '1º Ano'
+  }
+
+  // Função auxiliar para autodetectar o turno a partir do nome da aba
+  const detectTurno = (sheetName: string): string => {
+    const lower = sheetName.toLowerCase()
+    if (lower.includes('vesp') || lower.includes('tarde')) return 'Vespertino'
+    if (lower.includes('not') || lower.includes('noite')) return 'Noturno'
+    if (lower.includes('integ')) return 'Integral'
+    return 'Matutino'
+  }
+
   // Manipular Upload da Planilha Excel (.xlsx / .xls)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -170,9 +198,11 @@ export function ModalImportarExcel({
         return
       }
 
-      // Converter em estado gerenciável com selos de salvamento
+      // Converter em estado gerenciável com selos de salvamento e seleção de ano/turno por pasta
       const sheetStates: SheetGroupState[] = parsedGroups.map((group) => ({
         sheetName: group.sheetName,
+        anoSerie: detectAnoSerie(group.sheetName),
+        turno: detectTurno(group.sheetName),
         students: group.students.map((st) => ({
           ...st,
           isSaved: false,
@@ -233,6 +263,8 @@ export function ModalImportarExcel({
         telefoneAluno: student.telefone || null,
         responsavelPais: student.nome_pais || null,
         enderecoAluno: student.endereco || null,
+        anoSeriePasta: targetSheet.anoSerie || '1º Ano',
+        turnoPasta: targetSheet.turno || 'Matutino',
         origemImportacao: `Excel 15 (Aba: ${student.sheetName}, Linha: #${student.rowIndex})`
       }
 
@@ -247,6 +279,7 @@ export function ModalImportarExcel({
         cartao_sus: student.cartao_sus ? student.cartao_sus.trim() : null,
         endereco: student.endereco ? student.endereco.trim() : null,
         nome_mae: student.nome_pais ? student.nome_pais.trim() : null,
+        serie: targetSheet.anoSerie || '1º Ano',
         escola_id: selectedEscolaId || null,
         turma_id: selectedTurmaId || null,
         dados_matricula: dadosMatriculaObj
@@ -414,14 +447,14 @@ export function ModalImportarExcel({
       open={open}
       onOpenChange={onOpenChange}
       title="Importador 15 - Alunos via Excel (.xlsx / .xls)"
-      description="Faça o upload da planilha Excel. O sistema lê os dados a partir da linha 8 (B8) e permite importar pasta por pasta ou aluno por aluno (1 por 1)."
+      description="Faça o upload da planilha Excel. O sistema lê os dados a partir da linha 8 (B8) e permite informar o ano e turno de cada pasta para importar 1 por 1 ou em lote."
       maxWidth="max-w-4xl"
     >
       <div className="space-y-5 text-sm select-none">
         {/* ── Painel 1: Seleção de Destino (Escola & Turma) ── */}
         <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
           <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
-            <Building2 className="w-4 h-4" /> 1. Destino da Importação (Escola e Turma)
+            <Building2 className="w-4 h-4" /> 1. Destino da Importação (Escola e Turma Padrão)
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -447,14 +480,14 @@ export function ModalImportarExcel({
             {/* Seletor de Turma */}
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                Turma de Destino (Enturmação Automática)
+                Turma Geral de Destino (Opcional para Enturmação)
               </label>
               <select
                 value={selectedTurmaId}
                 onChange={(e) => setSelectedTurmaId(e.target.value)}
                 className="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
               >
-                <option value="">-- Sem Turma (Apenas Cadastro Geral) --</option>
+                <option value="">-- Sem Turma (Apenas Cadastro Geral com Série) --</option>
                 {turmas.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.nome} - {t.turno || 'Geral'} ({t.ano_letivo})
@@ -511,14 +544,14 @@ export function ModalImportarExcel({
           </label>
         </div>
 
-        {/* ── Painel 3: Abas de Pastas da Planilha e Navegação Ficha a Ficha (1 por 1) ── */}
+        {/* ── Painel 3: Abas de Pastas da Planilha e Configuração de Ano/Turno ── */}
         {sheets.length > 0 && activeSheet && (
           <div className="space-y-4">
             {/* Seletor de Pastas/Abas */}
-            <div className="bg-[#18181b] border border-[#27272a] p-3 rounded-2xl space-y-2">
+            <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5 uppercase tracking-wider">
-                  <FolderTree className="w-4 h-4 text-amber-400" /> Pastas / Abas Encontradas na Planilha ({sheets.length}):
+                  <FolderTree className="w-4 h-4 text-amber-400" /> Pastas / Abas da Planilha ({sheets.length}):
                 </span>
                 <Button
                   size="sm"
@@ -532,6 +565,7 @@ export function ModalImportarExcel({
                 </Button>
               </div>
 
+              {/* Botões de Seleção da Pasta */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {sheets.map((grp, sIdx) => {
                   const isSelected = sIdx === activeSheetIndex
@@ -542,7 +576,7 @@ export function ModalImportarExcel({
                     <button
                       key={sIdx}
                       onClick={() => setActiveSheetIndex(sIdx)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
                         isSelected
                           ? 'bg-purple-600 text-white border-purple-400 shadow-md scale-105'
                           : 'bg-[#09090b] text-gray-300 border-[#3f3f46] hover:bg-[#202024]'
@@ -564,6 +598,75 @@ export function ModalImportarExcel({
                   )
                 })}
               </div>
+
+              {/* ── Selects de Ano e Turno da Pasta Ativa ── */}
+              <div className="bg-[#09090b] border border-[#3f3f46] p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 mt-3">
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Select do Ano / Série */}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-400" />
+                    <label className="text-xs font-bold text-purple-300 whitespace-nowrap">
+                      Ano da Pasta ({activeSheet.sheetName}):
+                    </label>
+                    <select
+                      value={activeSheet.anoSerie || '1º Ano'}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setSheets((prev) => {
+                          const next = [...prev]
+                          next[activeSheetIndex] = { ...next[activeSheetIndex], anoSerie: val }
+                          return next
+                        })
+                      }}
+                      className="bg-[#18181b] border border-[#52525b] text-white text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:outline-none font-bold"
+                    >
+                      <option value="1º Ano">1º Ano</option>
+                      <option value="2º Ano">2º Ano</option>
+                      <option value="3º Ano">3º Ano</option>
+                      <option value="4º Ano">4º Ano</option>
+                      <option value="5º Ano">5º Ano</option>
+                      <option value="6º Ano">6º Ano</option>
+                      <option value="7º Ano">7º Ano</option>
+                      <option value="8º Ano">8º Ano</option>
+                      <option value="9º Ano">9º Ano</option>
+                      <option value="Educação Infantil">Educação Infantil</option>
+                      <option value="Ensino Médio 1º Ano">Ensino Médio 1º Ano</option>
+                      <option value="Ensino Médio 2º Ano">Ensino Médio 2º Ano</option>
+                      <option value="Ensino Médio 3º Ano">Ensino Médio 3º Ano</option>
+                      <option value="EJA">EJA</option>
+                    </select>
+                  </div>
+
+                  {/* Select do Turno */}
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-sky-400" />
+                    <label className="text-xs font-bold text-sky-300 whitespace-nowrap">
+                      Turno da Pasta:
+                    </label>
+                    <select
+                      value={activeSheet.turno || 'Matutino'}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setSheets((prev) => {
+                          const next = [...prev]
+                          next[activeSheetIndex] = { ...next[activeSheetIndex], turno: val }
+                          return next
+                        })
+                      }}
+                      className="bg-[#18181b] border border-[#52525b] text-white text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-sky-500 focus:outline-none font-bold"
+                    >
+                      <option value="Matutino">Matutino (Manhã)</option>
+                      <option value="Vespertino">Vespertino (Tarde)</option>
+                      <option value="Noturno">Noturno (Noite)</option>
+                      <option value="Integral">Integral</option>
+                    </select>
+                  </div>
+                </div>
+
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/20 text-[11px] px-2.5 py-1">
+                  Ano: {activeSheet.anoSerie} | Turno: {activeSheet.turno}
+                </Badge>
+              </div>
             </div>
 
             {/* Ficha Individual Atual (1 por 1) */}
@@ -573,7 +676,7 @@ export function ModalImportarExcel({
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/30 text-xs py-1">
-                      Pasta: {activeSheet.sheetName}
+                      Pasta: {activeSheet.sheetName} ({activeSheet.anoSerie} - {activeSheet.turno})
                     </Badge>
                     <span className="text-xs font-semibold text-gray-400">
                       Aluno {currentIndex + 1} de {activeSheet.students.length} (Linha Excel: #{currentStudent.rowIndex})
@@ -605,9 +708,14 @@ export function ModalImportarExcel({
 
                 {/* Exibição dos Dados do Aluno em Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-[#09090b] p-4 rounded-xl border border-[#27272a]">
-                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pb-1 border-b border-[#1f1f23]">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Nome do Aluno (Coluna B)</span>
-                    <span className="text-base font-bold text-white tracking-wide">{currentStudent.nome}</span>
+                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pb-1 border-b border-[#1f1f23] flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Nome do Aluno (Coluna B)</span>
+                      <span className="text-base font-bold text-white tracking-wide">{currentStudent.nome}</span>
+                    </div>
+                    <Badge variant="outline" className="bg-sky-500/10 text-sky-300 border-sky-500/30 text-xs">
+                      {activeSheet.anoSerie} • {activeSheet.turno}
+                    </Badge>
                   </div>
 
                   <div>
