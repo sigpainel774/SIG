@@ -505,7 +505,7 @@ export default function FuncionariosPage() {
     <div
       className={cn(
         "space-y-5 pb-12 transition-all duration-500 relative min-h-screen",
-        filtroModalidade === 'eja' && "bg-eja-pattern p-3 md:p-6 rounded-2xl"
+        filtroModalidade === 'eja' && "bg-eja-pattern"
       )}
     >
       {/* Modal Novo Funcionário */}

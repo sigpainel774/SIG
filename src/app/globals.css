@@ -356,10 +356,10 @@
 .bg-eja-pattern::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -1.5rem;
   z-index: -1;
   pointer-events: none;
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   opacity: 0.95;
   background-image: 
     radial-gradient(circle at 85% 15%, rgba(255, 120, 0, 0.25) 0%, transparent 45%),
