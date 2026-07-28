@@ -126,13 +126,31 @@ export async function excluirDefinitivamenteArquivado(params: {
 
     if (fetchError || !arquivado) throw fetchError || new Error('Registro não encontrado')
 
+    const refId = arquivado.referencia_id
+
+    // Se for um aluno, desvincular/limpar tabelas dependentes
+    if (arquivado.tabela_origem === 'alunos' || arquivado.tipo?.startsWith('ALUNO')) {
+      await Promise.all([
+        params.supabaseAdmin.from('alunos_anexos').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('notas').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('frequencias').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('ocorrencias').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('vinculos_turmas').delete().eq('funcionario_id', refId), // ou aluno_id se houver
+        params.supabaseAdmin.from('recuperacoes_finais').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('assinatura').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('alunos_transporte').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('transferencias_alunos').delete().eq('aluno_id', refId),
+        params.supabaseAdmin.from('solicitacoes_edicao_aluno').delete().eq('aluno_id', refId),
+      ])
+    }
+
     // 1. Excluir definitivamente da tabela original
     const { error: purgeError } = await params.supabaseAdmin
       .from(arquivado.tabela_origem)
       .delete()
-      .eq('id', arquivado.referencia_id)
+      .eq('id', refId)
 
-    if (purgeError) throw purgeError
+    if (purgeError) console.warn('Aviso: Registro original pode ter sido removido anteriormente:', purgeError)
 
     // 2. Atualizar status na tabela arquivados
     const { error: updateError } = await params.supabaseAdmin
@@ -151,7 +169,7 @@ export async function excluirDefinitivamenteArquivado(params: {
       supabase: params.supabaseAdmin,
       action: 'PURGE',
       entity: `${arquivado.tabela_origem} (EXPURGO DE ARQUIVADO)`,
-      entityId: arquivado.referencia_id,
+      entityId: refId,
       oldData: arquivado.payload_completo as object,
       performedBy: params.excluidoPor,
       tenantId: arquivado.escola_origem_id || undefined
@@ -160,9 +178,69 @@ export async function excluirDefinitivamenteArquivado(params: {
     return { success: true }
   } catch (error: any) {
     console.error('Erro ao excluir arquivado definitivamente:', error)
-    return { success: false, error }
+    return { success: false, error: error.message || error }
   }
 }
+
+export async function purgeAlunoArquivadoDirect(params: {
+  supabaseAdmin: SupabaseClient
+  alunoId: string
+  performedBy: { id: string; name: string; email: string }
+}) {
+  try {
+    const performedById = params.performedBy.id && params.performedBy.id !== '' ? params.performedBy.id : null
+    const aid = params.alunoId
+
+    // Buscar snapshot do aluno
+    const { data: aluno } = await params.supabaseAdmin
+      .from('alunos')
+      .select('*')
+      .eq('id', aid)
+      .maybeSingle()
+
+    // Limpar tabelas dependentes
+    await Promise.all([
+      params.supabaseAdmin.from('alunos_anexos').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('notas').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('frequencias').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('ocorrencias').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('recuperacoes_finais').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('assinatura').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('alunos_transporte').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('transferencias_alunos').delete().eq('aluno_id', aid),
+      params.supabaseAdmin.from('solicitacoes_edicao_aluno').delete().eq('aluno_id', aid),
+    ])
+
+    // Deletar da tabela alunos
+    await params.supabaseAdmin.from('alunos').delete().eq('id', aid)
+
+    // Atualizar registros correspondentes em arquivados se existirem
+    await params.supabaseAdmin
+      .from('arquivados')
+      .update({
+        status: 'EXCLUIDO',
+        excluido_em: new Date().toISOString(),
+        excluido_por: performedById
+      })
+      .eq('referencia_id', aid)
+
+    // Log auditoria
+    await logAudit({
+      supabase: params.supabaseAdmin,
+      action: 'PURGE',
+      entity: 'alunos (EXPURGO ARQUIVADO / SOFT DELETED)',
+      entityId: aid,
+      oldData: aluno || {},
+      performedBy: params.performedBy,
+    })
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Erro ao expurgar aluno diretamente:', error)
+    return { success: false, error: error.message || error }
+  }
+}
+
 
 export async function arquivarAnexo(params: {
   supabase: SupabaseClient
