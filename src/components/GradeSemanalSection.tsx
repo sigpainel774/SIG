@@ -88,6 +88,11 @@ export function GradeSemanalSection() {
       setTurmas(list)
       if (list.length > 0) {
         setSelectedTurmaId(list[0].id)
+      } else {
+        setSelectedTurmaId('')
+        setMaterias([])
+        setSlots([])
+        setGrade([])
       }
     } catch (err: any) {
       toast.error('Erro ao carregar turmas: ' + err.message)

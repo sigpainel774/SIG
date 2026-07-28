@@ -68,7 +68,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
   // 1.5 Filtro de performance por Bounds da Viewport
   const alunosVisiveis = useMemo(() => {
-    if (!mapBounds) return [];
+    if (!mapBounds) return alunosFiltrados.slice(0, 100);
     
     // Mantém apenas os que estão dentro do mapa atual
     let visiveis = alunosFiltrados.filter(a => 

@@ -68,7 +68,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
   // 1.5 Filtro de performance por Bounds da Viewport (evitar centenas de nós no DOM)
   const funcionariosVisiveis = useMemo(() => {
-    if (!mapBounds) return [];
+    if (!mapBounds) return funcionariosFiltrados.slice(0, 100);
     
     // Mantém apenas os que estão dentro do mapa atual
     let visiveis = funcionariosFiltrados.filter(f => 
