@@ -126,26 +126,25 @@ export default function AdminBancoPage() {
 
   // ── Export JSON ─────────────────────────────────────────────────────────────
 
-  const handleExportar = async (table: string, label: string) => {
-    setExportingTable(table)
-    try {
-      const { data, error } = await supabase.from(table as any).select('*')
-      if (error) throw error
+  const [exportSettings, setExportSettings] = useState<{table: string, label: string} | null>(null)
+  const [exportDays, setExportDays] = useState<string>('30')
 
-      const json = JSON.stringify(data, null, 2)
-      const blob = new Blob([json], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${table}_${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success(`${label} exportado com sucesso!`)
-    } catch (err: any) {
-      toast.error(`Erro ao exportar: ${err?.message || 'Erro desconhecido'}`)
-    } finally {
-      setExportingTable(null)
+  const handleExportar = (table: string, label: string) => {
+    if (table.includes('logs')) {
+      // Abre modal para perguntar período
+      setExportSettings({ table, label })
+    } else {
+      // Exporta direto
+      triggerExport(table)
     }
+  }
+
+  const triggerExport = (table: string, days?: string) => {
+    toast.success('Iniciando download... Isso pode levar alguns instantes para bancos grandes.')
+    const url = `/api/admin/export?table=${table}${days ? `&days=${days}` : ''}`
+    // Redirecionar para o endpoint para que o navegador cuide do stream
+    window.location.href = url
+    setExportSettings(null)
   }
 
   // ── Hard Delete ─────────────────────────────────────────────────────────────
@@ -359,6 +358,54 @@ export default function AdminBancoPage() {
               <p className="text-red-300 text-xs font-semibold">
                 ⚠️ Esta ação é irreversível. Um log de auditoria será registrado automaticamente.
               </p>
+            </div>
+          </div>
+        </StandardDialog>
+      )}
+
+      {/* ── Export Settings Dialog ── */}
+      {exportSettings && (
+        <StandardDialog
+          open={!!exportSettings}
+          onOpenChange={() => setExportSettings(null)}
+          title={`Exportar ${exportSettings.label}`}
+          maxWidth="sm:max-w-[400px]"
+          footer={
+            <div className="flex justify-end gap-2 w-full pt-2 border-t border-[#3f3f46]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setExportSettings(null)}
+                className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => triggerExport(exportSettings.table, exportDays !== 'all' ? exportDays : undefined)}
+                className="bg-sky-600 hover:bg-sky-700 text-white font-bold"
+              >
+                Exportar Arquivo
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-zinc-300 text-sm leading-relaxed">
+              Tabelas de log costumam ser muito pesadas. Selecione o período desejado para a exportação.
+            </p>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Período de Exportação</label>
+              <select
+                value={exportDays}
+                onChange={(e) => setExportDays(e.target.value)}
+                className="w-full bg-[#18181b] border border-[#3f3f46] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+              >
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="all">Exportar Todo o Histórico (Não Recomendado)</option>
+              </select>
             </div>
           </div>
         </StandardDialog>

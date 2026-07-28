@@ -103,10 +103,10 @@ export function GradeSemanalSection() {
   // 2. Carregar informações da turma selecionada (slots, matérias, grade semanal)
   const fetchTurmaGridData = async () => {
     if (!selectedTurmaId || !selectedEscola?.id) return
-    setLoadingGrid(true)
     const turma = turmas.find(t => t.id === selectedTurmaId)
     if (!turma) return
 
+    setLoadingGrid(true)
     try {
       // Carregar matérias da turma
       const materiasPromise = supabase

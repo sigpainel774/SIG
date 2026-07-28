@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, LayersControl, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Search, MapPin, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,9 +21,30 @@ interface MapaAlunosProps {
   alunos: AlunoMapeado[];
 }
 
+function BoundsTracker({ setBounds, setZoom }: { setBounds: (b: L.LatLngBounds) => void, setZoom: (z: number) => void }) {
+  const map = useMapEvents({
+    moveend: () => {
+      setBounds(map.getBounds());
+      setZoom(map.getZoom());
+    },
+    zoomend: () => {
+      setZoom(map.getZoom());
+    }
+  });
+
+  useEffect(() => {
+    setBounds(map.getBounds());
+    setZoom(map.getZoom());
+  }, [map, setBounds, setZoom]);
+
+  return null;
+}
+
 export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [busca, setBusca] = useState('');
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
+  const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
+  const [mapZoom, setMapZoom] = useState(14);
   const mapRef = useRef<L.Map>(null);
 
   // 1. Filtra alunos baseado no input de pesquisa e modalidade
@@ -44,6 +65,25 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
       );
     });
   }, [busca, filtroModalidade, alunos]);
+
+  // 1.5 Filtro de performance por Bounds da Viewport
+  const alunosVisiveis = useMemo(() => {
+    if (!mapBounds) return [];
+    
+    // Mantém apenas os que estão dentro do mapa atual
+    let visiveis = alunosFiltrados.filter(a => 
+      mapBounds.contains([a.latitude, a.longitude])
+    );
+
+    // Se estiver muito longe ou com muitos pontos (cluster simulado via limit)
+    if (mapZoom < 13 && visiveis.length > 50) {
+      visiveis = visiveis.slice(0, 50);
+    } else if (visiveis.length > 150) {
+      visiveis = visiveis.slice(0, 150);
+    }
+    
+    return visiveis;
+  }, [alunosFiltrados, mapBounds, mapZoom]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -243,7 +283,8 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          {alunosFiltrados.map((aluno) => {
+          <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
+          {alunosVisiveis.map((aluno) => {
             const icone = criarIconeCustomizado(aluno.id, aluno.nome, aluno.foto_url, aluno.modalidade);
             const iniciais = obterIniciais(aluno.nome);
 

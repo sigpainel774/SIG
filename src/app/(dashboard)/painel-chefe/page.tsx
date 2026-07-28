@@ -58,15 +58,18 @@ export default function PainelChefePage() {
   const [loading, setLoading] = useState(true)
 
   const fetchPainelData = async (isMountedRef = { current: true }) => {
-    setLoading(true)
     const state = useAuthStore.getState()
     const isDir = state.isDiretor()
     const isCh = state.isChefe()
     const isAdmin = state.isAdminGlobalOrRoot()
     const userId = state.funcionario?.id
 
+    if (!userId) return // Aguarda hydrate do Zustand
+
+    setLoading(true)
+
     let cargos: string[] = []
-    if (isCh && userId) {
+    if (isCh) {
       const { data } = await supabase
         .from('acessos_usuarios')
         .select('cargos_gerenciados')
@@ -78,46 +81,72 @@ export default function PainelChefePage() {
       }
     }
 
-    const [funcRes, escRes, altRes] = await Promise.all([
-      supabase.from('funcionarios').select('*, acessos_usuarios(nivel, ativo)').order('nome'),
-      (supabase.from as any)('escalas_servico').select('*, funcionarios(nome), escolas(nome)').order('data', { ascending: false }),
-      (supabase.from as any)('solicitacoes_rh').select('*, funcionarios(nome)').order('data', { ascending: false })
-    ])
-    
+    let queryFunc = supabase
+      .from('funcionarios')
+      .select('id, nome, cargo, orgao, status, email, is_superadmin, acessos_usuarios(nivel, ativo)')
+      .order('nome')
+
+    if (isDir) {
+      queryFunc = queryFunc.not('is_superadmin', 'eq', true)
+    } else if (isCh) {
+      if (cargos.length === 0) {
+        // Se é chefe e não tem cargos gerenciados, não retorna ninguém
+        if (isMountedRef.current) {
+          setEquipe([])
+          setEscalas([])
+          setAlertas([])
+          setLoading(false)
+        }
+        return
+      }
+      queryFunc = queryFunc.in('cargo', cargos)
+    }
+
+    const { data: funcData } = await queryFunc
     if (!isMountedRef.current) return
 
-    if (funcRes.data) {
-      let filteredEquipe = funcRes.data
-      if (isDir) {
-        filteredEquipe = funcRes.data.filter((f: any) => {
-          if (f.is_superadmin) return false
-          if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
-          
-          const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
-          if (acessosList.some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)) {
-            return false
-          }
-          return true
-        })
-      } else if (isCh) {
-        filteredEquipe = funcRes.data.filter((f: any) => f.cargo && cargos.includes(f.cargo))
-      }
-      setEquipe(filteredEquipe)
-
-      const equipeIds = new Set(filteredEquipe.map((f: any) => f.id))
-
-      if (escRes.data) {
-        setEscalas(isDir || isCh ? escRes.data.filter((e: any) => equipeIds.has(e.funcionario_id)) : escRes.data)
-      }
-      if (altRes.data) {
-        setAlertas(isDir || isCh ? altRes.data.filter((a: any) => equipeIds.has(a.funcionario_id)) : altRes.data)
-      }
-    } else {
-      if (escRes.data) setEscalas(escRes.data)
-      if (altRes.data) setAlertas(altRes.data)
+    let filteredEquipe = funcData || []
+    if (isDir && funcData) {
+      // Filtros adicionais client-side mais complexos para Diretores (ABAC níveis)
+      filteredEquipe = funcData.filter((f: any) => {
+        if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
+        const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
+        if (acessosList.some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false
+        return true
+      })
     }
     
-    setLoading(false)
+    setEquipe(filteredEquipe)
+    const equipeIds = filteredEquipe.map((f: any) => f.id)
+
+    // Se não for admin e a equipe estiver vazia, não precisa buscar escalas/alertas
+    if (!isAdmin && equipeIds.length === 0) {
+      setEscalas([])
+      setAlertas([])
+      setLoading(false)
+      return
+    }
+
+    let queryEsc = (supabase.from as any)('escalas_servico')
+      .select('*, funcionarios(nome), escolas(nome)')
+      .order('data', { ascending: false })
+      
+    let queryAlt = (supabase.from as any)('solicitacoes_rh')
+      .select('*, funcionarios(nome)')
+      .order('data', { ascending: false })
+
+    if (isDir || isCh) {
+      queryEsc = queryEsc.in('funcionario_id', equipeIds)
+      queryAlt = queryAlt.in('funcionario_id', equipeIds)
+    }
+
+    const [escRes, altRes] = await Promise.all([queryEsc, queryAlt])
+    
+    if (isMountedRef.current) {
+      setEscalas(escRes.data || [])
+      setAlertas(altRes.data || [])
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -126,23 +155,6 @@ export default function PainelChefePage() {
     return () => {
       isMountedRef.current = false
     }
-  }, [])
-
-  // Buscar cargos gerenciados pelo funcionário logado no ABAC
-  useEffect(() => {
-    const fetchCargosGerenciados = async () => {
-      if (!funcionario?.id) return
-      const { data } = await supabase
-        .from('acessos_usuarios')
-        .select('cargos_gerenciados')
-        .eq('funcionario_id', funcionario.id)
-        .maybeSingle()
-
-      if (data?.cargos_gerenciados && Array.isArray(data.cargos_gerenciados)) {
-        setCargosGerenciados(data.cargos_gerenciados)
-      }
-    }
-    fetchCargosGerenciados()
   }, [funcionario?.id])
 
   const equipeFiltrada = equipe.filter(
