@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -13,84 +13,237 @@ import {
   CheckCircle2, 
   PenTool, 
   Search, 
-  Eye, 
-  Info,
-  Smartphone,
-  Laptop,
-  Printer,
-  History
+  Printer, 
+  History,
+  UserX,
+  GraduationCap,
+  Users,
+  ShieldAlert
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { StandardDialog } from '@/components/ui/standard-dialog'
-import { restoreAction, purgeAction } from './actions'
+import { 
+  restoreAction, 
+  purgeAction, 
+  purgeFuncionarioDesligadoAction, 
+  purgeAlunoArquivadoAction 
+} from './actions'
 import { cn } from '@/lib/utils'
 import { PrintRelatorioAssinaturas } from '@/components/print/print-relatorio-assinaturas'
+import { useLocalSearch } from '@/hooks/useLocalSearch'
 
 export default function AdminLixeiraPage() {
   const router = useRouter()
   const { funcionario } = useAuthStore()
   const supabase = createClient()
   
-  // Trash states
+  // Mounted & Tab Refs for Race Condition Protection
+  const isMounted = useRef(true)
+  const activeTabRef = useRef<'trash' | 'signatures' | 'inactives'>('trash')
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  // Main Tab State
+  const [activeTab, setActiveTab] = useState<'trash' | 'signatures' | 'inactives'>('trash')
+  
+  // Update ref when state changes
+  useEffect(() => {
+    activeTabRef.current = activeTab
+  }, [activeTab])
+
+  // Sub-tab State for Inactives (Desligados & Arquivados)
+  const [inactiveSubTab, setInactiveSubTab] = useState<'funcionarios' | 'alunos'>('funcionarios')
+
+  // Search State
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Trash Bin States
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   
-  // Tab control
-  const [activeTab, setActiveTab] = useState<'trash' | 'signatures'>('trash')
-  
-  // Signature history states
+  // Signature History States
   const [sessionTimestamp] = useState(() => Date.now())
   const [sigLogs, setSigLogs] = useState<any[]>([])
   const [sigLogsLoading, setSigLogsLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
   const [sigFilter, setSigFilter] = useState<'ALL' | 'RESP' | 'FUNC'>('ALL')
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
   const [isPrintOpen, setIsPrintOpen] = useState(false)
 
+  // Inactive Purge States (Funcionários Desligados / Alunos Arquivados)
+  const [funcionariosDesligados, setFuncionariosDesligados] = useState<any[]>([])
+  const [alunosArquivados, setAlunosArquivados] = useState<any[]>([])
+  const [inactivesLoading, setInactivesLoading] = useState(false)
+
+  // Purge Confirmation Dialog State
+  const [confirmPurgeModal, setConfirmPurgeModal] = useState<{
+    type: 'trash' | 'funcionario' | 'aluno'
+    item: any
+  } | null>(null)
+  const [isPurging, setIsPurging] = useState(false)
+
+  /* ── 1. Carregar Lixeira Ativa ────────────────────────────────────────── */
   const loadTrash = async () => {
+    if (!isMounted.current) return
     setLoading(true)
-    const { data, error } = await supabase
-      .from('trash_bin')
-      .select('id, table_name, record_id, record_summary, deleted_by_id, deleted_by_name, deleted_by_email, deleted_at, status, resolution_note')
-      .eq('status', 'PENDING')
-      .order('deleted_at', { ascending: false })
-      .limit(50)
+    try {
+      const { data, error } = await supabase
+        .from('trash_bin')
+        .select('id, table_name, record_id, record_summary, deleted_by_id, deleted_by_name, deleted_by_email, deleted_at, status, resolution_note')
+        .in('status', ['PENDING', 'deleted'])
+        .order('deleted_at', { ascending: false })
+        .limit(100)
 
-    if (data) setItems(data)
-    if (error) console.error('Erro ao carregar lixeira:', error)
-    setLoading(false)
+      if (error) throw error
+      if (isMounted.current && activeTabRef.current === 'trash') {
+        setItems(data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar lixeira:', error)
+      toast.error('Erro ao carregar itens da lixeira.')
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
   }
 
+  /* ── 2. Carregar Histórico de Assinaturas ────────────────────────────── */
   const loadSignatureLogs = async () => {
+    if (!isMounted.current) return
     setSigLogsLoading(true)
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select('id, entity, entity_id, action, created_at, user_name, ip_address, new_data, old_data')
-      .in('entity', ['alunos_assinatura_responsavel', 'alunos_assinatura_funcionario'])
-      .order('created_at', { ascending: false })
-      .limit(100)
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('id, entity, entity_id, action, created_at, user_name, ip_address, new_data, old_data')
+        .in('entity', ['alunos_assinatura_responsavel', 'alunos_assinatura_funcionario'])
+        .order('created_at', { ascending: false })
+        .limit(100)
 
-    if (data) setSigLogs(data)
-    if (error) console.error('Erro ao carregar histórico de assinaturas:', error)
-    setSigLogsLoading(false)
+      if (error) throw error
+      if (isMounted.current && activeTabRef.current === 'signatures') {
+        setSigLogs(data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar histórico de assinaturas:', error)
+      toast.error('Erro ao carregar auditoria de assinaturas.')
+    } finally {
+      if (isMounted.current) setSigLogsLoading(false)
+    }
   }
 
+  /* ── 3. Carregar Inativos (Desligados & Arquivados) ──────────────────── */
+  const loadInactives = async () => {
+    if (!isMounted.current) return
+    setInactivesLoading(true)
+    try {
+      if (inactiveSubTab === 'funcionarios') {
+        const { data, error } = await supabase
+          .from('funcionarios')
+          .select('id, nome, email, cpf, cargo, status, deleted_at, created_at')
+          .or('status.eq.desligado,status.eq.Desligado,status.eq.DESLIGADO,deleted_at.not.is.null')
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        if (isMounted.current && activeTabRef.current === 'inactives') {
+          setFuncionariosDesligados(data || [])
+        }
+      } else {
+        // Busca tabela arquivados
+        const { data: arqData, error: arqErr } = await supabase
+          .from('arquivados')
+          .select('id, tipo, tabela_origem, referencia_id, motivo, created_at, status, payload_completo, escola_origem_id, escolas(nome)')
+          .neq('status', 'EXCLUIDO')
+          .or('tipo.eq.ALUNO,tipo.eq.ALUNO_TRANSFERIDO,tabela_origem.eq.alunos')
+          .order('created_at', { ascending: false })
+
+        if (arqErr) console.error('Erro ao carregar arquivados:', arqErr)
+
+        // Busca alunos com deleted_at
+        const { data: softData, error: softErr } = await supabase
+          .from('alunos')
+          .select('id, nome, cpf, numero_matricula, deleted_at, created_at, escola_id, escolas(nome)')
+          .not('deleted_at', 'is', null)
+          .order('deleted_at', { ascending: false })
+
+        if (softErr) console.error('Erro ao carregar alunos excluídos:', softErr)
+
+        const mapAlunos: Record<string, any> = {}
+
+        if (softData) {
+          for (const sa of softData) {
+            const esc = sa.escolas as any
+            mapAlunos[sa.id] = {
+              id: sa.id,
+              aluno_id: sa.id,
+              arquivado_id: null,
+              nome: sa.nome || 'Sem nome',
+              cpf_matricula: sa.cpf || sa.numero_matricula || 'Não informado',
+              escola_nome: esc?.nome || 'Rede Municipal',
+              motivo: 'Exclusão lógica (Soft delete)',
+              data_arquivamento: sa.deleted_at || sa.created_at,
+              status: 'DESATIVADO'
+            }
+          }
+        }
+
+        if (arqData) {
+          for (const arq of arqData) {
+            const refId = arq.referencia_id || arq.id
+            const payload = (arq.payload_completo || {}) as Record<string, any>
+            const esc = arq.escolas as any
+            mapAlunos[refId] = {
+              id: arq.id,
+              aluno_id: refId,
+              arquivado_id: arq.id,
+              nome: payload.nome || mapAlunos[refId]?.nome || 'Sem nome',
+              cpf_matricula: payload.cpf || payload.numero_matricula || mapAlunos[refId]?.cpf_matricula || 'Não informado',
+              escola_nome: esc?.nome || mapAlunos[refId]?.escola_nome || 'Rede Municipal',
+              motivo: arq.motivo || 'Arquivamento histórico',
+              data_arquivamento: arq.created_at,
+              status: arq.status || 'ARQUIVADO'
+            }
+          }
+        }
+
+        const merged = Object.values(mapAlunos).sort(
+          (a, b) => new Date(b.data_arquivamento).getTime() - new Date(a.data_arquivamento).getTime()
+        )
+
+        if (isMounted.current && activeTabRef.current === 'inactives') {
+          setAlunosArquivados(merged)
+        }
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar inativos:', err)
+      toast.error('Erro ao buscar lista de inativos.')
+    } finally {
+      if (isMounted.current) setInactivesLoading(false)
+    }
+  }
+
+  /* ── Sync Tab Triggers ────────────────────────────────────────────────── */
   useEffect(() => {
     if (activeTab === 'trash') {
       loadTrash()
-    } else {
+    } else if (activeTab === 'signatures') {
       loadSignatureLogs()
+    } else if (activeTab === 'inactives') {
+      loadInactives()
     }
-  }, [activeTab])
+  }, [activeTab, inactiveSubTab])
 
+  /* ── Ações do Usuário (Restauração e Expurgo) ────────────────────────── */
   const handleRestore = async (item: any) => {
     if (!confirm('Deseja realmente restaurar este registro?')) return
     const performedBy = { id: funcionario?.id, name: funcionario?.nome, email: funcionario?.email }
     
-    const { success, error } = await restoreAction(item.id, item.table_name, item.record_id, performedBy)
+    const { success } = await restoreAction(item.id, item.table_name, item.record_id, performedBy)
     if (success) {
       toast.success('Registro restaurado com sucesso!')
       loadTrash()
@@ -99,20 +252,70 @@ export default function AdminLixeiraPage() {
     }
   }
 
-  const handlePurge = async (item: any) => {
-    if (!confirm('ATENÇÃO: A exclusão permanente não pode ser desfeita. Deseja prosseguir?')) return
+  const executePurge = async () => {
+    if (!confirmPurgeModal) return
+    setIsPurging(true)
+    const { type, item } = confirmPurgeModal
     const performedBy = { id: funcionario?.id, name: funcionario?.nome, email: funcionario?.email }
-    
-    const { success, error } = await purgeAction(item.id, item.table_name, item.record_id, performedBy)
-    if (success) {
-      toast.success('Registro expurgado definitivamente!')
-      loadTrash()
-    } else {
-      toast.error('Erro ao expurgar registro.')
+
+    try {
+      if (type === 'trash') {
+        const { success } = await purgeAction(item.id, item.table_name, item.record_id, performedBy)
+        if (success) {
+          toast.success('Registro expurgado definitivamente!')
+          loadTrash()
+        } else {
+          toast.error('Erro ao expurgar registro da lixeira.')
+        }
+      } else if (type === 'funcionario') {
+        const res = await purgeFuncionarioDesligadoAction(item.id, performedBy)
+        if (res.success) {
+          toast.success(`Funcionário ${item.nome} expurgado com sucesso!`)
+          loadInactives()
+        } else {
+          toast.error(`Erro ao expurgar funcionário: ${res.error}`)
+        }
+      } else if (type === 'aluno') {
+        const res = await purgeAlunoArquivadoAction({
+          alunoId: item.aluno_id,
+          arquivadoId: item.arquivado_id,
+          performedBy
+        })
+        if (res.success) {
+          toast.success(`Aluno ${item.nome} expurgado definitivamente!`)
+          loadInactives()
+        } else {
+          toast.error(`Erro ao expurgar aluno: ${res.error}`)
+        }
+      }
+    } catch (err: any) {
+      toast.error('Falha inesperada durante a exclusão.')
+    } finally {
+      setIsPurging(false)
+      setConfirmPurgeModal(null)
     }
   }
 
-  // Filtragem de logs de assinatura (lista plana para o gerador de relatórios)
+  /* ── Filtros de Busca ─────────────────────────────────────────────────── */
+  const trashFiltrados = useLocalSearch(items, searchTerm, (item, term) => {
+    return [item.table_name, item.record_summary, item.deleted_by_name, item.deleted_by_email].some(val =>
+      (val || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term)
+    )
+  })
+
+  const funcionariosFiltrados = useLocalSearch(funcionariosDesligados, searchTerm, (func, term) => {
+    return [func.nome, func.email, func.cargo, func.cpf, func.status].some(val =>
+      (val || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term)
+    )
+  })
+
+  const alunosFiltrados = useLocalSearch(alunosArquivados, searchTerm, (aluno, term) => {
+    return [aluno.nome, aluno.cpf_matricula, aluno.escola_nome, aluno.motivo].some(val =>
+      (val || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term)
+    )
+  })
+
+  // Grouped Signature Logs Setup
   const filteredSigLogs = useMemo(() => {
     return sigLogs.filter((log) => {
       const searchLower = searchTerm.toLowerCase()
@@ -135,20 +338,8 @@ export default function AdminLixeiraPage() {
     })
   }, [sigLogs, searchTerm, sigFilter])
 
-  // Agrupamento de logs de assinatura por estudante
   const groupedStudents = useMemo(() => {
-    const studentsMap: Record<string, {
-      studentId: string
-      studentName: string
-      logs: any[]
-      lastUpdate: string
-      hasResp: boolean
-      hasFunc: boolean
-      respUrl: string | null
-      funcUrl: string | null
-    }> = {}
-
-    // Processa do mais antigo para o mais novo para que os estados mais recentes sobrescrevam
+    const studentsMap: Record<string, any> = {}
     const sortedLogs = [...sigLogs].reverse()
 
     for (const log of sortedLogs) {
@@ -173,7 +364,7 @@ export default function AdminLixeiraPage() {
       }
 
       const entry = studentsMap[studentId]
-      entry.logs.unshift(log) // Mantém ordenação decrescente (mais recente primeiro) no histórico
+      entry.logs.unshift(log)
       entry.lastUpdate = log.created_at
 
       if (isResp) {
@@ -190,18 +381,14 @@ export default function AdminLixeiraPage() {
     )
   }, [sigLogs])
 
-  // Filtragem da lista agrupada de estudantes (busca avançada nos logs internos)
   const filteredStudents = useMemo(() => {
     return groupedStudents.filter((student) => {
       const searchLower = searchTerm.toLowerCase()
-      
-      // Busca direta nos dados do aluno
       const matchesStudent = 
         student.studentName.toLowerCase().includes(searchLower) ||
         student.studentId.toLowerCase().includes(searchLower)
         
-      // Busca avançada: verifica se algum dos logs do histórico do aluno bate com o assinante, IP ou user agent
-      const matchesLog = student.logs.some((log) => {
+      const matchesLog = student.logs.some((log: any) => {
         const userName = log.user_name || ''
         const ip = log.ip_address || ''
         const device = log.new_data?.user_agent || log.old_data?.user_agent || ''
@@ -213,16 +400,13 @@ export default function AdminLixeiraPage() {
       })
       
       const matchesSearch = matchesStudent || matchesLog
-      
       if (sigFilter === 'ALL') return matchesSearch
       if (sigFilter === 'RESP') return matchesSearch && student.hasResp
       if (sigFilter === 'FUNC') return matchesSearch && student.hasFunc
-      
       return matchesSearch
     })
   }, [groupedStudents, searchTerm, sigFilter])
 
-  // Formatador de User Agent
   const formatUserAgent = (ua: string | null | undefined) => {
     if (!ua) return 'Dispositivo desconhecido'
     const lower = ua.toLowerCase()
@@ -241,6 +425,7 @@ export default function AdminLixeiraPage() {
     return `${device} — ${browser}`
   }
 
+  /* ── Definição de Colunas das Tabelas ─────────────────────────────────── */
   const trashColumns: TableColumn<any>[] = [
     {
       header: 'Tabela',
@@ -258,8 +443,8 @@ export default function AdminLixeiraPage() {
       header: 'Excluído por',
       accessor: (item) => (
         <div className="flex flex-col">
-          <span className="text-sm text-zinc-200 font-medium">{item.deleted_by_name}</span>
-          <span className="text-xs text-zinc-500">{item.deleted_by_email}</span>
+          <span className="text-sm text-zinc-200 font-medium">{item.deleted_by_name ?? 'Sistema'}</span>
+          <span className="text-xs text-zinc-500">{item.deleted_by_email ?? '-'}</span>
         </div>
       )
     },
@@ -267,7 +452,7 @@ export default function AdminLixeiraPage() {
       header: 'Data da Exclusão',
       accessor: (item) => (
         <span className="text-zinc-400 whitespace-nowrap">
-          {new Date(item.deleted_at).toLocaleString('pt-BR')}
+          {item.deleted_at ? new Date(item.deleted_at).toLocaleString('pt-BR') : '-'}
         </span>
       )
     },
@@ -289,13 +474,115 @@ export default function AdminLixeiraPage() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handlePurge(item)}
+            onClick={() => setConfirmPurgeModal({ type: 'trash', item })}
             className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
           >
             <AlertTriangle className="w-3.5 h-3.5 mr-1" />
             Expurgar
           </Button>
         </div>
+      )
+    }
+  ]
+
+  const funcionariosColumns: TableColumn<any>[] = [
+    {
+      header: 'Funcionário / Cargo',
+      accessor: (func) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-white uppercase">{func.nome}</span>
+          <span className="text-xs text-zinc-400">{func.cargo ?? 'Sem cargo definido'}</span>
+        </div>
+      )
+    },
+    {
+      header: 'E-mail',
+      accessor: (func) => <span className="text-zinc-300 text-sm">{func.email ?? '-'}</span>
+    },
+    {
+      header: 'CPF',
+      accessor: (func) => <span className="text-zinc-400 text-sm font-mono">{func.cpf ?? '-'}</span>
+    },
+    {
+      header: 'Status',
+      accessor: (func) => (
+        <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold uppercase">
+          {func.status ?? 'DESLIGADO'}
+        </Badge>
+      )
+    },
+    {
+      header: 'Data de Desligamento',
+      accessor: (func) => (
+        <span className="text-zinc-400 text-sm whitespace-nowrap">
+          {func.deleted_at 
+            ? new Date(func.deleted_at).toLocaleString('pt-BR') 
+            : (func.created_at ? new Date(func.created_at).toLocaleDateString('pt-BR') : '-')}
+        </span>
+      )
+    },
+    {
+      header: 'Ações ROOT',
+      className: 'text-right',
+      headClassName: 'text-right',
+      accessor: (func) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setConfirmPurgeModal({ type: 'funcionario', item: func })}
+          className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+        >
+          <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+          Expurgar Definitivo
+        </Button>
+      )
+    }
+  ]
+
+  const alunosColumns: TableColumn<any>[] = [
+    {
+      header: 'Aluno',
+      accessor: (aluno) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-white uppercase">{aluno.nome}</span>
+          <span className="text-[10px] text-zinc-500 font-mono">ID: {aluno.aluno_id}</span>
+        </div>
+      )
+    },
+    {
+      header: 'CPF / Matrícula',
+      accessor: (aluno) => <span className="text-zinc-300 text-sm font-mono">{aluno.cpf_matricula}</span>
+    },
+    {
+      header: 'Escola de Origem',
+      accessor: (aluno) => <span className="text-zinc-400 text-sm">{aluno.escola_nome}</span>
+    },
+    {
+      header: 'Motivo',
+      accessor: (aluno) => <span className="text-zinc-400 text-sm max-w-[200px] truncate block">{aluno.motivo}</span>
+    },
+    {
+      header: 'Data Arquivamento',
+      accessor: (aluno) => (
+        <span className="text-zinc-400 text-sm whitespace-nowrap">
+          {aluno.data_arquivamento ? new Date(aluno.data_arquivamento).toLocaleDateString('pt-BR') : '-'}
+        </span>
+      )
+    },
+    {
+      header: 'Ações ROOT',
+      className: 'text-right',
+      headClassName: 'text-right',
+      accessor: (aluno) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setConfirmPurgeModal({ type: 'aluno', item: aluno })}
+          className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+        >
+          <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+          Expurgar Definitivo
+        </Button>
       )
     }
   ]
@@ -372,24 +659,30 @@ export default function AdminLixeiraPage() {
     }
   ]
 
+  const handleRefresh = () => {
+    if (activeTab === 'trash') loadTrash()
+    else if (activeTab === 'signatures') loadSignatureLogs()
+    else if (activeTab === 'inactives') loadInactives()
+  }
+
   return (
     <div className="space-y-6">
-      {/* Top Header Bar */}
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#232328]">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Trash2 className="w-6 h-6 text-rose-500" />
-            <span>Lixeira Global & Auditorias</span>
+            <span>Lixeira Global & Expurgo</span>
           </h2>
           <p className="text-zinc-400 text-sm mt-1">
-            {activeTab === 'trash' 
-              ? 'Registros apagados e pendentes de restauração ou expurgo.' 
-              : 'Histórico de alteração e coleta de assinaturas digitais da rede.'}
+            {activeTab === 'trash' && 'Registros apagados e pendentes de restauração ou expurgo.'}
+            {activeTab === 'signatures' && 'Histórico de alteração e coleta de assinaturas digitais da rede.'}
+            {activeTab === 'inactives' && 'Expurgo definitivo de funcionários desligados e alunos arquivados (cadastros de teste).'}
           </p>
         </div>
         
         <div className="flex items-center gap-3">
-          {activeTab === 'trash' ? (
+          {activeTab === 'trash' && (
             <Button 
               variant="outline"
               onClick={() => router.push('/admin/lixeira/relatorio')}
@@ -397,7 +690,9 @@ export default function AdminLixeiraPage() {
             >
               <FileText className="w-4 h-4 mr-2" /> Relatório de Exclusões
             </Button>
-          ) : (
+          )}
+
+          {activeTab === 'signatures' && (
             <Button 
               variant="outline"
               onClick={() => setIsPrintOpen(true)}
@@ -410,17 +705,18 @@ export default function AdminLixeiraPage() {
           
           <Button 
             variant="outline"
-            onClick={activeTab === 'trash' ? loadTrash : loadSignatureLogs}
-            disabled={loading || sigLogsLoading}
+            onClick={handleRefresh}
+            disabled={loading || sigLogsLoading || inactivesLoading}
             className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] rounded-xl h-10 w-10 flex items-center justify-center p-0"
+            title="Atualizar Dados"
           >
-            <RefreshCw className={cn("w-4 h-4", (loading || sigLogsLoading) ? "animate-spin" : "")} />
+            <RefreshCw className={cn("w-4 h-4", (loading || sigLogsLoading || inactivesLoading) ? "animate-spin" : "")} />
           </Button>
         </div>
       </div>
 
-      {/* Tabs Switcher */}
-      <div className="flex border-b border-[#26262a] gap-2">
+      {/* Tabs Navigation */}
+      <div className="flex flex-wrap border-b border-[#26262a] gap-2">
         <button
           onClick={() => setActiveTab('trash')}
           className={cn(
@@ -433,6 +729,20 @@ export default function AdminLixeiraPage() {
           <Trash2 className="w-4.5 h-4.5" />
           Lixeira Ativa
         </button>
+
+        <button
+          onClick={() => setActiveTab('inactives')}
+          className={cn(
+            "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
+            activeTab === 'inactives'
+              ? "border-rose-500 text-rose-400"
+              : "border-transparent text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          <UserX className="w-4.5 h-4.5" />
+          Expurgar Inativos (Desligados / Arquivados)
+        </button>
+
         <button
           onClick={() => setActiveTab('signatures')}
           className={cn(
@@ -447,30 +757,89 @@ export default function AdminLixeiraPage() {
         </button>
       </div>
 
-      {/* Content Area */}
-      {activeTab === 'trash' ? (
+      {/* Search Filter Bar */}
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Input
+          type="text"
+          placeholder={
+            activeTab === 'trash' 
+              ? "Buscar por tabela, resumo ou usuário..." 
+              : activeTab === 'inactives'
+                ? (inactiveSubTab === 'funcionarios' ? "Buscar funcionário por nome, CPF, e-mail..." : "Buscar aluno por nome, CPF, escola...")
+                : "Buscar por aluno, assinante, IP ou dispositivo..."
+          }
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="bg-[#121214] border-[#26262a] pl-10 text-white rounded-xl focus-visible:ring-[#3ea6ff] h-10 text-sm placeholder:text-zinc-500"
+        />
+      </div>
+
+      {/* Main Content Render */}
+      {activeTab === 'trash' && (
         <StandardTable
-          data={items}
+          data={trashFiltrados}
           columns={trashColumns}
           keyExtractor={(item) => item.id}
           loading={loading}
           emptyMessage="Nenhum registro pendente na lixeira."
         />
-      ) : (
+      )}
+
+      {activeTab === 'inactives' && (
         <div className="space-y-4">
-          {/* Search and Filter Row */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <Input
-                type="text"
-                placeholder="Buscar por aluno, assinante, IP ou dispositivo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#121214] border-[#26262a] pl-10 text-white rounded-xl focus-visible:ring-[#3ea6ff] h-10 text-sm placeholder:text-zinc-500"
-              />
-            </div>
-            
+          {/* Sub-tab Selector */}
+          <div className="flex items-center gap-2 bg-[#141416] p-1.5 rounded-2xl border border-[#26262a] w-fit">
+            <button
+              onClick={() => setInactiveSubTab('funcionarios')}
+              className={cn(
+                "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
+                inactiveSubTab === 'funcionarios'
+                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                  : "text-zinc-400 hover:text-white"
+              )}
+            >
+              <Users className="w-4 h-4" />
+              Funcionários Desligados ({funcionariosDesligados.length})
+            </button>
+
+            <button
+              onClick={() => setInactiveSubTab('alunos')}
+              className={cn(
+                "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
+                inactiveSubTab === 'alunos'
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                  : "text-zinc-400 hover:text-white"
+              )}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Alunos Arquivados ({alunosArquivados.length})
+            </button>
+          </div>
+
+          {inactiveSubTab === 'funcionarios' ? (
+            <StandardTable
+              data={funcionariosFiltrados}
+              columns={funcionariosColumns}
+              keyExtractor={(func) => func.id}
+              loading={inactivesLoading}
+              emptyMessage="Nenhum funcionário desligado encontrado."
+            />
+          ) : (
+            <StandardTable
+              data={alunosFiltrados}
+              columns={alunosColumns}
+              keyExtractor={(aluno) => aluno.id}
+              loading={inactivesLoading}
+              emptyMessage="Nenhum aluno arquivado encontrado."
+            />
+          )}
+        </div>
+      )}
+
+      {activeTab === 'signatures' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
             <select
               value={sigFilter}
               onChange={(e: any) => setSigFilter(e.target.value)}
@@ -492,7 +861,7 @@ export default function AdminLixeiraPage() {
         </div>
       )}
 
-      {/* Printable Report Component */}
+      {/* Report Modal */}
       {isPrintOpen && (
         <PrintRelatorioAssinaturas 
           logs={filteredSigLogs} 
@@ -500,7 +869,7 @@ export default function AdminLixeiraPage() {
         />
       )}
 
-      {/* Grouped Student History Modal */}
+      {/* Signature Timeline Modal */}
       {selectedStudent && (
         <StandardDialog
           open={!!selectedStudent}
@@ -519,98 +888,160 @@ export default function AdminLixeiraPage() {
             </div>
           }
         >
-
-            <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
-              {/* Aluno Info Card */}
-              <div className="grid grid-cols-2 gap-4 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
-                <div>
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Aluno Auditado</span>
-                  <span className="font-semibold text-white">{selectedStudent.studentName}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
-                  <span className="font-mono text-xs text-zinc-400">{selectedStudent.studentId}</span>
-                </div>
+          <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-4 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
+              <div>
+                <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Aluno Auditado</span>
+                <span className="font-semibold text-white">{selectedStudent.studentName}</span>
               </div>
-
-              {/* Timeline Container */}
-              <div className="relative pl-4 space-y-4 before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#26262a]">
-                {selectedStudent.logs.map((log: any) => {
-                  const sigUrl = log.new_data?.url || log.old_data?.url
-                  const isResp = log.entity === 'alunos_assinatura_responsavel'
-                  const isDelete = log.action === 'DELETE'
-                  
-                  return (
-                    <div key={log.id} className="relative pl-5 space-y-2">
-                      {/* Circle Dot */}
-                      <span className={cn(
-                        "absolute -left-[15px] top-1.5 w-2.5 h-2.5 rounded-full border border-[#121214]",
-                        isDelete ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
-                      )} />
-                      
-                      <div className="bg-[#17171a] border border-[#26262a] p-4 rounded-xl space-y-3 shadow-inner">
-                        {/* Title and metadata */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#232328] pb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={cn(
-                              "text-[10px] font-bold border-none px-2 py-0.5 rounded-md uppercase",
-                              isResp ? "bg-[#3ea6ff]/10 text-[#3ea6ff]" : "bg-emerald-500/10 text-emerald-400"
-                            )}>
-                              {isResp ? 'Responsável' : 'Funcionário'}
-                            </Badge>
-                            <span className={cn(
-                              "text-xs font-bold uppercase",
-                              isDelete ? "text-rose-500" : "text-emerald-500"
-                            )}>
-                              {isDelete ? 'Exclusão' : 'Atualização'}
-                            </span>
-                          </div>
-                          
-                          <span className="text-zinc-500 text-xs">
-                            {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
-                          </span>
-                        </div>
-                        
-                        {/* Signer details */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Assinante / Operador</span>
-                            <span className="text-white font-medium block">{log.user_name || '-'}</span>
-                            {log.user_email && <span className="text-zinc-400 block">{log.user_email}</span>}
-                            {log.user_cargo && <span className="text-[9px] text-[#3ea6ff] uppercase font-bold block mt-0.5">{log.user_cargo}</span>}
-                          </div>
-                          
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Conexão & IP</span>
-                            <span className="text-white font-mono block">{log.ip_address || 'IP não registrado'}</span>
-                            <span className="text-zinc-500 block leading-tight mt-0.5 text-[10px]" title={log.new_data?.user_agent}>
-                              {formatUserAgent(log.new_data?.user_agent || log.old_data?.user_agent)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Signature preview */}
-                        <div className="pt-2 border-t border-[#232328]">
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Assinatura no Registro</span>
-                          {sigUrl && !isDelete ? (
-                            <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
-                              <img 
-                                src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
-                                alt="Assinatura Auditada" 
-                                className="max-h-12 w-auto object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-rose-500 italic text-xs font-semibold">Assinatura Excluída</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+              <div>
+                <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
+                <span className="font-mono text-xs text-zinc-400">{selectedStudent.studentId}</span>
               </div>
             </div>
 
+            <div className="relative pl-4 space-y-4 before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#26262a]">
+              {selectedStudent.logs.map((log: any) => {
+                const sigUrl = log.new_data?.url || log.old_data?.url
+                const isResp = log.entity === 'alunos_assinatura_responsavel'
+                const isDelete = log.action === 'DELETE'
+                
+                return (
+                  <div key={log.id} className="relative pl-5 space-y-2">
+                    <span className={cn(
+                      "absolute -left-[15px] top-1.5 w-2.5 h-2.5 rounded-full border border-[#121214]",
+                      isDelete ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                    )} />
+                    
+                    <div className="bg-[#17171a] border border-[#26262a] p-4 rounded-xl space-y-3 shadow-inner">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#232328] pb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn(
+                            "text-[10px] font-bold border-none px-2 py-0.5 rounded-md uppercase",
+                            isResp ? "bg-[#3ea6ff]/10 text-[#3ea6ff]" : "bg-emerald-500/10 text-emerald-400"
+                          )}>
+                            {isResp ? 'Responsável' : 'Funcionário'}
+                          </Badge>
+                          <span className={cn(
+                            "text-xs font-bold uppercase",
+                            isDelete ? "text-rose-500" : "text-emerald-500"
+                          )}>
+                            {isDelete ? 'Exclusão' : 'Atualização'}
+                          </span>
+                        </div>
+                        
+                        <span className="text-zinc-500 text-xs">
+                          {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Assinante / Operador</span>
+                          <span className="text-white font-medium block">{log.user_name || '-'}</span>
+                          {log.user_email && <span className="text-zinc-400 block">{log.user_email}</span>}
+                        </div>
+                        
+                        <div>
+                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Conexão & IP</span>
+                          <span className="text-white font-mono block">{log.ip_address || 'IP não registrado'}</span>
+                          <span className="text-zinc-500 block leading-tight mt-0.5 text-[10px]">
+                            {formatUserAgent(log.new_data?.user_agent || log.old_data?.user_agent)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#232328]">
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Assinatura no Registro</span>
+                        {sigUrl && !isDelete ? (
+                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
+                            <img 
+                              src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
+                              alt="Assinatura Auditada" 
+                              className="max-h-12 w-auto object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-rose-500 italic text-xs font-semibold">Assinatura Excluída</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </StandardDialog>
+      )}
+
+      {/* Confirmation Dialog for Purging */}
+      {confirmPurgeModal && (
+        <StandardDialog
+          open={!!confirmPurgeModal}
+          onOpenChange={(open) => !open && !isPurging && setConfirmPurgeModal(null)}
+          title="Confirmar Expurgo Definitivo"
+          description="Esta ação é permanente e irreversível."
+          maxWidth="sm:max-w-lg"
+          footer={
+            <div className="flex justify-end gap-2 w-full pt-3.5 border-t border-[#26262a]">
+              <Button
+                disabled={isPurging}
+                onClick={() => setConfirmPurgeModal(null)}
+                variant="outline"
+                className="border-[#27272a] text-zinc-300 hover:bg-[#202024] rounded-xl h-10 px-4 text-xs font-semibold"
+              >
+                Cancelar
+              </Button>
+
+              <Button
+                disabled={isPurging}
+                onClick={executePurge}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl h-10 px-5 text-xs shadow-md"
+              >
+                {isPurging ? 'Expurgando...' : 'Confirmar Expurgo'}
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4 pt-2">
+            <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-xl flex items-start gap-3">
+              <ShieldAlert className="w-6 h-6 text-rose-500 shrink-0 mt-0.5" />
+              <div className="text-xs text-rose-200 space-y-1">
+                <span className="font-bold text-rose-400 block text-sm">AVISO DE EXCLUSÃO DEFINITIVA</span>
+                <p>
+                  A exclusão expurgará permanentemente o cadastro selecionado do banco de dados do município. 
+                  Esta operação não poderá ser desfeita.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#17171a] p-3.5 rounded-xl border border-[#26262a] text-xs space-y-2">
+              <span className="text-[10px] text-zinc-500 uppercase font-bold block">Registro Selecionado</span>
+              
+              {confirmPurgeModal.type === 'trash' && (
+                <div>
+                  <span className="font-bold text-white block">{confirmPurgeModal.item.record_summary}</span>
+                  <span className="text-zinc-400 block">Tabela: {confirmPurgeModal.item.table_name}</span>
+                </div>
+              )}
+
+              {confirmPurgeModal.type === 'funcionario' && (
+                <div>
+                  <span className="font-bold text-white block">{confirmPurgeModal.item.nome}</span>
+                  <span className="text-zinc-400 block">Cargo: {confirmPurgeModal.item.cargo ?? 'Não informado'}</span>
+                  <span className="text-zinc-400 block">E-mail: {confirmPurgeModal.item.email ?? '-'}</span>
+                </div>
+              )}
+
+              {confirmPurgeModal.type === 'aluno' && (
+                <div>
+                  <span className="font-bold text-white block">{confirmPurgeModal.item.nome}</span>
+                  <span className="text-zinc-400 block">CPF / Matrícula: {confirmPurgeModal.item.cpf_matricula}</span>
+                  <span className="text-zinc-400 block">Escola: {confirmPurgeModal.item.escola_nome}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </StandardDialog>
       )}
     </div>

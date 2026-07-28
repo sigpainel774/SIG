@@ -183,3 +183,81 @@ export async function purgeFromTrash(params: {
     return { success: false, error }
   }
 }
+
+export async function purgeFuncionarioDesligado(params: {
+  supabaseAdmin: SupabaseClient
+  funcionarioId: string
+  performedBy: { id: string | null; name: string; email: string; cargo?: string }
+  note?: string
+}) {
+  try {
+    const fid = params.funcionarioId
+    const { data: func } = await params.supabaseAdmin
+      .from('funcionarios')
+      .select('*')
+      .eq('id', fid)
+      .maybeSingle()
+
+    if (!func) {
+      return { success: false, error: 'Funcionário não encontrado' }
+    }
+
+    // 1. Desvincular referências onde o funcionário é FK opcional
+    await Promise.all([
+      params.supabaseAdmin.from('escolas').update({ diretor_id: null }).eq('diretor_id', fid),
+      params.supabaseAdmin.from('materias').update({ professor_id: null }).eq('professor_id', fid),
+      params.supabaseAdmin.from('veiculos').update({ motorista_id: null }).eq('motorista_id', fid),
+      params.supabaseAdmin.from('rotas_transporte').update({ motorista_id: null }).eq('motorista_id', fid),
+    ])
+
+    // 2. Limpar tabelas dependentes vinculadas por funcionario_id
+    await Promise.all([
+      params.supabaseAdmin.from('vinculos_funcionarios').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('acessos_usuarios').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('desligamentos_programados').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('solicitacoes_rh').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('movimentacoes_funcionarios').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('adicionais_salario').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('escalas_servico').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('atestados').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('vinculos_turmas').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('pontos_ronda').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('rotas_ronda').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('registros_ronda').delete().eq('funcionario_id', fid),
+      params.supabaseAdmin.from('dispositivos').delete().eq('funcionario_id', fid),
+    ])
+
+    // 3. Excluir o registro de funcionarios
+    const { error: purgeError } = await params.supabaseAdmin
+      .from('funcionarios')
+      .delete()
+      .eq('id', fid)
+
+    if (purgeError) throw purgeError
+
+    // 4. Se possuir auth_user_id, tentar remover do auth
+    if (func.auth_user_id) {
+      try {
+        await params.supabaseAdmin.auth.admin.deleteUser(func.auth_user_id)
+      } catch (authErr) {
+        console.warn('Aviso: Não foi possível excluir usuário do Auth Supabase:', authErr)
+      }
+    }
+
+    // 5. Registrar auditoria
+    await logAudit({
+      supabase: params.supabaseAdmin,
+      action: 'PURGE',
+      entity: 'funcionarios (EXPURGO DESLIGADO)',
+      entityId: fid,
+      oldData: func,
+      performedBy: params.performedBy,
+    })
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Erro ao expurgar funcionário desligado:', error)
+    return { success: false, error: error.message || error }
+  }
+}
+
