@@ -130,26 +130,19 @@ export function FuncionarioLotacaoList({
                     : 'hover:bg-[#1a1a1e]'
                 }`}
               >
-                {(() => {
-                  const activeVincMod = f.lotacoes?.find((l) => l.ativo)?.modalidade_ensino ?? f.modalidade_ensino
-                  const isEja = (activeVincMod || '').trim().toUpperCase() === 'EJA'
-                  const avatarBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]'
-                  return (
-                    <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarBorder} ${pal.bg} ${pal.text}`}
-                    >
-                      {f.foto_url ? (
-                        <img 
-                          src={`${f.foto_url.split('?')[0]}?t=${timestamp}`} 
-                          alt={f.nome} 
-                          className="w-full h-full object-cover" 
-                        />
-                      ) : (
-                        getInitials(f.nome)
-                      )}
-                    </div>
-                  )
-                })()}
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${pal.bg} ${pal.text}`}
+                >
+                  {f.foto_url ? (
+                    <img 
+                      src={`${f.foto_url.split('?')[0]}?t=${timestamp}`} 
+                      alt={f.nome} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    getInitials(f.nome)
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-white truncate">{f.nome}</p>
                   <p className="text-xs text-zinc-500 truncate">{f.cpf ?? 'Sem CPF'}</p>

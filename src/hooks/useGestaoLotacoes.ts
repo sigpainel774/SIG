@@ -36,7 +36,6 @@ export interface FuncItem {
   cargo: string | null
   foto_url: string | null
   status: string
-  modalidade_ensino?: string | null
   lotacoes: Lotacao[]
   auth_user_id?: string | null
 }
@@ -123,7 +122,6 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           cargo: f.cargo ?? null,
           foto_url: f.foto_url ?? null,
           status: f.status ?? 'ativo',
-          modalidade_ensino: f.modalidade_ensino ?? 'Regular',
           auth_user_id: f.auth_user_id ?? null,
           lotacoes: vincsData
             .filter((v: any) => v.funcionario_id === f.id)
