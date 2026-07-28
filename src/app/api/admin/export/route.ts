@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabaseServer'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,36 +9,25 @@ export async function GET(req: NextRequest) {
     const days = searchParams.get('days')
 
     if (!table) {
-      return NextResponse.json({ error: 'Table is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Tabela não informada' }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value, ...options })
-            } catch (error) {}
-          },
-          remove(name: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value: '', ...options })
-            } catch (error) {}
-          },
-        },
-      }
-    )
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    // Verifica se é um usuário autorizado (Admin)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+
+    // Verificar se o usuário é superadmin/admin para exportação global
+    const { data: func } = await supabaseAdmin
+      .from('funcionarios')
+      .select('is_superadmin')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (!func?.is_superadmin) {
+      return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem exportar o banco de dados.' }, { status: 403 })
     }
 
     const encoder = new TextEncoder()
@@ -47,26 +36,28 @@ export async function GET(req: NextRequest) {
         controller.enqueue(encoder.encode('[\n'))
 
         let start = 0
-        const chunkSize = 2000 // Busca em blocos de 2000 para poupar memória
+        const chunkSize = 2000 // Busca em blocos de 2000
         let isFirstRow = true
         let hasMore = true
 
+        const parsedDays = days ? parseInt(days) : NaN
+
         while (hasMore) {
-          let query = supabase
+          let query = (supabaseAdmin as any)
             .from(table)
             .select('*')
             .range(start, start + chunkSize - 1)
           
-          if (days) {
+          if (!isNaN(parsedDays) && parsedDays > 0) {
             const dateLimit = new Date()
-            dateLimit.setDate(dateLimit.getDate() - parseInt(days))
+            dateLimit.setDate(dateLimit.getDate() - parsedDays)
             query = query.gte('created_at', dateLimit.toISOString())
           }
 
           const { data, error } = await query
 
           if (error) {
-            console.error('Error fetching export chunk:', error)
+            console.error('Erro no chunk da exportação:', error)
             controller.error(error)
             break
           }
@@ -105,7 +96,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (err: any) {
-    console.error('Error exporting data:', err)
+    console.error('Erro na exportação:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
