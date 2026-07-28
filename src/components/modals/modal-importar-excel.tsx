@@ -407,7 +407,12 @@ export function ModalImportarExcel({
         const next = [...prev]
         const targetGroup = { ...next[sheetIdx] }
         const nextStudents = [...targetGroup.students]
-        nextStudents[studentIdx] = { ...nextStudents[studentIdx], isSaving: false, isSaved: true }
+        nextStudents[studentIdx] = {
+          ...nextStudents[studentIdx],
+          isSaving: false,
+          isSaved: true,
+          savedInSchoolId: selectedEscolaId
+        }
         targetGroup.students = nextStudents
         next[sheetIdx] = targetGroup
         return next
