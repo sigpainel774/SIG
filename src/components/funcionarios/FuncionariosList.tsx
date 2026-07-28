@@ -18,6 +18,7 @@ export interface Funcionario {
   endereco?: string | null
   latitude?: number | null
   longitude?: number | null
+  modalidade_ensino?: string | null
 }
 
 interface FuncionariosListProps {
@@ -336,7 +337,7 @@ export function FuncionariosList({
                     return (
                       <div
                         key={func.id}
-                        className={`bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg`}
+                        className={`bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg relative`}
                       >
                         {/* Topo do card: Avatar + Nome + Badges + Ações */}
                         <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/50">
@@ -436,7 +437,7 @@ export function FuncionariosList({
                         </div>
 
                         {/* Informações Adicionais */}
-                        <div className="space-y-2.5">
+                        <div className="space-y-2.5 pr-16">
                           {func.orgao && (
                             <div className="flex flex-col">
                               <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -467,6 +468,24 @@ export function FuncionariosList({
                               </span>
                             </div>
                           )}
+                        </div>
+
+                        {/* Indicador de Modalidade de Ensino no Canto Inferior Direito */}
+                        <div className="absolute bottom-4 right-5 pointer-events-none select-none">
+                          {(() => {
+                            const isEja =
+                              (func.modalidade_ensino || '').trim().toUpperCase() ===
+                              'EJA'
+                            return (
+                              <span
+                                className={`text-xs font-semibold tracking-wide ${
+                                  isEja ? 'text-orange-400' : 'text-[#3ea6ff]'
+                                }`}
+                              >
+                                {isEja ? 'EJA' : 'Regular'}
+                              </span>
+                            )
+                          })()}
                         </div>
                       </div>
                     )
