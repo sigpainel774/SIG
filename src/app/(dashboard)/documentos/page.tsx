@@ -142,12 +142,6 @@ export default function DocumentosPage() {
     }
 
     const termoLimpo = buscaAluno.trim()
-    // Só buscar se tiver ao menos 2 caracteres digitados ou se uma turma específica estiver selecionada
-    if (termoLimpo.length < 2 && turmaFiltroId === 'all') {
-      setAlunos([])
-      setLoadingAlunos(false)
-      return
-    }
 
     let cancelled = false
     const timer = setTimeout(async () => {
@@ -202,7 +196,7 @@ export default function DocumentosPage() {
       }
 
       // Filtro de termo digitado (ES-4: Sanitização)
-      if (termoLimpo.length >= 2) {
+      if (termoLimpo.length >= 1) {
         const termSanitizado = termoLimpo.replace(/[%_\(\)]/g, '')
         query = query.or(`nome.ilike.%${termSanitizado}%,numero_matricula.ilike.%${termSanitizado}%,cpf.ilike.%${termSanitizado}%,inep.ilike.%${termSanitizado}%`)
       }
@@ -493,7 +487,7 @@ export default function DocumentosPage() {
                   </div>
 
                   {/* Sugestões do Autocomplete */}
-                  {showSugestoes && (buscaAluno || turmaFiltroId !== 'all') && (
+                  {showSugestoes && (
                     <div className="absolute z-50 w-full mt-1.5 bg-[#121214] border border-borderCustom rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
                       {loadingAlunos ? (
                         <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
