@@ -33,6 +33,7 @@ import { toast } from 'sonner'
 import { IconTile } from '@/components/ui/icon-tile'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { executeWithToast } from '@/lib/action-handler'
+import { cn } from '@/lib/utils'
 
 // Novos Componentes e Helpers
 import { FuncionariosQuickActions } from '@/components/funcionarios/FuncionariosQuickActions'
@@ -237,7 +238,7 @@ export default function FuncionariosPage() {
   useEffect(() => {
     carregarFuncionarios()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [selectedEscola?.id])
 
   /* ── Listas para dropdowns ─────────────────────────────────── */
 
@@ -501,7 +502,12 @@ export default function FuncionariosPage() {
   /* ── Render ─────────────────────────────────────────────────── */
 
   return (
-    <div className="space-y-5 pb-12">
+    <div
+      className={cn(
+        "space-y-5 pb-12 transition-all duration-500 relative min-h-screen",
+        filtroModalidade === 'eja' && "bg-eja-pattern p-3 md:p-6 rounded-2xl"
+      )}
+    >
       {/* Modal Novo Funcionário */}
       {modalNovoOpen && (
         <ModalFuncionario
@@ -586,7 +592,7 @@ export default function FuncionariosPage() {
             onClick={() => setFiltroModalidade('eja')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               filtroModalidade === 'eja'
-                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40 shadow-sm'
+                ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
