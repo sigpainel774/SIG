@@ -39,20 +39,39 @@ export default function MapaImpressao({ items, tipo }: MapaImpressaoProps) {
   }, [items])
 
   useEffect(() => {
-    if (mapRef.current) {
-      const map = mapRef.current
-      setTimeout(() => {
+    const invalidate = () => {
+      if (mapRef.current) {
+        const map = mapRef.current
         map.invalidateSize()
-      }, 150)
 
-      if (validItems.length > 0) {
-        const bounds = L.latLngBounds(
-          validItems.map((item) => [item.latitude, item.longitude])
-        )
-        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
-      } else {
-        map.setView(SAPEACU_CENTER, 14)
+        if (validItems.length === 1) {
+          map.setView([validItems[0].latitude, validItems[0].longitude], 15)
+        } else if (validItems.length > 1) {
+          const bounds = L.latLngBounds(
+            validItems.map((item) => [item.latitude, item.longitude])
+          )
+          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
+        } else {
+          map.setView(SAPEACU_CENTER, 14)
+        }
       }
+    }
+
+    // Invalidação inicial com tempo seguro para carregamento de DOM
+    const timer = setTimeout(invalidate, 150)
+
+    // Handler de segurança para evento de impressão e resize da janela
+    const handleBeforePrintOrResize = () => {
+      invalidate()
+    }
+
+    window.addEventListener('beforeprint', handleBeforePrintOrResize)
+    window.addEventListener('resize', handleBeforePrintOrResize)
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('beforeprint', handleBeforePrintOrResize)
+      window.removeEventListener('resize', handleBeforePrintOrResize)
     }
   }, [validItems])
 
@@ -84,6 +103,8 @@ export default function MapaImpressao({ items, tipo }: MapaImpressaoProps) {
           border: 2px solid #ffffff;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
           font-family: sans-serif;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         ">
           ${initials}
         </div>
@@ -95,7 +116,7 @@ export default function MapaImpressao({ items, tipo }: MapaImpressaoProps) {
   }
 
   return (
-    <div className="w-full h-[320px] rounded-xl overflow-hidden border border-gray-300 relative print:h-[280px]">
+    <div className="w-full h-[320px] rounded-xl overflow-hidden border border-gray-300 relative print:h-[280px] print:w-full print:block print:overflow-hidden print-map-container">
       <MapContainer
         center={SAPEACU_CENTER}
         zoom={14}
@@ -106,8 +127,9 @@ export default function MapaImpressao({ items, tipo }: MapaImpressaoProps) {
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; CartoDB &copy; OpenStreetMap'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          crossOrigin="anonymous"
         />
 
         {validItems.map((item) => (
@@ -131,7 +153,7 @@ export default function MapaImpressao({ items, tipo }: MapaImpressaoProps) {
       </MapContainer>
 
       {/* Badge no canto do mapa */}
-      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm border border-gray-300 text-gray-800 text-[9px] font-bold px-2 py-1 rounded shadow z-[1000]">
+      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm border border-gray-300 text-gray-800 text-[9px] font-bold px-2 py-1 rounded shadow z-[1000] no-print">
         {validItems.length} {validItems.length === 1 ? 'ponto registrado' : 'pontos registrados no mapa'}
       </div>
     </div>

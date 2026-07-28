@@ -66,7 +66,10 @@ export function PrintRelatorioGeolocalizacao({
   }, [])
 
   const handlePrint = () => {
-    window.print()
+    window.dispatchEvent(new Event('beforeprint'))
+    setTimeout(() => {
+      window.print()
+    }, 200)
   }
 
   // Safe formatting for coordinates to prevent ES-2 crashes
@@ -147,19 +150,68 @@ export function PrintRelatorioGeolocalizacao({
             page-break-inside: avoid;
             break-inside: avoid;
           }
+          
+          /* Leaflet map print layer enforcement */
+          .leaflet-container,
+          .leaflet-container *,
+          .leaflet-map-pane,
+          .leaflet-tile-pane,
+          .leaflet-layer,
+          .leaflet-tile-container,
+          .leaflet-tile,
+          .leaflet-marker-pane,
+          .leaflet-shadow-pane,
+          .leaflet-overlay-pane,
+          .leaflet-marker-icon,
+          .leaflet-popup,
+          .leaflet-tooltip,
+          .print-map-pin {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+
+          .leaflet-container {
+            width: 100% !important;
+            height: 280px !important;
+            min-height: 280px !important;
+            position: relative !important;
+            overflow: hidden !important;
+            background-color: #f8fafc !important;
+          }
+
+          .leaflet-tile-container {
+            width: 100% !important;
+            height: 100% !important;
+          }
+
           .leaflet-tile-container img {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+            max-width: none !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+
           .leaflet-control-container {
             display: none !important;
           }
+
           .print-tooltip {
             background: white !important;
             border: 1px solid #94a3b8 !important;
             box-shadow: none !important;
             padding: 1px 4px !important;
             font-size: 8px !important;
+            color: black !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+          }
+
+          .map-print-section {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -224,7 +276,7 @@ export function PrintRelatorioGeolocalizacao({
         </div>
 
         {/* Visual Map with Pins Section */}
-        <div className="mb-6">
+        <div className="mb-6 map-print-section">
           <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-gray-700 mb-2">
             <MapPin className="w-3.5 h-3.5 text-primary" />
             <span>Mapeamento Geográfico Visual (Pontos de Referência)</span>
