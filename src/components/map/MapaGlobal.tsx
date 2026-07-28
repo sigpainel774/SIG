@@ -11,7 +11,6 @@ export interface FuncionarioMapeado {
   cargo: string;
   escola: string;
   foto_url?: string;
-  modalidade_ensino?: string;
   latitude: number;
   longitude: number;
 }
@@ -77,10 +76,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   };
 
   // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
+  const criarIconeCustomizado = (nome: string, fotoUrl?: string) => {
     const iniciais = obterIniciais(nome);
-    const isEja = (modalidade || '').trim().toUpperCase() === 'EJA';
-    const borderColor = isEja ? '#f97316' : '#3ea6ff';
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
         ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
@@ -93,14 +90,14 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, ${borderColor}, #0284c7);
+          background: linear-gradient(135deg, #38bdf8, #0284c7);
           color: #ffffff;
           font-weight: 700;
           font-size: 13px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 3px solid ${borderColor};
+          border: 3px solid #1e293b;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
           overflow: hidden;
           position: relative;
@@ -123,53 +120,42 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           <Search className="w-5 h-5 text-slate-500" />
           <input
             type="text"
-            placeholder="Filtrar por nome, cargo ou escola..."
+            placeholder="Buscar por nome, cargo ou escola..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder-slate-500"
+            className="bg-transparent border-none text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none w-full"
           />
         </div>
+        
         <button
-          type="button"
           onClick={recentralizarSapeacu}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-          title="Centralizar visualização do mapa em Sapeaçu - BA"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors"
+          title="Recentralizar Mapa em Sapeaçu"
         >
-          <MapPin className="w-4 h-4" />
-          Centralizar Sapeaçu
+          <MapPin className="w-3.5 h-3.5" />
+          Sapeaçu - BA
         </button>
       </div>
 
-      {/* Container Principal do Mapa */}
-      <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-[#26304d] bg-[#182030] shadow-md z-0">
+      {/* Container do Mapa Leaflet */}
+      <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-[#232d42] shadow-xl relative z-0">
         <MapContainer
+          ref={mapRef}
           center={SAPEACU_CENTER}
           zoom={14}
-          ref={mapRef}
-          className="w-full h-full"
+          scrollWheelZoom={true}
+          style={{ width: '100%', height: '100%' }}
         >
+          {/* Seletor de Camadas (Satélite / Rota) */}
           <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="Google Satélite (Híbrido)">
+            <LayersControl.BaseLayer checked name="Mapa de Ruas (Padrão)">
               <TileLayer
-                attribution="&copy; Google Maps"
-                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-                maxZoom={20}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Google Satélite (Puro)">
-              <TileLayer
-                attribution="&copy; Google Maps"
-                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                maxZoom={20}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
-              <TileLayer
-                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satélite (Esri)">
+
+            <LayersControl.BaseLayer name="Satélite Híbrido">
               <TileLayer
                 attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -178,10 +164,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {funcionariosFiltrados.map((func) => {
-            const icone = criarIconeCustomizado(func.nome, func.foto_url, func.modalidade_ensino);
+            const icone = criarIconeCustomizado(func.nome, func.foto_url);
             const iniciais = obterIniciais(func.nome);
-            const isEja = (func.modalidade_ensino || '').trim().toUpperCase() === 'EJA';
-            const popupAvatarBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]';
             
             return (
               <Marker
@@ -198,18 +182,18 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                           <img
                             src={func.foto_url}
                             alt={func.nome}
-                            className={`w-full h-full rounded-full object-cover ${popupAvatarBorder} absolute inset-0 z-10`}
+                            className="w-full h-full rounded-full object-cover border-2 border-sky-500 absolute inset-0 z-10"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                           {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
-                          <div className={`w-full h-full rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center ${popupAvatarBorder} absolute inset-0 z-0`}>
+                          <div className="w-full h-full rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0">
                             {iniciais}
                           </div>
                         </div>
                       ) : (
-                        <div className={`w-[48px] h-[48px] rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center shrink-0 ${popupAvatarBorder}`}>
+                        <div className="w-[48px] h-[48px] rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700">
                           {iniciais}
                         </div>
                       )}

@@ -119,26 +119,19 @@ export function ModalGestaoLotacoes({
                 {/* Header do Funcionário */}
                 <div className="flex items-center justify-between bg-[#1a1a1e] rounded-xl p-4 border border-[#26262a]">
                   <div className="flex items-center gap-3">
-                    {(() => {
-                      const activeVincMod = selecionado.lotacoes?.find((l) => l.ativo)?.modalidade_ensino ?? selecionado.modalidade_ensino
-                      const isEja = (activeVincMod || '').trim().toUpperCase() === 'EJA'
-                      const avatarBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]'
-                      return (
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarBorder} ${avatarColor(selecionado.nome).bg} ${avatarColor(selecionado.nome).text}`}
-                        >
-                          {selecionado.foto_url ? (
-                            <img 
-                              src={`${selecionado.foto_url.split('?')[0]}?t=${timestamp}`} 
-                              alt={selecionado.nome} 
-                              className="w-full h-full object-cover" 
-                            />
-                          ) : (
-                            getInitials(selecionado.nome)
-                          )}
-                        </div>
-                      )
-                    })()}
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarColor(selecionado.nome).bg} ${avatarColor(selecionado.nome).text}`}
+                    >
+                      {selecionado.foto_url ? (
+                        <img 
+                          src={`${selecionado.foto_url.split('?')[0]}?t=${timestamp}`} 
+                          alt={selecionado.nome} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        getInitials(selecionado.nome)
+                      )}
+                    </div>
                     <div>
                       <p className="font-bold text-white">{selecionado.nome}</p>
                       <p className="text-xs text-zinc-400">CPF: {selecionado.cpf ?? 'Não informado'}</p>

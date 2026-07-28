@@ -49,7 +49,6 @@ export default async function VerificarFuncionarioPage({ params }: PageProps) {
       cargo,
       status,
       foto_url,
-      modalidade_ensino,
       vinculos_funcionarios (
         ativo,
         escolas (
@@ -96,23 +95,17 @@ export default async function VerificarFuncionarioPage({ params }: PageProps) {
 
             {/* Perfil e Identificação Básica */}
             <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#18181b]/60 border border-[#27272a] p-5 rounded-xl">
-              {(() => {
-                const isEja = (funcionario.modalidade_ensino || '').trim().toUpperCase() === 'EJA'
-                const photoBorder = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]'
-                return (
-                  <div className={`w-16 h-20 bg-zinc-800 ${photoBorder} rounded-lg overflow-hidden flex items-center justify-center text-xl font-bold text-zinc-300 flex-shrink-0`}>
-                    {funcionario.foto_url ? (
-                      <img
-                        src={`${funcionario.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
-                        alt={funcionario.nome}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </div>
-                )
-              })()}
+              <div className="w-16 h-20 bg-zinc-800 border border-[#3e3e42] rounded-lg overflow-hidden flex items-center justify-center text-xl font-bold text-zinc-300 flex-shrink-0">
+                {funcionario.foto_url ? (
+                  <img
+                    src={`${funcionario.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
+                    alt={funcionario.nome}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
+              </div>
               
               <div className="text-center sm:text-left space-y-1">
                 <h3 className="font-bold text-lg text-white uppercase leading-snug">{funcionario.nome}</h3>
