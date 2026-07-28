@@ -88,6 +88,7 @@ export default function FuncionariosPage() {
   const [busca, setBusca] = useState('')
   const [filtroCargo, setFiltroCargo] = useState('todos')
   const [filtroStatus, setFiltroStatus] = useState('todos')
+  const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('regular')
 
   /* Filtros de Impressão */
   const [filtroImpEscola, setFiltroImpEscola] = useState('todas')
@@ -266,9 +267,14 @@ export default function FuncionariosPage() {
         filtroStatus === 'todos' ||
         (f.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
 
-      return matchCargo && matchStatus
+      const mod = (f.modalidade_ensino ?? '').trim().toUpperCase()
+      const matchModalidade =
+        filtroModalidade === 'todos' ||
+        (filtroModalidade === 'eja' ? mod === 'EJA' : mod !== 'EJA')
+
+      return matchCargo && matchStatus && matchModalidade
     })
-  }, [funcionariosBuscados, filtroCargo, filtroStatus])
+  }, [funcionariosBuscados, filtroCargo, filtroStatus, filtroModalidade])
 
   /* ── Ações dos cards ────────────────────────────────────────── */
 
@@ -530,24 +536,63 @@ export default function FuncionariosPage() {
       )}
 
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-2 pb-4 border-b border-border">
-        <Link href="/home">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground"
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2 pb-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <Link href="/home">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <IconTile
+            icon={Users}
+            variant="primary"
+            className="h-10 w-10 shrink-0"
+          />
+          <h1 className="text-2xl font-bold text-foreground">
+            Gestão de Funcionários
+          </h1>
+        </div>
+
+        {/* Toggle Triplo de Modalidade (Todos / Regular / EJA) */}
+        <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('todos')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              filtroModalidade === 'todos'
+                ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <IconTile
-          icon={Users}
-          variant="primary"
-          className="h-10 w-10 shrink-0"
-        />
-        <h1 className="text-2xl font-bold text-foreground">
-          Gestão de Funcionários
-        </h1>
+            Todos
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('regular')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              filtroModalidade === 'regular'
+                ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Regular
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('eja')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              filtroModalidade === 'eja'
+                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            EJA
+          </button>
+        </div>
       </div>
 
       {/* ── Painel de Ações Rápidas ─────────────────────────── */}
