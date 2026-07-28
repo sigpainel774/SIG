@@ -24,6 +24,7 @@ export interface ExcelSheetGroup {
 
 /**
  * Converte valor de data vindo do Excel (serial numérico, objeto Date ou string DD/MM/YYYY) para ISO YYYY-MM-DD.
+ * Valida obrigatoriamente se o ano resultante está dentro do intervalo humano válido (1900 a 2100).
  */
 export function convertExcelDateToISO(val: any): string | undefined {
   if (val === undefined || val === null || val === '') return undefined
@@ -31,16 +32,30 @@ export function convertExcelDateToISO(val: any): string | undefined {
   // Caso 1: Objeto Date nativo
   if (val instanceof Date) {
     if (isNaN(val.getTime())) return undefined
-    return val.toISOString().split('T')[0]
+    const year = val.getFullYear()
+    if (year < 1900 || year > 2100) return undefined
+    const month = String(val.getMonth() + 1).padStart(2, '0')
+    const day = String(val.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   // Caso 2: Serial Numérico do Excel (ex: 40983)
   if (typeof val === 'number') {
     if (isNaN(val) || val <= 0) return undefined
-    // Época do Excel começa em 1899-12-30 (25569 dias antes da época Unix)
+    
+    // Limite de segurança: datas válidas entre os anos 1900 e 2050 possuem serial no Excel entre 1 e 55000.
+    // Números maiores (ex: INEP 29182004, NIS 12345678901 ou CPFs) NÃO são datas do Excel!
+    if (val > 60000) return undefined
+
     const dateObj = new Date(Math.round((val - 25569) * 86400 * 1000))
     if (isNaN(dateObj.getTime())) return undefined
-    return dateObj.toISOString().split('T')[0]
+
+    const year = dateObj.getUTCFullYear()
+    if (year < 1900 || year > 2100) return undefined
+
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(dateObj.getUTCDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const strVal = String(val).trim()
@@ -52,6 +67,8 @@ export function convertExcelDateToISO(val: any): string | undefined {
     const day = brMatch[1].padStart(2, '0')
     const month = brMatch[2].padStart(2, '0')
     const year = brMatch[3]
+    const yrNum = parseInt(year, 10)
+    if (yrNum < 1900 || yrNum > 2100) return undefined
     return `${year}-${month}-${day}`
   }
 
@@ -61,6 +78,8 @@ export function convertExcelDateToISO(val: any): string | undefined {
     const year = isoMatch[1]
     const month = isoMatch[2].padStart(2, '0')
     const day = isoMatch[3].padStart(2, '0')
+    const yrNum = parseInt(year, 10)
+    if (yrNum < 1900 || yrNum > 2100) return undefined
     return `${year}-${month}-${day}`
   }
 
