@@ -175,6 +175,19 @@ BEGIN
   FROM public.materias m
   WHERE m.turma_id = p_turma_id;
 
+  -- Fallback: Se a turma não tiver matérias específicas em public.materias, busca da grade_curricular_escola
+  IF v_materias IS NULL OR jsonb_array_length(v_materias) = 0 THEN
+    SELECT COALESCE(jsonb_agg(
+      jsonb_build_object(
+        'id', g.id,
+        'nome', g.nome,
+        'base_curricular', g.base_curricular
+      ) ORDER BY g.nome ASC
+    ), '[]'::jsonb) INTO v_materias
+    FROM public.grade_curricular_escola g
+    WHERE g.escola_id = p_escola_id;
+  END IF;
+
   -- Notas
   SELECT COALESCE(jsonb_agg(
     jsonb_build_object(
