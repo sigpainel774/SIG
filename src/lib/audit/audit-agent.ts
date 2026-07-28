@@ -137,6 +137,57 @@ export async function restoreFromTrash(params: {
   }
 }
 
+export async function cleanFuncionarioDependencies(supabaseAdmin: SupabaseClient, fid: string) {
+  // 1. Desvincular referências onde o funcionário é FK opcional (UPDATE to NULL)
+  await Promise.all([
+    supabaseAdmin.from('escolas').update({ diretor_id: null }).eq('diretor_id', fid),
+    supabaseAdmin.from('materias').update({ professor_id: null }).eq('professor_id', fid),
+    supabaseAdmin.from('veiculos').update({ motorista_id: null }).eq('motorista_id', fid),
+    supabaseAdmin.from('rotas_transporte').update({ motorista_id: null }).eq('motorista_id', fid),
+    supabaseAdmin.from('rotas_transporte').update({ motorista_tarde_id: null }).eq('motorista_tarde_id', fid),
+    supabaseAdmin.from('transferencias_alunos').update({ solicitante_id: null }).eq('solicitante_id', fid),
+    supabaseAdmin.from('transferencias_alunos').update({ respondido_por: null }).eq('respondido_por', fid),
+    supabaseAdmin.from('transferencias_funcionarios').update({ solicitante_id: null }).eq('solicitante_id', fid),
+    supabaseAdmin.from('transferencias_funcionarios').update({ respondido_por: null }).eq('respondido_por', fid),
+    supabaseAdmin.from('solicitacoes_edicao_aluno').update({ solicitante_id: null }).eq('solicitante_id', fid),
+    supabaseAdmin.from('solicitacoes_edicao_aluno').update({ aprovado_por: null }).eq('aprovado_por', fid),
+    supabaseAdmin.from('ocorrencias').update({ registrado_por: null }).eq('registrado_por', fid),
+    supabaseAdmin.from('comunicados').update({ criado_por: null }).eq('criado_por', fid),
+    supabaseAdmin.from('alunos_anexos').update({ arquivado_por: null }).eq('arquivado_por', fid),
+    supabaseAdmin.from('arquivados').update({ arquivado_por: null }).eq('arquivado_por', fid),
+    supabaseAdmin.from('arquivados').update({ revertido_por: null }).eq('revertido_por', fid),
+    supabaseAdmin.from('arquivados').update({ excluido_por: null }).eq('excluido_por', fid),
+    supabaseAdmin.from('atividades_secretaria').update({ updated_by: null }).eq('updated_by', fid),
+    supabaseAdmin.from('atividades_secretaria_historico').update({ alterado_por: null }).eq('alterado_por', fid),
+    supabaseAdmin.from('agenda_aulas').update({ professor_id: null }).eq('professor_id', fid),
+    supabaseAdmin.from('notifications').update({ processado_por: null }).eq('processado_por', fid),
+    supabaseAdmin.from('desligamentos_programados').update({ programado_por: null }).eq('programado_por', fid),
+    supabaseAdmin.from('adicionais_salario').update({ criado_por: null }).eq('criado_por', fid),
+    supabaseAdmin.from('abastecimentos_veiculos').update({ registrado_por: null }).eq('registrado_por', fid),
+    supabaseAdmin.from('manutencoes_veiculos').update({ registrado_por: null }).eq('registrado_por', fid),
+    supabaseAdmin.from('trash_bin').update({ deleted_by_id: null }).eq('deleted_by_id', fid),
+  ])
+
+  // 2. Limpar tabelas dependentes vinculadas por funcionario_id
+  await Promise.all([
+    supabaseAdmin.from('vinculos_funcionarios').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('acessos_usuarios').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('desligamentos_programados').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('solicitacoes_rh').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('movimentacoes_funcionarios').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('adicionais_salario').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('escalas_servico').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('atestados').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('vinculos_turmas').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('pontos_ronda').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('rotas_ronda').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('registros_ronda').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('dispositivos').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('transferencias_funcionarios').delete().eq('funcionario_id', fid),
+    supabaseAdmin.from('performance_metrics').delete().eq('funcionario_id', fid),
+  ])
+}
+
 export async function purgeFromTrash(params: {
   supabaseAdmin: SupabaseClient
   trashItemId: string
@@ -146,6 +197,10 @@ export async function purgeFromTrash(params: {
   note?: string
 }) {
   try {
+    if (params.tableName === 'funcionarios') {
+      await cleanFuncionarioDependencies(params.supabaseAdmin, params.recordId)
+    }
+
     // 1. Excluir definitivamente da tabela original
     const { error: purgeError } = await params.supabaseAdmin
       .from(params.tableName)
@@ -202,32 +257,10 @@ export async function purgeFuncionarioDesligado(params: {
       return { success: false, error: 'Funcionário não encontrado' }
     }
 
-    // 1. Desvincular referências onde o funcionário é FK opcional
-    await Promise.all([
-      params.supabaseAdmin.from('escolas').update({ diretor_id: null }).eq('diretor_id', fid),
-      params.supabaseAdmin.from('materias').update({ professor_id: null }).eq('professor_id', fid),
-      params.supabaseAdmin.from('veiculos').update({ motorista_id: null }).eq('motorista_id', fid),
-      params.supabaseAdmin.from('rotas_transporte').update({ motorista_id: null }).eq('motorista_id', fid),
-    ])
+    // 1. Limpar e desvincular dependências
+    await cleanFuncionarioDependencies(params.supabaseAdmin, fid)
 
-    // 2. Limpar tabelas dependentes vinculadas por funcionario_id
-    await Promise.all([
-      params.supabaseAdmin.from('vinculos_funcionarios').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('acessos_usuarios').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('desligamentos_programados').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('solicitacoes_rh').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('movimentacoes_funcionarios').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('adicionais_salario').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('escalas_servico').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('atestados').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('vinculos_turmas').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('pontos_ronda').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('rotas_ronda').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('registros_ronda').delete().eq('funcionario_id', fid),
-      params.supabaseAdmin.from('dispositivos').delete().eq('funcionario_id', fid),
-    ])
-
-    // 3. Excluir o registro de funcionarios
+    // 2. Excluir o registro de funcionarios
     const { error: purgeError } = await params.supabaseAdmin
       .from('funcionarios')
       .delete()
@@ -235,7 +268,7 @@ export async function purgeFuncionarioDesligado(params: {
 
     if (purgeError) throw purgeError
 
-    // 4. Se possuir auth_user_id, tentar remover do auth
+    // 3. Se possuir auth_user_id, tentar remover do auth
     if (func.auth_user_id) {
       try {
         await params.supabaseAdmin.auth.admin.deleteUser(func.auth_user_id)
@@ -244,7 +277,7 @@ export async function purgeFuncionarioDesligado(params: {
       }
     }
 
-    // 5. Registrar auditoria
+    // 4. Registrar auditoria
     await logAudit({
       supabase: params.supabaseAdmin,
       action: 'PURGE',
@@ -260,4 +293,5 @@ export async function purgeFuncionarioDesligado(params: {
     return { success: false, error: error.message || error }
   }
 }
+
 
