@@ -76,8 +76,13 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   };
 
   // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo
-  const criarIconeCustomizado = (nome: string) => {
+  const criarIconeCustomizado = (nome: string, fotoUrl?: string) => {
     const iniciais = obterIniciais(nome);
+    const imgHtml =
+      fotoUrl && fotoUrl.trim() !== ''
+        ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
+        : '';
+
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
@@ -94,8 +99,11 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           justify-content: center;
           border: 3px solid #1e293b;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          overflow: hidden;
+          position: relative;
         ">
-          ${iniciais}
+          ${imgHtml}
+          <span>${iniciais}</span>
         </div>
       `,
       iconSize: [36, 36],
@@ -167,7 +175,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {funcionariosFiltrados.map((func) => {
-            const icone = criarIconeCustomizado(func.nome);
+            const icone = criarIconeCustomizado(func.nome, func.foto_url);
             const iniciais = obterIniciais(func.nome);
             
             return (
