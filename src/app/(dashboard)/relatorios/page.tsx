@@ -365,8 +365,18 @@ export default function RelatoriosPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Logístico</span>
                   <h3 className="text-xl font-bold text-foreground mt-0.5">Mapa de Geolocalização</h3>
                 </div>
-                <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
-                  {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
+                    {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
+                  </div>
+                  <Button
+                    onClick={() => setIsPrintingGeolocalizacao(true)}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs gap-1.5 cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    Imprimir Relatório (A4)
+                  </Button>
                 </div>
               </div>
 
@@ -432,6 +442,17 @@ export default function RelatoriosPage() {
               Eles serão disponibilizados nas próximas etapas do projeto.
             </p>
           </div>
+        )}
+
+        {/* Modal de Impressão Oficial do Relatório de Geolocalização (A4) */}
+        {isPrintingGeolocalizacao && (
+          <PrintRelatorioGeolocalizacao
+            aba={mapaAba}
+            escola={selectedEscola}
+            funcionarios={mapData}
+            alunos={mapDataAlunos}
+            onClose={() => setIsPrintingGeolocalizacao(false)}
+          />
         )}
       </div>
     )
