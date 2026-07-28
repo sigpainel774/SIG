@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
+import { PrintRelatorioGeolocalizacao } from '@/components/print/print-relatorio-geolocalizacao'
 import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
 import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
@@ -107,6 +108,7 @@ export default function RelatoriosPage() {
   const [isLoadingMap, setIsLoadingMap] = useState(false)
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
+  const [isPrintingGeolocalizacao, setIsPrintingGeolocalizacao] = useState(false)
 
   // Fetch data for the Mapa Logístico de Funcionários
   useEffect(() => {
@@ -279,7 +281,11 @@ export default function RelatoriosPage() {
 
   // Global print function
   const handleGlobalPrint = () => {
-    window.print()
+    if (activeReport === 'mapa') {
+      setIsPrintingGeolocalizacao(true)
+    } else {
+      window.print()
+    }
   }
 
 
@@ -520,6 +526,17 @@ export default function RelatoriosPage() {
           )
         })}
       </div>
+
+      {/* Modal de Impressão Oficial do Relatório de Geolocalização (A4) */}
+      {isPrintingGeolocalizacao && (
+        <PrintRelatorioGeolocalizacao
+          aba={mapaAba}
+          escola={selectedEscola}
+          funcionarios={mapData}
+          alunos={mapDataAlunos}
+          onClose={() => setIsPrintingGeolocalizacao(false)}
+        />
+      )}
     </div>
   )
 }
