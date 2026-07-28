@@ -75,6 +75,7 @@ export default function RelatoriosPage() {
                 foto_url,
                 latitude,
                 longitude,
+                modalidade_ensino,
                 deleted_at
               )
             `)
@@ -100,15 +101,22 @@ export default function RelatoriosPage() {
                 !isNaN(Number(v.funcionarios.latitude)) &&
                 !isNaN(Number(v.funcionarios.longitude))
               )
-              .map(v => ({
-                id: v.funcionarios.id,
-                nome: v.funcionarios.nome,
-                cargo: v.cargo || 'Funcionário',
-                escola: v.escolas?.nome || 'Escola Não Informada',
-                foto_url: v.funcionarios.foto_url,
-                latitude: Number(v.funcionarios.latitude),
-                longitude: Number(v.funcionarios.longitude)
-              }))
+              .map(v => {
+                const rawMod = (v.funcionarios?.modalidade_ensino || '').toString().toUpperCase()
+                const rawCargo = (v.cargo || '').toString().toUpperCase()
+                const isEJA = rawMod.includes('EJA') || rawCargo.includes('EJA')
+
+                return {
+                  id: v.funcionarios.id,
+                  nome: v.funcionarios.nome,
+                  cargo: v.cargo || 'Funcionário',
+                  escola: v.escolas?.nome || 'Escola Não Informada',
+                  foto_url: v.funcionarios.foto_url,
+                  latitude: Number(v.funcionarios.latitude),
+                  longitude: Number(v.funcionarios.longitude),
+                  modalidade: isEJA ? 'EJA' : 'Regular'
+                }
+              })
             
             // Deduplicate by Funcionario ID
             const uniqueMap = new Map<string, any>()
@@ -142,6 +150,8 @@ export default function RelatoriosPage() {
               longitude,
               escola_id,
               turma_id,
+              serie,
+              dados_matricula,
               escolas (nome),
               turmas (nome)
             `)
@@ -165,15 +175,27 @@ export default function RelatoriosPage() {
                 !isNaN(Number(a.latitude)) && 
                 !isNaN(Number(a.longitude))
               )
-              .map((a) => ({
-                id: a.id,
-                nome: a.nome,
-                foto_url: a.foto_url,
-                escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
-                turma: (a.turmas as any)?.nome ?? undefined,
-                latitude: Number(a.latitude),
-                longitude: Number(a.longitude),
-              }))
+              .map((a) => {
+                const turmaNome = (a.turmas as any)?.nome ?? ''
+                const serieNome = a.serie ?? ''
+                const dadosMatriculaStr = JSON.stringify(a.dados_matricula || {}).toUpperCase()
+
+                const isEJA = 
+                  turmaNome.toUpperCase().includes('EJA') ||
+                  serieNome.toUpperCase().includes('EJA') ||
+                  dadosMatriculaStr.includes('EJA')
+
+                return {
+                  id: a.id,
+                  nome: a.nome,
+                  foto_url: a.foto_url,
+                  escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
+                  turma: turmaNome || undefined,
+                  latitude: Number(a.latitude),
+                  longitude: Number(a.longitude),
+                  modalidade: isEJA ? 'EJA' : 'Regular'
+                }
+              })
             setMapDataAlunos(mapped)
           }
         } catch (err) {

@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface FuncionarioMapeado {
   id: string;
@@ -13,6 +14,7 @@ export interface FuncionarioMapeado {
   foto_url?: string;
   latitude: number;
   longitude: number;
+  modalidade?: string;
 }
 
 interface MapaGlobalProps {
@@ -21,19 +23,27 @@ interface MapaGlobalProps {
 
 export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   const [busca, setBusca] = useState('');
+  const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const mapRef = useRef<L.Map>(null);
 
-  // 1. Filtra funcionários baseado no input de pesquisa
+  // 1. Filtra funcionários baseado no input de pesquisa e na modalidade
   const funcionariosFiltrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
-    if (!termo) return funcionarios;
-    return funcionarios.filter(
-      (f) =>
+    return funcionarios.filter((f) => {
+      // Filtro de modalidade
+      if (filtroModalidade === 'eja' && f.modalidade !== 'EJA') return false;
+      if (filtroModalidade === 'regular' && f.modalidade === 'EJA') return false;
+
+      // Filtro de texto
+      if (!termo) return true;
+      return (
         f.nome.toLowerCase().includes(termo) ||
         f.cargo.toLowerCase().includes(termo) ||
-        f.escola.toLowerCase().includes(termo)
-    );
-  }, [busca, funcionarios]);
+        f.escola.toLowerCase().includes(termo) ||
+        (f.modalidade && f.modalidade.toLowerCase().includes(termo))
+      );
+    });
+  }, [busca, filtroModalidade, funcionarios]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -76,12 +86,16 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   };
 
   // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string) => {
+  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
     const iniciais = obterIniciais(nome);
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
         ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
         : '';
+    const isEJA = modalidade === 'EJA';
+    const bgGradient = isEJA 
+      ? 'linear-gradient(135deg, #a855f7, #7e22ce)' 
+      : 'linear-gradient(135deg, #38bdf8, #0284c7)';
 
     return L.divIcon({
       className: 'custom-div-icon',
@@ -90,7 +104,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #38bdf8, #0284c7);
+          background: ${bgGradient};
           color: #ffffff;
           font-weight: 700;
           font-size: 13px;
@@ -114,8 +128,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Campo de Filtro Dinâmico e Botão de Recentralizar */}
-      <div className="flex flex-wrap gap-2 items-center justify-between bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
+      {/* Campo de Filtro Dinâmico, Seletor EJA/Regular e Botão de Recentralizar */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-[#141a27] border border-[#232d42] rounded-xl px-4 py-3 shadow-sm">
         <div className="flex flex-1 items-center gap-2 min-w-[200px]">
           <Search className="w-5 h-5 text-slate-500" />
           <input
@@ -127,9 +141,53 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           />
         </div>
         
+        {/* Seletor de Filtro de Modalidade (Todos, Regular, EJA) */}
+        <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+          <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+            <Filter className="w-3 h-3" /> Ensino:
+          </span>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('todos')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'todos'
+                ? "bg-sky-500 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('regular')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'regular'
+                ? "bg-sky-500 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            Regular
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroModalidade('eja')}
+            className={cn(
+              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+              filtroModalidade === 'eja'
+                ? "bg-purple-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            EJA
+          </button>
+        </div>
+
         <button
+          type="button"
           onClick={recentralizarSapeacu}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors cursor-pointer"
           title="Recentralizar Mapa em Sapeaçu"
         >
           <MapPin className="w-3.5 h-3.5" />
@@ -164,7 +222,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {funcionariosFiltrados.map((func) => {
-            const icone = criarIconeCustomizado(func.nome, func.foto_url);
+            const icone = criarIconeCustomizado(func.nome, func.foto_url, func.modalidade);
             const iniciais = obterIniciais(func.nome);
             
             return (
@@ -182,25 +240,48 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                           <img
                             src={func.foto_url}
                             alt={func.nome}
-                            className="w-full h-full rounded-full object-cover border-2 border-sky-500 absolute inset-0 z-10"
+                            className={cn(
+                              "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
+                              func.modalidade === 'EJA' ? "border-purple-500" : "border-sky-500"
+                            )}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                           {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
-                          <div className="w-full h-full rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0">
+                          <div className={cn(
+                            "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
+                            func.modalidade === 'EJA' 
+                              ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                              : "bg-gradient-to-br from-sky-600 to-sky-400"
+                          )}>
                             {iniciais}
                           </div>
                         </div>
                       ) : (
-                        <div className="w-[48px] h-[48px] rounded-full bg-gradient-to-br from-sky-600 to-sky-400 text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700">
+                        <div className={cn(
+                          "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
+                          func.modalidade === 'EJA'
+                            ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                            : "bg-gradient-to-br from-sky-600 to-sky-400"
+                        )}>
                           {iniciais}
                         </div>
                       )}
                       <div>
-                        <strong className="text-sm block text-white leading-tight">
-                          {func.nome}
-                        </strong>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <strong className="text-sm block text-white leading-tight">
+                            {func.nome}
+                          </strong>
+                          <span className={cn(
+                            "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                            func.modalidade === 'EJA'
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                          )}>
+                            {func.modalidade ?? 'Regular'}
+                          </span>
+                        </div>
                         <span className="text-xs text-sky-400 block mt-0.5">
                           {func.cargo}
                         </span>
@@ -229,7 +310,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
-        <strong className="text-sky-400">{funcionariosFiltrados.length}</strong> funcionário(s) encontrado(s) de um total de{' '}
+        <strong className="text-sky-400">{funcionariosFiltrados.length}</strong> funcionário(s) encontrado(s) {filtroModalidade !== 'todos' ? `[Filtro: ${filtroModalidade.toUpperCase()}]` : ''} de um total de{' '}
         {funcionarios.length}. Clique em um pino para detalhes.
       </p>
     </div>
