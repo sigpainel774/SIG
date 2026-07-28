@@ -84,6 +84,25 @@ export function sanitizeCPF(val: any): string | undefined {
 }
 
 /**
+ * Limpa e trata números de telefone (remove sufixos .0 numéricos do Excel e aceita parênteses, traços ou números puros).
+ */
+export function sanitizePhone(val: any): string | undefined {
+  if (val === undefined || val === null || val === '') return undefined
+  let str = String(val).replace(/\.0$/, '').trim()
+  if (!str) return undefined
+  return str
+}
+
+/**
+ * Limpa campos numéricos como NIS, SUS, INEP removendo .0 de números lidos do Excel.
+ */
+export function cleanNumericField(val: any): string | undefined {
+  if (val === undefined || val === null || val === '') return undefined
+  const str = String(val).replace(/\.0$/, '').trim()
+  return str.length > 0 ? str : undefined
+}
+
+/**
  * Converte valor textual para string limpa.
  */
 function cleanString(val: any): string | undefined {
@@ -142,7 +161,7 @@ export function parseExcelStudentWorkbook(fileBuffer: ArrayBuffer): ExcelSheetGr
       const dataNascISO = convertExcelDateToISO(row[2])
 
       // Coluna D = index 3 (ID Censo Escolar / INEP)
-      const inep = cleanString(row[3])
+      const inep = cleanNumericField(row[3])
 
       // Coluna E = index 4 (CPF)
       const cpf = sanitizeCPF(row[4])
@@ -154,13 +173,13 @@ export function parseExcelStudentWorkbook(fileBuffer: ArrayBuffer): ExcelSheetGr
       const cid = cleanString(row[6])
 
       // Coluna H = index 7 (NIS)
-      const nis = cleanString(row[7])
+      const nis = cleanNumericField(row[7])
 
       // Coluna I = index 8 (Número Cartão SUS)
-      const cartaoSus = cleanString(row[8])
+      const cartaoSus = cleanNumericField(row[8])
 
       // Coluna J = index 9 (Telefone)
-      const telefone = cleanString(row[9])
+      const telefone = sanitizePhone(row[9])
 
       // Coluna K = index 10 (Nomes dos Pais)
       const nomePais = cleanString(row[10])
