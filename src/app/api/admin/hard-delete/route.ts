@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cleanFuncionarioDependencies } from '@/lib/audit/audit-agent'
 
 type HardDeleteAction = 'funcionarios_sem_acesso' | 'turmas_arquivadas' | 'logs_90_dias'
 
@@ -67,6 +68,9 @@ export async function POST(req: NextRequest) {
       deletedCount = targets?.length ?? 0
 
       if (deletedCount > 0 && targets) {
+        for (const t of targets) {
+          await cleanFuncionarioDependencies(supabaseAdmin, t.id)
+        }
         const targetIds = targets.map(t => t.id)
         await supabaseAdmin
           .from('funcionarios')
