@@ -165,13 +165,13 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
         )}
 
         {/* Módulos do Formulário de Aluno */}
-        <SecaoIdentificacao />
-        <SecaoMatricula />
-        <SecaoEndereco />
-        <SecaoSaude />
-
-        {/* Módulo de Assinaturas (Somente se for edição) */}
         <fieldset disabled={isFichaBloqueada} className="space-y-6">
+          <SecaoIdentificacao />
+          <SecaoMatricula />
+          <SecaoEndereco />
+          <SecaoSaude />
+
+          {/* Módulo de Assinaturas (Somente se for edição) */}
           <SecaoAssinaturas />
 
           {/* QRCode de Assinatura Mobile */}
