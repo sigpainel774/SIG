@@ -2,10 +2,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Printer, MapPin, Users, GraduationCap, Building2 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { X, Printer, MapPin, Users, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PrintHeader } from '@/components/print/print-header'
 import { Escola } from '@/store/useSchoolStore'
+import type { ItemMapaImpressao } from '@/components/map/MapaImpressao'
+
+const MapaImpressao = dynamic(() => import('@/components/map/MapaImpressao'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[280px] bg-gray-100 rounded-xl border border-gray-300 flex items-center justify-center text-xs text-gray-500 font-semibold animate-pulse">
+      Carregando visualização gráfica do mapa com os pontos...
+    </div>
+  ),
+})
 
 // Timestamp fixo de sessão para evitar flickering de avatares/fotos
 const sessionTimestamp = Date.now()
@@ -66,28 +77,48 @@ export function PrintRelatorioGeolocalizacao({
     return Number(val).toFixed(6)
   }
 
-  // Calculate operational stats
-  const stats = useMemo(() => {
-    if (aba === 'funcionarios') {
-      const total = funcionarios.length
-      const ejaCount = funcionarios.filter((f) => f.modalidade === 'EJA').length
-      const regularCount = total - ejaCount
-      return { total, ejaCount, regularCount }
-    } else {
-      const total = alunos.length
-      const ejaCount = alunos.filter((a) => a.modalidade === 'EJA').length
-      const regularCount = total - ejaCount
-      return { total, ejaCount, regularCount }
-    }
-  }, [aba, funcionarios, alunos])
-
-  if (!mounted) return null
-
   const isFunc = aba === 'funcionarios'
   const currentList = isFunc ? funcionarios : alunos
   const docSubtitulo = isFunc
     ? 'Mapeamento Logístico de Servidores e Funcionários'
     : 'Mapeamento Logístico de Estudantes e Alunos'
+
+  // Map items formatted for Leaflet Map Component
+  const mapItems: ItemMapaImpressao[] = useMemo(() => {
+    if (isFunc) {
+      return funcionarios.map((f) => ({
+        id: f.id,
+        nome: f.nome,
+        cargoOuTurma: f.cargo,
+        escola: f.escola,
+        foto_url: f.foto_url,
+        latitude: f.latitude,
+        longitude: f.longitude,
+        modalidade: f.modalidade,
+      }))
+    } else {
+      return alunos.map((a) => ({
+        id: a.id,
+        nome: a.nome,
+        cargoOuTurma: a.turma || 'Não enturmado',
+        escola: a.escola,
+        foto_url: a.foto_url,
+        latitude: a.latitude,
+        longitude: a.longitude,
+        modalidade: a.modalidade,
+      }))
+    }
+  }, [isFunc, funcionarios, alunos])
+
+  // Calculate operational stats
+  const stats = useMemo(() => {
+    const total = currentList.length
+    const ejaCount = currentList.filter((item) => item.modalidade === 'EJA').length
+    const regularCount = total - ejaCount
+    return { total, ejaCount, regularCount }
+  }, [currentList])
+
+  if (!mounted) return null
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-[#09090b]/95 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
@@ -115,6 +146,20 @@ export function PrintRelatorioGeolocalizacao({
           tr {
             page-break-inside: avoid;
             break-inside: avoid;
+          }
+          .leaflet-tile-container img {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .leaflet-control-container {
+            display: none !important;
+          }
+          .print-tooltip {
+            background: white !important;
+            border: 1px solid #94a3b8 !important;
+            box-shadow: none !important;
+            padding: 1px 4px !important;
+            font-size: 8px !important;
           }
         }
       `}</style>
@@ -149,7 +194,7 @@ export function PrintRelatorioGeolocalizacao({
         />
 
         {/* Executive Summary Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="border border-gray-300 rounded-lg p-2.5 bg-gray-50 text-center">
             <span className="text-[9px] font-bold text-gray-500 uppercase block tracking-wider">
               Scope / Unidade
@@ -176,6 +221,15 @@ export function PrintRelatorioGeolocalizacao({
               Regular: <strong>{stats.regularCount}</strong> | EJA: <strong>{stats.ejaCount}</strong>
             </span>
           </div>
+        </div>
+
+        {/* Visual Map with Pins Section */}
+        <div className="mb-6">
+          <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-gray-700 mb-2">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span>Mapeamento Geográfico Visual (Pontos de Referência)</span>
+          </div>
+          <MapaImpressao items={mapItems} tipo={aba} />
         </div>
 
         {/* Information Notice */}
