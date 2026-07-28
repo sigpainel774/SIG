@@ -14,6 +14,7 @@ const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').the
 const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
 const ModalConfigSecretario = dynamic(() => import('@/components/modals/modal-config-secretario').then(m => m.ModalConfigSecretario), { ssr: false })
 const ModalImportarFichasDocx = dynamic(() => import('@/components/modals/modal-importar-fichas-docx').then(m => m.ModalImportarFichasDocx), { ssr: false })
+const ModalImportarExcel = dynamic(() => import('@/components/modals/modal-importar-excel').then(m => m.ModalImportarExcel), { ssr: false })
 const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
 
 import { toast } from 'sonner'
@@ -39,6 +40,7 @@ export default function AdminEscolasPage() {
 
   const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
   const [importDocxOpen, setImportDocxOpen] = useState(false)
+  const [importExcelOpen, setImportExcelOpen] = useState(false)
   const [filaImpressaoOpen, setFilaImpressaoOpen] = useState(false)
 
   const isMounted = useRef(true)
@@ -211,6 +213,14 @@ export default function AdminEscolasPage() {
           </Button>
           <Button 
             variant="outline"
+            onClick={() => setImportExcelOpen(true)}
+            className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold"
+            title="Importador 15 de Alunos via arquivos Excel (.xlsx / .xls)"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2 text-purple-400" /> Importador 15 (Excel)
+          </Button>
+          <Button 
+            variant="outline"
             onClick={() => setConfigSecretarioOpen(true)}
             className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold"
             title="Configurar Titular da Secretaria de Educação"
@@ -286,6 +296,15 @@ export default function AdminEscolasPage() {
         <ModalImportarFichasDocx
           open={importDocxOpen}
           onOpenChange={setImportDocxOpen}
+          onSuccess={loadEscolas}
+        />
+      )}
+
+      {/* Modal do Importador 15 (Excel) */}
+      {importExcelOpen && (
+        <ModalImportarExcel
+          open={importExcelOpen}
+          onOpenChange={setImportExcelOpen}
           onSuccess={loadEscolas}
         />
       )}
