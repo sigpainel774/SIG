@@ -346,4 +346,29 @@
   }
 }
 
+/* ─── Padrão Dinâmico EJA (Ondas Laranjas Fluídas) ──────────── */
+.bg-eja-pattern {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.bg-eja-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 1rem;
+  opacity: 0.95;
+  background-image: 
+    radial-gradient(circle at 85% 15%, rgba(255, 120, 0, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(235, 80, 0, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 140, 0, 0.12) 0%, transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M-100%2C220 C300%2C40 850%2C460 1540%2C140 C1200%2C620 650%2C220 -100%2C720 Z' fill='rgba(255%2C 100%2C 0%2C 0.08)' /%3E%3Cpath d='M-100%2C100 Q400%2C320 850%2C120 T1600%2C420' stroke='rgba(255%2C 140%2C 20%2C 0.45)' stroke-width='2.5' /%3E%3Cpath d='M-100%2C260 Q550%2C480 950%2C200 T1600%2C580' stroke='rgba(255%2C 80%2C 0%2C 0.38)' stroke-width='1.8' /%3E%3Cpath d='M-100%2C400 Q350%2C180 1050%2C520 T1600%2C300' stroke='rgba(255%2C 160%2C 40%2C 0.3)' stroke-width='3' /%3E%3Cpath d='M-100%2C580 Q650%2C200 1150%2C660 T1600%2C720' stroke='rgba(245%2C 110%2C 10%2C 0.25)' stroke-width='2' /%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.5s ease-in-out;
+}
+
 
