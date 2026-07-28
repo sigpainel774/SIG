@@ -40,6 +40,59 @@ import { Button } from '@/components/ui/button'
 type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
+// Report cards definition moved to module scope for stable reference
+const REPORT_CARDS = [
+  {
+    id: 'desempenho' as const,
+    title: 'Desempenho & Assiduidade',
+    description: 'Boletim vermelho, controle de faltas e risco de evasão.',
+    icon: TrendingUp,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'censo' as const,
+    title: 'Censo e Logística',
+    description: 'Métricas gerais e infraestrutura.',
+    icon: PieChart,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'ocorrencias' as const,
+    title: 'Ocorrências',
+    description: 'Registro de comportamento e alertas.',
+    icon: AlertTriangle,
+    variant: 'destructive' as const,
+  },
+  {
+    id: 'mapa' as const,
+    title: 'Mapa Logístico',
+    description: 'Geolocalização de funcionários.',
+    icon: MapIcon,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'presenca' as const,
+    title: 'Registros de Presença',
+    description: 'Logs de ponto e ronda (App Mobile).',
+    icon: Scan,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'atividades' as const,
+    title: 'Central de Atividades',
+    description: 'Trilha de auditoria, matrículas, edições e acessos a fichas.',
+    icon: Activity,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'necessidades_especiais' as const,
+    title: 'Necessidades Especiais',
+    description: 'Módulo em desenvolvimento. Informações de AEE e Ficha de Saúde.',
+    icon: ShieldAlert,
+    variant: 'warning' as const,
+  },
+]
+
 export default function RelatoriosPage() {
   const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
@@ -55,8 +108,9 @@ export default function RelatoriosPage() {
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
 
-  // Fetch data for the Mapa Logístico
+  // Fetch data for the Mapa Logístico de Funcionários
   useEffect(() => {
+    let active = true
     if (activeReport === 'mapa') {
       const fetchMapData = async () => {
         setIsLoadingMap(true)
@@ -80,6 +134,9 @@ export default function RelatoriosPage() {
               )
             `)
             .eq('ativo', true)
+            .is('funcionarios.deleted_at', null)
+            .not('funcionarios.latitude', 'is', null)
+            .not('funcionarios.longitude', 'is', null)
 
           if (selectedEscola) {
             query = query.eq('escola_id', selectedEscola.id)
@@ -89,13 +146,12 @@ export default function RelatoriosPage() {
 
           if (error) throw error
 
-          if (data) {
+          if (data && active) {
             const anyData = data as any[]
             const mapped = anyData
               .filter(v => 
                 v.funcionarios?.latitude != null && 
                 v.funcionarios?.longitude != null &&
-                !v.funcionarios?.deleted_at &&
                 Number(v.funcionarios.latitude) !== 0 &&
                 Number(v.funcionarios.longitude) !== 0 &&
                 !isNaN(Number(v.funcionarios.latitude)) &&
@@ -126,15 +182,22 @@ export default function RelatoriosPage() {
         } catch (err) {
           console.error("Erro ao buscar dados do mapa:", err)
         } finally {
-          setIsLoadingMap(false)
+          if (active) {
+            setIsLoadingMap(false)
+          }
         }
       }
       fetchMapData()
+    }
+
+    return () => {
+      active = false
     }
   }, [activeReport, selectedEscola])
 
   // Fetch data para o Mapa de Alunos
   useEffect(() => {
+    let active = true
     if (activeReport === 'mapa' && mapaAba === 'alunos') {
       const fetchMapDataAlunos = async () => {
         setIsLoadingMapAlunos(true)
@@ -166,7 +229,7 @@ export default function RelatoriosPage() {
           const { data, error } = await query
           if (error) throw error
 
-          if (data) {
+          if (data && active) {
             const anyData = data as any[]
             const mapped = anyData
               .filter(a => 
@@ -178,12 +241,12 @@ export default function RelatoriosPage() {
               .map((a) => {
                 const turmaNome = (a.turmas as any)?.nome ?? ''
                 const serieNome = a.serie ?? ''
-                const dadosMatriculaStr = JSON.stringify(a.dados_matricula || {}).toUpperCase()
+                const matMod = (a.dados_matricula as any)?.modalidade || (a.dados_matricula as any)?.etapa || ''
 
                 const isEJA = 
                   turmaNome.toUpperCase().includes('EJA') ||
                   serieNome.toUpperCase().includes('EJA') ||
-                  dadosMatriculaStr.includes('EJA')
+                  matMod.toString().toUpperCase().includes('EJA')
 
                 return {
                   id: a.id,
@@ -201,65 +264,18 @@ export default function RelatoriosPage() {
         } catch (err) {
           console.error('Erro ao buscar dados do mapa de alunos:', err)
         } finally {
-          setIsLoadingMapAlunos(false)
+          if (active) {
+            setIsLoadingMapAlunos(false)
+          }
         }
       }
       fetchMapDataAlunos()
     }
-  }, [activeReport, mapaAba, selectedEscola])
 
-  // Report cards definition matching user screenshot
-  const reportCards = [
-    {
-      id: 'desempenho' as const,
-      title: 'Desempenho & Assiduidade',
-      description: 'Boletim vermelho, controle de faltas e risco de evasão.',
-      icon: TrendingUp,
-      variant: 'primary' as const,
-    },
-    {
-      id: 'censo' as const,
-      title: 'Censo e Logística',
-      description: 'Métricas gerais e infraestrutura.',
-      icon: PieChart,
-      variant: 'primary' as const,
-    },
-    {
-      id: 'ocorrencias' as const,
-      title: 'Ocorrências',
-      description: 'Registro de comportamento e alertas.',
-      icon: AlertTriangle,
-      variant: 'destructive' as const,
-    },
-    {
-      id: 'mapa' as const,
-      title: 'Mapa Logístico',
-      description: 'Geolocalização de funcionários.',
-      icon: MapIcon,
-      variant: 'primary' as const,
-    },
-    {
-      id: 'presenca' as const,
-      title: 'Registros de Presença',
-      description: 'Logs de ponto e ronda (App Mobile).',
-      icon: Scan,
-      variant: 'primary' as const,
-    },
-    {
-      id: 'atividades' as const,
-      title: 'Central de Atividades',
-      description: 'Trilha de auditoria, matrículas, edições e acessos a fichas.',
-      icon: Activity,
-      variant: 'primary' as const,
-    },
-    {
-      id: 'necessidades_especiais' as const,
-      title: 'Necessidades Especiais',
-      description: 'Módulo em desenvolvimento. Informações de AEE e Ficha de Saúde.',
-      icon: ShieldAlert,
-      variant: 'warning' as const,
-    },
-  ]
+    return () => {
+      active = false
+    }
+  }, [activeReport, mapaAba, selectedEscola])
 
   // Global print function
   const handleGlobalPrint = () => {
@@ -302,7 +318,7 @@ export default function RelatoriosPage() {
 
             <div>
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                {reportCards.find(r => r.id === activeReport)?.title}
+                {REPORT_CARDS.find(r => r.id === activeReport)?.title}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {selectedEscola ? `Filtro: ${selectedEscola.nome}` : 'Visão Geral da Rede (Macro Sapeaçu)'}
@@ -406,7 +422,7 @@ export default function RelatoriosPage() {
               Módulo de Relatório em Construção
             </h3>
             <p className="text-muted-foreground max-w-md text-sm">
-              Os dados e gráficos para o relatório de <strong className="text-primary">{reportCards.find(r => r.id === activeReport)?.title}</strong> estão sendo estruturados.
+              Os dados e gráficos para o relatório de <strong className="text-primary">{REPORT_CARDS.find(r => r.id === activeReport)?.title}</strong> estão sendo estruturados.
               Eles serão disponibilizados nas próximas etapas do projeto.
             </p>
           </div>
@@ -466,7 +482,7 @@ export default function RelatoriosPage() {
 
       {/* Grid of 6 Cards Matching Screenshot Layout & Colors */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-        {reportCards.map((card) => {
+        {REPORT_CARDS.map((card) => {
           const Icon = card.icon
           return (
             <div

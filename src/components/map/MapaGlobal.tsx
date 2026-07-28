@@ -85,8 +85,15 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       .toUpperCase();
   };
 
-  // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
+  const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
+
+  // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo (com memoization de cache)
+  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string) => {
+    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}`;
+    if (iconCacheRef.current.has(cacheKey)) {
+      return iconCacheRef.current.get(cacheKey)!;
+    }
+
     const iniciais = obterIniciais(nome);
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
@@ -97,7 +104,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       ? 'linear-gradient(135deg, #a855f7, #7e22ce)' 
       : 'linear-gradient(135deg, #38bdf8, #0284c7)';
 
-    return L.divIcon({
+    const icon = L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="
@@ -124,6 +131,9 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       iconAnchor: [18, 18],
       popupAnchor: [0, -20],
     });
+
+    iconCacheRef.current.set(cacheKey, icon);
+    return icon;
   };
 
   return (
@@ -206,14 +216,27 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         >
           {/* Seletor de Camadas (Satélite / Rota) */}
           <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="Mapa de Ruas (Padrão)">
+            <LayersControl.BaseLayer checked name="Google Satélite (Híbrido)">
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution="&copy; Google Maps"
+                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                maxZoom={20}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Google Satélite (Puro)">
+              <TileLayer
+                attribution="&copy; Google Maps"
+                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                maxZoom={20}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
+              <TileLayer
+                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
             </LayersControl.BaseLayer>
-
-            <LayersControl.BaseLayer name="Satélite Híbrido">
+            <LayersControl.BaseLayer name="Satélite (Esri)">
               <TileLayer
                 attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -222,7 +245,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {funcionariosFiltrados.map((func) => {
-            const icone = criarIconeCustomizado(func.nome, func.foto_url, func.modalidade);
+            const icone = criarIconeCustomizado(func.id, func.nome, func.foto_url, func.modalidade);
             const iniciais = obterIniciais(func.nome);
             
             return (

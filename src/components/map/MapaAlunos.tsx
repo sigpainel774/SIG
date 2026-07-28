@@ -85,8 +85,15 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
       .toUpperCase();
   };
 
-  // 4. Criação do Pino DivIcon Customizado (verde esmeralda para regular, roxo para EJA)
-  const criarIconeCustomizado = (nome: string, fotoUrl?: string, modalidade?: string) => {
+  const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
+
+  // 4. Criação do Pino DivIcon Customizado (verde esmeralda para regular, roxo para EJA com cache)
+  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string) => {
+    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}`;
+    if (iconCacheRef.current.has(cacheKey)) {
+      return iconCacheRef.current.get(cacheKey)!;
+    }
+
     const iniciais = obterIniciais(nome);
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
@@ -98,7 +105,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
       ? 'linear-gradient(135deg, #a855f7, #7e22ce)'
       : 'linear-gradient(135deg, #34d399, #059669)';
 
-    return L.divIcon({
+    const icon = L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="
@@ -125,6 +132,9 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
       iconAnchor: [18, 18],
       popupAnchor: [0, -20],
     });
+
+    iconCacheRef.current.set(cacheKey, icon);
+    return icon;
   };
 
   return (
@@ -234,7 +244,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           {alunosFiltrados.map((aluno) => {
-            const icone = criarIconeCustomizado(aluno.nome, aluno.foto_url, aluno.modalidade);
+            const icone = criarIconeCustomizado(aluno.id, aluno.nome, aluno.foto_url, aluno.modalidade);
             const iniciais = obterIniciais(aluno.nome);
 
             return (
