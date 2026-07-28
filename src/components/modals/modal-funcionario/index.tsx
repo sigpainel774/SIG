@@ -33,11 +33,15 @@ function ModalFuncionarioContent() {
     escolaInep,
     escolaLocalizacao,
     fotoPreview,
+    modalidadeEnsino,
     handleFotoChange,
     handleSubmit,
     lotacoesModalOpen,
     setLotacoesModalOpen,
   } = useFuncionarioForm()
+
+  const isEja = (modalidadeEnsino || '').trim().toUpperCase() === 'EJA'
+  const photoBorderClass = isEja ? 'border-2 border-orange-500' : 'border-2 border-[#3ea6ff]'
 
   const tabClass = (tab: typeof activeTab) =>
     `px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
@@ -72,7 +76,7 @@ function ModalFuncionarioContent() {
         {/* Foto 3x4 */}
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-[#3ea6ff]/40 overflow-hidden flex items-center justify-center">
+            <div className={`w-16 h-20 rounded bg-[#1a1a2e] ${photoBorderClass} overflow-hidden flex items-center justify-center`}>
               {fotoPreview ? (
                 <img src={getFotoSrc()!} alt="Foto 3x4" className="w-full h-full object-cover" />
               ) : (
