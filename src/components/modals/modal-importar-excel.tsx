@@ -172,6 +172,82 @@ export function ModalImportarExcel({
     return 'Matutino'
   }
 
+  // Função auxiliar para normalizar texto (remover acentos e maiúsculas)
+  const normalizeStr = (str?: string) => {
+    if (!str) return ''
+    return str
+      .toUpperCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  }
+
+  // Verificar alunos que já existem no banco de dados para a escola selecionada e marcarem como 'isSaved'
+  const syncExistingStudentsWithDB = async (escolaId: string, currentSheets: SheetGroupState[]) => {
+    if (!escolaId || currentSheets.length === 0) return currentSheets
+
+    try {
+      const { data: existingAlunos, error } = await supabase
+        .from('alunos')
+        .select('id, nome, cpf, inep')
+        .eq('escola_id', escolaId)
+        .is('deleted_at', null)
+
+      if (error || !existingAlunos || existingAlunos.length === 0) return currentSheets
+
+      const existingNames = new Set(existingAlunos.map((a) => normalizeStr(a.nome)))
+      const existingCPFs = new Set(existingAlunos.filter((a) => Boolean(a.cpf)).map((a) => (a.cpf as string).replace(/\D/g, '')))
+      const existingINEPs = new Set(existingAlunos.filter((a) => Boolean(a.inep)).map((a) => (a.inep as string).trim()))
+
+      let duplicateCount = 0
+
+      const updatedSheets: SheetGroupState[] = currentSheets.map((group) => ({
+        ...group,
+        students: group.students.map((st) => {
+          const normNome = normalizeStr(st.nome)
+          const cleanCpf = st.cpf ? st.cpf.replace(/\D/g, '') : ''
+          const cleanInep = st.inep ? st.inep.trim() : ''
+
+          const isAlreadyInDB: boolean = Boolean(
+            (normNome && existingNames.has(normNome)) ||
+            (cleanCpf && existingCPFs.has(cleanCpf)) ||
+            (cleanInep && existingINEPs.has(cleanInep))
+          )
+
+          if (isAlreadyInDB && !st.isSaved) {
+            duplicateCount++
+          }
+
+          return {
+            ...st,
+            isSaved: Boolean(st.isSaved || isAlreadyInDB)
+          }
+        })
+      }))
+
+      if (duplicateCount > 0) {
+        toast.info(`${duplicateCount} aluno(s) já cadastrado(s) na escola foram identificados e serão pulados automaticamente.`)
+      }
+
+      return updatedSheets
+    } catch (err) {
+      console.error('Erro ao verificar alunos existentes no banco:', err)
+      return currentSheets
+    }
+  }
+
+  // Re-verificar duplicidade se a escola selecionada for alterada
+  useEffect(() => {
+    if (!selectedEscolaId || sheets.length === 0) return
+    const updateCheck = async () => {
+      const synced = await syncExistingStudentsWithDB(selectedEscolaId, sheets)
+      if (isMounted.current && synced) {
+        setSheets(synced)
+      }
+    }
+    updateCheck()
+  }, [selectedEscolaId])
+
   // Manipular Upload da Planilha Excel (.xlsx / .xls)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -199,7 +275,7 @@ export function ModalImportarExcel({
       }
 
       // Converter em estado gerenciável com selos de salvamento e seleção de ano/turno por pasta
-      const sheetStates: SheetGroupState[] = parsedGroups.map((group) => ({
+      const rawSheetStates: SheetGroupState[] = parsedGroups.map((group) => ({
         sheetName: group.sheetName,
         anoSerie: detectAnoSerie(group.sheetName),
         turno: detectTurno(group.sheetName),
@@ -209,6 +285,11 @@ export function ModalImportarExcel({
           isSaving: false
         }))
       }))
+
+      // Cruzar dados com o banco de dados para identificar alunos já cadastrados
+      const sheetStates = selectedEscolaId
+        ? await syncExistingStudentsWithDB(selectedEscolaId, rawSheetStates)
+        : rawSheetStates
 
       setSheets(sheetStates)
       setActiveSheetIndex(0)
@@ -295,17 +376,7 @@ export function ModalImportarExcel({
 
       const newAlunoId = inserted.id
 
-      // 4. Enturmação em public.vinculos_turmas (se turma selecionada)
-      if (selectedTurmaId) {
-        await (supabase.from('vinculos_turmas') as any).insert({
-          aluno_id: newAlunoId,
-          turma_id: selectedTurmaId,
-          escola_id: selectedEscolaId,
-          tipo: 'Aluno'
-        })
-      }
-
-      // 5. Audit Log
+      // 4. Audit Log
       await logAudit({
         supabase,
         action: 'CREATE',
@@ -448,7 +519,7 @@ export function ModalImportarExcel({
       onOpenChange={onOpenChange}
       title="Importador 15 - Alunos via Excel (.xlsx / .xls)"
       description="Faça o upload da planilha Excel. O sistema lê os dados a partir da linha 8 (B8) e permite informar o ano e turno de cada pasta para importar 1 por 1 ou em lote."
-      maxWidth="max-w-4xl"
+      maxWidth="sm:max-w-6xl w-full"
     >
       <div className="space-y-5 text-sm select-none">
         {/* ── Painel 1: Seleção de Destino (Escola & Turma) ── */}
