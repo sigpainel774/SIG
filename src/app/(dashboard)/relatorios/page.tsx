@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { PrintFicha } from '@/components/print/print-ficha'
-import { PrintRelatorioGeolocalizacao } from '@/components/print/print-relatorio-geolocalizacao'
 import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
 import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
@@ -108,7 +107,6 @@ export default function RelatoriosPage() {
   const [isLoadingMap, setIsLoadingMap] = useState(false)
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
-  const [isPrintingGeolocalizacao, setIsPrintingGeolocalizacao] = useState(false)
 
   // Fetch data for the Mapa Logístico de Funcionários
   useEffect(() => {
@@ -282,13 +280,10 @@ export default function RelatoriosPage() {
   // Global print function
   const handleGlobalPrint = () => {
     if (activeReport === 'mapa') {
-      setIsPrintingGeolocalizacao(true)
-    } else {
-      window.print()
+      return
     }
+    window.print()
   }
-
-
 
   if (printableSubView === 'ficha') {
     return (
@@ -344,13 +339,15 @@ export default function RelatoriosPage() {
               </Button>
             )}
 
-            <Button
-              onClick={handleGlobalPrint}
-              className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimir (A4)
-            </Button>
+            {activeReport !== 'mapa' && (
+              <Button
+                onClick={handleGlobalPrint}
+                className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-muted-foreground" />
+                Imprimir (A4)
+              </Button>
+            )}
           </div>
         </div>
 
@@ -369,14 +366,6 @@ export default function RelatoriosPage() {
                   <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
                     {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
                   </div>
-                  <Button
-                    onClick={() => setIsPrintingGeolocalizacao(true)}
-                    size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs gap-1.5 cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    Imprimir Relatório (A4)
-                  </Button>
                 </div>
               </div>
 
@@ -444,16 +433,7 @@ export default function RelatoriosPage() {
           </div>
         )}
 
-        {/* Modal de Impressão Oficial do Relatório de Geolocalização (A4) */}
-        {isPrintingGeolocalizacao && (
-          <PrintRelatorioGeolocalizacao
-            aba={mapaAba}
-            escola={selectedEscola}
-            funcionarios={mapData}
-            alunos={mapDataAlunos}
-            onClose={() => setIsPrintingGeolocalizacao(false)}
-          />
-        )}
+
       </div>
     )
   }
@@ -548,16 +528,7 @@ export default function RelatoriosPage() {
         })}
       </div>
 
-      {/* Modal de Impressão Oficial do Relatório de Geolocalização (A4) */}
-      {isPrintingGeolocalizacao && (
-        <PrintRelatorioGeolocalizacao
-          aba={mapaAba}
-          escola={selectedEscola}
-          funcionarios={mapData}
-          alunos={mapDataAlunos}
-          onClose={() => setIsPrintingGeolocalizacao(false)}
-        />
-      )}
+
     </div>
   )
 }
