@@ -215,6 +215,13 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     return icon;
   };
 
+  // 5. Limpeza de Memória (ES-Leaflet-MemoryLeak)
+  useEffect(() => {
+    return () => {
+      iconCacheRef.current.clear();
+    };
+  }, []);
+
   return (
     <div className="w-full flex flex-col gap-4">
       {/* Campo de Filtro Dinâmico, Seletor EJA/Regular e Botão de Recentralizar */}
@@ -319,6 +326,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 attribution="&copy; Google Maps"
                 url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                 maxZoom={20}
+                keepBuffer={4}
+                updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Google Satélite (Puro)">
@@ -326,12 +335,16 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 attribution="&copy; Google Maps"
                 url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
                 maxZoom={20}
+                keepBuffer={4}
+                updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
               <TileLayer
                 attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                keepBuffer={4}
+                updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Satélite (Esri)">
@@ -339,6 +352,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 maxZoom={19}
+                keepBuffer={4}
+                updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
           </LayersControl>
