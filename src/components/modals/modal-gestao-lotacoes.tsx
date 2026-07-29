@@ -111,18 +111,18 @@ export function ModalGestaoLotacoes({
       onOpenChange={onOpenChange}
       title="Gestão de Lotações"
       maxWidth="sm:max-w-5xl w-[95vw]"
-      className="p-0 gap-0 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
+      className="p-0 gap-0 md:overflow-hidden md:flex md:flex-col sm:max-h-[90vh]"
     >
       {loading ? (
         <div className="flex-1 min-h-[350px] sm:min-h-[400px] flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#3ea6ff]" />
         </div>
       ) : (
-        <div className="flex flex-1 overflow-hidden min-h-[450px] sm:min-h-[500px]">
+        <div className="flex flex-col md:flex-row flex-1 md:overflow-hidden min-h-0 md:min-h-[500px]">
           {/* Coluna Esquerda - Lista */}
           <div
             className={`w-full md:w-auto ${
-              mobileView === 'list' ? 'flex flex-1' : 'hidden md:flex'
+              mobileView === 'list' ? 'flex flex-col flex-1' : 'hidden md:flex'
             }`}
           >
             <FuncionarioLotacaoList
@@ -141,8 +141,8 @@ export function ModalGestaoLotacoes({
 
           {/* Coluna Direita - Detalhes */}
           <div
-            className={`flex-1 overflow-y-auto ${
-              mobileView === 'detail' ? 'block w-full' : 'hidden md:block'
+            className={`w-full md:flex-1 md:overflow-y-auto ${
+              mobileView === 'detail' ? 'block' : 'hidden md:block'
             }`}
           >
             {/* Header de Navegação Mobile (Exibido apenas em celulares/tablets na visão de detalhes) */}
