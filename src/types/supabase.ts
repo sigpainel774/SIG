@@ -1637,6 +1637,7 @@ export type Database = {
           cor_raca: string | null
           cpf: string | null
           created_at: string
+          data_admissao: string | null
           data_nascimento: string | null
           data_preenchimento: string | null
           deficiencias: string[] | null
@@ -1667,6 +1668,7 @@ export type Database = {
           formacao: string | null
           foto_url: string | null
           funcao_especifica: string | null
+          graduacoes: Json | null
           id: string
           is_conta_especial: boolean | null
           is_superadmin: boolean | null
@@ -1698,6 +1700,8 @@ export type Database = {
           superior_tipo_instituicao: string | null
           tea: boolean | null
           telefone: string | null
+          telefone_emergencia: string | null
+          tipo_sanguineo: string | null
           tipo_vinculo: string | null
           tipo_vinculo_especificacao: string | null
           uf_nascimento: string | null
@@ -1719,6 +1723,7 @@ export type Database = {
           cor_raca?: string | null
           cpf?: string | null
           created_at?: string
+          data_admissao?: string | null
           data_nascimento?: string | null
           data_preenchimento?: string | null
           deficiencias?: string[] | null
@@ -1749,6 +1754,7 @@ export type Database = {
           formacao?: string | null
           foto_url?: string | null
           funcao_especifica?: string | null
+          graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
@@ -1780,6 +1786,8 @@ export type Database = {
           superior_tipo_instituicao?: string | null
           tea?: boolean | null
           telefone?: string | null
+          telefone_emergencia?: string | null
+          tipo_sanguineo?: string | null
           tipo_vinculo?: string | null
           tipo_vinculo_especificacao?: string | null
           uf_nascimento?: string | null
@@ -1801,6 +1809,7 @@ export type Database = {
           cor_raca?: string | null
           cpf?: string | null
           created_at?: string
+          data_admissao?: string | null
           data_nascimento?: string | null
           data_preenchimento?: string | null
           deficiencias?: string[] | null
@@ -1831,6 +1840,7 @@ export type Database = {
           formacao?: string | null
           foto_url?: string | null
           funcao_especifica?: string | null
+          graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
@@ -1862,6 +1872,8 @@ export type Database = {
           superior_tipo_instituicao?: string | null
           tea?: boolean | null
           telefone?: string | null
+          telefone_emergencia?: string | null
+          tipo_sanguineo?: string | null
           tipo_vinculo?: string | null
           tipo_vinculo_especificacao?: string | null
           uf_nascimento?: string | null

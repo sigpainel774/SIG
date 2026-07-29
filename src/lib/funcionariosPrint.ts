@@ -349,8 +349,8 @@ export function gerarFichaFuncionarioHtml(
                     <span class="field-value">${f.telefone ?? '—'}</span>
                   </div>
                   <div class="field">
-                    <span class="field-label">Telefone Fixo / Recado</span>
-                    <span class="field-value">${f.telefone_recado ?? '—'}</span>
+                    <span class="field-label">Telefone de Emergência</span>
+                    <span class="field-value">${f.telefone_emergencia ?? '—'}</span>
                   </div>
                 </div>
                 <div class="grid-fields col-mix-2" style="border-top: 1px solid #eee; padding-top: 5px;">

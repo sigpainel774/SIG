@@ -13,6 +13,7 @@ export function EmpregoTab() {
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
     modalidadeEnsino, setModalidadeEnsino,
+    dataAdmissao, setDataAdmissao,
     status, setStatus,
     cargos,
     isEditing,
@@ -89,7 +90,7 @@ export function EmpregoTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <Label>Tipo de Vínculo</Label>
           <select
@@ -113,7 +114,7 @@ export function EmpregoTab() {
           />
         </div>
         <div>
-          <Label>Modalidade de Atuação / Ensino</Label>
+          <Label>Modalidade de Atuação</Label>
           <select
             value={modalidadeEnsino}
             onChange={(e) => setModalidadeEnsino(e.target.value)}
@@ -122,6 +123,15 @@ export function EmpregoTab() {
             <option value="Regular">Regular (Ensino Regular)</option>
             <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
           </select>
+        </div>
+        <div>
+          <Label>Data de Admissão</Label>
+          <Input
+            type="date"
+            value={dataAdmissao}
+            onChange={(e) => setDataAdmissao(e.target.value)}
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
         </div>
         <div>
           <Label>Status Funcional</Label>

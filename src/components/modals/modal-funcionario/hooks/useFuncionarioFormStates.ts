@@ -124,13 +124,18 @@ export function useFuncionarioFormStates({
   const [tipoVinculo, setTipoVinculo] = useState('Contratado')
   const [tipoVinculoEspec, setTipoVinculoEspec] = useState('')
   const [modalidadeEnsino, setModalidadeEnsino] = useState('Regular')
+  const [dataAdmissao, setDataAdmissao] = useState('')
   const [status, setStatus] = useState('ativo')
+
+  // Contato extra
+  const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
 
   // Saúde
   const [possuiDeficiencia, setPossuiDeficiencia] = useState(false)
   const [deficiencias, setDeficiencias] = useState<string[]>([])
   const [tea, setTea] = useState(false)
   const [altasHabilidades, setAltasHabilidades] = useState(false)
+  const [tipoSanguineo, setTipoSanguineo] = useState('Não informado')
 
   // Doenças
   const [doencas, setDoencas] = useState<Doencas>({
@@ -149,13 +154,14 @@ export function useFuncionarioFormStates({
   const [escolaridadeNivel, setEscolaridadeNivel] = useState('Não concluiu o Ensino Fundamental')
   const [ensinoMedioTipo, setEnsinoMedioTipo] = useState('Formação Geral')
 
-  // Superior
+  // Superior & Graduações
   const [superiorArea, setSuperiorArea] = useState('')
   const [superiorCodigo, setSuperiorCodigo] = useState('')
   const [superiorAno, setSuperiorAno] = useState('')
   const [superiorTipoInst, setSuperiorTipoInst] = useState('Pública')
   const [superiorGrau, setSuperiorGrau] = useState('Licenciatura')
   const [superiorInstituicao, setSuperiorInstituicao] = useState('')
+  const [graduacoes, setGraduacoes] = useState<import('../types').Graduacao[]>([])
 
   // Complementação pedagógica
   const [complementacaoPedagogica, setComplementacaoPedagogica] = useState('')
@@ -229,6 +235,9 @@ export function useFuncionarioFormStates({
             setEmpId(data.id)
             setAuthUserId(data.auth_user_id || null)
             populatePessoais(data)
+            setTelefoneEmergencia(data.telefone_emergencia ?? '')
+            setDataAdmissao(data.data_admissao ?? '')
+            setTipoSanguineo(data.tipo_sanguineo ?? 'Não informado')
             setCargo(data.cargo ?? '')
             setFuncaoEspec(data.funcao_especifica ?? '')
             setTipoVinculo(data.tipo_vinculo ?? 'Contratado')
@@ -258,8 +267,44 @@ export function useFuncionarioFormStates({
             setSuperiorTipoInst(data.superior_tipo_instituicao ?? 'Pública')
             setSuperiorGrau(data.superior_grau ?? 'Licenciatura')
             setSuperiorInstituicao(data.superior_instituicao ?? '')
+
+            // Carregamento resiliente de Graduações (Migração automática de legados)
+            const rawGrads = Array.isArray(data.graduacoes) ? data.graduacoes : []
+            if (rawGrads.length > 0) {
+              setGraduacoes(rawGrads.map((g: any) => ({
+                area: g.area ?? '',
+                codigo: g.codigo ?? '',
+                ano: g.ano ?? '',
+                tipoInstituicao: g.tipoInstituicao ?? 'Pública',
+                grau: g.grau ?? 'Licenciatura',
+                instituicao: g.instituicao ?? '',
+                situacao: g.situacao ?? 'Concluído'
+              })))
+            } else if (data.superior_area || data.superior_instituicao) {
+              setGraduacoes([{
+                area: data.superior_area ?? '',
+                codigo: data.superior_codigo ?? '',
+                ano: data.superior_ano_conclusao ? String(data.superior_ano_conclusao) : '',
+                tipoInstituicao: data.superior_tipo_instituicao ?? 'Pública',
+                grau: data.superior_grau ?? 'Licenciatura',
+                instituicao: data.superior_instituicao ?? '',
+                situacao: 'Concluído'
+              }])
+            } else {
+              setGraduacoes([])
+            }
+
             setComplementacaoPedagogica(data.complementacao_pedagogica ?? '')
-            setPosGraduacoes(Array.isArray(data.pos_graduacoes) ? (data.pos_graduacoes as any) : [])
+            
+            // Carregamento de Pós-Graduações com fallback de situação
+            const rawPos = Array.isArray(data.pos_graduacoes) ? data.pos_graduacoes : []
+            setPosGraduacoes(rawPos.map((p: any) => ({
+              tipo: p.tipo ?? 'Especialização',
+              area: p.area ?? '',
+              ano: p.ano ?? '',
+              situacao: p.situacao ?? 'Concluído'
+            })))
+
             setOutrosCursos(data.outros_cursos ?? [])
 
             // Cache bust estável para foto
@@ -308,6 +353,9 @@ export function useFuncionarioFormStates({
 
         // Reset states
         resetPessoais()
+        setTelefoneEmergencia('')
+        setDataAdmissao('')
+        setTipoSanguineo('Não informado')
         setCargo('')
         setCargaHoraria('')
         setFuncaoEspec('')
@@ -338,8 +386,10 @@ export function useFuncionarioFormStates({
         setSuperiorTipoInst('Pública')
         setSuperiorGrau('Licenciatura')
         setSuperiorInstituicao('')
+        setGraduacoes([])
         setComplementacaoPedagogica('')
         setPosGraduacoes([])
+        setOutrosCursos([])
         setOutrosCursos([])
         setFotoPreview(null)
         setFotoFile(null)
@@ -530,6 +580,9 @@ export function useFuncionarioFormStates({
         area_diferenciada: areaDiferenciada || null,
         apelido: apelido?.trim() || null,
         telefone: telefone?.trim() || null,
+        telefone_emergencia: telefoneEmergencia?.trim() || null,
+        data_admissao: dataAdmissao || null,
+        tipo_sanguineo: tipoSanguineo || null,
         modalidade_ensino: modalidadeEnsino || 'Regular',
         funcao_especifica: funcaoEspec || null,
         tipo_vinculo: tipoVinculo || null,
@@ -549,12 +602,16 @@ export function useFuncionarioFormStates({
         doenca_outra: doencas.outra || null,
         escolaridade_nivel: escolaridadeNivel || null,
         ensino_medio_tipo: ensinoMedioTipo || null,
-        superior_area: superiorArea || null,
-        superior_codigo: superiorCodigo || null,
-        superior_ano_conclusao: superiorAno ? parseInt(superiorAno) : null,
-        superior_tipo_instituicao: superiorTipoInst || null,
-        superior_grau: superiorGrau || null,
-        superior_instituicao: superiorInstituicao || null,
+
+        // Graduações (JSONB e espelhamento em superior_*)
+        graduacoes: graduacoes as any,
+        superior_area: graduacoes[0]?.area || superiorArea || null,
+        superior_codigo: graduacoes[0]?.codigo || superiorCodigo || null,
+        superior_ano_conclusao: graduacoes[0]?.ano ? parseInt(graduacoes[0].ano) : (superiorAno ? parseInt(superiorAno) : null),
+        superior_tipo_instituicao: graduacoes[0]?.tipoInstituicao || superiorTipoInst || null,
+        superior_grau: graduacoes[0]?.grau || superiorGrau || null,
+        superior_instituicao: graduacoes[0]?.instituicao || superiorInstituicao || null,
+
         complementacao_pedagogica: complementacaoPedagogica || null,
         pos_graduacoes: posGraduacoes as any,
         outros_cursos: outrosCursos.length > 0 ? outrosCursos : null,
@@ -790,6 +847,7 @@ export function useFuncionarioFormStates({
     nacionalidade, setNacionalidade,
     nacionalidadeEspec, setNacionalidadeEspec,
     telefone, setTelefone,
+    telefoneEmergencia, setTelefoneEmergencia,
     nomeMae, setNomeMae,
     nomePai, setNomePai,
     municipioNasc, setMunicipioNasc,
@@ -820,11 +878,13 @@ export function useFuncionarioFormStates({
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
     modalidadeEnsino, setModalidadeEnsino,
+    dataAdmissao, setDataAdmissao,
     status, setStatus,
     possuiDeficiencia, setPossuiDeficiencia,
     deficiencias, setDeficiencias,
     tea, setTea,
     altasHabilidades, setAltasHabilidades,
+    tipoSanguineo, setTipoSanguineo,
     doencas, setDoencas,
     toggleDeficiencia,
     escolaridadeNivel, setEscolaridadeNivel,
@@ -835,6 +895,7 @@ export function useFuncionarioFormStates({
     superiorTipoInst, setSuperiorTipoInst,
     superiorGrau, setSuperiorGrau,
     superiorInstituicao, setSuperiorInstituicao,
+    graduacoes, setGraduacoes,
     complementacaoPedagogica, setComplementacaoPedagogica,
     posGraduacoes, setPosGraduacoes,
     outrosCursos, setOutrosCursos,

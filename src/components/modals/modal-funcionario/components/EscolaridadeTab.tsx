@@ -4,35 +4,63 @@ import React from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
+import { Graduacao, PosGraduacao } from '../types'
 
 export function EscolaridadeTab() {
   const {
     escolaridadeNivel, setEscolaridadeNivel,
     ensinoMedioTipo, setEnsinoMedioTipo,
-    superiorArea, setSuperiorArea,
-    superiorCodigo, setSuperiorCodigo,
-    superiorAno, setSuperiorAno,
-    superiorTipoInst, setSuperiorTipoInst,
-    superiorGrau, setSuperiorGrau,
-    superiorInstituicao, setSuperiorInstituicao,
+    graduacoes, setGraduacoes,
     complementacaoPedagogica, setComplementacaoPedagogica,
     posGraduacoes, setPosGraduacoes,
     outrosCursos, setOutrosCursos,
     toggleOutroCurso,
   } = useFuncionarioForm()
 
+  const addGraduacao = () => {
+    if (graduacoes.length >= 6) {
+      toast.error('Limite de 6 graduações atingido.')
+      return
+    }
+    setGraduacoes([
+      ...graduacoes,
+      {
+        area: '',
+        codigo: '',
+        ano: '',
+        tipoInstituicao: 'Pública',
+        grau: 'Licenciatura',
+        instituicao: '',
+        situacao: 'Concluído',
+      },
+    ])
+  }
+
+  const updateGraduacao = (index: number, key: keyof Graduacao, value: string) => {
+    const updated = [...graduacoes]
+    updated[index] = { ...updated[index], [key]: value }
+    setGraduacoes(updated)
+  }
+
+  const removeGraduacao = (index: number) => {
+    setGraduacoes(graduacoes.filter((_, i) => i !== index))
+  }
+
   const addPos = () => {
     if (posGraduacoes.length >= 6) {
       toast.error('Limite de 6 pós-graduações atingido.')
       return
     }
-    setPosGraduacoes([...posGraduacoes, { tipo: 'Especialização', area: '', ano: '' }])
+    setPosGraduacoes([
+      ...posGraduacoes,
+      { tipo: 'Especialização', area: '', ano: '', situacao: 'Concluído' },
+    ])
   }
 
-  const updatePos = (index: number, key: 'tipo' | 'area' | 'ano', value: string) => {
+  const updatePos = (index: number, key: keyof PosGraduacao, value: string) => {
     const updated = [...posGraduacoes]
     updated[index] = { ...updated[index], [key]: value }
     setPosGraduacoes(updated)
@@ -67,8 +95,13 @@ export function EscolaridadeTab() {
           <Label>Maior Nível de Escolaridade Concluído</Label>
           <select
             value={escolaridadeNivel}
-            onChange={(e) => setEscolaridadeNivel(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            onChange={(e) => {
+              setEscolaridadeNivel(e.target.value)
+              if (e.target.value === 'Educação Superior' && graduacoes.length === 0) {
+                addGraduacao()
+              }
+            }}
+            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
           >
             <option value="Não concluiu o Ensino Fundamental">Não concluiu o Ensino Fundamental</option>
             <option value="Ensino Fundamental">Ensino Fundamental Completo</option>
@@ -94,74 +127,148 @@ export function EscolaridadeTab() {
         )}
       </div>
 
+      {/* Graduações / Cursos Superiores */}
       {escolaridadeNivel === 'Educação Superior' && (
         <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800 space-y-4">
-          <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">Dados do Curso Superior</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-xs">Área do Curso</Label>
-              <Input
-                value={superiorArea}
-                onChange={(e) => setSuperiorArea(e.target.value)}
-                placeholder="Ex: Pedagogia, Matemática"
-                className="bg-[#121212] border-borderCustom text-white mt-1 text-xs"
-              />
+          <div className="flex justify-between items-center border-b border-zinc-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-highlight" />
+              <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
+                Cursos de Graduação Superior (Até 6)
+              </h4>
             </div>
-            <div>
-              <Label className="text-xs">Código do Curso Superior</Label>
-              <Input
-                value={superiorCodigo}
-                onChange={(e) => setSuperiorCodigo(e.target.value)}
-                placeholder="Código do curso"
-                className="bg-[#121212] border-borderCustom text-white mt-1 text-xs"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Ano de Conclusão</Label>
-              <Input
-                value={superiorAno}
-                onChange={(e) => setSuperiorAno(e.target.value)}
-                placeholder="Ex: 2018"
-                className="bg-[#121212] border-borderCustom text-white mt-1 text-xs"
-              />
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addGraduacao}
+              className="text-xs h-7 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Adicionar Graduação
+            </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-xs">Tipo de Instituição</Label>
-              <select
-                value={superiorTipoInst}
-                onChange={(e) => setSuperiorTipoInst(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#121212] border border-borderCustom text-white text-xs outline-none mt-1"
+          {graduacoes.length === 0 ? (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-xs text-zinc-400">Nenhuma graduação cadastrada no momento.</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addGraduacao}
+                className="text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-medium"
               >
-                <option value="Pública">Pública</option>
-                <option value="Privada">Privada</option>
-              </select>
+                + Adicionar Primeira Graduação
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs">Nível / Grau Acadêmico</Label>
-              <select
-                value={superiorGrau}
-                onChange={(e) => setSuperiorGrau(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#121212] border border-borderCustom text-white text-xs outline-none mt-1"
-              >
-                <option value="Licenciatura">Licenciatura</option>
-                <option value="Bacharelado">Bacharelado</option>
-                <option value="Sequencial">Sequencial</option>
-                <option value="Tecnológico">Tecnológico</option>
-              </select>
+          ) : (
+            <div className="space-y-4">
+              {graduacoes.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#121212] p-3.5 rounded-lg border border-zinc-800 space-y-3 relative"
+                >
+                  <div className="flex justify-between items-center border-b border-zinc-800/60 pb-2">
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                      Graduação #{idx + 1}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removeGraduacao(idx)}
+                      className="h-7 px-2 text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 gap-1 border border-transparent hover:border-rose-500/20 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remover
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Grau Acadêmico</Label>
+                      <select
+                        value={item.grau || 'Licenciatura'}
+                        onChange={(e) => updateGraduacao(idx, 'grau', e.target.value)}
+                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1"
+                      >
+                        <option value="Licenciatura">Licenciatura</option>
+                        <option value="Bacharelado">Bacharelado</option>
+                        <option value="Sequencial">Sequencial</option>
+                        <option value="Tecnológico">Tecnológico</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Área do Curso *</Label>
+                      <Input
+                        value={item.area || ''}
+                        onChange={(e) => updateGraduacao(idx, 'area', e.target.value)}
+                        placeholder="Ex: Pedagogia, Matemática, História"
+                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Instituição de Formação</Label>
+                      <Input
+                        value={item.instituicao || ''}
+                        onChange={(e) => updateGraduacao(idx, 'instituicao', e.target.value)}
+                        placeholder="Nome da faculdade / universidade"
+                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Tipo de Instituição</Label>
+                      <select
+                        value={item.tipoInstituicao || 'Pública'}
+                        onChange={(e) => updateGraduacao(idx, 'tipoInstituicao', e.target.value)}
+                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1"
+                      >
+                        <option value="Pública">Pública</option>
+                        <option value="Privada">Privada</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Situação do Curso</Label>
+                      <select
+                        value={item.situacao || 'Concluído'}
+                        onChange={(e) => updateGraduacao(idx, 'situacao', e.target.value)}
+                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
+                      >
+                        <option value="Concluído">Concluído</option>
+                        <option value="Cursando">Cursando</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">
+                        {item.situacao === 'Cursando' ? 'Previsão de Conclusão' : 'Ano de Conclusão'}
+                      </Label>
+                      <Input
+                        value={item.ano || ''}
+                        onChange={(e) => updateGraduacao(idx, 'ano', e.target.value)}
+                        placeholder="Ex: 2024"
+                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-zinc-400">Código do Curso (opcional)</Label>
+                      <Input
+                        value={item.codigo || ''}
+                        onChange={(e) => updateGraduacao(idx, 'codigo', e.target.value)}
+                        placeholder="Código INEP/MEC"
+                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <Label className="text-xs">Instituição de Formação</Label>
-              <Input
-                value={superiorInstituicao}
-                onChange={(e) => setSuperiorInstituicao(e.target.value)}
-                placeholder="Nome da faculdade"
-                className="bg-[#121212] border-borderCustom text-white mt-1 text-xs"
-              />
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -178,7 +285,9 @@ export function EscolaridadeTab() {
       {/* Pós-Graduações */}
       <div className="space-y-3 bg-[#18181a] p-4 rounded-xl border border-zinc-800">
         <div className="flex justify-between items-center">
-          <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">Pós-Graduações Concluídas (Até 6)</h4>
+          <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
+            Pós-Graduações (Até 6)
+          </h4>
           <Button
             type="button"
             variant="outline"
@@ -186,7 +295,7 @@ export function EscolaridadeTab() {
             onClick={addPos}
             className="text-xs h-7 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold gap-1 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Adicionar
+            <Plus className="w-3.5 h-3.5" /> Adicionar Pós
           </Button>
         </div>
 
@@ -195,7 +304,10 @@ export function EscolaridadeTab() {
         ) : (
           <div className="space-y-3">
             {posGraduacoes.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#121212] p-2.5 rounded border border-zinc-800 relative">
+              <div
+                key={idx}
+                className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-[#121212] p-2.5 rounded border border-zinc-800 relative"
+              >
                 <div>
                   <Label className="text-[10px] text-zinc-500">Tipo</Label>
                   <select
@@ -208,6 +320,7 @@ export function EscolaridadeTab() {
                     <option value="Doutorado">Doutorado</option>
                   </select>
                 </div>
+
                 <div className="md:col-span-2">
                   <Label className="text-[10px] text-zinc-500 font-semibold">Área do Curso</Label>
                   <Input
@@ -217,9 +330,24 @@ export function EscolaridadeTab() {
                     className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
                   />
                 </div>
+
+                <div>
+                  <Label className="text-[10px] text-zinc-500">Situação</Label>
+                  <select
+                    value={item.situacao || 'Concluído'}
+                    onChange={(e) => updatePos(idx, 'situacao', e.target.value)}
+                    className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
+                  >
+                    <option value="Concluído">Concluído</option>
+                    <option value="Cursando">Cursando</option>
+                  </select>
+                </div>
+
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <Label className="text-[10px] text-zinc-500">Conclusão</Label>
+                    <Label className="text-[10px] text-zinc-500">
+                      {item.situacao === 'Cursando' ? 'Previsão' : 'Conclusão'}
+                    </Label>
                     <Input
                       value={item.ano}
                       onChange={(e) => updatePos(idx, 'ano', e.target.value)}

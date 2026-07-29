@@ -42,10 +42,21 @@ export interface Doencas {
   outra: string
 }
 
+export interface Graduacao {
+  area: string
+  codigo?: string
+  ano: string
+  tipoInstituicao: string
+  grau: string
+  instituicao: string
+  situacao?: string // 'Concluído' | 'Cursando'
+}
+
 export interface PosGraduacao {
   tipo: string
   area: string
   ano: string
+  situacao?: string // 'Concluído' | 'Cursando'
 }
 
 export interface FuncionarioFormContextType {
@@ -90,6 +101,8 @@ export interface FuncionarioFormContextType {
   setNacionalidadeEspec: (v: string) => void
   telefone: string
   setTelefone: (v: string) => void
+  telefoneEmergencia: string
+  setTelefoneEmergencia: (v: string) => void
   nomeMae: string
   setNomeMae: (v: string) => void
   nomePai: string
@@ -146,6 +159,8 @@ export interface FuncionarioFormContextType {
   setTipoVinculoEspec: (v: string) => void
   modalidadeEnsino: string
   setModalidadeEnsino: (v: string) => void
+  dataAdmissao: string
+  setDataAdmissao: (v: string) => void
   status: string
   setStatus: (v: string) => void
 
@@ -158,6 +173,8 @@ export interface FuncionarioFormContextType {
   setTea: (v: boolean) => void
   altasHabilidades: boolean
   setAltasHabilidades: (v: boolean) => void
+  tipoSanguineo: string
+  setTipoSanguineo: (v: string) => void
   doencas: Doencas
   setDoencas: React.Dispatch<React.SetStateAction<Doencas>>
   toggleDeficiencia: (val: string) => void
@@ -179,6 +196,8 @@ export interface FuncionarioFormContextType {
   setSuperiorGrau: (v: string) => void
   superiorInstituicao: string
   setSuperiorInstituicao: (v: string) => void
+  graduacoes: Graduacao[]
+  setGraduacoes: React.Dispatch<React.SetStateAction<Graduacao[]>>
   complementacaoPedagogica: string
   setComplementacaoPedagogica: (v: string) => void
   posGraduacoes: PosGraduacao[]

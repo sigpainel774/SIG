@@ -423,9 +423,9 @@ export default function FuncionariosPage() {
               .map(
                 (p: any) => `
             <div class="pos-item">
-              <strong>${p.tipo ?? ''}</strong> em ${p.area ?? ''} (Conclusão: ${
-                  p.ano ?? ''
-                })
+              <strong>${p.tipo ?? ''}</strong> em ${p.area ?? ''} (${
+                  p.situacao === 'Cursando' ? 'Cursando - Previsão:' : 'Conclusão:'
+                } ${p.ano ?? ''})
             </div>
           `
               )
