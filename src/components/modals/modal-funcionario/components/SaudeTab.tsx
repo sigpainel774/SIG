@@ -11,6 +11,7 @@ export function SaudeTab() {
     deficiencias, setDeficiencias,
     tea, setTea,
     altasHabilidades, setAltasHabilidades,
+    tipoSanguineo, setTipoSanguineo,
     doencas, setDoencas,
     toggleDeficiencia,
   } = useFuncionarioForm()
@@ -39,6 +40,28 @@ export function SaudeTab() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800 space-y-3">
+        <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Informações Médicas Gerais</h3>
+        <div className="max-w-xs">
+          <Label className="text-xs">Tipo Sanguíneo e Fator Rh</Label>
+          <select
+            value={tipoSanguineo}
+            onChange={(e) => setTipoSanguineo(e.target.value)}
+            className="w-full h-10 px-3 rounded-md bg-[#121212] border border-borderCustom text-white text-sm outline-none mt-1"
+          >
+            <option value="Não informado">Não informado</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+        </div>
+      </div>
+
       <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Acessibilidade & Deficiências</h3>
       
       <div className="flex items-center gap-3">

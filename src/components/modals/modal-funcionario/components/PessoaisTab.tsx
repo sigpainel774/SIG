@@ -10,6 +10,7 @@ export function PessoaisTab() {
     nome, setNome,
     apelido, setApelido,
     telefone, setTelefone,
+    telefoneEmergencia, setTelefoneEmergencia,
     censo, setCenso,
     email, setEmail,
     isEditing,
@@ -58,7 +59,16 @@ export function PessoaisTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Telefone de Emergência</Label>
+          <Input
+            value={telefoneEmergencia}
+            onChange={(e) => setTelefoneEmergencia(e.target.value)}
+            placeholder="(75) 98888-7777 (Contato)"
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
+        </div>
         <div>
           <Label>Identificação CENSO (INEP)</Label>
           <Input
