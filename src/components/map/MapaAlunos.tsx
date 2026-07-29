@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } f
 import L from 'leaflet';
 import { Search, MapPin, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { preloadFotos, prewarmSapeacuTiles } from '@/lib/mapCache';
 
 export interface AlunoMapeado {
   id: string;
@@ -46,6 +47,18 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
   const mapRef = useRef<L.Map>(null);
+
+  // Pre-warming dos tiles de Sapeaçu - BA e preloading das fotos 3x4 na montagem
+  useEffect(() => {
+    prewarmSapeacuTiles();
+  }, []);
+
+  useEffect(() => {
+    if (alunos && alunos.length > 0) {
+      const urls = alunos.map((a) => a.foto_url).filter(Boolean);
+      preloadFotos(urls);
+    }
+  }, [alunos]);
 
   // 1. Filtra alunos baseado no input de pesquisa e modalidade
   const alunosFiltrados = useMemo(() => {
@@ -90,20 +103,25 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
   // Lógica para centralizar o mapa em Sapeaçu por padrão ou quando a busca for limpa
   useEffect(() => {
+    let active = true;
     if (mapRef.current) {
-      // Invalida o tamanho do container Leaflet para prevenir mosaico cinza em trocas de aba
-      setTimeout(() => {
-        mapRef.current?.invalidateSize();
+      const timer = setTimeout(() => {
+        if (active && mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
       }, 100);
 
       if (busca.trim() !== '' && alunosFiltrados.length > 0) {
-        // Se houver busca ativa por texto, centraliza no primeiro resultado filtrado
         const primeiro = alunosFiltrados[0];
         mapRef.current.setView([primeiro.latitude, primeiro.longitude], 15);
       } else {
-        // Por padrão (sem busca ou ao abrir), o mapa sempre foca em Sapeaçu - BA
         mapRef.current.setView(SAPEACU_CENTER, 14);
       }
+
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
     }
   }, [busca, alunosFiltrados, SAPEACU_CENTER]);
 
@@ -137,7 +155,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
     const iniciais = obterIniciais(nome);
     const imgHtml =
       fotoUrl && fotoUrl.trim() !== ''
-        ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
+        ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" decoding="async" loading="eager" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
         : '';
 
     const isEJA = modalidade === 'EJA';
