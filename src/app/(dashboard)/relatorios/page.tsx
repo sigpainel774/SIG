@@ -176,9 +176,18 @@ export default function RelatoriosPage() {
                 }
               })
             
-            // Deduplicate by Funcionario ID
+            // Deduplicate by Funcionario ID, mantendo EJA se qualquer vínculo for EJA
             const uniqueMap = new Map<string, any>()
-            mapped.forEach(item => uniqueMap.set(item.id, item))
+            mapped.forEach(item => {
+              if (uniqueMap.has(item.id)) {
+                const existing = uniqueMap.get(item.id)
+                if (item.modalidade === 'EJA') {
+                  existing.modalidade = 'EJA'
+                }
+              } else {
+                uniqueMap.set(item.id, item)
+              }
+            })
             setMapData(Array.from(uniqueMap.values()))
           }
         } catch (err) {

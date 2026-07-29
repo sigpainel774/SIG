@@ -3,7 +3,7 @@
 Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
 Atualizado automaticamente com o status real do repositório.
 
-**Última atualização:** 2026-07-23
+**Última atualização:** 2026-07-28
 
 ---
 
@@ -11,6 +11,10 @@ Atualizado automaticamente com o status real do repositório.
 
 | Plano | Status | Observação |
 |-------|--------|------------|
+| Filtro de Mapa Logístico, Camadas e Impressão | ✅ Implementado | Sessão 2026-07-28 — Filtros de camadas em `MapaGlobal.tsx`, `MapaAlunos.tsx`, `relatorios/page.tsx` e impressão com `MapaImpressao.tsx` e `print-relatorio-geolocalizacao.tsx` |
+| Importador Inteligente de Alunos via Excel | ✅ Implementado | Sessão 2026-07-28 — Modal `modal-importar-excel.tsx` e utilitário `excelStudentParser.ts` para carga em massa |
+| Sistema de Expurgo Seguro & Auditoria da Lixeira | ✅ Implementado | Sessão 2026-07-28 — Rotas de hard-delete `/api/admin/hard-delete`, `archive-agent.ts`, `audit-agent.ts` e gestão em `/admin/lixeira` |
+| Otimização de Exportações de Banco & Painel do Chefe | ✅ Implementado | Sessão 2026-07-28 — Rota `/api/admin/export`, otimizações SQL/UI em `/admin/banco` e `/painel-chefe` |
 | Módulo de Transporte Escolar Completo | ✅ Implementado | Sessão 2026-07-23 — Tabelas SQL, 5 abas em `/admin/transporte`, modais de combustível, manutenção e alocação de alunos |
 | Módulo Secretário de Educação & Limpeza Boletim | ✅ Implementado | Sessão 2026-07-23 — Tabela `configuracoes_rede`, modal `/admin/escolas`, integração boletim e remoção placeholder |
 | Integração Resend + Primeiro Acesso | ✅ Implementado | Sessão 2026-07-21 — Tela `/primeiro-acesso`, integração no `proxy.ts`, `PerfilTab.tsx` e `login/page.tsx` |

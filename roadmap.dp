@@ -1,0 +1,51 @@
+# SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
+
+**Última Atualização:** 2026-07-28  
+**Repositório:** github.com/sigpainel774/SIG  
+**Branch Principal:** `main`  
+**Produção:** https://sig-six-kappa.vercel.app  
+
+---
+
+## 🗺️ Visão Geral & Painel de Status do Roadmap
+
+| Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
+|-------------------------|--------|----------------|-------------------|
+| **Filtro de Mapa Logístico, Camadas e Impressão** | ✅ Concluído | 2026-07-28 | Filtros avançados por camada de transporte/geolocalização em `MapaGlobal.tsx` e `MapaAlunos.tsx`, relatórios com `MapaImpressao.tsx` e template de impressão `print-relatorio-geolocalizacao.tsx`. |
+| **Importador Inteligente de Alunos via Excel** | ✅ Concluído | 2026-07-28 | Modal `modal-importar-excel.tsx` e parser `excelStudentParser.ts` para validação e carga em massa de estudantes em `/admin/escolas`. |
+| **Expurgo Seguro & Auditoria da Lixeira** | ✅ Concluído | 2026-07-28 | Endpoint `/api/admin/hard-delete`, rotinas de auditoria em `audit-agent.ts` e `archive-agent.ts`, interface em `/admin/lixeira`. |
+| **Otimização de Exportações & Banco/Painel do Chefe** | ✅ Concluído | 2026-07-28 | Endpoint `/api/admin/export`, otimizações de queries SQL e renderização em `/admin/banco` e `/painel-chefe`. |
+| **Módulo de Transporte Escolar Completo** | ✅ Concluído | 2026-07-23 | Tabelas SQL, 5 abas administrativas em `/admin/transporte`, modais de combustível, manutenção, rotas e enturmação de veículos/alunos. |
+| **Módulo Secretário de Educação & Limpeza Boletim** | ✅ Concluído | 2026-07-23 | Tabela `configuracoes_rede`, modal `/admin/escolas`, integração de assinaturas de relatórios e remoção de dados falsos. |
+| **Integração Resend + Primeiro Acesso** | ✅ Concluído | 2026-07-21 | Rota `/primeiro-acesso` (interceptador no `proxy.ts`), troca obrigatória de senha e envio de e-mails via Resend SMTP. |
+| **Verificação QR Code / Crachá de Funcionário** | ✅ Concluído | 2026-07-20 | Rota pública `/verificar/funcionario/[id]` para leitura de QR Code e validação instantânea de vínculo de funcionário. |
+| **Tiles de Mapas e Resiliência Leaflet** | ✅ Concluído | 2026-07-22 | Fallbacks e servidores alternativos de tiles Leaflet para visualização de escolas, rondas e geolocalização. |
+| **Portal do Aluno / Responsáveis** | ⏳ Pendente | — | Sistema de acesso para pais/responsáveis acompanharem notas, frequências e comunicados. Estrutura e SQL planejados em `PLANOS_FUTUROS.md`. |
+| **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
+| **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
+
+---
+
+## 📋 Detalhamento dos Próximos Passos (Pendências)
+
+### 1. Portal do Aluno & Responsáveis (Prioridade Alta)
+- **Escopo:** Interface simplificada para pais e alunos acessarem diários, ocorrências, horários e notas.
+- **Estrutura:** Autenticação via Supabase Auth (e-mail cadastrado presencialmente pela secretaria), tabelas `responsaveis` e `responsaveis_alunos`.
+- **Status:** Aguardando comando de execução inicial.
+
+### 2. Módulo Roteiro e Paradas - Motoristas Nível 6 (Prioridade Média)
+- **Escopo:** Interface simplificada em `/ponto-mobile` ou `/transporte-mobile` para motoristas visualizarem paradas do itinerário, registrarem presenças no ônibus e avisarem imprevistos.
+- **Status:** Planejado.
+
+### 3. Assistente de IA para Logs de Auditoria (Prioridade Média)
+- **Escopo:** Painel de chat interativo em `/admin/root` alimentado por consultas em `audit_logs` para diagnósticos rápidos pelo Superadmin.
+- **Status:** Planejado.
+
+---
+
+## ⚙️ Diretrizes & Regras Técnicas do Repositório
+
+1. **Proxy do Next.js 16 (`proxy.ts`):** O guard de segurança e roteamento deve se chamar estritamente `src/proxy.ts` exportando a função `proxy`. NUNCA renomeie para `middleware.ts`.
+2. **Qualidade de Código & Build:** Sempre testar tipos com `cmd /c "npx tsc --noEmit"` antes de finalizar qualquer lote de alterações.
+3. **Resolução de Dados Nulos:** Utilizar o operador de coalescência nula (`??`) e não `||` para manter strings vazias ou valores `0` / `false` válidos.
+4. **Git Workflow:** Alterações locais são feitas pelo agente; o commit e push para o GitHub são realizados exclusivamente pelo usuário.
