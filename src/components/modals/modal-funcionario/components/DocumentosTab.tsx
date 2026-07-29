@@ -260,7 +260,7 @@ export function DocumentosTab() {
 
         <div>
           <Label className="text-xs text-zinc-400">Visualização no Mapa (Clique ou arraste o pino para ajustar)</Label>
-          <div className="mt-1.5 h-[240px] w-full rounded-xl overflow-hidden border border-borderCustom relative z-10">
+          <div className="mt-1.5 h-[312px] w-full rounded-xl overflow-hidden border border-borderCustom relative z-10">
             <MiniMapa
               initialLat={latitude ?? undefined}
               initialLng={longitude ?? undefined}
