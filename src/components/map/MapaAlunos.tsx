@@ -2,10 +2,22 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { Search, MapPin, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { preloadFotos, prewarmSapeacuTiles } from '@/lib/mapCache';
+
+// Criador estático de ícone de agrupamento (evita re-render / memory leaks - ES-3)
+const criarIconeCluster = (cluster: any) => {
+  const count = cluster.getChildCount();
+  const sizeClass = count > 50 ? 'marker-cluster-custom-large' : '';
+  return L.divIcon({
+    html: `<div><span>${count}</span></div>`,
+    className: `marker-cluster-custom ${sizeClass}`,
+    iconSize: L.point(42, 42, true),
+  });
+};
 
 export interface AlunoMapeado {
   id: string;
@@ -79,24 +91,18 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
     });
   }, [busca, filtroModalidade, alunos]);
 
-  // 1.5 Filtro de performance por Bounds da Viewport
-  const alunosVisiveis = useMemo(() => {
-    if (!mapBounds) return alunosFiltrados.slice(0, 100);
-    
-    // Mantém apenas os que estão dentro do mapa atual
-    let visiveis = alunosFiltrados.filter(a => 
-      mapBounds.contains([a.latitude, a.longitude])
+  // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
+  const alunosValidos = useMemo(() => {
+    return alunosFiltrados.filter(
+      (a) =>
+        a.latitude != null &&
+        a.longitude != null &&
+        !isNaN(Number(a.latitude)) &&
+        !isNaN(Number(a.longitude)) &&
+        Number(a.latitude) !== 0 &&
+        Number(a.longitude) !== 0
     );
-
-    // Se estiver muito longe ou com muitos pontos (cluster simulado via limit)
-    if (mapZoom < 13 && visiveis.length > 50) {
-      visiveis = visiveis.slice(0, 50);
-    } else if (visiveis.length > 150) {
-      visiveis = visiveis.slice(0, 150);
-    }
-    
-    return visiveis;
-  }, [alunosFiltrados, mapBounds, mapZoom]);
+  }, [alunosFiltrados]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -302,91 +308,99 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
-          {alunosVisiveis.map((aluno) => {
-            const icone = criarIconeCustomizado(aluno.id, aluno.nome, aluno.foto_url, aluno.modalidade);
-            const iniciais = obterIniciais(aluno.nome);
+          <MarkerClusterGroup
+            iconCreateFunction={criarIconeCluster}
+            chunkedLoading
+            maxClusterRadius={45}
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={false}
+          >
+            {alunosValidos.map((aluno) => {
+              const icone = criarIconeCustomizado(aluno.id, aluno.nome, aluno.foto_url, aluno.modalidade);
+              const iniciais = obterIniciais(aluno.nome);
 
-            return (
-              <Marker
-                key={aluno.id}
-                position={[aluno.latitude, aluno.longitude]}
-                icon={icone}
-              >
-                {/* Popup Premium */}
-                <Popup maxWidth={260} className="custom-popup">
-                  <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px]">
-                    <div className="flex gap-3 items-center p-3">
-                      {aluno.foto_url ? (
-                        <div className="relative w-[48px] h-[48px] shrink-0">
-                          <img
-                            src={aluno.foto_url}
-                            alt={aluno.nome}
-                            className={cn(
-                              "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
-                              aluno.modalidade === 'EJA' ? "border-purple-500" : "border-emerald-500"
-                            )}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
+              return (
+                <Marker
+                  key={aluno.id}
+                  position={[aluno.latitude, aluno.longitude]}
+                  icon={icone}
+                >
+                  {/* Popup Premium */}
+                  <Popup maxWidth={260} className="custom-popup">
+                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px]">
+                      <div className="flex gap-3 items-center p-3">
+                        {aluno.foto_url ? (
+                          <div className="relative w-[48px] h-[48px] shrink-0">
+                            <img
+                              src={aluno.foto_url}
+                              alt={aluno.nome}
+                              className={cn(
+                                "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
+                                aluno.modalidade === 'EJA' ? "border-purple-500" : "border-emerald-500"
+                              )}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            <div className={cn(
+                              "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
+                              aluno.modalidade === 'EJA'
+                                ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                                : "bg-gradient-to-br from-emerald-600 to-emerald-400"
+                            )}>
+                              {iniciais}
+                            </div>
+                          </div>
+                        ) : (
                           <div className={cn(
-                            "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
+                            "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
                             aluno.modalidade === 'EJA'
                               ? "bg-gradient-to-br from-purple-600 to-purple-400"
                               : "bg-gradient-to-br from-emerald-600 to-emerald-400"
                           )}>
                             {iniciais}
                           </div>
-                        </div>
-                      ) : (
-                        <div className={cn(
-                          "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
-                          aluno.modalidade === 'EJA'
-                            ? "bg-gradient-to-br from-purple-600 to-purple-400"
-                            : "bg-gradient-to-br from-emerald-600 to-emerald-400"
-                        )}>
-                          {iniciais}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <strong className="text-sm block text-white leading-tight">
-                            {aluno.nome}
-                          </strong>
-                          <span className={cn(
-                            "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
-                            aluno.modalidade === 'EJA'
-                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                              : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          )}>
-                            {aluno.modalidade ?? 'Regular'}
-                          </span>
-                        </div>
-                        {aluno.turma && (
-                          <span className="text-xs text-emerald-400 block mt-0.5">
-                            Turma: {aluno.turma}
-                          </span>
                         )}
-                        <span className="text-[11px] text-slate-400 block mt-1">
-                          📍 {aluno.escola}
-                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <strong className="text-sm block text-white leading-tight">
+                              {aluno.nome}
+                            </strong>
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                              aluno.modalidade === 'EJA'
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                            )}>
+                              {aluno.modalidade ?? 'Regular'}
+                            </span>
+                          </div>
+                          {aluno.turma && (
+                            <span className="text-xs text-emerald-400 block mt-0.5">
+                              Turma: {aluno.turma}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-slate-400 block mt-1">
+                            📍 {aluno.escola}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="bg-[#1f283b] p-2 border-t border-[#26304d]">
+                        <a
+                          href={`https://www.google.com/maps?q=${aluno.latitude},${aluno.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-lg transition-colors no-underline"
+                        >
+                          🧭 Ver Residência no Maps
+                        </a>
                       </div>
                     </div>
-                    <div className="bg-[#1f283b] p-2 border-t border-[#26304d]">
-                      <a
-                        href={`https://www.google.com/maps?q=${aluno.latitude},${aluno.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-lg transition-colors no-underline"
-                      >
-                        🧭 Ver Residência no Maps
-                      </a>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MarkerClusterGroup>
         </MapContainer>
       </div>
 

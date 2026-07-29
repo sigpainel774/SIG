@@ -88,6 +88,8 @@ export function EscolaridadeTab() {
     'Nenhum',
   ]
 
+  const isSuperior = escolaridadeNivel?.toLowerCase().includes('superior') || graduacoes.length > 0
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -97,7 +99,7 @@ export function EscolaridadeTab() {
             value={escolaridadeNivel}
             onChange={(e) => {
               setEscolaridadeNivel(e.target.value)
-              if (e.target.value === 'Educação Superior' && graduacoes.length === 0) {
+              if (e.target.value.toLowerCase().includes('superior') && graduacoes.length === 0) {
                 addGraduacao()
               }
             }}
@@ -107,6 +109,9 @@ export function EscolaridadeTab() {
             <option value="Ensino Fundamental">Ensino Fundamental Completo</option>
             <option value="Ensino Médio">Ensino Médio Completo</option>
             <option value="Educação Superior">Educação Superior Completa</option>
+            {escolaridadeNivel && !['Não concluiu o Ensino Fundamental', 'Ensino Fundamental', 'Ensino Médio', 'Educação Superior'].includes(escolaridadeNivel) && (
+              <option value={escolaridadeNivel}>{escolaridadeNivel}</option>
+            )}
           </select>
         </div>
 
@@ -128,7 +133,7 @@ export function EscolaridadeTab() {
       </div>
 
       {/* Graduações / Cursos Superiores */}
-      {escolaridadeNivel === 'Educação Superior' && (
+      {isSuperior && (
         <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800 space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-800/80 pb-3">
             <div className="flex items-center gap-2">
