@@ -46,35 +46,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user) {
-    const isPublicRoute =
-      pathname.startsWith('/login') ||
-      pathname.startsWith('/assinar') ||
-      pathname.startsWith('/verificar') ||
-      pathname.startsWith('/primeiro-acesso')
-
-    const { data: funcionario } = await supabase
-      .from('funcionarios')
-      .select('primeiro_acesso')
-      .eq('auth_user_id', user.id)
-      .maybeSingle()
-
-    if (funcionario?.primeiro_acesso && !isPublicRoute) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/primeiro-acesso'
-      return NextResponse.redirect(url)
-    }
-
-    if (!funcionario?.primeiro_acesso && pathname.startsWith('/primeiro-acesso')) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/home'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // Lógica simplificada de níveis baseada em JWT Custom Claims.
-  // Em um cenário real, se as custom claims não estiverem habilitadas, 
-  // será preciso buscar o nível no banco e rotear.
   // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
   if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
     const res = NextResponse.next({
@@ -102,43 +73,6 @@ export async function proxy(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/home'
         return NextResponse.redirect(url)
-      }
-    }
-
-    if (pathname.startsWith('/relatorios/servidores')) {
-      const isSuperAdmin = user.app_metadata?.is_superadmin === true
-      if (!isSuperAdmin) {
-        const { data: acessos } = await supabase
-          .from('acessos_usuarios')
-          .select('nivel, funcionarios!acessos_usuarios_funcionario_id_fkey!inner(auth_user_id)')
-          .eq('funcionarios.auth_user_id', user.id)
-          .eq('ativo', true)
-
-        const temNivel1 = acessos?.some((a: any) => a.nivel === 1)
-        if (!temNivel1) {
-          const url = request.nextUrl.clone()
-          url.pathname = '/home'
-          return NextResponse.redirect(url)
-        }
-      }
-    }
-
-    if (pathname.startsWith('/financeiro/folha-pagamento')) {
-      const isSuperAdmin = user.app_metadata?.is_superadmin === true
-      if (!isSuperAdmin) {
-        // Otimização: unifica a busca em uma única query síncrona com join explícito para evitar RTTs redundantes
-        const { data: acessos } = await supabase
-          .from('acessos_usuarios')
-          .select('nivel, funcionarios!acessos_usuarios_funcionario_id_fkey!inner(auth_user_id)')
-          .eq('funcionarios.auth_user_id', user.id)
-          .eq('ativo', true)
-
-        const temNivel1 = acessos?.some((a: any) => a.nivel === 1)
-        if (!temNivel1) {
-          const url = request.nextUrl.clone()
-          url.pathname = '/home'
-          return NextResponse.redirect(url)
-        }
       }
     }
   }

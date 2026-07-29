@@ -36,6 +36,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       // Usuário órfão: logado mas sem cadastro na tabela funcionarios
       redirect('/login?error=orphan')
     }
+    
+    if (perfil.funcionario?.primeiro_acesso) {
+      redirect('/primeiro-acesso')
+    }
 
     funcionario = perfil.funcionario
     acessos = perfil.acessos
