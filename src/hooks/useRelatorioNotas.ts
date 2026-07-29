@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 
 export interface NotaRecord {
@@ -58,10 +58,12 @@ export function useRelatorioNotas(escolaId: string | null) {
   const [taxaAprovados, setTaxaAprovados] = useState<number>(0)
   const [taxaRisco, setTaxaRisco] = useState<number>(0)
   
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const fetchIdRef = useRef(0)
 
   // Carregar turmas e matérias da escola ativa para os filtros
   useEffect(() => {
+    let active = true
     async function loadFiltrosData() {
       if (!escolaId) {
         setTurmas([])
@@ -77,14 +79,19 @@ export function useRelatorioNotas(escolaId: string | null) {
         if (turmasRes.error) throw turmasRes.error
         if (materiasRes.error) throw materiasRes.error
 
-        setTurmas(turmasRes.data || [])
-        setMaterias(materiasRes.data || [])
+        if (active) {
+          setTurmas(turmasRes.data || [])
+          setMaterias(materiasRes.data || [])
+        }
       } catch (err: any) {
         console.error('Erro ao carregar filtros de escola:', err)
       }
     }
     loadFiltrosData()
-  }, [escolaId])
+    return () => {
+      active = false
+    }
+  }, [escolaId, supabase])
 
   // Função principal para carregar os dados pedagógicos
   const fetchPedagogicoData = useCallback(async (filters: {
@@ -93,6 +100,8 @@ export function useRelatorioNotas(escolaId: string | null) {
     materiaId?: string
     periodo?: string
   } = {}) => {
+    const currentFetchId = ++fetchIdRef.current
+
     setLoading(true)
     setError(null)
     
@@ -134,6 +143,9 @@ export function useRelatorioNotas(escolaId: string | null) {
 
         const { data: AlunosData, error: errAlunos } = await queryAlunos
         if (errAlunos) throw errAlunos
+        
+        if (currentFetchId !== fetchIdRef.current) return
+        
         setAlunos(AlunosData || [])
 
         // 2. Buscar Notas
@@ -151,6 +163,9 @@ export function useRelatorioNotas(escolaId: string | null) {
 
         const { data: NotasData, error: errNotas } = await queryNotas
         if (errNotas) throw errNotas
+        
+        if (currentFetchId !== fetchIdRef.current) return
+        
         setNotas((NotasData as unknown as NotaRecord[]) || [])
 
         // 3. Buscar Frequências (Lightweight)
@@ -168,6 +183,9 @@ export function useRelatorioNotas(escolaId: string | null) {
 
         const { data: FreqsData, error: errFreqs } = await queryFreqs
         if (errFreqs) throw errFreqs
+        
+        if (currentFetchId !== fetchIdRef.current) return
+        
         setFrequencias((FreqsData as FrequenciaRecord[]) || [])
 
       } else {
@@ -193,6 +211,8 @@ export function useRelatorioNotas(escolaId: string | null) {
         if (alunosRes.error) throw alunosRes.error
         if (notasRes.error) throw notasRes.error
         if (freqsRes.error) throw freqsRes.error
+
+        if (currentFetchId !== fetchIdRef.current) return
 
         const allEscolas = escolasRes.data || []
         const allTurmas = turmasRes.data || []
@@ -316,12 +336,15 @@ export function useRelatorioNotas(escolaId: string | null) {
         }
       }
     } catch (err: any) {
+      if (currentFetchId !== fetchIdRef.current) return
       console.error('Erro ao buscar dados pedagógicos:', err)
       setError(err.message || 'Falha ao recuperar dados do banco de dados.')
     } finally {
-      setLoading(false)
+      if (currentFetchId === fetchIdRef.current) {
+        setLoading(false)
+      }
     }
-  }, [escolaId])
+  }, [escolaId, supabase])
 
   // O carregamento inicial e atualizações são gerenciados pelo componente pai chamando refetch() com filtros.
 
