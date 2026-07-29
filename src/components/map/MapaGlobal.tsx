@@ -48,7 +48,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
   const [busca, setBusca] = useState('');
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
-  const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados'>('todos');
+  const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados' | 'efetivos'>('todos');
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
   const mapRef = useRef<L.Map>(null);
@@ -58,14 +58,16 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     const termo = busca.toLowerCase().trim();
     return funcionarios.filter((f) => {
       // Filtro de modalidade
-      if (filtroModalidade === 'eja' && f.modalidade !== 'EJA') return false;
-      if (filtroModalidade === 'regular' && f.modalidade === 'EJA') return false;
+      const isEJA = (f.modalidade || '').toString().toUpperCase().includes('EJA');
+      if (filtroModalidade === 'eja' && !isEJA) return false;
+      if (filtroModalidade === 'regular' && isEJA) return false;
 
       // Filtro de tipo de vínculo (Visível e ativo apenas para Nível 1 & Superadmin)
       if (isLevel1OrSuperadmin && filtroVinculo !== 'todos') {
         const vinc = (f.tipo_vinculo || '').toLowerCase().trim();
         if (filtroVinculo === 'contratados' && !vinc.includes('contratad')) return false;
         if (filtroVinculo === 'nomeados' && !vinc.includes('nomead')) return false;
+        if (filtroVinculo === 'efetivos' && !vinc.includes('efetiv')) return false;
       }
 
       // Filtro de texto
@@ -255,12 +257,13 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </span>
             <select
               value={filtroVinculo}
-              onChange={(e) => setFiltroVinculo(e.target.value as 'todos' | 'contratados' | 'nomeados')}
+              onChange={(e) => setFiltroVinculo(e.target.value as 'todos' | 'contratados' | 'nomeados' | 'efetivos')}
               className="bg-[#141a27] text-xs font-semibold text-slate-200 border border-[#2d3a54] rounded-md px-2.5 py-1 outline-none focus:border-sky-500 cursor-pointer"
             >
               <option value="todos">Todos</option>
               <option value="contratados">Contratados</option>
               <option value="nomeados">Nomeados</option>
+              <option value="efetivos">Efetivos</option>
             </select>
           </div>
         )}
