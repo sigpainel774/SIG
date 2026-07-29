@@ -91,8 +91,8 @@ export async function proxy(request: NextRequest) {
       // Zero queries: lê is_superadmin diretamente do JWT (app_metadata populado pelo trigger Postgres)
       const isSuperAdmin = user.app_metadata?.is_superadmin === true
 
-      // Se for superadmin de sistema, a navegação fica trancada no painel root /admin
-      if (isSuperAdmin && !pathname.startsWith('/admin')) {
+      // Se for superadmin de sistema, a navegação fica no painel root /admin ou em /relatorios
+      if (isSuperAdmin && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin'
         return NextResponse.redirect(url)
@@ -104,6 +104,25 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url)
       }
     }
+
+    if (pathname.startsWith('/relatorios/servidores')) {
+      const isSuperAdmin = user.app_metadata?.is_superadmin === true
+      if (!isSuperAdmin) {
+        const { data: acessos } = await supabase
+          .from('acessos_usuarios')
+          .select('nivel, funcionarios!acessos_usuarios_funcionario_id_fkey!inner(auth_user_id)')
+          .eq('funcionarios.auth_user_id', user.id)
+          .eq('ativo', true)
+
+        const temNivel1 = acessos?.some((a: any) => a.nivel === 1)
+        if (!temNivel1) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/home'
+          return NextResponse.redirect(url)
+        }
+      }
+    }
+
     if (pathname.startsWith('/financeiro/folha-pagamento')) {
       const isSuperAdmin = user.app_metadata?.is_superadmin === true
       if (!isSuperAdmin) {

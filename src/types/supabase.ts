@@ -3809,6 +3809,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_relatorio_servidores: {
+        Args: {
+          p_cargo?: string | null
+          p_escola_id?: string | null
+          p_modalidade?: string | null
+          p_vinculo_tipo?: string | null
+        }
+        Returns: Json
+      }
       check_chefe_gerencia_funcionario: {
         Args: { f_cargo: string; f_id: string }
         Returns: boolean
