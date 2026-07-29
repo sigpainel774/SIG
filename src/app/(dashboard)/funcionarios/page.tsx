@@ -83,6 +83,7 @@ export default function FuncionariosPage() {
   const [viewMode, setViewMode] = useState<'lista' | 'permissoes'>('lista')
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
+  const [cargosCadastrados, setCargosCadastrados] = useState<string[]>([])
   const [carregando, setCarregando] = useState(true)
 
   /* Filtros */
@@ -102,6 +103,39 @@ export default function FuncionariosPage() {
   const [funcLotacaoInicial, setFuncLotacaoInicial] = useState<{
     id: string
   } | null>(null)
+
+  /* ── Carregar cargos cadastrados no Superpainel (public.cargos) ── */
+  useEffect(() => {
+    let isMounted = true
+    const carregarCargosCadastrados = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cargos')
+          .select('nome')
+          .is('deleted_at', null)
+          .order('nome', { ascending: true })
+
+        if (error) {
+          console.error('Erro ao carregar cargos do superpainel:', error)
+          return
+        }
+
+        if (isMounted && data) {
+          const nomes = data
+            .map((c: { nome: string }) => (c.nome ?? '').trim())
+            .filter(Boolean)
+          setCargosCadastrados(nomes)
+        }
+      } catch (err) {
+        console.error('Erro inesperado ao carregar cargos do superpainel:', err)
+      }
+    }
+
+    carregarCargosCadastrados()
+    return () => {
+      isMounted = false
+    }
+  }, [supabase])
 
   /* ── Carregar funcionários ───────────────────────────────── */
 
@@ -243,11 +277,22 @@ export default function FuncionariosPage() {
   /* ── Listas para dropdowns ─────────────────────────────────── */
 
   const cargosUnicos = useMemo(() => {
-    const set = new Set(
-      funcionarios.map((f) => f.cargo).filter(Boolean) as string[]
-    )
-    return Array.from(set).sort()
-  }, [funcionarios])
+    const set = new Set<string>()
+
+    // Cargos cadastrados no superpainel (tabela public.cargos)
+    cargosCadastrados.forEach((nome) => {
+      const trimmed = nome.trim()
+      if (trimmed) set.add(trimmed)
+    })
+
+    // Cargos atribuídos aos funcionários atuais (fallback para vínculos antigos)
+    funcionarios.forEach((f) => {
+      const trimmed = (f.cargo ?? '').trim()
+      if (trimmed) set.add(trimmed)
+    })
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }, [cargosCadastrados, funcionarios])
 
   const escolasUnicas = useMemo(() => {
     const set = new Set(
