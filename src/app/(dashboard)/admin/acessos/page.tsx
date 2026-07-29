@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { KeyRound, RefreshCw, Pause, Trash2, Search, ShieldCheck, Check, X, AlertTriangle } from 'lucide-react'
+import { KeyRound, RefreshCw, Pause, Trash2, Search, ShieldCheck, Check, X, AlertTriangle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { ModalContasEspeciais } from '@/components/modals/modal-contas-especiais'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
@@ -20,13 +21,14 @@ export interface AcessoItem {
   status: 'ATIVO' | 'INATIVO' | 'PAUSADO' | string
 }
 
-
-
 export default function AdminAcessosPage() {
   const supabase = createClient()
 
   const [acessos, setAcessos] = useState<AcessoItem[]>([])
   const [loading, setLoading] = useState(false)
+
+  // Modal de Contas Especiais
+  const [modalContasEspeciaisOpen, setModalContasEspeciaisOpen] = useState(false)
 
   // Filtros exatamente como no layout da imagem
   const [filtroNivel, setFiltroNivel] = useState('ALL')
@@ -274,6 +276,36 @@ export default function AdminAcessosPage() {
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto pb-10">
+      {/* Cabeçalho do Superpainel de Acessos */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-borderCustom">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <KeyRound className="w-7 h-7 text-purple-400" />
+            Gestão Global de Acessos
+          </h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Superpainel de controle de permissões, níveis hierárquicos e contas especiais.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          onClick={() => setModalContasEspeciaisOpen(true)}
+          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs gap-2 rounded-xl h-10 px-4 cursor-pointer shadow-md self-start sm:self-auto"
+        >
+          <Sparkles className="w-4 h-4 fill-black" />
+          <span>Gerenciar Contas Especiais</span>
+        </Button>
+      </div>
+
+      {/* Modal Contas Especiais */}
+      {modalContasEspeciaisOpen && (
+        <ModalContasEspeciais
+          open={modalContasEspeciaisOpen}
+          onOpenChange={setModalContasEspeciaisOpen}
+        />
+      )}
+
       {/* Filtros Superiores exatamente conforme Layout da Imagem */}
       <div className="space-y-3">
         {/* Dropdown 1: Todos os níveis */}
