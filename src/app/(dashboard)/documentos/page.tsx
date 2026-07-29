@@ -231,7 +231,7 @@ export default function DocumentosPage() {
     }
 
     // Apenas atestados e declaração de vaga que usam a tabela 'assinatura' genérica
-    if (['atestado-matricula', 'atestado-frequencia', 'declaracao-vaga'].indexOf(docType) === -1) {
+    if (['atestado-matricula', 'atestado-frequencia', 'declaracao-vaga', 'atestado-transferencia'].indexOf(docType) === -1) {
       setTokenDocumentoExistente(null)
       return
     }
@@ -341,6 +341,7 @@ export default function DocumentosPage() {
     { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
     { id: 'atestado-frequencia', label: 'Atestado de Frequência', icon: FileCheck, desc: 'Declara frequência escolar regular do estudante.' },
     { id: 'declaracao-vaga', label: 'Declaração de Vaga', icon: GraduationCap, desc: 'Reserva/indica vaga de transferência na unidade.' },
+    { id: 'atestado-transferencia', label: 'Atestado de Transferência', icon: FileText, desc: 'Atestado oficial de pedido de transferência em curso.' },
     { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
     { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
     { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
