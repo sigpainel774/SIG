@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { Phone, Calendar, ClipboardList, Plus, MessageCircle, X } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalNovaOcorrencia } from './ModalNovaOcorrencia'
+import { CachedImage } from '@/components/ui/cached-image'
 
 interface ModalDetalhesAlunoProps {
   open: boolean
@@ -217,11 +218,12 @@ export function ModalDetalhesAluno({
         {/* Perfil e Avatar */}
         <div className="flex flex-col items-center text-center mt-2">
           <div className="w-20 h-20 rounded-full bg-[#3ea6ff]/10 border-2 border-[#3ea6ff]/30 text-[#3ea6ff] text-2xl font-bold flex items-center justify-center overflow-hidden shadow-inner mb-3">
-            {aluno.foto_url ? (
-              <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
-            ) : (
-              aluno.nome.substring(0, 2).toUpperCase()
-            )}
+            <CachedImage
+              src={aluno.foto_url}
+              alt={aluno.nome}
+              className="w-full h-full"
+              fallback={aluno.nome.substring(0, 2).toUpperCase()}
+            />
           </div>
           <h3 className="text-lg font-bold text-foreground tracking-tight">{aluno.nome}</h3>
           <p className="text-muted-foreground text-xs mt-1">{turma.nome} ({turma.ano_letivo})</p>

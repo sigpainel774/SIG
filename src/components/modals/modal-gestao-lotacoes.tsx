@@ -16,6 +16,7 @@ import { FuncionarioLotacaoList } from './lotacoes/FuncionarioLotacaoList'
 import { NovaLotacaoForm } from './lotacoes/NovaLotacaoForm'
 import { TransferenciaImediataForm } from './lotacoes/TransferenciaImediataForm'
 import { SolicitarTransferenciaForm } from './lotacoes/SolicitarTransferenciaForm'
+import { CachedImage } from '@/components/ui/cached-image'
 
 interface ModalGestaoLotacoesProps {
   open: boolean
@@ -171,15 +172,12 @@ export function ModalGestaoLotacoes({
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarColor(selecionado.nome).bg} ${avatarColor(selecionado.nome).text}`}
                     >
-                      {selecionado.foto_url ? (
-                        <img 
-                          src={`${selecionado.foto_url.split('?')[0]}?t=${timestamp}`} 
-                          alt={selecionado.nome} 
-                          className="w-full h-full object-cover" 
-                        />
-                      ) : (
-                        getInitials(selecionado.nome)
-                      )}
+                      <CachedImage
+                        src={selecionado.foto_url}
+                        alt={selecionado.nome}
+                        className="w-full h-full"
+                        fallback={getInitials(selecionado.nome)}
+                      />
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-white text-sm sm:text-base truncate">{selecionado.nome}</p>

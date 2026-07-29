@@ -10,6 +10,7 @@ import { usePessoaForm } from '@/hooks/usePessoaForm'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { useAlunoSignaturePolling } from './useAlunoSignaturePolling'
 import { AlunoFormContextType, ModalAlunoProps } from '../types'
+import { invalidarCacheFoto } from '@/lib/photoCache'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -371,7 +372,9 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         .from('fotos_alunos')
         .getPublicUrl(fileName)
 
+    await invalidarCacheFoto(fotoUrl)
     setFotoUrl(publicData.publicUrl)
+    await invalidarCacheFoto(publicData.publicUrl)
     toast.success('Foto enviada com sucesso!')
   }
 
