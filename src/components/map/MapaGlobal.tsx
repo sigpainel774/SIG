@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } f
 import L from 'leaflet';
 import { Search, MapPin, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export interface FuncionarioMapeado {
   id: string;
@@ -15,6 +16,7 @@ export interface FuncionarioMapeado {
   latitude: number;
   longitude: number;
   modalidade?: string;
+  tipo_vinculo?: string | null;
 }
 
 interface MapaGlobalProps {
@@ -41,19 +43,30 @@ function BoundsTracker({ setBounds, setZoom }: { setBounds: (b: L.LatLngBounds) 
 }
 
 export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
+  const isAdminGlobalOrRoot = useAuthStore((state) => state.isAdminGlobalOrRoot);
+  const isLevel1OrSuperadmin = isAdminGlobalOrRoot();
+
   const [busca, setBusca] = useState('');
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
+  const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados'>('todos');
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
   const mapRef = useRef<L.Map>(null);
 
-  // 1. Filtra funcionários baseado no input de pesquisa e na modalidade
+  // 1. Filtra funcionários baseado no input de pesquisa, modalidade e vínculo
   const funcionariosFiltrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
     return funcionarios.filter((f) => {
       // Filtro de modalidade
       if (filtroModalidade === 'eja' && f.modalidade !== 'EJA') return false;
       if (filtroModalidade === 'regular' && f.modalidade === 'EJA') return false;
+
+      // Filtro de tipo de vínculo (Visível e ativo apenas para Nível 1 & Superadmin)
+      if (isLevel1OrSuperadmin && filtroVinculo !== 'todos') {
+        const vinc = (f.tipo_vinculo || '').toLowerCase().trim();
+        if (filtroVinculo === 'contratados' && !vinc.includes('contratad')) return false;
+        if (filtroVinculo === 'nomeados' && !vinc.includes('nomead')) return false;
+      }
 
       // Filtro de texto
       if (!termo) return true;
@@ -64,7 +77,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         (f.modalidade && f.modalidade.toLowerCase().includes(termo))
       );
     });
-  }, [busca, filtroModalidade, funcionarios]);
+  }, [busca, filtroModalidade, filtroVinculo, funcionarios, isLevel1OrSuperadmin]);
 
   // 1.5 Filtro de performance por Bounds da Viewport (evitar centenas de nós no DOM)
   const funcionariosVisiveis = useMemo(() => {
@@ -234,6 +247,24 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           </button>
         </div>
 
+        {/* Seletor de Tipo de Vínculo (Exclusivo Nível 1 & Superadmin) */}
+        {isLevel1OrSuperadmin && (
+          <div className="flex items-center gap-1.5 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+            <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+              <Filter className="w-3 h-3" /> Vínculo:
+            </span>
+            <select
+              value={filtroVinculo}
+              onChange={(e) => setFiltroVinculo(e.target.value as 'todos' | 'contratados' | 'nomeados')}
+              className="bg-[#141a27] text-xs font-semibold text-slate-200 border border-[#2d3a54] rounded-md px-2.5 py-1 outline-none focus:border-sky-500 cursor-pointer"
+            >
+              <option value="todos">Todos</option>
+              <option value="contratados">Contratados</option>
+              <option value="nomeados">Nomeados</option>
+            </select>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={recentralizarSapeacu}
@@ -374,8 +405,10 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
-        <strong className="text-sky-400">{funcionariosFiltrados.length}</strong> funcionário(s) encontrado(s) {filtroModalidade !== 'todos' ? `[Filtro: ${filtroModalidade.toUpperCase()}]` : ''} de um total de{' '}
-        {funcionarios.length}. Clique em um pino para detalhes.
+        <strong className="text-sky-400">{funcionariosFiltrados.length}</strong> funcionário(s) encontrado(s){' '}
+        {filtroModalidade !== 'todos' ? `[Ensino: ${filtroModalidade.toUpperCase()}] ` : ''}
+        {isLevel1OrSuperadmin && filtroVinculo !== 'todos' ? `[Vínculo: ${filtroVinculo.toUpperCase()}] ` : ''}
+        de um total de {funcionarios.length}. Clique em um pino para detalhes.
       </p>
     </div>
   );
