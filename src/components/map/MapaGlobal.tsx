@@ -2,12 +2,23 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { Search, MapPin, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
-
 import { preloadFotos, prewarmSapeacuTiles } from '@/lib/mapCache';
+
+// Criador estático de ícone de agrupamento para Servidores/Funcionários (ES-3)
+const criarIconeCluster = (cluster: any) => {
+  const count = cluster.getChildCount();
+  const sizeClass = count > 50 ? 'marker-cluster-custom-large' : '';
+  return L.divIcon({
+    html: `<div><span>${count}</span></div>`,
+    className: `marker-cluster-custom ${sizeClass}`,
+    iconSize: L.point(42, 42, true),
+  });
+};
 
 export interface FuncionarioMapeado {
   id: string;
@@ -95,24 +106,18 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     });
   }, [busca, filtroModalidade, filtroVinculo, funcionarios, isLevel1OrSuperadmin]);
 
-  // 1.5 Filtro de performance por Bounds da Viewport (evitar centenas de nós no DOM)
-  const funcionariosVisiveis = useMemo(() => {
-    if (!mapBounds) return funcionariosFiltrados.slice(0, 100);
-    
-    // Mantém apenas os que estão dentro do mapa atual
-    let visiveis = funcionariosFiltrados.filter(f => 
-      mapBounds.contains([f.latitude, f.longitude])
+  // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
+  const funcionariosValidos = useMemo(() => {
+    return funcionariosFiltrados.filter(
+      (f) =>
+        f.latitude != null &&
+        f.longitude != null &&
+        !isNaN(Number(f.latitude)) &&
+        !isNaN(Number(f.longitude)) &&
+        Number(f.latitude) !== 0 &&
+        Number(f.longitude) !== 0
     );
-
-    // Se estiver muito longe ou com muitos pontos (cluster simulado via limit)
-    if (mapZoom < 13 && visiveis.length > 50) {
-      visiveis = visiveis.slice(0, 50);
-    } else if (visiveis.length > 150) {
-      visiveis = visiveis.slice(0, 150);
-    }
-    
-    return visiveis;
-  }, [funcionariosFiltrados, mapBounds, mapZoom]);
+  }, [funcionariosFiltrados]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -338,90 +343,98 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             </LayersControl.BaseLayer>
           </LayersControl>
           <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
-          {funcionariosVisiveis.map((func) => {
-            const icone = criarIconeCustomizado(func.id, func.nome, func.foto_url, func.modalidade);
-            const iniciais = obterIniciais(func.nome);
-            
-            return (
-              <Marker
-                key={func.id}
-                position={[func.latitude, func.longitude]}
-                icon={icone}
-              >
-                {/* Popup Premium */}
-                <Popup maxWidth={260} className="custom-popup">
-                  <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px]">
-                    <div className="flex gap-3 items-center p-3">
-                      {func.foto_url ? (
-                        <div className="relative w-[48px] h-[48px] shrink-0">
-                          <img
-                            src={func.foto_url}
-                            alt={func.nome}
-                            className={cn(
-                              "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
-                              func.modalidade === 'EJA' ? "border-purple-500" : "border-sky-500"
-                            )}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                          {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
+          <MarkerClusterGroup
+            iconCreateFunction={criarIconeCluster}
+            chunkedLoading
+            maxClusterRadius={45}
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={false}
+          >
+            {funcionariosValidos.map((func) => {
+              const icone = criarIconeCustomizado(func.id, func.nome, func.foto_url, func.modalidade);
+              const iniciais = obterIniciais(func.nome);
+              
+              return (
+                <Marker
+                  key={func.id}
+                  position={[func.latitude, func.longitude]}
+                  icon={icone}
+                >
+                  {/* Popup Premium */}
+                  <Popup maxWidth={260} className="custom-popup">
+                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px]">
+                      <div className="flex gap-3 items-center p-3">
+                        {func.foto_url ? (
+                          <div className="relative w-[48px] h-[48px] shrink-0">
+                            <img
+                              src={func.foto_url}
+                              alt={func.nome}
+                              className={cn(
+                                "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
+                                func.modalidade === 'EJA' ? "border-purple-500" : "border-sky-500"
+                              )}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
+                            <div className={cn(
+                              "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
+                              func.modalidade === 'EJA' 
+                                ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                                : "bg-gradient-to-br from-sky-600 to-sky-400"
+                            )}>
+                              {iniciais}
+                            </div>
+                          </div>
+                        ) : (
                           <div className={cn(
-                            "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
-                            func.modalidade === 'EJA' 
+                            "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
+                            func.modalidade === 'EJA'
                               ? "bg-gradient-to-br from-purple-600 to-purple-400"
                               : "bg-gradient-to-br from-sky-600 to-sky-400"
                           )}>
                             {iniciais}
                           </div>
-                        </div>
-                      ) : (
-                        <div className={cn(
-                          "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
-                          func.modalidade === 'EJA'
-                            ? "bg-gradient-to-br from-purple-600 to-purple-400"
-                            : "bg-gradient-to-br from-sky-600 to-sky-400"
-                        )}>
-                          {iniciais}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <strong className="text-sm block text-white leading-tight">
-                            {func.nome}
-                          </strong>
-                          <span className={cn(
-                            "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
-                            func.modalidade === 'EJA'
-                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                              : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
-                          )}>
-                            {func.modalidade ?? 'Regular'}
+                        )}
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <strong className="text-sm block text-white leading-tight">
+                              {func.nome}
+                            </strong>
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                              func.modalidade === 'EJA'
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                            )}>
+                              {func.modalidade ?? 'Regular'}
+                            </span>
+                          </div>
+                          <span className="text-xs text-sky-400 block mt-0.5">
+                            {func.cargo}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block mt-1">
+                            📍 {func.escola}
                           </span>
                         </div>
-                        <span className="text-xs text-sky-400 block mt-0.5">
-                          {func.cargo}
-                        </span>
-                        <span className="text-[11px] text-slate-400 block mt-1">
-                          📍 {func.escola}
-                        </span>
+                      </div>
+                      <div className="bg-[#1f283b] p-2 border-t border-[#26304d]">
+                        <a
+                          href={`https://www.google.com/maps?q=${func.latitude},${func.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 rounded-lg transition-colors no-underline"
+                        >
+                          🧭 Gerar Rota no Maps
+                        </a>
                       </div>
                     </div>
-                    <div className="bg-[#1f283b] p-2 border-t border-[#26304d]">
-                      <a
-                        href={`https://www.google.com/maps?q=${func.latitude},${func.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-center bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 rounded-lg transition-colors no-underline"
-                      >
-                        🧭 Gerar Rota no Maps
-                      </a>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MarkerClusterGroup>
         </MapContainer>
       </div>
 
