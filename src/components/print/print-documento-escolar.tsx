@@ -20,7 +20,7 @@ function generateVerificacaoToken() {
 
 interface PrintDocumentoProps {
   aluno: any
-  docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga'
+  docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga' | 'atestado-transferencia'
   tokenExistente?: string | null
   onClose: () => void
 }
@@ -31,6 +31,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
   
   const [escolaNome, setEscolaNome] = useState('')
   const [escolaLogoUrl, setEscolaLogoUrl] = useState<string | null>(null)
+  const [escolaInep, setEscolaInep] = useState('')
   const [diretorNome, setDiretorNome] = useState('')
   const [diretorAssinaturaUrl, setDiretorAssinaturaUrl] = useState<string | null>(null)
 
@@ -83,6 +84,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
         if (esc) {
           setEscolaNome(esc.nome)
           setEscolaLogoUrl(esc.logo_url || null)
+          setEscolaInep(esc.inep || '')
           setDiretorAssinaturaUrl(esc.assinatura_diretor_url || null)
           if (esc.funcionarios) {
             setDiretorNome(esc.funcionarios.nome)
@@ -167,6 +169,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
   const getDocumentTitle = () => {
     if (docType === 'atestado-matricula') return 'ATESTADO DE MATRÍCULA'
     if (docType === 'atestado-frequencia') return 'ATESTADO DE FREQUÊNCIA'
+    if (docType === 'atestado-transferencia') return 'ATESTADO DE TRANSFERÊNCIA'
     return 'DECLARAÇÃO DE VAGA'
   }
 
@@ -176,6 +179,66 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
     const cursoTurno = turnoVal?.toUpperCase() || '___________________'
     const cursoTurma = turmaNome?.toUpperCase() || '___________________'
     const nascimento = dataNascimentoFormatada
+
+    const cpfFormatado = aluno.cpf?.trim() ? `nº ${aluno.cpf.trim()}` : 'não informado'
+
+    const filiacaoFormatada = (() => {
+      const pai = aluno.nome_pai?.trim()
+      const mae = aluno.nome_mae?.trim()
+      if (pai && mae) {
+        return (
+          <>
+            filho(a) do Sr. <strong className="text-black font-semibold">{pai}</strong> e da Sra.{' '}
+            <strong className="text-black font-semibold">{mae}</strong>
+          </>
+        )
+      } else if (mae) {
+        return (
+          <>
+            filho(a) da Sra. <strong className="text-black font-semibold">{mae}</strong>
+          </>
+        )
+      } else if (pai) {
+        return (
+          <>
+            filho(a) do Sr. <strong className="text-black font-semibold">{pai}</strong>
+          </>
+        )
+      }
+      return <>filiação não informada</>
+    })()
+
+    const cursoSerieFormatado = (() => {
+      if (aluno.serie?.trim()) {
+        return aluno.serie.trim()
+      }
+      if (turmaNome?.trim()) {
+        return turmaNome.trim()
+      }
+      return '___________________'
+    })()
+
+    if (docType === 'atestado-transferencia') {
+      return (
+        <div className="space-y-6">
+          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12">
+            Atesto, para os devidos fins de direito, que o(a) aluno(a){' '}
+            <strong className="text-black font-bold">{nomeAluno}</strong>, nascido(a) em{' '}
+            <strong className="text-black font-semibold">{nascimento}</strong>, portador(a) do CPF{' '}
+            <strong className="text-black font-semibold">{cpfFormatado}</strong>, {filiacaoFormatada}, está
+            matriculado(a) e frequenta a{' '}
+            <strong className="text-black font-bold">{escolaNome || 'Unidade Escolar'}</strong>, cursando o{' '}
+            <strong className="text-black font-bold">{cursoSerieFormatado}</strong> no ano letivo de{' '}
+            <strong className="text-black font-bold">{anoLetivo}</strong>.
+          </p>
+
+          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12">
+            Consta o pedido de transferência em curso, e o referido documento poderá ser disponibilizado no prazo de 60
+            a 120 dias, a contar desta data.
+          </p>
+        </div>
+      )
+    }
 
     if (docType === 'atestado-matricula') {
       return (
@@ -424,7 +487,12 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
             <h1 className="text-base font-black text-gray-900 uppercase tracking-wide">
               {escolaNome || 'UNIDADE ESCOLAR MUNICIPAL'}
             </h1>
-            <div className="w-12 h-0.5 bg-black"></div>
+            {escolaInep && (
+              <p className="text-xs font-semibold text-gray-800 tracking-wider uppercase">
+                Código do INEP: {escolaInep}
+              </p>
+            )}
+            <div className="w-12 h-0.5 bg-black mt-1"></div>
           </div>
 
           {/* Título do Documento */}
