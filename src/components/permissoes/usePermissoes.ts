@@ -344,31 +344,59 @@ export function usePermissoes() {
     }
 
     // Verificar se já existe acesso para este funcionário + escola
-    const { data: existente } = await supabase
+    let checkQuery = supabase
       .from('acessos_usuarios')
       .select('id')
       .eq('funcionario_id', funcSelecionado.id)
-      .eq('escola_id', escolaIdToSave as string)
-      .maybeSingle()
+
+    if (escolaIdToSave) {
+      checkQuery = checkQuery.eq('escola_id', escolaIdToSave)
+    } else {
+      checkQuery = checkQuery.is('escola_id', null)
+    }
+
+    const { data: existente } = await checkQuery.maybeSingle()
+
+    const isNivel1 = nivelNum === 1
 
     let error
     if (existente?.id) {
-      // UPDATE — atualizar nível
+      // UPDATE — atualizar nível e reativar
+      const updateData: any = { nivel: nivelNum, ativo: true }
+      if (isNivel1) {
+        updateData.pode_mural = true
+        updateData.pode_turmas = true
+        updateData.pode_funcionarios = true
+        updateData.pode_matriculas = true
+        updateData.pode_alunos = true
+        updateData.pode_ocorrencias = true
+        updateData.pode_atestados = true
+      }
       const { error: updateError } = await supabase
         .from('acessos_usuarios')
-        .update({ nivel: nivelNum, ativo: true })
+        .update(updateData)
         .eq('id', existente.id)
       error = updateError
     } else {
       // INSERT — novo registro
+      const insertData: any = {
+        funcionario_id: funcSelecionado.id,
+        escola_id: escolaIdToSave,
+        nivel: nivelNum,
+        ativo: true,
+      }
+      if (isNivel1) {
+        insertData.pode_mural = true
+        insertData.pode_turmas = true
+        insertData.pode_funcionarios = true
+        insertData.pode_matriculas = true
+        insertData.pode_alunos = true
+        insertData.pode_ocorrencias = true
+        insertData.pode_atestados = true
+      }
       const { error: insertError } = await supabase
         .from('acessos_usuarios')
-        .insert({
-          funcionario_id: funcSelecionado.id,
-          escola_id: escolaIdToSave,
-          nivel: nivelNum,
-          ativo: true,
-        })
+        .insert(insertData)
       error = insertError
     }
 
