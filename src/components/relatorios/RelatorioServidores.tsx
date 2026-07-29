@@ -14,7 +14,7 @@ import {
   GraduationCap, 
   DollarSign,
   FileSpreadsheet,
-  CheckCircle2
+  Printer
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { PrintRelatorioServidores, ServidorNominalPrint } from '@/components/print/print-relatorio-servidores'
 
 interface ResumoData {
   total_servidores_unicos: number
@@ -83,6 +84,12 @@ export default function RelatorioServidores() {
     },
     cargos: [],
   })
+
+  // Estados do Modal de Impressão A4
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [printModoView, setPrintModoView] = useState<'sintetico' | 'nominal'>('sintetico')
+  const [servidoresNominais, setServidoresNominais] = useState<ServidorNominalPrint[]>([])
+  const [isLoadingNominal, setIsLoadingNominal] = useState(false)
 
   const isMountedRef = useRef(true)
   const requestCounter = useRef(0)
@@ -168,6 +175,84 @@ export default function RelatorioServidores() {
     }
   }, [loadRelatorio, activeTab])
 
+  // Ação de abertura da impressão (Sintética A4 ou Lista Nominal)
+  const handleAbrirImpressao = async (modo: 'sintetico' | 'nominal') => {
+    setPrintModoView(modo)
+    if (modo === 'nominal') {
+      setIsLoadingNominal(true)
+      try {
+        let query = supabase
+          .from('vinculos_funcionarios')
+          .select(`
+            id,
+            cargo,
+            escola_id,
+            escolas (nome),
+            funcionarios!inner (
+              id,
+              nome,
+              cpf,
+              status,
+              modalidade_ensino,
+              tipo_vinculo,
+              deleted_at
+            )
+          `)
+          .eq('ativo', true)
+          .is('funcionarios.deleted_at', null)
+
+        if (filtroEscolaId) {
+          query = query.eq('escola_id', filtroEscolaId)
+        }
+
+        const { data, error } = await query
+        if (error) throw error
+
+        if (data) {
+          const mapped = (data as any[])
+            .map((v) => {
+              const f = v.funcionarios
+              return {
+                id: f.id,
+                nome: f.nome,
+                cpf: f.cpf,
+                cargo: v.cargo || f.cargo,
+                status: f.status || 'ativo',
+                orgao: v.escolas?.nome || 'Escola Não Informada',
+                modalidade_ensino: f.modalidade_ensino || 'Regular',
+                vinculo_tipo: f.tipo_vinculo || 'Não informado',
+              }
+            })
+            .filter((s) => {
+              const matchCargo = !filtroCargo || s.cargo === filtroCargo
+              const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase().includes(filtroModalidade.toUpperCase())
+              const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase().includes(filtroVinculo.toUpperCase())
+              return matchCargo && matchMod && matchVinc
+            })
+            .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
+          setServidoresNominais(mapped)
+        }
+      } catch (err) {
+        console.error('Erro ao buscar lista nominal de servidores:', err)
+        toast.error('Erro ao gerar lista nominal para impressão.')
+      } finally {
+        setIsLoadingNominal(false)
+      }
+    }
+    setIsPrintModalOpen(true)
+  }
+
+  // Nome da Escola Selecionada
+  const nomeEscolaAtiva = useMemo(() => {
+    if (selectedEscola) return selectedEscola.nome
+    if (filtroEscolaId) {
+      const esc = escolas.find(e => e.id === filtroEscolaId)
+      if (esc) return esc.nome
+    }
+    return 'Rede Municipal (Todas as Escolas)'
+  }, [selectedEscola, filtroEscolaId, escolas])
+
   // Dados para o Gráfico de Pizza de Vínculos
   const chartDataVinculos = useMemo(() => {
     const { total_concursados, total_contratados, total_outros } = reportData.resumo
@@ -210,8 +295,23 @@ export default function RelatorioServidores() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Abas Superiores do Relatório */}
-      <div className="flex items-center justify-between border-b border-border pb-3 no-print">
+      {/* Componente de Impressão Portal A4 */}
+      {isPrintModalOpen && (
+        <PrintRelatorioServidores
+          modoView={printModoView}
+          escolaNome={nomeEscolaAtiva}
+          filtroCargo={filtroCargo}
+          filtroModalidade={filtroModalidade}
+          filtroVinculo={filtroVinculo}
+          resumo={reportData.resumo}
+          cargos={reportData.cargos}
+          servidoresNominais={servidoresNominais}
+          onClose={() => setIsPrintModalOpen(false)}
+        />
+      )}
+
+      {/* Abas Superiores do Relatório + Botões de Impressão */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 no-print">
         <div className="flex items-center gap-2 bg-secondary/60 border border-border p-1 rounded-xl">
           <button
             onClick={() => setActiveTab('geral')}
@@ -240,15 +340,35 @@ export default function RelatorioServidores() {
         </div>
 
         {activeTab === 'geral' && (
-          <Button
-            variant="outline"
-            onClick={loadRelatorio}
-            disabled={isLoading}
-            className="bg-card hover:bg-hoverCustom border-border text-foreground text-xs gap-2 rounded-xl"
-          >
-            <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
-            Atualizar Dados
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={loadRelatorio}
+              disabled={isLoading}
+              className="bg-card hover:bg-hoverCustom border-border text-foreground text-xs gap-2 rounded-xl"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
+              Atualizar
+            </Button>
+
+            <Button
+              onClick={() => handleAbrirImpressao('sintetico')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-xl gap-2 cursor-pointer shadow-sm"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Imprimir Relatório (A4)
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleAbrirImpressao('nominal')}
+              disabled={isLoadingNominal}
+              className="bg-secondary hover:bg-hoverCustom border-border text-foreground text-xs gap-2 rounded-xl cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-muted-foreground" />
+              {isLoadingNominal ? 'Carregando...' : 'Imprimir Lista Nominal'}
+            </Button>
+          </div>
         )}
       </div>
 
