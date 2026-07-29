@@ -27,6 +27,8 @@ interface SchoolState {
   loadEscolas: (force?: boolean) => Promise<void>
 }
 
+let loadingPromise: Promise<void> | null = null;
+
 export const useSchoolStore = create<SchoolState>()(
   persist(
     (set, get) => ({
@@ -46,11 +48,18 @@ export const useSchoolStore = create<SchoolState>()(
           useAuthStore.getState().setEscolaAtivaId(null)
           return
         }
+
+        // Aguarda carregar a lista completa de escolas para evitar queries individuais redundantes
+        if (!get().isLoaded) {
+          await get().loadEscolas()
+        }
+
         const found = get().escolas.find((e) => e.id === id) || null
         if (found) {
           set({ selectedEscola: found })
           useAuthStore.getState().setEscolaAtivaId(id)
         } else {
+          // Fallback caso a escola não venha na lista global (inativa ou erro)
           try {
             const supabase = createClient()
             const { data } = await supabase
@@ -70,33 +79,43 @@ export const useSchoolStore = create<SchoolState>()(
         }
       },
       loadEscolas: async (force = false) => {
-        if (!force && (get().isLoaded || get().isLoading)) return
-        set({ isLoading: true })
-        try {
-          const supabase = createClient()
-          const { data } = await supabase
-            .from('escolas')
-            .select('*')
-            .is('deleted_at', null)
-            .eq('ativo', true)
-            .order('nome', { ascending: true })
-            
-          if (data) {
-            set({ escolas: data as Escola[], isLoaded: true })
-            
-            const currentSelected = get().selectedEscola
-            if (currentSelected) {
-              const stillExists = data.find(e => e.id === currentSelected.id)
-              if (!stillExists) {
-                set({ selectedEscola: null })
-              } else {
-                set({ selectedEscola: stillExists as Escola })
+        if (!force && get().isLoaded) return
+        if (loadingPromise && !force) {
+          await loadingPromise
+          return
+        }
+
+        loadingPromise = (async () => {
+          set({ isLoading: true })
+          try {
+            const supabase = createClient()
+            const { data } = await supabase
+              .from('escolas')
+              .select('*')
+              .is('deleted_at', null)
+              .eq('ativo', true)
+              .order('nome', { ascending: true })
+              
+            if (data) {
+              set({ escolas: data as Escola[], isLoaded: true })
+              
+              const currentSelected = get().selectedEscola
+              if (currentSelected) {
+                const stillExists = data.find(e => e.id === currentSelected.id)
+                if (!stillExists) {
+                  set({ selectedEscola: null })
+                } else {
+                  set({ selectedEscola: stillExists as Escola })
+                }
               }
             }
+          } finally {
+            set({ isLoading: false })
+            loadingPromise = null
           }
-        } finally {
-          set({ isLoading: false })
-        }
+        })()
+
+        await loadingPromise
       }
     }),
     {

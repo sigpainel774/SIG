@@ -1,15 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
-import { PrintFicha } from '@/components/print/print-ficha'
 import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
-import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
-import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
-import RelatorioOcorrencias from '@/components/relatorios/RelatorioOcorrencias'
-import RelatorioServidores from '@/components/relatorios/RelatorioServidores'
 import { createClient } from '@/lib/supabaseClient'
+
+// Importações dinâmicas para otimizar o bundle inicial
+const RelatorioNotas = dynamic(() => import('@/components/relatorios/RelatorioNotas'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório de desempenho...</div>
+})
+const RelatorioNecessidades = dynamic(() => import('@/components/relatorios/RelatorioNecessidades'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório...</div>
+})
+const RelatorioOcorrencias = dynamic(() => import('@/components/relatorios/RelatorioOcorrencias'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ocorrências...</div>
+})
+const RelatorioServidores = dynamic(() => import('@/components/relatorios/RelatorioServidores'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando painel de servidores...</div>
+})
+const PrintFicha = dynamic(() => import('@/components/print/print-ficha').then(m => ({ default: m.PrintFicha })), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ficha...</div>
+})
 import { useAuthStore } from '@/store/useAuthStore'
 import { IconTile } from '@/components/ui/icon-tile'
 import { cn } from '@/lib/utils'
