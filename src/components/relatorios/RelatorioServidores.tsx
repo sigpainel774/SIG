@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { 
@@ -84,6 +84,15 @@ export default function RelatorioServidores() {
     cargos: [],
   })
 
+  const isMountedRef = useRef(true)
+  const requestCounter = useRef(0)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   // Filtros em tempo real
   const [filtroEscolaId, setFiltroEscolaId] = useState<string>('')
   const [filtroCargo, setFiltroCargo] = useState<string>('')
@@ -106,8 +115,10 @@ export default function RelatorioServidores() {
     return reportData.cargos.map((c) => c.cargo).sort()
   }, [reportData.cargos])
 
-  // Função de carregamento dos dados via RPC Supabase
   const loadRelatorio = useCallback(async () => {
+    if (!isMountedRef.current) return
+    const currentRequest = ++requestCounter.current
+    
     setIsLoading(true)
     try {
       const { data, error } = await supabase.rpc('get_relatorio_servidores', {
@@ -116,6 +127,8 @@ export default function RelatorioServidores() {
         p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
         p_vinculo_tipo: filtroVinculo === 'Todos' ? undefined : filtroVinculo,
       })
+
+      if (!isMountedRef.current || currentRequest !== requestCounter.current) return
 
       if (error) {
         console.error('Erro ao buscar RPC get_relatorio_servidores:', error)
@@ -139,20 +152,19 @@ export default function RelatorioServidores() {
         })
       }
     } catch (err) {
+      if (!isMountedRef.current || currentRequest !== requestCounter.current) return
       console.error('Exceção no carregamento do relatório de servidores:', err)
       toast.error('Ocorreu um erro ao carregar os dados.')
     } finally {
-      setIsLoading(false)
+      if (isMountedRef.current && currentRequest === requestCounter.current) {
+        setIsLoading(false)
+      }
     }
   }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo])
 
   useEffect(() => {
-    let active = true
     if (activeTab === 'geral') {
       loadRelatorio()
-    }
-    return () => {
-      active = false
     }
   }, [loadRelatorio, activeTab])
 
