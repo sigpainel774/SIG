@@ -79,6 +79,9 @@ export default function PrimeiroAcessoPage() {
         return
       }
 
+      // Invalida o cache de perfil do servidor para refletir a alteração de primeiro_acesso imediatamente
+      await fetch('/api/auth/invalidate-cache', { method: 'POST' }).catch(() => {})
+
       toast.success('Senha atualizada com sucesso! Bem-vindo ao SIG.')
       
       // Redireciona para home limpando o histórico de navegação

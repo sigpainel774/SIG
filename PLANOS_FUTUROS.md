@@ -23,6 +23,7 @@ Atualizado automaticamente com o status real do repositório.
 | Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — aguardando início do desenvolvimento |
 | Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
 | Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
+| Contas Especiais Nível 3 (Matrículas EJA & Movimentação de Pastas) | ⏳ Pendente | Proposto em 2026-07-29 — Perfil restrito para matrículas e transferência de pastas de alunos exclusivamente entre escolas da modalidade EJA |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -651,4 +652,28 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 - [ ] **Lista e Checklist de Alunos por Parada**: Exibir a relação de alunos alocados em cada ponto (`public.alunos_transporte`), com opção de marcar presença/embarque e desembarque no ponto da escola ou residência.
 - [ ] **Diário de Bordo & Leitura de Hodômetro**: Modal/Formulário rápido para o motorista registrar o início da viagem (quilometragem inicial), intercorrências no percurso (ex: atrasos, desvios) e finalização da viagem (quilometragem final e confirmação de chegada).
 - [ ] **Histórico e Relatórios de Viagem**: Tabela `public.historico_viagens_transporte` para auditoria de horários cumpridos, total de alunos transportados por dia/turno e acompanhamento pela gestão de transporte (Nível 1 a 5 / Admin).
+
+---
+
+## 📌 Contas Especiais Nível 3 - Modalidade EJA Exclusiva & Movimentação de Pastas
+
+> **Status:** ⏳ Pendente — Proposto em 2026-07-29  
+> **Planejado em:** 2026-07-29  
+> **Objetivo:** Criar um perfil de conta especial Nível 3 (Coord. / Secretário) que possui acesso restrito e focado exclusivamente na realização de novas matrículas e na movimentação/transferência de pastas de alunos entre escolas que ofertam a modalidade EJA, sem visibilidade de outras seções administrativas ou do ensino regular.
+> **Tabelas de banco envolvidas:** `public.acessos_usuarios`, `public.funcionarios`, `public.alunos`, `public.alunos_anexos`, `public.transferencias_alunos`, `public.escolas`, `public.turmas`
+
+### Checklist de Execução
+- [ ] **Configuração ABAC / Nível de Acesso (`acessos_usuarios` e `funcionarios`)**:
+  - Atribuir Nível 3 com flags booleanas restritas (`pode_matriculas = true`, `pode_alunos = false`, `pode_funcionarios = false`, `pode_atestados = false`, `pode_ocorrencias = false`, etc.).
+  - Cadastrar a restrição de modalidade `modalidade_permissao = 'EJA'` ou flag de escopo no perfil do funcionário.
+- [ ] **Filtro de Navegação no Menu Lateral (`Sidebar.tsx`)**:
+  - Condicionar a exibição dos grupos de menu no `Sidebar.tsx` para exibir unicamente as rotas `/home`, `/matriculas` (ou `/transferencias`) e `/configuracoes` quando detectado a conta especial EJA.
+- [ ] **Guarda de Proteção de Rotas (`proxy.ts`)**:
+  - Adicionar verificação em `proxy.ts` redirecionando o usuário para `/matriculas` caso tente acessar diretamente URLs do ensino regular ou administrativas.
+- [ ] **Restrição no Formulário de Matrículas (`ModalAluno` / `/matriculas`)**:
+  - Limitar o carregamento de turmas e séries no formulário de matrícula apenas para turmas com `modalidade = 'EJA'` ativas na unidade escolar.
+- [ ] **Módulo de Transferência entre Escolas EJA (`ModalTransferirAluno.tsx`)**:
+  - Permitir a solicitação e aprovação de transferências de alunos entre unidades, restringindo a lista de escolas de destino no combo apenas para unidades que ofertem turmas EJA.
+  - Garantir a migração em cadeia de toda a pasta digital e documentos anexos do estudante (`public.alunos_anexos`) ao aprovar a transferência.
+
 
