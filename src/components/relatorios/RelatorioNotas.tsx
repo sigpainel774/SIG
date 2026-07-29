@@ -37,25 +37,27 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
     refetch
   } = useRelatorioNotas(selectedEscola?.id ?? null)
 
-  // Recarregar os dados do relatório sempre que escola ou filtros (como periodo) mudarem
+  // Recarregar os dados do relatório sempre que escola ou filtros mudarem
   useEffect(() => {
     refetch(filters)
-  }, [selectedEscola, filters.periodo, refetch])
+  }, [selectedEscola, filters.periodo, filters.turmaId, filters.materiaId, refetch])
 
   // Callback acionado quando filtros mudam nos componentes filhos
   const handleFilterChange = useCallback((newFilters: { turmaId?: string; materiaId?: string; periodo?: string }) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters
-    }))
-    // Se mudou algum filtro estrutural que precise de refetch imediato:
-    if (newFilters.turmaId !== undefined || newFilters.materiaId !== undefined || newFilters.periodo !== undefined) {
-      refetch({
-        ...filters,
+    setFilters((prev) => {
+      const hasChanged = 
+        prev.turmaId !== newFilters.turmaId ||
+        prev.materiaId !== newFilters.materiaId ||
+        prev.periodo !== newFilters.periodo;
+        
+      if (!hasChanged) return prev;
+
+      return {
+        ...prev,
         ...newFilters
-      })
-    }
-  }, [refetch, filters])
+      };
+    })
+  }, [])
 
   if (error) {
     return (
