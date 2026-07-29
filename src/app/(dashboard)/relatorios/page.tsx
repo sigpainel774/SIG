@@ -130,6 +130,7 @@ export default function RelatoriosPage() {
                 latitude,
                 longitude,
                 modalidade_ensino,
+                tipo_vinculo,
                 deleted_at
               )
             `)
@@ -170,7 +171,8 @@ export default function RelatoriosPage() {
                   foto_url: v.funcionarios.foto_url,
                   latitude: Number(v.funcionarios.latitude),
                   longitude: Number(v.funcionarios.longitude),
-                  modalidade: isEJA ? 'EJA' : 'Regular'
+                  modalidade: isEJA ? 'EJA' : 'Regular',
+                  tipo_vinculo: v.funcionarios.tipo_vinculo || null
                 }
               })
             
