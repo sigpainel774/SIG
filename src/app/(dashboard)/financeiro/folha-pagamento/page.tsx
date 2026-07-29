@@ -57,6 +57,7 @@ export default function FolhaPagamentoPage() {
           email,
           status,
           cargo,
+          is_conta_especial,
           vinculos_funcionarios (
             id,
             escola_id,
@@ -72,6 +73,7 @@ export default function FolhaPagamentoPage() {
 
       // Filtragem client-side/in-memory para garantir exatidão do relacionamento aninhado
       let filtered: any[] = (data as any) || []
+      filtered = filtered.filter(f => !f.is_conta_especial)
 
       filtered = filtered.map(f => {
         // Encontra o vínculo ativo ou o primeiro vínculo existente

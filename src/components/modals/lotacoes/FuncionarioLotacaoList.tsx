@@ -59,7 +59,7 @@ export function FuncionarioLotacaoList({
   setSelecionado,
 }: FuncionarioLotacaoListProps) {
   const tabClass = (t: TabFiltro) =>
-    `px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+    `px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center flex items-center justify-center min-h-[38px] sm:min-h-0 ${
       tab === t
         ? 'bg-[#3ea6ff] text-[#0f0f0f]'
         : 'bg-[#1e1e22] text-zinc-400 hover:text-white hover:bg-[#252528]'
@@ -68,26 +68,26 @@ export function FuncionarioLotacaoList({
   const [timestamp] = useState(() => Date.now())
 
   return (
-    <div className="w-[310px] shrink-0 border-r border-[#26262a] flex flex-col overflow-hidden">
+    <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-[#26262a] flex flex-col overflow-hidden">
       {/* Filtros */}
-      <div className="p-4 space-y-3 border-b border-[#26262a] shrink-0">
+      <div className="p-3.5 sm:p-4 space-y-3 border-b border-[#26262a] shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Buscar por nome, CPF ou cargo..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-9 text-sm"
+            className="pl-9 bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-10 sm:h-9 text-sm"
           />
         </div>
         <Select
           value={filtroCargo}
           onValueChange={(v) => setFiltroCargo(v ?? 'todos')}
         >
-          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-9 text-sm">
+          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-10 sm:h-9 text-sm">
             <SelectValue placeholder="Cargo (Todos)" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white max-h-[250px]">
             <SelectItem value="todos">Cargo (Todos)</SelectItem>
             {cargos.map((c) => (
               <SelectItem key={c.id} value={c.nome}>
@@ -96,7 +96,7 @@ export function FuncionarioLotacaoList({
             ))}
           </SelectContent>
         </Select>
-        <div className="flex gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           <button className={tabClass('todos')} onClick={() => setTab('todos')}>
             Todos
           </button>

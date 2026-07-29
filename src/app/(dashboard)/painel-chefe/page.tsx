@@ -83,7 +83,7 @@ export default function PainelChefePage() {
 
     let queryFunc = supabase
       .from('funcionarios')
-      .select('id, nome, cargo, orgao, status, email, is_superadmin, acessos_usuarios(nivel, ativo)')
+      .select('id, nome, cargo, orgao, status, email, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo)')
       .order('nome')
 
     if (isDir) {
@@ -105,10 +105,10 @@ export default function PainelChefePage() {
     const { data: funcData } = await queryFunc
     if (!isMountedRef.current) return
 
-    let filteredEquipe = funcData || []
+    let filteredEquipe = (funcData || []).filter((f: any) => !f.is_conta_especial)
     if (isDir && funcData) {
       // Filtros adicionais client-side mais complexos para Diretores (ABAC níveis)
-      filteredEquipe = funcData.filter((f: any) => {
+      filteredEquipe = filteredEquipe.filter((f: any) => {
         if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
         const acessosList = (f.acessos_usuarios as Array<{ nivel: number | null; ativo: boolean }>) ?? []
         if (acessosList.some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo)) return false

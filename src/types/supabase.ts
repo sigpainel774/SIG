@@ -1668,6 +1668,7 @@ export type Database = {
           foto_url: string | null
           funcao_especifica: string | null
           id: string
+          is_conta_especial: boolean | null
           is_superadmin: boolean | null
           latitude: number | null
           logradouro: string | null
@@ -1749,6 +1750,7 @@ export type Database = {
           foto_url?: string | null
           funcao_especifica?: string | null
           id?: string
+          is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
           latitude?: number | null
           logradouro?: string | null
@@ -1830,6 +1832,7 @@ export type Database = {
           foto_url?: string | null
           funcao_especifica?: string | null
           id?: string
+          is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
           latitude?: number | null
           logradouro?: string | null
