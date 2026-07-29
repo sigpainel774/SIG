@@ -8,7 +8,9 @@ import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import RelatorioNotas from '@/components/relatorios/RelatorioNotas'
 import RelatorioNecessidades from '@/components/relatorios/RelatorioNecessidades'
 import RelatorioOcorrencias from '@/components/relatorios/RelatorioOcorrencias'
+import RelatorioServidores from '@/components/relatorios/RelatorioServidores'
 import { createClient } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/store/useAuthStore'
 import { IconTile } from '@/components/ui/icon-tile'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -33,15 +35,23 @@ import {
   Search,
   Filter,
   Download,
-  Activity
+  Activity,
+  Briefcase
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
 const REPORT_CARDS = [
+  {
+    id: 'servidores' as const,
+    title: 'Relatório de Servidores',
+    description: 'Quadro geral de servidores ativos, cargos ocupados, vínculos e modalidades.',
+    icon: Users,
+    variant: 'primary' as const,
+  },
   {
     id: 'desempenho' as const,
     title: 'Desempenho & Assiduidade',
@@ -96,6 +106,9 @@ const REPORT_CARDS = [
 export default function RelatoriosPage() {
   const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
+  const { acessos, isAdminGlobalOrRoot } = useAuthStore()
+
+  const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
 
   useEffect(() => {
     loadEscolas()
@@ -363,7 +376,9 @@ export default function RelatoriosPage() {
         </div>
 
         {/* Dynamic Content based on Macro vs School Specific */}
-        {activeReport === 'desempenho' ? (
+        {activeReport === 'servidores' ? (
+          <RelatorioServidores />
+        ) : activeReport === 'desempenho' ? (
           <RelatorioNotas selectedEscola={selectedEscola} />
         ) : activeReport === 'mapa' ? (
           <div className="space-y-6">
@@ -498,9 +513,14 @@ export default function RelatoriosPage() {
         </div>
       )}
 
-      {/* Grid of 6 Cards Matching Screenshot Layout & Colors */}
+      {/* Grid of Cards Matching Screenshot Layout & Colors */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-        {REPORT_CARDS.map((card) => {
+        {REPORT_CARDS.filter((card) => {
+          if (card.id === 'servidores') {
+            return isSuperAdminOrNivel1
+          }
+          return true
+        }).map((card) => {
           const Icon = card.icon
           return (
             <div

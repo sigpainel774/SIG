@@ -1,0 +1,635 @@
+'use client'
+
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createClient } from '@/lib/supabaseClient'
+import { useSchoolStore } from '@/store/useSchoolStore'
+import { 
+  Users, 
+  Briefcase, 
+  PieChart as PieChartIcon, 
+  Filter, 
+  RefreshCw, 
+  AlertTriangle, 
+  Building2, 
+  GraduationCap, 
+  DollarSign,
+  FileSpreadsheet,
+  CheckCircle2
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
+
+interface ResumoData {
+  total_servidores_unicos: number
+  total_cargos_ocupados: number
+  total_contratados: number
+  total_concursados: number
+  total_outros: number
+  total_regular: number
+  total_eja: number
+}
+
+interface CargoBreakdown {
+  cargo: string
+  ocupacoes: number
+  regular: number
+  eja: number
+  concursados: number
+  contratados: number
+  outros: number
+}
+
+interface RelatorioServidoresPayload {
+  resumo: ResumoData
+  cargos: CargoBreakdown[]
+}
+
+const COLORS_VINCULO = {
+  Concursado: '#3b82f6', // azul
+  Contratado: '#10b981', // verde
+  Outros: '#f59e0b',     // âmbar
+}
+
+const PALETTE_CARGOS = [
+  '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', 
+  '#06b6d4', '#f97316', '#64748b', '#14b8a6', '#a855f7'
+]
+
+export default function RelatorioServidores() {
+  const supabase = createClient()
+  const { escolas, selectedEscola } = useSchoolStore()
+
+  const [activeTab, setActiveTab] = useState<'geral' | 'orcamento'>('geral')
+  const [isMounted, setIsMounted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [reportData, setReportData] = useState<RelatorioServidoresPayload>({
+    resumo: {
+      total_servidores_unicos: 0,
+      total_cargos_ocupados: 0,
+      total_contratados: 0,
+      total_concursados: 0,
+      total_outros: 0,
+      total_regular: 0,
+      total_eja: 0,
+    },
+    cargos: [],
+  })
+
+  // Filtros em tempo real
+  const [filtroEscolaId, setFiltroEscolaId] = useState<string>('')
+  const [filtroCargo, setFiltroCargo] = useState<string>('')
+  const [filtroModalidade, setFiltroModalidade] = useState<string>('Todos')
+  const [filtroVinculo, setFiltroVinculo] = useState<string>('Todos')
+
+  // Sincroniza a escola selecionada globalmente se houver
+  useEffect(() => {
+    setIsMounted(true)
+    if (selectedEscola) {
+      setFiltroEscolaId(selectedEscola.id)
+    } else {
+      setFiltroEscolaId('')
+    }
+  }, [selectedEscola])
+
+  // Busca lista única de cargos disponíveis para o select de filtro
+  const listaCargosDisponiveis = useMemo(() => {
+    if (!reportData.cargos || reportData.cargos.length === 0) return []
+    return reportData.cargos.map((c) => c.cargo).sort()
+  }, [reportData.cargos])
+
+  // Função de carregamento dos dados via RPC Supabase
+  const loadRelatorio = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const { data, error } = await supabase.rpc('get_relatorio_servidores', {
+        p_escola_id: filtroEscolaId || undefined,
+        p_cargo: filtroCargo || undefined,
+        p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
+        p_vinculo_tipo: filtroVinculo === 'Todos' ? undefined : filtroVinculo,
+      })
+
+      if (error) {
+        console.error('Erro ao buscar RPC get_relatorio_servidores:', error)
+        toast.error('Erro ao carregar dados do relatório de servidores.')
+        return
+      }
+
+      if (data) {
+        const payload = data as any
+        setReportData({
+          resumo: payload.resumo ?? {
+            total_servidores_unicos: 0,
+            total_cargos_ocupados: 0,
+            total_contratados: 0,
+            total_concursados: 0,
+            total_outros: 0,
+            total_regular: 0,
+            total_eja: 0,
+          },
+          cargos: Array.isArray(payload.cargos) ? payload.cargos : [],
+        })
+      }
+    } catch (err) {
+      console.error('Exceção no carregamento do relatório de servidores:', err)
+      toast.error('Ocorreu um erro ao carregar os dados.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo])
+
+  useEffect(() => {
+    let active = true
+    if (activeTab === 'geral') {
+      loadRelatorio()
+    }
+    return () => {
+      active = false
+    }
+  }, [loadRelatorio, activeTab])
+
+  // Dados para o Gráfico de Pizza de Vínculos
+  const chartDataVinculos = useMemo(() => {
+    const { total_concursados, total_contratados, total_outros } = reportData.resumo
+    return [
+      { name: 'Concursados', value: total_concursados ?? 0, color: COLORS_VINCULO.Concursado },
+      { name: 'Contratados', value: total_contratados ?? 0, color: COLORS_VINCULO.Contratado },
+      { name: 'Outros / Não informado', value: total_outros ?? 0, color: COLORS_VINCULO.Outros },
+    ].filter((item) => item.value > 0)
+  }, [reportData.resumo])
+
+  // Dados para o Gráfico de Pizza de Cargos (Top cargos + Outros)
+  const chartDataCargos = useMemo(() => {
+    if (!reportData.cargos || reportData.cargos.length === 0) return []
+
+    const sorted = [...reportData.cargos].sort((a, b) => b.ocupacoes - a.ocupacoes)
+    const top = sorted.slice(0, 6)
+    const rest = sorted.slice(6)
+
+    const result = top.map((item, index) => ({
+      name: item.cargo,
+      value: item.ocupacoes,
+      color: PALETTE_CARGOS[index % PALETTE_CARGOS.length],
+    }))
+
+    if (rest.length > 0) {
+      const restTotal = rest.reduce((acc, curr) => acc + curr.ocupacoes, 0)
+      result.push({
+        name: 'Demais Cargos',
+        value: restTotal,
+        color: PALETTE_CARGOS[6],
+      })
+    }
+
+    return result
+  }, [reportData.cargos])
+
+  const totalCargosCalculado = useMemo(() => {
+    return reportData.resumo.total_cargos_ocupados ?? 0
+  }, [reportData.resumo])
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Abas Superiores do Relatório */}
+      <div className="flex items-center justify-between border-b border-border pb-3 no-print">
+        <div className="flex items-center gap-2 bg-secondary/60 border border-border p-1 rounded-xl">
+          <button
+            onClick={() => setActiveTab('geral')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer',
+              activeTab === 'geral'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+            )}
+          >
+            <Users className="w-4 h-4" />
+            Visão Geral de Servidores
+          </button>
+          <button
+            onClick={() => setActiveTab('orcamento')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer',
+              activeTab === 'orcamento'
+                ? 'bg-amber-600 text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+            )}
+          >
+            <DollarSign className="w-4 h-4" />
+            Execução Orçamentária
+          </button>
+        </div>
+
+        {activeTab === 'geral' && (
+          <Button
+            variant="outline"
+            onClick={loadRelatorio}
+            disabled={isLoading}
+            className="bg-card hover:bg-hoverCustom border-border text-foreground text-xs gap-2 rounded-xl"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
+            Atualizar Dados
+          </Button>
+        )}
+      </div>
+
+      {/* Conteúdo da Aba Execução Orçamentária (Em Desenvolvimento) */}
+      {activeTab === 'orcamento' ? (
+        <div className="bg-card border border-amber-500/30 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-4 shadow-lg my-8">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
+            <DollarSign className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+              Em Desenvolvimento
+            </span>
+            <h3 className="text-xl font-bold text-foreground mt-3">
+              Módulo de Execução Orçamentária & Folha Financeira
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-lg mt-2 leading-relaxed">
+              Esta área está preparada para integrar as métricas de despesas de pessoal, remuneração média, adicionais salariais e filtros por período orçamentário municipal.
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Conteúdo da Aba Principal: Visão Geral de Servidores */
+        <div className="space-y-6">
+          {/* Painel de Filtros em Tempo Real */}
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 no-print">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <Filter className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">Filtros do Relatório</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Select Escola */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                  Unidade / Escola
+                </label>
+                <select
+                  value={filtroEscolaId}
+                  onChange={(e) => setFiltroEscolaId(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                >
+                  <option value="">Rede Municipal (Todas as Escolas)</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>
+                      {esc.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Select Cargo */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                  Cargo / Função
+                </label>
+                <select
+                  value={filtroCargo}
+                  onChange={(e) => setFiltroCargo(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                >
+                  <option value="">Todos os Cargos</option>
+                  {listaCargosDisponiveis.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Select Modalidade */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                  Modalidade
+                </label>
+                <select
+                  value={filtroModalidade}
+                  onChange={(e) => setFiltroModalidade(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                >
+                  <option value="Todos">Todas as Modalidades</option>
+                  <option value="Regular">Ensino Regular</option>
+                  <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
+                </select>
+              </div>
+
+              {/* Select Vínculo */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                  Tipo de Vínculo
+                </label>
+                <select
+                  value={filtroVinculo}
+                  onChange={(e) => setFiltroVinculo(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                >
+                  <option value="Todos">Todos os Vínculos</option>
+                  <option value="Concursado">Concursado / Efetivo</option>
+                  <option value="Contratado">Contratado / Substituto</option>
+                  <option value="Outros">Outros / Não informado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards KPI (Destaques) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* KPI 1: Servidores Únicos */}
+            <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-semibold">Total de Servidores (Pessoas)</p>
+                <h3 className="text-2xl font-bold text-foreground mt-0.5">
+                  {isLoading ? '...' : reportData.resumo.total_servidores_unicos ?? 0}
+                </h3>
+                <span className="text-[10px] text-blue-400 font-medium">Deduplicado por servidor</span>
+              </div>
+            </div>
+
+            {/* KPI 2: Cargos Ocupados */}
+            <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-semibold">Total de Cargos Ocupados</p>
+                <h3 className="text-2xl font-bold text-foreground mt-0.5">
+                  {isLoading ? '...' : reportData.resumo.total_cargos_ocupados ?? 0}
+                </h3>
+                <span className="text-[10px] text-emerald-400 font-medium">Total de postos/vínculos</span>
+              </div>
+            </div>
+
+            {/* KPI 3: Servidores no Regular */}
+            <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-semibold">Ensino Regular</p>
+                <h3 className="text-2xl font-bold text-foreground mt-0.5">
+                  {isLoading ? '...' : reportData.resumo.total_regular ?? 0}
+                </h3>
+                <span className="text-[10px] text-purple-400 font-medium">
+                  {totalCargosCalculado > 0
+                    ? `${Math.round(((reportData.resumo.total_regular ?? 0) / totalCargosCalculado) * 100)}% das ocupações`
+                    : '0%'}
+                </span>
+              </div>
+            </div>
+
+            {/* KPI 4: Servidores no EJA */}
+            <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-semibold">Modalidade EJA</p>
+                <h3 className="text-2xl font-bold text-foreground mt-0.5">
+                  {isLoading ? '...' : reportData.resumo.total_eja ?? 0}
+                </h3>
+                <span className="text-[10px] text-amber-400 font-medium">
+                  {totalCargosCalculado > 0
+                    ? `${Math.round(((reportData.resumo.total_eja ?? 0) / totalCargosCalculado) * 100)}% das ocupações`
+                    : '0%'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção de Gráficos (Pizza/Donut Recharts) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Gráfico 1: Vínculos */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <PieChartIcon className="w-5 h-5 text-primary" />
+                  <h4 className="text-base font-bold text-foreground">Distribuição por Vínculo</h4>
+                </div>
+                <span className="text-xs text-muted-foreground">Concursados × Contratados</span>
+              </div>
+
+              {isLoading ? (
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground text-xs animate-pulse">
+                  Carregando gráfico...
+                </div>
+              ) : chartDataVinculos.length === 0 ? (
+                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground text-xs space-y-2">
+                  <AlertTriangle className="w-6 h-6 text-amber-500" />
+                  <span>Nenhum vínculo encontrado para os filtros selecionados</span>
+                </div>
+              ) : (
+                isMounted && (
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartDataVinculos}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {chartDataVinculos.map((entry, index) => (
+                            <Cell key={`cell-v-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#18181b',
+                            borderColor: '#27272a',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '12px',
+                          }}
+                          formatter={(val: any) => [`${val} ocupação(ões)`, 'Total']}
+                        />
+                        <Legend
+                          formatter={(value, entry: any) => (
+                            <span className="text-xs font-semibold text-foreground">
+                              {value} ({entry.payload.value})
+                            </span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Gráfico 2: Cargos Ocupados */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-emerald-400" />
+                  <h4 className="text-base font-bold text-foreground">Distribuição dos Cargos Ocupados</h4>
+                </div>
+                <span className="text-xs text-muted-foreground">Postos Principais</span>
+              </div>
+
+              {isLoading ? (
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground text-xs animate-pulse">
+                  Carregando gráfico...
+                </div>
+              ) : chartDataCargos.length === 0 ? (
+                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground text-xs space-y-2">
+                  <AlertTriangle className="w-6 h-6 text-amber-500" />
+                  <span>Nenhum cargo encontrado para os filtros</span>
+                </div>
+              ) : (
+                isMounted && (
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartDataCargos}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {chartDataCargos.map((entry, index) => (
+                            <Cell key={`cell-c-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#18181b',
+                            borderColor: '#27272a',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '12px',
+                          }}
+                          formatter={(val: any, name: any) => [
+                            `${val} ocupação(ões) (${totalCargosCalculado > 0 ? Math.round((Number(val) / totalCargosCalculado) * 100) : 0}%)`,
+                            name,
+                          ]}
+                        />
+                        <Legend
+                          layout="vertical"
+                          align="right"
+                          verticalAlign="middle"
+                          formatter={(value, entry: any) => (
+                            <span className="text-[11px] font-medium text-foreground truncate max-w-[140px] inline-block">
+                              {value}: {entry.payload.value}
+                            </span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Tabela Consolidada por Cargo */}
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-5 border-b border-border flex items-center justify-between bg-surface-1">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-primary" />
+                <h4 className="text-base font-bold text-foreground">Detalhamento Consolidado por Cargo</h4>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {reportData.cargos.length} cargo(s) encontrado(s)
+              </span>
+            </div>
+
+            {isLoading ? (
+              <div className="p-12 text-center text-muted-foreground text-sm animate-pulse">
+                Carregando tabela consolidada...
+              </div>
+            ) : reportData.cargos.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center space-y-2">
+                <AlertTriangle className="w-8 h-8 text-amber-500 mb-1" />
+                <p className="font-semibold text-foreground">Nenhum registro encontrado</p>
+                <p className="text-xs text-muted-foreground">Tente ajustar ou limpar os filtros de busca no topo.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-secondary/70 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border">
+                    <tr>
+                      <th className="py-3 px-4 font-bold">Cargo / Função</th>
+                      <th className="py-3 px-4 font-bold text-center">Total Ocupações</th>
+                      <th className="py-3 px-4 font-bold text-center">Ensino Regular</th>
+                      <th className="py-3 px-4 font-bold text-center">EJA</th>
+                      <th className="py-3 px-4 font-bold text-center">Concursados</th>
+                      <th className="py-3 px-4 font-bold text-center">Contratados</th>
+                      <th className="py-3 px-4 font-bold text-center">Outros</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {reportData.cargos.map((item, idx) => (
+                      <tr
+                        key={idx}
+                        className="hover:bg-hoverCustom/60 transition-colors text-foreground font-medium"
+                      >
+                        <td className="py-3 px-4 font-semibold text-foreground flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                          <span>{item.cargo}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-primary">
+                          {item.ocupacoes}
+                        </td>
+                        <td className="py-3 px-4 text-center">{item.regular}</td>
+                        <td className="py-3 px-4 text-center">
+                          {item.eja > 0 ? (
+                            <span className="bg-amber-500/10 text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/20">
+                              {item.eja}
+                            </span>
+                          ) : (
+                            '0'
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center text-blue-400 font-semibold">
+                          {item.concursados}
+                        </td>
+                        <td className="py-3 px-4 text-center text-emerald-400 font-semibold">
+                          {item.contratados}
+                        </td>
+                        <td className="py-3 px-4 text-center text-muted-foreground">
+                          {item.outros}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  {/* Linha de Totais da Tabela */}
+                  <tfoot className="bg-secondary/80 font-bold text-foreground border-t-2 border-border text-xs">
+                    <tr>
+                      <td className="py-3.5 px-4">TOTAL GERAL MUNICIPAL</td>
+                      <td className="py-3.5 px-4 text-center text-primary font-extrabold text-sm">
+                        {reportData.resumo.total_cargos_ocupados ?? 0}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">{reportData.resumo.total_regular ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-amber-400">{reportData.resumo.total_eja ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-blue-400">{reportData.resumo.total_concursados ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-emerald-400">{reportData.resumo.total_contratados ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-muted-foreground">{reportData.resumo.total_outros ?? 0}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
