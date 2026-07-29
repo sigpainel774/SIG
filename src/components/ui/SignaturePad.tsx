@@ -305,14 +305,45 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     setIsModalOpen(false)
   }
 
-  // Detectar orientação portrait no mobile
+  // Evitar scroll/drag do navegador durante o desenho de assinatura no touch/tablet (listener não-passivo)
+  useEffect(() => {
+    if (!isModalOpen) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault()
+      startDrawing(e as any)
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault()
+      draw(e as any)
+    }
+
+    const handleTouchEnd = () => {
+      stopDrawing()
+    }
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isModalOpen, isDrawing, isEditMode, drawnPaths])
+
+  // Detectar orientação portrait no mobile/tablet
   const [isPortraitMobile, setIsPortraitMobile] = useState(false)
 
   useEffect(() => {
     const checkOrientation = () => {
-      const isMobile = window.innerWidth < 768
+      const isTouchDevice = window.innerWidth <= 1024
       const isVert = window.innerHeight > window.innerWidth
-      setIsPortraitMobile(isMobile && isVert)
+      setIsPortraitMobile(isTouchDevice && isVert)
     }
 
     checkOrientation()
@@ -320,8 +351,8 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     return () => window.removeEventListener('resize', checkOrientation)
   }, [])
 
-  // Classes css do container do modal
-  const modalClasses = "w-[96vw] max-w-[750px] h-[90vh] max-h-[520px] bg-[#121214] border border-[#26262a] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+  // Classes css do container do modal (centralização flexbox segura no tablet/mobile)
+  const modalClasses = "relative w-[96vw] sm:w-[90vw] max-w-[750px] h-[85vh] max-h-[520px] bg-[#121214] border border-[#26262a] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl my-auto m-auto"
 
   return (
     <div className="space-y-2 w-full">
@@ -400,6 +431,14 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                     : 'Desenhe sua assinatura no quadro abaixo.'}
                 </p>
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClose}
+                className="text-zinc-400 hover:text-white hover:bg-zinc-800/60 rounded-lg p-1.5 h-8 w-8 flex items-center justify-center cursor-pointer -mr-1 -mt-1"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
 
             {/* Canvas Area */}
@@ -410,9 +449,6 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
                 className="w-full h-full cursor-crosshair touch-none"
               />
               {!hasSignature && (
