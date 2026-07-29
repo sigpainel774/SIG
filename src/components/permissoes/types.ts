@@ -9,6 +9,9 @@ export interface FuncionarioSimples {
   id: string
   nome: string
   email: string | null
+  cargo?: string | null
+  is_superadmin?: boolean | null
+  is_conta_especial?: boolean | null
   auth_user_id?: string | null
 }
 
@@ -22,4 +25,8 @@ export interface RegistroPermissao {
   escola: string
   escolaId: string | null
   status: string
+  cargo?: string | null
+  is_superadmin?: boolean | null
+  is_conta_especial?: boolean | null
 }
+

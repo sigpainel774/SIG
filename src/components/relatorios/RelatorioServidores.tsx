@@ -195,6 +195,7 @@ export default function RelatorioServidores() {
               status,
               modalidade_ensino,
               tipo_vinculo,
+              is_conta_especial,
               deleted_at
             )
           `)
@@ -210,6 +211,7 @@ export default function RelatorioServidores() {
 
         if (data) {
           const mapped = (data as any[])
+            .filter((v) => !v.funcionarios?.is_conta_especial)
             .map((v) => {
               const f = v.funcionarios
               return {

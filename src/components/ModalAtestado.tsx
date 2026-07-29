@@ -39,7 +39,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
         try {
           let query = supabase
             .from('funcionarios')
-            .select('id, nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo)')
+            .select('id, nome, cargo, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo)')
             .is('deleted_at', null)
             .order('nome')
 
@@ -70,6 +70,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
 
           if (data && active) {
             const filtrados = data.filter((f: any) => {
+              if (f.is_conta_especial) return false
               if (escolaAtivaId) {
                 if (f.is_superadmin) return false
                 if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false

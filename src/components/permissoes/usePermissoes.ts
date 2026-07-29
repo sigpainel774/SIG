@@ -34,7 +34,7 @@ export function usePermissoes() {
   const [itemConfigurar, setItemConfigurar] = useState<RegistroPermissao | null>(null)
 
   // ── Estado: modo de visualização ────────────────────────────────────────────
-  const [modoAtribuicao, setModoAtribuicao] = useState<'funcionario' | 'escola'>('funcionario')
+  const [modoAtribuicao, setModoAtribuicao] = useState<'funcionario' | 'escola' | 'especiais'>('funcionario')
   const [salvando, setSalvando] = useState(false)
 
   // ── Estado: dados do banco ──────────────────────────────────────────────────
@@ -209,10 +209,10 @@ export function usePermissoes() {
         setEscolas(escolasData)
       }
 
-      // 2. Todos os funcionários (para o autocomplete)
+      // 2. Todos os funcionários (para o autocomplete e gestão de contas especiais)
       let funcsQuery = supabase
         .from('funcionarios')
-        .select('id, nome, email, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
+        .select('id, nome, email, cargo, is_superadmin, is_conta_especial, auth_user_id, acessos_usuarios(nivel, ativo)')
         .eq('status', 'ativo')
 
       if (restringirNivel && schoolIdToUse) {
@@ -445,6 +445,40 @@ export function usePermissoes() {
     setModalConfigOpen(true)
   }
 
+  // ─── Alternar Status de Conta Especial ──────────────────────────────────────
+  const handleToggleContaEspecial = async (funcionarioId: string, novoValor: boolean, nomeFuncionario: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ is_conta_especial: novoValor })
+        .eq('id', funcionarioId)
+
+      if (error) throw error
+
+      toast.success(
+        novoValor
+          ? `Conta "${nomeFuncionario}" marcada como Especial!`
+          : `Conta "${nomeFuncionario}" desmarcada como Especial!`
+      )
+
+      // Atualizar lista local de funcionários
+      setFuncionariosAll((prev) =>
+        prev.map((f) => (f.id === funcionarioId ? { ...f, is_conta_especial: novoValor } : f))
+      )
+
+      // Invalidação de cache de perfil se existir auth_user_id
+      const func = funcionariosAll.find((f) => f.id === funcionarioId)
+      if (func?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(func.auth_user_id)
+      }
+    } catch (err: any) {
+      console.error('Erro ao alternar conta especial:', err)
+      toast.error('Erro ao atualizar status de conta especial: ' + (err.message || 'Erro desconhecido'))
+    }
+  }
+
   return {
     // refs
     autocompleteRef,
@@ -496,6 +530,8 @@ export function usePermissoes() {
     handleSalvarPermissao,
     limparFiltros,
     handleClickEditCard,
+    handleToggleContaEspecial,
+    fetchDadosContasEspeciais: () => fetchRegistros(escolas),
     // edit mode store
     setEditMode,
   }

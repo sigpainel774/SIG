@@ -472,7 +472,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           funcionario_id: selecionado.id,
           escola_origem_id: escolaAtivaId,
           escola_destino_id: destinoEscolaId,
-          solicitante_id: authFuncionario?.id ?? '',
+          solicitante_id: authFuncionario?.id || null,
           motivo: motivoSolicitacao,
           fora_da_rede: false,
           ficha_snapshot: selecionado as any,

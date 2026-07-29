@@ -59,6 +59,7 @@ export interface Funcionario {
   formacao?: string | null
   foto_url?: string | null
   is_superadmin?: boolean | null
+  is_conta_especial?: boolean | null
   endereco?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -149,13 +150,13 @@ export default function FuncionariosPage() {
       const selectFields =
         escolaId || !isAdminUser
           ? `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
           : `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
@@ -185,6 +186,9 @@ export default function FuncionariosPage() {
 
       const formatados: Funcionario[] = (data ?? [])
         .filter((f: Record<string, any>) => {
+          // Contas marcadas como especiais não aparecem na listagem de funcionários
+          if (f.is_conta_especial) return false
+
           // Desduplicação defensiva caso o mesmo funcionário tenha mais de um vínculo ativo na mesma escola
           if (vistos.has(f.id)) return false
           vistos.add(f.id)
