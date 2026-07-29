@@ -1,11 +1,15 @@
-// SIG Sapeaçu — Service Worker v10
+// SIG Sapeaçu — Service Worker v11
 // Estratégia de Alta Performance & Segurança PWA:
-// 1. Assets Estáticos Imutáveis (_next/static, fontes, logos institucionais): Cache-First / SWR.
-// 2. Navegação HTML e Transições RSC: Network-Only (garante isolamento total entre sessões de usuários).
-// 3. Fallback Offline: Redireciona para /offline.html somente quando houver falha real de conexão de rede.
+// 1. Assets Estáticos Imutáveis (_next/static, fontes, logos): Cache-First / SWR.
+// 2. Fotos 3x4 / Avatars Públicos (Supabase Storage): Stale-While-Revalidate (sig-photos-v11).
+// 3. Tiles de Mapa (Google, OSM, Esri): Stale-While-Revalidate com suporte a opaque responses (sig-maptiles-v11).
+// 4. Navegação HTML e Transições RSC: Network-Only (garante isolamento total entre sessões).
+// 5. Fallback Offline: Redireciona para /offline.html somente quando houver falha real de rede.
 
-const CACHE_NAME = 'sig-sapeacu-v10';
-const STATIC_CACHE_NAME = 'sig-static-v10';
+const CACHE_NAME = 'sig-sapeacu-v11';
+const STATIC_CACHE_NAME = 'sig-static-v11';
+const MAP_TILES_CACHE_NAME = 'sig-maptiles-v11';
+const PHOTOS_CACHE_NAME = 'sig-photos-v11';
 
 // Assets estáticos essenciais do PWA (ícones, manifest e offline shell)
 const STATIC_ASSETS = [
@@ -35,8 +39,13 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          // Deleta versões obsoletas de cache, incluindo caches de páginas antigas (sig-pages-*)
-          if (key !== STATIC_CACHE_NAME && key !== CACHE_NAME) {
+          // Mantém apenas as versões ativas do cache do sistema
+          if (
+            key !== STATIC_CACHE_NAME &&
+            key !== CACHE_NAME &&
+            key !== MAP_TILES_CACHE_NAME &&
+            key !== PHOTOS_CACHE_NAME
+          ) {
             return caches.delete(key);
           }
         })
@@ -59,7 +68,67 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Ignora endpoints de API, Supabase, extensões do Chrome, dev HMR e Server Actions
+  // 1. CACHE DE FOTOS 3x4 / AVATARS DO SUPABASE STORAGE (Stale-While-Revalidate)
+  const isSupabasePublicStorage =
+    url.hostname.includes('supabase.co') &&
+    url.pathname.includes('/storage/v1/object/public/');
+
+  if (isSupabasePublicStorage) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              caches.open(PHOTOS_CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // 2. CACHE DE TILES DE MAPA (Google Maps, OpenStreetMap, Esri)
+  const isMapTile =
+    url.hostname.includes('mt1.google.com') ||
+    url.hostname.includes('mt0.google.com') ||
+    url.hostname.includes('mt2.google.com') ||
+    url.hostname.includes('mt3.google.com') ||
+    url.hostname.includes('tile.openstreetmap.org') ||
+    url.hostname.includes('arcgisonline.com');
+
+  if (isMapTile) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            // Aceita 200 OK ou resposta opaque (cross-origin sem CORS explícito)
+            if (
+              networkResponse &&
+              (networkResponse.status === 200 || networkResponse.type === 'opaque')
+            ) {
+              const responseToCache = networkResponse.clone();
+              caches.open(MAP_TILES_CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Ignora endpoints de API, Supabase genérico (Auth/DB), extensões do Chrome, dev HMR e Server Actions
   if (
     url.pathname.startsWith('/api') ||
     url.hostname.includes('supabase.co') ||
@@ -71,7 +140,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First / SWR
+  // 3. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First / SWR
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.endsWith('.png') ||
@@ -102,7 +171,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navegação HTML e payloads RSC -> Network-Only (Sem armazenar dados de sessão em cache)
+  // 4. Navegação HTML e payloads RSC -> Network-Only
   const isHtmlNavigation =
     event.request.mode === 'navigate' &&
     event.request.headers.get('accept')?.includes('text/html');
@@ -110,7 +179,6 @@ self.addEventListener('fetch', (event) => {
   if (isHtmlNavigation) {
     event.respondWith(
       fetch(event.request).catch(async () => {
-        // Se estiver completamente offline, tenta retornar a página offline graciosa do PWA
         const offlinePage = await caches.match('/offline.html');
         if (offlinePage) return offlinePage;
 

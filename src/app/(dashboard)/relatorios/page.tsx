@@ -134,12 +134,29 @@ export default function RelatoriosPage() {
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
 
-  // Fetch data for the Mapa Logístico de Funcionários
+  // Fetch data for the Mapa Logístico de Funcionários (com cache em sessionStorage)
   useEffect(() => {
     let active = true
     if (activeReport === 'mapa') {
+      const cacheKey = `sig_map_func_${selectedEscola?.id || 'all'}`
+      
+      // Tenta recuperar do sessionStorage para exibição instantânea
+      try {
+        const cached = sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0 && active) {
+            setMapData(parsed)
+          }
+        }
+      } catch (e) {
+        // Ignora erro de parse de cache
+      }
+
       const fetchMapData = async () => {
-        setIsLoadingMap(true)
+        if (!sessionStorage.getItem(cacheKey)) {
+          setIsLoadingMap(true)
+        }
         const supabase = createClient()
         try {
           let query = supabase
@@ -214,7 +231,11 @@ export default function RelatoriosPage() {
                 uniqueMap.set(item.id, item)
               }
             })
-            setMapData(Array.from(uniqueMap.values()))
+            const result = Array.from(uniqueMap.values())
+            setMapData(result)
+            try {
+              sessionStorage.setItem(cacheKey, JSON.stringify(result))
+            } catch (e) {}
           }
         } catch (err) {
           console.error("Erro ao buscar dados do mapa:", err)
@@ -232,12 +253,26 @@ export default function RelatoriosPage() {
     }
   }, [activeReport, selectedEscola])
 
-  // Fetch data para o Mapa de Alunos
+  // Fetch data para o Mapa de Alunos (com cache em sessionStorage)
   useEffect(() => {
     let active = true
     if (activeReport === 'mapa' && mapaAba === 'alunos') {
+      const cacheKey = `sig_map_alunos_${selectedEscola?.id || 'all'}`
+      
+      try {
+        const cached = sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0 && active) {
+            setMapDataAlunos(parsed)
+          }
+        }
+      } catch (e) {}
+
       const fetchMapDataAlunos = async () => {
-        setIsLoadingMapAlunos(true)
+        if (!sessionStorage.getItem(cacheKey)) {
+          setIsLoadingMapAlunos(true)
+        }
         const supabase = createClient()
         try {
           let query = supabase
@@ -297,9 +332,12 @@ export default function RelatoriosPage() {
                 }
               })
             setMapDataAlunos(mapped)
+            try {
+              sessionStorage.setItem(cacheKey, JSON.stringify(mapped))
+            } catch (e) {}
           }
         } catch (err) {
-          console.error('Erro ao buscar dados do mapa de alunos:', err)
+          console.error("Erro ao buscar alunos para mapa:", err)
         } finally {
           if (active) {
             setIsLoadingMapAlunos(false)
