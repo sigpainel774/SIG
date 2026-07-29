@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { Loader2, Printer, Pencil, UserX, Briefcase } from 'lucide-react'
+import { CachedImage } from '@/components/ui/cached-image'
 
 export interface Funcionario {
   id: string
@@ -346,15 +347,12 @@ export function FuncionariosList({
                             <div
                               className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
                             >
-                              {func.foto_url ? (
-                                <img
-                                  src={func.foto_url}
-                                  alt={func.nome}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                getInitials(func.nome)
-                              )}
+                              <CachedImage
+                                src={func.foto_url}
+                                alt={func.nome}
+                                className="w-full h-full"
+                                fallback={getInitials(func.nome)}
+                              />
                             </div>
 
                             {/* Nome + badges */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select'
 import { Search } from 'lucide-react'
 import { FuncItem, TabFiltro, Cargo } from '@/hooks/useGestaoLotacoes'
+import { CachedImage } from '@/components/ui/cached-image'
+import { precarregarFotosCache } from '@/lib/photoCache'
 
 interface FuncionarioLotacaoListProps {
   busca: string
@@ -65,7 +67,11 @@ export function FuncionarioLotacaoList({
         : 'bg-[#1e1e22] text-zinc-400 hover:text-white hover:bg-[#252528]'
     }`
 
-  const [timestamp] = useState(() => Date.now())
+  useEffect(() => {
+    if (funcsFiltrados.length > 0) {
+      precarregarFotosCache(funcsFiltrados.map((f) => f.foto_url))
+    }
+  }, [funcsFiltrados])
 
   return (
     <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-[#26262a] flex flex-col overflow-hidden">
@@ -133,15 +139,12 @@ export function FuncionarioLotacaoList({
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${pal.bg} ${pal.text}`}
                 >
-                  {f.foto_url ? (
-                    <img 
-                      src={`${f.foto_url.split('?')[0]}?t=${timestamp}`} 
-                      alt={f.nome} 
-                      className="w-full h-full object-cover" 
-                    />
-                  ) : (
-                    getInitials(f.nome)
-                  )}
+                  <CachedImage
+                    src={f.foto_url}
+                    alt={f.nome}
+                    className="w-full h-full"
+                    fallback={getInitials(f.nome)}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-white truncate">{f.nome}</p>

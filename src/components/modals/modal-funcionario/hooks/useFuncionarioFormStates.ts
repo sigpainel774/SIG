@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { usePessoaForm } from '@/hooks/usePessoaForm'
 import { Cargo, Doencas, PosGraduacao, FuncionarioFormContextType, ModalFuncionarioProps } from '../types'
+import { invalidarCacheFoto } from '@/lib/photoCache'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -484,6 +485,7 @@ export function useFuncionarioFormStates({
           .getPublicUrl(uploadData.path)
 
         foto_url = urlData.publicUrl
+        await invalidarCacheFoto(foto_url)
       }
 
       // Mitigação do Bug Silencioso de UX no Endereço: se os campos básicos de endereço estão vazios, limpa do banco (salva como null)

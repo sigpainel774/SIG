@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { type Aluno } from '@/hooks/useAlunos'
 import { useCheckPermissao } from '@/hooks/useCheckPermissao'
+import { CachedImage } from '@/components/ui/cached-image'
 
 interface AlunosListProps {
   carregando: boolean
@@ -83,15 +84,12 @@ export function AlunosList({
               <div className="flex items-center gap-4 min-w-0">
                 {/* Foto / Iniciais */}
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-border flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
-                  {aluno.foto_url ? (
-                    <img
-                      src={aluno.foto_url}
-                      alt={aluno.nome}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    aluno.nome.substring(0, 2).toUpperCase()
-                  )}
+                  <CachedImage
+                    src={aluno.foto_url}
+                    alt={aluno.nome}
+                    className="w-full h-full"
+                    fallback={aluno.nome.substring(0, 2).toUpperCase()}
+                  />
                 </div>
 
                 {/* Informações Principais */}
