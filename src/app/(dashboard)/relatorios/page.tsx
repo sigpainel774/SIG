@@ -286,7 +286,8 @@ export default function RelatoriosPage() {
               escola_id,
               turma_id,
               serie,
-              dados_matricula,
+              modalidade_mat:dados_matricula->>modalidade,
+              etapa_mat:dados_matricula->>etapa,
               escolas (nome),
               turmas (nome)
             `)
@@ -313,12 +314,12 @@ export default function RelatoriosPage() {
               .map((a) => {
                 const turmaNome = (a.turmas as any)?.nome ?? ''
                 const serieNome = a.serie ?? ''
-                const matMod = (a.dados_matricula as any)?.modalidade || (a.dados_matricula as any)?.etapa || ''
+                const matMod = a.modalidade_mat || a.etapa_mat || ''
 
                 const isEJA = 
                   turmaNome.toUpperCase().includes('EJA') ||
                   serieNome.toUpperCase().includes('EJA') ||
-                  matMod.toString().toUpperCase().includes('EJA')
+                  String(matMod).toUpperCase().includes('EJA')
 
                 return {
                   id: a.id,

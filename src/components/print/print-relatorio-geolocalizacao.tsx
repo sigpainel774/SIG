@@ -309,12 +309,15 @@ export function PrintRelatorioGeolocalizacao({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {currentList.map((item, idx) => {
-              const fotoUrlClean = item.foto_url
-                ? item.foto_url.startsWith('data:')
-                  ? item.foto_url
-                  : `${item.foto_url.split('?')[0]}?t=${sessionTimestamp}`
-                : null
+            {(() => {
+              const mostrarFotos = currentList.length <= 100;
+              
+              return currentList.map((item, idx) => {
+                const fotoUrlClean = mostrarFotos && item.foto_url
+                  ? item.foto_url.startsWith('data:')
+                    ? item.foto_url
+                    : `${item.foto_url.split('?')[0]}?t=${sessionTimestamp}`
+                  : null
 
               const cargoOuTurma = isFunc
                 ? (item as FuncionarioMapeado).cargo || 'Não especificado'
@@ -333,6 +336,8 @@ export function PrintRelatorioGeolocalizacao({
                         <img
                           src={fotoUrlClean}
                           alt=""
+                          loading="eager"
+                          decoding="async"
                           className="w-6 h-6 rounded-full object-cover border border-gray-300 shrink-0"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
@@ -381,7 +386,8 @@ export function PrintRelatorioGeolocalizacao({
                   </td>
                 </tr>
               )
-            })}
+              })
+            })()}
 
             {currentList.length === 0 && (
               <tr>
