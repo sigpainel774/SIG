@@ -40,7 +40,7 @@ export function StandardDialog({
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 flex flex-col flex-1 min-h-0">
           {children}
         </div>
         {footer && <DialogFooter>{footer}</DialogFooter>}
