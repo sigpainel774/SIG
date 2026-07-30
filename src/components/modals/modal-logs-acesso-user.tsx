@@ -35,7 +35,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
       const supabase = createClient()
       const { data, error } = await supabase
         .from('access_logs')
-        .select('*')
+        .select('id, email, evento, ip_address, user_agent, detalhes, created_at')
         .ilike('email', userEmail)
         .order('created_at', { ascending: false })
         .limit(20)

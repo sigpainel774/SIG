@@ -197,7 +197,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       const supabase = createClient()
       const { data: rawSol } = await (supabase
         .from('solicitacoes_edicao_aluno' as any) as any)
-        .select('*')
+        .select('id, aluno_id, solicitante_id, justificativa, status, aprovado_por, justificativa_resposta, criado_em, respondido_em')
         .eq('aluno_id', alunoEditar.id)
         .order('criado_em', { ascending: false })
         .limit(1)

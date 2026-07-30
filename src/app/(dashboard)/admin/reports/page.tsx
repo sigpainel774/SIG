@@ -67,7 +67,7 @@ export default function AdminReportsPage() {
 
     try {
       const { data, error } = await (supabase.from as any)('bug_reports')
-        .select('*')
+        .select('id, tipo, titulo, descricao, autor_nome, autor_email, escola, resposta_root, status, created_at, updated_at')
         .order('created_at', { ascending: false })
 
       if (data && !error) {

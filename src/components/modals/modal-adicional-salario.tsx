@@ -50,7 +50,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
     try {
       const { data, error } = await supabase
         .from('adicionais_salario')
-        .select('*')
+        .select('id, funcionario_id, descricao, valor, tipo, mes_referencia, ano_referencia, ativo, criado_por, created_at')
         .eq('funcionario_id', funcionarioId)
         .order('created_at', { ascending: false })
 

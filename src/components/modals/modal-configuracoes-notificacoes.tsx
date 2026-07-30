@@ -59,7 +59,7 @@ export function ModalConfiguracoesNotificacoes({
     try {
       const { data, error } = await supabase
         .from('configuracao_notificacoes_niveis')
-        .select('*')
+        .select('id, nivel, cargo_pattern, tipo_notificacao, enviar_web, created_at')
       if (error) throw error
       setRules(data ?? [])
     } catch (err: any) {

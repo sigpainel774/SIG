@@ -55,13 +55,13 @@ export function ModalDetalhesAluno({
       // 2. Calcular Média Global
       const { data: notas } = await supabase
         .from('notas')
-        .select('*')
+        .select('id, aluno_id, materia_id, turma_id, escola_id, unidade, nota1, nota2, nota3, created_at')
         .eq('aluno_id', aluno.id)
         .eq('turma_id', turma.id)
 
       const { data: recs } = await supabase
         .from('recuperacoes_finais')
-        .select('*')
+        .select('id, aluno_id, materia_id, turma_id, escola_id, nota, created_at')
         .eq('aluno_id', aluno.id)
         .eq('turma_id', turma.id)
 

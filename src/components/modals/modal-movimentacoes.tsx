@@ -71,7 +71,7 @@ export function ModalMovimentacoes({
       if (funcionario?.id) {
         const supabase = createClient()
         const { data, error } = await (supabase.from as any)('movimentacoes_funcionarios')
-          .select('*')
+          .select('id, funcionario_id, tipo, descricao, data, orgao_origem, orgao_destino, portaria, created_at')
           .eq('funcionario_id', funcionario.id)
           .order('data', { ascending: false })
 

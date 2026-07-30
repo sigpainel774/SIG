@@ -64,7 +64,7 @@ export function ModalAlunosAnexos({
       // 1. Carregar anexos existentes do aluno
       const { data: anexosData, error: anexosError } = await supabase
         .from('alunos_anexos')
-        .select('*')
+        .select('id, aluno_id, nome, arquivo_url, created_at, deleted_at, arquivado_por, motivo_arquivamento')
         .eq('aluno_id', aluno.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })

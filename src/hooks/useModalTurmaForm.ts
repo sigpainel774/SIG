@@ -38,7 +38,7 @@ export function useModalTurmaForm({ open, turma, onSuccess, onOpenChange }: UseM
     try {
       const { data, error } = await supabase
         .from('grade_curricular_escola')
-        .select('*')
+        .select('id, escola_id, nome, base_curricular, created_at')
         .eq('escola_id', escolaAtivaId)
         .order('nome', { ascending: true })
 

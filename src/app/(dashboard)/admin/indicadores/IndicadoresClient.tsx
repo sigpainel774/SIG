@@ -93,7 +93,7 @@ export function IndicadoresClient() {
       // 1. Carregar prazos gerais da rede (escola_id is null)
       const { data: prazosData } = await supabase
         .from('prazos_unidades')
-        .select('*')
+        .select('id, escola_id, unidade, data_limite, created_at')
         .is('escola_id', null)
       
       setPrazos(prazosData ?? [])

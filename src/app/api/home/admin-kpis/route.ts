@@ -26,7 +26,12 @@ export async function GET(req: NextRequest) {
       p_escola_id: escolaId
     })
 
-    if (rpcError) throw rpcError
+    if (rpcError) {
+      if (rpcError.message?.includes('Acesso negado') || rpcError.code === 'P0001') {
+        return NextResponse.json({ error: rpcError.message || 'Acesso negado para esta escola' }, { status: 403 })
+      }
+      throw rpcError
+    }
 
     return NextResponse.json(kpiData ?? {
       totalAlunos: 0,

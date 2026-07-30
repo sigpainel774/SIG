@@ -56,7 +56,7 @@ export const getCatalogoMaterias = async (supabase: SupabaseClient, escolaId: st
   if (!escolaId) return []
   const { data, error } = await supabase
     .from('grade_curricular_escola')
-    .select('*')
+    .select('id, escola_id, nome, base_curricular, created_at')
     .eq('escola_id', escolaId)
     .order('nome', { ascending: true })
 

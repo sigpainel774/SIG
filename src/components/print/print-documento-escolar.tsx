@@ -117,7 +117,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
         const supabase = createClient()
         const { data } = await supabase
           .from('assinatura')
-          .select('*')
+          .select('id, aluno_id, tipo_documento, token_verificacao, hash_sha256, arquivo_pdf_url, ip_responsavel, dispositivo_responsavel, user_agent_responsavel, data_responsavel, ip_funcionario, dispositivo_funcionario, user_agent_funcionario, data_funcionario, criado_em')
           .eq('token_verificacao', tokenExistente)
           .maybeSingle()
 

@@ -38,7 +38,7 @@ export function useEscolasSWR() {
     async () => {
       const { data, error } = await supabase
         .from('escolas')
-        .select('*')
+        .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
         .eq('ativo', true)
         .order('nome', { ascending: true })
 
@@ -81,7 +81,7 @@ export function useTurmasSWR(escolaId: string | null | undefined) {
     async ([, , escId]) => {
       const { data, error } = await supabase
         .from('turmas')
-        .select('*')
+        .select('id, nome, ano_letivo, escola_id, turno, capacidade, created_at, deleted_at')
         .eq('escola_id', escId)
         .order('nome', { ascending: true })
 
@@ -183,7 +183,7 @@ export function useAlunosSWR(escolaId: string | null | undefined, turmaId?: stri
   return useSWR(
     key,
     async ([, , escId, tId]) => {
-      let query = supabase.from('alunos').select('*').eq('escola_id', escId)
+      let query = supabase.from('alunos').select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at').eq('escola_id', escId)
       if (tId && tId !== 'all') {
         query = query.eq('turma_id', tId)
       }

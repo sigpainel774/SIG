@@ -42,7 +42,7 @@ export function HorariosSlotsSection() {
     try {
       const { data, error } = await (supabase as any)
         .from('horarios_aulas_slots')
-        .select('*')
+        .select('id, escola_id, turno, ordem_aula, horario_inicio, horario_fim, created_at')
         .eq('escola_id', selectedEscola.id)
         .order('turno')
         .order('ordem_aula')

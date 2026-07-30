@@ -42,7 +42,7 @@ export default function GradeCurricularTab() {
     try {
       const { data, error } = await supabase
         .from('grade_curricular_escola')
-        .select('*')
+        .select('id, escola_id, nome, base_curricular, created_at')
         .eq('escola_id', escolaAtivaId)
         .order('nome', { ascending: true })
       if (error) throw error

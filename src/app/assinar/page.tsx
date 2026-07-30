@@ -44,7 +44,7 @@ export default function AssinarPage() {
       // 1. Busca por código de responsável
       let { data: alunoResp, error: errorResp } = await supabase
         .from('alunos')
-        .select('*')
+        .select('id, nome, escola_id, turma_id, numero_matricula, codigo_temp_resp, codigo_temp_resp_criado_em, codigo_temp_func, codigo_temp_func_criado_em')
         .eq('codigo_temp_resp', code)
         .is('deleted_at', null)
         .maybeSingle()
@@ -71,7 +71,7 @@ export default function AssinarPage() {
       // 2. Se não encontrou, busca por código de funcionário
       let { data: alunoFunc, error: errorFunc } = await supabase
         .from('alunos')
-        .select('*')
+        .select('id, nome, escola_id, turma_id, numero_matricula, codigo_temp_resp, codigo_temp_resp_criado_em, codigo_temp_func, codigo_temp_func_criado_em')
         .eq('codigo_temp_func', code)
         .is('deleted_at', null)
         .maybeSingle()

@@ -72,8 +72,8 @@ export function useRelatorioNotas(escolaId: string | null) {
       }
       try {
         const [turmasRes, materiasRes] = await Promise.all([
-          supabase.from('turmas').select('*').eq('escola_id', escolaId).is('deleted_at', null),
-          supabase.from('materias').select('*').eq('escola_id', escolaId)
+          supabase.from('turmas').select('id, nome, ano_letivo, escola_id, turno, capacidade, created_at, deleted_at').eq('escola_id', escolaId).is('deleted_at', null),
+          supabase.from('materias').select('id, nome, base_curricular, turma_id, escola_id, professor_id, created_at').eq('escola_id', escolaId)
         ])
 
         if (turmasRes.error) throw turmasRes.error

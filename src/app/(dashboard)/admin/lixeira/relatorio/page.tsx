@@ -19,7 +19,7 @@ export default function AdminLixeiraRelatorioPage() {
     setLoading(true)
     let query = supabase
       .from('trash_bin')
-      .select('*')
+      .select('id, record_summary, table_name, record_id, deleted_by_name, deleted_by_email, deleted_at, status, resolution_note')
       .neq('status', 'PENDING')
       .order('resolved_at', { ascending: false })
 

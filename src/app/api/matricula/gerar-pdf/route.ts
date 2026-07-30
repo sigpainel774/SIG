@@ -1,21 +1,48 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { PDFDocument, rgb } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { createClient } from '@/lib/supabaseServer'
+import { checkRateLimit } from '@/lib/rateLimit'
 
-// Cache da fonte em memória para evitar múltiplos downloads
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
+// Cache da fonte em memória para evitar múltiplos carregamentos
 let robotoFontBytes: Uint8Array | null = null
 
-async function getRobotoFont() {
+async function getRobotoFont(baseUrl: string) {
   if (robotoFontBytes) return robotoFontBytes
-  const filePath = path.join(process.cwd(), 'public', 'fonts', 'Roboto-Regular.ttf')
-  const fileBuffer = fs.readFileSync(filePath)
-  robotoFontBytes = new Uint8Array(fileBuffer)
-  return robotoFontBytes
+
+  // 1. Tentar leitura física local
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'fonts', 'Roboto-Regular.ttf')
+    if (fs.existsSync(filePath)) {
+      const fileBuffer = fs.readFileSync(filePath)
+      robotoFontBytes = new Uint8Array(fileBuffer)
+      return robotoFontBytes
+    }
+  } catch (fsErr) {
+    console.warn('Falha na leitura local fs da fonte Roboto, tentando via fetch:', fsErr)
+  }
+
+  // 2. Fallback via fetch na origem (Vercel Serverless environment)
+  try {
+    const fontUrl = `${baseUrl}/fonts/Roboto-Regular.ttf`
+    const res = await fetch(fontUrl)
+    if (res.ok) {
+      const arrayBuf = await res.arrayBuffer()
+      robotoFontBytes = new Uint8Array(arrayBuf)
+      return robotoFontBytes
+    }
+  } catch (fetchErr) {
+    console.warn('Falha ao baixar fonte Roboto via HTTP:', fetchErr)
+  }
+
+  return null
 }
 
 function generateVerificacaoToken() {
@@ -27,14 +54,53 @@ function generateVerificacaoToken() {
   return token
 }
 
+async function getImageBytes(sigUrl: string): Promise<Uint8Array> {
+  // Suporte a Data URLs (Base64)
+  if (sigUrl.startsWith('data:')) {
+    const base64Data = sigUrl.split(',')[1] || ''
+    return new Uint8Array(Buffer.from(base64Data, 'base64'))
+  }
+  
+  // Suporte a URLs HTTP com cache buster seguro
+  const separator = sigUrl.includes('?') ? '&' : '?'
+  const res = await fetch(`${sigUrl}${separator}t=${Date.now()}`)
+  if (!res.ok) throw new Error('Falha ao baixar imagem de assinatura do storage.')
+  const buf = await res.arrayBuffer()
+  return new Uint8Array(buf)
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { alunoId } = await request.json()
-    if (!alunoId) {
-      return NextResponse.json({ error: 'ID do aluno é obrigatório.' }, { status: 400 })
+    // 1. Obter cliente Supabase do Servidor e validar sessão do usuário
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Acesso não autorizado. Por favor, realize o login.' }, { status: 401 })
     }
 
-    // 1. Buscar dados do aluno no banco de dados (bypassing RLS com supabaseAdmin)
+    // 2. Obter IP de quem está solicitando a geração e aplicar Rate Limiting
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const ipFuncionario = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip') || '127.0.0.1'
+    const uaFuncionario = request.headers.get('user-agent') || 'SIG/Server'
+
+    const rlResult = checkRateLimit(`${user.id}_${ipFuncionario}`, 5, 60000)
+    if (!rlResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas requisições de geração de PDF. Aguarde um momento antes de tentar novamente.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rlResult.resetInSeconds) }
+        }
+      )
+    }
+
+    const { alunoId } = await request.json()
+    if (!alunoId || !UUID_REGEX.test(alunoId)) {
+      return NextResponse.json({ error: 'ID do aluno é inválido ou obrigatório.' }, { status: 400 })
+    }
+
+    // 3. Buscar dados do aluno no banco de dados (bypassing RLS com supabaseAdmin)
     const { data: aluno, error: alunoError } = await supabaseAdmin
       .from('alunos')
       .select('*, escolas(nome)')
@@ -46,7 +112,59 @@ export async function POST(request: NextRequest) {
     }
 
     const dm = (aluno.dados_matricula as Record<string, any>) || {}
-    
+
+    // 4. Verificar se o usuário autenticado possui permissão ABAC / vínculo sobre a escola do aluno
+    const { data: funcionario } = await supabaseAdmin
+      .from('funcionarios')
+      .select('id, is_superadmin')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+
+    if (!funcionario) {
+      return NextResponse.json({ error: 'Usuário logado não possui perfil de funcionário cadastrado.' }, { status: 403 })
+    }
+
+    if (!funcionario.is_superadmin) {
+      const targetEscolaId = aluno.escola_id || dm.escolaId
+
+      if (targetEscolaId) {
+        const { data: vinculo } = await supabaseAdmin
+          .from('vinculos_funcionarios')
+          .select('id')
+          .eq('funcionario_id', funcionario.id)
+          .eq('escola_id', targetEscolaId)
+          .eq('ativo', true)
+          .limit(1)
+
+        const { data: acesso } = await supabaseAdmin
+          .from('acessos_usuarios')
+          .select('id')
+          .eq('funcionario_id', funcionario.id)
+          .eq('escola_id', targetEscolaId)
+          .eq('ativo', true)
+          .limit(1)
+
+        if ((!vinculo || vinculo.length === 0) && (!acesso || acesso.length === 0)) {
+          return NextResponse.json({ 
+            error: 'Acesso negado: Você não possui vínculo ou permissão ativa para a escola deste aluno.' 
+          }, { status: 403 })
+        }
+      } else {
+        const { data: vinculoQualquer } = await supabaseAdmin
+          .from('vinculos_funcionarios')
+          .select('id')
+          .eq('funcionario_id', funcionario.id)
+          .eq('ativo', true)
+          .limit(1)
+
+        if (!vinculoQualquer || vinculoQualquer.length === 0) {
+          return NextResponse.json({ 
+            error: 'Acesso negado: Você não possui vínculo ativo na rede de ensino.' 
+          }, { status: 403 })
+        }
+      }
+    }
+
     // Verificar se ambas as assinaturas estão presentes
     const sigRespUrl = dm.assinatura_responsavel_url
     const sigFuncUrl = dm.assinatura_funcionario_url
@@ -57,86 +175,76 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 2. Obter IP de quem está solicitando a geração (funcionário na escola)
-    const forwardedFor = request.headers.get('x-forwarded-for')
-    const ipFuncionario = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1'
-    const uaFuncionario = request.headers.get('user-agent') || 'SIG/Server'
-
-    // 3. Baixar imagens das assinaturas em array buffer
+    // 5. Baixar imagens das assinaturas com tratamento seguro
     let respSigImageBytes: Uint8Array
     let funcSigImageBytes: Uint8Array
 
     try {
-      // Adicionar query timestamp para forçar download atualizado
-      const respRes = await fetch(`${sigRespUrl}?t=${Date.now()}`)
-      const funcRes = await fetch(`${sigFuncUrl}?t=${Date.now()}`)
-      
-      if (!respRes.ok || !funcRes.ok) throw new Error('Falha ao baixar imagem de assinatura do storage.')
-      
-      const respBuf = await respRes.arrayBuffer()
-      const funcBuf = await funcRes.arrayBuffer()
-      
-      respSigImageBytes = new Uint8Array(respBuf)
-      funcSigImageBytes = new Uint8Array(funcBuf)
+      respSigImageBytes = await getImageBytes(sigRespUrl)
+      funcSigImageBytes = await getImageBytes(sigFuncUrl)
     } catch (fetchErr: any) {
       return NextResponse.json({ 
         error: `Erro ao buscar imagens de assinaturas: ${fetchErr.message}` 
       }, { status: 500 })
     }
 
-    // 4. Carregar a fonte Roboto-Regular para UTF-8
-    let robotoBytes: Uint8Array
-    try {
-      robotoBytes = await getRobotoFont()
-    } catch (fontErr: any) {
-      return NextResponse.json({ 
-        error: `Erro ao carregar fonte institucional Roboto: ${fontErr.message}` 
-      }, { status: 500 })
-    }
+    // 6. Carregar a fonte com resiliência
+    const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sig-six-kappa.vercel.app'
+    const siteUrl = rawSiteUrl.replace(/\/$/, '')
+    const robotoBytes = await getRobotoFont(siteUrl)
 
-    // 4.1 Carregar as logos institucionais locais do disco
+    // 6.1 Carregar as logos institucionais locais
     let logoPrefeituraImageBytes: Uint8Array | null = null
     let logoSecretariaImageBytes: Uint8Array | null = null
     
     try {
       const logoPrefeituraPath = path.join(process.cwd(), 'public', 'img', 'logo-prefeitura.png')
-      const logoPrefeituraBuffer = fs.readFileSync(logoPrefeituraPath)
-      logoPrefeituraImageBytes = new Uint8Array(logoPrefeituraBuffer)
+      if (fs.existsSync(logoPrefeituraPath)) {
+        logoPrefeituraImageBytes = new Uint8Array(fs.readFileSync(logoPrefeituraPath))
+      }
     } catch (err) {
-      console.error('Erro ao ler logo da prefeitura no disco:', err)
+      console.warn('Erro ao ler logo da prefeitura no disco:', err)
     }
 
     try {
       const logoSecretariaPath = path.join(process.cwd(), 'public', 'img', 'logo-secretaria.png')
-      const logoSecretariaBuffer = fs.readFileSync(logoSecretariaPath)
-      logoSecretariaImageBytes = new Uint8Array(logoSecretariaBuffer)
+      if (fs.existsSync(logoSecretariaPath)) {
+        logoSecretariaImageBytes = new Uint8Array(fs.readFileSync(logoSecretariaPath))
+      }
     } catch (err) {
-      console.error('Erro ao ler logo da secretaria no disco:', err)
+      console.warn('Erro ao ler logo da secretaria no disco:', err)
     }
 
-    // 5. Gerar o token de verificação e QR Code
+    // 7. Gerar o token de verificação e QR Code
     const token = generateVerificacaoToken()
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sig-six-kappa.vercel.app'
     const verificationUrl = `${siteUrl}/verificar/${token}`
     
-    // Gerar QR code em base64 como imagem PNG
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, width: 120 })
     const qrCodeBase64 = qrCodeDataUrl.split(';base64,')[1]
     const qrCodeImageBytes = new Uint8Array(Buffer.from(qrCodeBase64, 'base64'))
 
-    // 6. Criar o PDF usando pdf-lib
+    // 8. Criar o PDF usando pdf-lib
     const pdfDoc = await PDFDocument.create()
-    pdfDoc.registerFontkit(fontkit)
     
-    // Registrar fonte UTF-8
-    const robotoFont = await pdfDoc.embedFont(robotoBytes)
+    let robotoFont: any
+    if (robotoBytes) {
+      try {
+        pdfDoc.registerFontkit(fontkit)
+        robotoFont = await pdfDoc.embedFont(robotoBytes)
+      } catch (fontKitErr) {
+        console.warn('Erro ao registrar fontkit/roboto, usando Helvetica:', fontKitErr)
+        robotoFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+      }
+    } else {
+      robotoFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    }
     
     // Embutir as assinaturas e o QR Code no PDF
     const respSigImage = await pdfDoc.embedPng(respSigImageBytes)
     const funcSigImage = await pdfDoc.embedPng(funcSigImageBytes)
     const qrCodeImage = await pdfDoc.embedPng(qrCodeImageBytes)
 
-    // Embutir as logos no PDF se carregadas (com fallback PNG/JPG)
+    // Embutir as logos no PDF se carregadas
     let logoPrefeituraImage: any = null
     if (logoPrefeituraImageBytes) {
       try {
@@ -145,7 +253,7 @@ export async function POST(request: NextRequest) {
         try {
           logoPrefeituraImage = await pdfDoc.embedJpg(logoPrefeituraImageBytes)
         } catch (e2) {
-          console.error('Erro ao embutir logo prefeitura (PNG e JPG):', e2)
+          console.warn('Erro ao embutir logo prefeitura:', e2)
         }
       }
     }
@@ -158,16 +266,15 @@ export async function POST(request: NextRequest) {
         try {
           logoSecretariaImage = await pdfDoc.embedJpg(logoSecretariaImageBytes)
         } catch (e2) {
-          console.error('Erro ao embutir logo secretaria (PNG e JPG):', e2)
+          console.warn('Erro ao embutir logo secretaria:', e2)
         }
       }
     }
 
     // Adicionar página A4
-    const page = pdfDoc.addPage([595.28, 841.89]) // A4
+    const page = pdfDoc.addPage([595.28, 841.89])
     const { width, height } = page.getSize()
 
-    // Margens e Estilos
     const margin = 30
     const tableWidth = width - (margin * 2)
     const pageCenter = width / 2
@@ -186,7 +293,6 @@ export async function POST(request: NextRequest) {
       ? new Date(dm.dataMatricula).toLocaleDateString('pt-BR') 
       : new Date().toLocaleDateString('pt-BR')
 
-    // Regex de parsing do Ano e da Turma
     const rawSerie = aluno.serie || dm.serieAluno || ''
     let exibidoAno = '-'
     let exibidoTurma = '-'
@@ -201,12 +307,9 @@ export async function POST(request: NextRequest) {
 
     const autorizaImagemVoz = dm.autoriza_imagem_voz || 'Não'
 
-    // Função auxiliar para desenhar uma Via do Comprovante
     const drawVia = (yStart: number, isTopCopy: boolean, hashText: string) => {
       let y = yStart
 
-      // 1. Cabeçalho
-      // Logo Prefeitura (Esquerda)
       if (logoPrefeituraImage) {
         page.drawImage(logoPrefeituraImage, {
           x: margin,
@@ -216,7 +319,6 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Logo Secretaria (Direita)
       if (logoSecretariaImage) {
         page.drawImage(logoSecretariaImage, {
           x: width - margin - 75,
@@ -226,7 +328,6 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Textos Centralizados
       page.drawText(txtEstado, {
         x: pageCenter - (wEstado / 2),
         y: y - 12,
@@ -249,7 +350,6 @@ export async function POST(request: NextRequest) {
         color: rgb(0.2, 0.2, 0.2)
       })
 
-      // Linha Divisória
       page.drawLine({
         start: { x: margin, y: y - 50 },
         end: { x: width - margin, y: y - 50 },
@@ -258,8 +358,6 @@ export async function POST(request: NextRequest) {
       })
 
       y -= 50
-
-      // 2. Banner de Título
       y -= 22
       page.drawRectangle({
         x: margin,
@@ -281,13 +379,10 @@ export async function POST(request: NextRequest) {
       })
 
       y -= 12
-
-      // 3. Tabela de Dados (Estruturada)
       y -= 10
       const tableHeight = 70
       const tableY = y - tableHeight
 
-      // Borda Externa
       page.drawRectangle({
         x: margin,
         y: tableY,
@@ -298,7 +393,6 @@ export async function POST(request: NextRequest) {
         color: rgb(1, 1, 1)
       })
 
-      // Linhas Horizontais
       const row1Y = y - 18
       const row2Y = y - 35
       const row3Y = y - 52
@@ -306,7 +400,6 @@ export async function POST(request: NextRequest) {
       page.drawLine({ start: { x: margin, y: row2Y }, end: { x: width - margin, y: row2Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
       page.drawLine({ start: { x: margin, y: row3Y }, end: { x: width - margin, y: row3Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
 
-      // Linhas Verticais
       const col1_4 = margin + tableWidth * 0.75
       const col3_1 = margin + tableWidth / 3
       const col3_2 = margin + (tableWidth / 3) * 2
@@ -317,24 +410,20 @@ export async function POST(request: NextRequest) {
       page.drawLine({ start: { x: col3_2, y: row3Y }, end: { x: col3_2, y: row2Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
       page.drawLine({ start: { x: col2_1, y: tableY }, end: { x: col2_1, y: row3Y }, thickness: 0.5, color: rgb(0.1, 0.1, 0.1) })
 
-      // Rótulos e Valores
       const labelColor = rgb(0.3, 0.3, 0.3)
       const valueColor = rgb(0, 0, 0)
       const labelSize = 6.5
       const valueSize = 8
 
-      // Linha 1
       page.drawText('UNIDADE ESCOLAR', { x: margin + paddingLeft, y: y - 7, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText((escolaNome || 'Sem Escola').toUpperCase(), { x: margin + paddingLeft, y: y - 15, size: valueSize, font: robotoFont, color: valueColor })
 
       page.drawText('DATA', { x: col1_4 + paddingLeft, y: y - 7, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText(dataMatriculaFormatada, { x: col1_4 + paddingLeft, y: y - 15, size: valueSize, font: robotoFont, color: valueColor })
 
-      // Linha 2
       page.drawText('ALUNO(A)', { x: margin + paddingLeft, y: y - 24.5, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText(aluno.nome.toUpperCase(), { x: margin + paddingLeft, y: y - 32.5, size: valueSize, font: robotoFont, color: valueColor })
 
-      // Linha 3
       page.drawText('ANO', { x: margin + paddingLeft, y: y - 41.5, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText(exibidoAno, { x: margin + paddingLeft, y: y - 49.5, size: valueSize, font: robotoFont, color: valueColor })
 
@@ -344,7 +433,6 @@ export async function POST(request: NextRequest) {
       page.drawText('TURNO', { x: col3_2 + paddingLeft, y: y - 41.5, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText((dm.turnoAluno || 'MATUTINO').toUpperCase(), { x: col3_2 + paddingLeft, y: y - 49.5, size: valueSize, font: robotoFont, color: valueColor })
 
-      // Linha 4
       page.drawText('Nº IDENTIDADE (RG)', { x: margin + paddingLeft, y: y - 58.5, size: labelSize, font: robotoFont, color: labelColor })
       page.drawText(aluno.rg || dm.rgAluno || '-', { x: margin + paddingLeft, y: y - 66.5, size: valueSize, font: robotoFont, color: valueColor })
 
@@ -352,8 +440,6 @@ export async function POST(request: NextRequest) {
       page.drawText(aluno.cpf || dm.cpfAluno || '-', { x: col2_1 + paddingLeft, y: y - 66.5, size: valueSize, font: robotoFont, color: valueColor })
 
       y -= tableHeight
-
-      // 4. Termo de Compromisso
       y -= 8
       page.drawRectangle({
         x: margin,
@@ -395,8 +481,6 @@ export async function POST(request: NextRequest) {
       })
 
       y -= (10 + termoBoxHeight)
-
-      // 5. Uso de Imagem e Voz
       y -= 8
       page.drawRectangle({
         x: margin,
@@ -437,12 +521,10 @@ export async function POST(request: NextRequest) {
         color: rgb(0.15, 0.15, 0.15)
       })
 
-      // Checkboxes Sim / Não
       const optXSim = margin + 415
       const optXNao = margin + 475
       const optY = y - 20
 
-      // Checkbox Sim
       page.drawRectangle({
         x: optXSim,
         y: optY,
@@ -457,7 +539,6 @@ export async function POST(request: NextRequest) {
         page.drawText('X', { x: optXSim + 1.5, y: optY + 1, size: 6.5, font: robotoFont })
       }
 
-      // Checkbox Não
       page.drawRectangle({
         x: optXNao,
         y: optY,
@@ -473,13 +554,10 @@ export async function POST(request: NextRequest) {
       }
 
       y -= (10 + imagemBoxHeight)
-
-      // 6. Área de Assinaturas
       y -= 42
       const signatureWidth = 140
       const signatureHeight = 25
 
-      // Funcionário (Esquerda)
       const xFunc = margin + 15
       page.drawImage(funcSigImage, {
         x: xFunc + 10,
@@ -498,7 +576,6 @@ export async function POST(request: NextRequest) {
         : 'FUNCIONÁRIO RESPONSÁVEL PELA MATRÍCULA'
       page.drawText(txtFuncLabel, { x: xFunc - 5, y: y - 5, size: 6.2, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
 
-      // Responsável (Direita)
       const xResp = width - margin - signatureWidth - 35
       page.drawImage(respSigImage, {
         x: xResp + 10,
@@ -515,8 +592,6 @@ export async function POST(request: NextRequest) {
       page.drawText('ASSINATURA DO PAI/MÃE/RESPONSÁVEL PELO ALUNO(A)', { x: xResp - 5, y: y - 5, size: 6.2, font: robotoFont, color: rgb(0.2, 0.2, 0.2) })
 
       y -= 15
-
-      // 7. Tarja de Autenticidade Digital
       y -= 40
       page.drawRectangle({
         x: margin,
@@ -559,16 +634,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Coordenadas Y de início de cada via
-    const via0YStart = height - 20 // Via Superior
-    const via1YStart = height / 2 - 15 // Via Inferior
+    const via0YStart = height - 20
+    const via1YStart = height / 2 - 15
     const placeholderHash = '----------------------------------------------------------------'
 
-    // Passo A: Desenhar ambas as vias com um hash provisório
     drawVia(via0YStart, true, placeholderHash)
     drawVia(via1YStart, false, placeholderHash)
 
-    // Desenhar a linha tracejada divisória de vias (meio da página A4)
     const yMiddle = height / 2
     page.drawLine({
       start: { x: 20, y: yMiddle },
@@ -578,20 +650,15 @@ export async function POST(request: NextRequest) {
       color: rgb(0.5, 0.5, 0.5)
     })
 
-    // Salvar o arquivo PDF temporariamente em buffer para computar o hash correto
     const tempPdfBytes = await pdfDoc.save()
-
-    // Calcular o Hash SHA-256 final a partir dos bytes temporários
     const hash = crypto.createHash('sha256').update(tempPdfBytes).digest('hex')
 
-    // Passo B: Redesenhar os blocos de autenticidade (com a real chave e hash real)
     drawVia(via0YStart, true, hash)
     drawVia(via1YStart, false, hash)
 
-    // Salvar o PDF finalizado com o hash impresso nas vias
     const finalPdfBytes = await pdfDoc.save()
 
-    // 8. Fazer upload do PDF gerado para o Supabase Storage (comprovantes_matriculas)
+    // 9. Upload do PDF gerado para o Supabase Storage
     const pdfFileName = `comprovante_aluno_${alunoId}_${token}.pdf`
     
     const { error: uploadError } = await supabaseAdmin.storage
@@ -603,14 +670,21 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) throw uploadError
 
-    // Buscar URL Pública do PDF
+    // URL pública permanente para o banco de dados
     const { data: publicUrlData } = supabaseAdmin.storage
       .from('comprovantes_matriculas')
       .getPublicUrl(pdfFileName)
 
     const pdfPublicUrl = publicUrlData.publicUrl
 
-    // 9. Registrar dados na tabela assinatura
+    // URL assinada temporária (1 hora) para a resposta da API ao cliente
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from('comprovantes_matriculas')
+      .createSignedUrl(pdfFileName, 3600)
+
+    const pdfSignedUrl = signedUrlData?.signedUrl || pdfPublicUrl
+
+    // 10. Registrar evidências na tabela assinatura
     const { error: insertSigError } = await (supabaseAdmin
       .from('assinatura' as any) as any)
       .insert({
@@ -620,13 +694,11 @@ export async function POST(request: NextRequest) {
         hash_sha256: hash,
         arquivo_pdf_url: pdfPublicUrl,
         
-        // Evidências do responsável salvas no aluno
         ip_responsavel: dm.assinatura_responsavel_ip || null,
         user_agent_responsavel: dm.assinatura_responsavel_user_agent || null,
         dispositivo_responsavel: dm.assinatura_responsavel_dispositivo || null,
         data_responsavel: dm.assinatura_responsavel_at || null,
         
-        // Evidências do funcionário
         ip_funcionario: dm.assinatura_funcionario_ip || ipFuncionario,
         user_agent_funcionario: dm.assinatura_funcionario_user_agent || uaFuncionario,
         dispositivo_funcionario: dm.assinatura_funcionario_dispositivo || 'Desktop',
@@ -635,9 +707,17 @@ export async function POST(request: NextRequest) {
 
     if (insertSigError) throw insertSigError
 
-    // 10. Atualizar dados_matricula com a URL do PDF, Token e Hash na tabela alunos
+    // 11. Re-fetch dos dados_matricula mais recentes para prevenir race conditions
+    const { data: alunoRecente } = await supabaseAdmin
+      .from('alunos')
+      .select('dados_matricula')
+      .eq('id', alunoId)
+      .maybeSingle()
+
+    const dmAtual = (alunoRecente?.dados_matricula as Record<string, any>) || dm
+
     const dadosMatriculaAtualizados = {
-      ...dm,
+      ...dmAtual,
       pdf_assinado_url: pdfPublicUrl,
       pdf_assinado_token: token,
       pdf_assinado_hash: hash,
@@ -655,7 +735,7 @@ export async function POST(request: NextRequest) {
       success: true,
       token,
       hash,
-      pdfUrl: pdfPublicUrl
+      pdfUrl: pdfSignedUrl
     })
 
   } catch (error: any) {

@@ -36,7 +36,7 @@ export function useTurmaNotas({
       const [notasRes, recsRes, calculosRes] = await Promise.all([
         supabase.from('notas').select('aluno_id, materia_id, unidade, nota1, nota2, nota3, nota4').eq('turma_id', turma.id),
         supabase.from('recuperacoes_finais').select('aluno_id, materia_id, nota').eq('turma_id', turma.id),
-        supabase.from('boletins_consolidados').select('*').eq('turma_id', turma.id)
+        supabase.from('boletins_consolidados').select('aluno_id, materia_id, turma_id, m1, m2, m3, media_final, media_pos_rec, situacao, todas_unidades, is_elegivel_rec').eq('turma_id', turma.id)
       ])
       if (notasRes.error) throw notasRes.error
       if (recsRes.error) throw recsRes.error
