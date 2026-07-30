@@ -146,7 +146,7 @@ export interface FuncionarioFormContextType {
   consultarCep: (cepInput?: string) => Promise<void>
 
 
-  // Emprego
+  // Emprego & Afastamento / Licença Médica
   cargo: string
   setCargo: (v: string) => void
   cargaHoraria: string
@@ -163,6 +163,16 @@ export interface FuncionarioFormContextType {
   setDataAdmissao: (v: string) => void
   status: string
   setStatus: (v: string) => void
+  cid: string
+  setCid: (v: string) => void
+  diasAfastamento: string
+  setDiasAfastamento: (v: string) => void
+  dataFimAfastamento: string
+  setDataFimAfastamento: (v: string) => void
+  atestadoFile: File | null
+  setAtestadoFile: (v: File | null) => void
+  atestadoAnexoExistenteUrl: string | null
+  setAtestadoAnexoExistenteUrl: (v: string | null) => void
 
   // Saúde & Deficiências
   possuiDeficiencia: boolean

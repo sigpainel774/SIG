@@ -53,6 +53,7 @@ function ModalFuncionarioContent() {
   const getFotoSrc = () => {
     if (!fotoPreview) return null
     if (fotoPreview.startsWith('data:')) return fotoPreview
+    if (fotoPreview.includes('?')) return fotoPreview
     return `${fotoPreview}?t=${cacheBuster}`
   }
 

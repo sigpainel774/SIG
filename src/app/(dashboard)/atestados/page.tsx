@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { ModalAtestado } from '@/components/ModalAtestado'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
-
+import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 
 export default function AtestadosPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -34,6 +34,7 @@ export default function AtestadosPage() {
   const fetchAtestados = async () => {
     if (isMounted.current) setLoading(true)
     try {
+      await verificarEAtualizarRetornosAfastamentos(supabase)
       let query = supabase.from('atestados')
         .select('*, funcionarios(nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo))')
 
@@ -144,6 +145,13 @@ export default function AtestadosPage() {
             header: 'Dias',
             accessor: (item: any) => `${item.dias_afastamento} dias`,
             className: 'text-white font-bold',
+          },
+          {
+            header: 'Término Previsto',
+            accessor: (item: any) => item.data_fim 
+              ? new Date(item.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')
+              : '-',
+            className: 'text-amber-400 font-semibold',
           },
           {
             header: 'CID',
