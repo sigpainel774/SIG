@@ -55,27 +55,21 @@ function BoundsTracker({ setBounds, setZoom }: { setBounds: (b: L.LatLngBounds) 
 
 export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [busca, setBusca] = useState('');
+  const buscaDebounced = React.useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
   const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
   const mapRef = useRef<L.Map>(null);
 
-  // Pre-warming dos tiles de Sapeaçu - BA e preloading das fotos 3x4 na montagem
+  // Pre-warming dos tiles de Sapeaçu - BA na montagem
   useEffect(() => {
     prewarmSapeacuTiles();
   }, []);
 
-  useEffect(() => {
-    if (alunos && alunos.length > 0) {
-      const urls = alunos.map((a) => a.foto_url).filter(Boolean);
-      preloadFotos(urls);
-    }
-  }, [alunos]);
-
   // 1. Filtra alunos baseado no input de pesquisa e modalidade
   const alunosFiltrados = useMemo(() => {
-    const termo = busca.toLowerCase().trim();
+    const termo = buscaDebounced.toLowerCase().trim();
     return alunos.filter((a) => {
       // Filtro de modalidade
       if (filtroModalidade === 'eja' && a.modalidade !== 'EJA') return false;
@@ -90,7 +84,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         (a.modalidade && a.modalidade.toLowerCase().includes(termo))
       );
     });
-  }, [busca, filtroModalidade, alunos]);
+  }, [buscaDebounced, filtroModalidade, alunos]);
 
   // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
   const alunosValidos = useMemo(() => {
@@ -296,28 +290,10 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                 updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Google Satélite (Puro)">
-              <TileLayer
-                attribution="&copy; Google Maps"
-                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                maxZoom={20}
-                keepBuffer={4}
-                updateWhenIdle={true}
-              />
-            </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
               <TileLayer
                 attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                keepBuffer={4}
-                updateWhenIdle={true}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satélite (Esri)">
-              <TileLayer
-                attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                maxZoom={19}
                 keepBuffer={4}
                 updateWhenIdle={true}
               />
