@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { Search, MapPin, Filter } from 'lucide-react';
+import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { preloadFotos, prewarmSapeacuTiles } from '@/lib/mapCache';
 
@@ -58,6 +58,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
+  const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
   const mapRef = useRef<L.Map>(null);
 
   // Pre-warming dos tiles de Sapeaçu - BA e preloading das fotos 3x4 na montagem
@@ -342,43 +343,42 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                 >
                   {/* Popup Premium */}
                   <Popup maxWidth={260} className="custom-popup">
-                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px]">
+                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px] shadow-xl border border-[#2d3a54]">
                       <div className="flex gap-3 items-center p-3">
-                        {aluno.foto_url ? (
-                          <div className="relative w-[48px] h-[48px] shrink-0">
+                        <div
+                          onClick={() => setFotoModal(aluno)}
+                          className="relative w-[50px] h-[50px] shrink-0 cursor-pointer group/avatar rounded-full overflow-hidden"
+                          title="Clique para ampliar a foto"
+                        >
+                          {aluno.foto_url ? (
                             <img
                               src={aluno.foto_url}
                               alt={aluno.nome}
                               className={cn(
-                                "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10",
+                                "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
                                 aluno.modalidade === 'EJA' ? "border-purple-500" : "border-emerald-500"
                               )}
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
-                            <div className={cn(
-                              "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0",
-                              aluno.modalidade === 'EJA'
-                                ? "bg-gradient-to-br from-purple-600 to-purple-400"
-                                : "bg-gradient-to-br from-emerald-600 to-emerald-400"
-                            )}>
-                              {iniciais}
-                            </div>
-                          </div>
-                        ) : (
+                          ) : null}
                           <div className={cn(
-                            "w-[48px] h-[48px] rounded-full text-white font-bold text-lg flex items-center justify-center shrink-0 border-2 border-slate-700",
+                            "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0 transition-transform duration-200 group-hover/avatar:scale-110",
                             aluno.modalidade === 'EJA'
                               ? "bg-gradient-to-br from-purple-600 to-purple-400"
                               : "bg-gradient-to-br from-emerald-600 to-emerald-400"
                           )}>
                             {iniciais}
                           </div>
-                        )}
-                        <div>
+                          {/* Overlay visual ao passar o mouse para indicar expansão */}
+                          <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity z-20 flex items-center justify-center">
+                            <ZoomIn className="w-4 h-4 text-white drop-shadow" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <strong className="text-sm block text-white leading-tight">
+                            <strong className="text-sm block text-white leading-tight truncate max-w-[140px]" title={aluno.nome}>
                               {aluno.nome}
                             </strong>
                             <span className={cn(
@@ -391,11 +391,11 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                             </span>
                           </div>
                           {aluno.turma && (
-                            <span className="text-xs text-emerald-400 block mt-0.5">
+                            <span className="text-xs text-emerald-400 font-medium block mt-0.5 truncate">
                               Turma: {aluno.turma}
                             </span>
                           )}
-                          <span className="text-[11px] text-slate-400 block mt-1">
+                          <span className="text-[11px] text-slate-400 block mt-1 leading-tight">
                             📍 {aluno.escola}
                           </span>
                         </div>
@@ -405,9 +405,10 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                           href={`https://www.google.com/maps?q=${aluno.latitude},${aluno.longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block text-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-lg transition-colors no-underline"
+                          className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 !text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md transition-all no-underline cursor-pointer group/btn"
                         >
-                          🧭 Ver Residência no Maps
+                          <Navigation className="w-4 h-4 !text-white shrink-0 group-hover/btn:scale-110 transition-transform" />
+                          <span className="!text-white font-bold">Ver Residência no Maps</span>
                         </a>
                       </div>
                     </div>
@@ -418,6 +419,91 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           </MarkerClusterGroup>
         </MapContainer>
       </div>
+
+      {/* Modal de Foto Ampliada */}
+      {fotoModal && (
+        <div 
+          className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setFotoModal(null)}
+        >
+          <div 
+            className="relative max-w-sm sm:max-w-md w-full bg-[#141a27] border border-[#2d3a54] rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-4 text-center animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botão Fechar */}
+            <button
+              type="button"
+              onClick={() => setFotoModal(null)}
+              className="absolute top-3.5 right-3.5 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-[#1e283b] transition-colors cursor-pointer"
+              title="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Container da Foto Ampliada */}
+            <div className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-[#232d42] shadow-2xl mt-2 bg-[#1e283b] flex items-center justify-center shrink-0">
+              {fotoModal.foto_url ? (
+                <img
+                  src={fotoModal.foto_url}
+                  alt={fotoModal.nome}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : null}
+              <div className={cn(
+                "w-full h-full text-white font-bold text-5xl flex items-center justify-center",
+                fotoModal.modalidade === 'EJA'
+                  ? "bg-gradient-to-br from-purple-600 to-purple-800"
+                  : "bg-gradient-to-br from-emerald-600 to-emerald-800"
+              )}>
+                {obterIniciais(fotoModal.nome)}
+              </div>
+            </div>
+
+            {/* Detalhes do Aluno */}
+            <div className="flex flex-col items-center gap-1 w-full">
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <h3 className="text-lg font-bold text-white leading-snug">{fotoModal.nome}</h3>
+                <span className={cn(
+                  "text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                  fotoModal.modalidade === 'EJA'
+                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                )}>
+                  {fotoModal.modalidade ?? 'Regular'}
+                </span>
+              </div>
+              {fotoModal.turma && <p className="text-sm font-semibold text-emerald-400">Turma: {fotoModal.turma}</p>}
+              <p className="text-xs text-slate-400 flex items-center justify-center gap-1 mt-1">
+                <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                {fotoModal.escola}
+              </p>
+            </div>
+
+            {/* Ações do Modal */}
+            <div className="flex items-center gap-3 w-full mt-2 pt-4 border-t border-[#232d42]">
+              <a
+                href={`https://www.google.com/maps?q=${fotoModal.latitude},${fotoModal.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 !text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md transition-all no-underline cursor-pointer"
+              >
+                <Navigation className="w-4 h-4 !text-white shrink-0" />
+                <span className="!text-white font-bold">Ver Residência no Maps</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setFotoModal(null)}
+                className="px-4 py-2.5 text-xs font-semibold text-slate-300 bg-[#1e283b] hover:bg-[#28354d] border border-[#2d3a54] rounded-xl transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
