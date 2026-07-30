@@ -258,24 +258,10 @@ export default function MiniMapa({
                 maxZoom={20}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Google Satélite (Puro)">
-              <TileLayer
-                attribution="&copy; Google Maps"
-                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                maxZoom={20}
-              />
-            </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
               <TileLayer
                 attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Satélite (Esri)">
-              <TileLayer
-                attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community"
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                maxZoom={19}
               />
             </LayersControl.BaseLayer>
           </LayersControl>
