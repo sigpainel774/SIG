@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
-import { preloadFotos, prewarmSapeacuTiles } from '@/lib/mapCache';
+import { prewarmSapeacuTiles } from '@/lib/mapCache';
+
+const sessionTimestamp = Date.now();
 
 // Criador estático de ícone de agrupamento para Servidores/Funcionários (ES-3)
 const criarIconeCluster = (cluster: any) => {
@@ -60,8 +62,9 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   const isLevel1OrSuperadmin = isAdminGlobalOrRoot();
 
   const [busca, setBusca] = useState('');
+  const buscaDebounced = useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
-  const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados' | 'efetivos'>('todos');
+  const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados' | 'efetivos'>('contratados');
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [mapZoom, setMapZoom] = useState(14);
   const [fotoModal, setFotoModal] = useState<FuncionarioMapeado | null>(null);
@@ -72,25 +75,18 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     prewarmSapeacuTiles();
   }, []);
 
-  useEffect(() => {
-    if (funcionarios && funcionarios.length > 0) {
-      const urls = funcionarios.map((f) => f.foto_url).filter(Boolean);
-      preloadFotos(urls);
-    }
-  }, [funcionarios]);
-
   // 1. Filtra funcionários baseado no input de pesquisa, modalidade e vínculo
   const funcionariosFiltrados = useMemo(() => {
-    const termo = busca.toLowerCase().trim();
+    const termo = buscaDebounced.toLowerCase().trim();
     return funcionarios.filter((f) => {
       // Filtro de modalidade
-      const isEJA = (f.modalidade || '').toString().toUpperCase().includes('EJA');
+      const isEJA = (f.modalidade ?? '').toString().toUpperCase().includes('EJA');
       if (filtroModalidade === 'eja' && !isEJA) return false;
       if (filtroModalidade === 'regular' && isEJA) return false;
 
       // Filtro de tipo de vínculo (Visível e ativo apenas para Nível 1 & Superadmin)
       if (isLevel1OrSuperadmin && filtroVinculo !== 'todos') {
-        const vinc = (f.tipo_vinculo || '').toLowerCase().trim();
+        const vinc = (f.tipo_vinculo ?? '').toLowerCase().trim();
         if (filtroVinculo === 'contratados' && !vinc.includes('contratad')) return false;
         if (filtroVinculo === 'nomeados' && !vinc.includes('nomead')) return false;
         if (filtroVinculo === 'efetivos' && !vinc.includes('efetiv')) return false;
@@ -105,7 +101,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         (f.modalidade && f.modalidade.toLowerCase().includes(termo))
       );
     });
-  }, [busca, filtroModalidade, filtroVinculo, funcionarios, isLevel1OrSuperadmin]);
+  }, [buscaDebounced, filtroModalidade, filtroVinculo, funcionarios, isLevel1OrSuperadmin]);
 
   // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
   const funcionariosValidos = useMemo(() => {
@@ -133,7 +129,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         }
       }, 100);
 
-      if (busca.trim() !== '' && funcionariosFiltrados.length > 0) {
+      if (buscaDebounced.trim() !== '' && funcionariosFiltrados.length > 0) {
         const primeiro = funcionariosFiltrados[0];
         mapRef.current.setView([primeiro.latitude, primeiro.longitude], 15);
       } else {
@@ -145,7 +141,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         clearTimeout(timer);
       };
     }
-  }, [busca, funcionariosFiltrados, SAPEACU_CENTER]);
+  }, [buscaDebounced, funcionariosFiltrados, SAPEACU_CENTER]);
 
   const recentralizarSapeacu = () => {
     if (mapRef.current) {
@@ -175,9 +171,10 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     }
 
     const iniciais = obterIniciais(nome);
+    const safeFotoUrl = fotoUrl?.startsWith('data:') ? fotoUrl : (fotoUrl ? `${fotoUrl.split('?')[0]}?t=${sessionTimestamp}` : '');
     const imgHtml =
-      fotoUrl && fotoUrl.trim() !== ''
-        ? `<img src="${fotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" decoding="async" loading="eager" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
+      safeFotoUrl && safeFotoUrl.trim() !== ''
+        ? `<img src="${safeFotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" decoding="async" loading="eager" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
         : '';
     const isEJA = modalidade === 'EJA';
     const bgGradient = isEJA 
@@ -387,7 +384,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                         >
                           {func.foto_url ? (
                             <img
-                              src={func.foto_url}
+                              src={func.foto_url.startsWith('data:') ? func.foto_url : `${func.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
                               alt={func.nome}
                               className={cn(
                                 "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
@@ -478,7 +475,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             <div className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-[#232d42] shadow-2xl mt-2 bg-[#1e283b] flex items-center justify-center shrink-0">
               {fotoModal.foto_url ? (
                 <img
-                  src={fotoModal.foto_url}
+                  src={fotoModal.foto_url.startsWith('data:') ? fotoModal.foto_url : `${fotoModal.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
                   alt={fotoModal.nome}
                   className="w-full h-full object-cover"
                   onError={(e) => {
