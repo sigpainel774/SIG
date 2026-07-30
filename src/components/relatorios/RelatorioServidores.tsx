@@ -14,11 +14,14 @@ import {
   GraduationCap, 
   DollarSign,
   FileSpreadsheet,
-  Printer
+  Printer,
+  Eye,
+  Search
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import {
   PieChart,
   Pie,
@@ -47,6 +50,18 @@ interface CargoBreakdown {
   concursados: number
   contratados: number
   outros: number
+}
+
+interface OcupanteCargo {
+  id: string
+  vinculo_id: string
+  nome: string
+  cpf?: string | null
+  cargoCalculado: string
+  orgao: string
+  modalidade: string
+  vinculo: string
+  status: string
 }
 
 interface RelatorioServidoresPayload {
@@ -91,6 +106,14 @@ export default function RelatorioServidores() {
   const [servidoresNominais, setServidoresNominais] = useState<ServidorNominalPrint[]>([])
   const [isLoadingNominal, setIsLoadingNominal] = useState(false)
 
+  // Estados do Modal de Detalhamento dos Ocupantes por Cargo
+  const [isCargoModalOpen, setIsCargoModalOpen] = useState(false)
+  const [cargoModalName, setCargoModalName] = useState<string>('')
+  const [occupantsList, setOccupantsList] = useState<OcupanteCargo[]>([])
+  const [isLoadingOccupants, setIsLoadingOccupants] = useState(false)
+  const [occupantSearch, setOccupantSearch] = useState('')
+  const occupantRequestCounter = useRef(0)
+
   const isMountedRef = useRef(true)
   const requestCounter = useRef(0)
 
@@ -105,6 +128,130 @@ export default function RelatorioServidores() {
   const [filtroCargo, setFiltroCargo] = useState<string>('')
   const [filtroModalidade, setFiltroModalidade] = useState<string>('Todos')
   const [filtroVinculo, setFiltroVinculo] = useState<string>('Todos')
+
+  // Abertura e carga do modal de ocupantes por cargo
+  const handleOpenCargoModal = useCallback(async (cargoName: string) => {
+    setCargoModalName(cargoName)
+    setIsCargoModalOpen(true)
+    setIsLoadingOccupants(true)
+    setOccupantSearch('')
+
+    const currentReq = ++occupantRequestCounter.current
+
+    try {
+      let query = supabase
+        .from('vinculos_funcionarios')
+        .select(`
+          id,
+          cargo,
+          escola_id,
+          escolas (nome),
+          funcionarios!inner (
+            id,
+            nome,
+            cpf,
+            status,
+            cargo,
+            modalidade_ensino,
+            tipo_vinculo,
+            is_conta_especial,
+            deleted_at
+          )
+        `)
+        .eq('ativo', true)
+        .is('funcionarios.deleted_at', null)
+
+      if (filtroEscolaId) {
+        query = query.eq('escola_id', filtroEscolaId)
+      }
+
+      const { data, error } = await query
+
+      if (!isMountedRef.current || currentReq !== occupantRequestCounter.current) return
+
+      if (error) {
+        console.error('Erro ao buscar ocupantes do cargo:', error)
+        toast.error('Erro ao carregar lista de ocupantes do cargo.')
+        setOccupantsList([])
+        return
+      }
+
+      if (data) {
+        const filteredAndMapped: OcupanteCargo[] = (data as any[])
+          .filter((v) => !v.funcionarios?.is_conta_especial)
+          .filter((v) => {
+            const statusUpper = (v.funcionarios?.status ?? 'ATIVO').toUpperCase()
+            return statusUpper === 'ATIVO' || statusUpper === ''
+          })
+          .map((v) => {
+            const f = v.funcionarios
+            const cargoFinal = (v.cargo || f.cargo || 'Cargo não informado').trim()
+
+            const tipoVincUpper = (f.tipo_vinculo ?? '').toUpperCase()
+            let vinculoTipoFinal = 'Outros'
+            if (tipoVincUpper.includes('EFETIVO') || tipoVincUpper.includes('CONCURSADO')) {
+              vinculoTipoFinal = 'Concursado / Efetivo'
+            } else if (
+              tipoVincUpper.includes('CONTRATADO') ||
+              tipoVincUpper.includes('SUBSTITUTO') ||
+              tipoVincUpper.includes('PRESTADOR') ||
+              tipoVincUpper.includes('RESERVISTA')
+            ) {
+              vinculoTipoFinal = 'Contratado'
+            }
+
+            const modUpper = (f.modalidade_ensino ?? '').toUpperCase()
+            const cargoUpper = cargoFinal.toUpperCase()
+            let modalidadeFinal = 'Regular'
+            if (modUpper.includes('EJA') || cargoUpper.includes('EJA')) {
+              modalidadeFinal = 'EJA'
+            }
+
+            return {
+              id: f.id,
+              vinculo_id: v.id,
+              nome: f.nome,
+              cpf: f.cpf,
+              cargoCalculado: cargoFinal,
+              orgao: v.escolas?.nome ?? 'Escola Não Informada',
+              modalidade: modalidadeFinal,
+              vinculo: vinculoTipoFinal,
+              status: f.status ?? 'ativo',
+            }
+          })
+          .filter((item) => {
+            const matchCargo = item.cargoCalculado.toLowerCase() === cargoName.trim().toLowerCase()
+            const matchMod = filtroModalidade === 'Todos' || item.modalidade.toUpperCase().includes(filtroModalidade.toUpperCase())
+            const matchVinc = filtroVinculo === 'Todos' || item.vinculo.toUpperCase().includes(filtroVinculo.toUpperCase())
+            return matchCargo && matchMod && matchVinc
+          })
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
+        setOccupantsList(filteredAndMapped)
+      }
+    } catch (err) {
+      if (!isMountedRef.current || currentReq !== occupantRequestCounter.current) return
+      console.error('Exceção ao buscar ocupantes:', err)
+      toast.error('Ocorreu um erro ao carregar os ocupantes.')
+      setOccupantsList([])
+    } finally {
+      if (isMountedRef.current && currentReq === occupantRequestCounter.current) {
+        setIsLoadingOccupants(false)
+      }
+    }
+  }, [supabase, filtroEscolaId, filtroModalidade, filtroVinculo])
+
+  // Filtro de ocupantes pesquisados no modal
+  const filteredOccupants = useMemo(() => {
+    if (!occupantSearch.trim()) return occupantsList
+    const term = occupantSearch.toLowerCase().trim()
+    return occupantsList.filter(
+      (o) =>
+        o.nome.toLowerCase().includes(term) ||
+        o.orgao.toLowerCase().includes(term) ||
+        (o.cpf && o.cpf.includes(term))
+    )
+  }, [occupantsList, occupantSearch])
 
   // Sincroniza a escola selecionada globalmente se houver
   useEffect(() => {
@@ -715,9 +862,18 @@ export default function RelatorioServidores() {
                         key={idx}
                         className="hover:bg-hoverCustom/60 transition-colors text-foreground font-medium"
                       >
-                        <td className="py-3 px-4 font-semibold text-foreground flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                          <span>{item.cargo}</span>
+                        <td className="py-3 px-4 font-semibold text-foreground">
+                          <button
+                            onClick={() => handleOpenCargoModal(item.cargo)}
+                            className="flex items-center gap-2 group cursor-pointer text-left focus:outline-none"
+                            title="Clique para ver a lista de ocupantes deste cargo"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-primary shrink-0 group-hover:scale-125 transition-transform" />
+                            <span className="text-primary font-bold group-hover:underline group-hover:text-primary/80 transition-colors">
+                              {item.cargo}
+                            </span>
+                            <Eye className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                          </button>
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-primary">
                           {item.ocupacoes}
@@ -764,6 +920,136 @@ export default function RelatorioServidores() {
           </div>
         </div>
       )}
+
+      {/* Modal de Detalhamento dos Ocupantes do Cargo */}
+      <StandardDialog
+        open={isCargoModalOpen}
+        onOpenChange={setIsCargoModalOpen}
+        title={`Ocupantes do Cargo: ${cargoModalName}`}
+        description={`Listagem oficial de servidores cadastrados como ${cargoModalName}`}
+        maxWidth="sm:max-w-4xl"
+      >
+        <div className="space-y-4">
+          {/* Header de Estatísticas do Cargo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-secondary/40 p-3.5 rounded-xl border border-border text-xs">
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold">Total de Ocupantes:</span>
+              <strong className="text-primary text-base font-extrabold">{occupantsList.length}</strong>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold">Ensino Regular:</span>
+              <strong className="text-purple-400 text-sm">{occupantsList.filter(o => o.modalidade === 'Regular').length}</strong>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold">Modalidade EJA:</span>
+              <strong className="text-amber-400 text-sm">{occupantsList.filter(o => o.modalidade === 'EJA').length}</strong>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold">Efetivos / Concursados:</span>
+              <strong className="text-blue-400 text-sm">{occupantsList.filter(o => o.vinculo.includes('Concursado')).length}</strong>
+            </div>
+          </div>
+
+          {/* Campo de Busca de Ocupantes */}
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar por nome do servidor, CPF ou escola..."
+              value={occupantSearch}
+              onChange={(e) => setOccupantSearch(e.target.value)}
+              className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-primary font-medium"
+            />
+            {occupantSearch && (
+              <button
+                onClick={() => setOccupantSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs font-semibold cursor-pointer"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          {/* Tabela de Ocupantes */}
+          {isLoadingOccupants ? (
+            <div className="p-10 text-center text-muted-foreground text-xs animate-pulse">
+              Carregando lista de ocupantes...
+            </div>
+          ) : filteredOccupants.length === 0 ? (
+            <div className="p-10 text-center text-muted-foreground text-xs flex flex-col items-center justify-center space-y-2 border border-dashed border-border rounded-xl">
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <p className="font-semibold text-foreground">Nenhum servidor encontrado</p>
+              <p className="text-muted-foreground text-[11px]">
+                {occupantSearch ? 'Tente buscar por outro termo' : 'Nenhum ocupante atende aos filtros atuais.'}
+              </p>
+            </div>
+          ) : (
+            <div className="border border-border rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-secondary/80 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border sticky top-0 z-10 backdrop-blur-md">
+                  <tr>
+                    <th className="py-2.5 px-3 w-10 text-center">#</th>
+                    <th className="py-2.5 px-3">Nome do Servidor</th>
+                    <th className="py-2.5 px-3">Unidade / Escola</th>
+                    <th className="py-2.5 px-3 text-center">Modalidade</th>
+                    <th className="py-2.5 px-3 text-center">Tipo de Vínculo</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredOccupants.map((serv, idx) => (
+                    <tr key={serv.vinculo_id || idx} className="hover:bg-hoverCustom/60 transition-colors font-medium">
+                      <td className="py-2.5 px-3 text-center font-bold text-muted-foreground text-[11px]">
+                        {idx + 1}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-foreground">
+                        {serv.nome}
+                        {serv.cpf && (
+                          <span className="block font-mono text-[10px] text-muted-foreground font-normal">
+                            CPF: {serv.cpf}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-muted-foreground">{serv.orgao}</td>
+                      <td className="py-2.5 px-3 text-center">
+                        {serv.modalidade === 'EJA' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                            EJA
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            Ensino Regular
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        {serv.vinculo.includes('Concursado') ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                            Concursado / Efetivo
+                          </span>
+                        ) : serv.vinculo === 'Contratado' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            Contratado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-muted-foreground border border-border">
+                            {serv.vinculo}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center uppercase text-[10px] font-bold">
+                        <span className={serv.status === 'ativo' ? 'text-emerald-400' : 'text-muted-foreground'}>
+                          {serv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </StandardDialog>
     </div>
   )
 }
