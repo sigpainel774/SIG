@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { usePessoaForm } from '@/hooks/usePessoaForm'
 import { Cargo, Doencas, PosGraduacao, FuncionarioFormContextType, ModalFuncionarioProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
+import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -126,6 +127,13 @@ export function useFuncionarioFormStates({
   const [modalidadeEnsino, setModalidadeEnsino] = useState('Regular')
   const [dataAdmissao, setDataAdmissao] = useState('')
   const [status, setStatus] = useState('ativo')
+
+  // Licença Médica & Afastamento
+  const [cid, setCid] = useState('')
+  const [diasAfastamento, setDiasAfastamento] = useState('1')
+  const [dataFimAfastamento, setDataFimAfastamento] = useState('')
+  const [atestadoFile, setAtestadoFile] = useState<File | null>(null)
+  const [atestadoAnexoExistenteUrl, setAtestadoAnexoExistenteUrl] = useState<string | null>(null)
 
   // Contato extra
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
@@ -325,6 +333,35 @@ export function useFuncionarioFormStates({
             setObservacoes(data.observacoes ?? '')
             setDataPreenchimento(data.data_preenchimento ?? '')
 
+            // Carregar atestado mais recente vinculado ao funcionário
+            const { data: latestAtestado } = await (supabase.from as any)('atestados')
+              .select('*')
+              .eq('funcionario_id', data.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (latestAtestado && active) {
+              setCid(latestAtestado.cid ?? '')
+              setDiasAfastamento(latestAtestado.dias_afastamento ? String(latestAtestado.dias_afastamento) : '1')
+              if (latestAtestado.data_fim) {
+                setDataFimAfastamento(latestAtestado.data_fim)
+              } else if (latestAtestado.data_inclusao && latestAtestado.dias_afastamento) {
+                const dt = new Date(latestAtestado.data_inclusao)
+                dt.setDate(dt.getDate() + (latestAtestado.dias_afastamento - 1))
+                setDataFimAfastamento(dt.toISOString().split('T')[0])
+              } else {
+                setDataFimAfastamento('')
+              }
+              setAtestadoAnexoExistenteUrl(latestAtestado.anexo_url ?? null)
+            } else if (active) {
+              setCid('')
+              setDiasAfastamento('1')
+              setDataFimAfastamento('')
+              setAtestadoAnexoExistenteUrl(null)
+            }
+            setAtestadoFile(null)
+
             // Escola vinculada ativa (priorizando a escola atual ou primeira ativa)
             const activeVinc = (data.vinculos_funcionarios as any[])?.find((v) => v.ativo && v.escola_id === escolaId) || (data.vinculos_funcionarios as any[])?.find((v) => v.ativo)
             if (activeVinc) {
@@ -404,6 +441,11 @@ export function useFuncionarioFormStates({
         setDocDoutoradoUrl('')
         setObservacoes('')
         setDataPreenchimento(new Date().toISOString().split('T')[0])
+        setCid('')
+        setDiasAfastamento('1')
+        setDataFimAfastamento('')
+        setAtestadoFile(null)
+        setAtestadoAnexoExistenteUrl(null)
 
         // Tentar autopreencher escola ativa logada
         const currentEscolaId = useAuthStore.getState().escolaAtivaId
@@ -635,9 +677,11 @@ export function useFuncionarioFormStates({
         .eq('email', cleanEmail)
         .maybeSingle()
 
+      const foundExistingId = (existingFunc as any)?.id as string | undefined
+
       if (isEditing && funcionario) {
         // Se estiver editando e o e-mail pertencer a OUTRO funcionário
-        if (existingFunc && existingFunc.id !== funcionario.id) {
+        if (existingFunc && (existingFunc as any).id !== funcionario.id) {
           toast.error('Este e-mail já está cadastrado para outro funcionário no sistema.')
           setLoading(false)
           return
@@ -731,9 +775,9 @@ export function useFuncionarioFormStates({
         }
       } else {
         // Se não estiver editando (novo cadastro), mas o funcionário já existir no Supabase por e-mail
-        const targetId = existingFunc ? existingFunc.id : empId
+        const targetId = foundExistingId || empId
 
-        if (existingFunc) {
+        if (foundExistingId) {
           // Atualiza a ficha do funcionário que já havia sido criado no Supabase
           const { error } = await supabase
             .from('funcionarios')
@@ -801,10 +845,70 @@ export function useFuncionarioFormStates({
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
-        if (existingFunc) {
-          toast.success('Ficha cadastral atualizada e vinculada ao funcionário do Supabase!')
+        // Se o status for afastado e CID tiver sido preenchido, salva/atualiza o atestado médico
+        const targetIdForAtestado = (funcionario as any)?.id || targetId
+        if (status === 'afastado' && cid.trim()) {
+          let anexoUrl = atestadoAnexoExistenteUrl
+          let anexoNome = atestadoAnexoExistenteUrl ? 'Atestado Anexado' : null
+
+          if (atestadoFile) {
+            const fileExt = atestadoFile.name.split('.').pop()
+            const fileName = `${Math.random()}.${fileExt}`
+            const filePath = `atestados/${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+              .from('anexos')
+              .upload(filePath, atestadoFile, { upsert: true })
+
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('anexos')
+                .getPublicUrl(filePath)
+
+              anexoUrl = publicUrl
+              anexoNome = atestadoFile.name
+            }
+          }
+
+          const parsedDias = parseInt(diasAfastamento, 10) || 1
+          const escolaAtestadoId = escolaId || useAuthStore.getState().escolaAtivaId || null
+
+          // Verificar se já existe atestado para este funcionário
+          const { data: existingAtestado } = await (supabase.from as any)('atestados')
+            .select('id')
+            .eq('funcionario_id', targetIdForAtestado)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          const atestadoPayload = {
+            funcionario_id: targetIdForAtestado,
+            cid: cid.trim().toUpperCase(),
+            dias_afastamento: parsedDias,
+            data_fim: dataFimAfastamento || null,
+            escola_id: escolaAtestadoId,
+            status: 'Pendente',
+            anexo_url: anexoUrl,
+            anexo_nome: anexoNome
+          }
+
+          if (existingAtestado) {
+            await (supabase.from as any)('atestados')
+              .update(atestadoPayload)
+              .eq('id', (existingAtestado as any).id)
+          } else {
+            await (supabase.from as any)('atestados')
+              .insert(atestadoPayload)
+          }
+        }
+
+        // Executar rotina de verificação de retorno à ativa
+        verificarEAtualizarRetornosAfastamentos(supabase).catch((e) => console.error(e))
+
+        if (existingFunc || isEditing) {
+          toast.success('Ficha cadastral e dados de afastamento atualizados com sucesso!')
         } else {
-          toast.success('Funcionário cadastrado e vinculado com sucesso!')
+          toast.success('Funcionário cadastrado e afastamento registrado com sucesso!')
         }
       }
 
@@ -880,6 +984,11 @@ export function useFuncionarioFormStates({
     modalidadeEnsino, setModalidadeEnsino,
     dataAdmissao, setDataAdmissao,
     status, setStatus,
+    cid, setCid,
+    diasAfastamento, setDiasAfastamento,
+    dataFimAfastamento, setDataFimAfastamento,
+    atestadoFile, setAtestadoFile,
+    atestadoAnexoExistenteUrl, setAtestadoAnexoExistenteUrl,
     possuiDeficiencia, setPossuiDeficiencia,
     deficiencias, setDeficiencias,
     tea, setTea,

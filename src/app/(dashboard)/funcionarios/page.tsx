@@ -43,6 +43,7 @@ import {
   gerarFichaFuncionarioHtml,
   gerarListaFuncionariosHtml
 } from '@/lib/funcionariosPrint'
+import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 
 /* ─── Tipo Funcionário ─────────────────────────────────────── */
 
@@ -143,6 +144,7 @@ export default function FuncionariosPage() {
   const carregarFuncionarios = async () => {
     setCarregando(true)
     try {
+      await verificarEAtualizarRetornosAfastamentos(supabase)
       const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot()
       const escolaId = useAuthStore.getState().escolaAtivaId
 

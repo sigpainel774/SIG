@@ -22,6 +22,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
   const [funcionarioId, setFuncionarioId] = useState('')
   const [cid, setCid] = useState('')
   const [dias, setDias] = useState<number>(1)
+  const [dataFim, setDataFim] = useState('')
   const [arquivo, setArquivo] = useState<File | null>(null)
   
   const [loading, setLoading] = useState(false)
@@ -132,11 +133,20 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
         anexoNome = arquivo.name
       }
 
+      // Calcular data de término se não informada explicitamente
+      let calculatedDataFim = dataFim
+      if (!calculatedDataFim && dias > 0) {
+        const dt = new Date()
+        dt.setDate(dt.getDate() + (dias - 1))
+        calculatedDataFim = dt.toISOString().split('T')[0]
+      }
+
       const { error } = await (supabase.from as any)('atestados')
         .insert({
           funcionario_id: funcionarioId,
           cid: cid.trim().toUpperCase(),
           dias_afastamento: dias,
+          data_fim: calculatedDataFim || null,
           escola_id: escolaAtivaId,
           status: 'Pendente',
           anexo_url: anexoUrl,
@@ -144,14 +154,21 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
         })
 
       if (error) throw error
+
+      // Atualizar status do funcionário para afastado
+      await supabase
+        .from('funcionarios')
+        .update({ status: 'afastado' })
+        .eq('id', funcionarioId)
       
-      toast.success('Atestado registrado com sucesso (Status: Pendente)')
+      toast.success('Atestado registrado e funcionário atualizado para Afastado com sucesso!')
       onSuccess()
       
       // Reset form
       setFuncionarioId('')
       setCid('')
       setDias(1)
+      setDataFim('')
       setArquivo(null)
       onOpenChange(false)
     } catch (error: any) {
@@ -223,15 +240,46 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Dias de Afastamento</label>
-          <Input
-            type="number"
-            min={1}
-            value={dias}
-            onChange={(e) => setDias(parseInt(e.target.value) || 0)}
-            className="bg-[#18181b] border-[#3f3f46] text-white"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-zinc-300">Dias de Afastamento</label>
+            <Input
+              type="number"
+              min={1}
+              value={dias}
+              onChange={(e) => {
+                const num = parseInt(e.target.value) || 0
+                setDias(num)
+                if (num > 0) {
+                  const dt = new Date()
+                  dt.setDate(dt.getDate() + (num - 1))
+                  setDataFim(dt.toISOString().split('T')[0])
+                }
+              }}
+              className="bg-[#18181b] border-[#3f3f46] text-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-zinc-300">Data Prevista Término</label>
+            <Input
+              type="date"
+              value={dataFim}
+              onChange={(e) => {
+                const val = e.target.value
+                setDataFim(val)
+                if (val) {
+                  const end = new Date(val + 'T00:00:00')
+                  const start = new Date()
+                  start.setHours(0,0,0,0)
+                  const diffMs = end.getTime() - start.getTime()
+                  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1
+                  if (diffDays > 0) setDias(diffDays)
+                }
+              }}
+              className="bg-[#18181b] border-[#3f3f46] text-white"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
