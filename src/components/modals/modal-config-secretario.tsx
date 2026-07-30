@@ -39,7 +39,7 @@ export function ModalConfigSecretario({
       try {
         const { data, error } = await (supabase as any)
           .from('configuracoes_rede')
-          .select('*')
+          .select('id, secretario_educacao, cargo_secretario, nome_rede, updated_at')
           .eq('id', SETTINGS_ID)
           .maybeSingle()
 

@@ -46,7 +46,7 @@ export default function PontoMobilePage() {
     setLoadingRegistros(true)
 
     const { data } = await (supabase.from as any)('pontos_ronda')
-      .select('*')
+      .select('id, funcionario_id, escola_id, localizacao, created_at')
       .eq('funcionario_id', funcionario.id)
       .order('created_at', { ascending: false })
       .limit(10)

@@ -191,13 +191,13 @@ export function useTransferencias() {
 
           const { data: alunoCompleto } = await supabase
             .from('alunos')
-            .select('*')
+            .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at')
             .eq('id', transferenciaSelecionada.aluno_id)
             .single()
 
           const { data: anexosAtivos } = await supabase
             .from('alunos_anexos')
-            .select('*')
+            .select('id, aluno_id, nome, arquivo_url, created_at, deleted_at, arquivado_por, motivo_arquivamento')
             .eq('aluno_id', transferenciaSelecionada.aluno_id)
             .is('deleted_at', null)
 

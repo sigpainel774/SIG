@@ -28,7 +28,7 @@ export default function ConfigFolhaPage() {
     try {
       const { data, error } = await supabase
         .from('folha_pagamento_config')
-        .select('*')
+        .select('id, dia_fechamento, observacoes, atualizado_por, updated_at')
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle()

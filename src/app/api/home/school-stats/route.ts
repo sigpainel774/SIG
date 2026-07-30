@@ -47,7 +47,12 @@ export async function GET(req: NextRequest) {
       p_escola_ids: escolaIdsValidos,
     })
 
-    if (rpcError) throw rpcError
+    if (rpcError) {
+      if (rpcError.message?.includes('Acesso negado') || rpcError.code === 'P0001') {
+        return NextResponse.json({ error: rpcError.message || 'Acesso negado para as estatísticas solicitadas' }, { status: 403 })
+      }
+      throw rpcError
+    }
 
     return NextResponse.json({ stats: stats ?? {} })
   } catch (err) {

@@ -249,7 +249,7 @@ export async function purgeFuncionarioDesligado(params: {
     const fid = params.funcionarioId
     const { data: func } = await params.supabaseAdmin
       .from('funcionarios')
-      .select('*')
+      .select('id, nome, apelido, email, auth_user_id, status, cargo, cpf')
       .eq('id', fid)
       .maybeSingle()
 

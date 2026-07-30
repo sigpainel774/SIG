@@ -62,7 +62,7 @@ export const getPerfilUsuario = cache(async function getPerfilUsuario(
       const [acessosRes, vinculosRes] = await Promise.all([
         supabaseAdmin
           .from('acessos_usuarios')
-          .select('*')
+          .select('id, funcionario_id, escola_id, orgao_id, nivel, ativo, cargos_gerenciados, pode_mural, pode_turmas, pode_funcionarios, pode_matriculas, pode_alunos, pode_ocorrencias, pode_atestados, created_at')
           .eq('funcionario_id', funcData.id)
           .eq('ativo', true),
         supabaseAdmin

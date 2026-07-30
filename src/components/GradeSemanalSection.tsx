@@ -122,7 +122,7 @@ export function GradeSemanalSection() {
       // Carregar slots do turno da turma (de forma case-insensitive usando ilike)
       const slotsPromise = (supabase as any)
         .from('horarios_aulas_slots')
-        .select('*')
+        .select('id, escola_id, turno, ordem_aula, horario_inicio, horario_fim, created_at')
         .eq('escola_id', selectedEscola.id)
         .ilike('turno', turma.turno)
         .order('ordem_aula')
@@ -130,7 +130,7 @@ export function GradeSemanalSection() {
       // Carregar grade semanal salva para a turma e ano letivo atual
       const gradePromise = (supabase as any)
         .from('grade_semanal')
-        .select('*')
+        .select('id, escola_id, turma_id, materia_id, dia_semana, ordem_aula, ano_letivo, ativo, created_at')
         .eq('turma_id', selectedTurmaId)
         .eq('ano_letivo', turma.ano_letivo)
         .eq('ativo', true)

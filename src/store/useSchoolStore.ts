@@ -64,7 +64,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('*')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
               .eq('id', id)
               .is('deleted_at', null)
               .maybeSingle()
@@ -91,7 +91,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('*')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
               .is('deleted_at', null)
               .eq('ativo', true)
               .order('nome', { ascending: true })

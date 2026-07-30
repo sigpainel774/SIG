@@ -89,7 +89,7 @@ export function ModalDetalhesAtividade({
       const supabase = createClient()
       const { data, error } = await (supabase as any)
         .from('atividades_secretaria_historico')
-        .select('*')
+        .select('id, atividade_id, status_anterior, status_novo, alterado_por, alterado_por_nome, alterado_em')
         .eq('atividade_id', atividade.id)
         .order('alterado_em', { ascending: false })
       if (error) console.error('Erro ao carregar histórico:', error)

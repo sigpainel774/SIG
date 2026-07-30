@@ -66,7 +66,7 @@ export async function reverterArquivado(params: {
     // 1. Obter registro arquivado
     const { data: arquivado, error: fetchError } = await params.supabaseAdmin
       .from('arquivados')
-      .select('*')
+      .select('id, tipo, tabela_origem, motivo, referencia_id, arquivado_por, escola_origem_id, payload_completo, arquivos_anexos, status, revertido_em, revertido_por, excluido_por, excluido_em, created_at')
       .eq('id', params.arquivadoId)
       .single()
 
@@ -120,7 +120,7 @@ export async function excluirDefinitivamenteArquivado(params: {
 
     const { data: arquivado, error: fetchError } = await params.supabaseAdmin
       .from('arquivados')
-      .select('*')
+      .select('id, tipo, tabela_origem, motivo, referencia_id, arquivado_por, escola_origem_id, payload_completo, arquivos_anexos, status, revertido_em, revertido_por, excluido_por, excluido_em, created_at')
       .eq('id', params.arquivadoId)
       .single()
 

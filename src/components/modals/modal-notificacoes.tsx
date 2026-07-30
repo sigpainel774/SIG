@@ -29,7 +29,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     
     let query = supabase
       .from('notifications')
-      .select('*')
+      .select('id, tenant_id, user_id, title, message, type, link, read, created_at, grupo_id, processado_por, processado_por_nome, processado_em')
       .eq('user_id', funcionario.auth_user_id)
       .order('created_at', { ascending: false })
       .limit(10)
