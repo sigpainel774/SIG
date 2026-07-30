@@ -66,11 +66,19 @@ export default function LoginPage() {
       }
 
       // 3. Após autenticação bem-sucedida, validar o status do funcionário no banco (com permissão RLS do usuário autenticado)
-      const { data: funcCheck } = await supabase
+      const { data: funcCheck, error: funcCheckError } = await supabase
         .from('funcionarios')
         .select('status, primeiro_acesso')
         .eq('email', data.user.email || cleanEmail)
         .maybeSingle()
+
+      // Tratamento de Erro Silencioso de UX: Evita que o usuário órfão vá para '/' e sofra flickering de redirecionamento
+      if (!funcCheck) {
+        await supabase.auth.signOut()
+        setLoading(false)
+        toast.error('Acesso negado. Seu e-mail não pertence a nenhum funcionário cadastrado.')
+        return
+      }
 
       const status = funcCheck?.status?.toLowerCase()
       if (status === 'suspenso' || status === 'sem acesso') {
