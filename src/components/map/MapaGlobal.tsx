@@ -87,9 +87,15 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       // Filtro de tipo de vínculo (Visível e ativo apenas para Nível 1 & Superadmin)
       if (isLevel1OrSuperadmin && filtroVinculo !== 'todos') {
         const vinc = (f.tipo_vinculo ?? '').toLowerCase().trim();
-        if (filtroVinculo === 'contratados' && !vinc.includes('contratad')) return false;
+        if (filtroVinculo === 'contratados') {
+          const isContratado = vinc.includes('contratad') || vinc.includes('substitut') || vinc.includes('prestad') || vinc.includes('reservist');
+          if (!isContratado) return false;
+        }
         if (filtroVinculo === 'nomeados' && !vinc.includes('nomead')) return false;
-        if (filtroVinculo === 'efetivos' && !vinc.includes('efetiv')) return false;
+        if (filtroVinculo === 'efetivos') {
+          const isEfetivo = vinc.includes('efetiv') || vinc.includes('concursad');
+          if (!isEfetivo) return false;
+        }
       }
 
       // Filtro de texto
