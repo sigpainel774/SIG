@@ -7,9 +7,7 @@ import L from 'leaflet';
 import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
-import { prewarmSapeacuTiles } from '@/lib/mapCache';
-
-const sessionTimestamp = Date.now();
+import { prewarmSapeacuTiles, preloadFotos, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
 
 // Criador estático de ícone de agrupamento para Servidores/Funcionários (ES-3)
 const criarIconeCluster = (cluster: any) => {
@@ -75,6 +73,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     prewarmSapeacuTiles();
   }, []);
 
+
   // 1. Filtra funcionários baseado no input de pesquisa, modalidade e vínculo
   const funcionariosFiltrados = useMemo(() => {
     const termo = buscaDebounced.toLowerCase().trim();
@@ -121,6 +120,14 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         Number(f.longitude) !== 0
     );
   }, [funcionariosFiltrados]);
+
+  // Pré-carrega fotos 3x4 dos funcionários visíveis
+  useEffect(() => {
+    if (funcionariosValidos.length > 0) {
+      const urls = funcionariosValidos.map((f) => f.foto_url).filter(Boolean);
+      preloadFotos(urls);
+    }
+  }, [funcionariosValidos]);
 
   // 2. Coordenadas padrão de Sapeaçu - BA (-12.7299932, -39.1858195)
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
@@ -177,7 +184,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
     }
 
     const iniciais = obterIniciais(nome);
-    const safeFotoUrl = fotoUrl?.startsWith('data:') ? fotoUrl : (fotoUrl ? `${fotoUrl.split('?')[0]}?t=${sessionTimestamp}` : '');
+    const safeFotoUrl = formatPhotoUrlWithTimestamp(fotoUrl);
     const imgHtml =
       safeFotoUrl && safeFotoUrl.trim() !== ''
         ? `<img src="${safeFotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" decoding="async" loading="eager" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
@@ -330,7 +337,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 attribution="&copy; Google Maps"
                 url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                 maxZoom={20}
-                keepBuffer={4}
+                keepBuffer={6}
                 updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
@@ -338,7 +345,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
               <TileLayer
                 attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                keepBuffer={4}
+                keepBuffer={6}
                 updateWhenIdle={true}
               />
             </LayersControl.BaseLayer>
@@ -372,7 +379,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                         >
                           {func.foto_url ? (
                             <img
-                              src={func.foto_url.startsWith('data:') ? func.foto_url : `${func.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
+                              src={formatPhotoUrlWithTimestamp(func.foto_url)}
                               alt={func.nome}
                               className={cn(
                                 "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
@@ -463,7 +470,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             <div className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-[#232d42] shadow-2xl mt-2 bg-[#1e283b] flex items-center justify-center shrink-0">
               {fotoModal.foto_url ? (
                 <img
-                  src={fotoModal.foto_url.startsWith('data:') ? fotoModal.foto_url : `${fotoModal.foto_url.split('?')[0]}?t=${sessionTimestamp}`}
+                  src={formatPhotoUrlWithTimestamp(fotoModal.foto_url)}
                   alt={fotoModal.nome}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -471,6 +478,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                   }}
                 />
               ) : null}
+
               <div className={cn(
                 "w-full h-full text-white font-bold text-5xl flex items-center justify-center",
                 fotoModal.modalidade === 'EJA'

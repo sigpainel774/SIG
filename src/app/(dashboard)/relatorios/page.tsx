@@ -6,6 +6,7 @@ import { SchoolSelector } from '@/components/SchoolSelector'
 import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import { createClient } from '@/lib/supabaseClient'
+import { preloadFotos } from '@/lib/mapCache'
 
 // Importações dinâmicas para otimizar o bundle inicial
 const RelatorioNotas = dynamic(() => import('@/components/relatorios/RelatorioNotas'), {
@@ -233,6 +234,7 @@ export default function RelatoriosPage() {
             })
             const result = Array.from(uniqueMap.values())
             setMapData(result)
+            preloadFotos(result.map(f => f.foto_url).filter(Boolean))
             try {
               sessionStorage.setItem(cacheKey, JSON.stringify(result))
             } catch (e) {}
@@ -333,6 +335,7 @@ export default function RelatoriosPage() {
                 }
               })
             setMapDataAlunos(mapped)
+            preloadFotos(mapped.map(a => a.foto_url).filter(Boolean))
             try {
               sessionStorage.setItem(cacheKey, JSON.stringify(mapped))
             } catch (e) {}

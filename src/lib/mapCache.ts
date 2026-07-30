@@ -2,6 +2,18 @@
  * Utilitários de Cache e Pre-loading para o Mapa Logístico e Fotos 3x4
  */
 
+export const mapSessionTimestamp = typeof window !== 'undefined' ? Date.now() : 0;
+
+/**
+ * Formata URL da foto aplicando cache-busting consistente de sessão
+ */
+export function formatPhotoUrlWithTimestamp(fotoUrl?: string | null): string {
+  if (!fotoUrl || fotoUrl.trim() === '') return '';
+  if (fotoUrl.startsWith('data:')) return fotoUrl;
+  const cleanUrl = fotoUrl.split('?')[0];
+  return `${cleanUrl}?t=${mapSessionTimestamp}`;
+}
+
 // Memory Cache para URLs de imagens pré-carregadas
 const imagePreloadCache = new Set<string>();
 
@@ -13,20 +25,22 @@ const imagePreloadCache = new Set<string>();
 export function preloadFotos(urls: (string | undefined | null)[]) {
   if (typeof window === 'undefined') return;
 
-  const validUrls = urls.filter((url): url is string => Boolean(url && url.trim() !== ''));
+  const validUrls = urls
+    .filter((url): url is string => Boolean(url && url.trim() !== ''))
+    .map((url) => formatPhotoUrlWithTimestamp(url));
 
-  validUrls.forEach((url) => {
-    if (imagePreloadCache.has(url)) return;
+  validUrls.forEach((formattedUrl) => {
+    if (imagePreloadCache.has(formattedUrl)) return;
 
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => {
-      imagePreloadCache.add(url);
+      imagePreloadCache.add(formattedUrl);
     };
     img.onerror = () => {
       // Ignora erro sem quebrar a UI
     };
-    img.src = url;
+    img.src = formattedUrl;
   });
 }
 
@@ -55,32 +69,36 @@ function lat2tile(lat: number, zoom: number) {
 }
 
 /**
- * Pré-aquece os tiles de mapa na região central de Sapeaçu - BA (zooms 13 a 15)
+ * Pré-aquece os tiles de mapa na região central de Sapeaçu - BA (zooms 13 a 16)
  * de forma silenciosa e em segundo plano para que o Service Worker popule o cache.
+ * Executado após 1s para não competir com as requisições iniciais de dados do Supabase.
  */
 export function prewarmSapeacuTiles() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
-  const centerLat = SAPEACU_CENTER[0];
-  const centerLng = SAPEACU_CENTER[1];
+  setTimeout(() => {
+    const centerLat = SAPEACU_CENTER[0];
+    const centerLng = SAPEACU_CENTER[1];
 
-  // Zooms 13, 14, 15 cobrem toda a área urbana e rural principal de Sapeaçu
-  const zooms = [13, 14, 15];
+    // Zooms 13, 14, 15, 16 cobrem toda a área urbana e rural principal de Sapeaçu
+    const zooms = [13, 14, 15, 16];
 
-  zooms.forEach((zoom) => {
-    const tileX = lng2tile(centerLng, zoom);
-    const tileY = lat2tile(centerLat, zoom);
+    zooms.forEach((zoom) => {
+      const tileX = lng2tile(centerLng, zoom);
+      const tileY = lat2tile(centerLat, zoom);
 
-    // Raio de 1 tile ao redor do centro para pré-carregar
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        const x = tileX + dx;
-        const y = tileY + dy;
+      // Raio de 1 tile ao redor do centro para pré-carregar (36 tiles no total)
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const x = tileX + dx;
+          const y = tileY + dy;
 
-        // Pré-carrega o tile Híbrido do Google Maps (padrão do sistema)
-        const googleTileUrl = `https://mt1.google.com/vt/lyrs=y&x=${x}&y=${y}&z=${zoom}`;
-        fetch(googleTileUrl, { mode: 'no-cors' }).catch(() => {});
+          // Pré-carrega o tile Híbrido do Google Maps (padrão do sistema)
+          const googleTileUrl = `https://mt1.google.com/vt/lyrs=y&x=${x}&y=${y}&z=${zoom}`;
+          fetch(googleTileUrl, { mode: 'no-cors' }).catch(() => {});
+        }
       }
-    }
-  });
+    });
+  }, 1000);
 }
+
