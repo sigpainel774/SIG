@@ -6,7 +6,7 @@ import React from 'react';
 // Importa os componentes reais do mapa sem SSR
 const MiniMapaReal = dynamic(() => import('./MiniMapa'), { 
   ssr: false, 
-  loading: () => <MapLoadingSkeleton height="220px" /> 
+  loading: () => <MapLoadingSkeleton height="286px" /> 
 });
 
 const MapaGlobalReal = dynamic(() => import('./MapaGlobal'), { 
