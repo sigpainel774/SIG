@@ -1174,6 +1174,7 @@ export type Database = {
           criado_por: string | null
           date: string
           id: string
+          is_popup: boolean | null
           target: string
           title: string
         }
@@ -1185,6 +1186,7 @@ export type Database = {
           criado_por?: string | null
           date: string
           id?: string
+          is_popup?: boolean | null
           target: string
           title: string
         }
@@ -1196,6 +1198,7 @@ export type Database = {
           criado_por?: string | null
           date?: string
           id?: string
+          is_popup?: boolean | null
           target?: string
           title?: string
         }

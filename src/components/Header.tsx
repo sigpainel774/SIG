@@ -21,6 +21,11 @@ import { Logo } from './Logo'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
+const ModalComunicadoPopup = dynamic(
+  () => import('@/components/modals/modal-comunicado-popup').then((mod) => mod.ModalComunicadoPopup),
+  { ssr: false }
+)
+
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario } = useAuthStore()
@@ -171,6 +176,9 @@ export function Header() {
         open={modalNotifOpen}
         onOpenChange={setModalNotifOpen}
       />
+
+      {/* Popup de Comunicado Importante ao Fazer Login */}
+      <ModalComunicadoPopup />
     </>
   )
 }
