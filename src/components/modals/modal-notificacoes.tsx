@@ -35,6 +35,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
       .limit(10)
 
     if (filtro === 'nao_lidas') query = query.eq('read', false)
+    if (filtro === 'comunicados') query = query.in('type', ['comunicado', 'mural'])
     if (filtro === 'transferencias') query = query.eq('type', 'transferencia')
     if (filtro === 'atividade_secretaria') query = query.eq('type', 'atividade_secretaria')
 
@@ -141,6 +142,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
           >
             <option value="todas">Todas</option>
             <option value="nao_lidas">Não Lidas</option>
+            <option value="comunicados">Comunicados</option>
             <option value="transferencias">Transferências</option>
             <option value="atividade_secretaria">Atividades</option>
           </select>
