@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -102,7 +103,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   // Pré-carrega fotos 3x4 dos alunos visíveis
   useEffect(() => {
     if (alunosValidos.length > 0) {
-      const urls = alunosValidos.map((a) => a.foto_url).filter(Boolean);
+      const urls = alunosValidos.map((a) => getAvatarUrl(a)).filter(Boolean);
       preloadFotos(urls);
     }
   }, [alunosValidos]);
@@ -317,7 +318,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             showCoverageOnHover={false}
           >
             {alunosValidos.map((aluno) => {
-              const icone = criarIconeCustomizado(aluno.id, aluno.nome, aluno.foto_url, aluno.modalidade);
+              const icone = criarIconeCustomizado(aluno.id, aluno.nome, (getAvatarUrl(aluno) ?? undefined), aluno.modalidade);
               const iniciais = obterIniciais(aluno.nome);
 
               return (
@@ -335,9 +336,9 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                           className="relative w-[50px] h-[50px] shrink-0 cursor-pointer group/avatar rounded-full overflow-hidden"
                           title="Clique para ampliar a foto"
                         >
-                          {aluno.foto_url ? (
+                          {(getAvatarUrl(aluno) ?? undefined) ? (
                             <img
-                              src={formatPhotoUrlWithTimestamp(aluno.foto_url)}
+                              src={formatPhotoUrlWithTimestamp((getAvatarUrl(aluno) ?? undefined))}
                               alt={aluno.nome}
                               className={cn(
                                 "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
@@ -427,9 +428,9 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
             {/* Container da Foto Ampliada */}
             <div className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-[#232d42] shadow-2xl mt-2 bg-[#1e283b] flex items-center justify-center shrink-0">
-              {fotoModal.foto_url ? (
+              {getAvatarUrl(fotoModal) ? (
                 <img
-                  src={formatPhotoUrlWithTimestamp(fotoModal.foto_url)}
+                  src={formatPhotoUrlWithTimestamp(getAvatarUrl(fotoModal))}
                   alt={fotoModal.nome}
                   className="w-full h-full object-cover"
                   onError={(e) => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -69,7 +70,7 @@ export function FuncionarioLotacaoList({
 
   useEffect(() => {
     if (funcsFiltrados.length > 0) {
-      precarregarFotosCache(funcsFiltrados.map((f) => f.foto_url))
+      precarregarFotosCache(funcsFiltrados.map((f) => getAvatarUrl(f)))
     }
   }, [funcsFiltrados])
 
@@ -140,7 +141,7 @@ export function FuncionarioLotacaoList({
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${pal.bg} ${pal.text}`}
                 >
                   <CachedImage
-                    src={f.foto_url}
+                    src={getAvatarUrl(f)}
                     alt={f.nome}
                     className="w-full h-full"
                     fallback={getInitials(f.nome)}

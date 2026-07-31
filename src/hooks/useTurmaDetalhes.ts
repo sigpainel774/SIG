@@ -72,7 +72,7 @@ export function useTurmaDetalhes({
       const [alunosRes, materiasRes] = await Promise.all([
         supabase
           .from('alunos')
-          .select('id, nome, foto_url, nome_mae, nome_pai, telefone, dados_matricula, turma_id, escola_id')
+          .select('id, nome, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, nome_mae, nome_pai, telefone, dados_matricula, turma_id, escola_id')
           .eq('turma_id', turma.id)
           .eq('escola_id', escolaAtivaId)
           .is('deleted_at', null)

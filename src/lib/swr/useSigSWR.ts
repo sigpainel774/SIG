@@ -183,7 +183,7 @@ export function useAlunosSWR(escolaId: string | null | undefined, turmaId?: stri
   return useSWR(
     key,
     async ([, , escId, tId]) => {
-      let query = supabase.from('alunos').select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at').eq('escola_id', escId)
+      let query = supabase.from('alunos').select('id, nome, escola_id, turma_id, numero_matricula, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at').eq('escola_id', escId)
       if (tId && tId !== 'all') {
         query = query.eq('turma_id', tId)
       }

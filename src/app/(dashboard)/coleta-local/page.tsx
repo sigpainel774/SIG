@@ -32,7 +32,7 @@ export default function ColetaLocalPage() {
       // 1. Busca por código de responsável
       let { data: alunoResp } = await supabase
         .from('alunos')
-        .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, codigo_temp_resp, codigo_temp_func')
+        .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, codigo_temp_resp, codigo_temp_func')
         .eq('codigo_temp_resp', token)
         .is('deleted_at', null)
         .maybeSingle()
@@ -48,7 +48,7 @@ export default function ColetaLocalPage() {
       // 2. Busca por código de funcionário
       let { data: alunoFunc } = await supabase
         .from('alunos')
-        .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, codigo_temp_resp, codigo_temp_func')
+        .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, codigo_temp_resp, codigo_temp_func')
         .eq('codigo_temp_func', token)
         .is('deleted_at', null)
         .maybeSingle()

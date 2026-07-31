@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper';
 import { createPortal } from 'react-dom'
 import { PrintHeader } from '@/components/print/print-header'
 import { Loader2, Printer, X, ExternalLink } from 'lucide-react'

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useMemo } from 'react'
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
