@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper';
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
@@ -219,7 +220,7 @@ export function ModalDetalhesAluno({
         <div className="flex flex-col items-center text-center mt-2">
           <div className="w-20 h-20 rounded-full bg-[#3ea6ff]/10 border-2 border-[#3ea6ff]/30 text-[#3ea6ff] text-2xl font-bold flex items-center justify-center overflow-hidden shadow-inner mb-3">
             <CachedImage
-              src={aluno.foto_url}
+              src={getVisualizacaoUrl(aluno)}
               alt={aluno.nome}
               className="w-full h-full"
               fallback={aluno.nome.substring(0, 2).toUpperCase()}

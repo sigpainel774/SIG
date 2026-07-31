@@ -560,25 +560,9 @@ export function useFuncionarioFormStates({
     const supabase = createClient()
 
     try {
-      let foto_url: string | null = fotoPreview ? fotoPreview.split('?')[0] : null // Limpar timestamp se houver
-
-      // Upload da foto 3x4 se houver arquivo novo
-      if (fotoFile) {
-        const { ext } = sanitizeFileName(fotoFile.name)
-        const path = `${empId}/foto3x4_${Date.now()}.${ext}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('fotos-funcionarios')
-          .upload(path, fotoFile, { upsert: true, cacheControl: '31536000' })
-
-        if (uploadError) throw uploadError
-
-        const { data: urlData } = supabase.storage
-          .from('fotos-funcionarios')
-          .getPublicUrl(uploadData.path)
-
-        foto_url = urlData.publicUrl
-        await invalidarCacheFoto(foto_url)
-      }
+      // O upload da foto será feito APÓS o funcionário ser criado/atualizado,
+      // para garantir que o ID já exista no banco quando a API /process for chamada.
+      const isFotoRemoved = !fotoPreview && !fotoFile
 
       // Mitigação do Bug Silencioso de UX no Endereço: se os campos básicos de endereço estão vazios, limpa do banco (salva como null)
       const hasEnderecoPreenchido = !!(logradouro?.trim() || bairro?.trim() || cidade?.trim())
@@ -588,14 +572,13 @@ export function useFuncionarioFormStates({
 
       const cleanEmail = email.trim().toLowerCase()
 
-      const basePayload = {
+      const basePayload: any = {
         nome,
         email: cleanEmail,
         cpf: cpf || null,
         cargo: cargo || null,
         status,
         formacao: escolaridadeNivel || null,
-        foto_url,
         data_nascimento: nascimento || null,
         endereco: enderecoFinal,
         latitude: latitude ?? null,
@@ -667,7 +650,15 @@ export function useFuncionarioFormStates({
         doc_mestrado_url: docMestradoUrl || null,
         doc_doutorado_url: docDoutoradoUrl || null,
         observacoes: observacoes || null,
-        data_preenchimento: dataPreenchimento || null,
+        is_superadmin: false,
+        data_preenchimento: dataPreenchimento || null
+      } as any
+
+      if (isFotoRemoved) {
+        basePayload.foto_url = null
+        basePayload.foto_avatar_path = null
+        basePayload.foto_visualizacao_path = null
+        basePayload.foto_original_path = null
       }
 
       // Verificar se o e-mail já existe no banco de dados
@@ -767,6 +758,28 @@ export function useFuncionarioFormStates({
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
+        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
+        if (fotoFile) {
+          const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
+          const dataUrl = await resUrl.json()
+          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+
+          const uploadRes = await fetch(dataUrl.signedUrl, {
+            method: 'PUT',
+            body: fotoFile,
+            headers: { 'Content-Type': fotoFile.type }
+          })
+          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+
+          const processRes = await fetch('/api/fotos/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
+          })
+          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+        }
+        // --- FIM UPLOAD OTIMIZADO ---
+
         toast.success('Funcionário atualizado com sucesso!')
 
         if (authUserId) {
@@ -791,6 +804,33 @@ export function useFuncionarioFormStates({
             .insert({ ...basePayload, id: empId, is_superadmin: false })
           if (error) throw error
         }
+
+        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3) ---
+        if (fotoFile) {
+          const idParaFoto = targetId
+          
+          // 1. Solicita a Signed URL do bucket privado
+          const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
+          const dataUrl = await resUrl.json()
+          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+
+          // 2. Faz o upload direto
+          const uploadRes = await fetch(dataUrl.signedUrl, {
+            method: 'PUT',
+            body: fotoFile,
+            headers: { 'Content-Type': fotoFile.type }
+          })
+          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+
+          // 3. Manda processar e atualizar o banco
+          const processRes = await fetch('/api/fotos/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
+          })
+          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+        }
+        // --- FIM UPLOAD OTIMIZADO ---
 
         // Criar ou garantir vínculo de funcionário na escola logada automaticamente
         if (escolaId) {

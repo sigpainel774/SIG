@@ -92,7 +92,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
       const [funcsRes, escsRes, cargsRes, vincsRes] = await Promise.all([
         supabase
           .from('funcionarios')
-          .select('id, nome, email, cpf, cargo, foto_url, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
+          .select('id, nome, email, cpf, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
         supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),

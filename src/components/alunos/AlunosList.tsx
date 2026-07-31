@@ -1,3 +1,4 @@
+import { getAvatarUrl } from '@/lib/photoHelper';
 'use client'
 
 import {
@@ -85,7 +86,7 @@ export function AlunosList({
                 {/* Foto / Iniciais */}
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-border flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
                   <CachedImage
-                    src={aluno.foto_url}
+                    src={getAvatarUrl(aluno)}
                     alt={aluno.nome}
                     className="w-full h-full"
                     fallback={aluno.nome.substring(0, 2).toUpperCase()}

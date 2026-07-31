@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import {
   MapPin,
@@ -173,7 +174,7 @@ export function ModalGestaoLotacoes({
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarColor(selecionado.nome).bg} ${avatarColor(selecionado.nome).text}`}
                     >
                       <CachedImage
-                        src={selecionado.foto_url}
+                        src={getAvatarUrl(selecionado)}
                         alt={selecionado.nome}
                         className="w-full h-full"
                         fallback={getInitials(selecionado.nome)}

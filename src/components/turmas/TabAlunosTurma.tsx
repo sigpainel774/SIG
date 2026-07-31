@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
@@ -73,9 +74,9 @@ export function TabAlunosTurma({
               className="bg-card border border-border hover:border-primary/40 shadow-[0_2px_10px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 p-3 rounded-xl flex items-center gap-3.5 cursor-pointer transition-all duration-200 text-foreground"
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
-                {aluno.foto_url ? (
+                {getAvatarUrl(aluno) ? (
                   <img
-                    src={aluno.foto_url}
+                    src={getAvatarUrl(aluno)}
                     alt={aluno.nome}
                     className="w-full h-full object-cover"
                   />

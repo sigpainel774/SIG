@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -124,7 +125,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   // Pré-carrega fotos 3x4 dos funcionários visíveis
   useEffect(() => {
     if (funcionariosValidos.length > 0) {
-      const urls = funcionariosValidos.map((f) => f.foto_url).filter(Boolean);
+      const urls = funcionariosValidos.map((f) => getAvatarUrl(f)).filter(Boolean);
       preloadFotos(urls);
     }
   }, [funcionariosValidos]);
@@ -359,7 +360,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             showCoverageOnHover={false}
           >
             {funcionariosValidos.map((func) => {
-              const icone = criarIconeCustomizado(func.id, func.nome, func.foto_url, func.modalidade);
+              const icone = criarIconeCustomizado(func.id, func.nome, getAvatarUrl(func), func.modalidade);
               const iniciais = obterIniciais(func.nome);
               
               return (
@@ -377,9 +378,9 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                           className="relative w-[50px] h-[50px] shrink-0 cursor-pointer group/avatar rounded-full overflow-hidden"
                           title="Clique para ampliar a foto"
                         >
-                          {func.foto_url ? (
+                          {getAvatarUrl(func) ? (
                             <img
-                              src={formatPhotoUrlWithTimestamp(func.foto_url)}
+                              src={formatPhotoUrlWithTimestamp(getAvatarUrl(func))}
                               alt={func.nome}
                               className={cn(
                                 "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
@@ -468,9 +469,9 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
             {/* Container da Foto Ampliada */}
             <div className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-[#232d42] shadow-2xl mt-2 bg-[#1e283b] flex items-center justify-center shrink-0">
-              {fotoModal.foto_url ? (
+              {getAvatarUrl(fotoModal) ? (
                 <img
-                  src={formatPhotoUrlWithTimestamp(fotoModal.foto_url)}
+                  src={formatPhotoUrlWithTimestamp(getAvatarUrl(fotoModal))}
                   alt={fotoModal.nome}
                   className="w-full h-full object-cover"
                   onError={(e) => {

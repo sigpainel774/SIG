@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper';
 import { createPortal } from 'react-dom'
 import dynamic from 'next/dynamic'
 import { X, Printer, MapPin, Users, GraduationCap } from 'lucide-react'
@@ -94,7 +95,7 @@ export function PrintRelatorioGeolocalizacao({
         nome: f.nome,
         cargoOuTurma: f.cargo,
         escola: f.escola,
-        foto_url: f.foto_url,
+        foto_url: getVisualizacaoUrl(f),
         latitude: f.latitude,
         longitude: f.longitude,
         modalidade: f.modalidade,
@@ -105,7 +106,7 @@ export function PrintRelatorioGeolocalizacao({
         nome: a.nome,
         cargoOuTurma: a.turma || 'Não enturmado',
         escola: a.escola,
-        foto_url: a.foto_url,
+        foto_url: getVisualizacaoUrl(a),
         latitude: a.latitude,
         longitude: a.longitude,
         modalidade: a.modalidade,
@@ -313,10 +314,11 @@ export function PrintRelatorioGeolocalizacao({
               const mostrarFotos = currentList.length <= 100;
               
               return currentList.map((item, idx) => {
-                const fotoUrlClean = mostrarFotos && item.foto_url
-                  ? item.foto_url.startsWith('data:')
-                    ? item.foto_url
-                    : `${item.foto_url.split('?')[0]}?t=${sessionTimestamp}`
+                const vizUrl = getVisualizacaoUrl(item);
+                const fotoUrlClean = mostrarFotos && vizUrl
+                  ? vizUrl.startsWith('data:')
+                    ? vizUrl
+                    : `${vizUrl.split('?')[0]}?t=${sessionTimestamp}`
                   : null
 
               const cargoOuTurma = isFunc

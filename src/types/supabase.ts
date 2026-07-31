@@ -391,6 +391,10 @@ export type Database = {
           endereco: string | null
           escola_id: string | null
           foto_url: string | null
+          foto_avatar_path: string | null
+          foto_visualizacao_path: string | null
+          foto_original_path: string | null
+          foto_updated_at: string | null
           id: string
           inep: string | null
           latitude: number | null
@@ -420,6 +424,10 @@ export type Database = {
           endereco?: string | null
           escola_id?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           id?: string
           inep?: string | null
           latitude?: number | null
@@ -449,6 +457,10 @@ export type Database = {
           endereco?: string | null
           escola_id?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           id?: string
           inep?: string | null
           latitude?: number | null
@@ -1667,6 +1679,10 @@ export type Database = {
           estado_civil: string | null
           formacao: string | null
           foto_url: string | null
+          foto_avatar_path: string | null
+          foto_visualizacao_path: string | null
+          foto_original_path: string | null
+          foto_updated_at: string | null
           funcao_especifica: string | null
           graduacoes: Json | null
           id: string
@@ -1753,6 +1769,10 @@ export type Database = {
           estado_civil?: string | null
           formacao?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           funcao_especifica?: string | null
           graduacoes?: Json | null
           id?: string
@@ -1839,6 +1859,10 @@ export type Database = {
           estado_civil?: string | null
           formacao?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           funcao_especifica?: string | null
           graduacoes?: Json | null
           id?: string
@@ -2703,6 +2727,10 @@ export type Database = {
       registros_ronda: {
         Row: {
           foto_url: string | null
+          foto_avatar_path: string | null
+          foto_visualizacao_path: string | null
+          foto_original_path: string | null
+          foto_updated_at: string | null
           funcionario_id: string | null
           id: string
           latitude: number | null
@@ -2714,6 +2742,10 @@ export type Database = {
         }
         Insert: {
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           funcionario_id?: string | null
           id?: string
           latitude?: number | null
@@ -2725,6 +2757,10 @@ export type Database = {
         }
         Update: {
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           funcionario_id?: string | null
           id?: string
           latitude?: number | null
@@ -3581,6 +3617,10 @@ export type Database = {
           deleted_at: string | null
           escola_id: string | null
           foto_url: string | null
+          foto_avatar_path: string | null
+          foto_visualizacao_path: string | null
+          foto_original_path: string | null
+          foto_updated_at: string | null
           id: string | null
           nome: string | null
         }
@@ -3589,6 +3629,10 @@ export type Database = {
           deleted_at?: string | null
           escola_id?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           id?: string | null
           nome?: string | null
         }
@@ -3597,6 +3641,10 @@ export type Database = {
           deleted_at?: string | null
           escola_id?: string | null
           foto_url?: string | null
+          foto_avatar_path?: string | null
+          foto_visualizacao_path?: string | null
+          foto_original_path?: string | null
+          foto_updated_at?: string | null
           id?: string | null
           nome?: string | null
         }

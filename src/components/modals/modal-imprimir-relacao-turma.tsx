@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper';
 import { createPortal } from 'react-dom'
 import { Printer, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'

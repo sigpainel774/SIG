@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper'
+
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabaseClient'
 import { PrintHeader } from '@/components/print/print-header'

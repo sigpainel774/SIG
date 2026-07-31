@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { getAvatarUrl } from '@/lib/photoHelper';
 import { Loader2, Printer, Pencil, UserX, Briefcase } from 'lucide-react'
 import { CachedImage } from '@/components/ui/cached-image'
 
@@ -348,7 +349,7 @@ export function FuncionariosList({
                               className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
                             >
                               <CachedImage
-                                src={func.foto_url}
+                                src={getAvatarUrl(func)}
                                 alt={func.nome}
                                 className="w-full h-full"
                                 fallback={getInitials(func.nome)}

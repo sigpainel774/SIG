@@ -138,7 +138,10 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
   const [deficienciasSelecionadas, setDeficienciasSelecionadas] = useState<string[]>([])
 
   // 12. Assinatura e Autorização de Imagem e Voz
-  const [autorizaImagemVoz, setAutorizaImagemVoz] = useState('Não')
+  const [autorizaImagemVoz, setAutorizaImagemVoz] = useState('sim')
+  
+  // Foto State (Fase 3: Armazenamento local antes do envio)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
   const [assinaturaFuncionarioUrl, setAssinaturaFuncionarioUrl] = useState<string | null>(null)
   const [newSignatureResponsavel, setNewSignatureResponsavel] = useState<string | null>(null)
@@ -283,6 +286,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         // Reset completo para cadastrar aluno novo
         pessoaForm.resetPessoais()
         setFotoUrl('')
+        setFotoFile(null)
         setEscolaId(escolaAtivaId || '')
         setTurmaId('')
         setSus('')
@@ -352,30 +356,12 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     const file = e.target.files?.[0]
     if (!file) return
 
-    const supabase = createClient()
-    const fileExt = file.name.split('.').pop()
-    const fileName = `aluno_${Date.now()}.${fileExt}`
-    toast.loading('Enviando foto 3x4...')
-
-    const { data, error } = await supabase.storage
-        .from('fotos_alunos')
-        .upload(fileName, file, { cacheControl: '31536000' })
-
-    toast.dismiss()
-
-    if (error) {
-      toast.error(`Erro no upload da foto: ${error.message}`)
-      return
+    setFotoFile(file)
+    const reader = new FileReader()
+    reader.onload = () => {
+      setFotoUrl(reader.result as string)
     }
-
-    const { data: publicData } = supabase.storage
-        .from('fotos_alunos')
-        .getPublicUrl(fileName)
-
-    await invalidarCacheFoto(fotoUrl)
-    setFotoUrl(publicData.publicUrl)
-    await invalidarCacheFoto(publicData.publicUrl)
-    toast.success('Foto enviada com sucesso!')
+    reader.readAsDataURL(file)
   }
 
   const handleEnviarSolicitacaoEdicao = async () => {
@@ -535,7 +521,10 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         inep: pessoaForm.censo || null,
         telefone: pessoaForm.telefone || null,
         data_nascimento: pessoaForm.nascimento || null,
-        foto_url: fotoUrl || null,
+        foto_url: (!fotoUrl && !fotoFile) ? null : undefined,
+        foto_avatar_path: (!fotoUrl && !fotoFile) ? null : undefined,
+        foto_visualizacao_path: (!fotoUrl && !fotoFile) ? null : undefined,
+        foto_original_path: (!fotoUrl && !fotoFile) ? null : undefined,
         turma_id: turmaId || null,
         rg: pessoaForm.rg || null,
         nis: pessoaForm.nis || null,
@@ -601,6 +590,33 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
+        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
+        if (fotoFile) {
+          try {
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const dataUrl = await resUrl.json()
+            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+
+            const uploadRes = await fetch(dataUrl.signedUrl, {
+              method: 'PUT',
+              body: fotoFile,
+              headers: { 'Content-Type': fotoFile.type }
+            })
+            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entity: 'alunos', id: alunoEditar.id, originalPath: dataUrl.path })
+            })
+            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+          } catch (err: any) {
+            console.error('Erro no processamento da foto:', err)
+            toast.error('O aluno foi salvo, mas houve um erro ao processar a foto.')
+          }
+        }
+        // --- FIM UPLOAD OTIMIZADO ---
+
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
         const { data: insertedData, error } = await (supabase.from('alunos') as any)
@@ -646,6 +662,33 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
         toast.success('Aluno cadastrado com sucesso!')
+
+        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - CADASTRO) ---
+        if (fotoFile) {
+          try {
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const dataUrl = await resUrl.json()
+            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+
+            const uploadRes = await fetch(dataUrl.signedUrl, {
+              method: 'PUT',
+              body: fotoFile,
+              headers: { 'Content-Type': fotoFile.type }
+            })
+            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entity: 'alunos', id: savedAlunoId, originalPath: dataUrl.path })
+            })
+            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+          } catch (err: any) {
+            console.error('Erro no processamento da foto:', err)
+            toast.error('O aluno foi salvo, mas houve um erro ao processar a foto.')
+          }
+        }
+        // --- FIM UPLOAD OTIMIZADO ---
 
         let hasNewSigs = false
         if (newSignatureResponsavel) {

@@ -26,7 +26,7 @@ export function usePrefetchTurma(escolaId?: string | null) {
       preload(alunosKey, async () => {
         const { data } = await supabase
           .from('alunos')
-          .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, nome_mae, nome_pai, telefone, serie')
+          .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, cpf, rg, nis, nome_mae, nome_pai, telefone, serie')
           .eq('escola_id', escolaId)
           .eq('turma_id', turmaId)
           .order('nome', { ascending: true })

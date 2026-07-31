@@ -89,7 +89,7 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
         // 1. Buscar a ficha completa do aluno na tabela 'alunos' (com acesso RLS agora na escola destino)
         const { data: alunoCompleto } = await supabase
           .from('alunos')
-          .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at')
+          .select('id, nome, escola_id, turma_id, numero_matricula, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, cpf, rg, nis, inep, cartao_sus, certidao_nascimento, nome_mae, nome_pai, telefone, endereco, serie, latitude, longitude, dados_matricula, codigo_temp_resp, created_at, deleted_at')
           .eq('id', solicitacao.aluno_id)
           .single()
 

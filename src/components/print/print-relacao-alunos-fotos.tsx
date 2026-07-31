@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { getVisualizacaoUrl } from '@/lib/photoHelper';
 import { PrintHeader } from './print-header'
 
 const sessionTimestamp = Date.now()
@@ -98,7 +99,7 @@ export function PrintRelacaoAlunosFotos({
               (aluno.dados_matricula?.responsavel_nome && aluno.dados_matricula.responsavel_nome.trim() !== '' ? aluno.dados_matricula.responsavel_nome : null) ??
               '-'
 
-            const hasValidPhoto = aluno.foto_url && !failedImageIds[aluno.id]
+            const hasValidPhoto = getVisualizacaoUrl(aluno) && !failedImageIds[aluno.id]
 
             return (
               <tr
@@ -111,7 +112,7 @@ export function PrintRelacaoAlunosFotos({
                   <div className="w-7 h-7 rounded-full border border-gray-400 bg-gray-200 overflow-hidden mx-auto flex items-center justify-center text-[7.5px] text-gray-500 font-semibold shrink-0">
                     {hasValidPhoto ? (
                       <img
-                        src={getCacheBustedUrl(aluno.foto_url)}
+                        src={getCacheBustedUrl(getVisualizacaoUrl(aluno))}
                         alt={aluno.nome}
                         onError={() => handleImageError(aluno.id)}
                         className="w-full h-full object-cover"

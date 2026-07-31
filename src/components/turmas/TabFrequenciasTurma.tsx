@@ -1,3 +1,4 @@
+import { getAvatarUrl } from '@/lib/photoHelper';
 'use client'
 
 import { Button } from '@/components/ui/button'
@@ -141,9 +142,9 @@ export function TabFrequenciasTurma({
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="w-9 h-9 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {aluno.foto_url ? (
+                    {getAvatarUrl(aluno) ? (
                       <img
-                        src={aluno.foto_url}
+                        src={getAvatarUrl(aluno)}
                         alt={aluno.nome}
                         className="w-full h-full object-cover"
                       />
