@@ -38,6 +38,7 @@ export default function HistoricoNotificacoesPage() {
 
     if (status === 'nao_lidas') query = query.eq('read', false)
     if (status === 'lidas') query = query.eq('read', true)
+    if (status === 'comunicados') query = query.in('type', ['comunicado', 'mural'])
     if (status === 'transferencias') query = query.eq('type', 'transferencia')
 
     if (dataInicio) query = query.gte('created_at', `${dataInicio}T00:00:00`)
@@ -127,6 +128,7 @@ export default function HistoricoNotificacoesPage() {
               <SelectItem value="todas">Todas</SelectItem>
               <SelectItem value="lidas">Lidas</SelectItem>
               <SelectItem value="nao_lidas">Não Lidas</SelectItem>
+              <SelectItem value="comunicados">Comunicados</SelectItem>
               <SelectItem value="transferencias">Apenas Transferências</SelectItem>
             </SelectContent>
           </Select>
