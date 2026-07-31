@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Menu, School } from 'lucide-react'
+import { Bell, Mail, Menu, School } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 const ModalConfirmacaoSenha = dynamic(
@@ -10,6 +10,10 @@ const ModalConfirmacaoSenha = dynamic(
 )
 const ModalNotificacoes = dynamic(
   () => import('@/components/modals/modal-notificacoes').then((mod) => mod.ModalNotificacoes),
+  { ssr: false }
+)
+const ModalCentralMensagens = dynamic(
+  () => import('@/components/modals/modal-central-mensagens').then((mod) => mod.ModalCentralMensagens),
   { ssr: false }
 )
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -33,8 +37,11 @@ export function Header() {
   const { selectedEscola } = useSchoolStore()
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
+  const [modalMensagensOpen, setModalMensagensOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMensagensCount, setUnreadMensagensCount] = useState(0)
 
+  // Notificações em Tempo Real
   useEffect(() => {
     if (!funcionario?.auth_user_id) return
     let isMounted = true
@@ -81,6 +88,54 @@ export function Header() {
     }
   }, [funcionario?.auth_user_id])
 
+  // Mensagens Internas em Tempo Real
+  useEffect(() => {
+    if (!funcionario?.id) return
+    let isMounted = true
+    const supabase = createClient()
+
+    const fetchUnreadMensagensCount = async () => {
+      const { count, error } = await supabase
+        .from('mensagens_internas')
+        .select('*', { count: 'exact', head: true })
+        .eq('destinatario_id', funcionario.id)
+        .eq('lida', false)
+        .eq('deletado_destinatario', false)
+
+      if (isMounted && !error && count !== null) {
+        setUnreadMensagensCount(count)
+      }
+    }
+
+    fetchUnreadMensagensCount()
+
+    const channelMsg = supabase
+      .channel('realtime_mensagens_header')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mensagens_internas',
+          filter: `destinatario_id=eq.${funcionario.id}`
+        },
+        (payload: any) => {
+          if (isMounted) {
+            fetchUnreadMensagensCount()
+            if (payload.eventType === 'INSERT') {
+              toast.info('💬 Nova mensagem recebida no Correio Eletrônico')
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      isMounted = false
+      supabase.removeChannel(channelMsg)
+    }
+  }, [funcionario?.id])
+
   const handleToggleClick = () => {
     if (!isEditMode) {
       setModalSenhaOpen(true)
@@ -122,14 +177,30 @@ export function Header() {
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 md:gap-4 shrink-0">
           <ThemeSwitcher />
+
+          {/* Mail / Mensagens Internas Icon */}
+          <button
+            onClick={() => setModalMensagensOpen(true)}
+            className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer flex items-center justify-center"
+            title="Central de Mensagens (Correio Eletrônico)"
+            aria-label="Abrir Central de Mensagens"
+          >
+            <Mail className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff]" />
+            {unreadMensagensCount > 0 && (
+              <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-surface-1">
+                {unreadMensagensCount > 9 ? '9+' : unreadMensagensCount}
+              </span>
+            )}
+          </button>
 
           {/* Notification Bell */}
           <button
             onClick={() => setModalNotifOpen(true)}
             className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer flex items-center justify-center"
             title="Notificações"
+            aria-label="Notificações"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -177,8 +248,16 @@ export function Header() {
         onOpenChange={setModalNotifOpen}
       />
 
+      {/* Central de Mensagens Modal */}
+      <ModalCentralMensagens
+        open={modalMensagensOpen}
+        onOpenChange={setModalMensagensOpen}
+        onUnreadCountChange={setUnreadMensagensCount}
+      />
+
       {/* Popup de Comunicado Importante ao Fazer Login */}
       <ModalComunicadoPopup />
     </>
   )
 }
+
