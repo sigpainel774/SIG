@@ -11,6 +11,7 @@ import {
   Loader2,
   Save,
   CalendarClock,
+  Bell,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -36,6 +37,15 @@ const SignaturePad = dynamic(
     ),
   }
 )
+
+const PushNotificationsTab = dynamic(() => import('./PushNotificationsTab').then((m) => ({ default: m.PushNotificationsTab })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
 
 // Dynamic import — SessoesAtivasTab só carrega ao clicar na aba
 const SessoesAtivasTab = dynamic(() => import('./SessoesAtivasTab').then((m) => ({ default: m.SessoesAtivasTab })), {
@@ -82,7 +92,7 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades'
+type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades'
 
 export function ConfiguracoesClient() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
@@ -351,6 +361,31 @@ export function ConfiguracoesClient() {
         </button>
 
         <button
+          onClick={() => setActiveTab('push-notifications')}
+          className={cn(
+            'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+            activeTab === 'push-notifications'
+              ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+              : 'bg-card border-borderCustom hover:bg-hoverCustom'
+          )}
+        >
+          <div
+            className={cn(
+              'p-3 rounded-xl',
+              activeTab === 'push-notifications'
+                ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            <Bell className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foregroundCustom text-base">Notificações Push</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Receber avisos no celular ou tablet</p>
+          </div>
+        </button>
+
+        <button
           onClick={() => setActiveTab('sessoes')}
           className={cn(
             'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
@@ -525,6 +560,10 @@ export function ConfiguracoesClient() {
 
       {activeTab === 'sessoes' && (
         <SessoesAtivasTab />
+      )}
+
+      {activeTab === 'push-notifications' && (
+        <PushNotificationsTab />
       )}
 
       {activeTab === 'assinatura-diretor' && (isDiretor || isAdmin) && (

@@ -191,3 +191,57 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+// 5. LISTENER DE PUSH NATIVO (Celular / Tablet / Desktop)
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch (err) {
+    payload = { title: 'SIG Sapeaçu', body: event.data.text() };
+  }
+
+  const title = payload.title || 'SIG Sapeaçu';
+  const bodyText = payload.body ? (payload.body.length > 140 ? payload.body.slice(0, 140) + '...' : payload.body) : '';
+
+  const options = {
+    body: bodyText,
+    icon: payload.icon || '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: payload.tag || 'sig-push-notification',
+    data: {
+      url: payload.link || '/home',
+    },
+    vibrate: [100, 50, 100],
+    requireInteraction: false,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 6. LISTENER DE CLIQUE NA NOTIFICAÇÃO NATIVA
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/home';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Procura se o SIG já está aberto em alguma aba do navegador
+      for (const client of clientList) {
+        if (client.url && client.url.includes(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      // Se não houver janela aberta, abre uma nova janela no link da notificação
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+

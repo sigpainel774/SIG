@@ -24,6 +24,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { sendPushToUser } from '@/lib/push/sendPushToUser'
 
 export interface MensagemInterna {
   id: string
@@ -93,6 +94,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
   const [formAnexoNome, setFormAnexoNome] = useState<string | null>(null)
 
   const isLevel1 = funcionario?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
+  const isLevel2 = !isLevel1 && (acessos?.some((a: any) => a.nivel === 2 && a.ativo) || funcionario?.cargo?.toLowerCase()?.includes('diretor'))
 
   // Carregar lista de mensagens recebidas
   const loadInbox = async () => {
@@ -156,9 +158,10 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
     const supabase = createClient()
     try {
       let list: FuncionarioOption[] = []
+      const map = new Map<string, FuncionarioOption>()
 
       if (isLevel1) {
-        // Nível 1 pode enviar para QUALQUER funcionário ativo da rede municipal
+        // Nível 1: Pode enviar para QUALQUER funcionário ativo da rede municipal
         const { data, error } = await supabase
           .from('funcionarios')
           .select('id, nome, cargo')
@@ -169,28 +172,58 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         if (error) throw error
         list = (data as unknown as FuncionarioOption[]) ?? []
       } else {
-        // Nível > 1: limita à mesma unidade (escola_id atual da sessão ou do vínculo)
+        // Nível 2 ou Nível 3+: Carrega funcionários da mesma unidade escolar
         const targetEscolaId = selectedEscola?.id ?? (funcionario as any)?.escola_id
 
         if (targetEscolaId) {
-          // Busca funcionários vinculados na tabela vinculos_funcionarios
           const { data: vinculos, error: errVinculos } = await supabase
             .from('vinculos_funcionarios')
             .select('funcionario:funcionarios!funcionario_id(id, nome, cargo)')
             .eq('escola_id', targetEscolaId)
             .eq('ativo', true)
 
-          if (errVinculos) throw errVinculos
-
-          const map = new Map<string, FuncionarioOption>()
-          ;(vinculos ?? []).forEach((v: any) => {
-            if (v.funcionario && v.funcionario.id !== funcionario.id) {
-              map.set(v.funcionario.id, v.funcionario)
-            }
-          })
-
-          list = Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome))
+          if (!errVinculos && vinculos) {
+            vinculos.forEach((v: any) => {
+              if (v.funcionario && v.funcionario.id !== funcionario.id) {
+                map.set(v.funcionario.id, v.funcionario)
+              }
+            })
+          }
         }
+
+        // Se for Nível 2 (Diretor), também carrega todos os funcionários Nível 1 (Gestores Macros / Prefeito / Secretário)
+        if (isLevel2) {
+          const { data: acessosNivel1 } = await supabase
+            .from('acessos_usuarios')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo)')
+            .eq('nivel', 1)
+            .eq('ativo', true)
+
+          if (acessosNivel1) {
+            acessosNivel1.forEach((a: any) => {
+              if (a.funcionario && a.funcionario.id !== funcionario.id) {
+                map.set(a.funcionario.id, a.funcionario)
+              }
+            })
+          }
+
+          // Adiciona também superadmins raízes da tabela funcionarios
+          const { data: superadmins } = await supabase
+            .from('funcionarios')
+            .select('id, nome, cargo')
+            .eq('is_superadmin', true)
+            .eq('status', 'ativo')
+
+          if (superadmins) {
+            superadmins.forEach((sa: any) => {
+              if (sa.id !== funcionario.id) {
+                map.set(sa.id, sa)
+              }
+            })
+          }
+        }
+
+        list = Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome))
       }
 
       setDestinatarios(list)
@@ -311,6 +344,17 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       if (error) throw error
 
       toast.success('Mensagem enviada com sucesso!')
+
+      // Disparo de Notificação Push Nativa em background (non-blocking / fire-and-forget)
+      sendPushToUser({
+        destinatarioId: formDestinatarioId,
+        title: `💬 Mensagem de ${funcionario.nome || 'Servidor'}`,
+        message: formAssunto.trim(),
+        link: '/home',
+        tag: 'mensagem-interna',
+      }).catch((pushErr) => {
+        console.warn('Falha silenciosa ao disparar push nativo da mensagem:', pushErr)
+      })
       
       // Reset Form
       setFormDestinatarioId('')

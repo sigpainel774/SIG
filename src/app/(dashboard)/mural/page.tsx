@@ -13,6 +13,8 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { CachedImage } from '@/components/ui/cached-image'
 import { getAvatarUrl } from '@/lib/photoHelper'
 
+import { sendPushToUser } from '@/lib/push/sendPushToUser'
+
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
   const [selectedDate, setSelectedDate] = useState('')
@@ -219,6 +221,18 @@ export default function MuralPage() {
       toast.error('Erro ao publicar comunicado: ' + error.message)
     } else {
       toast.success('Comunicado publicado com sucesso!')
+
+      // Disparo de Notificação Push Nativa em Broadcast (non-blocking)
+      sendPushToUser({
+        isBroadcast: true,
+        title: `📢 Mural: ${titulo.trim()}`,
+        message: mensagem.trim(),
+        link: '/mural',
+        tag: 'comunicado-mural',
+      }).catch((pushErr) => {
+        console.warn('Falha silenciosa ao disparar push do mural:', pushErr)
+      })
+
       setTitulo('')
       setMensagem('')
       setAlvo('Geral / Toda a Rede')
