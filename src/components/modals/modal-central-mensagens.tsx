@@ -100,7 +100,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
     const supabase = createClient()
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('mensagens_internas')
         .select(`
           *,
@@ -130,7 +130,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
     const supabase = createClient()
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('mensagens_internas')
         .select(`
           *,
@@ -161,40 +161,28 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         // Nível 1 pode enviar para QUALQUER funcionário ativo da rede municipal
         const { data, error } = await supabase
           .from('funcionarios')
-          .select('id, nome, cargo, escola_id')
+          .select('id, nome, cargo')
           .eq('status', 'ativo')
           .neq('id', funcionario.id)
           .order('nome', { ascending: true })
 
         if (error) throw error
-        list = (data as FuncionarioOption[]) ?? []
+        list = (data as unknown as FuncionarioOption[]) ?? []
       } else {
-        // Nível > 1: limita à mesma unidade (escola_id atual do funcionário ou da sessão)
-        const targetEscolaId = selectedEscola?.id ?? funcionario.escola_id
+        // Nível > 1: limita à mesma unidade (escola_id atual da sessão ou do vínculo)
+        const targetEscolaId = selectedEscola?.id ?? (funcionario as any)?.escola_id
 
         if (targetEscolaId) {
-          // Busca funcionários diretamente vinculados à escola
-          const { data: diretos, error: errDiretos } = await supabase
-            .from('funcionarios')
-            .select('id, nome, cargo, escola_id')
-            .eq('status', 'ativo')
-            .eq('escola_id', targetEscolaId)
-            .neq('id', funcionario.id)
-            .order('nome', { ascending: true })
-
-          if (errDiretos) throw errDiretos
-
           // Busca funcionários vinculados na tabela vinculos_funcionarios
           const { data: vinculos, error: errVinculos } = await supabase
             .from('vinculos_funcionarios')
-            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, escola_id)')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo)')
             .eq('escola_id', targetEscolaId)
             .eq('ativo', true)
 
           if (errVinculos) throw errVinculos
 
           const map = new Map<string, FuncionarioOption>()
-          ;(diretos ?? []).forEach((item) => map.set(item.id, item))
           ;(vinculos ?? []).forEach((v: any) => {
             if (v.funcionario && v.funcionario.id !== funcionario.id) {
               map.set(v.funcionario.id, v.funcionario)
@@ -236,7 +224,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       const newUnread = Math.max(0, mensagens.filter((m) => !m.lida && m.id !== msg.id).length)
       if (onUnreadCountChange) onUnreadCountChange(newUnread)
 
-      await supabase
+      await (supabase as any)
         .from('mensagens_internas')
         .update({ lida: true, lida_em: new Date().toISOString() })
         .eq('id', msg.id)
@@ -310,7 +298,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       const payload = {
         remetente_id: funcionario.id,
         destinatario_id: formDestinatarioId,
-        escola_id: selectedEscola?.id ?? funcionario.escola_id ?? null,
+        escola_id: selectedEscola?.id ?? (funcionario as any)?.escola_id ?? null,
         assunto: formAssunto.trim(),
         conteudo: formConteudo.trim(),
         anexo_url: formAnexoUrl ?? null,
@@ -318,7 +306,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         mensagem_resposta_id: selectedMensagem?.id ?? null,
       }
 
-      const { error } = await supabase.from('mensagens_internas').insert(payload)
+      const { error } = await (supabase as any).from('mensagens_internas').insert(payload)
 
       if (error) throw error
 
@@ -366,7 +354,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
     const supabase = createClient()
     try {
       const field = isInbox ? 'deletado_destinatario' : 'deletado_remetente'
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('mensagens_internas')
         .update({ [field]: true })
         .eq('id', msgId)
@@ -629,9 +617,13 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                             {new Date(msg.created_at).toLocaleDateString('pt-BR')} {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           {msg.lida ? (
-                            <CheckCheck className="w-4 h-4 text-emerald-500" title={`Lida em ${new Date(msg.lida_em!).toLocaleString('pt-BR')}`} />
+                            <span title={`Lida em ${new Date(msg.lida_em!).toLocaleString('pt-BR')}`}>
+                              <CheckCheck className="w-4 h-4 text-emerald-500" />
+                            </span>
                           ) : (
-                            <Check className="w-4 h-4 text-muted-foreground" title="Entregue (Não lida)" />
+                            <span title="Entregue (Não lida)">
+                              <Check className="w-4 h-4 text-muted-foreground" />
+                            </span>
                           )}
                         </div>
                       </div>

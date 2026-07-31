@@ -95,7 +95,7 @@ export function Header() {
     const supabase = createClient()
 
     const fetchUnreadMensagensCount = async () => {
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from('mensagens_internas')
         .select('*', { count: 'exact', head: true })
         .eq('destinatario_id', funcionario.id)
