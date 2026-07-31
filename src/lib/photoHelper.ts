@@ -19,8 +19,12 @@ export function getAvatarUrl(registro?: FotoRegistro | null): string | undefined
 
   let url: string | undefined = undefined
 
-  if (registro.foto_avatar_path && SUPABASE_URL) {
-    url = `${SUPABASE_URL}/storage/v1/object/public/fotos-avatar/${registro.foto_avatar_path}`
+  if (registro.foto_avatar_path) {
+    if (registro.foto_avatar_path.startsWith('http://') || registro.foto_avatar_path.startsWith('https://')) {
+      url = registro.foto_avatar_path
+    } else if (SUPABASE_URL) {
+      url = `${SUPABASE_URL}/storage/v1/object/public/fotos-avatar/${registro.foto_avatar_path}`
+    }
   } else if (registro.foto_url) {
     url = registro.foto_url
   }
@@ -38,8 +42,12 @@ export function getVisualizacaoUrl(registro?: FotoRegistro | null): string | und
 
   let url: string | undefined = undefined
 
-  if (registro.foto_visualizacao_path && SUPABASE_URL) {
-    url = `${SUPABASE_URL}/storage/v1/object/public/fotos-visualizacao/${registro.foto_visualizacao_path}`
+  if (registro.foto_visualizacao_path) {
+    if (registro.foto_visualizacao_path.startsWith('http://') || registro.foto_visualizacao_path.startsWith('https://')) {
+      url = registro.foto_visualizacao_path
+    } else if (SUPABASE_URL) {
+      url = `${SUPABASE_URL}/storage/v1/object/public/fotos-visualizacao/${registro.foto_visualizacao_path}`
+    }
   } else if (registro.foto_url) {
     url = registro.foto_url
   }
