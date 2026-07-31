@@ -52,6 +52,7 @@ export default function AdminDispositivosPage() {
   const [pwaDialogOpen, setPwaDialogOpen] = useState(false)
   const [pwaNextVersion, setPwaNextVersion] = useState('')
   const [pwaCustomMessage, setPwaCustomMessage] = useState('')
+  const [pwaStaggerSeconds, setPwaStaggerSeconds] = useState(60)
   const [pwaSubmitting, setPwaSubmitting] = useState(false)
 
   const isMounted = useRef(true)
@@ -148,6 +149,7 @@ export default function AdminDispositivosPage() {
 
     setPwaNextVersion(nextVer)
     setPwaCustomMessage('Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.')
+    setPwaStaggerSeconds(60)
     setPwaDialogOpen(true)
   }
 
@@ -165,7 +167,8 @@ export default function AdminDispositivosPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           version: pwaNextVersion.trim(),
-          message: pwaCustomMessage.trim()
+          message: pwaCustomMessage.trim(),
+          staggerSeconds: pwaStaggerSeconds
         })
       })
 
@@ -503,6 +506,20 @@ export default function AdminDispositivosPage() {
               className="bg-[#18181a] border-[#3f3f46] text-white font-mono"
             />
             <p className="text-[11px] text-[#777]">Versão atual cadastrada: <code className="text-amber-400">{currentVersion}</code></p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#ccc]">Estratégia de Distribuição de Carga (Jitter)</label>
+            <select
+              value={pwaStaggerSeconds}
+              onChange={(e) => setPwaStaggerSeconds(Number(e.target.value))}
+              className="w-full h-9 px-3 rounded-md bg-[#18181a] border border-[#3f3f46] text-white text-xs outline-none"
+            >
+              <option value={60}>🌊 Onda Suave — Distribuir em 1 min (Recomendado para 500+ dispositivos)</option>
+              <option value={180}>🌊 Onda Estendida — Distribuir em 3 min (Evita picos em horário de entrada)</option>
+              <option value={0}>⚡ Imediata — Sem atraso (Apenas para emergências/poucos dispositivos)</option>
+            </select>
+            <p className="text-[11px] text-[#777]">Evita travamentos e picos de acessos simultâneos na Vercel/Supabase.</p>
           </div>
 
           <div className="space-y-1.5">

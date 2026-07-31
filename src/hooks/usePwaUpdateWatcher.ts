@@ -10,6 +10,7 @@ export interface PwaUpdateInfo {
   newVersion: string
   newMessage: string
   currentVersion: string
+  staggerSeconds: number
   lastUpdatedAt: string | null
   updatedByName: string | null
   triggerUpdate: () => void
@@ -24,6 +25,7 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
   const [newVersion, setNewVersion] = useState('')
   const [newMessage, setNewMessage] = useState('Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.')
   const [currentVersion, setCurrentVersion] = useState('v11')
+  const [staggerSeconds, setStaggerSeconds] = useState(60)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
   const [updatedByName, setUpdatedByName] = useState<string | null>(null)
 
@@ -31,12 +33,13 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
     try {
       const { data, error } = await (supabase.from('system_config' as any) as any)
         .select('chave, valor, updated_at, updated_by, funcionarios(nome)')
-        .in('chave', ['pwa_version', 'pwa_update_message'])
+        .in('chave', ['pwa_version', 'pwa_update_message', 'pwa_stagger_seconds'])
 
       if (error || !data || !isMounted.current) return
 
       let serverVer = 'v11'
       let serverMsg = 'Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.'
+      let serverStagger = 60
       let updatedAt: string | null = null
       let updatedBy: string | null = null
 
@@ -47,12 +50,15 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
           updatedBy = item.funcionarios?.nome || null
         } else if (item.chave === 'pwa_update_message') {
           serverMsg = item.valor
+        } else if (item.chave === 'pwa_stagger_seconds') {
+          serverStagger = parseInt(item.valor, 10) || 60
         }
       })
 
       if (isMounted.current) {
         setCurrentVersion(serverVer)
         setNewMessage(serverMsg)
+        setStaggerSeconds(serverStagger)
         setLastUpdatedAt(updatedAt)
         setUpdatedByName(updatedBy)
       }
@@ -153,6 +159,7 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
     newVersion,
     newMessage,
     currentVersion,
+    staggerSeconds,
     lastUpdatedAt,
     updatedByName,
     triggerUpdate,
