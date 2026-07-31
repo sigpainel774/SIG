@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Bell, History, Circle, Check, Sliders, UserCheck } from 'lucide-react'
+import { Bell, History, Circle, Check, CheckCheck, Sliders, UserCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
@@ -49,7 +49,9 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
   }
 
   useEffect(() => {
-    if (open) loadNotificacoes()
+    if (open && funcionario?.auth_user_id) {
+      loadNotificacoes()
+    }
   }, [open, filtro, funcionario?.auth_user_id])
 
   const markAsRead = async (notif: any, e: React.MouseEvent) => {
@@ -89,6 +91,25 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     }
   }
 
+  const markAllAsRead = async () => {
+    if (!funcionario?.auth_user_id) return
+    const supabase = createClient()
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', funcionario.auth_user_id)
+        .eq('read', false)
+
+      if (error) throw error
+      toast.success('Todas as notificações foram marcadas como lidas.')
+      loadNotificacoes()
+    } catch (error: any) {
+      console.error('Erro ao marcar todas como lidas:', error)
+      toast.error('Erro ao atualizar notificações.')
+    }
+  }
+
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
   }
@@ -118,20 +139,33 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
       }
     >
       <div className="space-y-4">
-        {canManage && (
-          <div className="flex justify-end pb-2">
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#2f2f33]">
+          {notificacoes.some((n) => !n.read) ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={markAllAsRead}
+              className="text-[#3ea6ff] hover:text-[#3ea6ff]/80 hover:bg-[#3ea6ff]/10 h-7 px-2 cursor-pointer gap-1.5 text-xs font-medium"
+              title="Marcar todas como lidas"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span>Marcar todas como lidas</span>
+            </Button>
+          ) : <div />}
+
+          {canManage && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setConfigOpen(true)}
-              className="text-zinc-400 hover:text-white h-8 cursor-pointer gap-1.5 text-xs"
+              className="text-zinc-400 hover:text-white h-7 px-2 cursor-pointer gap-1.5 text-xs"
               title="Configurações de Notificações"
             >
               <Sliders className="w-3.5 h-3.5" />
               <span>Configurações</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
         
         {/* Filtros */}
         <div className="px-4 py-3 border-b border-[#3f3f46] bg-[#121214] flex gap-2">

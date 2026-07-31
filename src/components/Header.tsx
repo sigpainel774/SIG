@@ -32,6 +32,7 @@ export function Header() {
 
   useEffect(() => {
     if (!funcionario?.auth_user_id) return
+    let isMounted = true
     const supabase = createClient()
 
     const fetchUnreadCount = async () => {
@@ -41,7 +42,7 @@ export function Header() {
         .eq('user_id', funcionario.auth_user_id as string)
         .eq('read', false)
       
-      if (!error && count !== null) {
+      if (isMounted && !error && count !== null) {
         setUnreadCount(count)
       }
     }
@@ -53,19 +54,24 @@ export function Header() {
       .on(
         'postgres_changes',
         { 
-          event: 'INSERT', 
+          event: '*', 
           schema: 'public', 
           table: 'notifications', 
           filter: `user_id=eq.${funcionario.auth_user_id as string}` 
         },
         (payload: any) => {
-          setUnreadCount((prev) => prev + 1)
-          toast.info(payload.new.title || 'Nova notificação')
+          if (isMounted) {
+            fetchUnreadCount()
+            if (payload.eventType === 'INSERT') {
+              toast.info(payload.new.title || 'Nova notificação')
+            }
+          }
         }
       )
       .subscribe()
 
     return () => {
+      isMounted = false
       supabase.removeChannel(channel)
     }
   }, [funcionario?.auth_user_id])
