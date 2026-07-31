@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { 
   Users, 
   Briefcase, 
@@ -83,6 +84,9 @@ const PALETTE_CARGOS = [
 export default function RelatorioServidores() {
   const supabase = createClient()
   const { escolas, selectedEscola } = useSchoolStore()
+  const { acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
+
+  const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
 
   const [activeTab, setActiveTab] = useState<'geral' | 'orcamento'>('geral')
   const [isMounted, setIsMounted] = useState(false)
@@ -253,15 +257,16 @@ export default function RelatorioServidores() {
     )
   }, [occupantsList, occupantSearch])
 
-  // Sincroniza a escola selecionada globalmente se houver
+  // Sincroniza a escola selecionada globalmente se houver (travando para Nível 2 / Nível 3)
   useEffect(() => {
     setIsMounted(true)
-    if (selectedEscola) {
-      setFiltroEscolaId(selectedEscola.id)
+    const escolaIdAlvo = selectedEscola?.id || escolaAtivaId || ''
+    if (isSuperAdminOrNivel1) {
+      setFiltroEscolaId(selectedEscola?.id || '')
     } else {
-      setFiltroEscolaId('')
+      setFiltroEscolaId(escolaIdAlvo)
     }
-  }, [selectedEscola])
+  }, [selectedEscola, escolaAtivaId, isSuperAdminOrNivel1])
 
   // Busca lista única de cargos disponíveis para o select de filtro
   const listaCargosDisponiveis = useMemo(() => {
@@ -558,9 +563,13 @@ export default function RelatorioServidores() {
                 <select
                   value={filtroEscolaId}
                   onChange={(e) => setFiltroEscolaId(e.target.value)}
-                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                  disabled={!isSuperAdminOrNivel1}
+                  className={cn(
+                    "w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer",
+                    !isSuperAdminOrNivel1 && "opacity-80 cursor-not-allowed bg-secondary/30"
+                  )}
                 >
-                  <option value="">Rede Municipal (Todas as Escolas)</option>
+                  {isSuperAdminOrNivel1 && <option value="">Rede Municipal (Todas as Escolas)</option>}
                   {escolas.map((esc) => (
                     <option key={esc.id} value={esc.id}>
                       {esc.nome}

@@ -62,6 +62,7 @@ const GRUPOS_PERMISSOES: GrupoToggle[] = [
     icone: ShieldCheck,
     itens: [
       { chave: 'secretaria.emitir_documentos', label: 'Emitir documentos escolares', descricao: 'Atestados, declarações e documentos acadêmicos' },
+      { chave: 'relatorios.servidores', label: 'Relatório de Servidores', descricao: 'Visualizar relatório e estatísticas de servidores da escola' },
     ],
   },
   {
