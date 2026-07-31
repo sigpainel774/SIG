@@ -94,10 +94,6 @@ export default function FuncionariosPage() {
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('regular')
 
-  /* Filtros de Impressão */
-  const [filtroImpEscola, setFiltroImpEscola] = useState('todas')
-  const [filtroImpCargo, setFiltroImpCargo] = useState('todos')
-
   /* Modais */
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
   const [modalEditando, setModalEditando] = useState<Funcionario | null>(null)
@@ -518,20 +514,13 @@ export default function FuncionariosPage() {
       ? `${logoEscolaAtivaUrl}?t=${Date.now()}`
       : logoSecretariaUrl
 
-    // Aplicar filtros de impressão sobre a lista já filtrada pela tela
-    const funcsParaImprimir = funcsFiltrados.filter((f) => {
-      const matchEscola =
-        filtroImpEscola === 'todas' || (f.orgao ?? '') === filtroImpEscola
-      const matchCargo =
-        filtroImpCargo === 'todos' || (f.cargo ?? '') === filtroImpCargo
-      return matchEscola && matchCargo
-    })
+    // Imprimir a lista filtrada exibida na tela
+    const funcsParaImprimir = funcsFiltrados
 
     // Legenda dos filtros para o cabeçalho do documento
-    const legendaEscola =
-      filtroImpEscola === 'todas' ? 'Todas as Escolas' : filtroImpEscola
+    const legendaEscola = selectedEscola?.nome ?? 'Todas as Escolas'
     const legendaCargo =
-      filtroImpCargo === 'todos' ? 'Todos os Cargos' : filtroImpCargo
+      filtroCargo === 'todos' ? 'Todos os Cargos' : filtroCargo
 
     const win = window.open('', '_blank', 'width=1000,height=800')
     if (!win) {
@@ -679,12 +668,7 @@ export default function FuncionariosPage() {
             setFiltroCargo={setFiltroCargo}
             filtroStatus={filtroStatus}
             setFiltroStatus={setFiltroStatus}
-            filtroImpEscola={filtroImpEscola}
-            setFiltroImpEscola={setFiltroImpEscola}
-            filtroImpCargo={filtroImpCargo}
-            setFiltroImpCargo={setFiltroImpCargo}
             cargosUnicos={cargosUnicos}
-            escolasUnicas={escolasUnicas}
             handleImprimirLista={handleImprimirLista}
             setModalNovoOpen={setModalNovoOpen}
           />
