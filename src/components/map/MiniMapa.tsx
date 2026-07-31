@@ -82,6 +82,14 @@ export default function MiniMapa({
     }
   }, [initialLat, initialLng]);
 
+  // Garante que o Leaflet recalcule as dimensões do container ao abrir em modais ou abas
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      mapRef.current?.invalidateSize();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Sincroniza estado interno do endereço caso o pai envie um novo endereço
   useEffect(() => {
     setLocalAddress(address || '');
@@ -243,7 +251,7 @@ export default function MiniMapa({
       </div>
 
       {/* Container Leaflet */}
-      <div className="w-full h-[220px] rounded-xl overflow-hidden border border-[#232d42] bg-[#141a27] z-0">
+      <div className="w-full h-[286px] rounded-xl overflow-hidden border border-[#232d42] bg-[#141a27] z-0">
         <MapContainer
           center={[lat, lng]}
           zoom={zoom}

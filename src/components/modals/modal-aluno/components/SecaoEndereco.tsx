@@ -143,8 +143,8 @@ export function SecaoEndereco() {
 
         {/* Seleção de GPS por Mapa - print:hidden */}
         <div className="print:hidden mt-4">
-          <Label className="text-xs text-gray-400 font-medium">Coordenadas de GPS (Arraste o pin ou clique no mapa para selecionar)</Label>
-          <div className="mt-2 h-[260px] w-full rounded-xl overflow-hidden border border-[#2a2a2a] relative z-10">
+          <Label className="text-xs text-gray-400 font-medium mb-1.5 block">Coordenadas de GPS (Arraste o pin ou clique no mapa para selecionar)</Label>
+          <div className="mt-1 w-full relative z-10">
             <MiniMapa
               initialLat={latitude ?? undefined}
               initialLng={longitude ?? undefined}
