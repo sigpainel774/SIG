@@ -14,6 +14,7 @@ export interface ResumoServidoresPrint {
   total_cargos_ocupados: number
   total_contratados: number
   total_concursados: number
+  total_nomeados: number
   total_outros: number
   total_regular: number
   total_eja: number
@@ -26,6 +27,7 @@ export interface CargoBreakdownPrint {
   eja: number
   concursados: number
   contratados: number
+  nomeados: number
   outros: number
 }
 
@@ -213,7 +215,7 @@ export function PrintRelatorioServidores({
           <span className="text-[9.5px] font-extrabold text-gray-800 uppercase block mb-1.5">
             Quadro de Distribuição por Vínculo Profissional
           </span>
-          <div className="grid grid-cols-3 gap-3 text-center text-xs">
+          <div className="grid grid-cols-4 gap-3 text-center text-xs">
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">CONCURSADOS / EFETIVOS</span>
               <strong className="text-blue-900 text-sm">{resumo.total_concursados ?? 0}</strong>
@@ -221,6 +223,10 @@ export function PrintRelatorioServidores({
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">CONTRATADOS / TEMPORÁRIOS</span>
               <strong className="text-emerald-900 text-sm">{resumo.total_contratados ?? 0}</strong>
+            </div>
+            <div className="p-2 bg-white border border-gray-200 rounded-md">
+              <span className="text-[9px] text-gray-500 font-bold block">NOMEADOS / COMISSIONADOS</span>
+              <strong className="text-purple-900 text-sm">{resumo.total_nomeados ?? 0}</strong>
             </div>
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">OUTROS VÍNCULOS</span>
@@ -248,9 +254,10 @@ export function PrintRelatorioServidores({
                   <th className="py-2 px-2 text-center w-24">Total Ocupações</th>
                   <th className="py-2 px-2 text-center w-24">Ensino Regular</th>
                   <th className="py-2 px-2 text-center w-20">EJA</th>
-                  <th className="py-2 px-2 text-center w-24">Concursados</th>
-                  <th className="py-2 px-2 text-center w-24">Contratados</th>
-                  <th className="py-2 px-2 text-center w-20">Outros</th>
+                  <th className="py-2 px-2 text-center w-20">Concursados</th>
+                  <th className="py-2 px-2 text-center w-20">Contratados</th>
+                  <th className="py-2 px-2 text-center w-20">Nomeados</th>
+                  <th className="py-2 px-2 text-center w-16">Outros</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -262,6 +269,7 @@ export function PrintRelatorioServidores({
                     <td className="py-1.5 px-2 text-center text-amber-900 font-semibold">{item.eja}</td>
                     <td className="py-1.5 px-2 text-center text-blue-800 font-semibold">{item.concursados}</td>
                     <td className="py-1.5 px-2 text-center text-emerald-800 font-semibold">{item.contratados}</td>
+                    <td className="py-1.5 px-2 text-center text-purple-800 font-semibold">{item.nomeados}</td>
                     <td className="py-1.5 px-2 text-center text-gray-500">{item.outros}</td>
                   </tr>
                 ))}
@@ -274,6 +282,7 @@ export function PrintRelatorioServidores({
                   <td className="py-2 px-2 text-center text-amber-900">{resumo.total_eja ?? 0}</td>
                   <td className="py-2 px-2 text-center text-blue-900">{resumo.total_concursados ?? 0}</td>
                   <td className="py-2 px-2 text-center text-emerald-900">{resumo.total_contratados ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-purple-900">{resumo.total_nomeados ?? 0}</td>
                   <td className="py-2 px-2 text-center text-gray-600">{resumo.total_outros ?? 0}</td>
                 </tr>
               </tfoot>
