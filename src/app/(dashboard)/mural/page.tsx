@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2 } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -26,6 +26,7 @@ export default function MuralPage() {
   const [titulo, setTitulo] = useState('')
   const [mensagem, setMensagem] = useState('')
   const [alvo, setAlvo] = useState('Geral / Toda a Rede')
+  const [isPopup, setIsPopup] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -70,7 +71,7 @@ export default function MuralPage() {
   const fetchNotices = async () => {
     const supabase = createClient()
     const { data, error } = await supabase.from('comunicados')
-      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
+      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
       .order('date', { ascending: false })
 
     if (error) {
@@ -90,7 +91,7 @@ export default function MuralPage() {
 
         const [comunicadosRes, birthdayRes] = await Promise.all([
           supabase.from('comunicados')
-            .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
+            .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
             .order('date', { ascending: false }),
           (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth })
         ])
@@ -193,6 +194,7 @@ export default function MuralPage() {
       body: mensagem.trim(),
       date: hojeStr,
       target: alvo,
+      is_popup: isPopup,
       criado_por: funcionario?.id ?? null,
       anexo_url: anexoUrl,
       anexo_nome: anexoNome
@@ -205,6 +207,7 @@ export default function MuralPage() {
       setTitulo('')
       setMensagem('')
       setAlvo('Geral / Toda a Rede')
+      setIsPopup(false)
       setArquivo(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -286,6 +289,45 @@ export default function MuralPage() {
                     <option value="Equipe Administrativa">Equipe Administrativa</option>
                     <option value="Equipe de Cozinha / Limpeza">Equipe de Cozinha / Limpeza</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">Modalidade de Notificação</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPopup((prev) => !prev)}
+                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all duration-300 cursor-pointer ${
+                      isPopup
+                        ? 'border-amber-500/70 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.25)] ring-1 ring-amber-500/50'
+                        : 'border-borderCustom bg-input/60 text-muted-foreground hover:bg-hoverCustom hover:text-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg transition-colors ${isPopup ? 'bg-amber-500/20 text-amber-400' : 'bg-surface-2 text-muted-foreground'}`}>
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm tracking-wide">Exibir como Pop-up</span>
+                          {isPopup && (
+                            <span className="text-[10px] uppercase font-extrabold bg-amber-500 text-black px-2 py-0.5 rounded-full tracking-wider animate-pulse">
+                              Efeito Ativo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs opacity-80 mt-0.5">
+                          {isPopup
+                            ? 'O comunicado aparecerá no centro da tela dos funcionários ao fazer login.'
+                            : 'O comunicado será exibido normalmente no Mural e no sino de notificações.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                      isPopup ? 'border-amber-400 bg-amber-500 text-black font-bold text-xs shadow-sm' : 'border-borderCustom bg-surface-3'
+                    }`}>
+                      {isPopup ? '✓' : ''}
+                    </div>
+                  </button>
                 </div>
 
                 <div>
@@ -419,6 +461,12 @@ export default function MuralPage() {
                     )}
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {notice.is_popup && (
+                        <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          Pop-up Prioritário
+                        </span>
+                      )}
                       {notice.target && (
                         <span className="text-xs font-semibold text-highlight bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
                           {notice.target}
