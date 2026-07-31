@@ -1,0 +1,161 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createClient } from '@/lib/supabaseClient'
+
+const LOCAL_STORAGE_KEY = 'sig_pwa_version'
+
+export interface PwaUpdateInfo {
+  showUpdateModal: boolean
+  newVersion: string
+  newMessage: string
+  currentVersion: string
+  lastUpdatedAt: string | null
+  updatedByName: string | null
+  triggerUpdate: () => void
+  dismissModal: () => void
+}
+
+export function usePwaUpdateWatcher(): PwaUpdateInfo {
+  const supabase = createClient()
+  const isMounted = useRef(true)
+
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [newVersion, setNewVersion] = useState('')
+  const [newMessage, setNewMessage] = useState('Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.')
+  const [currentVersion, setCurrentVersion] = useState('v11')
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
+  const [updatedByName, setUpdatedByName] = useState<string | null>(null)
+
+  const checkVersion = useCallback(async () => {
+    try {
+      const { data, error } = await (supabase.from('system_config' as any) as any)
+        .select('chave, valor, updated_at, updated_by, funcionarios(nome)')
+        .in('chave', ['pwa_version', 'pwa_update_message'])
+
+      if (error || !data || !isMounted.current) return
+
+      let serverVer = 'v11'
+      let serverMsg = 'Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.'
+      let updatedAt: string | null = null
+      let updatedBy: string | null = null
+
+      data.forEach((item: any) => {
+        if (item.chave === 'pwa_version') {
+          serverVer = item.valor
+          updatedAt = item.updated_at || null
+          updatedBy = item.funcionarios?.nome || null
+        } else if (item.chave === 'pwa_update_message') {
+          serverMsg = item.valor
+        }
+      })
+
+      if (isMounted.current) {
+        setCurrentVersion(serverVer)
+        setNewMessage(serverMsg)
+        setLastUpdatedAt(updatedAt)
+        setUpdatedByName(updatedBy)
+      }
+
+      const localVer = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
+
+      if (!localVer) {
+        // Primeira abertura do app: registra a versão atual sem forçar modal
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(LOCAL_STORAGE_KEY, serverVer)
+        }
+      } else if (localVer !== serverVer) {
+        // Versão no servidor mudou! Exibir modal de atualização
+        if (isMounted.current) {
+          setNewVersion(serverVer)
+          setShowUpdateModal(true)
+        }
+      }
+    } catch (err) {
+      console.error('[usePwaUpdateWatcher] Erro ao checar versão do PWA:', err)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    isMounted.current = true
+
+    // 1. Checagem inicial
+    checkVersion()
+
+    // 2. Realtime subscription
+    const channel = supabase
+      .channel('system_config_pwa_watcher')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'system_config' },
+        (payload: any) => {
+          if (!isMounted.current) return
+          const newRow = payload.new
+          if (!newRow) return
+
+          if (newRow.chave === 'pwa_version') {
+            const localVer = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
+            setCurrentVersion(newRow.valor)
+            if (newRow.updated_at) setLastUpdatedAt(newRow.updated_at)
+
+            if (localVer && localVer !== newRow.valor) {
+              setNewVersion(newRow.valor)
+              setShowUpdateModal(true)
+            }
+          } else if (newRow.chave === 'pwa_update_message') {
+            setNewMessage(newRow.valor)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      isMounted.current = false
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, checkVersion])
+
+  const triggerUpdate = useCallback(() => {
+    const verToSave = newVersion || currentVersion || 'v12'
+
+    // 1. Salva nova versão no localStorage para não disparar novamente
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_KEY, verToSave)
+    }
+
+    // 2. Avisa o Service Worker para pular a espera (SKIP_WAITING)
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' })
+      }
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => {
+          reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
+          reg.update().catch(() => {})
+        })
+      })
+    }
+
+    // 3. Força recarregamento da página após curto delay
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
+    }, 1500)
+  }, [newVersion, currentVersion])
+
+  const dismissModal = useCallback(() => {
+    setShowUpdateModal(false)
+  }, [])
+
+  return {
+    showUpdateModal,
+    newVersion,
+    newMessage,
+    currentVersion,
+    lastUpdatedAt,
+    updatedByName,
+    triggerUpdate,
+    dismissModal,
+  }
+}

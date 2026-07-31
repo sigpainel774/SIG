@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import NextTopLoader from 'nextjs-toploader'
+import { PwaUpdateModal } from '@/components/PwaUpdateModal'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -87,6 +88,7 @@ export default function RootLayout({
             shadow="0 0 10px #389fff,0 0 5px #389fff"
           />
           {children}
+          <PwaUpdateModal />
           <Toaster theme="dark" />
           <SpeedInsights />
           <Analytics />

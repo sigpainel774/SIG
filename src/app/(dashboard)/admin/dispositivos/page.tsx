@@ -2,22 +2,42 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { MonitorSmartphone, Plus, Edit, Trash2, RefreshCw, Search, Building2, User, ChevronDown } from 'lucide-react'
+import {
+  MonitorSmartphone,
+  Plus,
+  Edit,
+  Trash2,
+  RefreshCw,
+  Search,
+  Building2,
+  User,
+  ChevronDown,
+  Zap,
+  Radio,
+  Sparkles,
+  AlertTriangle,
+  Loader2,
+  Send,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { ModalDispositivo } from '@/components/modals/modal-dispositivo'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { executeWithToast } from '@/lib/action-handler'
+import { usePwaUpdateWatcher } from '@/hooks/usePwaUpdateWatcher'
 
 export default function AdminDispositivosPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
+  const { currentVersion, lastUpdatedAt, updatedByName } = usePwaUpdateWatcher()
 
   const [dispositivos, setDispositivos] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -27,6 +47,12 @@ export default function AdminDispositivosPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [dispositivoToEdit, setDispositivoToEdit] = useState<any | null>(null)
+
+  // PWA Remote Update Dialog state
+  const [pwaDialogOpen, setPwaDialogOpen] = useState(false)
+  const [pwaNextVersion, setPwaNextVersion] = useState('')
+  const [pwaCustomMessage, setPwaCustomMessage] = useState('')
+  const [pwaSubmitting, setPwaSubmitting] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -112,6 +138,50 @@ export default function AdminDispositivosPage() {
         loadDispositivos()
       }
     })
+  }
+
+  // Open PWA Update modal
+  const handleOpenPwaDialog = () => {
+    // Calculo automático da próxima versão ex: v11 -> v12
+    const currentNum = parseInt(currentVersion.replace(/\D/g, ''), 10)
+    const nextVer = isNaN(currentNum) ? 'v12' : `v${currentNum + 1}`
+
+    setPwaNextVersion(nextVer)
+    setPwaCustomMessage('Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.')
+    setPwaDialogOpen(true)
+  }
+
+  // Submit PWA Update
+  const handleSubmitPwaUpdate = async () => {
+    if (!pwaNextVersion.trim()) {
+      toast.error('Informe o código da nova versão (ex: v12)')
+      return
+    }
+
+    setPwaSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/pwa-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: pwaNextVersion.trim(),
+          message: pwaCustomMessage.trim()
+        })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao disparar atualização')
+      }
+
+      toast.success(`Comando enviado! Versão ${data.version} disponibilizada para a rede.`)
+      setPwaDialogOpen(false)
+    } catch (err: any) {
+      console.error('Erro ao enviar PWA update:', err)
+      toast.error(err.message || 'Falha ao comunicar com o servidor')
+    } finally {
+      setPwaSubmitting(false)
+    }
   }
 
   // KPIs
@@ -243,7 +313,7 @@ export default function AdminDispositivosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Gestão de Dispositivos"
-        description="Gestão de tablets, totens e celulares da rede."
+        description="Gestão de tablets, totens, celulares e controle de atualização PWA da rede."
         icon={MonitorSmartphone}
         iconVariant="primary"
         backHref="/admin"
@@ -282,6 +352,44 @@ export default function AdminDispositivosPage() {
         <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 flex flex-col">
           <span className="text-[#aaa] text-xs font-semibold uppercase tracking-wider mb-1">Bloqueados</span>
           <span className="text-2xl font-bold text-rose-500">{totalBloqueados}</span>
+        </div>
+      </div>
+
+      {/* ── CARD DESTACADO: CONTROLE REMOTO PWA ── */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-sky-500/10 border border-amber-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <Radio className="w-5 h-5 text-amber-400 animate-pulse" />
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                Controle Remoto de Atualização PWA
+                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 font-mono text-xs">
+                  {currentVersion}
+                </Badge>
+              </h2>
+            </div>
+            <p className="text-xs text-[#aaa] leading-relaxed max-w-2xl">
+              Transmita um comando de atualização em tempo real via Supabase Realtime para todos os dispositivos e navegadores conectados na rede. Dispositivos offline verão o aviso ao conectar no início do turno.
+            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#777] pt-1">
+              <span>
+                Último envio: <strong className="text-[#ccc]">{lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleString('pt-BR') : 'Nenhuma atualização recente'}</strong>
+              </span>
+              {updatedByName && (
+                <span>
+                  Disparado por: <strong className="text-[#ccc]">{updatedByName}</strong>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <Button
+            onClick={handleOpenPwaDialog}
+            className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition-all duration-200 shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0 self-start md:self-center"
+          >
+            <Zap className="w-4 h-4 text-amber-200 fill-amber-200" />
+            <span>Forçar Atualização na Rede</span>
+          </Button>
         </div>
       </div>
 
@@ -328,7 +436,7 @@ export default function AdminDispositivosPage() {
         emptyMessage="Nenhum dispositivo encontrado."
       />
 
-      {/* Modal Criar / Editar */}
+      {/* Modal Criar / Editar Dispositivo */}
       {modalOpen && (
         <ModalDispositivo
           open={modalOpen}
@@ -337,6 +445,78 @@ export default function AdminDispositivosPage() {
           onSuccess={loadDispositivos}
         />
       )}
+
+      {/* ── DIALOG DE CONFIRMAÇÃO DE ATUALIZAÇÃO PWA ── */}
+      <StandardDialog
+        open={pwaDialogOpen}
+        onOpenChange={setPwaDialogOpen}
+        title="Forçar Atualização da Instalação PWA"
+        description="Esta ação enviará uma instrução de recarregamento e limpeza de cache para toda a rede."
+        maxWidth="sm:max-w-[550px]"
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setPwaDialogOpen(false)}
+              disabled={pwaSubmitting}
+              className="text-[#aaa] hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmitPwaUpdate}
+              disabled={pwaSubmitting}
+              className="bg-amber-600 hover:bg-amber-500 text-white font-bold flex items-center gap-2"
+            >
+              {pwaSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Transmitindo...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>Transmitir para Toda a Rede</span>
+                </>
+              )}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 text-sm text-white">
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs text-amber-200">
+              <strong className="font-semibold block text-amber-400">Atenção para Ações em Rede</strong>
+              <p>
+                Todos os usuários com o PWA aberto verão a mensagem de atualização com contagem regressiva e recarregamento automático. Dispositivos offline serão forçados a atualizar no início do turno ao conectar.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#ccc]">Identificador da Nova Versão</label>
+            <Input
+              value={pwaNextVersion}
+              onChange={(e) => setPwaNextVersion(e.target.value)}
+              placeholder="Ex: v12"
+              className="bg-[#18181a] border-[#3f3f46] text-white font-mono"
+            />
+            <p className="text-[11px] text-[#777]">Versão atual cadastrada: <code className="text-amber-400">{currentVersion}</code></p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#ccc]">Mensagem Exibida ao Usuário</label>
+            <Textarea
+              value={pwaCustomMessage}
+              onChange={(e) => setPwaCustomMessage(e.target.value)}
+              rows={3}
+              placeholder="Digite a mensagem..."
+              className="bg-[#18181a] border-[#3f3f46] text-white text-xs leading-relaxed"
+            />
+          </div>
+        </div>
+      </StandardDialog>
     </div>
   )
 }
