@@ -38,6 +38,7 @@ interface ResumoData {
   total_cargos_ocupados: number
   total_contratados: number
   total_concursados: number
+  total_nomeados: number
   total_outros: number
   total_regular: number
   total_eja: number
@@ -50,6 +51,7 @@ interface CargoBreakdown {
   eja: number
   concursados: number
   contratados: number
+  nomeados: number
   outros: number
 }
 
@@ -73,6 +75,7 @@ interface RelatorioServidoresPayload {
 const COLORS_VINCULO = {
   Concursado: '#3b82f6', // azul
   Contratado: '#10b981', // verde
+  Nomeado: '#8b5cf6',    // roxo
   Outros: '#f59e0b',     // âmbar
 }
 
@@ -97,6 +100,7 @@ export default function RelatorioServidores() {
       total_cargos_ocupados: 0,
       total_contratados: 0,
       total_concursados: 0,
+      total_nomeados: 0,
       total_outros: 0,
       total_regular: 0,
       total_eja: 0,
@@ -202,6 +206,8 @@ export default function RelatorioServidores() {
               tipoVincUpper.includes('RESERVISTA')
             ) {
               vinculoTipoFinal = 'Contratado'
+            } else if (tipoVincUpper.includes('NOMEADO')) {
+              vinculoTipoFinal = 'Nomeado'
             }
 
             const modUpper = (f.modalidade_ensino ?? '').toUpperCase()
@@ -303,6 +309,7 @@ export default function RelatorioServidores() {
             total_cargos_ocupados: 0,
             total_contratados: 0,
             total_concursados: 0,
+            total_nomeados: 0,
             total_outros: 0,
             total_regular: 0,
             total_eja: 0,
@@ -409,10 +416,11 @@ export default function RelatorioServidores() {
 
   // Dados para o Gráfico de Pizza de Vínculos
   const chartDataVinculos = useMemo(() => {
-    const { total_concursados, total_contratados, total_outros } = reportData.resumo
+    const { total_concursados, total_contratados, total_nomeados, total_outros } = reportData.resumo
     return [
       { name: 'Concursados', value: total_concursados ?? 0, color: COLORS_VINCULO.Concursado },
       { name: 'Contratados', value: total_contratados ?? 0, color: COLORS_VINCULO.Contratado },
+      { name: 'Nomeados', value: total_nomeados ?? 0, color: COLORS_VINCULO.Nomeado },
       { name: 'Outros / Não informado', value: total_outros ?? 0, color: COLORS_VINCULO.Outros },
     ].filter((item) => item.value > 0)
   }, [reportData.resumo])
@@ -626,6 +634,7 @@ export default function RelatorioServidores() {
                   <option value="Todos">Todos os Vínculos</option>
                   <option value="Concursado">Concursado / Efetivo</option>
                   <option value="Contratado">Contratado / Substituto</option>
+                  <option value="Nomeado">Nomeado (Cargo Comissionado)</option>
                   <option value="Outros">Outros / Não informado</option>
                 </select>
               </div>
@@ -862,6 +871,7 @@ export default function RelatorioServidores() {
                       <th className="py-3 px-4 font-bold text-center">EJA</th>
                       <th className="py-3 px-4 font-bold text-center">Concursados</th>
                       <th className="py-3 px-4 font-bold text-center">Contratados</th>
+                      <th className="py-3 px-4 font-bold text-center">Nomeados</th>
                       <th className="py-3 px-4 font-bold text-center">Outros</th>
                     </tr>
                   </thead>
@@ -903,6 +913,9 @@ export default function RelatorioServidores() {
                         <td className="py-3 px-4 text-center text-emerald-400 font-semibold">
                           {item.contratados}
                         </td>
+                        <td className="py-3 px-4 text-center text-purple-400 font-semibold">
+                          {item.nomeados}
+                        </td>
                         <td className="py-3 px-4 text-center text-muted-foreground">
                           {item.outros}
                         </td>
@@ -920,6 +933,7 @@ export default function RelatorioServidores() {
                       <td className="py-3.5 px-4 text-center text-amber-400">{reportData.resumo.total_eja ?? 0}</td>
                       <td className="py-3.5 px-4 text-center text-blue-400">{reportData.resumo.total_concursados ?? 0}</td>
                       <td className="py-3.5 px-4 text-center text-emerald-400">{reportData.resumo.total_contratados ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-purple-400">{reportData.resumo.total_nomeados ?? 0}</td>
                       <td className="py-3.5 px-4 text-center text-muted-foreground">{reportData.resumo.total_outros ?? 0}</td>
                     </tr>
                   </tfoot>
