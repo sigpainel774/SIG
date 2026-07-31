@@ -19,12 +19,7 @@ interface FuncionariosFiltersProps {
   setFiltroCargo: (val: string) => void
   filtroStatus: string
   setFiltroStatus: (val: string) => void
-  filtroImpEscola: string
-  setFiltroImpEscola: (val: string) => void
-  filtroImpCargo: string
-  setFiltroImpCargo: (val: string) => void
   cargosUnicos: string[]
-  escolasUnicas: string[]
   handleImprimirLista: () => void
   setModalNovoOpen: (open: boolean) => void
 }
@@ -37,12 +32,7 @@ export function FuncionariosFilters({
   setFiltroCargo,
   filtroStatus,
   setFiltroStatus,
-  filtroImpEscola,
-  setFiltroImpEscola,
-  filtroImpCargo,
-  setFiltroImpCargo,
   cargosUnicos,
-  escolasUnicas,
   handleImprimirLista,
   setModalNovoOpen
 }: FuncionariosFiltersProps) {
@@ -88,42 +78,6 @@ export function FuncionariosFilters({
           <SelectItem value="afastado">Afastado</SelectItem>
           <SelectItem value="desligado">Desligado</SelectItem>
           <SelectItem value="suspenso">Suspenso</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* ── Filtros de Impressão ── */}
-      <Select
-        value={filtroImpEscola}
-        onValueChange={(v) => setFiltroImpEscola(v ?? 'todas')}
-      >
-        <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
-          <SelectValue placeholder="Escola p/ impressão" />
-        </SelectTrigger>
-        <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
-          <SelectItem value="todas">Todas as Escolas</SelectItem>
-          {escolasUnicas.map((escola) => (
-            <SelectItem key={escola} value={escola}>
-              {escola}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Cargo para Impressão */}
-      <Select
-        value={filtroImpCargo}
-        onValueChange={(v) => setFiltroImpCargo(v ?? 'todos')}
-      >
-        <SelectTrigger className="bg-surface-1 border-borderCustom text-foreground h-9 w-44 text-sm rounded-xl">
-          <SelectValue placeholder="Cargo p/ impressão" />
-        </SelectTrigger>
-        <SelectContent className="bg-surface-1 border-borderCustom text-foreground">
-          <SelectItem value="todos">Todos os Cargos</SelectItem>
-          {cargosUnicos.map((cargo) => (
-            <SelectItem key={cargo} value={cargo}>
-              {cargo}
-            </SelectItem>
-          ))}
         </SelectContent>
       </Select>
 
