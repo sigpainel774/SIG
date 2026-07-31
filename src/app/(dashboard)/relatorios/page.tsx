@@ -123,6 +123,49 @@ export default function RelatoriosPage() {
   const { acessos, isAdminGlobalOrRoot } = useAuthStore()
 
   const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
+  const isDiretor = acessos?.some(a => a.nivel === 2 && a.ativo)
+  const [podeVerRelatorioServidores, setPodeVerRelatorioServidores] = useState<boolean>(false)
+
+  useEffect(() => {
+    let isMounted = true
+    if (isSuperAdminOrNivel1 || isDiretor) {
+      setPodeVerRelatorioServidores(true)
+      return
+    }
+
+    const acessoSecretario = acessos?.find(a => a.nivel === 3 && a.ativo)
+    if (!acessoSecretario || !acessoSecretario.id) {
+      setPodeVerRelatorioServidores(false)
+      return
+    }
+
+    const idSecretario = acessoSecretario.id
+
+    async function checarPermissaoSecretario() {
+      try {
+        const supabase = createClient()
+        const { data, error } = await (supabase as any)
+          .from('acessos_usuarios_permissoes')
+          .select('permitido')
+          .eq('acesso_usuario_id', idSecretario)
+          .eq('permissao', 'relatorios.servidores')
+          .maybeSingle()
+
+        if (!error && data && data.permitido && isMounted) {
+          setPodeVerRelatorioServidores(true)
+        } else if (isMounted) {
+          setPodeVerRelatorioServidores(false)
+        }
+      } catch (e) {
+        if (isMounted) setPodeVerRelatorioServidores(false)
+      }
+    }
+
+    checarPermissaoSecretario()
+    return () => {
+      isMounted = false
+    }
+  }, [isSuperAdminOrNivel1, isDiretor, acessos])
 
   useEffect(() => {
     loadEscolas()
@@ -572,7 +615,7 @@ export default function RelatoriosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
           if (card.id === 'servidores') {
-            return isSuperAdminOrNivel1
+            return podeVerRelatorioServidores
           }
           return true
         }).map((card) => {
