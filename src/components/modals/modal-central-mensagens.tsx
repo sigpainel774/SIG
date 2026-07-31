@@ -408,13 +408,13 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       const filePath = `anexos_mensagens/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('comunicados')
+        .from('anexos')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
       const { data: publicUrlData } = supabase.storage
-        .from('comunicados')
+        .from('anexos')
         .getPublicUrl(filePath)
 
       if (isChat) {
@@ -615,7 +615,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               }`}
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Chat WhatsApp</span>
+              <span>Chat</span>
               {totalUnreadAll > 0 && (
                 <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                   {totalUnreadAll}
