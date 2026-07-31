@@ -1,23 +1,36 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePwaUpdateWatcher } from '@/hooks/usePwaUpdateWatcher'
-import { RefreshCw, Sparkles, ShieldCheck, Download, ArrowRight } from 'lucide-react'
+import { RefreshCw, Sparkles, ShieldCheck, Download, ArrowRight, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function PwaUpdateModal() {
-  const { showUpdateModal, newVersion, newMessage, triggerUpdate } = usePwaUpdateWatcher()
+  const { showUpdateModal, newVersion, newMessage, staggerSeconds, triggerUpdate } = usePwaUpdateWatcher()
   const [updating, setUpdating] = useState(false)
+  const [totalSeconds, setTotalSeconds] = useState(5)
   const [countdown, setCountdown] = useState(5)
+  const isJitterCalculated = useRef(false)
 
   useEffect(() => {
     if (!showUpdateModal) {
       setCountdown(5)
+      setTotalSeconds(5)
       setUpdating(false)
+      isJitterCalculated.current = false
       return
     }
 
-    // Regressão automática de 5 a 0 segundos
+    if (!isJitterCalculated.current) {
+      isJitterCalculated.current = true
+      // Calculo de Jitter aleatório para escalonar 500+ conexões simultâneas
+      const randomJitter = staggerSeconds > 0 ? Math.floor(Math.random() * staggerSeconds) : 0
+      const calculatedTotal = 5 + randomJitter
+
+      setTotalSeconds(calculatedTotal)
+      setCountdown(calculatedTotal)
+    }
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -30,7 +43,7 @@ export function PwaUpdateModal() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [showUpdateModal])
+  }, [showUpdateModal, staggerSeconds])
 
   const handleUpdate = () => {
     setUpdating(true)
@@ -39,7 +52,7 @@ export function PwaUpdateModal() {
 
   if (!showUpdateModal) return null
 
-  const progressPercent = ((5 - countdown) / 5) * 100
+  const progressPercent = totalSeconds > 0 ? ((totalSeconds - countdown) / totalSeconds) * 100 : 100
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
@@ -73,7 +86,7 @@ export function PwaUpdateModal() {
         {/* Title & Description */}
         <div className="text-center space-y-2 mb-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {updating ? 'Atualizando Aplicativo...' : 'Atualização Obrigatória do SIG'}
+            {updating ? 'Atualizando Aplicativo...' : 'Atualização do SIG'}
           </h2>
           <p className="text-xs sm:text-sm text-[#aaa] leading-relaxed">
             {newMessage}
@@ -83,7 +96,7 @@ export function PwaUpdateModal() {
         {/* Progress Bar & Countdown */}
         <div className="space-y-2 mb-6">
           <div className="flex justify-between items-center text-xs text-[#888] font-medium">
-            <span>{updating ? 'Reiniciando aplicação...' : 'Atualização automática em:'}</span>
+            <span>{updating ? 'Reiniciando aplicação...' : 'Escalonamento automático em:'}</span>
             <span className="text-sky-400 font-bold">{updating ? '0s' : `${countdown}s`}</span>
           </div>
 
@@ -93,6 +106,13 @@ export function PwaUpdateModal() {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+
+          {staggerSeconds > 0 && !updating && (
+            <p className="text-[10px] text-center text-amber-400/80 flex items-center justify-center gap-1 pt-1">
+              <Layers className="w-3 h-3" />
+              <span>Carga distribuída para evitar travamento da rede municipal.</span>
+            </p>
+          )}
         </div>
 
         {/* Actions */}

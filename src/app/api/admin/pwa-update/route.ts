@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { version, message } = body
+    const { version, message, staggerSeconds } = body
 
     if (!version || typeof version !== 'string') {
       return NextResponse.json({ error: 'Versão inválida' }, { status: 400 })
@@ -46,6 +46,10 @@ export async function POST(req: NextRequest) {
     const updateMsg = message && typeof message === 'string' && message.trim()
       ? message.trim()
       : 'Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.'
+
+    const staggerVal = typeof staggerSeconds === 'number' && !isNaN(staggerSeconds)
+      ? String(Math.max(0, Math.min(300, staggerSeconds)))
+      : '60'
 
     const now = new Date().toISOString()
 
@@ -79,7 +83,22 @@ export async function POST(req: NextRequest) {
 
     if (errMsg) throw errMsg
 
-    // 3. Registrar Audit Log
+    // 3. Upsert pwa_stagger_seconds
+    const { error: errStagger } = await (supabaseAdmin.from('system_config' as any) as any)
+      .upsert(
+        {
+          chave: 'pwa_stagger_seconds',
+          valor: staggerVal,
+          descricao: 'Intervalo máximo em segundos para distribuição do recarregamento PWA (jitter)',
+          updated_by: admin.id || null,
+          updated_at: now,
+        },
+        { onConflict: 'chave' }
+      )
+
+    if (errStagger) throw errStagger
+
+    // 4. Registrar Audit Log
     await supabaseAdmin.from('audit_logs').insert({
       user_id: admin.id || null,
       user_name: admin.nome || 'Superadmin',
@@ -88,13 +107,14 @@ export async function POST(req: NextRequest) {
       entity: 'system_config (PWA_UPDATE)',
       entity_id: 'pwa_version',
       old_data: null,
-      new_data: { version: version.trim(), message: updateMsg, triggered_at: now },
+      new_data: { version: version.trim(), message: updateMsg, stagger_seconds: staggerVal, triggered_at: now },
     })
 
     return NextResponse.json({
       success: true,
       version: version.trim(),
       message: updateMsg,
+      stagger_seconds: staggerVal,
       updated_at: now,
       updated_by_name: admin.nome,
     })
