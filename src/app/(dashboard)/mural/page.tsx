@@ -2,13 +2,16 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles, Cake } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
+import { StandardDialog } from '@/components/ui/standard-dialog'
+import { CachedImage } from '@/components/ui/cached-image'
+import { getAvatarUrl } from '@/lib/photoHelper'
 
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
@@ -33,11 +36,21 @@ export default function MuralPage() {
 
   const [viewDate, setViewDate] = useState(() => new Date())
   const [loadingBirthdays, setLoadingBirthdays] = useState(false)
+  const [birthdayModal, setBirthdayModal] = useState<{ day: number; open: boolean }>({ day: 0, open: false })
 
   const MONTH_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ]
+
+  const birthdaysOfSelectedDay = useMemo(() => {
+    return birthdays.filter((b) => b.day === birthdayModal.day)
+  }, [birthdays, birthdayModal.day])
+
+  const handleDayClick = (day: number, hasBirthday: boolean) => {
+    if (!hasBirthday) return
+    setBirthdayModal({ day, open: true })
+  }
 
   const fetchBirthdaysForMonth = async (monthNum: number) => {
     setLoadingBirthdays(true)
@@ -57,12 +70,14 @@ export default function MuralPage() {
   }
 
   const handlePrevMonth = () => {
+    setBirthdayModal({ day: 0, open: false })
     const next = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)
     setViewDate(next)
     fetchBirthdaysForMonth(next.getMonth() + 1)
   }
 
   const handleNextMonth = () => {
+    setBirthdayModal({ day: 0, open: false })
     const next = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)
     setViewDate(next)
     fetchBirthdaysForMonth(next.getMonth() + 1)
@@ -544,7 +559,12 @@ export default function MuralPage() {
                 return (
                   <span
                     key={day}
-                    className={hasBirthday ? 'rounded-md bg-highlight py-1 font-semibold text-background shadow-sm' : 'rounded-md bg-input py-1 text-muted-foreground'}
+                    onClick={() => handleDayClick(day, hasBirthday)}
+                    className={
+                      hasBirthday
+                        ? 'rounded-md bg-highlight py-1 font-semibold text-background shadow-sm cursor-pointer hover:brightness-110 transition-all select-none'
+                        : 'rounded-md bg-input py-1 text-muted-foreground'
+                    }
                   >
                     {day}
                   </span>
@@ -571,6 +591,64 @@ export default function MuralPage() {
           </Card>
         </aside>
       </div>
+
+      {/* Modal de Aniversariantes do Dia */}
+      <StandardDialog
+        open={birthdayModal.open}
+        onOpenChange={(open) => setBirthdayModal((prev) => ({ ...prev, open }))}
+        title={`Aniversariantes — Dia ${birthdayModal.day}`}
+        description={`${MONTH_NAMES[viewDate.getMonth()]} de ${viewDate.getFullYear()}`}
+        maxWidth="sm:max-w-[420px]"
+      >
+        <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+          {birthdaysOfSelectedDay.length === 0 ? (
+            <p className="text-center text-xs text-muted-foreground py-4">Nenhum aniversariante registrado neste dia.</p>
+          ) : (
+            birthdaysOfSelectedDay.map((b, idx) => {
+              const fullPhotoUrl = getAvatarUrl({ foto_url: b.foto_url })
+              const initials = b.name
+                .trim()
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w: string) => w[0])
+                .join('')
+                .toUpperCase()
+
+              return (
+                <div key={idx} className="flex items-center gap-3.5 rounded-xl bg-input/80 border border-borderCustom/60 p-2.5 hover:border-highlight/30 transition-colors">
+                  {/* Moldura de Foto 3x4 */}
+                  <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 border border-borderCustom bg-surface-2 flex items-center justify-center shadow-sm">
+                    <CachedImage
+                      src={fullPhotoUrl}
+                      alt={b.name}
+                      className="w-full h-full object-cover object-top"
+                      fallback={
+                        <div className="w-full h-full bg-highlight/10 text-highlight font-extrabold text-sm flex items-center justify-center border border-highlight/20">
+                          {initials}
+                        </div>
+                      }
+                    />
+                  </div>
+
+                  {/* Nome + Cargo */}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-foreground text-sm truncate leading-snug">{b.name}</p>
+                    <span className="inline-block text-[11px] font-medium text-muted-foreground bg-surface-2 px-2 py-0.5 rounded-md border border-borderCustom/40 mt-1">
+                      {b.role}
+                    </span>
+                  </div>
+
+                  {/* Ícone comemorativo */}
+                  <div className="p-2 rounded-lg bg-highlight/10 text-highlight shrink-0">
+                    <Cake className="w-4 h-4" />
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </StandardDialog>
     </div>
   )
 }
