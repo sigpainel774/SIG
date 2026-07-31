@@ -1,5 +1,6 @@
-import { getAvatarUrl } from '@/lib/photoHelper';
 'use client'
+
+import { getAvatarUrl } from '@/lib/photoHelper';
 
 import { Button } from '@/components/ui/button'
 import {
