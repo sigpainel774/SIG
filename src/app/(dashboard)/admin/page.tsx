@@ -249,7 +249,7 @@ const adminGroups: AdminGroup[] = [
       },
       {
         title: 'Dispositivos',
-        subtitle: 'Dispositivos mobile',
+        subtitle: 'Dispositivos & PWA',
         icon: MonitorSmartphone,
         iconColor: 'text-sky-400',
         path: '/admin/dispositivos',
