@@ -377,7 +377,7 @@
 
       <!-- Botões de Ação -->
       <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
-        <button class="btn-retry" onclick="window.location.reload()">
+        <button class="btn-retry" id="btn-retry-main">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"/>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -403,17 +403,47 @@
   </div>
 
   <script>
-    function continuarAguardando() {
-      const badge = document.querySelector('.status-badge');
+    // Captura a URL de origem (página que gerou o erro offline)
+    // Usa sessionStorage para persistir entre reloads acidentais
+    (function() {
+      var ref = document.referrer;
+      // Só salva se vier de uma rota interna (não do próprio /offline.html)
+      if (ref && !ref.includes('/offline') && !ref.includes('offline.html')) {
+        try { sessionStorage.setItem('sig_offline_origin', ref); } catch(e) {}
+      }
+    })();
+
+    // Retorna para a URL salva ou para /home
+    function getDestino() {
+      try {
+        var saved = sessionStorage.getItem('sig_offline_origin');
+        if (saved) return saved;
+      } catch(e) {}
+      return '/home';
+    }
+
+    function reconectar() {
+      var badge = document.querySelector('.status-badge');
       if (badge) {
-        badge.innerHTML = '<div class="status-dot"></div> RECONECTANDO...';
+        badge.innerHTML = '<div class="status-dot" style="background:#3b6cf4"></div> RECONECTANDO...';
         badge.style.borderColor = 'rgba(59,108,244,0.3)';
         badge.style.background = 'rgba(59,108,244,0.12)';
         badge.style.color = '#3b6cf4';
       }
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Limpa a URL salva após usar
+      try { sessionStorage.removeItem('sig_offline_origin'); } catch(e) {}
+      // Redireciona para a página de origem (não recarrega o offline.html)
+      window.location.href = getDestino();
+    }
+
+    function continuarAguardando() {
+      var badge = document.querySelector('.status-badge');
+      if (badge) {
+        badge.innerHTML = '<div class="status-dot" style="background:#3b6cf4"></div> AGUARDANDO CONEXÃO...';
+        badge.style.borderColor = 'rgba(59,108,244,0.3)';
+        badge.style.background = 'rgba(59,108,244,0.12)';
+        badge.style.color = '#3b6cf4';
+      }
     }
 
     function voltarTelaAnterior() {
@@ -424,17 +454,49 @@
       }
     }
 
-    // Tenta reconectar automaticamente a cada 8 segundos
-    let attempts = 0;
-    const interval = setInterval(() => {
+    // ✅ Evento nativo do navegador: detecta IMEDIATAMENTE quando a internet volta
+    window.addEventListener('online', function() {
+      reconectar();
+    });
+
+    // Polling de fallback: verifica a cada 8 segundos (caso o evento 'online' não dispare)
+    var attempts = 0;
+    var interval = setInterval(function() {
       attempts++;
-      fetch('/').then(() => {
-        clearInterval(interval);
-        window.location.reload();
-      }).catch(() => {});
+      fetch('/favicon.ico', { method: 'HEAD', cache: 'no-store' })
+        .then(function() {
+          clearInterval(interval);
+          reconectar();
+        })
+        .catch(function() {});
       // Para após 30 tentativas (~4 min)
       if (attempts >= 30) clearInterval(interval);
     }, 8000);
+
+    // Botão "Tentar novamente" usa redirect inteligente
+    document.addEventListener('DOMContentLoaded', function() {
+      var btnRetry = document.getElementById('btn-retry-main');
+      if (btnRetry) {
+        btnRetry.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Testa conexão antes de redirecionar
+          fetch('/favicon.ico', { method: 'HEAD', cache: 'no-store' })
+            .then(function() {
+              reconectar();
+            })
+            .catch(function() {
+              // Sem conexão ainda — avisa o usuário
+              var badge = document.querySelector('.status-badge');
+              if (badge) {
+                badge.innerHTML = '<div class="status-dot"></div> AINDA SEM CONEXÃO';
+                badge.style.borderColor = 'rgba(244,67,54,0.2)';
+                badge.style.background = 'var(--danger-soft)';
+                badge.style.color = '#ff6b6b';
+              }
+            });
+        });
+      }
+    });
   </script>
 </body>
 </html>
