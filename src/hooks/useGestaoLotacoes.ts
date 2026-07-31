@@ -35,6 +35,9 @@ export interface FuncItem {
   cpf: string | null
   cargo: string | null
   foto_url: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
   status: string
   lotacoes: Lotacao[]
   auth_user_id?: string | null
@@ -121,6 +124,9 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           cpf: f.cpf ?? null,
           cargo: f.cargo ?? null,
           foto_url: f.foto_url ?? null,
+          foto_avatar_path: f.foto_avatar_path ?? null,
+          foto_visualizacao_path: f.foto_visualizacao_path ?? null,
+          foto_updated_at: f.foto_updated_at ?? null,
           status: f.status ?? 'ativo',
           auth_user_id: f.auth_user_id ?? null,
           lotacoes: vincsData
