@@ -7,6 +7,7 @@ import { useSchoolStore, Escola } from '@/store/useSchoolStore'
 import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import { createClient } from '@/lib/supabaseClient'
 import { preloadFotos } from '@/lib/mapCache'
+import { getAvatarUrl } from '@/lib/photoHelper'
 
 // Importações dinâmicas para otimizar o bundle inicial
 const RelatorioNotas = dynamic(() => import('@/components/relatorios/RelatorioNotas'), {
@@ -214,6 +215,9 @@ export default function RelatoriosPage() {
                 id,
                 nome,
                 foto_url,
+                foto_avatar_path,
+                foto_visualizacao_path,
+                foto_updated_at,
                 latitude,
                 longitude,
                 modalidade_ensino,
@@ -255,7 +259,10 @@ export default function RelatoriosPage() {
                   nome: v.funcionarios.nome,
                   cargo: v.cargo || 'Funcionário',
                   escola: v.escolas?.nome || 'Escola Não Informada',
-                  foto_url: v.funcionarios.foto_url,
+                  foto_url: getAvatarUrl(v.funcionarios) || v.funcionarios.foto_url,
+                  foto_avatar_path: v.funcionarios.foto_avatar_path,
+                  foto_visualizacao_path: v.funcionarios.foto_visualizacao_path,
+                  foto_updated_at: v.funcionarios.foto_updated_at,
                   latitude: Number(v.funcionarios.latitude),
                   longitude: Number(v.funcionarios.longitude),
                   modalidade: isEJA ? 'EJA' : 'Regular',
@@ -326,6 +333,9 @@ export default function RelatoriosPage() {
               id,
               nome,
               foto_url,
+              foto_avatar_path,
+              foto_visualizacao_path,
+              foto_updated_at,
               latitude,
               longitude,
               escola_id,
@@ -369,7 +379,10 @@ export default function RelatoriosPage() {
                 return {
                   id: a.id,
                   nome: a.nome,
-                  foto_url: a.foto_url,
+                  foto_url: getAvatarUrl(a) || a.foto_url,
+                  foto_avatar_path: a.foto_avatar_path,
+                  foto_visualizacao_path: a.foto_visualizacao_path,
+                  foto_updated_at: a.foto_updated_at,
                   escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
                   turma: turmaNome || undefined,
                   latitude: Number(a.latitude),

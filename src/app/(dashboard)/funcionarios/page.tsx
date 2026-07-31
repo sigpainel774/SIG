@@ -152,13 +152,13 @@ export default function FuncionariosPage() {
       const selectFields =
         escolaId || !isAdminUser
           ? `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin, is_conta_especial,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
           : `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, data_nascimento, is_superadmin, is_conta_especial,
+          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
@@ -255,6 +255,9 @@ export default function FuncionariosPage() {
             status: (f.status as string) ?? 'ativo',
             formacao: f.formacao as string | null,
             foto_url: f.foto_url as string | null,
+            foto_avatar_path: f.foto_avatar_path as string | null,
+            foto_visualizacao_path: f.foto_visualizacao_path as string | null,
+            foto_updated_at: f.foto_updated_at as string | null,
             data_nascimento: f.data_nascimento as string | null,
             is_superadmin: f.is_superadmin as boolean | null,
             orgao: escola?.nome ?? null,
