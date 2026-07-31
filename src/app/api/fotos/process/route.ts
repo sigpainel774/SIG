@@ -46,31 +46,44 @@ export async function POST(req: NextRequest) {
     const buffer = await fileData.arrayBuffer()
 
     // 2. Processar com Sharp simultaneamente (Avatar e Visualização)
-    const [avatarBuffer, visualizacaoBuffer] = await Promise.all([
-      sharp(Buffer.from(buffer))
-        .resize(256, 256, { fit: 'cover', position: 'top' })
-        .webp({ quality: 80, effort: 4 })
-        .toBuffer(),
-      sharp(Buffer.from(buffer))
-        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85, effort: 4 })
-        .toBuffer()
-    ])
+    // .rotate() garante que fotos tiradas em celulares (com EXIF Orientation) sejam rotacionadas corretamente
+    let avatarBuffer: Buffer
+    let visualizacaoBuffer: Buffer
+    let originalOtimizadoBuffer: Buffer
+
+    try {
+      const [avBuf, visBuf, origBuf] = await Promise.all([
+        sharp(Buffer.from(buffer))
+          .rotate()
+          .resize(256, 256, { fit: 'cover', position: 'top' })
+          .webp({ quality: 80, effort: 4 })
+          .toBuffer(),
+        sharp(Buffer.from(buffer))
+          .rotate()
+          .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 85, effort: 4 })
+          .toBuffer(),
+        sharp(Buffer.from(buffer))
+          .rotate()
+          .webp({ quality: 90 })
+          .toBuffer()
+      ])
+      avatarBuffer = avBuf
+      visualizacaoBuffer = visBuf
+      originalOtimizadoBuffer = origBuf
+    } catch (sharpError) {
+      console.error('[API fotos/process] Erro no processamento Sharp (arquivo inválido ou corrompido):', sharpError)
+      // Tenta remover o arquivo temporário enviado para não deixar lixo no storage
+      await supabaseAdmin.storage.from('fotos-originais').remove([originalPath]).catch(() => {})
+      return NextResponse.json({ error: 'Formato de imagem inválido ou corrompido' }, { status: 400 })
+    }
 
     // 3. Montar os novos caminhos
     const timestamp = Date.now()
     const baseName = `${id}/foto_${timestamp}`
     const avatarPath = `${baseName}_avatar.webp`
     const visualizacaoPath = `${baseName}_vis.webp`
-    
-    // O originalPath já está num folder 'temp/userid/', vamos movê-lo para o path final ou deixá-lo lá.
-    // É melhor manter organizado. O upload final da original pode ser copiado.
     const finalOriginalPath = `${baseName}_original.webp`
-    
-    // Processar o original também para WebP, economiza muito espaço do bucket privado
-    const originalOtimizadoBuffer = await sharp(Buffer.from(buffer))
-        .webp({ quality: 90 })
-        .toBuffer()
 
     // 4. Buscar caminhos antigos no banco para limpeza (ES-Storage-Bloat)
     const { data: oldRecord } = await supabaseAdmin
