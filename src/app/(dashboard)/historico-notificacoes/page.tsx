@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check, Sliders } from 'lucide-react'
+import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check, CheckCheck, Sliders } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { ModalConfiguracoesNotificacoes } from '@/components/modals/modal-configuracoes-notificacoes'
+import { toast } from 'sonner'
 
 export default function HistoricoNotificacoesPage() {
   const router = useRouter()
@@ -68,6 +69,37 @@ export default function HistoricoNotificacoesPage() {
     setDataFim('')
     setStatus('todas')
     setBusca('')
+  }
+
+  const markAsRead = async (notifId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    const supabase = createClient()
+    try {
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', notifId)
+      if (error) throw error
+      setNotificacoes((prev) => prev.map((n) => (n.id === notifId ? { ...n, read: true } : n)))
+    } catch (error) {
+      console.error('Erro ao marcar notificação como lida:', error)
+    }
+  }
+
+  const markAllAsRead = async () => {
+    if (!funcionario?.auth_user_id) return
+    const supabase = createClient()
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', funcionario.auth_user_id)
+        .eq('read', false)
+
+      if (error) throw error
+      toast.success('Todas as notificações foram marcadas como lidas.')
+      loadNotificacoes()
+    } catch (error: any) {
+      console.error('Erro ao marcar todas como lidas:', error)
+      toast.error('Erro ao atualizar notificações.')
+    }
   }
 
   return (
@@ -143,11 +175,20 @@ export default function HistoricoNotificacoesPage() {
             className="bg-[#121212] border-[#3f3f46] text-white" 
           />
         </div>
-        <div>
+        <div className="flex gap-2">
+          {notificacoes.some((n) => !n.read) && (
+            <Button 
+              variant="outline" 
+              onClick={markAllAsRead}
+              className="h-10 border-[#3ea6ff]/40 bg-[#3ea6ff]/10 text-[#3ea6ff] hover:bg-[#3ea6ff]/20 cursor-pointer"
+            >
+              <CheckCheck className="w-4 h-4 mr-2" /> Marcar todas como lidas
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             onClick={limparFiltros}
-            className="h-10 text-[#aaa] hover:bg-[#2f2f33] hover:text-white"
+            className="h-10 text-[#aaa] hover:bg-[#2f2f33] hover:text-white cursor-pointer"
           >
             <RefreshCw className="w-4 h-4 mr-2" /> Limpar
           </Button>
@@ -160,21 +201,40 @@ export default function HistoricoNotificacoesPage() {
         {!loading && notificacoes.map((notif) => (
           <div 
             key={notif.id} 
-            className={`p-4 rounded-xl border flex gap-4 ${notif.read ? 'bg-[#181818] border-[#2f2f33]' : 'bg-[#1f1f23] border-[#3ea6ff]/30'}`}
+            className={`p-4 rounded-xl border flex gap-4 cursor-pointer transition-colors group ${notif.read ? 'bg-[#181818] border-[#2f2f33] hover:bg-[#222226]' : 'bg-[#1f1f23] border-[#3ea6ff]/30 hover:bg-[#25252a]'}`}
+            onClick={async (e) => {
+              if (!notif.read) {
+                await markAsRead(notif.id, e)
+              }
+              if (notif.link) {
+                router.push(notif.link)
+              }
+            }}
           >
-            <div className="pt-1">
+            <div className="pt-1 shrink-0">
               {notif.read ? (
                 <Bell className="w-5 h-5 text-[#aaa]" />
               ) : (
                 <Circle className="w-4 h-4 fill-[#3ea6ff] text-[#3ea6ff] mt-0.5" />
               )}
             </div>
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-1">
-                <h4 className="text-white font-medium">{notif.title}</h4>
-                <span className="text-xs text-[#aaa] whitespace-nowrap ml-4">
-                  {new Date(notif.created_at).toLocaleString('pt-BR')}
-                </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start mb-1 gap-2">
+                <h4 className="text-white font-medium truncate">{notif.title}</h4>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-[#aaa] whitespace-nowrap">
+                    {new Date(notif.created_at).toLocaleString('pt-BR')}
+                  </span>
+                  {!notif.read && (
+                    <button 
+                      onClick={(e) => markAsRead(notif.id, e)}
+                      className="text-[#aaa] hover:text-white p-1 rounded hover:bg-[#3f3f46]/50 transition-colors"
+                      title="Marcar como lida"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <p className="text-[#ccc] text-sm leading-relaxed">{notif.message}</p>
             </div>

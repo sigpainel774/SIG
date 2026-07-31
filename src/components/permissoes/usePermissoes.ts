@@ -40,6 +40,15 @@ export function usePermissoes() {
   // ── Estado: dados do banco ──────────────────────────────────────────────────
   const [escolas, setEscolas] = useState<Escola[]>([])
   const [funcionariosAll, setFuncionariosAll] = useState<FuncionarioSimples[]>([])
+  const [cargosLista, setCargosLista] = useState<string[]>([
+    'Prefeito(a) Municipal',
+    'Vice-Prefeito(a) Municipal',
+    'Secretário(a) Municipal de Educação',
+    'Chefe de Gabinete',
+    'Coordenador(a) Geral da Rede',
+    'Supervisor(a) de Ensino',
+    'Administrador(a) do Sistema / Root'
+  ])
   const [registros, setRegistros] = useState<RegistroPermissao[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -207,6 +216,18 @@ export function usePermissoes() {
       if (escolasData) {
         escolasLista = escolasData
         setEscolas(escolasData)
+      }
+
+      // 1.5. Carregar Catálogo de Cargos do Banco de Dados
+      const { data: cargosDb } = await supabase
+        .from('cargos')
+        .select('nome')
+        .eq('ativo', true)
+        .order('nome')
+
+      if (cargosDb && cargosDb.length > 0) {
+        const nomesDb = cargosDb.map((c: any) => c.nome as string)
+        setCargosLista((prev) => Array.from(new Set([...prev, ...nomesDb])))
       }
 
       // 2. Todos os funcionários (para o autocomplete e gestão de contas especiais)
@@ -507,6 +528,83 @@ export function usePermissoes() {
     }
   }
 
+  // ─── Alterar Cargo de Funcionário / Conta Especial ───────────────────────────
+  const handleUpdateCargo = async (funcionarioId: string, novoCargo: string, nomeFuncionario: string) => {
+    if (!funcionarioId || funcionarioId.trim() === '') {
+      toast.error('ID de usuário inválido.')
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      const cargoTratado = novoCargo.trim() ?? null
+
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ cargo: cargoTratado })
+        .eq('id', funcionarioId)
+
+      if (error) throw error
+
+      toast.success(`Cargo de "${nomeFuncionario}" atualizado para "${cargoTratado ?? 'Não informado'}"!`)
+
+      // Atualizar no estado local de funcionários
+      setFuncionariosAll((prev) =>
+        prev.map((f) => (f.id === funcionarioId ? { ...f, cargo: cargoTratado } : f))
+      )
+
+      // Garantir que o novo cargo esteja no catálogo visual
+      if (cargoTratado && !cargosLista.includes(cargoTratado)) {
+        setCargosLista((prev) => Array.from(new Set([...prev, cargoTratado])))
+      }
+
+      // Invalidação de cache de perfil do servidor
+      const func = funcionariosAll.find((f) => f.id === funcionarioId)
+      if (func?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(func.auth_user_id)
+      }
+    } catch (err: any) {
+      console.error('Erro ao atualizar cargo:', err)
+      toast.error('Erro ao atualizar cargo: ' + (err.message || 'Erro desconhecido'))
+    }
+  }
+
+  // ─── Adicionar Novo Cargo ao Catálogo de Cargos ──────────────────────────────
+  const handleAdicionarCargo = async (nomeCargo: string) => {
+    const nomeLimpo = nomeCargo.trim()
+    if (!nomeLimpo) {
+      toast.error('Informe o nome do novo cargo.')
+      return false
+    }
+
+    try {
+      const supabase = createClient()
+      // Tentar inserir na tabela public.cargos
+      const { error } = await supabase
+        .from('cargos')
+        .insert({
+          nome: nomeLimpo,
+          nivel: 1,
+          ativo: true,
+          descricao: 'Cargo especial cadastrado via Painel Root'
+        })
+
+      if (error && !error.message.includes('unique')) {
+        // Se a tabela não tiver constraint unique, não lançar fatal
+        console.warn('Nota ao cadastrar cargo em tabela public.cargos:', error.message)
+      }
+
+      setCargosLista((prev) => Array.from(new Set([...prev, nomeLimpo])))
+      toast.success(`Novo cargo "${nomeLimpo}" registrado no catálogo!`)
+      return true
+    } catch (err: any) {
+      console.error('Erro ao cadastrar novo cargo:', err)
+      toast.error('Falha ao cadastrar novo cargo: ' + (err.message || 'Erro de conexão'))
+      return false
+    }
+  }
+
   return {
     // refs
     autocompleteRef,
@@ -530,6 +628,7 @@ export function usePermissoes() {
     // dados
     escolas,
     funcionariosAll,
+    cargosLista,
     registros,
     loading,
     // formulário
@@ -559,6 +658,8 @@ export function usePermissoes() {
     limparFiltros,
     handleClickEditCard,
     handleToggleContaEspecial,
+    handleUpdateCargo,
+    handleAdicionarCargo,
     fetchDadosContasEspeciais: () => fetchRegistros(escolas),
     // edit mode store
     setEditMode,

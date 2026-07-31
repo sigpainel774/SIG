@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle } from 'lucide-react'
+import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -15,9 +15,12 @@ interface ContasEspeciaisViewProps {
 export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   const {
     funcionariosAll,
+    cargosLista = [],
     loading,
     isEditActive,
     handleToggleContaEspecial,
+    handleUpdateCargo,
+    handleAdicionarCargo,
     setModalSenhaOpen,
     fetchDadosContasEspeciais
   } = hook
@@ -25,6 +28,17 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<'todas' | 'especiais' | 'normais'>('todas')
   const [processandoId, setProcessandoId] = useState<string | null>(null)
+
+  // Estado para cadastro de novo cargo no sistema
+  const [mostrarNovoCargoForm, setMostrarNovoCargoForm] = useState(false)
+  const [novoCargoNome, setNovoCargoNome] = useState('')
+  const [salvandoNovoCargo, setSalvandoNovoCargo] = useState(false)
+
+  // Estado para alteração rápida de cargo por conta
+  const [editandoCargoId, setEditandoCargoId] = useState<string | null>(null)
+  const [cargoSelecionadoIdMap, setCargoSelecionadoIdMap] = useState<Record<string, string>>({})
+  const [cargoCustomInputMap, setCargoCustomInputMap] = useState<Record<string, string>>({})
+  const [salvandoCargoFuncId, setSalvandoCargoFuncId] = useState<string | null>(null)
 
   // Filtragem de funcionários em memória
   const contasFiltradas = useMemo(() => {
@@ -60,6 +74,46 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
     setProcessandoId(null)
   }
 
+  // Submeter novo cargo ao catálogo
+  const handleCadastrarNovoCargoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!novoCargoNome.trim()) return
+
+    setSalvandoNovoCargo(true)
+    const ok = await handleAdicionarCargo(novoCargoNome)
+    setSalvandoNovoCargo(false)
+
+    if (ok) {
+      setNovoCargoNome('')
+      setMostrarNovoCargoForm(false)
+    }
+  }
+
+  // Submeter alteração de cargo para uma conta
+  const handleSalvarCargoConta = async (funcId: string, nomeFunc: string) => {
+    if (!isEditActive) {
+      setModalSenhaOpen(true)
+      return
+    }
+
+    const selValue = cargoSelecionadoIdMap[funcId]
+    const customValue = cargoCustomInputMap[funcId]
+
+    let cargoFinal = selValue
+    if (selValue === '__CUSTOM__') {
+      cargoFinal = customValue
+    }
+
+    if (!cargoFinal || !cargoFinal.trim()) {
+      return
+    }
+
+    setSalvandoCargoFuncId(funcId)
+    await handleUpdateCargo(funcId, cargoFinal, nomeFunc)
+    setSalvandoCargoFuncId(null)
+    setEditandoCargoId(null)
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* ── Banner Informativo ────────────────────────────────────────────── */}
@@ -71,31 +125,91 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-white tracking-tight">
-                Gestão de Contas Especiais
+                Gestão de Contas Especiais e Cargos Root
               </h2>
               <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-xs font-semibold">
                 {totalEspeciais} {totalEspeciais === 1 ? 'Conta Especial' : 'Contas Especiais'}
               </Badge>
             </div>
             <p className="text-xs text-zinc-300 mt-1 leading-relaxed max-w-3xl">
-              Contas marcadas como <strong>Especiais</strong> (como contas de teste, superadmins ou perfis estritamente administrativos) 
-              são <strong>omitidas da listagem operacional de funcionários</strong> e dos <strong>relatórios corporativos/escolares</strong>, 
-              garantindo que os números de pessoal do município permaneçam 100% autênticos.
+              Contas marcadas como <strong>Especiais</strong> (como Prefeito, Secretários ou contas de teste) 
+              são <strong>omitidas das listas escolares padrão</strong>. Aqui você também pode atribuir e cadastrar cargos estratégicos da rede.
             </p>
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchDadosContasEspeciais}
-          disabled={loading}
-          className="bg-card hover:bg-hoverCustom border-borderCustom text-zinc-300 text-xs gap-2 rounded-xl shrink-0 cursor-pointer"
-        >
-          <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setMostrarNovoCargoForm(!mostrarNovoCargoForm)}
+            className="bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/40 text-amber-300 text-xs gap-1.5 rounded-xl cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Novo Cargo</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDadosContasEspeciais}
+            disabled={loading}
+            className="bg-card hover:bg-hoverCustom border-borderCustom text-zinc-300 text-xs gap-2 rounded-xl cursor-pointer"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+            <span>Atualizar</span>
+          </Button>
+        </div>
       </div>
+
+      {/* ── Form Inline: Cadastrar Novo Cargo no Sistema ──────────────────── */}
+      {mostrarNovoCargoForm && (
+        <form
+          onSubmit={handleCadastrarNovoCargoSubmit}
+          className="bg-[#18181b] border border-amber-500/40 rounded-2xl p-4 shadow-xl space-y-3 animate-in slide-in-from-top-2 duration-200"
+        >
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+            <Briefcase className="w-4 h-4" />
+            <span>Cadastrar Novo Cargo no Catálogo do Sistema</span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Input
+              type="text"
+              placeholder="Ex: Prefeito(a) Municipal, Chefe de Gabinete..."
+              value={novoCargoNome}
+              onChange={(e) => setNovoCargoNome(e.target.value)}
+              className="flex-1 bg-input border-borderCustom text-white text-sm rounded-xl focus:border-amber-500"
+              autoFocus
+            />
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                type="submit"
+                disabled={salvandoNovoCargo || !novoCargoNome.trim()}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs gap-1.5 rounded-xl h-10 px-4 w-full sm:w-auto cursor-pointer"
+              >
+                {salvandoNovoCargo ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>Salvar Cargo</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMostrarNovoCargoForm(false)}
+                className="bg-transparent border-zinc-700 text-zinc-400 hover:text-white text-xs rounded-xl h-10 px-3 cursor-pointer"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </form>
+      )}
 
       {/* ── Painel de Filtros e Busca ───────────────────────────────────────── */}
       <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-md space-y-4">
@@ -173,6 +287,12 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
             {contasFiltradas.map((item) => {
               const isEspecial = !!item.is_conta_especial
               const isBusy = processandoId === item.id
+              const isEditingCargo = editandoCargoId === item.id
+              const isSavingCargo = salvandoCargoFuncId === item.id
+
+              const cargoAtual = item.cargo ?? 'Cargo não informado'
+              const selValue = cargoSelecionadoIdMap[item.id] ?? cargoAtual
+              const isCustomSelected = selValue === '__CUSTOM__'
 
               return (
                 <div
@@ -192,7 +312,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                     </div>
                   )}
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h4 className="text-base font-bold text-white flex items-center gap-2">
@@ -209,10 +329,96 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-zinc-300 pt-1">
-                      <span className="bg-zinc-800/80 px-2.5 py-1 rounded-md border border-zinc-700/60 font-medium">
-                        {item.cargo ?? 'Cargo não informado'}
-                      </span>
+                    {/* Exibição e Edição de Cargo */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-zinc-400 font-semibold flex items-center gap-1">
+                          <Briefcase className="w-3 h-3 text-amber-400" />
+                          Cargo da Conta:
+                        </span>
+                        {!isEditingCargo && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditandoCargoId(item.id)
+                              setCargoSelecionadoIdMap((prev) => ({ ...prev, [item.id]: cargoAtual }))
+                            }}
+                            className="text-[11px] text-amber-400 hover:underline font-semibold cursor-pointer"
+                          >
+                            Alterar Cargo
+                          </button>
+                        )}
+                      </div>
+
+                      {isEditingCargo ? (
+                        <div className="space-y-2 bg-[#121214] p-3 rounded-xl border border-amber-500/30 animate-in fade-in duration-150">
+                          <select
+                            value={selValue}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              setCargoSelecionadoIdMap((prev) => ({ ...prev, [item.id]: v }))
+                            }}
+                            className="w-full bg-[#1c1c21] border border-borderCustom text-white text-xs rounded-lg p-2 focus:border-amber-500 cursor-pointer"
+                          >
+                            <optgroup label="Cargos Especiais & Cadastrados">
+                              {cargosLista.map((cg) => (
+                                <option key={cg} value={cg}>
+                                  {cg}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Outro">
+                              <option value="__CUSTOM__">+ Digitar outro cargo...</option>
+                            </optgroup>
+                          </select>
+
+                          {isCustomSelected && (
+                            <Input
+                              type="text"
+                              placeholder="Digite o cargo personalizado..."
+                              value={cargoCustomInputMap[item.id] ?? ''}
+                              onChange={(e) => {
+                                const v = e.target.value
+                                setCargoCustomInputMap((prev) => ({ ...prev, [item.id]: v }))
+                              }}
+                              className="bg-input border-borderCustom text-white text-xs rounded-lg h-9"
+                              autoFocus
+                            />
+                          )}
+
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditandoCargoId(null)}
+                              className="h-7 text-[11px] bg-transparent border-zinc-700 text-zinc-400 hover:text-white rounded-lg px-2 cursor-pointer"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={isSavingCargo}
+                              onClick={() => handleSalvarCargoConta(item.id, item.nome)}
+                              className="h-7 text-[11px] bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg px-2.5 gap-1 cursor-pointer"
+                            >
+                              {isSavingCargo ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3" />
+                              )}
+                              <span>Confirmar</span>
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-amber-500/10 text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-bold tracking-wide">
+                            {cargoAtual}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {isEspecial ? (
