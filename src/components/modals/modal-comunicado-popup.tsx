@@ -242,7 +242,7 @@ export function ModalComunicadoPopup() {
             className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-extrabold h-11 sm:h-12 px-6 rounded-xl shadow-lg shadow-amber-500/20 text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
           >
             <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span>Li e compreendi</span>
+            <span>Lido</span>
           </Button>
         </div>
       </div>
