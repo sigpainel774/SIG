@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { History, Home, RefreshCw, ArrowLeft, Bell, Circle, Check, CheckCheck, Sliders } from 'lucide-react'
+import { usePushNotification } from '@/hooks/usePushNotification'
+import { History, Home, RefreshCw, ArrowLeft, Bell, BellOff, Circle, Check, CheckCheck, Sliders, Lock, Loader2, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { ModalConfiguracoesNotificacoes } from '@/components/modals/modal-configuracoes-notificacoes'
@@ -22,6 +23,16 @@ export default function HistoricoNotificacoesPage() {
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [configOpen, setConfigOpen] = useState(false)
+
+  const {
+    isSupported,
+    permissionState,
+    isSubscribed,
+    loading: pushLoading,
+    subscribe,
+    unsubscribe,
+    checkSubscription,
+  } = usePushNotification()
 
   const canManage = funcionario?.is_superadmin || isAdminGlobalOrRoot?.()
 
@@ -129,6 +140,98 @@ export default function HistoricoNotificacoesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Banner de Ativação / Status de Push Notifications */}
+      {isSupported && (
+        <div className="bg-[#1f1f23] border border-[#2f2f33] rounded-xl p-4 sm:p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg bg-[#3ea6ff]/10 text-[#3ea6ff] shrink-0 mt-0.5 sm:mt-0">
+                <Bell className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-white text-base">Notificações Push no Dispositivo</h3>
+                  {isSubscribed && permissionState === 'granted' && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <CheckCircle2 className="w-3 h-3" /> Ativado
+                    </span>
+                  )}
+                  {permissionState === 'denied' && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                      <Lock className="w-3 h-3" /> Bloqueado no Navegador
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[#aaa] mt-1 leading-relaxed">
+                  Receba alertas nativos instantâneos de mensagens, comunicados do mural e solicitações neste aparelho.
+                </p>
+              </div>
+            </div>
+
+            {/* Botão Principal de Ativar / Desativar */}
+            {permissionState !== 'denied' && (
+              <Button
+                onClick={async () => {
+                  if (isSubscribed) {
+                    const ok = await unsubscribe()
+                    if (ok) toast.info('Notificações push desativadas neste dispositivo.')
+                    else toast.error('Erro ao desativar notificações.')
+                  } else {
+                    const ok = await subscribe()
+                    if (ok) {
+                      toast.success('Notificações push ativadas com sucesso!')
+                    } else {
+                      toast.error('Não foi possível ativar as notificações push.')
+                    }
+                  }
+                }}
+                disabled={pushLoading}
+                className={`shrink-0 cursor-pointer text-xs font-semibold transition-all h-9 px-4 ${
+                  isSubscribed
+                    ? 'bg-[#2a2a2e] hover:bg-[#333338] text-white border border-[#3f3f46]'
+                    : 'bg-[#3ea6ff] hover:bg-[#2b95ee] text-zinc-950 font-bold'
+                }`}
+              >
+                {pushLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : isSubscribed ? (
+                  <BellOff className="w-4 h-4 mr-2" />
+                ) : (
+                  <Bell className="w-4 h-4 mr-2" />
+                )}
+                {isSubscribed ? 'Desativar neste Aparelho' : 'Ativar Notificações no Dispositivo'}
+              </Button>
+            )}
+          </div>
+
+          {/* Banner de Alerta em caso de Permissão Bloqueada (denied) */}
+          {permissionState === 'denied' && (
+            <div className="bg-rose-500/10 border border-rose-500/25 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-rose-300">
+              <div className="flex items-start gap-3">
+                <Lock className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-rose-200">As notificações estão bloqueadas nas configurações do seu navegador.</p>
+                  <p className="text-rose-300/90 leading-relaxed">
+                    Para reativar: clique no ícone de <strong>cadeado 🔒</strong> na barra de endereço (topo da tela), altere a opção <strong>"Notificações"</strong> para <strong>"Permitir"</strong> e clique em Reverificar.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => {
+                  checkSubscription()
+                  toast.info('Verificando permissões do navegador...')
+                }}
+                variant="outline"
+                className="shrink-0 cursor-pointer bg-rose-950/40 border-rose-500/40 text-rose-200 hover:bg-rose-900/60 hover:text-white text-xs h-8"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Reverificar Permissão
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-[#1f1f23] border border-[#2f2f33] rounded-xl p-4 flex flex-wrap gap-4 items-end">

@@ -44,3 +44,6 @@ next-env.d.ts
  
 # Documentacao local
 PERMISSOES_ARQUITETURA.md
+
+# Relatorios locais em PDF
+/output/pdf/

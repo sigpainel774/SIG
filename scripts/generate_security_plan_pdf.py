@@ -93,14 +93,43 @@ def header_footer(canvas, doc):
 
 story = []
 # Cover
-cover = Table([[p("PLANO INSTITUCIONAL DE<br/>SEGURANÇA, BACKUP E<br/>RECUPERAÇÃO DO SIG", "CoverTitle"),
-                p("Prefeitura Municipal<br/>Ambiente: Supabase + Vercel + GitHub<br/>Versão 1.0 - 01 de agosto de 2026", "CoverSub")]],
+cover = Table([[p("RELATÓRIO DE SEGURANÇA<br/>E EFICIÊNCIA SIG -<br/>SAPEAÇU", "CoverTitle"),
+                p("Prefeitura Municipal de Sapeaçu<br/>Segurança, Backup, Recuperação e Economia<br/>Versão 1.0 - 01 de agosto de 2026", "CoverSub")]],
               colWidths=[11.8*cm, 5.4*cm], rowHeights=[14.8*cm])
 cover.setStyle(TableStyle([("BACKGROUND", (0,0), (-1,-1), NAVY), ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                            ("LEFTPADDING", (0,0), (-1,-1), 16), ("RIGHTPADDING", (0,0), (-1,-1), 16),
                            ("LINEAFTER", (0,0), (0,-1), 0.8, colors.HexColor("#31506F"))]))
 story += [Spacer(1, 3.1*cm), cover, Spacer(1, .5*cm),
           p("Documento de decisão e implantação. Não contém senhas, chaves, URLs privadas ou dados pessoais.", "Small"), PageBreak()]
+
+story += [p("Seção inicial - Operação paralela assistida e econômica", "H1x"),
+          p("A adoção inicial do SIG pode ocorrer lado a lado com a operação administrativa atual. Nesta modalidade, o sistema atua como uma camada avançada de gestão de dados, relatórios, indicadores, consulta e auditoria, sem exigir a substituição imediata de formulários impressos, assinaturas físicas ou arquivos já existentes. É a forma recomendada para iniciar com cautela, baixo custo e aprendizagem institucional."),
+          callout("Objetivo da modalidade", "Criar uma fonte digital organizada e confiável para decisões e relatórios, enquanto a Secretaria mantém os documentos físicos que ainda forem necessários por rotina, legislação, auditoria ou preferência operacional. O papel deixa de ser a única fonte de informação, mas não é eliminado por decreto."),
+          p("O que funciona no SIG desde o início", "H2x"),
+          table(["Uso digital prioritário", "Operação paralela preservada", "Resultado"], [
+              ["Cadastro único de alunos, servidores, escolas, turmas, transporte e ocorrências", "Pastas físicas e formulários já obrigatórios continuam arquivados", "Dados pesquisáveis, menos duplicidade e relatórios mais rápidos."],
+              ["Painéis, relatórios, filtros, exportações e indicadores de gestão", "Impressão de relatórios oficiais, reuniões e processos que exigem papel", "Informação atualizada sem abandonar a rotina formal."],
+              ["Registro de anexos novos e referências ao local do documento físico", "Acervo histórico é digitalizado apenas por prioridade e consulta frequente", "Evita custo de digitalização massiva logo no início."],
+              ["Auditoria de alterações, controle de perfis e histórico digital", "Conferência e assinatura física quando exigidas", "Mais rastreabilidade e menor risco de perda de informação."],
+          ], [5.3*cm, 6.2*cm, 5.7*cm]),
+          p("Modalidade de backup de baixo custo", "H2x"),
+          table(["Camada", "Configuração econômica recomendada", "Limite assumido"], [
+              ["Supabase", "Plano Pro com backups diários nativos e retenção de 7 dias", "Sem restauração por minuto; a recuperação depende do ponto diário disponível."],
+              ["Cópia externa", "Dump lógico diário do banco, cópia semanal de Storage e mirror do GitHub", "RPO de até 24 horas para a cópia externa."],
+              ["Mídias", "Dois SSDs cifrados em rodízio desde o início; terceiro SSD assim que o orçamento permitir", "Um SSD fica desconectado e guardado; nunca depender de uma única mídia."],
+              ["Execução", "Agendamento em computador municipal existente ou mini-PC simples; botão manual apenas para solicitar cópia extraordinária", "Recuperação é manual e testada; não requer serviço contínuo caro."],
+          ], [3.2*cm, 9.4*cm, 4.6*cm]),
+          callout("Custo e decisão", "Esta fase dispensa o PITR inicialmente e reduz a operação para cerca de R$ 150 a R$ 350 por mês, além do plano Vercel/GitHub já contratado e dos equipamentos. Em contrapartida, a perda máxima de dados em um incidente pode chegar a 24 horas. Para processos críticos ou quando o SIG passar a ser a única fonte operacional, a recomendação é migrar para o nível com PITR."),
+          p("Gatilhos para evolução", "H2x"), bullet([
+              "Quando o SIG se tornar a fonte oficial de uma rotina crítica, como frequência, dados de transporte, documentos digitais ou relatórios obrigatórios.",
+              "Quando uma perda de até 24 horas de informação deixar de ser aceitável para a Secretaria.",
+              "Após 90 a 180 dias de uso paralelo, com dados de impressão, produtividade e incidentes avaliados pela gestão.",
+          ]),
+          p("Regras de segurança que permanecem obrigatórias", "H2x"), bullet([
+              "Contas institucionais, MFA, acessos individuais, permissões por perfil e nunca compartilhar credenciais.",
+              "Cópias cifradas com verificação de hash; teste mensal de leitura/restauração de uma amostra.",
+              "Registrar a referência física durante a fase paralela; proibir dados de alunos e servidores em pendrives, e-mails pessoais ou planilhas sem proteção.",
+          ]), PageBreak()]
 
 story += [p("1. Decisão executiva", "H1x"),
           p("O SIG deve passar a ser um ativo institucional da Prefeitura, sem retirar do desenvolvedor a capacidade de operar, evoluir e atender o sistema. A solução recomendada é separar propriedade institucional de operação técnica, usar contas pessoais nominativas e manter dois proprietários institucionais em cada plataforma."),
@@ -286,7 +315,29 @@ story += [p("10. Plano de execução e evidências", "H1x"),
               ["Janela de manutenção", "Aprovar procedimento de parada e comunicação para restores de produção."],
           ], [5.3*cm, 13.9*cm]), PageBreak()]
 
-story += [p("11. Referências oficiais e notas técnicas", "H1x"),
+story += [p("11. Estimativa orçamentária da continuidade e backup", "H1x"),
+          p("Valores de referência para planejamento em agosto de 2026. Não constituem cotação nem autorização de despesa; a Prefeitura deve realizar pesquisa de preços e aplicar suas regras de contratação. Valores em dólar dependem de câmbio, IOF, tributos e consumo."),
+          table(["Investimento inicial", "Quantidade", "Faixa estimada (R$)"], [
+              ["SSD externo confiável, 1 TB, USB 3.2/USB-C", "3", "1.800 a 3.000"],
+              ["Mini-PC de backup (Intel N100, 16 GB RAM, 512 GB SSD ou equivalente)", "1", "1.500 a 2.500"],
+              ["Nobreak para o mini-PC", "1", "500 a 900"],
+              ["Cofre/armário de mídia com chave", "1", "700 a 1.500"],
+              ["Chaves físicas MFA para administradores", "3 a 4", "450 a 1.200"],
+              ["Subtotal equipamentos", "-", "4.950 a 9.100"],
+              ["Automação, painel de backup manual, testes e runbooks", "Serviço", "6.000 a 15.000"],
+              ["Total estimado de implantação", "-", "10.950 a 24.100"],
+          ], [9.4*cm, 2.7*cm, 7.2*cm]),
+          p("Custo recorrente estimado", "H2x"),
+          table(["Componente", "Referência", "Faixa mensal (R$)"], [
+              ["Supabase Pro", "US$ 25/mês; inclui backup diário com 7 dias", "aprox. 130 a 160"],
+              ["PITR Supabase", "A partir de US$ 100/mês para 7 dias; recuperação por ponto no tempo", "aprox. 520 a 650"],
+              ["Energia/conectividade do mini-PC", "Execução local automatizada", "20 a 50"],
+              ["Cópia externa cifrada opcional", "Complemento aos SSDs, conforme volume", "30 a 100"],
+              ["Operação de backup recomendada", "Sem incluir Vercel/GitHub e excedentes de uso", "700 a 960"],
+          ], [6.5*cm, 7.0*cm, 5.8*cm]),
+          callout("Decisão de custo", "A solução com PITR é a recomendada para dados educacionais críticos, pois permite retorno a um instante anterior ao incidente. A opção sem PITR reduz o custo recorrente, mas aumenta a perda potencial entre dumps. Vercel e GitHub não têm aumento obrigatório apenas por esse mecanismo; manter seus planos atuais e prever eventual consumo excedente."), PageBreak()]
+
+story += [p("12. Referências oficiais e notas técnicas", "H1x"),
           p("As recomendações deste documento foram elaboradas a partir do estado conhecido do repositório SIG em 01/08/2026 e das fontes oficiais abaixo. Os detalhes de planos e funcionalidades devem ser revalidados na contratação, pois serviços em nuvem podem mudar."),
           p("Supabase", "H2x"), bullet([
               "Database Backups: backups diários, PITR, restauração e limitações; destaca que Storage não integra o backup de banco e que senhas de roles customizadas não são preservadas. https://supabase.com/docs/guides/platform/backups",
@@ -307,7 +358,7 @@ story += [p("11. Referências oficiais e notas técnicas", "H1x"),
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 doc = SimpleDocTemplate(str(OUT), pagesize=A4, rightMargin=1.8*cm, leftMargin=1.8*cm,
-                        topMargin=1.55*cm, bottomMargin=1.75*cm, title="Plano de Segurança, Backup e Recuperação - SIG",
+                        topMargin=1.55*cm, bottomMargin=1.75*cm, title="Relatório de Segurança e Eficiência SIG - Sapeaçu",
                         author="SIG / Prefeitura Municipal")
 doc.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
 print(OUT)
