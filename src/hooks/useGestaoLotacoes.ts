@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { logAudit } from '@/lib/audit/audit-agent'
+import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
 
@@ -348,6 +349,24 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
 
       toast.success(`Lotação adicionada em ${escolaNome}`)
 
+      // Notificar chefes da escola de destino e o próprio funcionário
+      try {
+        const chefesDestino = await coletarAuthUserIds(supabase, [escolaId], [2])
+        const destinatarios = new Set<string>(chefesDestino)
+        if (selecionado?.auth_user_id) destinatarios.add(selecionado.auth_user_id)
+        if (destinatarios.size > 0) {
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(destinatarios),
+            p_title: 'Nova Lotação Registrada',
+            p_message: `O funcionário ${selecionado.nome} foi vinculado à escola ${escolaNome} pelo Administrador.`,
+            p_type: 'INFO',
+            p_link: '/funcionarios'
+          })
+        }
+      } catch (notifErr) {
+        console.warn('Erro não-crítico ao notificar lotação adicionada:', notifErr)
+      }
+
       if (selecionado?.auth_user_id) {
         await invalidarCacheHelper(selecionado.auth_user_id)
       }
@@ -404,6 +423,27 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         performedBy: performer,
       })
 
+      // Notificar chefes de origem, chefes de destino e o próprio funcionário
+      try {
+        const escolasEnvolvidas: string[] = []
+        if (lotacaoOrigem?.escola_id) escolasEnvolvidas.push(lotacaoOrigem.escola_id)
+        if (destinoEscolaId) escolasEnvolvidas.push(destinoEscolaId)
+        const chefes = await coletarAuthUserIds(supabase, escolasEnvolvidas, [2])
+        const destinatarios = new Set<string>(chefes)
+        if (selecionado?.auth_user_id) destinatarios.add(selecionado.auth_user_id)
+        if (destinatarios.size > 0) {
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(destinatarios),
+            p_title: 'Mudança de Lotação',
+            p_message: `O funcionário ${selecionado.nome} foi transferido de ${lotacaoOrigem?.escolaNome ?? 'escola anterior'} para ${escolaDestinoNome} pelo Administrador.`,
+            p_type: 'INFO',
+            p_link: '/funcionarios'
+          })
+        }
+      } catch (notifErr) {
+        console.warn('Erro não-crítico ao notificar mudança de lotação:', notifErr)
+      }
+
       toast.success(`Funcionário transferido para ${escolaDestinoNome}`)
 
       if (selecionado?.auth_user_id) {
@@ -444,6 +484,28 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         oldData: { escola: lotacao.escolaNome, cargo: lotacao.cargo },
         performedBy: performer,
       })
+
+      // ES-6: Notificar chefes da unidade e o próprio funcionário desvinculado
+      try {
+        const escolaNomeRem = lotacao.escolaNome ?? lotacao.escola_id
+        const destinatarios = new Set<string>()
+        if (lotacao.escola_id) {
+          const chefes = await coletarAuthUserIds(supabase, [lotacao.escola_id], [2])
+          chefes.forEach((id) => destinatarios.add(id))
+        }
+        if (selecionado?.auth_user_id) destinatarios.add(selecionado.auth_user_id)
+        if (destinatarios.size > 0) {
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(destinatarios),
+            p_title: 'Lotação Encerrada',
+            p_message: `A lotação do funcionário ${selecionado?.nome ?? 'Funcionário'} na escola ${escolaNomeRem} foi encerrada pelo Administrador.`,
+            p_type: 'WARNING',
+            p_link: '/funcionarios'
+          })
+        }
+      } catch (notifErr) {
+        console.warn('Erro não-crítico ao notificar remoção de lotação:', notifErr)
+      }
 
       toast.success('Lotação removida.')
 
@@ -492,37 +554,20 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
 
       const transferId = insertData?.id
 
-      const { data: acessosDest } = await supabase
-        .from('acessos_usuarios')
-        .select('funcionarios(id)')
-        .eq('escola_id', destinoEscolaId)
-        .eq('nivel', 2)
-        .eq('ativo', true)
+      // Correção 2d (ES): usar auth_user_id correto via helper centralizado
+      const chefesDestino = await coletarAuthUserIds(supabase, [destinoEscolaId], [2])
+      const chefesOrigem = await coletarAuthUserIds(supabase, [escolaAtivaId!], [2])
+      const adminsGlobais = await coletarAuthUserIdsAdminsGlobais(supabase)
 
-      const userIds = new Set<string>()
-      if (acessosDest) {
-        acessosDest.forEach((acc: any) => {
-          const funcId = acc.funcionarios?.id
-          if (funcId) userIds.add(funcId)
-        })
-      }
+      const destinatarios = new Set<string>([
+        ...chefesDestino,
+        ...chefesOrigem,
+        ...adminsGlobais,
+      ])
 
-      const { data: acessosGlobais } = await supabase
-        .from('acessos_usuarios')
-        .select('funcionarios(id)')
-        .eq('nivel', 1)
-        .eq('ativo', true)
-
-      if (acessosGlobais) {
-        acessosGlobais.forEach((acc: any) => {
-          const funcId = acc.funcionarios?.id
-          if (funcId) userIds.add(funcId)
-        })
-      }
-
-      if (userIds.size > 0) {
+      if (destinatarios.size > 0) {
         await (supabase as any).rpc('criar_notificacoes', {
-          p_destinatarios: Array.from(userIds),
+          p_destinatarios: Array.from(destinatarios),
           p_title: 'Solicitação de Transferência de Lotação',
           p_message: `O Diretor da escola ${escolaOrigemNome} solicitou a transferência do funcionário ${selecionado.nome} para a escola ${escolaDestinoNome}.`,
           p_type: 'INFO',

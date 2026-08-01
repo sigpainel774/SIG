@@ -10,6 +10,7 @@ import { ArrowRightLeft, Search, FileUp, Building2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { logAudit } from '@/lib/audit/audit-agent'
+import { coletarAuthUserIds } from '@/lib/notifications/lotacaoNotifications'
 import { toast } from 'sonner'
 
 interface ModalTransferirFuncionarioProps {
@@ -197,41 +198,32 @@ export function ModalTransferirFuncionario({
 
         const transferId = insertData?.id
 
-        // Notificar diretores e secretários da escola destino (níveis 2 e 3 ativos)
-        const { data: acessosDest } = await supabase
-          .from('acessos_usuarios')
-          .select('funcionarios(id)')
-          .eq('escola_id', escolaDestinoId)
-          .in('nivel', [2, 3])
-          .eq('ativo', true)
+        // ES-2 corrigido: usar helper com auth_user_id correto.
+        // Removído bloco de escolas(diretor_id) — diretor já é capturado via acessos_usuarios nivel 2.
+        // Notificar chefes do DESTINO (nível 2 e 3) e chefes de ORIGEM (nível 2)
+        const chefesDestino = await coletarAuthUserIds(supabase, [escolaDestinoId], [2, 3])
+        const chefesOrigem = await coletarAuthUserIds(supabase, [escolaAtivaId!], [2])
 
-        const { data: escolaDest } = await supabase
-          .from('escolas')
-          .select('diretor_id')
-          .eq('id', escolaDestinoId)
-          .single()
+        const destinatariosDestino = new Set<string>(chefesDestino)
+        const destinatariosOrigem = new Set<string>(chefesOrigem)
 
-        const userIds = new Set<string>()
-        if (escolaDest?.diretor_id) {
-          userIds.add(escolaDest.diretor_id)
-        }
-
-        if (acessosDest) {
-          acessosDest.forEach((acc: any) => {
-            const funcId = acc.funcionarios?.id
-            if (funcId) {
-              userIds.add(funcId)
-            }
-          })
-        }
-
-        if (userIds.size > 0) {
+        if (destinatariosDestino.size > 0) {
           await (supabase as any).rpc('criar_notificacoes', {
-            p_destinatarios: Array.from(userIds),
+            p_destinatarios: Array.from(destinatariosDestino),
             p_title: 'Nova Solicitação de Transferência de Funcionário',
             p_message: `O funcionário ${funcionarioObj.nome} solicitou transferência para sua escola.`,
             p_type: 'INFO',
             p_link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`
+          })
+        }
+
+        if (destinatariosOrigem.size > 0) {
+          await (supabase as any).rpc('criar_notificacoes', {
+            p_destinatarios: Array.from(destinatariosOrigem),
+            p_title: 'Transferência de Funcionário Solicitada',
+            p_message: `Uma solicitação de transferência do funcionário ${funcionarioObj.nome} para outra escola foi registrada.`,
+            p_type: 'INFO',
+            p_link: `/transferencias?tab=funcionarios&subtab=submissoes`
           })
         }
 

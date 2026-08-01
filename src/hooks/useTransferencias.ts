@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { logAudit } from '@/lib/audit/audit-agent'
+import { coletarAuthUserIds } from '@/lib/notifications/lotacaoNotifications'
 import { toast } from 'sonner'
 
 export function useTransferencias() {
@@ -339,14 +340,51 @@ export function useTransferencias() {
           }
         }
 
-        if (transferenciaSelecionada.solicitante_id) {
+        // 4a-4c (ES-5): bloco fora do if/else — cobre tanto o branch lotacao_id quanto o branch sem lotacao_id
+        // 4a: corrigido para usar solicitante.auth_user_id em vez de solicitante_id (funcionarios.id)
+        const solicitanteAuthId = transferenciaSelecionada.solicitante?.auth_user_id
+        const funcionarioAuthId = transferenciaSelecionada.funcionarios?.auth_user_id
+
+        const destinatariosDecisao = new Set<string>()
+        if (solicitanteAuthId) destinatariosDecisao.add(solicitanteAuthId)
+        // 4b: notificar o próprio funcionário transferido
+        if (funcionarioAuthId && funcionarioAuthId !== solicitanteAuthId) {
+          destinatariosDecisao.add(funcionarioAuthId)
+        }
+
+        if (destinatariosDecisao.size > 0) {
           await (supabase as any).rpc('criar_notificacoes', {
-            p_destinatarios: [transferenciaSelecionada.solicitante_id],
+            p_destinatarios: Array.from(destinatariosDecisao),
             p_title: `Transferência de Funcionário ${statusDestino}`,
             p_message: `O pedido de transferência do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
             p_type: aceitar ? 'SUCCESS' : 'ERROR',
             p_link: '/transferencias?tab=funcionarios&subtab=submissoes'
           })
+        }
+
+        // 4c: ao aceitar, notificar chefes (nível 2) da escola de ORIGEM
+        if (aceitar && transferenciaSelecionada.escola_origem_id) {
+          try {
+            const chefesOrigem = await coletarAuthUserIds(
+              supabase,
+              [transferenciaSelecionada.escola_origem_id],
+              [2]
+            )
+            const destinatariosOrigem = chefesOrigem.filter(
+              (id) => id !== solicitanteAuthId && id !== funcionarioAuthId
+            )
+            if (destinatariosOrigem.length > 0) {
+              await (supabase as any).rpc('criar_notificacoes', {
+                p_destinatarios: destinatariosOrigem,
+                p_title: 'Funcionário Transferido',
+                p_message: `O funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi transferido para ${transferenciaSelecionada.destino?.nome ?? 'outra escola'}.`,
+                p_type: 'INFO',
+                p_link: '/transferencias?tab=funcionarios'
+              })
+            }
+          } catch (notifErr) {
+            console.warn('Erro não-crítico ao notificar chefes de origem:', notifErr)
+          }
         }
       }
 
@@ -384,21 +422,26 @@ export function useTransferencias() {
 
       if (error) throw error
 
+      // ES-1 corrigido: usar auth_user_id em vez de funcionarios.id
       const userIds = new Set<string>()
-      
+
       const { data: acessosEnvolvidos } = await supabase
         .from('acessos_usuarios')
-        .select('funcionarios(id)')
+        .select('funcionarios(auth_user_id)')
         .in('escola_id', [transferenciaSelecionada.escola_origem_id, transferenciaSelecionada.escola_destino_id])
         .eq('nivel', 2)
         .eq('ativo', true)
 
       if (acessosEnvolvidos) {
         acessosEnvolvidos.forEach((acc: any) => {
-          const funcId = acc.funcionarios?.id
-          if (funcId) userIds.add(funcId)
+          const authId = acc.funcionarios?.auth_user_id
+          if (authId && typeof authId === 'string') userIds.add(authId)
         })
       }
+
+      // Notificar também o próprio funcionário que teve a transferência revertida
+      const funcionarioAuthIdRev = transferenciaSelecionada.funcionarios?.auth_user_id
+      if (funcionarioAuthIdRev) userIds.add(funcionarioAuthIdRev)
 
       if (userIds.size > 0) {
         await (supabase as any).rpc('criar_notificacoes', {
