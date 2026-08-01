@@ -69,6 +69,20 @@ export function usePushNotification() {
 
   useEffect(() => {
     checkSubscription()
+
+    if (typeof window === 'undefined') return
+
+    const handleFocus = () => {
+      checkSubscription()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [checkSubscription])
 
   // Inscrever o dispositivo para Push Notifications

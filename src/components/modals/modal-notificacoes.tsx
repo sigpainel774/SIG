@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Bell, History, Circle, Check, CheckCheck, Sliders, UserCheck } from 'lucide-react'
+import { Bell, BellRing, BellOff, Loader2, History, Circle, Check, CheckCheck, Sliders, UserCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { ModalConfiguracoesNotificacoes } from '@/components/modals/modal-configuracoes-notificacoes'
+import { usePushNotification } from '@/hooks/usePushNotification'
 import { toast } from 'sonner'
 
 interface ModalNotificacoesProps {
@@ -119,6 +120,36 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     router.push('/historico-notificacoes')
   }
 
+  const {
+    isSupported,
+    permissionState,
+    isSubscribed,
+    loading: pushLoading,
+    subscribe,
+    unsubscribe,
+  } = usePushNotification()
+
+  const handleTogglePush = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isSubscribed) {
+      const ok = await unsubscribe()
+      if (ok) {
+        toast.info('Notificações push desativadas neste aparelho.')
+      } else {
+        toast.error('Erro ao desativar notificações.')
+      }
+    } else {
+      const ok = await subscribe()
+      if (ok) {
+        toast.success('🎉 Push Notifications ativadas com sucesso!')
+      } else if (permissionState === 'denied') {
+        toast.error('Permissão bloqueada no navegador. Desbloqueie no ícone de cadeado 🔒 da barra de endereço.')
+      } else {
+        toast.error('Não foi possível ativar as notificações push neste navegador.')
+      }
+    }
+  }
+
   return (
     <StandardDialog
       open={!!open}
@@ -138,6 +169,38 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
         </div>
       }
     >
+      {/* Botão de Push ao lado do X no cabeçalho do modal */}
+      <div className="absolute top-3.5 right-11 z-50">
+        <button
+          type="button"
+          onClick={handleTogglePush}
+          disabled={pushLoading || permissionState === 'unsupported'}
+          title={
+            isSubscribed
+              ? 'Push Ativado neste aparelho (Clique para desativar)'
+              : permissionState === 'denied'
+              ? 'Push Bloqueado no Navegador'
+              : 'Ativar Notificações Push neste aparelho'
+          }
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer border ${
+            isSubscribed
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+              : permissionState === 'denied'
+              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 opacity-70 cursor-not-allowed'
+              : 'bg-[#185FA5]/20 dark:bg-[#3ea6ff]/20 text-[#185FA5] dark:text-[#3ea6ff] border-[#185FA5]/30 dark:border-[#3ea6ff]/30 hover:bg-[#185FA5]/30 dark:hover:bg-[#3ea6ff]/30'
+          }`}
+        >
+          {pushLoading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : isSubscribed ? (
+            <BellRing className="w-3 h-3 text-emerald-400" />
+          ) : (
+            <Bell className="w-3 h-3" />
+          )}
+          <span>{isSubscribed ? 'Push Ativo' : 'Ativar Push'}</span>
+        </button>
+      </div>
+
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#2f2f33]">
           {notificacoes.some((n) => !n.read) ? (
