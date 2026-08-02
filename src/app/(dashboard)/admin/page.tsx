@@ -64,7 +64,7 @@ interface AdminGroup {
 const adminGroups: AdminGroup[] = [
   {
     id: 'rede',
-    label: 'Rede Escolar',
+    label: 'Rede Municipal',
     icon: Building2,
     headerColor: 'text-sky-400',
     badgeColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
@@ -77,8 +77,8 @@ const adminGroups: AdminGroup[] = [
         path: '/admin/secretarias',
       },
       {
-        title: 'Escolas',
-        subtitle: 'Gerenciar unidades',
+        title: 'Escolas & Unidades',
+        subtitle: 'Todas as unidades',
         icon: Building2,
         iconColor: 'text-sky-400',
         path: '/admin/escolas',

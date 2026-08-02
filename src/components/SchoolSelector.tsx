@@ -23,6 +23,17 @@ export function SchoolSelector() {
     return escolas
   }, [isAdmin, escolas, vinculosAtivos])
 
+  // Agrupa as escolas por Secretaria mantenedora
+  const escolasAgrupadas = useMemo(() => {
+    const map: Record<string, typeof escolasPermitidas> = {}
+    for (const e of escolasPermitidas) {
+      const secNome = e.secretariaNome || 'Secretaria Municipal de Educação'
+      if (!map[secNome]) map[secNome] = []
+      map[secNome].push(e)
+    }
+    return map
+  }, [escolasPermitidas])
+
   useEffect(() => {
     loadEscolas()
   }, [loadEscolas])
@@ -35,14 +46,12 @@ export function SchoolSelector() {
         if (escola && selectedEscola?.id !== escola.id) {
           setSelectedEscola(escola)
         } else if (!escola && !isAdmin) {
-          // Se a escola ativa atual não for permitida para este usuário comum
           setSelectedEscola(escolasPermitidas[0])
           setEscolaAtivaId(escolasPermitidas[0].id)
         }
       } else if (!escolaAtivaId && selectedEscola) {
         setEscolaAtivaId(selectedEscola.id)
       } else if (!escolaAtivaId && !selectedEscola && !isAdmin) {
-        // Fallback de segurança para usuário comum sem escola ativa
         setSelectedEscola(escolasPermitidas[0])
         setEscolaAtivaId(escolasPermitidas[0].id)
       }
@@ -79,7 +88,7 @@ export function SchoolSelector() {
           ) : (
             <>
               <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-              <span className="font-semibold text-sky-200 truncate">Todas as Escolas (Rede Macro)</span>
+              <span className="font-semibold text-sky-200 truncate">Todas as Unidades (Rede Municipal)</span>
             </>
           )}
         </div>
@@ -87,9 +96,9 @@ export function SchoolSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#141824] border border-[#2a3449] shadow-2xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95">
+        <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#141824] border border-[#2a3449] shadow-2xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95">
           <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-[#222b3d]">
-            Selecione a Escola Foco
+            Selecione a Unidade Foco
           </div>
 
           {isAdmin && (
@@ -104,39 +113,52 @@ export function SchoolSelector() {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Globe className="w-4 h-4 text-sky-400" />
+                <Globe className="w-4 h-4 text-sky-400 shrink-0" />
                 <div className="text-left">
                   <p className="font-bold">Visão Geral da Rede</p>
-                  <p className="text-[10px] text-gray-400 font-normal">Todas as unidades municipais</p>
+                  <p className="text-[10px] text-gray-400 font-normal">Todas as secretarias e unidades</p>
                 </div>
               </div>
-              {!selectedEscola && <Check className="w-4 h-4 text-sky-400" />}
+              {!selectedEscola && <Check className="w-4 h-4 text-sky-400 shrink-0" />}
             </button>
           )}
 
-          <div className="pt-1 border-t border-[#222b3d]/60 space-y-1 max-h-60 overflow-y-auto">
-            {escolasPermitidas.map((escola) => {
-              const isSelected = selectedEscola?.id === escola.id
-              return (
-                <button
-                  key={escola.id}
-                  onClick={() => {
-                    setSelectedEscola(escola)
-                    useAuthStore.getState().setEscolaAtivaId(escola.id)
-                    setIsOpen(false)
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
-                    isSelected ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 font-semibold' : 'text-gray-300 hover:bg-[#1f2738] hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${escola.color || 'bg-blue-500'}`} />
-                    <span className="truncate">{escola.nome}</span>
-                  </div>
-                  {isSelected && <Check className="w-4 h-4 text-blue-400 shrink-0" />}
-                </button>
-              )
-            })}
+          <div className="pt-1 border-t border-[#222b3d]/60 space-y-3 max-h-72 overflow-y-auto pr-0.5">
+            {Object.entries(escolasAgrupadas).map(([secNome, unidades]) => (
+              <div key={secNome} className="space-y-1">
+                {/* Header da Secretaria */}
+                <div className="px-2 pt-1.5 pb-0.5 flex items-center gap-1.5 text-[11px] font-bold text-sky-400 uppercase tracking-wider">
+                  <Building2 className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{secNome}</span>
+                </div>
+
+                {/* Unidades filhas */}
+                {unidades.map((escola) => {
+                  const isSelected = selectedEscola?.id === escola.id
+                  return (
+                    <button
+                      key={escola.id}
+                      onClick={() => {
+                        setSelectedEscola(escola)
+                        useAuthStore.getState().setEscolaAtivaId(escola.id)
+                        setIsOpen(false)
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 font-semibold'
+                          : 'text-gray-300 hover:bg-[#1f2738] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 pl-1">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${escola.color || 'bg-blue-500'}`} />
+                        <span className="truncate">{escola.nome}</span>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
           </div>
         </div>
       )}

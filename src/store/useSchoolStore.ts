@@ -15,6 +15,12 @@ export interface Escola {
   logo_url?: string | null
   diretor_id?: string | null
   assinatura_diretor_url?: string | null
+  secretaria_id?: string | null
+  secretariaNome?: string
+  secretarias?: {
+    id: string
+    nome: string
+  } | null
 }
 
 interface SchoolState {
@@ -49,7 +55,6 @@ export const useSchoolStore = create<SchoolState>()(
           return
         }
 
-        // Aguarda carregar a lista completa de escolas para evitar queries individuais redundantes
         if (!get().isLoaded) {
           await get().loadEscolas()
         }
@@ -59,18 +64,21 @@ export const useSchoolStore = create<SchoolState>()(
           set({ selectedEscola: found })
           useAuthStore.getState().setEscolaAtivaId(id)
         } else {
-          // Fallback caso a escola não venha na lista global (inativa ou erro)
           try {
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .eq('id', id)
               .is('deleted_at', null)
               .maybeSingle()
             
             if (data) {
-              set({ selectedEscola: data as Escola })
+              const formatted: Escola = {
+                ...(data as any),
+                secretariaNome: (data as any).secretarias?.nome || 'Secretaria Municipal de Educação'
+              }
+              set({ selectedEscola: formatted })
             }
           } catch (err) {
             console.error('Erro ao carregar escola ativa:', err)
@@ -91,21 +99,26 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .is('deleted_at', null)
               .eq('ativo', true)
               .order('nome', { ascending: true })
               
             if (data) {
-              set({ escolas: data as Escola[], isLoaded: true })
+              const mappedEscolas: Escola[] = (data || []).map((e: any) => ({
+                ...e,
+                secretariaNome: e.secretarias?.nome || 'Secretaria Municipal de Educação'
+              }))
+
+              set({ escolas: mappedEscolas, isLoaded: true })
               
               const currentSelected = get().selectedEscola
               if (currentSelected) {
-                const stillExists = data.find(e => e.id === currentSelected.id)
+                const stillExists = mappedEscolas.find(e => e.id === currentSelected.id)
                 if (!stillExists) {
                   set({ selectedEscola: null })
                 } else {
-                  set({ selectedEscola: stillExists as Escola })
+                  set({ selectedEscola: stillExists })
                 }
               }
             }
