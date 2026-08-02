@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -326,11 +327,26 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                   key={aluno.id}
                   position={[aluno.latitude, aluno.longitude]}
                   icon={icone}
+                  eventHandlers={{
+                    click: (e) => {
+                      if (e.target && e.target._map) {
+                        e.target._map.panTo(e.target.getLatLng(), { animate: true, duration: 0.35 });
+                      }
+                    },
+                  }}
                 >
-                  {/* Popup Premium */}
-                  <Popup maxWidth={260} className="custom-popup">
-                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[220px] shadow-xl border border-[#2d3a54]">
-                      <div className="flex gap-3 items-center p-3">
+                  {/* Popup Premium com AutoPan Padding Protegido */}
+                  <Popup 
+                    maxWidth={270} 
+                    className="custom-popup"
+                    autoPan={true}
+                    keepInView={true}
+                    autoPanPadding={L.point(45, 45)}
+                    autoPanPaddingTopLeft={L.point(45, 45)}
+                    autoPanPaddingBottomRight={L.point(45, 45)}
+                  >
+                    <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[230px] shadow-xl border border-[#2d3a54]">
+                      <div className="flex gap-3 items-center p-3 pr-6">
                         <div
                           onClick={() => setFotoModal(aluno)}
                           className="relative w-[50px] h-[50px] shrink-0 cursor-pointer group/avatar rounded-full overflow-hidden"
@@ -364,11 +380,11 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <strong className="text-sm block text-white leading-tight truncate max-w-[140px]" title={aluno.nome}>
+                            <strong className="text-sm font-bold text-white leading-tight truncate max-w-[160px]" title={aluno.nome}>
                               {aluno.nome}
                             </strong>
                             <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                              "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0",
                               aluno.modalidade === 'EJA'
                                 ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                                 : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
@@ -406,8 +422,8 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         </MapContainer>
       </div>
 
-      {/* Modal de Foto Ampliada */}
-      {fotoModal && (
+      {/* Modal de Foto Ampliada via React Portal */}
+      {fotoModal && typeof window !== 'undefined' && createPortal(
         <div 
           className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setFotoModal(null)}
@@ -488,7 +504,8 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Info Inferior Dinâmica */}
