@@ -36,31 +36,10 @@ interface MapaAlunosProps {
   alunos: AlunoMapeado[];
 }
 
-function BoundsTracker({ setBounds, setZoom }: { setBounds: (b: L.LatLngBounds) => void, setZoom: (z: number) => void }) {
-  const map = useMapEvents({
-    moveend: () => {
-      setBounds(map.getBounds());
-      setZoom(map.getZoom());
-    },
-    zoomend: () => {
-      setZoom(map.getZoom());
-    }
-  });
-
-  useEffect(() => {
-    setBounds(map.getBounds());
-    setZoom(map.getZoom());
-  }, [map, setBounds, setZoom]);
-
-  return null;
-}
-
 export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [busca, setBusca] = useState('');
   const buscaDebounced = React.useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
-  const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
-  const [mapZoom, setMapZoom] = useState(14);
   const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
   const mapRef = useRef<L.Map>(null);
 
@@ -310,7 +289,6 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
           <MarkerClusterGroup
             iconCreateFunction={criarIconeCluster}
             chunkedLoading
@@ -330,20 +308,19 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                   eventHandlers={{
                     click: (e) => {
                       if (e.target && e.target._map) {
-                        e.target._map.panTo(e.target.getLatLng(), { animate: true, duration: 0.35 });
+                        e.target._map.flyTo(e.target.getLatLng(), Math.max(e.target._map.getZoom(), 15), {
+                          animate: true,
+                          duration: 0.35,
+                        });
                       }
                     },
                   }}
                 >
-                  {/* Popup Premium com AutoPan Padding Protegido */}
+                  {/* Popup Premium com autoPan desativado para evitar loop de animação do Leaflet */}
                   <Popup 
                     maxWidth={270} 
                     className="custom-popup"
-                    autoPan={true}
-                    keepInView={true}
-                    autoPanPadding={L.point(45, 45)}
-                    autoPanPaddingTopLeft={L.point(45, 45)}
-                    autoPanPaddingBottomRight={L.point(45, 45)}
+                    autoPan={false}
                   >
                     <div className="font-sans text-slate-100 bg-[#182030] rounded-xl overflow-hidden min-w-[230px] shadow-xl border border-[#2d3a54]">
                       <div className="flex gap-3 items-center p-3 pr-6">
