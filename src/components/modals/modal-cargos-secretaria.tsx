@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
@@ -33,9 +33,15 @@ export function ModalCargosSecretaria({
 
   const supabase = createClient()
 
+  const isMounted = useRef(true)
+
   useEffect(() => {
+    isMounted.current = true
     if (open && secretariaId) {
       loadCargos()
+    }
+    return () => {
+      isMounted.current = false
     }
   }, [open, secretariaId])
 
@@ -50,12 +56,14 @@ export function ModalCargosSecretaria({
         .order('nivel', { ascending: true })
 
       if (error) throw error
-      setCargos(data || [])
+      if (isMounted.current) {
+        setCargos(data || [])
+      }
     } catch (error: any) {
       console.error('Erro ao carregar cargos:', error)
-      toast.error('Erro ao carregar os cargos desta secretaria.')
+      if (isMounted.current) toast.error('Erro ao carregar os cargos desta secretaria.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }
 
