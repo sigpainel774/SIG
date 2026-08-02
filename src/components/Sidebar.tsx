@@ -24,7 +24,8 @@ import {
   UserCheck,
   FileBadge,
   Fingerprint,
-  Activity
+  Activity,
+  Stethoscope
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -49,6 +50,10 @@ export function Sidebar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showSchoolWarningModal, setShowSchoolWarningModal] = useState(false)
+
+  const secNome = selectedEscola?.secretariaNome || selectedEscola?.secretarias?.nome || ''
+  const isEducacao = !selectedEscola || !secNome || /educa/i.test(secNome)
+  const isSaude = !isEducacao && /sa[uú]de/i.test(secNome)
 
   const handleLogout = async () => {
     closeMobile()
@@ -86,42 +91,95 @@ export function Sidebar() {
   type MenuItem = { href: string; label: string; icon: React.ElementType }
   type MenuGroup = { label: string | null; items: MenuItem[] }
 
-  const menuGroups: MenuGroup[] = [
-    {
-      label: null,
-      items: [
-        { href: '/home', label: 'Início', icon: Home },
-        { href: '/mural', label: 'Mural', icon: Pin },
+  const menuGroups: MenuGroup[] = isEducacao
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+            { href: '/mural', label: 'Mural', icon: Pin },
+          ]
+        },
+        {
+          label: 'GESTÃO ACADÊMICA',
+          items: [
+            { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+            { href: '/turmas', label: 'Turmas', icon: BookOpen },
+            { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
+            { href: '/avaliacoes', label: 'Avaliações', icon: ClipboardList },
+            { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+          ]
+        },
+        {
+          label: 'SECRETARIA',
+          items: [
+            { href: '/documentos', label: 'Documentos', icon: FileText },
+            { href: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
+            { href: '/arquivos', label: 'Arquivo', icon: Archive },
+          ]
+        },
+        {
+          label: 'GESTÃO ADMINISTRATIVA',
+          items: [
+            { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+            { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
+            { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
+            { href: '/funcionarios', label: 'Funcionários', icon: Users },
+          ]
+        },
       ]
-    },
-    {
-      label: 'GESTÃO ACADÊMICA',
-      items: [
-        { href: '/alunos', label: 'Alunos', icon: GraduationCap },
-        { href: '/turmas', label: 'Turmas', icon: BookOpen },
-        { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
-        { href: '/avaliacoes', label: 'Avaliações', icon: ClipboardList },
-        { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+    : isSaude
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+            { href: '/mural', label: 'Mural', icon: Pin },
+          ]
+        },
+        {
+          label: 'GESTÃO DE SAÚDE & UNIDADE',
+          items: [
+            { href: '/funcionarios', label: 'Servidores da Saúde', icon: Users },
+            { href: '/painel-chefe', label: 'Escalas & Plantões', icon: UserCheck },
+            { href: '/atestados', label: 'Atestados Médicos', icon: Stethoscope },
+            { href: '/documentos', label: 'Documentos Oficiais', icon: FileText },
+          ]
+        },
+        {
+          label: 'GESTÃO ADMINISTRATIVA & AUDITORIA',
+          items: [
+            { href: '/relatorios', label: 'Relatórios & KPIs', icon: FileBarChart },
+            { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
+            { href: '/arquivos', label: 'Arquivo Geral', icon: Archive },
+          ]
+        },
       ]
-    },
-    {
-      label: 'SECRETARIA',
-      items: [
-        { href: '/documentos', label: 'Documentos', icon: FileText },
-        { href: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
-        { href: '/arquivos', label: 'Arquivo', icon: Archive },
+    : [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+            { href: '/mural', label: 'Mural', icon: Pin },
+          ]
+        },
+        {
+          label: 'GESTÃO DA UNIDADE',
+          items: [
+            { href: '/funcionarios', label: 'Servidores / Funcionários', icon: Users },
+            { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
+            { href: '/documentos', label: 'Documentos', icon: FileText },
+          ]
+        },
+        {
+          label: 'GESTÃO ADMINISTRATIVA',
+          items: [
+            { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+            { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
+            { href: '/arquivos', label: 'Arquivo', icon: Archive },
+          ]
+        },
       ]
-    },
-    {
-      label: 'GESTÃO ADMINISTRATIVA',
-      items: [
-        { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
-        { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
-        { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
-        { href: '/funcionarios', label: 'Funcionários', icon: Users },
-      ]
-    },
-  ]
 
   const systemItems: MenuItem[] = [
     { href: '/configuracoes', label: 'Configurações', icon: Settings },

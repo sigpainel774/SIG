@@ -236,7 +236,7 @@ export function ModalDetalhesSecretaria({
                       <div className="min-w-0">
                         <h4 className="text-xs font-bold text-white truncate flex items-center gap-2">
                           {u.nome}
-                          {u.inep && (
+                          {u.inep && isEducacao && (
                             <span className="text-[10px] text-zinc-500 font-mono font-normal">
                               INEP: {u.inep}
                             </span>

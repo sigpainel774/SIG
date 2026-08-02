@@ -211,7 +211,7 @@ export function ModalEscola({
           .from('escolas')
           .update({
             nome: nome.trim(),
-            inep: inep.trim() || null,
+            inep: isEducacao ? (inep.trim() || null) : null,
             tipo,
             ativo,
             logo_url: logoUrl || null,
@@ -230,7 +230,7 @@ export function ModalEscola({
           .from('escolas')
           .insert({
             nome: nome.trim(),
-            inep: inep.trim() || null,
+            inep: isEducacao ? (inep.trim() || null) : null,
             tipo,
             ativo,
             logo_url: logoUrl || null,
@@ -345,18 +345,18 @@ export function ModalEscola({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-[#aaa]">
-              {isEducacao ? 'Código INEP' : 'Código / INEP (Opcional)'}
-            </Label>
-            <Input
-              value={inep}
-              onChange={(e) => setInep(e.target.value)}
-              placeholder="Ex: 29182001"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
-            />
-          </div>
-          <div>
+          {isEducacao && (
+            <div>
+              <Label className="text-xs text-[#aaa]">Código INEP</Label>
+              <Input
+                value={inep}
+                onChange={(e) => setInep(e.target.value)}
+                placeholder="Ex: 29182001"
+                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              />
+            </div>
+          )}
+          <div className={isEducacao ? '' : 'col-span-2'}>
             <Label className="text-xs text-[#aaa]">Tipo de Unidade</Label>
             <select
               value={tipo}
