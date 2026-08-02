@@ -51,21 +51,22 @@ export function ModalSecretariasConta({
       if (secError) throw secError
       setSecretarias(secData || [])
 
-      // 2. Carregar o acesso nivel 1 do usuário
-      const { data: acData, error: acError } = await supabase
+      // 2. Carregar o acesso nivel 1 do usuário (sem .maybeSingle() para evitar PGRST116 se houver registros múltiplos)
+      const { data: acRows, error: acError } = await supabase
         .from('acessos_usuarios')
-        .select('id, secretarias_ids')
+        .select('id, secretarias_ids, ativo')
         .eq('funcionario_id', funcionarioId)
         .eq('nivel', 1)
-        .eq('ativo', true)
-        .maybeSingle()
+        .order('created_at', { ascending: false })
 
       if (acError) throw acError
 
-      if (acData) {
-        setAcessoUsuarioId(acData.id)
-        if (acData.secretarias_ids && acData.secretarias_ids.length > 0) {
-          setSelectedIds(acData.secretarias_ids)
+      const acAtivo = acRows?.find((a: any) => a.ativo === true) || acRows?.[0]
+
+      if (acAtivo) {
+        setAcessoUsuarioId(acAtivo.id)
+        if (acAtivo.secretarias_ids && acAtivo.secretarias_ids.length > 0) {
+          setSelectedIds(acAtivo.secretarias_ids)
           setTodos(false)
         } else {
           setSelectedIds([])
@@ -102,21 +103,38 @@ export function ModalSecretariasConta({
       return
     }
 
-    if (!acessoUsuarioId) {
-      toast.error('Este usuário não possui um Nível 1 ativo para vincular secretarias. Atribua o nível 1 a ele primeiro.')
-      return
-    }
-
     setSalvando(true)
     try {
       const finalIds = todos || selectedIds.length === 0 ? null : selectedIds
 
-      const { error } = await supabase
-        .from('acessos_usuarios')
-        .update({ secretarias_ids: finalIds })
-        .eq('id', acessoUsuarioId)
+      if (acessoUsuarioId) {
+        const { error } = await supabase
+          .from('acessos_usuarios')
+          .update({ secretarias_ids: finalIds, ativo: true })
+          .eq('funcionario_id', funcionarioId)
+          .eq('nivel', 1)
 
-      if (error) throw error
+        if (error) throw error
+      } else {
+        // Se o usuário ainda não possui o registro Nível 1 em acessos_usuarios, insere com Nível 1
+        const { error } = await supabase
+          .from('acessos_usuarios')
+          .insert({
+            funcionario_id: funcionarioId,
+            nivel: 1,
+            ativo: true,
+            secretarias_ids: finalIds,
+            pode_mural: true,
+            pode_turmas: true,
+            pode_funcionarios: true,
+            pode_matriculas: true,
+            pode_alunos: true,
+            pode_ocorrencias: true,
+            pode_atestados: true
+          })
+
+        if (error) throw error
+      }
 
       toast.success('Acesso a secretarias atualizado com sucesso!')
       onOpenChange(false)
@@ -161,13 +179,13 @@ export function ModalSecretariasConta({
           <p>O usuário <strong>{funcionarioNome}</strong> é um administrador <strong>ROOT</strong>.</p>
           <p className="mt-1">Ele já possui acesso irrestrito a todas as secretarias.</p>
         </div>
-      ) : !acessoUsuarioId ? (
-        <div className="py-6 text-center text-sm text-zinc-400 bg-black/20 rounded-xl border border-zinc-800">
-          <p>Este usuário não possui o <strong>Nível 1</strong> ativo.</p>
-          <p className="mt-1">Apenas usuários com Nível 1 podem ter acessos granulares a secretarias.</p>
-        </div>
       ) : (
         <div className="space-y-4">
+          {!acessoUsuarioId && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300">
+              ⚠️ Este usuário não possui um registro de Nível 1 ativo. Ao salvar as secretarias, o Nível 1 será atribuído automaticamente a ele.
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input 
               type="checkbox" 
