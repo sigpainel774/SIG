@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check } from 'lucide-react'
+import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { ModalSecretariasConta } from '@/components/modals/modal-secretarias-conta'
 import type { UsePermissoesReturn } from './usePermissoes'
 
 interface ContasEspeciaisViewProps {
@@ -39,6 +40,12 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   const [cargoSelecionadoIdMap, setCargoSelecionadoIdMap] = useState<Record<string, string>>({})
   const [cargoCustomInputMap, setCargoCustomInputMap] = useState<Record<string, string>>({})
   const [salvandoCargoFuncId, setSalvandoCargoFuncId] = useState<string | null>(null)
+
+  // Estado para Modal Secretarias Conta
+  const [modalSecretariasState, setModalSecretariasState] = useState<{ open: boolean; item: any | null }>({
+    open: false,
+    item: null
+  })
 
   // Filtragem de funcionários em memória
   const contasFiltradas = useMemo(() => {
@@ -417,6 +424,18 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                           <span className="bg-amber-500/10 text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-bold tracking-wide">
                             {cargoAtual}
                           </span>
+                          
+                          {(item.is_superadmin || (item.acessos_usuarios ?? []).some((a: any) => a.nivel === 1)) && (
+                            <button
+                              type="button"
+                              onClick={() => setModalSecretariasState({ open: true, item })}
+                              className="ml-2 flex items-center gap-1 text-[11px] bg-[#0090ff]/10 hover:bg-[#0090ff]/20 text-[#0090ff] border border-[#0090ff]/30 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                              title="Gerenciar acesso às Secretarias"
+                            >
+                              <Building2 className="w-3 h-3" />
+                              Secretarias
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -472,6 +491,15 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de Secretarias Conta */}
+      <ModalSecretariasConta
+        open={modalSecretariasState.open}
+        onOpenChange={(open) => setModalSecretariasState(prev => ({ ...prev, open }))}
+        funcionarioId={modalSecretariasState.item?.id}
+        funcionarioNome={modalSecretariasState.item?.nome}
+        isSuperAdmin={!!modalSecretariasState.item?.is_superadmin}
+      />
     </div>
   )
 }

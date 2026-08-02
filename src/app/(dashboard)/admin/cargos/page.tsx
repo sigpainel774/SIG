@@ -38,7 +38,7 @@ export default function AdminCargosPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('cargos')
-      .select('id, nome, nivel, descricao, salario_base, ativo, created_at')
+      .select('id, nome, nivel, descricao, salario_base, ativo, created_at, secretarias(nome), secretaria_id')
       .is('deleted_at', null)
       .order('nivel', { ascending: true })
 
@@ -111,6 +111,14 @@ export default function AdminCargosPage() {
         <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
           Nível {cargo.nivel}
         </Badge>
+      )
+    },
+    {
+      header: 'Secretaria',
+      accessor: (cargo) => (
+        <span className="text-sm text-slate-300 font-medium">
+          {cargo.secretarias?.nome ?? '-'}
+        </span>
       )
     },
     {
