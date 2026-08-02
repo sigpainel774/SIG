@@ -23,12 +23,19 @@ export interface Escola {
   } | null
 }
 
+export interface SecretariaState {
+  id: string
+  nome: string
+}
+
 interface SchoolState {
   escolas: Escola[]
   selectedEscola: Escola | null
+  selectedSecretaria: SecretariaState | null
   isLoaded: boolean
   isLoading: boolean
   setSelectedEscola: (escola: Escola | null) => void
+  setSelectedSecretaria: (secretaria: SecretariaState | null) => void
   selectEscolaById: (id: string | null) => void | Promise<void>
   loadEscolas: (force?: boolean) => Promise<void>
 }
@@ -40,12 +47,25 @@ export const useSchoolStore = create<SchoolState>()(
     (set, get) => ({
       escolas: [],
       selectedEscola: null,
+      selectedSecretaria: null,
       isLoaded: false,
       isLoading: false,
       setSelectedEscola: (escola) => {
         if (get().selectedEscola?.id === (escola?.id ?? null)) return
-        set({ selectedEscola: escola })
+        
+        let sec: SecretariaState | null = get().selectedSecretaria
+        if (escola?.secretaria_id || escola?.secretariaNome) {
+          sec = {
+            id: escola.secretaria_id || '',
+            nome: escola.secretariaNome || (escola.secretarias as any)?.nome || 'Secretaria Municipal de Educação'
+          }
+        }
+        set({ selectedEscola: escola, selectedSecretaria: sec })
         useAuthStore.getState().setEscolaAtivaId(escola ? escola.id : null)
+      },
+      setSelectedSecretaria: (secretaria) => {
+        set({ selectedSecretaria: secretaria, selectedEscola: null })
+        useAuthStore.getState().setEscolaAtivaId(null)
       },
       selectEscolaById: async (id) => {
         if (get().selectedEscola?.id === id) return
@@ -61,7 +81,11 @@ export const useSchoolStore = create<SchoolState>()(
 
         const found = get().escolas.find((e) => e.id === id) || null
         if (found) {
-          set({ selectedEscola: found })
+          const sec = {
+            id: found.secretaria_id || '',
+            nome: found.secretariaNome || 'Secretaria Municipal de Educação'
+          }
+          set({ selectedEscola: found, selectedSecretaria: sec })
           useAuthStore.getState().setEscolaAtivaId(id)
         } else {
           try {
@@ -78,7 +102,11 @@ export const useSchoolStore = create<SchoolState>()(
                 ...(data as any),
                 secretariaNome: (data as any).secretarias?.nome || 'Secretaria Municipal de Educação'
               }
-              set({ selectedEscola: formatted })
+              const sec = {
+                id: (data as any).secretaria_id || '',
+                nome: formatted.secretariaNome || 'Secretaria Municipal de Educação'
+              }
+              set({ selectedEscola: formatted, selectedSecretaria: sec })
             }
           } catch (err) {
             console.error('Erro ao carregar escola ativa:', err)
@@ -134,7 +162,7 @@ export const useSchoolStore = create<SchoolState>()(
     {
       name: 'sig-selected-school',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ selectedEscola: state.selectedEscola }),
+      partialize: (state) => ({ selectedEscola: state.selectedEscola, selectedSecretaria: state.selectedSecretaria }),
       onRehydrateStorage: () => (state) => {
         if (state?.selectedEscola?.id) {
           useAuthStore.getState().setEscolaAtivaId(state.selectedEscola.id)

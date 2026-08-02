@@ -69,6 +69,9 @@ export function ModalDetalhesSecretaria({
   useEffect(() => {
     if (open && secretaria?.id) {
       loadUnidades()
+      // Atualiza o contexto ativo da secretaria no sistema
+      const { useSchoolStore } = require('@/store/useSchoolStore')
+      useSchoolStore.getState().setSelectedSecretaria({ id: secretaria.id, nome: secretaria.nome })
     }
   }, [open, secretaria?.id])
 
