@@ -43,7 +43,7 @@ export function Sidebar() {
   const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
-  const { selectedEscola } = useSchoolStore()
+  const { selectedEscola, selectedSecretaria } = useSchoolStore()
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
@@ -51,8 +51,8 @@ export function Sidebar() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showSchoolWarningModal, setShowSchoolWarningModal] = useState(false)
 
-  const secNome = selectedEscola?.secretariaNome || selectedEscola?.secretarias?.nome || ''
-  const isEducacao = !selectedEscola || !secNome || /educa/i.test(secNome)
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || selectedEscola?.secretarias?.nome || ''
+  const isEducacao = (!selectedEscola && !selectedSecretaria) || !secNome || /educa/i.test(secNome)
   const isSaude = !isEducacao && /sa[uú]de/i.test(secNome)
 
   const handleLogout = async () => {
@@ -244,7 +244,7 @@ export function Sidebar() {
               />
             )}
             <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground truncate">
-              {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
+              {selectedEscola ? selectedEscola.nome : selectedSecretaria ? selectedSecretaria.nome : 'Painel Escolar'}
             </h2>
           </div>
           <button 
