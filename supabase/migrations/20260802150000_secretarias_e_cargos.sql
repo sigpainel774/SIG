@@ -57,9 +57,11 @@ AS $$
 $$;
 
 -- RLS policies for Secretarias
+DROP POLICY IF EXISTS "secretarias_leitura" ON public.secretarias;
 CREATE POLICY "secretarias_leitura" ON public.secretarias
   FOR SELECT USING (public.tem_acesso_a_secretaria(id));
 
+DROP POLICY IF EXISTS "secretarias_escrita" ON public.secretarias;
 CREATE POLICY "secretarias_escrita" ON public.secretarias
   FOR ALL USING (public.is_admin_global()) WITH CHECK (public.is_admin_global());
 
