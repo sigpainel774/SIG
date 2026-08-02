@@ -133,9 +133,36 @@ export function PerformanceTracker() {
     }
   }, [])
 
+  const queueRef = useRef<any[]>([])
+  const shouldSampleRef = useRef(Math.random() <= 1.0) // 100% amostragem inicial, ajustável
+
+  const flushQueue = useCallback(async () => {
+    if (queueRef.current.length === 0) return
+    const batch = [...queueRef.current]
+    queueRef.current = []
+    
+    try {
+      const { error } = await supabase
+        .from('performance_metrics')
+        .insert(batch)
+      if (error) console.warn('[Perf] Erro ao salvar Web Vitals (batch):', error.message)
+    } catch {
+      // Falha silenciosa intencional
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    const interval = setInterval(flushQueue, 5000)
+    return () => {
+      clearInterval(interval)
+      flushQueue()
+    }
+  }, [flushQueue])
+
   // Callback para Core Web Vitals
   const handleWebVitals = useCallback(
-    async (metric: Metric) => {
+    (metric: Metric) => {
+      if (!shouldSampleRef.current) return
       // Ignorar deslocamentos insignificantes de CLS (< 0.01) para evitar rajadas de inserts (ES-2)
       if (metric.name === 'CLS' && metric.value < 0.01) return
 
@@ -154,16 +181,12 @@ export function PerformanceTracker() {
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }
 
-      try {
-        const { error } = await supabase
-          .from('performance_metrics')
-          .insert(payload)
-        if (error) console.warn('[Perf] Erro ao salvar Web Vital:', error.message)
-      } catch {
-        // Falha silenciosa intencional
+      queueRef.current.push(payload)
+      if (queueRef.current.length >= 10) {
+        flushQueue() // Forçar flush se a fila crescer rápido
       }
     },
-    [pathname, supabase]
+    [pathname, flushQueue]
   )
 
   useReportWebVitals(handleWebVitals)
@@ -171,6 +194,7 @@ export function PerformanceTracker() {
   // Medição executada exclusivamente quando pathname realmente muda
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (!shouldSampleRef.current) return
 
     if (
       pendingNavigationRef.current &&
@@ -204,23 +228,12 @@ export function PerformanceTracker() {
           user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
         }
 
-        const saveMetric = async () => {
-          try {
-            const { error } = await supabase
-              .from('performance_metrics')
-              .insert(payload)
-            if (error) console.warn('[Perf] Erro ao salvar transição de rota:', error.message)
-          } catch {
-            // Falha silenciosa intencional
-          }
-        }
-
-        saveMetric()
+        queueRef.current.push(payload)
       }
     }
 
     prevPathnameRef.current = pathname
-  }, [pathname, supabase])
+  }, [pathname])
 
   return null
 }

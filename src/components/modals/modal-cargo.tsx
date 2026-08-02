@@ -32,6 +32,25 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
   const [descricao, setDescricao] = useState('')
   const [salarioBase, setSalarioBase] = useState('')
   const [ativo, setAtivo] = useState(true)
+  const [secretariaId, setSecretariaId] = useState<string>('')
+  const [secretarias, setSecretarias] = useState<{ id: string, nome: string }[]>([])
+
+  useEffect(() => {
+    const fetchSecretarias = async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('secretarias')
+        .select('id, nome')
+        .eq('ativo', true)
+        .order('created_at', { ascending: true })
+      
+      if (data) setSecretarias(data)
+    }
+
+    if (open) {
+      fetchSecretarias()
+    }
+  }, [open])
 
   useEffect(() => {
     if (cargoToEdit) {
@@ -40,12 +59,14 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
       setDescricao(cargoToEdit.descricao || '')
       setSalarioBase(cargoToEdit.salario_base ? String(cargoToEdit.salario_base) : '')
       setAtivo(cargoToEdit.ativo !== false)
+      setSecretariaId((cargoToEdit as any).secretaria_id || '')
     } else {
       setNome('')
       setNivel('1')
       setDescricao('')
       setSalarioBase('')
       setAtivo(true)
+      setSecretariaId('')
     }
   }, [cargoToEdit, open])
 
@@ -65,7 +86,8 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
         nivel: parseInt(nivel) || 1,
         descricao: descricao.trim() || null,
         salario_base: salarioBase ? parseFloat(salarioBase.replace(',', '.')) : null,
-        ativo
+        ativo,
+        secretaria_id: secretariaId || null
       }
 
       if (cargoToEdit?.id) {
@@ -127,6 +149,21 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
       maxWidth="sm:max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label className="text-xs text-[#aaa]">Secretaria *</Label>
+          <select
+            value={secretariaId}
+            onChange={(e) => setSecretariaId(e.target.value)}
+            className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+            required
+          >
+            <option value="">Selecione uma secretaria...</option>
+            {secretarias.map((sec) => (
+              <option key={sec.id} value={sec.id}>{sec.nome}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <Label className="text-xs text-[#aaa]">Nome do Cargo *</Label>
           <Input

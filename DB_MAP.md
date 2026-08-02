@@ -86,6 +86,7 @@ Gestão de permissões de acesso baseadas em atributos (ABAC).
 *   `funcionario_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `escola_id`: `uuid` (FK -> `public.escolas.id`, Nullable)
 *   `orgao_id`: `uuid` (FK -> `public.orgaos.id`, Nullable)
+*   `secretarias_ids`: `uuid[]` / `ARRAY` (Filtro de permissões manuais de secretarias para Nível 1, Nullable)
 *   `nivel`: `integer` (Nível de acesso hierárquico, NOT NULL)
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `cargos_gerenciados`: `text[]` / `ARRAY` (Filtro de cargos sob sua gestão, Nullable)
@@ -307,6 +308,7 @@ Alertas in-app para usuários finais.
 Cargos e salários-base parametrizados.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `nome`: `text` (NOT NULL)
+*   `secretaria_id`: `uuid` (FK -> `public.secretarias.id`, Nullable)
 *   `nivel`: `integer` (Default: 1, Nullable)
 *   `descricao`: `text` (Nullable)
 *   `salario_base`: `numeric` (Nullable)
@@ -653,6 +655,15 @@ Histórico de revisões, oficinas e manutenções da frota.
 *   `proxima_revisao_data`: `date` (Data prevista para próxima revisão, Nullable)
 *   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
+### 55. `public.secretarias`
+Organização estrutural dos órgãos macro (ex: Secretaria de Educação, Secretaria de Saúde).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `nome`: `text` (NOT NULL)
+*   `logo_url`: `text` (Nullable)
+*   `ativo`: `boolean` (Default: true, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `deleted_at`: `timestamp with time zone` (Nullable)
 
 ---
 

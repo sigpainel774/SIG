@@ -47,3 +47,7 @@ PERMISSOES_ARQUITETURA.md
 
 # Relatorios locais em PDF
 /output/pdf/
+
+# Backups locais de banco de dados
+/backups/
+

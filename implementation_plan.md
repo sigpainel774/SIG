@@ -16,16 +16,18 @@ Impacto atual mais relevante: a política `dev_all_authenticated` de `performanc
 | ES-4 | Rota é agregada pelo `pathname` bruto. | Parâmetros ou IDs dinâmicos fragmentam as amostras e escondem o gargalo da tela real. |
 | ES-5 | A tela de auditoria lê `select('*')` antes de abrir o Diff. | JSONs completos — possivelmente com PII — trafegam e ficam na memória mesmo sem inspeção. |
 | ES-6 | O “Diff” apenas mostra dois JSONs; não indica campos mudados, nem mascara campos sigilosos. | Revisão lenta e risco de exposição de CPF, endereço, tokens ou URLs privadas. |
+| ES-7 | Bloquear leitura de `audit_logs` exclusivamente para ROOT. | **Incompatibilidade**: Gestores escolares locais (diretores) perderão o acesso aos logs de auditoria de sua própria escola. |
+| ES-8 | RLS de inserção em `performance_metrics` restrito a `authenticated`. | **Erro Silencioso**: Páginas públicas (ex: `/assinar`) falharão silenciosamente ao tentar enviar métricas por não possuírem sessão. |
 
 ## Mudanças propostas
 
 ### Fase 1 — Segurança, consistência e confiança (prioridade imediata)
 
-1. Substituir a política de desenvolvimento de `performance_metrics` por RLS de produção: inserir somente a própria telemetria, leitura/agregação e exclusão somente para superadmin. Preferir Route Handler/Server Action para a limpeza, validando a autorização no servidor e registrando a ação em `audit_logs`.
+1. Substituir a política de desenvolvimento de `performance_metrics` por RLS de produção: permitir *inserção anônima* (para abranger páginas públicas como `/assinar`), limitando leitura/agregação e exclusão somente para superadmin. Preferir Route Handler/Server Action para a limpeza, validando a autorização no servidor e registrando a ação em `audit_logs`.
 2. Estabilizar o cliente Supabase nos dois painéis (singleton de browser ou `useMemo`) e separar o carregamento da página do estado de loading para impedir reconsultas involuntárias.
 3. Trocar o score vazio por `null`/“Sem dados” e exibir cobertura: número de amostras, usuários distintos e aviso de baixa confiança abaixo de um limite definido (por exemplo, 30 navegações).
 4. Definir explicitamente o contrato do score: inicialmente, calcular somente a partir de `ROUTE_CHANGE_MS`; numa evolução posterior, criar um score ponderado por métrica, com pesos e metas documentados.
-5. Tornar `audit_logs` append-only: bloquear `UPDATE`/`DELETE` em banco, restringir leitura a ROOT, confirmar RLS e registrar ator, entidade, `entity_id`, tenant, IP e correlação de requisição.
+5. Tornar `audit_logs` append-only: bloquear `UPDATE`/`DELETE` em banco, restringir leitura a ROOT **e aos Gestores Locais para o seu respectivo `tenant_id`/`escola_id`**, confirmar RLS e registrar ator, entidade, `entity_id`, tenant, IP e correlação de requisição.
 
 ### Fase 2 — Diagnóstico que leva a ação
 
@@ -42,6 +44,16 @@ Impacto atual mais relevante: a política `dev_all_authenticated` de `performanc
 2. Criar retenção em camadas: telemetria bruta curta (30–90 dias), agregados diários por mais tempo; auditoria com prazo legal definido, exportação e trilha de acesso à própria auditoria.
 3. Oferecer exportação CSV/JSON respeitando filtros, com registro de quem exportou e marcação de dados sensíveis.
 4. Criar um painel-resumo ROOT: saúde agora, regressões abertas, operações sensíveis recentes e links diretos para a investigação filtrada.
+
+### Fase 4 — Expansão do Superpainel (Gestão de Secretarias e Cargos) [NOVO]
+
+Esta fase atende à nova demanda de organização administrativa de Secretarias (ex: Educação, Saúde, Administração) e alocação de Cargos dentro do Superpainel.
+
+1. **Nova Entidade `secretarias` e Migração de Dados**: Criar a tabela `public.secretarias` (`id`, `nome`, `logo_url`, `ativo`). A migration de banco garantirá que os dados da atual "Secretaria de Educação" (presentes na tabela `configuracoes_rede`) sejam inseridos como o primeiro registro da nova tabela, evitando qualquer perda de dados da secretaria atual.
+2. **Modal de Criação de Secretaria**: Desenvolver um modal específico no superpainel para cadastro e edição de Secretarias. Este modal deve obrigatoriamente incluir a **possibilidade de cadastrar a logo da secretaria** usando o componente `FileUpload` (com *cache-busting* `?t=timestamp`).
+3. **Relacionamento de Cargos**: Atualizar a tabela `public.cargos` adicionando a chave estrangeira `secretaria_id` referenciando `public.secretarias(id)` (Migration).
+4. **Gestão de Cargos Contextualizada**: Dentro da visão detalhada de cada Secretaria, adicionar a **opção de cadastrar os cargos das respectivas secretarias**, garantindo que o `secretaria_id` seja herdado.
+5. **Permissões (Nível 1 - Acesso Global Híbrido)**: Expandir as funções de RLS e a interface de Permissões para que todos os usuários de **Nível 1** continuem, por padrão, com acesso a **todas as Secretarias**. Além disso, o Modal de "Acessos Especiais" no painel de permissões será atualizado, permitindo que você restrinja manualmente um usuário de Nível 1 para visualizar e atuar apenas em secretarias específicas (ex: limitar o Secretário de Saúde apenas à Saúde).
 
 ## Prioridade
 
@@ -65,3 +77,4 @@ Impacto atual mais relevante: a política `dev_all_authenticated` de `performanc
 4. Conferir estados vazios, baixa amostragem, falha de rede, dados de navegador indisponíveis e páginas além do total.
 5. Criar uma atualização de teste em um registro: validar resumo, diff por campo, máscara de dados sensíveis, link para o registro e imutabilidade do log.
 6. Simular um aumento de latência e conferir tendência, comparação de período, alerta e navegação para a rota filtrada.
+7. Validar a criação de uma nova Secretaria no superpainel, anexando a logo com sucesso, e em seguida cadastrando um novo cargo vinculado exclusivamente àquela Secretaria.

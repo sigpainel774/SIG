@@ -70,6 +70,13 @@ const adminGroups: AdminGroup[] = [
     badgeColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
     items: [
       {
+        title: 'Secretarias',
+        subtitle: 'Gerenciar secretarias',
+        icon: Building2,
+        iconColor: 'text-sky-300',
+        path: '/admin/secretarias',
+      },
+      {
         title: 'Escolas',
         subtitle: 'Gerenciar unidades',
         icon: Building2,
