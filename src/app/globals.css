@@ -274,29 +274,45 @@
   z-index: 1;
 }
 
-/* Fix do Popup do Leaflet para não ficar branco no Dark Mode */
+/* Fix do Popup do Leaflet para não ficar branco no Dark Mode e zerar paddings do wrapper (prevenindo clipping e tremida) */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+
 .dark .leaflet-popup-content-wrapper,
 .dark .leaflet-popup-tip {
   background-color: #182030 !important;
   color: #f1f1f1 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
 }
 
-.dark .leaflet-popup-content {
+.leaflet-popup-content {
   margin: 0 !important;
   border-radius: 0.75rem !important;
+  width: auto !important;
 }
 
 .dark .leaflet-popup-content a {
   color: inherit !important;
 }
 
-.dark .leaflet-popup-close-button {
+.leaflet-popup-close-button {
   color: #94a3b8 !important;
-  padding: 4px 4px 0 0 !important;
+  top: 8px !important;
+  right: 8px !important;
+  z-index: 30 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
 }
-.dark .leaflet-popup-close-button:hover {
+.leaflet-popup-close-button:hover {
   color: #f87171 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Classes para padronizar e ajustar o tamanho dos logos nos cabeçalhos de documentos oficiais */
