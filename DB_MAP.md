@@ -23,6 +23,7 @@ Cadastro de escolas e unidades do município.
 *   `assinatura_diretor_url`: `text` (Nullable)
 *   `anexos_padrao`: `text[]` / `ARRAY` (Default: '{}'::text[], Nullable)
 *   `codigo`: `integer` (NOT NULL)
+*   `secretaria_id`: `uuid` (Foreign Key -> `public.secretarias.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 

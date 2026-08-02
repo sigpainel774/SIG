@@ -73,3 +73,5 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 54 | `20260802000000_fix_birthdays_rpc_foto_url.sql` | 2026-08-02 | Atualização da RPC `get_birthdays_of_month` incluindo `foto_avatar_path` e `foto_visualizacao_path`. | `public.funcionarios`, `public.alunos` | Suporte a Fotos de Avatar |
 | 55 | `20260802000001_make_fotos_originais_bucket_public.sql` | 2026-08-02 | Configuração do bucket `fotos-originais` como Privado (`public = false`) para conformidade LGPD. | `storage.buckets` | Proteção de Privacidade LGPD |
 | 56 | `20260802150000_secretarias_e_cargos.sql` | 2026-08-02 | Cria tabela `secretarias`, migra os dados da secretaria atual, e atualiza as RLS de `performance_metrics` e `audit_logs` para corrigir os erros silenciosos. Também vincula secretarias a cargos. | `public.secretarias`, `public.cargos`, `public.acessos_usuarios` | RLS e ABAC Atualizados |
+| 57 | `20260802160000_add_secretaria_id_to_escolas.sql` | 2026-08-02 | Adiciona a coluna `secretaria_id` na tabela `public.escolas` e vincula escolas existentes à Secretaria Municipal de Educação. | `public.escolas`, `public.secretarias` | Coluna FK adicionada |
+

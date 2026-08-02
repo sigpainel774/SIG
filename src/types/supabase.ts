@@ -1504,6 +1504,7 @@ export type Database = {
           modulos_ativos: string[] | null
           nome: string
           plano: string | null
+          secretaria_id: string | null
           telefone: string | null
           tipo: string | null
         }
@@ -1511,7 +1512,7 @@ export type Database = {
           anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
-          codigo: number
+          codigo?: number
           created_at?: string
           deleted_at?: string | null
           diretor_id?: string | null
@@ -1525,6 +1526,7 @@ export type Database = {
           modulos_ativos?: string[] | null
           nome: string
           plano?: string | null
+          secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null
         }
@@ -1546,6 +1548,7 @@ export type Database = {
           modulos_ativos?: string[] | null
           nome?: string
           plano?: string | null
+          secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null
         }
@@ -1557,6 +1560,14 @@ export type Database = {
             referencedRelation: "funcionarios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "escolas_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+
           {
             foreignKeyName: "escolas_diretor_id_fkey"
             columns: ["diretor_id"]
