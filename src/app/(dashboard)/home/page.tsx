@@ -14,7 +14,8 @@ import {
   Users,
   Clock,
   Printer,
-  Loader2
+  Loader2,
+  ChevronLeft
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,7 @@ import { KPICard } from '@/components/KPICard'
 import { FrequenciaBar } from '@/components/FrequenciaBar'
 import { ModalDetalhesFrequenciaHoje } from '@/components/modals/ModalDetalhesFrequenciaHoje'
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
+import { createClient } from '@/lib/supabaseClient'
 
 interface KPIData {
   totalAlunos: number
@@ -49,6 +51,12 @@ const ACESSO_RAPIDO_ITEMS = [
   { label: 'Funcionários', icon: Users, href: '/funcionarios' },
 ] as const
 
+interface SecretariaItem {
+  id: string
+  nome: string
+  logo_url: string | null
+}
+
 export default function HomePage() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
   const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
@@ -67,6 +75,61 @@ export default function HomePage() {
     [acessos, funcionario?.cargo]
   )
   const isMultiLotadoDocente = isProfessor && vinculosAtivos.length > 1
+
+  // ── Detecção de nível 1 (admin global não-superadmin) ──
+  // Nível 1 possui acesso a múltiplas secretarias e precisa selecionar
+  // secretaria → escola antes de acessar o dashboard
+  const isNivel1 = useMemo(
+    () => !funcionario?.is_superadmin && acessos.some(a => a.nivel === 1 && a.ativo),
+    [funcionario?.is_superadmin, acessos]
+  )
+
+  // IDs de secretarias que o nível 1 pode acessar (null = todas)
+  const secretariasIdsPermitidas = useMemo<string[] | null>(() => {
+    if (!isNivel1) return null
+    const acessoNivel1 = acessos.find(a => a.nivel === 1 && a.ativo)
+    return (acessoNivel1 as any)?.secretarias_ids ?? null
+  }, [isNivel1, acessos])
+
+  // Estado da secretaria selecionada (passo 1 do fluxo nível 1)
+  const [selectedSecretaria, setSelectedSecretaria] = useState<SecretariaItem | null>(null)
+  const [secretarias, setSecretarias] = useState<SecretariaItem[]>([])
+  const [loadingSecretarias, setLoadingSecretarias] = useState(false)
+
+  // Carrega secretarias do banco para o fluxo nível 1
+  useEffect(() => {
+    if (!isNivel1) return
+    let active = true
+    setLoadingSecretarias(true)
+    const supabase = createClient()
+    supabase
+      .from('secretarias')
+      .select('id, nome, logo_url')
+      .is('deleted_at', null)
+      .eq('ativo', true)
+      .order('nome')
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) {
+          console.error('[home] Erro ao carregar secretarias:', error)
+          toast.error('Erro ao carregar lista de secretarias.')
+        } else if (data) {
+          // Filtra pelas secretarias permitidas ao nível 1 (null = todas)
+          const filtradas = secretariasIdsPermitidas
+            ? data.filter(s => secretariasIdsPermitidas.includes(s.id))
+            : data
+          setSecretarias(filtradas)
+        }
+        setLoadingSecretarias(false)
+      })
+    return () => { active = false }
+  }, [isNivel1, secretariasIdsPermitidas])
+
+  // Escolas filtradas pela secretaria selecionada (para o passo 2 do fluxo nível 1)
+  const escolasDaSecretaria = useMemo(() => {
+    if (!selectedSecretaria) return []
+    return escolas.filter(e => e.secretaria_id === selectedSecretaria.id)
+  }, [escolas, selectedSecretaria])
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
@@ -263,8 +326,112 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── VISÃO 1: SELEÇÃO DE ESCOLA ── */}
-      {!selectedEscola ? (
+      {/* ── VISÃO 1A: NÍVEL 1 — SELEÇÃO DE SECRETARIA ── */}
+      {isNivel1 && !selectedSecretaria ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+              <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
+              Selecione uma Secretaria
+            </h1>
+            <p className="text-sm text-muted-foreground hidden md:block">
+              Clique em uma secretaria para acessar suas unidades
+            </p>
+          </div>
+
+          {loadingSecretarias ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
+              <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
+              <p className="text-sm text-muted-foreground">Carregando secretarias...</p>
+            </div>
+          ) : secretarias.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
+              <Building2 className="w-10 h-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhuma secretaria disponível para o seu acesso.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-8 justify-items-center pt-6">
+              {secretarias.map((secretaria) => (
+                <div
+                  key={secretaria.id}
+                  onClick={() => setSelectedSecretaria(secretaria)}
+                  className="flex flex-col items-center cursor-pointer group w-36"
+                >
+                  <div className="w-24 h-24 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95 bg-surface-2 border border-borderCustom">
+                    {secretaria.logo_url ? (
+                      <img src={secretaria.logo_url} alt={secretaria.nome} className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <Building2 className="w-10 h-10 text-sky-400" />
+                    )}
+                  </div>
+                  <span className="mt-2.5 text-xs font-semibold text-center text-foreground group-hover:text-highlight transition-colors line-clamp-3 max-w-[130px] leading-snug">
+                    {secretaria.nome}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      ) : isNivel1 && selectedSecretaria && !selectedEscola ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedSecretaria(null)}
+                className="text-muted-foreground hover:text-foreground gap-1.5 -ml-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Secretarias
+              </Button>
+              <span className="text-muted-foreground">/</span>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                {selectedSecretaria.logo_url ? (
+                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} className="w-7 h-7 object-contain rounded-lg" />
+                ) : (
+                  <Building2 className="w-6 h-6 text-sky-400" />
+                )}
+                {selectedSecretaria.nome}
+              </h1>
+            </div>
+            <p className="text-sm text-muted-foreground hidden md:block">
+              Clique em uma escola para acessar o painel
+            </p>
+          </div>
+
+          {escolasDaSecretaria.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
+              <GraduationCap className="w-10 h-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhuma escola vinculada a esta secretaria.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-8 justify-items-center pt-6">
+              {escolasDaSecretaria.map((escola) => {
+                const iconProps = getSchoolIconProps(escola)
+                return (
+                  <div
+                    key={escola.id}
+                    onClick={() => setSelectedEscola(escola)}
+                    className="flex flex-col items-center cursor-pointer group w-32"
+                  >
+                    <div
+                      className="w-20 h-20 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95"
+                      style={iconProps.style}
+                    >
+                      {iconProps.content}
+                    </div>
+                    <span className="mt-2.5 text-xs font-semibold text-center text-foreground group-hover:text-highlight transition-colors line-clamp-2 max-w-[110px] leading-snug">
+                      {escola.nome}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : !selectedEscola ? (
         !isAdmin && !isMultiLotadoDocente ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
             <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />

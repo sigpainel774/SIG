@@ -38,6 +38,11 @@ export function AuthInitializer({ funcionario, acessos, vinculos = [] }: AuthIni
         if (primeiroVinculo?.escola_id) {
           state.setEscolaAtivaId(primeiroVinculo.escola_id)
         }
+      } else {
+        // Nível 1 (admin global) sem escola vinculada diretamente:
+        // Limpa a escola ativa para que a home exiba a seleção de secretarias
+        // sem herdar uma escola persistida no localStorage de sessão anterior
+        state.setEscolaAtivaId(null)
       }
     }
     initialized.current = true
@@ -65,6 +70,11 @@ export function AuthInitializer({ funcionario, acessos, vinculos = [] }: AuthIni
           if (primeiroVinculo?.escola_id) {
             state.setEscolaAtivaId(primeiroVinculo.escola_id)
           }
+        } else {
+          // Nível 1 (admin global) sem escola vinculada diretamente:
+          // Limpa a escola ativa para que a home exiba a seleção de secretarias
+          // sem herdar uma escola persistida no localStorage de sessão anterior
+          state.setEscolaAtivaId(null)
         }
       }
     }
