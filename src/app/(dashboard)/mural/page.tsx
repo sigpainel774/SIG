@@ -619,7 +619,7 @@ export default function MuralPage() {
             <p className="text-center text-xs text-muted-foreground py-4">Nenhum aniversariante registrado neste dia.</p>
           ) : (
             birthdaysOfSelectedDay.map((b, idx) => {
-              const fullPhotoUrl = getAvatarUrl({ foto_url: b.foto_url })
+              const fullPhotoUrl = getAvatarUrl(b)
               const initials = b.name
                 .trim()
                 .split(' ')

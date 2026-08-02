@@ -3961,6 +3961,9 @@ export type Database = {
           day: number
           name: string
           role: string
+          foto_url: string | null
+          foto_avatar_path: string | null
+          foto_visualizacao_path: string | null
         }[]
       }
       get_dashboard_resumo: {
