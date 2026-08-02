@@ -165,6 +165,12 @@
 - **Uso do DB_MAP.md**: O agente deve SEMPRE realizar a leitura do arquivo `DB_MAP.md` localizado na raiz do projeto (`c:\Users\Pc\Documents\GitHub\SIG\DB_MAP.md`) antes de formular ou executar qualquer query SQL, insert, update ou delete, a fim de garantir a exatidão dos nomes de tabelas, colunas, chaves estrangeiras e tipos de dados sem a necessidade de varredura prévia de tabelas via API.
 <!-- END:db-map-rule -->
 
+<!-- BEGIN:migrations-map-rule -->
+# Leitura Prévia e Manutenção de Migrations (MIGRATIONS_MAP.md)
+
+- **Uso do MIGRATIONS_MAP.md**: O agente deve SEMPRE consultar e manter atualizado o arquivo `MIGRATIONS_MAP.md` localizado na raiz do projeto (`c:\Users\Pc\Documents\GitHub\SIG\MIGRATIONS_MAP.md`) ao criar, alterar ou verificar migrations do Supabase (`supabase/migrations/`), registrando a data, nome do arquivo, propósito e tabelas/funções modificadas.
+<!-- END:migrations-map-rule -->
+
 <!-- BEGIN:refactoring-and-duplication-rules -->
 # Diretrizes de Reutilização de Código e Supressão de Duplicações
 

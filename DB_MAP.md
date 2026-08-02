@@ -654,4 +654,27 @@ Histórico de revisões, oficinas e manutenções da frota.
 *   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
+---
 
+## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
+
+| Nome da RPC | Parâmetros | Tipo de Retorno | Descrição & Propósito |
+|-------------|------------|-----------------|------------------------|
+| `public.obter_admin_dashboard_kpis` | `p_escola_id UUID, p_data DATE, p_inicio_mes TIMESTAMPTZ` | `jsonb` | Retorna consolidação de KPIs (alunos, turmas, ocorrências, transferências pendentes, diários) com validação de acesso `auth.uid()`. |
+| `public.obter_multi_escolas_stats` | `p_funcionario_id UUID, p_escola_ids UUID[], p_data DATE` | `jsonb` | Estatísticas multi-escola de professores (turmas vinculadas, aulas do dia, chamadas pendentes). |
+| `public.get_birthdays_of_month` | `month_num INT` | `TABLE (day, name, role, foto_url, foto_avatar_path, foto_visualizacao_path)` | Aniversariantes (alunos e funcionários) do mês com fotos/avatars para exibição de perfil. |
+| `public.obter_relatorio_servidores_completo` | `p_escola_id UUID, p_cargo TEXT, p_status TEXT` | `jsonb` | Relatório completo de servidores por escola/cargo com detalhamento de vínculos e contatos. |
+| `public.obter_boletim_aluno_completo` | `p_aluno_id UUID, p_turma_id UUID` | `jsonb` | Notas, faltas e médias consolidadas por trimestre para exibição no diário/boletim do aluno. |
+
+---
+
+## 📦 Buckets do Supabase Storage
+
+| Nome do Bucket | Visibilidade | Propósito & Conteúdo |
+|----------------|--------------|----------------------|
+| `fotos-originais` | 🔒 Privado (LGPD) | Fotos brutas originais enviadas em alta resolução (proteção de privacidade LGPD). |
+| `fotos-avatars` | 🌐 Público | Imagens otimizadas e recortadas para exibição circular em avatares de listas/tabelas. |
+| `fotos-visualizacao` | 🌐 Público | Imagens otimizadas em média resolução para fichas e perfis de alunos/funcionários. |
+| `documentos-oficiais` | 🌐 Público | Comprovantes de matrícula, fichas e PDFs gerados com assinatura digital e QR Code. |
+| `anexos-alunos` | 🔒 Privado / RLS | Certidões de nascimento, RG, atestados médicos e anexos sigilosos de alunos. |
+| `assinaturas` | 🌐 Público | Assinaturas de diretores e responsáveis para chancela de documentos. |

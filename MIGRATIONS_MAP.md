@@ -1,0 +1,74 @@
+# SIG - Mapa Oficial de Migrations SQL (MIGRATIONS_MAP.md)
+
+Este arquivo descreve o histórico completo e a finalidade de todas as migrations SQL do Supabase localizadas em `supabase/migrations/`. **Consulte este arquivo antes de criar, aplicar ou modificar qualquer migration ou script SQL no banco de dados.**
+
+---
+
+## 📜 Regras de Manutenção de Migrations
+
+1. **Nomeclatura Padronizada:** Toda nova migration DEVE utilizar o prefixo timestamp `YYYYMMDDHHMMSS_nome_descritivo.sql` (ex: `20260802000000_exemplo.sql`).
+2. **Idempotência:** Scripts SQL devem ser seguros para re-execução (usar `CREATE TABLE IF NOT EXISTS`, `DROP FUNCTION IF EXISTS`, `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`).
+3. **Imutabilidade de Produção:** Nunca edite um arquivo de migration antigo já aplicado em produção. Em vez disso, crie um novo arquivo de migration para aplicar alterações subsequentes.
+4. **Registro Obrigatório:** Ao criar ou modificar migrations, este arquivo (`MIGRATIONS_MAP.md`) DEVE ser atualizado imediatamente.
+
+---
+
+## 🗺️ Inventário Completo de Migrations (55 Arquivos)
+
+| # | Arquivo / Migration | Data / Prefixo | Propósito & Descrição | Tabelas / Entidades Afetadas | RLS / Segurança |
+|---|---------------------|----------------|-----------------------|------------------------------|-----------------|
+| 01 | `009_indexes_docentes_kpis.sql` | Legado | Criação de índices para consultas rápidas de docentes e KPIs por turma. | `vinculos_turmas`, `funcionarios` | Performance |
+| 02 | `055_dashboard_metrics_rpc.sql` | Legado | Funções RPC para agregação rápida de métricas na dashboard principal. | `alunos`, `turmas`, `ocorrencias` | `SECURITY DEFINER` |
+| 03 | `20260703000000_initial_schema.sql` | 2026-07-03 | Schema base do sistema (escolas, funcionarios, alunos, turmas, vinculos). | Tabelas principais do schema `public` | RLS Enable + Policies |
+| 04 | `20260703000001_storage_buckets.sql` | 2026-07-03 | Inicialização dos buckets públicos e privados no Supabase Storage. | `storage.buckets`, `storage.objects` | Public & Authenticated |
+| 05 | `20260703000002_auto_user_trigger.sql` | 2026-07-03 | Trigger para vinculação automática do `auth.users.id` com `funcionarios.auth_user_id`. | `auth.users`, `public.funcionarios` | Trigger System |
+| 06 | `20260703000003_alunos_extended.sql` | 2026-07-03 | Expansão de colunas em `alunos` (saúde, documentos, contatos e filiação). | `public.alunos` | Mantém RLS |
+| 07 | `20260703000004_cargos.sql` | 2026-07-03 | Tabela de parametrização de cargos, níveis e salários base da rede municipal. | `public.cargos` | `dev_all_authenticated` |
+| 08 | `20260705000000_bug_reports.sql` | 2026-07-05 | Tabela para envio de chamados, suporte e bug reports ao Superadmin. | `public.bug_reports` | Authenticated Insert/Select |
+| 09 | `20260706000000_add_deleted_at_to_cargos.sql` | 2026-07-06 | Coluna `deleted_at` para soft delete na tabela `cargos`. | `public.cargos` | Filter `deleted_at IS NULL` |
+| 10 | `20260706000001_add_deleted_at_to_dispositivos.sql` | 2026-07-06 | Coluna `deleted_at` em `dispositivos` de ponto biométrico/coleta. | `public.dispositivos` | Soft delete |
+| 11 | `20260706000002_lotacoes_schema.sql` | 2026-07-06 | Estruturação de vínculos e lotações de servidores nas escolas. | `public.vinculos_funcionarios` | RLS por Escola |
+| 12 | `20260706000003_mural_optimizations.sql` | 2026-07-06 | Índices por data e destino na tabela `comunicados` do mural escolar. | `public.comunicados` | Performance |
+| 13 | `20260706000004_permissions_reformulation.sql` | 2026-07-06 | Reformulação do modelo de permissões ABAC por nível e cargo. | `public.acessos_usuarios` | ABAC granular |
+| 14 | `20260707000000_sync_diretor_permissions.sql` | 2026-07-07 | Sincronização automática de acessos de Diretor ao vincular funcionário à escola. | `public.acessos_usuarios`, `escolas` | Trigger / Security Definer |
+| 15 | `20260707000001_create_student_buckets.sql` | 2026-07-07 | Bucket privado `anexos-alunos` com políticas de leitura/escrita restritas. | `storage.buckets`, `storage.objects` | Restricted RLS |
+| 16 | `20260707000002_add_coords_to_alunos.sql` | 2026-07-07 | Colunas `latitude` e `longitude` em `alunos` para geolocalização e mapas. | `public.alunos` | Dados numéricos |
+| 17 | `20260707000003_performance_metrics.sql` | 2026-07-07 | Tabela `performance_metrics` para telemetria Web Vitals e tempo de resposta. | `public.performance_metrics` | Insert Authenticated |
+| 18 | `20260707000004_add_turno_capacidade_to_turmas.sql` | 2026-07-07 | Campos `turno` e `capacidade` na tabela de turmas escolares. | `public.turmas` | Schema Update |
+| 19 | `20260707000005_create_materias_table.sql` | 2026-07-07 | Tabela `materias` vinculando disciplinas, turmas e professores. | `public.materias` | RLS por Escola |
+| 20 | `20260707000006_fix_turmas_update_policy.sql` | 2026-07-07 | Correção de política RLS para permitir edições de turmas por gestores. | `public.turmas` | RLS Update Policy |
+| 21 | `20260708000000_create_frequencias_and_notas.sql` | 2026-07-08 | Tabelas centrais de lançamentos de diário: `frequencias` e `notas`. | `public.frequencias`, `public.notas` | RLS por Professor/Escola |
+| 22 | `20260708000001_update_funcionarios_schema.sql` | 2026-07-08 | Extensão completa dos campos de RH, formação e documentos em `funcionarios`. | `public.funcionarios` | RH Schema |
+| 23 | `20260708000002_alunos_temp_signatures.sql` | 2026-07-08 | Códigos de acesso temporários para assinatura de comprovantes. | `public.alunos` | Validation tokens |
+| 24 | `20260708000003_add_diretor_signature.sql` | 2026-07-08 | Colunas de URL de assinatura do diretor na tabela `escolas`. | `public.escolas` | Assinatura digital |
+| 25 | `20260708000004_alunos_anexos_and_archiving.sql` | 2026-07-08 | Tabela `alunos_anexos` e histórico de arquivamento de documentos. | `public.alunos_anexos`, `arquivados` | Multi-anexo RLS |
+| 26 | `20260709000000_fix_diretor_rls_function.sql` | 2026-07-09 | Função `is_diretor` com `SECURITY DEFINER` para evitar recursão em RLS. | `public.escolas`, `acessos_usuarios` | Prevent Infinite Recursion |
+| 27 | `20260709000001_fix_student_signatures_rls.sql` | 2026-07-09 | Liberação de leitura anônima para validação de QR Code de estudantes. | `public.alunos` | Public read on verification |
+| 28 | `20260709000002_log_signature_history.sql` | 2026-07-09 | Tabela de auditoria de assinaturas de documentos com hash SHA256. | `public.assinatura` | Auditoria |
+| 29 | `20260709231000_fix_signature_rls_flow.sql` | 2026-07-09 | Política de `UPDATE` com `WITH CHECK (true)` para assinatura mobile anônima. | `public.alunos` | Mobile validation RLS |
+| 30 | `20260710000000_create_recuperacoes_finais.sql` | 2026-07-10 | Tabela `recuperacoes_finais` para notas e médias do conselho final. | `public.recuperacoes_finais` | RLS Lançamento Final |
+| 31 | `20260710022000_update_trigger_log_signature_timestamp.sql` | 2026-07-10 | Trigger de atualização de timestamp no log auditável de assinaturas. | `public.assinatura` | Trigger Timestamp |
+| 32 | `20260710023500_add_assinatura_url_to_funcionarios.sql` | 2026-07-10 | Coluna `assinatura_url` na tabela `funcionarios`. | `public.funcionarios` | Assinatura Servidor |
+| 33 | `20260710030000_create_assinatura_table.sql` | 2026-07-10 | Tabela oficial de tokens criptográficos e chancelas de QR Code. | `public.assinatura` | Cryptographic Verification |
+| 34 | `20260710203500_add_anexos_padrao_to_escolas.sql` | 2026-07-10 | Campo `anexos_padrao` em `escolas` para lista de documentos exigidos na matrícula. | `public.escolas` | Configuração Matrícula |
+| 35 | `20260710204800_notifications_settings_and_deadlines.sql` | 2026-07-10 | Tabelas `configuracao_notificacoes_niveis` e `prazos_unidades` para prazos de digitação. | `configuracao_notificacoes_niveis`, `prazos_unidades` | Parametrização |
+| 36 | `20260711000000_transferencias_funcionarios.sql` | 2026-07-11 | Tabela de movimentação e transferência de servidores entre escolas da rede. | `public.transferencias_funcionarios` | Fluxo de Transferência |
+| 37 | `20260712000000_central_avaliacoes.sql` | 2026-07-12 | RPCs e estruturas para lançamento unificado de notas por trimestre e matéria. | `public.notas`, `public.materias` | Central de Lançamentos |
+| 38 | `20260713000000_multi_lotacao_transfer_request.sql` | 2026-07-13 | Suporte a transferência multi-lotação com snapshots cadastrais de servidores. | `public.transferencias_funcionarios` | Snapshots JSONB |
+| 39 | `20260714000000_grade_horaria_and_professor_kpis.sql` | 2026-07-14 | Tabelas `grade_semanal` e `horarios_aulas_slots` para matriz curricular da escola. | `grade_semanal`, `horarios_aulas_slots` | Matriz Curricular |
+| 40 | `20260714000000_superadmin_jwt_claim.sql` | 2026-07-14 | Injeção de custom claim `is_superadmin` nos tokens JWT do Supabase Auth. | `auth.users`, Custom Claims | Bypass de Segurança |
+| 41 | `20260714000001_performance_indexes.sql` | 2026-07-14 | Índices B-Tree compostos em `alunos(escola_id, turma_id)` e `frequencias`. | Várias tabelas | Performance SQL |
+| 42 | `20260714010000_add_integral_shift_to_slots.sql` | 2026-07-14 | Suporte ao turno 'Integral' na tabela `horarios_aulas_slots`. | `public.horarios_aulas_slots` | Shift Support |
+| 43 | `20260714020000_performance_dashboard_rpc.sql` | 2026-07-14 | RPC `obter_metricas_performance` para auditoria de velocidade e latência web. | `public.performance_metrics` | `SECURITY DEFINER` |
+| 44 | `20260714030000_restrict_aluno_escola_id_update.sql` | 2026-07-14 | RLS restritiva impedindo a alteração direta de `escola_id` sem transferência oficial. | `public.alunos` | Proteção de Dados |
+| 45 | `20260715000000_student_enrollment_number.sql` | 2026-07-15 | Função de geração de número de matrícula sequencial por ano/escola. | `public.alunos` | Sequencial Único |
+| 46 | `20260718000000_enable_security_invoker_on_performance_views.sql` | 2026-07-18 | Habilitação de `security_invoker = true` em views estatísticas do banco. | Views de estatísticas | Postgres Security |
+| 47 | `20260723000000_sessoes_ativas.sql` | 2026-07-23 | Tabela de rastreamento e encerramento remoto de sessões de usuário ativas. | `public.access_logs` | Auditoria de Sessão |
+| 48 | `20260723162000_unidade_diretor_unico.sql` | 2026-07-23 | Constraint de unicidade impedindo múltiplos diretores ativos na mesma escola. | `public.escolas`, `vinculos_funcionarios` | Validação de Regra de Negócio |
+| 49 | `20260724000000_secure_perf_and_audit_rls.sql` | 2026-07-24 | Restrição de leitura de logs de auditoria e performance apenas a Superadmins. | `public.audit_logs`, `performance_metrics` | Superadmin RLS |
+| 50 | `20260725000000_dashboard_and_boletim_rpcs.sql` | 2026-07-25 | RPCs `obter_boletim_aluno_completo` e consolidadores da dashboard administrativa. | `public.notas`, `frequencias`, `alunos` | RPC Consolidadora |
+| 51 | `20260725000000_permissoes_granulares_secretaria.sql` | 2026-07-25 | Tabela `atividades_secretaria` e histórico de entregas pedagógicas dos diários. | `atividades_secretaria`, `atividades_secretaria_historico` | Controle de Entregas |
+| 52 | `20260729000000_relatorio_servidores_rpc.sql` | 2026-07-29 | RPC `obter_relatorio_servidores_completo` para geração de relatórios de RH. | `public.funcionarios`, `vinculos_funcionarios` | Relatório RH JSON |
+| 53 | `20260730000000_fix_dashboard_rpcs_security.sql` | 2026-07-30 | Correção de segurança com validação `auth.uid()` em `obter_admin_dashboard_kpis` e `obter_multi_escolas_stats`. | RPCs da Dashboard | Blindagem contra Acesso Não Autorizado |
+| 54 | `20260802000000_fix_birthdays_rpc_foto_url.sql` | 2026-08-02 | Atualização da RPC `get_birthdays_of_month` incluindo `foto_avatar_path` e `foto_visualizacao_path`. | `public.funcionarios`, `public.alunos` | Suporte a Fotos de Avatar |
+| 55 | `20260802000001_make_fotos_originais_bucket_public.sql` | 2026-08-02 | Configuração do bucket `fotos-originais` como Privado (`public = false`) para conformidade LGPD. | `storage.buckets` | Proteção de Privacidade LGPD |

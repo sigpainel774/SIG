@@ -68,5 +68,8 @@ Sempre que for executar comandos no projeto, verifique previamente o arquivo `ro
 Sempre que for alterar o visual do sistema, consulte previamente o arquivo `design_preferences.md` (ou `DESIGN_PREFERENCES.md`) para garantir conformidade com os padrões visuais e diretrizes de UI/UX do projeto.
 <!-- END:verify-design-preferences-rule -->
 
+<!-- BEGIN:migrations-map-rule -->
+# Consulta e Atualização do Mapeamento de Migrations
 
-
+Sempre que for criar, alterar ou verificar migrations do Supabase (`supabase/migrations/`), consulte e mantenha atualizado o arquivo `MIGRATIONS_MAP.md` na raiz do projeto, registrando a data, nome do arquivo, propósito e tabelas/funções modificadas.
+<!-- END:migrations-map-rule -->

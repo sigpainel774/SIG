@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-07-28  
+**Última Atualização:** 2026-08-02  
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -11,6 +11,9 @@
 
 | Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
 |-------------------------|--------|----------------|-------------------|
+| **Mapeamento de Migrations (`MIGRATIONS_MAP.md`)** | ✅ Concluído | 2026-08-02 | Inventário centralizado das 55 migrations do Supabase com regras permanentes em `AGENTS.md` e `.agents/AGENTS.md`. |
+| **Relatório de Servidores & RPC Aniversariantes** | ✅ Concluído | 2026-08-02 | RPC `obter_relatorio_servidores_completo`, atualização da `get_birthdays_of_month` com foto_avatar/foto_visualizacao e bucket privado LGPD. |
+| **Refatoração de RPCs & Segurança RLS (G-3)** | ✅ Concluído | 2026-07-30 | RPCs `obter_admin_dashboard_kpis` e `obter_multi_escolas_stats` blindadas com verificação `auth.uid()` e restrições de acesso. |
 | **Filtro de Mapa Logístico, Camadas e Impressão** | ✅ Concluído | 2026-07-28 | Filtros avançados por camada de transporte/geolocalização em `MapaGlobal.tsx` e `MapaAlunos.tsx`, relatórios com `MapaImpressao.tsx` e template de impressão `print-relatorio-geolocalizacao.tsx`. |
 | **Importador Inteligente de Alunos via Excel** | ✅ Concluído | 2026-07-28 | Modal `modal-importar-excel.tsx` e parser `excelStudentParser.ts` para validação e carga em massa de estudantes em `/admin/escolas`. |
 | **Expurgo Seguro & Auditoria da Lixeira** | ✅ Concluído | 2026-07-28 | Endpoint `/api/admin/hard-delete`, rotinas de auditoria em `audit-agent.ts` e `archive-agent.ts`, interface em `/admin/lixeira`. |
