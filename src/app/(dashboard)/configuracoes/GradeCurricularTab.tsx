@@ -55,6 +55,8 @@ export default function GradeCurricularTab() {
   }
 
   useEffect(() => {
+    setEditingId(null)
+    setEditingNome('')
     fetchMaterias()
   }, [escolaAtivaId])
 
@@ -242,13 +244,6 @@ export default function GradeCurricularTab() {
           </Button>
         )}
       </div>
-
-      {isAdminGlobalOrRoot() && (
-        <div className="flex flex-col gap-2 p-4 bg-surface-2 rounded-xl border border-borderCustom max-w-md">
-          <span className="text-xs font-semibold text-foregroundCustom">Selecione a Escola para configurar:</span>
-          <SchoolSelector />
-        </div>
-      )}
 
       {!escolaAtivaId ? (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-medium max-w-md">

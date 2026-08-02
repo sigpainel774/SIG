@@ -12,6 +12,7 @@ import {
   Save,
   CalendarClock,
   Bell,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -93,8 +94,10 @@ type FuncionarioLocal = Pick<
 >
 
 type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades'
+type Category = 'pessoal' | 'escola'
 
 export function ConfiguracoesClient() {
+  const [category, setCategory] = useState<Category>('pessoal')
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
   const [mounted, setMounted] = useState(false)
 
@@ -136,7 +139,6 @@ export function ConfiguracoesClient() {
         const { data } = await supabase
           .from('funcionarios')
           .select('id, nome, email, cargo, status, assinatura_url, auth_user_id')
-          // Fix #7: eq (comparação exata) em vez de ilike (evita bugs com % e _ em e-mails)
           .eq('email', user.email)
           .maybeSingle()
         if (!cancelled && data) {
@@ -147,7 +149,6 @@ export function ConfiguracoesClient() {
 
     fetchLocal()
 
-    // Cleanup: cancela o setState se o componente for desmontado antes da resposta
     return () => {
       cancelled = true
     }
@@ -156,15 +157,17 @@ export function ConfiguracoesClient() {
   // Sincroniza URL da assinatura pessoal com localFuncionario
   useEffect(() => {
     if (localFuncionario) {
-      // Fix #4: exibe com cache-buster para evitar imagem obsoleta do browser
       const url = localFuncionario.assinatura_url
       setAssinaturaPessoalUrl(getVersaoImagemUrl(url))
     }
   }, [localFuncionario])
 
-  // Carrega assinatura do diretor quando a escola ativa muda
+  // ES-1: Carrega assinatura do diretor quando a escola ativa muda com reset explícito
   useEffect(() => {
-    if (!escolaAtivaId) return
+    if (!escolaAtivaId) {
+      setAssinaturaDiretorUrl(null)
+      return
+    }
 
     const supabase = createClient()
     let cancelled = false
@@ -175,10 +178,12 @@ export function ConfiguracoesClient() {
         .select('assinatura_diretor_url')
         .eq('id', escolaAtivaId)
         .maybeSingle()
-      if (!cancelled && data?.assinatura_diretor_url) {
-        // Fix #4: cache-buster na exibição
-        const url = data.assinatura_diretor_url
-        setAssinaturaDiretorUrl(getVersaoImagemUrl(url))
+      if (!cancelled) {
+        if (data?.assinatura_diretor_url) {
+          setAssinaturaDiretorUrl(getVersaoImagemUrl(data.assinatura_diretor_url))
+        } else {
+          setAssinaturaDiretorUrl(null)
+        }
       }
     }
 
@@ -186,18 +191,18 @@ export function ConfiguracoesClient() {
     return () => { cancelled = true }
   }, [escolaAtivaId])
 
-  // Fix #3: useMemo para evitar recalcular e instabilidade de deps no useEffect abaixo
+  // ES-4: Exigir v.ativo !== false na verificação de vínculo de diretor
   const isDiretor = useMemo(() =>
     selectedEscola?.diretor_id === localFuncionario?.id ||
     vinculos.some(
       (v) =>
+        v.ativo !== false &&
         v.escola_id === escolaAtivaId &&
         (v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR'))
     ),
     [selectedEscola, localFuncionario, vinculos, escolaAtivaId]
   )
 
-  // Fix #3: isDiretor estabilizado por useMemo — sem loop de re-render
   useEffect(() => {
     if (isDiretor && activeTab === 'assinatura-pessoal') {
       setActiveTab('perfil')
@@ -234,7 +239,6 @@ export function ConfiguracoesClient() {
       if (uploadErr) throw uploadErr
 
       const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
-      // Fix #4: URL limpa (sem timestamp) vai para o banco
       const cleanUrl = pData.publicUrl.split('?')[0]
 
       const { error: dbErr } = await supabase
@@ -244,10 +248,9 @@ export function ConfiguracoesClient() {
 
       if (dbErr) throw dbErr
 
-      // Fix #4: exibe com cache-buster para o browser não usar versão antiga
       setAssinaturaDiretorUrl(getVersaoImagemUrl(cleanUrl, Date.now()))
       setNewDiretorSignature(null)
-      toast.success('Assinatura global do diretor salva com sucesso!')
+      toast.success('Assinatura oficial do diretor salva com sucesso!')
     } catch (err: any) {
       toast.error(`Erro ao salvar assinatura do diretor: ${err.message}`)
     } finally {
@@ -285,7 +288,6 @@ export function ConfiguracoesClient() {
       if (uploadErr) throw uploadErr
 
       const { data: pData } = supabase.storage.from('assinaturas_alunos').getPublicUrl(fileName)
-      // Fix #4: URL limpa vai para o banco
       const cleanUrl = pData.publicUrl.split('?')[0]
 
       const { error: dbErr } = await supabase
@@ -295,10 +297,8 @@ export function ConfiguracoesClient() {
 
       if (dbErr) throw dbErr
 
-      // Fix #4: exibe com cache-buster
       setAssinaturaPessoalUrl(getVersaoImagemUrl(cleanUrl, Date.now()))
 
-      // Fix #2: spread seguro — só atualiza o Zustand se `funcionario` não for null
       if (funcionario) {
         useAuthStore.setState({
           funcionario: {
@@ -322,6 +322,12 @@ export function ConfiguracoesClient() {
     }
   }
 
+  const isPessoalTab = (tab: ActiveTab) =>
+    ['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tab)
+
+  const isEscolaTab = (tab: ActiveTab) =>
+    ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades'].includes(tab)
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -331,86 +337,181 @@ export function ConfiguracoesClient() {
           Configurações do Sistema
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerencie seu perfil pessoal, preferências de tema e permissões de acesso ao sistema.
+          Gerencie seu perfil pessoal, preferências de tema e parâmetros operacionais do sistema.
         </p>
       </div>
 
-      {/* Navegação por cards */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {/* Alternância Principal: Preferências Pessoais vs Configurações da Escola */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-borderCustom pb-4">
         <button
-          onClick={() => setActiveTab('perfil')}
+          type="button"
+          onClick={() => {
+            setCategory('pessoal')
+            if (!isPessoalTab(activeTab)) {
+              setActiveTab('perfil')
+            }
+          }}
           className={cn(
-            'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
-            activeTab === 'perfil'
-              ? 'bg-card border-highlight ring-1 ring-highlight/50'
-              : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
+            category === 'pessoal'
+              ? 'bg-[#185FA5] text-white dark:bg-[#3ea6ff] dark:text-zinc-950 font-bold ring-2 ring-[#185FA5]/30'
+              : 'bg-card border border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
           )}
         >
-          <div
-            className={cn(
-              'p-3 rounded-xl',
-              activeTab === 'perfil' ? 'bg-highlight/10 text-highlight' : 'bg-muted text-muted-foreground'
-            )}
-          >
-            <User className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foregroundCustom text-base">Meu Perfil &amp; Aparência</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Ficha funcional, alterar senha e tema do sistema</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('push-notifications')}
-          className={cn(
-            'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
-            activeTab === 'push-notifications'
-              ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
-              : 'bg-card border-borderCustom hover:bg-hoverCustom'
-          )}
-        >
-          <div
-            className={cn(
-              'p-3 rounded-xl',
-              activeTab === 'push-notifications'
-                ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
-                : 'bg-muted text-muted-foreground'
-            )}
-          >
-            <Bell className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foregroundCustom text-base">Notificações Push</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Receber avisos no celular ou tablet</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('sessoes')}
-          className={cn(
-            'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
-            activeTab === 'sessoes'
-              ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
-              : 'bg-card border-borderCustom hover:bg-hoverCustom'
-          )}
-        >
-          <div
-            className={cn(
-              'p-3 rounded-xl',
-              activeTab === 'sessoes'
-                ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
-                : 'bg-muted text-muted-foreground'
-            )}
-          >
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foregroundCustom text-base">Sessões Ativas</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Gerenciar conexões e dispositivos logados na sua conta</p>
-          </div>
+          <User className="h-4 w-4" />
+          Preferências Pessoais
         </button>
 
         {(isDiretor || isAdmin) && (
+          <button
+            type="button"
+            onClick={() => {
+              setCategory('escola')
+              if (!isEscolaTab(activeTab)) {
+                setActiveTab(isDiretor || isAdmin ? 'assinatura-diretor' : 'materias')
+              }
+            }}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
+              category === 'escola'
+                ? 'bg-[#185FA5] text-white dark:bg-[#3ea6ff] dark:text-zinc-950 font-bold ring-2 ring-[#185FA5]/30'
+                : 'bg-card border border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+            )}
+          >
+            <Building2 className="h-4 w-4" />
+            Configurações da Escola (Administrativo)
+          </button>
+        )}
+      </div>
+
+      {/* Banner de Escola Foco (Exibido na Seção Administrativa da Escola) */}
+      {category === 'escola' && (isDiretor || isAdmin) && (
+        <div className="p-4 rounded-2xl bg-card border border-borderCustom shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in-50 duration-200">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#185FA5] dark:text-[#3ea6ff] block mb-0.5">
+              Escola Foco (Unidade Ativa)
+            </span>
+            <h2 className="text-base font-bold text-foregroundCustom">
+              {selectedEscola ? selectedEscola.nome : 'Visão Geral da Rede Macro'}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Alterne a escola foco para configurar a assinatura do diretor, grade curricular e prazos específicos da unidade.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <SchoolSelector />
+          </div>
+        </div>
+      )}
+
+      {/* Cards da Categoria 1: Preferências Pessoais */}
+      {category === 'pessoal' && (
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in-50 duration-200">
+          <button
+            onClick={() => setActiveTab('perfil')}
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+              activeTab === 'perfil'
+                ? 'bg-card border-highlight ring-1 ring-highlight/50'
+                : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            )}
+          >
+            <div
+              className={cn(
+                'p-3 rounded-xl',
+                activeTab === 'perfil' ? 'bg-highlight/10 text-highlight' : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <User className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Meu Perfil &amp; Aparência</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Ficha funcional, alterar senha e tema do sistema</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('push-notifications')}
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+              activeTab === 'push-notifications'
+                ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            )}
+          >
+            <div
+              className={cn(
+                'p-3 rounded-xl',
+                activeTab === 'push-notifications'
+                  ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <Bell className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Notificações Push</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Receber avisos no celular ou tablet</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sessoes')}
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+              activeTab === 'sessoes'
+                ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                : 'bg-card border-borderCustom hover:bg-hoverCustom'
+            )}
+          >
+            <div
+              className={cn(
+                'p-3 rounded-xl',
+                activeTab === 'sessoes'
+                  ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foregroundCustom text-base">Sessões Ativas</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Gerenciar conexões e dispositivos logados na sua conta</p>
+            </div>
+          </button>
+
+          {!isDiretor && (
+            <button
+              onClick={() => setActiveTab('assinatura-pessoal')}
+              className={cn(
+                'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+                activeTab === 'assinatura-pessoal'
+                  ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                  : 'bg-card border-borderCustom hover:bg-hoverCustom'
+              )}
+            >
+              <div
+                className={cn(
+                  'p-3 rounded-xl',
+                  activeTab === 'assinatura-pessoal'
+                    ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                <PenTool className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foregroundCustom text-base">Minha Assinatura</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Cadastrar sua assinatura digital pessoal para assinar documentos</p>
+              </div>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Cards da Categoria 2: Configurações da Escola (Administrativo) */}
+      {category === 'escola' && (isDiretor || isAdmin) && (
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in-50 duration-200">
           <button
             onClick={() => setActiveTab('assinatura-diretor')}
             className={cn(
@@ -435,36 +536,7 @@ export function ConfiguracoesClient() {
               <p className="text-xs text-muted-foreground mt-0.5">Cadastrar assinatura oficial do gestor para os documentos</p>
             </div>
           </button>
-        )}
 
-        {!isDiretor && (
-          <button
-            onClick={() => setActiveTab('assinatura-pessoal')}
-            className={cn(
-              'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
-              activeTab === 'assinatura-pessoal'
-                ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
-                : 'bg-card border-borderCustom hover:bg-hoverCustom'
-            )}
-          >
-            <div
-              className={cn(
-                'p-3 rounded-xl',
-                activeTab === 'assinatura-pessoal'
-                  ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
-                  : 'bg-muted text-muted-foreground'
-              )}
-            >
-              <PenTool className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foregroundCustom text-base">Minha Assinatura</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Cadastrar sua assinatura digital pessoal para assinar documentos</p>
-            </div>
-          </button>
-        )}
-
-        {(isDiretor || isAdmin) && (
           <button
             onClick={() => setActiveTab('materias')}
             className={cn(
@@ -489,9 +561,7 @@ export function ConfiguracoesClient() {
               <p className="text-xs text-muted-foreground mt-0.5">Cadastrar matérias da escola e definir base comum/diversificada</p>
             </div>
           </button>
-        )}
 
-        {(isDiretor || isAdmin) && (
           <button
             onClick={() => setActiveTab('prazo-frequencia')}
             className={cn(
@@ -516,9 +586,7 @@ export function ConfiguracoesClient() {
               <p className="text-xs text-muted-foreground mt-0.5">Trava de dias limite para alteração de chamadas passadas</p>
             </div>
           </button>
-        )}
 
-        {(isDiretor || isAdmin) && (
           <button
             onClick={() => setActiveTab('prazo-atividades')}
             className={cn(
@@ -543,12 +611,12 @@ export function ConfiguracoesClient() {
               <p className="text-xs text-muted-foreground mt-0.5">Antecedência mínima para envio de atividades à secretaria</p>
             </div>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Conteúdo das abas */}
 
-      {activeTab === 'perfil' && (
+      {category === 'pessoal' && activeTab === 'perfil' && (
         <PerfilTab
           nome={localFuncionario?.nome ?? 'Usuário'}
           email={localFuncionario?.email ?? '-'}
@@ -558,36 +626,29 @@ export function ConfiguracoesClient() {
         />
       )}
 
-      {activeTab === 'sessoes' && (
+      {category === 'pessoal' && activeTab === 'sessoes' && (
         <SessoesAtivasTab />
       )}
 
-      {activeTab === 'push-notifications' && (
+      {category === 'pessoal' && activeTab === 'push-notifications' && (
         <PushNotificationsTab />
       )}
 
-      {activeTab === 'assinatura-diretor' && (isDiretor || isAdmin) && (
+      {category === 'escola' && activeTab === 'assinatura-diretor' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <Card className="border-borderCustom bg-card p-6">
             <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
               <PenTool className="h-5 w-5 text-highlight" />
-              Assinatura Oficial do Diretor (Global)
+              Assinatura Oficial do Diretor (Global da Escola)
             </h2>
             <div className="space-y-4">
               <p className="text-xs text-muted-foreground">
                 Esta assinatura será impressa automaticamente em todos os comprovantes, boletins e documentos oficiais desta escola.
               </p>
 
-              {isAdmin && (
-                <div className="flex flex-col gap-2 p-4 bg-surface-2 rounded-xl border border-borderCustom max-w-md">
-                  <span className="text-xs font-semibold text-foregroundCustom">Selecione a Escola para configurar:</span>
-                  <SchoolSelector />
-                </div>
-              )}
-
               {!escolaAtivaId ? (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-medium max-w-md">
-                  Por favor, selecione uma escola para visualizar e gerenciar a assinatura oficial do diretor.
+                  Por favor, selecione uma escola no painel acima para visualizar e gerenciar a assinatura oficial do diretor.
                 </div>
               ) : (
                 <>
@@ -637,7 +698,7 @@ export function ConfiguracoesClient() {
         </div>
       )}
 
-      {activeTab === 'assinatura-pessoal' && !isDiretor && (
+      {category === 'pessoal' && activeTab === 'assinatura-pessoal' && !isDiretor && (
         <div className="animate-in fade-in-50 duration-200">
           <Card className="border-borderCustom bg-card p-6">
             <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
@@ -692,19 +753,19 @@ export function ConfiguracoesClient() {
         </div>
       )}
 
-      {activeTab === 'materias' && (isDiretor || isAdmin) && (
+      {category === 'escola' && activeTab === 'materias' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <GradeCurricularTab />
         </div>
       )}
 
-      {activeTab === 'prazo-frequencia' && (isDiretor || isAdmin) && (
+      {category === 'escola' && activeTab === 'prazo-frequencia' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <PrazoFrequenciaTab />
         </div>
       )}
 
-      {activeTab === 'prazo-atividades' && (isDiretor || isAdmin) && (
+      {category === 'escola' && activeTab === 'prazo-atividades' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <PrazoAtividadesTab />
         </div>
@@ -712,3 +773,4 @@ export function ConfiguracoesClient() {
     </div>
   )
 }
+

@@ -3,14 +3,25 @@
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Building2, ChevronDown, Check, Globe } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 
 export function SchoolSelector() {
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
-  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId } = useAuthStore()
+  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos } = useAuthStore()
   const isAdmin = isAdminGlobalOrRoot()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const vinculosAtivos = useMemo(() => vinculos?.filter((v) => v.ativo) || [], [vinculos])
+
+  const escolasPermitidas = useMemo(() => {
+    if (isAdmin) return escolas
+    if (vinculosAtivos.length > 0) {
+      const permitidas = escolas.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
+      return permitidas.length > 0 ? permitidas : escolas
+    }
+    return escolas
+  }, [isAdmin, escolas, vinculosAtivos])
 
   useEffect(() => {
     loadEscolas()
@@ -18,19 +29,25 @@ export function SchoolSelector() {
 
   // Sincroniza a store de escola com a store de autenticação no carregamento
   useEffect(() => {
-    if (escolas.length > 0) {
-      if (escolaAtivaId && !selectedEscola) {
-        const escola = escolas.find(e => e.id === escolaAtivaId)
-        if (escola) setSelectedEscola(escola)
+    if (escolasPermitidas.length > 0) {
+      if (escolaAtivaId) {
+        const escola = escolasPermitidas.find(e => e.id === escolaAtivaId)
+        if (escola && selectedEscola?.id !== escola.id) {
+          setSelectedEscola(escola)
+        } else if (!escola && !isAdmin) {
+          // Se a escola ativa atual não for permitida para este usuário comum
+          setSelectedEscola(escolasPermitidas[0])
+          setEscolaAtivaId(escolasPermitidas[0].id)
+        }
       } else if (!escolaAtivaId && selectedEscola) {
         setEscolaAtivaId(selectedEscola.id)
       } else if (!escolaAtivaId && !selectedEscola && !isAdmin) {
-        // Se for usuário comum sem escola ativa (fallback de segurança)
-        setSelectedEscola(escolas[0])
-        setEscolaAtivaId(escolas[0].id)
+        // Fallback de segurança para usuário comum sem escola ativa
+        setSelectedEscola(escolasPermitidas[0])
+        setEscolaAtivaId(escolasPermitidas[0].id)
       }
     }
-  }, [escolas, escolaAtivaId, selectedEscola, isAdmin, setSelectedEscola, setEscolaAtivaId])
+  }, [escolasPermitidas, escolaAtivaId, selectedEscola, isAdmin, setSelectedEscola, setEscolaAtivaId])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -42,35 +59,37 @@ export function SchoolSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  if (!isAdmin) {
+  if (escolasPermitidas.length === 0 && !isAdmin) {
     return null
   }
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left max-w-full" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 bg-[#1a1f2c] hover:bg-[#22293a] border border-[#2e3952] text-white px-3.5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm cursor-pointer"
+        className="flex items-center justify-between gap-2.5 bg-[#1a1f2c] hover:bg-[#22293a] border border-[#2e3952] text-white px-3.5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm cursor-pointer max-w-full"
       >
-        {selectedEscola ? (
-          <>
-            <div className={`w-3 h-3 rounded-full ${selectedEscola.color || 'bg-blue-500'}`} />
-            <span className="font-semibold text-white max-w-[200px] truncate">{selectedEscola.nome}</span>
-          </>
-        ) : (
-          <>
-            <Globe className="w-4 h-4 text-sky-400" />
-            <span className="font-semibold text-sky-200">Todas as Escolas (Rede Macro)</span>
-          </>
-        )}
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="flex items-center gap-2 min-w-0 truncate">
+          {selectedEscola ? (
+            <>
+              <div className={`w-3 h-3 rounded-full shrink-0 ${selectedEscola.color || 'bg-blue-500'}`} />
+              <span className="font-semibold text-white max-w-[180px] sm:max-w-[240px] truncate">{selectedEscola.nome}</span>
+            </>
+          ) : (
+            <>
+              <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+              <span className="font-semibold text-sky-200 truncate">Todas as Escolas (Rede Macro)</span>
+            </>
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#141824] border border-[#2a3449] shadow-2xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95">
           <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-[#222b3d]">
-            Filtro de Relatório
+            Selecione a Escola Foco
           </div>
 
           {isAdmin && (
@@ -96,7 +115,7 @@ export function SchoolSelector() {
           )}
 
           <div className="pt-1 border-t border-[#222b3d]/60 space-y-1 max-h-60 overflow-y-auto">
-            {escolas.map((escola) => {
+            {escolasPermitidas.map((escola) => {
               const isSelected = selectedEscola?.id === escola.id
               return (
                 <button
@@ -110,8 +129,8 @@ export function SchoolSelector() {
                     isSelected ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 font-semibold' : 'text-gray-300 hover:bg-[#1f2738] hover:text-white'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-2.5 h-2.5 rounded-full ${escola.color || 'bg-blue-500'}`} />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${escola.color || 'bg-blue-500'}`} />
                     <span className="truncate">{escola.nome}</span>
                   </div>
                   {isSelected && <Check className="w-4 h-4 text-blue-400 shrink-0" />}
