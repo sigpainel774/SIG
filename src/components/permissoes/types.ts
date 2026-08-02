@@ -13,6 +13,7 @@ export interface FuncionarioSimples {
   is_superadmin?: boolean | null
   is_conta_especial?: boolean | null
   auth_user_id?: string | null
+  acessos_usuarios?: any[]
 }
 
 export interface RegistroPermissao {

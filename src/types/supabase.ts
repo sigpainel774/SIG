@@ -109,6 +109,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           cargos_gerenciados: string[] | null
+          secretarias_ids: string[] | null
           created_at: string
           escola_id: string | null
           funcionario_id: string | null
@@ -126,6 +127,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
+          secretarias_ids?: string[] | null
           created_at?: string
           escola_id?: string | null
           funcionario_id?: string | null
@@ -143,6 +145,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
+          secretarias_ids?: string[] | null
           created_at?: string
           escola_id?: string | null
           funcionario_id?: string | null
@@ -1142,6 +1145,7 @@ export type Database = {
           nivel: number | null
           nome: string
           salario_base: number | null
+          secretaria_id: string | null
         }
         Insert: {
           ativo?: boolean | null
@@ -1152,6 +1156,7 @@ export type Database = {
           nivel?: number | null
           nome: string
           salario_base?: number | null
+          secretaria_id?: string | null
         }
         Update: {
           ativo?: boolean | null
@@ -1162,6 +1167,42 @@ export type Database = {
           nivel?: number | null
           nome?: string
           salario_base?: number | null
+          secretaria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargos_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      secretarias: {
+        Row: {
+          id: string
+          nome: string
+          logo_url: string | null
+          ativo: boolean
+          created_at: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          logo_url?: string | null
+          ativo?: boolean
+          created_at?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          logo_url?: string | null
+          ativo?: boolean
+          created_at?: string | null
+          deleted_at?: string | null
         }
         Relationships: []
       }
