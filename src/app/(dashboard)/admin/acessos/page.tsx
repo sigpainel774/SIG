@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalContasEspeciais } from '@/components/modals/modal-contas-especiais'
+import { ModalResetSenhaUser } from '@/components/modals/modal-reset-senha-user'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
@@ -19,6 +20,7 @@ export interface AcessoItem {
   escola: string
   nivel: 'SECRETARIA' | 'DIRETOR' | 'PROFESSOR' | 'COORDENADOR' | 'N6' | 'ROOT' | string
   status: 'ATIVO' | 'INATIVO' | 'PAUSADO' | string
+  auth_user_id?: string | null
 }
 
 export default function AdminAcessosPage() {
@@ -30,7 +32,13 @@ export default function AdminAcessosPage() {
   // Modal de Contas Especiais
   const [modalContasEspeciaisOpen, setModalContasEspeciaisOpen] = useState(false)
 
-  // Filtros exatamente como no layout da imagem
+  // Modal de Reset de Senha
+  const [resetModalState, setResetModalState] = useState<{ open: boolean; item: AcessoItem | null }>({
+    open: false,
+    item: null,
+  })
+
+  // Filtros
   const [filtroNivel, setFiltroNivel] = useState('ALL')
   const [filtroStatus, setFiltroStatus] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,7 +73,8 @@ export default function AdminAcessosPage() {
             email: f.email ?? f.nome,
             escola: escolaNome,
             nivel: f.is_superadmin ? 'ROOT' : (f.cargo?.toUpperCase() ?? 'PROFESSOR'),
-            status: f.status?.toUpperCase() ?? 'ATIVO'
+            status: f.status?.toUpperCase() ?? 'ATIVO',
+            auth_user_id: f.auth_user_id ?? null,
           }
         })
 
@@ -104,6 +113,18 @@ export default function AdminAcessosPage() {
       }
     }
 
+    // Persistir a alteração de status no banco de dados (Corrige ES-1)
+    const { error: statusError } = await supabase
+      .from('funcionarios')
+      .update({ status: novoStatus.toLowerCase() })
+      .eq('id', item.id)
+
+    if (statusError) {
+      console.error('Erro ao atualizar status no banco:', statusError)
+      toast.error('Falha ao atualizar o status do usuário no banco de dados.')
+      return
+    }
+
     setAcessos(prev => prev.map(a => a.id === item.id ? { ...a, status: novoStatus } : a))
 
     if (!isPausado) {
@@ -138,6 +159,15 @@ export default function AdminAcessosPage() {
     toast.error(`Acesso de ${itemParaExcluir.funcionario} removido do sistema.`)
     setConfirmDeleteOpen(false)
     setItemParaExcluir(null)
+  }
+
+  // Abrir modal de reset de senha
+  const handleOpenResetSenha = (item: AcessoItem) => {
+    if (!item.auth_user_id) {
+      toast.error(`O usuário "${item.funcionario}" ainda não possui uma conta de autenticação (auth_user_id) vinculada.`)
+      return
+    }
+    setResetModalState({ open: true, item })
   }
 
   // Renderização das pílulas de nível exatamente conforme a imagem
@@ -193,7 +223,7 @@ export default function AdminAcessosPage() {
     )
   }
 
-  // Filtragem dos itens da tabela
+  // Filtragem dos itens da tabela com busca local
   const acessosBuscados = useLocalSearch(acessos, searchTerm, ['funcionario', 'email', 'escola'])
 
   const acessosFiltrados = acessosBuscados.filter(item => {
@@ -247,9 +277,30 @@ export default function AdminAcessosPage() {
       headClassName: 'text-right pr-6',
       accessor: (item) => {
         const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
+        const hasAuthAccount = Boolean(item.auth_user_id)
+
         return (
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-            {/* Botão 1: Pausar / Alternar Acesso */}
+            {/* Botão Resetar Senha */}
+            <button
+              type="button"
+              onClick={() => handleOpenResetSenha(item)}
+              disabled={!hasAuthAccount}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+                hasAuthAccount
+                  ? 'bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-400 hover:text-white cursor-pointer'
+                  : 'bg-zinc-900 border border-zinc-800 text-zinc-600 opacity-40 cursor-not-allowed'
+              }`}
+              title={
+                hasAuthAccount
+                  ? `Resetar Senha de ${item.funcionario}`
+                  : 'Usuário ainda não possui conta de acesso (auth_user_id) vinculada.'
+              }
+            >
+              <KeyRound className="w-4 h-4" />
+            </button>
+
+            {/* Botão Pausar / Alternar Acesso */}
             <button
               type="button"
               onClick={() => handleTogglePausa(item)}
@@ -259,7 +310,7 @@ export default function AdminAcessosPage() {
               <Pause className="w-4 h-4" />
             </button>
 
-            {/* Botão 2: Excluir Acesso */}
+            {/* Botão Excluir Acesso */}
             <button
               type="button"
               onClick={() => handleConfirmExcluir(item)}
@@ -306,37 +357,71 @@ export default function AdminAcessosPage() {
         />
       )}
 
-      {/* Filtros Superiores exatamente conforme Layout da Imagem */}
+      {/* Modal Reset de Senha do Usuário */}
+      <ModalResetSenhaUser
+        open={resetModalState.open}
+        onOpenChange={(open) => setResetModalState(prev => ({ ...prev, open }))}
+        authUserId={resetModalState.item?.auth_user_id}
+        funcionarioId={resetModalState.item?.id}
+        userName={resetModalState.item?.funcionario}
+        userEmail={resetModalState.item?.email}
+      />
+
+      {/* Filtros Superiores e Campo de Pesquisa Visível */}
       <div className="space-y-3">
-        {/* Dropdown 1: Todos os níveis */}
-        <div>
-          <select
-            value={filtroNivel}
-            onChange={e => setFiltroNivel(e.target.value)}
-            className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
-          >
-            <option value="ALL">Todos os níveis</option>
-            <option value="SECRETARIA">Secretaria</option>
-            <option value="DIRETOR">Diretor</option>
-            <option value="PROFESSOR">Professor</option>
-            <option value="COORDENADOR">Coordenador</option>
-            <option value="N6">N6 - Operacional</option>
-            <option value="ROOT">Root / Admin</option>
-          </select>
+        {/* Campo de Pesquisa em Tempo Real */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Input
+            type="text"
+            placeholder="Buscar por nome, e-mail ou escola..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl pl-11 pr-10 text-sm font-medium focus:ring-purple-500 focus:border-purple-500 shadow-md"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1 cursor-pointer"
+              title="Limpar busca"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Dropdown 2: Todos os status */}
-        <div>
-          <select
-            value={filtroStatus}
-            onChange={e => setFiltroStatus(e.target.value)}
-            className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
-          >
-            <option value="ALL">Todos os status</option>
-            <option value="ATIVO">Ativo</option>
-            <option value="PAUSADO">Pausado</option>
-            <option value="INATIVO">Inativo</option>
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Dropdown 1: Todos os níveis */}
+          <div>
+            <select
+              value={filtroNivel}
+              onChange={e => setFiltroNivel(e.target.value)}
+              className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
+            >
+              <option value="ALL">Todos os níveis</option>
+              <option value="SECRETARIA">Secretaria</option>
+              <option value="DIRETOR">Diretor</option>
+              <option value="PROFESSOR">Professor</option>
+              <option value="COORDENADOR">Coordenador</option>
+              <option value="N6">N6 - Operacional</option>
+              <option value="ROOT">Root / Admin</option>
+            </select>
+          </div>
+
+          {/* Dropdown 2: Todos os status */}
+          <div>
+            <select
+              value={filtroStatus}
+              onChange={e => setFiltroStatus(e.target.value)}
+              className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
+            >
+              <option value="ALL">Todos os status</option>
+              <option value="ATIVO">Ativo</option>
+              <option value="PAUSADO">Pausado</option>
+              <option value="INATIVO">Inativo</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -345,7 +430,11 @@ export default function AdminAcessosPage() {
         columns={columns}
         keyExtractor={(item) => item.id}
         loading={loading}
-        emptyMessage="Nenhum registro de acesso encontrado."
+        emptyMessage={
+          searchTerm
+            ? `Nenhum registro encontrado para "${searchTerm}".`
+            : "Nenhum registro de acesso encontrado."
+        }
       />
 
       {/* Modal de Confirmação para Excluir Acesso */}
