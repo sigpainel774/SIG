@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 import dynamic from 'next/dynamic'
 
@@ -44,10 +45,17 @@ const PrintBoletimSapeacu = dynamic(
   { ssr: false }
 )
 
+import { useSchoolStore } from '@/store/useSchoolStore'
+
 export default function DocumentosPage() {
   const { funcionario, vinculos, acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const { isEditMode } = useEditModeStore()
-  
+  const { selectedEscola, selectedSecretaria } = useSchoolStore()
+
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isEducacao = (!selectedEscola && !selectedSecretaria) || (!secNome || /educa/i.test(secNome))
+  const isSaude = !isEducacao && (/sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE')
+
   const [alunos, setAlunos] = useState<any[]>([])
   const [loadingAlunos, setLoadingAlunos] = useState(false)
   const [buscaAluno, setBuscaAluno] = useState('')
@@ -57,7 +65,13 @@ export default function DocumentosPage() {
   const [turmas, setTurmas] = useState<any[]>([])
   const [turmaFiltroId, setTurmaFiltroId] = useState<string>('all')
   
-  const [docType, setDocType] = useState<string>('atestado-matricula')
+  const [docType, setDocType] = useState<string>(isSaude ? 'oficio' : 'atestado-matricula')
+
+  useEffect(() => {
+    if (isSaude && docType !== 'oficio') {
+      setDocType('oficio')
+    }
+  }, [isSaude, docType])
   
   // Estados de gatilho para a impressão real
   const [alunoImprimirFicha, setAlunoImprimirFicha] = useState<any | null>(null)
@@ -265,7 +279,7 @@ export default function DocumentosPage() {
   }, [checarHistoricoRapido])
 
   const handleEmitirDocumento = async () => {
-    if (!alunoSelecionado) {
+    if (!isSaude && docType !== 'oficio' && !alunoSelecionado) {
       toast.error('Por favor, selecione um aluno.')
       return
     }
@@ -333,19 +347,23 @@ export default function DocumentosPage() {
         setLoadingBoletim(false)
       }
     } else {
-      setAlunoImprimirDocumentoEscolar(alunoSelecionado)
+      setAlunoImprimirDocumentoEscolar(alunoSelecionado || { id: 'oficio', nome: 'Documento Oficial' })
     }
   }
 
-  const documentOptions = [
-    { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
-    { id: 'atestado-frequencia', label: 'Atestado de Frequência', icon: FileCheck, desc: 'Declara frequência escolar regular do estudante.' },
-    { id: 'declaracao-vaga', label: 'Declaração de Vaga', icon: GraduationCap, desc: 'Reserva/indica vaga de transferência na unidade.' },
-    { id: 'atestado-transferencia', label: 'Atestado de Transferência', icon: FileText, desc: 'Atestado oficial de pedido de transferência em curso.' },
-    { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
-    { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
-    { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
-  ]
+  const documentOptions = isSaude
+    ? [
+        { id: 'oficio', label: 'Ofício', icon: FileText, desc: 'Emissão e geração de ofício oficial.' },
+      ]
+    : [
+        { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
+        { id: 'atestado-frequencia', label: 'Atestado de Frequência', icon: FileCheck, desc: 'Declara frequência escolar regular do estudante.' },
+        { id: 'declaracao-vaga', label: 'Declaração de Vaga', icon: GraduationCap, desc: 'Reserva/indica vaga de transferência na unidade.' },
+        { id: 'atestado-transferencia', label: 'Atestado de Transferência', icon: FileText, desc: 'Atestado oficial de pedido de transferência em curso.' },
+        { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
+        { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
+        { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
+      ]
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -405,14 +423,16 @@ export default function DocumentosPage() {
             </Link>
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <IconTile icon={FileText} variant="primary" className="h-10 w-10" /> 
-              Documentos & Atestados Escolares
+              {isSaude ? 'Documentos Oficiais' : 'Documentos & Atestados Escolares'}
             </h2>
           </div>
-          <p className="text-muted-foreground text-xs mt-1 ml-14">Emissão de comprovantes, certidões e atestados com validade oficial.</p>
+          <p className="text-muted-foreground text-xs mt-1 ml-14">
+            {isSaude ? 'Emissão e geração de ofícios oficiais com validade jurídica.' : 'Emissão de comprovantes, certidões e atestados com validade oficial.'}
+          </p>
         </div>
       </div>
 
-      {!escolaAtivaId ? (
+      {!escolaAtivaId && !isSaude ? (
         <Card className="p-8 border-border bg-card flex flex-col items-center justify-center text-center space-y-4">
           <GraduationCap className="h-12 w-12 text-muted-foreground animate-pulse" />
           <h3 className="text-sm font-semibold text-foreground">Nenhuma Escola Ativa</h3>
@@ -421,151 +441,152 @@ export default function DocumentosPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Coluna Esquerda: Busca do Aluno */}
-          <div className="md:col-span-1 space-y-4">
-            <Card className="p-5 border-borderCustom bg-card space-y-4 overflow-visible">
-              <div className="space-y-4">
-                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                  1. Buscar Aluno(a)
-                </label>
+        <div className={cn("grid gap-6", isSaude ? "grid-cols-1" : "md:grid-cols-3")}>
+          {/* Coluna Esquerda: Busca do Aluno (Removido na Saúde) */}
+          {!isSaude && (
+            <div className="md:col-span-1 space-y-4">
+              <Card className="p-5 border-borderCustom bg-card space-y-4 overflow-visible">
+                <div className="space-y-4">
+                  <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    1. Buscar Aluno(a)
+                  </label>
 
-                {/* Filtro por Turma */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Filtrar por Turma</span>
-                  <select
-                    value={turmaFiltroId}
-                    onChange={(e) => {
-                      setTurmaFiltroId(e.target.value)
-                      // Limpar seleção anterior se o aluno selecionado não for da nova turma
-                      if (alunoSelecionado && e.target.value !== 'all' && alunoSelecionado.turma_id !== e.target.value) {
-                        setAlunoSelecionado(null)
-                        setBuscaAluno('')
-                      }
-                    }}
-                    className="w-full h-10 px-3 bg-input border border-borderCustom text-zinc-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#185FA5]/50 hover:bg-[#1a1a1c] transition-all cursor-pointer"
-                  >
-                    <option value="all">Todas as Turmas</option>
-                    {turmas.map((t) => (
-                      <option key={t.id} value={t.id} className="bg-[#121214]">
-                        {t.nome} {t.turno ? `(${t.turno})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Campo de Busca por Aluno */}
-                <div ref={autocompleteRef} className="relative space-y-1.5">
-                  <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Nome ou Matrícula</span>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
-                    <Input
-                      type="text"
-                      placeholder="Nome ou matrícula..."
-                      value={buscaAluno}
+                  {/* Filtro por Turma */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Filtrar por Turma</span>
+                    <select
+                      value={turmaFiltroId}
                       onChange={(e) => {
-                        setBuscaAluno(e.target.value)
-                        setShowSugestoes(true)
-                        if (alunoSelecionado) setAlunoSelecionado(null)
-                      }}
-                      onFocus={() => setShowSugestoes(true)}
-                      onClick={() => setShowSugestoes(true)}
-                      className="pl-9 pr-8 h-10 bg-input border-borderCustom text-white rounded-xl text-xs"
-                    />
-                    {buscaAluno && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBuscaAluno('')
+                        setTurmaFiltroId(e.target.value)
+                        if (alunoSelecionado && e.target.value !== 'all' && alunoSelecionado.turma_id !== e.target.value) {
                           setAlunoSelecionado(null)
-                          setShowSugestoes(false)
-                        }}
-                        className="absolute right-3 top-3 text-zinc-500 hover:text-white transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+                          setBuscaAluno('')
+                        }
+                      }}
+                      className="w-full h-10 px-3 bg-input border border-borderCustom text-zinc-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#185FA5]/50 hover:bg-[#1a1a1c] transition-all cursor-pointer"
+                    >
+                      <option value="all">Todas as Turmas</option>
+                      {turmas.map((t) => (
+                        <option key={t.id} value={t.id} className="bg-[#121214]">
+                          {t.nome} {t.turno ? `(${t.turno})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* Sugestões do Autocomplete */}
-                  {showSugestoes && (
-                    <div className="absolute z-50 w-full mt-1.5 bg-[#121214] border border-borderCustom rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
-                      {loadingAlunos ? (
-                        <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
-                        </div>
-                      ) : sugestoesAlunos.length > 0 ? (
-                        sugestoesAlunos.map((aluno) => (
-                          <button
-                            key={aluno.id}
-                            type="button"
-                            onClick={() => {
-                              setAlunoSelecionado(aluno)
-                              setBuscaAluno(aluno.nome)
-                              setShowSugestoes(false)
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-xs hover:bg-[#185FA5]/10 hover:text-[#3ea6ff] text-zinc-300 transition-colors border-b border-borderCustom last:border-none cursor-pointer flex flex-col gap-0.5"
-                          >
-                            <span className="font-bold text-white uppercase">{aluno.nome}</span>
-                            <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                              <span>Matrícula: {aluno.id}</span>
-                              {aluno.turmas?.nome && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-[#3ea6ff] font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
-                                </>
-                              )}
-                            </div>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="p-4 text-center text-xs text-zinc-500">Nenhum aluno encontrado.</div>
+                  {/* Campo de Busca por Aluno */}
+                  <div ref={autocompleteRef} className="relative space-y-1.5">
+                    <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Nome ou Matrícula</span>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                      <Input
+                        type="text"
+                        placeholder="Nome ou matrícula..."
+                        value={buscaAluno}
+                        onChange={(e) => {
+                          setBuscaAluno(e.target.value)
+                          setShowSugestoes(true)
+                          if (alunoSelecionado) setAlunoSelecionado(null)
+                        }}
+                        onFocus={() => setShowSugestoes(true)}
+                        onClick={() => setShowSugestoes(true)}
+                        className="pl-9 pr-8 h-10 bg-input border-borderCustom text-white rounded-xl text-xs"
+                      />
+                      {buscaAluno && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBuscaAluno('')
+                            setAlunoSelecionado(null)
+                            setShowSugestoes(false)
+                          }}
+                          className="absolute right-3 top-3 text-zinc-500 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Ficha Rápida do Aluno Selecionado */}
-              {alunoSelecionado && (
-                <div className="p-4 bg-background border border-border rounded-xl space-y-3 animate-in fade-in duration-200">
-                  <h3 className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
-                    Ficha de Emissão
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Aluno(a)</span>
-                      <span className="text-sm font-semibold text-foreground uppercase">{alunoSelecionado.nome}</span>
-                    </div>
-                    {alunoSelecionado.turmas?.nome && (
-                      <div>
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Turma</span>
-                        <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.turmas.nome}</span>
+                    {/* Sugestões do Autocomplete */}
+                    {showSugestoes && (
+                      <div className="absolute z-50 w-full mt-1.5 bg-[#121214] border border-borderCustom rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                        {loadingAlunos ? (
+                          <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
+                          </div>
+                        ) : sugestoesAlunos.length > 0 ? (
+                          sugestoesAlunos.map((aluno) => (
+                            <button
+                              key={aluno.id}
+                              type="button"
+                              onClick={() => {
+                                setAlunoSelecionado(aluno)
+                                setBuscaAluno(aluno.nome)
+                                setShowSugestoes(false)
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-xs hover:bg-[#185FA5]/10 hover:text-[#3ea6ff] text-zinc-300 transition-colors border-b border-borderCustom last:border-none cursor-pointer flex flex-col gap-0.5"
+                            >
+                              <span className="font-bold text-white uppercase">{aluno.nome}</span>
+                              <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                                <span>Matrícula: {aluno.id}</span>
+                                {aluno.turmas?.nome && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-[#3ea6ff] font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-xs text-zinc-500">Nenhum aluno encontrado.</div>
+                        )}
                       </div>
                     )}
-                    <div>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Mãe / Responsável</span>
-                      <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Nascimento</span>
-                      <span className="text-sm font-normal text-muted-foreground">{dataNascimentoFormatada}</span>
-                    </div>
                   </div>
                 </div>
-              )}
-            </Card>
-          </div>
+
+                {/* Ficha Rápida do Aluno Selecionado */}
+                {alunoSelecionado && (
+                  <div className="p-4 bg-background border border-border rounded-xl space-y-3 animate-in fade-in duration-200">
+                    <h3 className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+                      Ficha de Emissão
+                    </h3>
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Aluno(a)</span>
+                        <span className="text-sm font-semibold text-foreground uppercase">{alunoSelecionado.nome}</span>
+                      </div>
+                      {alunoSelecionado.turmas?.nome && (
+                        <div>
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Turma</span>
+                          <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.turmas.nome}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Mãe / Responsável</span>
+                        <span className="text-sm font-normal text-muted-foreground uppercase">{alunoSelecionado.nome_mae ?? 'Não informado'}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-0.5">Nascimento</span>
+                        <span className="text-sm font-normal text-muted-foreground">{dataNascimentoFormatada}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
 
           {/* Coluna Direita: Seleção do Documento */}
-          <div className="md:col-span-2 space-y-4">
+          <div className={isSaude ? "w-full space-y-4" : "md:col-span-2 space-y-4"}>
             <Card className="p-5 border-border bg-card space-y-5">
               <div>
                 <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                  2. Escolha o Documento
+                  {isSaude ? 'Documento Oficial Selecionado' : '2. Escolha o Documento'}
                 </label>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className={cn("grid gap-3", isSaude ? "grid-cols-1" : "sm:grid-cols-2")}>
                   {documentOptions.map((opt) => {
                     const Icon = opt.icon
                     const isSelected = docType === opt.id
@@ -597,7 +618,7 @@ export default function DocumentosPage() {
                   <Button
                     onClick={() => {
                       setUsarHistorico(true)
-                      setAlunoImprimirDocumentoEscolar(alunoSelecionado)
+                      setAlunoImprimirDocumentoEscolar(alunoSelecionado || { id: 'oficio', nome: 'Documento Oficial' })
                     }}
                     type="button"
                     variant="outline"
@@ -609,7 +630,7 @@ export default function DocumentosPage() {
                 )}
                 <Button
                   onClick={handleEmitirDocumento}
-                  disabled={!alunoSelecionado || loadingBoletim}
+                  disabled={(!isSaude && !alunoSelecionado) || loadingBoletim}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700 font-bold gap-2 h-10 px-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {loadingBoletim ? (

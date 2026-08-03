@@ -19,8 +19,8 @@ function generateVerificacaoToken() {
 }
 
 interface PrintDocumentoProps {
-  aluno: any
-  docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga' | 'atestado-transferencia'
+  aluno?: any
+  docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga' | 'atestado-transferencia' | 'oficio'
   tokenExistente?: string | null
   onClose: () => void
 }
@@ -73,7 +73,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       const supabase = createClient()
       
       // 1. Unidade Escolar e Assinatura do Diretor
-      const targetEscolaId = aluno.escola_id || dm.escolaId
+      const targetEscolaId = aluno?.escola_id || dm.escolaId
       if (targetEscolaId) {
         const { data: esc } = await supabase
           .from('escolas')
@@ -93,7 +93,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       }
 
       // 2. Turma e Turno
-      const targetTurmaId = aluno.turma_id || dm.turmaIdAluno
+      const targetTurmaId = aluno?.turma_id || dm.turmaIdAluno
       if (targetTurmaId) {
         const { data: tur } = await supabase
           .from('turmas')
@@ -108,7 +108,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
     }
 
     fetchDados()
-  }, [aluno.escola_id, aluno.turma_id, dm.escolaId, dm.turmaIdAluno])
+  }, [aluno?.escola_id, aluno?.turma_id, dm.escolaId, dm.turmaIdAluno])
 
   // Carregar assinatura existente se houver (Modo Histórico)
   useEffect(() => {
@@ -167,6 +167,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
   if (!mounted) return null
 
   const getDocumentTitle = () => {
+    if (docType === 'oficio') return 'OFÍCIO'
     if (docType === 'atestado-matricula') return 'ATESTADO DE MATRÍCULA'
     if (docType === 'atestado-frequencia') return 'ATESTADO DE FREQUÊNCIA'
     if (docType === 'atestado-transferencia') return 'ATESTADO DE TRANSFERÊNCIA'
@@ -174,8 +175,28 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
   }
 
   const renderDocumentContent = () => {
-    const nomeAluno = aluno.nome?.toUpperCase() || '_________________________________'
-    const matriculaId = aluno.numero_matricula || aluno.id || 'N/A'
+    if (docType === 'oficio') {
+      return (
+        <div className="space-y-6 min-h-[280px]">
+          <div className="text-left font-bold text-sm text-gray-900">
+            OFÍCIO Nº _____ / {anoLetivo}
+          </div>
+          <div className="text-left text-xs font-semibold text-gray-800 space-y-1">
+            <p>Ao(À) Senhor(a): ________________________________________</p>
+            <p>Assunto: ________________________________________________</p>
+          </div>
+          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12 pt-4">
+            Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.
+          </p>
+          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12">
+            Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.
+          </p>
+        </div>
+      )
+    }
+
+    const nomeAluno = aluno?.nome?.toUpperCase() || '_________________________________'
+    const matriculaId = aluno?.numero_matricula || aluno?.id || 'N/A'
     const cursoTurno = turnoVal?.toUpperCase() || '___________________'
     const cursoTurma = turmaNome?.toUpperCase() || '___________________'
     const nascimento = dataNascimentoFormatada
@@ -343,10 +364,12 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
       }
 
       // 3. Salvar no banco
+      const targetAlunoId = (aluno?.id && aluno.id !== 'oficio') ? aluno.id : null
+
       const { error: insertError } = await supabase
         .from('assinatura')
         .insert({
-          aluno_id: aluno.id,
+          aluno_id: targetAlunoId,
           tipo_documento: docType,
           token_verificacao: token,
           hash_sha256: hashHex,
@@ -358,13 +381,15 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
 
       if (insertError) throw insertError
 
-      // 4. Deletar atestados/documentos anteriores deste mesmo tipo para o mesmo aluno
-      await supabase
-        .from('assinatura')
-        .delete()
-        .eq('aluno_id', aluno.id)
-        .eq('tipo_documento', docType)
-        .neq('token_verificacao', token)
+      // 4. Deletar atestados/documentos anteriores deste mesmo tipo
+      if (targetAlunoId) {
+        await supabase
+          .from('assinatura')
+          .delete()
+          .eq('aluno_id', targetAlunoId)
+          .eq('tipo_documento', docType)
+          .neq('token_verificacao', token)
+      }
 
       // 5. Atualizar QR Code no state
       const siteUrl = window.location.origin
@@ -472,7 +497,7 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
             className="pb-3 border-b border-black mb-4"
             estado="ESTADO DA BAHIA"
             municipio="PREFEITURA MUNICIPAL DE SAPEAÇU"
-            secretaria="SECRETARIA MUNICIPAL DE EDUCAÇÃO"
+            secretaria={docType === 'oficio' || (escolaNome && /sa[uú]de/i.test(escolaNome)) ? "SECRETARIA MUNICIPAL DE SAÚDE" : "SECRETARIA MUNICIPAL DE EDUCAÇÃO"}
           />
 
           {/* Sub-Cabeçalho com Logo da Escola (Se Houver) */}
