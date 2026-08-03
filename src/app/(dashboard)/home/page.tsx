@@ -15,7 +15,13 @@ import {
   Clock,
   Printer,
   Loader2,
-  ChevronLeft
+  ChevronLeft,
+  Stethoscope,
+  UserCheck,
+  FileBarChart,
+  FileText,
+  Pin,
+  Activity,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,6 +48,13 @@ interface KPIData {
   atividadesPendentesSecretaria: number
 }
 
+interface SaudeKPIData {
+  totalProfissionais: number
+  escalasHoje: number
+  atestadosMes: number
+  documentosMes: number
+}
+
 const ACESSO_RAPIDO_ITEMS = [
   { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
   { label: 'Turmas', icon: BookOpen, href: '/turmas' },
@@ -49,6 +62,15 @@ const ACESSO_RAPIDO_ITEMS = [
   { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias', warn: true },
   { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
   { label: 'Funcionários', icon: Users, href: '/funcionarios' },
+] as const
+
+const ACESSO_RAPIDO_SAUDE_ITEMS = [
+  { label: 'Servidores da Saúde', icon: Users, href: '/funcionarios' },
+  { label: 'Escalas & Plantões', icon: UserCheck, href: '/painel-chefe' },
+  { label: 'Atestados Médicos', icon: Stethoscope, href: '/atestados' },
+  { label: 'Documentos', icon: FileText, href: '/documentos' },
+  { label: 'Relatórios', icon: FileBarChart, href: '/relatorios' },
+  { label: 'Mural de Avisos', icon: Pin, href: '/mural' },
 ] as const
 
 interface SecretariaItem {
@@ -132,7 +154,20 @@ export default function HomePage() {
   }, [escolas, selectedSecretaria])
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
+  const [saudeKpi, setSaudeKpi] = useState<SaudeKPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
+
+  // ── Detecção de Unidade de Saúde x Educação ──
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isSaudeUnit = useMemo(() => {
+    if (selectedSecretaria && /sa[uú]de/i.test(selectedSecretaria.nome)) return true
+    if (selectedEscola) {
+      if (selectedEscola.tipo === 'SAUDE' || selectedEscola.tipo === 'UNIDADE_SAUDE') return true
+      if (/sa[uú]de/i.test(selectedEscola.secretariaNome || '')) return true
+      if (/sa[uú]de|posto|ubs|usf|hospital|upa|atendimento/i.test(selectedEscola.nome)) return true
+    }
+    return Boolean(secNome && /sa[uú]de/i.test(secNome))
+  }, [selectedSecretaria, selectedEscola, secNome])
 
   // Estados para Professor
   interface TeacherKPIData {
@@ -193,13 +228,32 @@ export default function HomePage() {
     }
   }, [dashboardSwrMetrics])
 
+  const fetchSaudeKpis = useCallback(async (unidadeId: string, signal?: AbortSignal) => {
+    if (isMounted.current) setLoadingKpi(true)
+    try {
+      const res = await fetch(`/api/home/saude-kpis?escolaId=${unidadeId}`, { signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: SaudeKPIData = await res.json()
+      if (isMounted.current) setSaudeKpi(data)
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
+      console.error('[home] Erro ao carregar KPIs da Saúde:', err)
+    } finally {
+      if (isMounted.current) setLoadingKpi(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (selectedEscola?.id) {
       const controller = new AbortController()
-      fetchKpis(selectedEscola.id, controller.signal)
+      if (isSaudeUnit) {
+        fetchSaudeKpis(selectedEscola.id, controller.signal)
+      } else {
+        fetchKpis(selectedEscola.id, controller.signal)
+      }
       return () => controller.abort()
     }
-  }, [selectedEscola?.id, fetchKpis])
+  }, [selectedEscola?.id, isSaudeUnit, fetchKpis, fetchSaudeKpis])
 
   // Buscar estatísticas rápidas por escola para professores multi-lotados
   const fetchSchoolStats = useCallback(async (signal?: AbortSignal) => {
@@ -297,11 +351,13 @@ export default function HomePage() {
   return (
     <div className="space-y-8 -mt-2">
 
-      {/* ── INDICADOR DE ESCOLA SELECIONADA ── */}
+      {/* ── INDICADOR DE UNIDADE/ESCOLA SELECIONADA ── */}
       {selectedEscola && (
         <div className="bg-surface-2 border border-borderCustom rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola Selecionada:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {isSaudeUnit ? 'Unidade Selecionada:' : 'Escola Selecionada:'}
+            </span>
             <div className="flex items-center gap-2 bg-highlight/10 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
               <div className={`w-5 h-5 rounded-full overflow-hidden ${selectedEscola.logo_url ? 'bg-transparent' : selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
                 {selectedEscola.logo_url ? (
@@ -318,9 +374,9 @@ export default function HomePage() {
               variant="ghost"
               size="sm"
               onClick={() => setSelectedEscola(null)}
-              className="text-muted-foreground hover:text-foreground gap-1"
+              className="text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
             >
-              <X className="w-4 h-4" /> Trocar Escola
+              <X className="w-4 h-4" /> {isSaudeUnit ? 'Trocar Unidade' : 'Trocar Escola'}
             </Button>
           )}
         </div>
@@ -397,14 +453,14 @@ export default function HomePage() {
               </h1>
             </div>
             <p className="text-sm text-muted-foreground hidden md:block">
-              Clique em uma escola para acessar o painel
+              {/sa[uú]de/i.test(selectedSecretaria?.nome || '') ? 'Clique em uma unidade de saúde para acessar o painel' : 'Clique em uma escola para acessar o painel'}
             </p>
           </div>
 
           {escolasDaSecretaria.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
-              <GraduationCap className="w-10 h-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Nenhuma escola vinculada a esta secretaria.</p>
+              <Building2 className="w-10 h-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhuma unidade vinculada a esta secretaria.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-8 justify-items-center pt-6">
@@ -435,17 +491,17 @@ export default function HomePage() {
         !isAdmin && !isMultiLotadoDocente ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
             <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
-            <p className="text-sm text-muted-foreground">Carregando painel da escola...</p>
+            <p className="text-sm text-muted-foreground">Carregando painel da unidade...</p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
-                Selecione uma Escola
+                {isSaudeUnit ? 'Selecione uma Unidade de Saúde' : 'Selecione uma Escola'}
               </h1>
               <p className="text-sm text-muted-foreground hidden md:block">
-                Clique em uma escola para acessar o painel
+                {isSaudeUnit ? 'Clique em uma unidade de saúde para acessar o painel' : 'Clique em uma escola para acessar o painel'}
               </p>
             </div>
 
@@ -641,10 +697,10 @@ export default function HomePage() {
           </Card>
         </div>
       ) : (
-        /* ── VISÃO 2: DASHBOARD DE KPIs DA ESCOLA ── */
+        /* ── VISÃO 2: DASHBOARD DE KPIs DA UNIDADE DE SAÚDE OU ESCOLA ── */
         <div className="space-y-6 animate-in fade-in duration-300">
 
-          {/* Header da escola */}
+          {/* Header da escola / unidade */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center overflow-hidden shrink-0">
@@ -654,6 +710,8 @@ export default function HomePage() {
                     alt={selectedEscola.nome}
                     className="w-full h-full object-contain p-1"
                   />
+                ) : isSaudeUnit ? (
+                  <Stethoscope className="w-8 h-8 text-emerald-400" />
                 ) : (
                   <GraduationCap className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
                 )}
@@ -662,98 +720,139 @@ export default function HomePage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
                   {selectedEscola.nome}
                 </h1>
-                <p className="text-sm text-muted-foreground">Painel de situação em tempo real</p>
+                <p className="text-sm text-muted-foreground">
+                  {isSaudeUnit ? 'Painel de Gestão da Unidade de Saúde' : 'Painel de situação em tempo real'}
+                </p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => fetchKpis(selectedEscola.id)}
+              onClick={() => isSaudeUnit ? fetchSaudeKpis(selectedEscola.id) : fetchKpis(selectedEscola.id)}
               disabled={loadingKpi}
-              className="text-muted-foreground hover:text-foreground gap-1.5"
+              className="text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
             >
               <RefreshCw className={cn('w-4 h-4', loadingKpi && 'animate-spin')} />
               Atualizar
             </Button>
           </div>
 
-          {/* ── GRID DE KPIs PRINCIPAIS ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KPICard
-              icon={GraduationCap}
-              label="Alunos Ativos"
-              value={kpi?.totalAlunos ?? 0}
-              loading={loadingKpi}
-              color="blue"
-              href="/alunos"
-            />
-            <KPICard
-              icon={BookOpen}
-              label="Turmas Ativas"
-              value={kpi?.totalTurmas ?? 0}
-              loading={loadingKpi}
-              color="violet"
-              href="/turmas"
-            />
-            <KPICard
-              icon={AlertTriangle}
-              label="Ocorrências (Mês)"
-              value={kpi?.ocorrenciasMes ?? 0}
-              loading={loadingKpi}
-              color="amber"
-              href="/ocorrencias"
-            />
-            <KPICard
-              icon={ArrowLeftRight}
-              label="Transf. Pendentes"
-              value={kpi?.transferenciasPendentes ?? 0}
-              loading={loadingKpi}
-              color="rose"
-              href="/transferencias"
-            />
-          </div>
+          {/* ── GRID DE KPIs PRINCIPAIS (SAÚDE OU EDUCAÇÃO) ── */}
+          {isSaudeUnit ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KPICard
+                icon={Users}
+                label="Profissionais de Saúde"
+                value={saudeKpi?.totalProfissionais ?? 0}
+                loading={loadingKpi}
+                color="blue"
+                href="/funcionarios"
+              />
+              <KPICard
+                icon={UserCheck}
+                label="Plantões Hoje"
+                value={saudeKpi?.escalasHoje ?? 0}
+                loading={loadingKpi}
+                color="violet"
+                href="/painel-chefe"
+              />
+              <KPICard
+                icon={Stethoscope}
+                label="Atestados Médicos (Mês)"
+                value={saudeKpi?.atestadosMes ?? 0}
+                loading={loadingKpi}
+                color="amber"
+                href="/atestados"
+              />
+              <KPICard
+                icon={FileText}
+                label="Documentos / Solicit."
+                value={saudeKpi?.documentosMes ?? 0}
+                loading={loadingKpi}
+                color="emerald"
+                href="/documentos"
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KPICard
+                icon={GraduationCap}
+                label="Alunos Ativos"
+                value={kpi?.totalAlunos ?? 0}
+                loading={loadingKpi}
+                color="blue"
+                href="/alunos"
+              />
+              <KPICard
+                icon={BookOpen}
+                label="Turmas Ativas"
+                value={kpi?.totalTurmas ?? 0}
+                loading={loadingKpi}
+                color="violet"
+                href="/turmas"
+              />
+              <KPICard
+                icon={AlertTriangle}
+                label="Ocorrências (Mês)"
+                value={kpi?.ocorrenciasMes ?? 0}
+                loading={loadingKpi}
+                color="amber"
+                href="/ocorrencias"
+              />
+              <KPICard
+                icon={ArrowLeftRight}
+                label="Transf. Pendentes"
+                value={kpi?.transferenciasPendentes ?? 0}
+                loading={loadingKpi}
+                color="rose"
+                href="/transferencias"
+              />
+            </div>
+          )}
 
-          {/* ── BARRA DE FREQUÊNCIA + ATIVIDADES SECRETARIA ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FrequenciaBar
-              feitas={kpi?.turmasComFrequenciaHoje ?? 0}
-              total={kpi?.totalTurmasAtivas ?? 0}
-              loading={loadingKpi}
-              onClick={() => setIsModalFrequenciaOpen(true)}
-            />
+          {/* ── BARRA DE FREQUÊNCIA + ATIVIDADES SECRETARIA (Apenas para Educação) ── */}
+          {!isSaudeUnit && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FrequenciaBar
+                feitas={kpi?.turmasComFrequenciaHoje ?? 0}
+                total={kpi?.totalTurmasAtivas ?? 0}
+                loading={loadingKpi}
+                onClick={() => setIsModalFrequenciaOpen(true)}
+              />
 
-            {/* Atividades pendentes na secretaria */}
-            <Card className="bg-surface-1 border-borderCustom rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-[#3ea6ff]" />
-                  <span className="text-sm font-semibold text-foreground">Atividades — Secretaria</span>
+              {/* Atividades pendentes na secretaria */}
+              <Card className="bg-surface-1 border-borderCustom rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-[#3ea6ff]" />
+                    <span className="text-sm font-semibold text-foreground">Atividades — Secretaria</span>
+                  </div>
+                  <Link href="/avaliacoes">
+                    <Button variant="ghost" size="sm" className="text-xs text-[#3ea6ff] hover:text-[#3ea6ff] h-7 px-2">
+                      Ver todas →
+                    </Button>
+                  </Link>
                 </div>
-                <Link href="/avaliacoes">
-                  <Button variant="ghost" size="sm" className="text-xs text-[#3ea6ff] hover:text-[#3ea6ff] h-7 px-2">
-                    Ver todas →
-                  </Button>
-                </Link>
-              </div>
-              {loadingKpi ? (
-                <div className="space-y-2">
-                  <div className="h-8 w-16 bg-muted/20 rounded animate-pulse" />
-                  <div className="h-3 w-32 bg-muted/20 rounded animate-pulse" />
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-foreground tabular-nums">
-                    {kpi?.atividadesPendentesSecretaria ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {kpi?.atividadesPendentesSecretaria === 0
-                      ? 'Nenhuma atividade aguardando impressão'
-                      : `atividade${(kpi?.atividadesPendentesSecretaria ?? 0) > 1 ? 's' : ''} aguardando impressão`}
-                  </p>
-                </>
-              )}
-            </Card>
-          </div>
+                {loadingKpi ? (
+                  <div className="space-y-2">
+                    <div className="h-8 w-16 bg-muted/20 rounded animate-pulse" />
+                    <div className="h-3 w-32 bg-muted/20 rounded animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-foreground tabular-nums">
+                      {kpi?.atividadesPendentesSecretaria ?? 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kpi?.atividadesPendentesSecretaria === 0
+                        ? 'Nenhuma atividade aguardando impressão'
+                        : `atividade${(kpi?.atividadesPendentesSecretaria ?? 0) > 1 ? 's' : ''} aguardando impressão`}
+                    </p>
+                  </>
+                )}
+              </Card>
+            </div>
+          )}
 
           {/* ── ACESSO RÁPIDO (links de atalho compactos) ── */}
           <div>
@@ -761,7 +860,7 @@ export default function HomePage() {
               Acesso Rápido
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {ACESSO_RAPIDO_ITEMS.map((item) => {
+              {(isSaudeUnit ? ACESSO_RAPIDO_SAUDE_ITEMS : ACESSO_RAPIDO_ITEMS).map((item) => {
                 const Icon = item.icon
                 return (
                   <Link key={item.href} href={item.href}>
