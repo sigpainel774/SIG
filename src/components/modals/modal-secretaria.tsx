@@ -164,9 +164,9 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
           <Label className="text-xs text-[#aaa] mb-2 block">Logo da Secretaria (Opcional)</Label>
           
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl border border-[#27272a] bg-[#121214] flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-16 h-16 rounded-xl border border-[#27272a] bg-white flex items-center justify-center overflow-hidden shrink-0">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
               ) : (
                 <ImageIcon className="w-6 h-6 text-slate-600" />
               )}

@@ -123,7 +123,7 @@ export default function AdminSecretariasPage() {
       accessor: (sec) => (
         <div 
           onClick={() => handleAbrirDetalhes(sec)}
-          className="w-10 h-10 rounded-md border border-[#27272a] bg-[#121214] flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
+          className="w-10 h-10 rounded-md border border-[#27272a] bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
         >
           {sec.logo_url ? (
             <img src={sec.logo_url} alt="Logo" className="w-full h-full object-contain p-1" />

@@ -125,7 +125,7 @@ export function ModalDetalhesSecretaria({
           {/* Header Card da Secretaria */}
           <div className="bg-gradient-to-r from-sky-500/10 via-sky-500/5 to-transparent border border-sky-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-black/40 border border-sky-500/30 flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-white border border-sky-500/30 flex items-center justify-center shrink-0 overflow-hidden">
                 {secretaria.logo_url ? (
                   <img 
                     src={`${secretaria.logo_url}?t=${sessionTimestamp}`} 
