@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { ModalRedatorOficio, DadosOficio } from '@/components/modals/modal-redator-oficio'
 
 import dynamic from 'next/dynamic'
@@ -358,7 +359,7 @@ export default function DocumentosPage() {
 
   const documentOptions = isSaude
     ? [
-        { id: 'oficio', label: 'Ofício', icon: FileText, desc: 'Emissão e geração de ofício oficial.' },
+        { id: 'oficio', label: 'Ofício Oficial', icon: FileText, desc: 'Clique para redigir e emitir um ofício oficial formatado.' },
       ]
     : [
         { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
@@ -368,6 +369,7 @@ export default function DocumentosPage() {
         { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
         { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
         { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
+        { id: 'oficio', label: 'Ofício Oficial', icon: FileText, desc: 'Clique para redigir e emitir um ofício oficial formatado.' },
       ]
 
   return (
@@ -454,7 +456,7 @@ export default function DocumentosPage() {
         </div>
       </div>
 
-      {!escolaAtivaId && !isSaude ? (
+      {!escolaAtivaId && !isSaude && !selectedSecretaria ? (
         <Card className="p-8 border-border bg-card flex flex-col items-center justify-center text-center space-y-4">
           <GraduationCap className="h-12 w-12 text-muted-foreground animate-pulse" />
           <h3 className="text-sm font-semibold text-foreground">Nenhuma Escola Ativa</h3>
@@ -616,7 +618,12 @@ export default function DocumentosPage() {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setDocType(opt.id)}
+                        onClick={() => {
+                          setDocType(opt.id)
+                          if (opt.id === 'oficio') {
+                            setIsRedatorOficioOpen(true)
+                          }
+                        }}
                         className={`p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer flex gap-3.5 shadow-sm hover:scale-[1.01] ${
                           isSelected
                             ? 'bg-primary/10 border-primary text-foreground'
@@ -652,13 +659,18 @@ export default function DocumentosPage() {
                 )}
                 <Button
                   onClick={handleEmitirDocumento}
-                  disabled={(!isSaude && !alunoSelecionado) || loadingBoletim}
+                  disabled={(docType !== 'oficio' && !isSaude && !alunoSelecionado) || loadingBoletim}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700 font-bold gap-2 h-10 px-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {loadingBoletim ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Carregando...
+                    </>
+                  ) : docType === 'oficio' ? (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Redigir & Imprimir Ofício
                     </>
                   ) : (
                     <>
