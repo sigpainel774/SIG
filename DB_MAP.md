@@ -218,6 +218,7 @@ Assinaturas eletrônicas emitidas via QRCode.
 *   `arquivo_pdf_url`: `text` (PDF assinado no Storage, Nullable)
 *   `ip_responsavel`, `dispositivo_responsavel`, `user_agent_responsavel`, `data_responsavel`: Metadados da assinatura do responsável legal (Nullable)
 *   `ip_funcionario`, `dispositivo_funcionario`, `user_agent_funcionario`, `data_funcionario`: Metadados da assinatura do funcionário emissor (Nullable)
+*   `dados_documento`: `jsonb` (Payload JSON contendo dados do documento emitido como numeroOficio, destinatario, assunto e conteudoHtml, Nullable)
 *   `criado_em`: `timestamp with time zone` (Default: `now()`, Nullable)
 
 ### 15. `public.trash_bin`

@@ -233,6 +233,7 @@ function ArquivosContent() {
         <PrintDocumentoEscolar
           aluno={{ id: 'oficio', nome: 'Ofício Oficial' }}
           docType="oficio"
+          dadosOficio={oficioImprimir.dados_documento ?? undefined}
           tokenExistente={oficioImprimir.token_verificacao}
           onClose={() => setOficioImprimir(null)}
         />
@@ -313,6 +314,42 @@ function ArquivosContent() {
                 </p>
               </div>
 
+              {/* Informações do Ofício (se disponíveis) */}
+              {selectedOficio.dados_documento && (
+                <div className="space-y-2 bg-[#18181b] border border-sky-500/20 rounded-xl p-3.5 text-xs">
+                  <div className="font-bold text-sky-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Dados do Documento Redigido</span>
+                  </div>
+                  {selectedOficio.dados_documento.numeroOficio && (
+                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5 pt-1">
+                      <span className="text-zinc-400 font-medium">Número:</span>
+                      <span className="col-span-2 font-bold text-white">{selectedOficio.dados_documento.numeroOficio}</span>
+                    </div>
+                  )}
+                  {selectedOficio.dados_documento.destinatario && (
+                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5">
+                      <span className="text-zinc-400 font-medium">Destinatário:</span>
+                      <span className="col-span-2 font-medium text-zinc-200">{selectedOficio.dados_documento.destinatario}</span>
+                    </div>
+                  )}
+                  {selectedOficio.dados_documento.assunto && (
+                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5">
+                      <span className="text-zinc-400 font-medium">Assunto:</span>
+                      <span className="col-span-2 font-medium text-zinc-200">{selectedOficio.dados_documento.assunto}</span>
+                    </div>
+                  )}
+                  {selectedOficio.dados_documento.conteudoHtml && (
+                    <div className="pt-1">
+                      <span className="text-zinc-400 font-medium block mb-1">Resumo do Texto:</span>
+                      <div className="p-2 bg-[#121214] border border-[#26262a] rounded-lg text-[11px] text-zinc-300 line-clamp-4 italic">
+                        {selectedOficio.dados_documento.conteudoHtml.replace(/<[^>]*>?/gm, '')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2.5 bg-[#121214] border border-[#26262a] rounded-xl p-4 text-xs">
                 <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
                   <span className="text-zinc-400">Tipo de Documento:</span>
@@ -329,7 +366,7 @@ function ArquivosContent() {
                 <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
                   <span className="text-zinc-400">Data de Emissão:</span>
                   <span className="col-span-2 font-semibold text-white">
-                    {selectedOficio.data_funcionario ? new Date(selectedOficio.data_funcionario).toLocaleString('pt-BR') : selectedOficio.criado_em ? new Date(selectedOficio.criado_em).toLocaleString('pt-BR') : '-'}
+                    {selectedOficio.data_funcionario ? new Date(selectedOficio.data_funcionario).toLocaleString('pt-BR') : (selectedOficio.criado_em ? new Date(selectedOficio.criado_em).toLocaleString('pt-BR') : '-')}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
@@ -513,8 +550,13 @@ function ArquivosContent() {
                       <TableCell>
                         <div className="font-bold text-white flex items-center gap-2">
                           <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Ofício Oficial</span>
+                          <span>{of.dados_documento?.numeroOficio ? `Ofício Nº ${of.dados_documento.numeroOficio}` : 'Ofício Oficial'}</span>
                         </div>
+                        {of.dados_documento?.destinatario && (
+                          <div className="text-xs text-zinc-300 font-medium truncate max-w-[260px] mt-0.5" title={of.dados_documento.destinatario}>
+                            {of.dados_documento.destinatario}
+                          </div>
+                        )}
                         <div className="text-xs font-mono text-sky-400 font-semibold mt-0.5">
                           Chave: {of.token_verificacao}
                         </div>
