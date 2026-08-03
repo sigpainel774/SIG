@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { ModalRedatorOficio, DadosOficio } from '@/components/modals/modal-redator-oficio'
 
 import dynamic from 'next/dynamic'
 
@@ -90,6 +90,9 @@ export default function DocumentosPage() {
   const [tokenDocumentoExistente, setTokenDocumentoExistente] = useState<string | null>(null)
   const [verificandoHistorico, setVerificandoHistorico] = useState(false)
   const [usarHistorico, setUsarHistorico] = useState(false)
+
+  const [isRedatorOficioOpen, setIsRedatorOficioOpen] = useState(false)
+  const [dadosOficio, setDadosOficio] = useState<DadosOficio | null>(null)
 
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
@@ -346,6 +349,8 @@ export default function DocumentosPage() {
       } finally {
         setLoadingBoletim(false)
       }
+    } else if (docType === 'oficio') {
+      setIsRedatorOficioOpen(true)
     } else {
       setAlunoImprimirDocumentoEscolar(alunoSelecionado || { id: 'oficio', nome: 'Documento Oficial' })
     }
@@ -383,14 +388,31 @@ export default function DocumentosPage() {
         />
       )}
 
-      {/* Impressão overlay - Atestados escolares e declaração de vaga */}
+      {/* Modal Redator de Ofício da Saúde */}
+      {isRedatorOficioOpen && (
+        <ModalRedatorOficio
+          isOpen={isRedatorOficioOpen}
+          onClose={() => setIsRedatorOficioOpen(false)}
+          onConfirm={(dados) => {
+            setDadosOficio(dados)
+            setIsRedatorOficioOpen(false)
+            setAlunoImprimirDocumentoEscolar({ id: 'oficio', nome: 'Ofício Oficial' })
+          }}
+          funcionarioNome={funcionario?.nome}
+          funcionarioCargo={funcionario?.cargo || 'Secretaria Municipal de Saúde'}
+        />
+      )}
+
+      {/* Impressão overlay - Atestados escolares, ofícios e declaração de vaga */}
       {alunoImprimirDocumentoEscolar && (
         <PrintDocumentoEscolar 
           aluno={alunoImprimirDocumentoEscolar}
           docType={docType as any}
+          dadosOficio={dadosOficio || undefined}
           tokenExistente={usarHistorico ? tokenDocumentoExistente : null}
           onClose={() => {
             setAlunoImprimirDocumentoEscolar(null)
+            setDadosOficio(null)
             checarHistoricoRapido()
           }}
         />
