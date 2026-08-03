@@ -17,6 +17,7 @@ export interface Escola {
   assinatura_diretor_url?: string | null
   secretaria_id?: string | null
   secretariaNome?: string
+  tipo?: string | null
   secretarias?: {
     id: string
     nome: string
