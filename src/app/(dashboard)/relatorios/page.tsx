@@ -120,8 +120,12 @@ const REPORT_CARDS = [
 
 export default function RelatoriosPage() {
   const router = useRouter()
-  const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
+  const { escolas, selectedEscola, setSelectedEscola, loadEscolas, selectedSecretaria } = useSchoolStore()
   const { acessos, isAdminGlobalOrRoot } = useAuthStore()
+
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isEducacao = (!selectedEscola && !selectedSecretaria) || (!secNome || /educa/i.test(secNome))
+  const isSaude = !isEducacao && (/sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE')
 
   const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
   const isDiretor = acessos?.some(a => a.nivel === 2 && a.ativo)
@@ -627,6 +631,10 @@ export default function RelatoriosPage() {
       {/* Grid of Cards Matching Screenshot Layout & Colors */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
+          if (isSaude) {
+            const permitidosSaude = ['mapa', 'presenca', 'servidores']
+            if (!permitidosSaude.includes(card.id)) return false
+          }
           if (card.id === 'servidores') {
             return podeVerRelatorioServidores
           }
