@@ -50,6 +50,13 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   const [hashSha256, setHashSha256] = useState('')
   const [dataEmissao, setDataEmissao] = useState<string | null>(null)
   const [registrandoAssinatura, setRegistrandoAssinatura] = useState(false)
+  const [localDadosOficio, setLocalDadosOficio] = useState<any>(dadosOficio || null)
+
+  useEffect(() => {
+    if (dadosOficio) {
+      setLocalDadosOficio(dadosOficio)
+    }
+  }, [dadosOficio])
 
   const { funcionario } = useAuthStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
@@ -129,14 +136,18 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
         const supabase = createClient()
         const { data } = await supabase
           .from('assinatura')
-          .select('id, aluno_id, tipo_documento, token_verificacao, hash_sha256, arquivo_pdf_url, ip_responsavel, dispositivo_responsavel, user_agent_responsavel, data_responsavel, ip_funcionario, dispositivo_funcionario, user_agent_funcionario, data_funcionario, criado_em')
+          .select('*')
           .eq('token_verificacao', tokenExistente)
           .maybeSingle()
 
         if (data) {
-          setTokenVerificacao(data.token_verificacao)
-          setHashSha256(data.hash_sha256)
-          setDataEmissao(data.data_funcionario || data.criado_em)
+          const item = data as any
+          setTokenVerificacao(item.token_verificacao)
+          setHashSha256(item.hash_sha256)
+          setDataEmissao(item.data_funcionario || item.criado_em)
+          if (item.dados_documento) {
+            setLocalDadosOficio(item.dados_documento)
+          }
           
           const siteUrl = window.location.origin
           const qrUrl = await QRCode.toDataURL(`${siteUrl}/verificar/${data.token_verificacao}`, { margin: 1, width: 80 })
@@ -192,10 +203,11 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
 
   const renderDocumentContent = () => {
     if (docType === 'oficio') {
-      const numOficio = dadosOficio?.numeroOficio || `_____ / ${anoLetivo}`
-      const dest = dadosOficio?.destinatario || 'Ao(À) Senhor(a): ________________________________________'
-      const ass = dadosOficio?.assunto || 'Assunto: ________________________________________________'
-      const htmlBody = dadosOficio?.conteudoHtml || `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
+      const activeDados = dadosOficio || localDadosOficio
+      const numOficio = activeDados?.numeroOficio || `_____ / ${anoLetivo}`
+      const dest = activeDados?.destinatario || 'Ao(À) Senhor(a): ________________________________________'
+      const ass = activeDados?.assunto || 'Assunto: ________________________________________________'
+      const htmlBody = activeDados?.conteudoHtml || `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
 
       return (
         <div className="space-y-3 min-h-[180px]">
@@ -335,9 +347,32 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   ]
   const dataPorExtenso = `Sapeaçu - BA, ${dataRef.getDate()} de ${meses[dataRef.getMonth()]} de ${dataRef.getFullYear()}.`
 
+  const triggerPrintWithTitle = () => {
+    const originalTitle = document.title
+    const activeDados = dadosOficio || localDadosOficio
+    let customTitle = `Ofício ${activeDados?.numeroOficio ? activeDados.numeroOficio.replace(/\//g, '-').trim() : `001-${anoLetivo}`} - Secretaria de Saúde`
+    if (docType !== 'oficio') {
+      const nomeAluno = aluno?.nome ? aluno.nome.trim() : 'Estudante'
+      if (docType === 'atestado-matricula') customTitle = `Atestado de Matrícula - ${nomeAluno}`
+      else if (docType === 'atestado-frequencia') customTitle = `Atestado de Frequência - ${nomeAluno}`
+      else if (docType === 'declaracao-vaga') customTitle = `Declaração de Vaga - ${nomeAluno}`
+      else if (docType === 'atestado-transferencia') customTitle = `Atestado de Transferência - ${nomeAluno}`
+      else customTitle = `Documento Oficial - ${nomeAluno}`
+    }
+    
+    try {
+      document.title = customTitle
+      window.print()
+    } finally {
+      setTimeout(() => {
+        document.title = originalTitle
+      }, 1200)
+    }
+  }
+
   const handlePrint = async () => {
     if (tokenVerificacao) {
-      window.print()
+      triggerPrintWithTitle()
       return
     }
 
@@ -385,6 +420,13 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
       // 3. Salvar no banco
       const targetAlunoId = (aluno?.id && aluno.id !== 'oficio') ? aluno.id : null
 
+      const activeDadosPayload = (dadosOficio || localDadosOficio) ? {
+        numeroOficio: (dadosOficio || localDadosOficio)?.numeroOficio,
+        destinatario: (dadosOficio || localDadosOficio)?.destinatario,
+        assunto: (dadosOficio || localDadosOficio)?.assunto,
+        conteudoHtml: (dadosOficio || localDadosOficio)?.conteudoHtml,
+      } : null
+
       const { error: insertError } = await supabase
         .from('assinatura')
         .insert({
@@ -395,8 +437,9 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
           ip_funcionario: ip,
           user_agent_funcionario: navigator.userAgent,
           dispositivo_funcionario: window.innerWidth < 768 ? 'Celular' : 'Computador',
-          data_funcionario: new Date().toISOString()
-        })
+          data_funcionario: new Date().toISOString(),
+          dados_documento: activeDadosPayload
+        } as any)
 
       if (insertError) throw insertError
 
@@ -421,7 +464,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
 
       // Pequeno timeout para garantir a renderização antes de disparar o print do browser
       setTimeout(() => {
-        window.print()
+        triggerPrintWithTitle()
       }, 300)
 
     } catch (err: any) {
