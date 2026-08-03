@@ -411,6 +411,7 @@ export type Database = {
           serie: string | null
           telefone: string | null
           turma_id: string | null
+          historico: string | null
         }
         Insert: {
           cartao_sus?: string | null
@@ -444,6 +445,7 @@ export type Database = {
           serie?: string | null
           telefone?: string | null
           turma_id?: string | null
+          historico?: string | null
         }
         Update: {
           cartao_sus?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           serie?: string | null
           telefone?: string | null
           turma_id?: string | null
+          historico?: string | null
         }
         Relationships: [
           {

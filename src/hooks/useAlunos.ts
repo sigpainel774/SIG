@@ -27,6 +27,7 @@ export interface Aluno {
   escola_id?: string | null
   escola_nome?: string
   foto_url?: string | null
+  historico?: string | null
   dados_matricula?: Record<string, any>
   numero_matricula?: string | null
   created_at: string
@@ -230,6 +231,27 @@ export function useAlunos() {
     })
   }
 
+  /* ── Salvar Histórico do Aluno ───────────────────────────────── */
+  const salvarHistoricoAluno = async (id: string, historicoText: string) => {
+    const supabase = createClient()
+    const valorHistorico = historicoText.trim() || null
+
+    await executeWithToast({
+      action: async () => {
+        const { error } = await supabase
+          .from('alunos')
+          .update({ historico: valorHistorico })
+          .eq('id', id)
+        if (error) throw error
+      },
+      successMessage: 'Histórico do aluno salvo com sucesso!',
+      errorMessage: 'Erro ao salvar histórico do aluno',
+      onSuccess: () => {
+        carregarAlunos()
+      }
+    })
+  }
+
   /* ── Carregar ao alterar dependências ────────────────────────── */
   useEffect(() => {
     carregarAlunos()
@@ -253,5 +275,7 @@ export function useAlunos() {
     solicitacoes,
     carregandoSolicitacoes,
     handleResponderSolicitacao,
+    salvarHistoricoAluno,
   }
 }
+

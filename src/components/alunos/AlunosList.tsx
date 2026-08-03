@@ -16,10 +16,13 @@ import {
   Paperclip,
   Hash,
   Lock,
+  History,
+  ZoomIn,
 } from 'lucide-react'
 import { type Aluno } from '@/hooks/useAlunos'
 import { useCheckPermissao } from '@/hooks/useCheckPermissao'
 import { CachedImage } from '@/components/ui/cached-image'
+import { cn } from '@/lib/utils'
 
 interface AlunosListProps {
   carregando: boolean
@@ -30,6 +33,8 @@ interface AlunosListProps {
   onImprimir: (aluno: Aluno) => void
   onComprovante: (aluno: Aluno) => void
   onArquivar: (aluno: Aluno) => void
+  onHistorico?: (aluno: Aluno) => void
+  onAmpliarFoto?: (aluno: Aluno) => void
 }
 
 export function AlunosList({
@@ -41,6 +46,8 @@ export function AlunosList({
   onImprimir,
   onComprovante,
   onArquivar,
+  onHistorico,
+  onAmpliarFoto,
 }: AlunosListProps) {
   const { temPermissao: podeEditar } = useCheckPermissao('alunos.editar')
   const { temPermissao: podeAnexos } = useCheckPermissao('alunos.anexos')
@@ -75,6 +82,9 @@ export function AlunosList({
           aluno.endereco ?? aluno.dados_matricula?.ruaAluno ?? '-'
         const nomeMae =
           aluno.nome_mae ?? aluno.dados_matricula?.nomeMaeAluno ?? null
+        const temHistorico = Boolean(
+          aluno.historico?.trim() || aluno.dados_matricula?.historico?.trim()
+        )
 
         return (
           <div
@@ -84,14 +94,21 @@ export function AlunosList({
             {/* ── Topo do card: Foto + Nome + Série ── */}
             <div className="flex items-center justify-between gap-3 pb-4 border-b border-border/50">
               <div className="flex items-center gap-4 min-w-0">
-                {/* Foto / Iniciais */}
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-border flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner">
+                {/* Foto / Iniciais com efeito de hover ZoomIn */}
+                <div
+                  onClick={() => onAmpliarFoto?.(aluno)}
+                  className="relative group/avatar cursor-pointer w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-border flex-shrink-0 flex items-center justify-center bg-muted text-foreground text-base sm:text-lg font-bold overflow-hidden shadow-inner"
+                  title="Clique para ampliar a foto 3x4"
+                >
                   <CachedImage
                     src={getAvatarUrl(aluno)}
                     alt={aluno.nome}
-                    className="w-full h-full"
+                    className="w-full h-full object-cover group-hover/avatar:scale-105 transition-transform duration-200"
                     fallback={aluno.nome.substring(0, 2).toUpperCase()}
                   />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
+                    <ZoomIn className="w-4 h-4 text-white drop-shadow" />
+                  </div>
                 </div>
 
                 {/* Informações Principais */}
@@ -168,6 +185,32 @@ export function AlunosList({
 
             {/* ── Botões de Ação ── */}
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 pt-2">
+              {/* Botão Histórico (à esquerda do botão de Anexos) */}
+              {onHistorico && (
+                <button
+                  onClick={() => onHistorico(aluno)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer",
+                    temHistorico
+                      ? "bg-emerald-500/10 border border-emerald-500 text-emerald-400 hover:bg-emerald-500/20"
+                      : "bg-transparent border border-border text-foreground hover:bg-hoverCustom"
+                  )}
+                  title={
+                    temHistorico
+                      ? "Histórico Cadastrado (Clique para visualizar/editar)"
+                      : "Histórico do Aluno"
+                  }
+                >
+                  <History
+                    className={cn(
+                      "w-3.5 h-3.5",
+                      temHistorico ? "text-emerald-400" : "text-muted-foreground"
+                    )}
+                  />
+                  <span className="hidden sm:inline">Histórico</span>
+                </button>
+              )}
+
               {podeAnexos && (
                 <button
                   onClick={() => onAnexos(aluno)}
@@ -230,3 +273,4 @@ export function AlunosList({
     </div>
   )
 }
+
