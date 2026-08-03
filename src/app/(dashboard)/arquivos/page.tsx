@@ -20,6 +20,7 @@ import {
   Printer,
   Copy,
   ExternalLink,
+  Trash2,
   X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,25 @@ function ArquivosContent() {
   const [selectedOficio, setSelectedOficio] = useState<any>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [oficioImprimir, setOficioImprimir] = useState<any | null>(null)
+
+  const handleDeleteOficio = async (id: string, token: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o Ofício com a Chave ${token} do histórico?`)) return
+    try {
+      const { error } = await supabase
+        .from('assinatura')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      toast.success(`Ofício ${token} excluído com sucesso.`)
+      setModalOpen(false)
+      setSelectedOficio(null)
+      loadDados()
+    } catch (err: any) {
+      console.error('Erro ao excluir ofício:', err)
+      toast.error('Erro ao excluir ofício: ' + err.message)
+    }
+  }
 
   // Sincronizar aba ativa quando muda entre Saúde e Educação
   useEffect(() => {
@@ -235,19 +255,29 @@ function ArquivosContent() {
           footer={
             <div className="flex items-center justify-between w-full pt-3 border-t border-[#26262a]">
               {selectedOficio ? (
-                <div className="flex items-center gap-2 w-full justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const url = `${window.location.origin}/verificar/${selectedOficio.token_verificacao}`
-                      navigator.clipboard.writeText(url)
-                      toast.success('Link de verificação copiado!')
-                    }}
-                    className="border-[#3f3f46] text-white hover:bg-[#27272a] text-xs font-semibold gap-1.5"
-                  >
-                    <Copy className="w-3.5 h-3.5 text-sky-400" />
-                    Copiar Link
-                  </Button>
+                <div className="flex items-center gap-2 w-full justify-between flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const url = `${window.location.origin}/verificar/${selectedOficio.token_verificacao}`
+                        navigator.clipboard.writeText(url)
+                        toast.success('Link de verificação copiado!')
+                      }}
+                      className="border-[#3f3f46] text-white hover:bg-[#27272a] text-xs font-semibold gap-1.5"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-sky-400" />
+                      Copiar Link
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleDeleteOficio(selectedOficio.id, selectedOficio.token_verificacao)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs font-semibold gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Excluir
+                    </Button>
+                  </div>
                   <Button
                     onClick={() => {
                       setOficioImprimir(selectedOficio)
@@ -501,18 +531,29 @@ function ArquivosContent() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => {
-                            setSelectedOficio(of)
-                            setModalOpen(true)
-                          }}
-                          className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 h-8 px-2.5 rounded-lg"
-                        >
-                          <Eye className="w-4 h-4 mr-1.5" />
-                          Visualizar
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedOficio(of)
+                              setModalOpen(true)
+                            }}
+                            className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 h-8 px-2.5 rounded-lg"
+                          >
+                            <Eye className="w-4 h-4 mr-1.5" />
+                            Visualizar
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteOficio(of.id, of.token_verificacao)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 px-2 rounded-lg"
+                            title="Excluir do histórico"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
