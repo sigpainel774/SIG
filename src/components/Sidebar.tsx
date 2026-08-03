@@ -215,10 +215,10 @@ export function Sidebar() {
           "flex items-center gap-3.5 px-4 py-3 md:py-2.5 font-medium transition-all duration-200 text-base md:text-sm min-h-[48px] md:min-h-0",
           isActive
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-l-2 border-sidebar-primary rounded-r-xl rounded-l-none shadow-sm dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff] dark:border-[#3ea6ff]"
-            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl"
         )}
       >
-        <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-sidebar-accent-foreground dark:text-[#3ea6ff]" : "text-sidebar-foreground/60")} />
+        <Icon className={cn("w-6 h-6 md:w-5 md:h-5 shrink-0", isActive ? "text-sidebar-accent-foreground dark:text-[#3ea6ff]" : "text-sidebar-foreground dark:text-sidebar-foreground/70")} />
         <span>{item.label}</span>
       </Link>
     )
@@ -305,7 +305,7 @@ export function Sidebar() {
                 <>
                   <hr className="border-sidebar-border/40 mx-3 my-1" />
                   <div className="px-4 pt-4 pb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700 dark:text-sidebar-foreground/40">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/75 dark:text-sidebar-foreground/40">
                       {group.label}
                     </span>
                   </div>
@@ -342,9 +342,9 @@ export function Sidebar() {
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full flex items-center gap-3.5 px-4 py-3 md:py-2.5 text-base md:text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent rounded-xl transition-colors text-left cursor-pointer min-h-[48px] md:min-h-0 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <RefreshCw className={cn("w-6 h-6 md:w-5 md:h-5 text-sidebar-foreground/60", isRefreshing && "animate-spin text-highlight")} />
+          <RefreshCw className={cn("w-6 h-6 md:w-5 md:h-5 text-sidebar-foreground dark:text-sidebar-foreground/70", isRefreshing && "animate-spin text-highlight")} />
           <span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
         </button>
         <button 

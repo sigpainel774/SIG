@@ -357,7 +357,7 @@ export default function HomePage() {
                   onClick={() => setSelectedSecretaria(secretaria)}
                   className="flex flex-col items-center cursor-pointer group w-36"
                 >
-                  <div className="w-24 h-24 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95 bg-surface-2 border border-borderCustom">
+                  <div className="w-24 h-24 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95 bg-white border border-borderCustom">
                     {secretaria.logo_url ? (
                       <img src={secretaria.logo_url} alt={secretaria.nome} className="w-full h-full object-contain p-2" />
                     ) : (
@@ -389,7 +389,7 @@ export default function HomePage() {
               <span className="text-muted-foreground">/</span>
               <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                 {selectedSecretaria.logo_url ? (
-                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} className="w-7 h-7 object-contain rounded-lg" />
+                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} className="w-7 h-7 object-contain rounded-lg bg-white p-0.5" />
                 ) : (
                   <Building2 className="w-6 h-6 text-sky-400" />
                 )}
