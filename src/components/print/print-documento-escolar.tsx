@@ -6,6 +6,7 @@ import { PrintHeader } from '@/components/print/print-header'
 import { Printer, X, Loader2, Award, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import QRCode from 'qrcode'
 import { toast } from 'sonner'
 
@@ -51,6 +52,11 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   const [registrandoAssinatura, setRegistrandoAssinatura] = useState(false)
 
   const { funcionario } = useAuthStore()
+  const { selectedEscola, selectedSecretaria } = useSchoolStore()
+
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isSaudeContext = /sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE' || docType === 'oficio'
+  const nomeSecretariaOficial = isSaudeContext ? "SECRETARIA MUNICIPAL DE SAÚDE" : (secNome.toUpperCase() || "SECRETARIA MUNICIPAL DE EDUCAÇÃO")
 
   const dm = aluno.dados_matricula || {}
   const dataNascimentoFormatada = (() => {
@@ -506,7 +512,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
             className="pb-3 border-b border-black mb-4"
             estado="ESTADO DA BAHIA"
             municipio="PREFEITURA MUNICIPAL DE SAPEAÇU"
-            secretaria={docType === 'oficio' || (escolaNome && /sa[uú]de/i.test(escolaNome)) ? "SECRETARIA MUNICIPAL DE SAÚDE" : "SECRETARIA MUNICIPAL DE EDUCAÇÃO"}
+            secretaria={nomeSecretariaOficial}
           />
 
           {/* Sub-Cabeçalho com Logo da Escola (Se Houver) */}
@@ -519,7 +525,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
               />
             )}
             <h1 className="text-base font-black text-gray-900 uppercase tracking-wide">
-              {escolaNome || 'UNIDADE ESCOLAR MUNICIPAL'}
+              {escolaNome || (docType === 'oficio' ? nomeSecretariaOficial : 'UNIDADE ESCOLAR MUNICIPAL')}
             </h1>
             {escolaInep && (
               <p className="text-xs font-semibold text-gray-800 tracking-wider uppercase">
