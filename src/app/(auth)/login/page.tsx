@@ -144,8 +144,8 @@ export default function LoginPage() {
             alt="Brasão Sapeaçu"
             className="w-14 h-14 object-contain"
           />
-          <h1 className="text-2xl sm:text-[26px] font-bold text-white text-center tracking-tight">
-            Sapeaçu Painel Escolar
+          <h1 className="text-2xl sm:text-[26px] font-bold text-[#ffffff] text-center tracking-tight">
+            SIG - Sapeaçu
           </h1>
         </div>
 
@@ -154,7 +154,7 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
-              placeholder="adm@super.com"
+              placeholder="exemplo@sig.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
