@@ -46,6 +46,20 @@ const ModalAlunosAnexos = dynamic(
     ),
   { ssr: false }
 )
+const ModalHistoricoAluno = dynamic(
+  () =>
+    import('@/components/modals/modal-historico-aluno').then(
+      (mod) => mod.ModalHistoricoAluno
+    ),
+  { ssr: false }
+)
+const ModalFotoAmpliada = dynamic(
+  () =>
+    import('@/components/modals/modal-foto-ampliada').then(
+      (mod) => mod.ModalFotoAmpliada
+    ),
+  { ssr: false }
+)
 
 export default function AlunosPage() {
   const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot, isProfessor: checkProfessor } =
@@ -66,6 +80,7 @@ export default function AlunosPage() {
     carregarAlunos,
     solicitacoes,
     handleResponderSolicitacao,
+    salvarHistoricoAluno,
   } = useAlunos()
 
   /* ── Guard: Professores não acessam esta tela ─────────────── */
@@ -103,6 +118,8 @@ export default function AlunosPage() {
   const [alunoComprovanteImprimir, setAlunoComprovanteImprimir] = useState<Aluno | null>(null)
   const [alunoArquivar, setAlunoArquivar] = useState<Aluno | null>(null)
   const [alunoAnexos, setAlunoAnexos] = useState<Aluno | null>(null)
+  const [alunoHistorico, setAlunoHistorico] = useState<Aluno | null>(null)
+  const [alunoFotoAmpliada, setAlunoFotoAmpliada] = useState<Aluno | null>(null)
 
   const isDiretorOuAdmin =
     acessos.some((a) => a.nivel === 2 && a.ativo) || isAdminGlobalOrRoot()
@@ -160,6 +177,24 @@ export default function AlunosPage() {
           escolaAtivaId={escolaAtivaId}
         />
       )}
+
+      {alunoHistorico && (
+        <ModalHistoricoAluno
+          open={!!alunoHistorico}
+          onOpenChange={(open) => !open && setAlunoHistorico(null)}
+          aluno={alunoHistorico}
+          isEditMode={isEditMode}
+          onSalvar={salvarHistoricoAluno}
+        />
+      )}
+
+      {alunoFotoAmpliada && (
+        <ModalFotoAmpliada
+          aluno={alunoFotoAmpliada}
+          onClose={() => setAlunoFotoAmpliada(null)}
+        />
+      )}
+
 
       {/* Topo */}
       <div className="print:hidden space-y-6">
@@ -230,6 +265,8 @@ export default function AlunosPage() {
           carregando={loading}
           alunosFiltrados={alunosFiltrados}
           isEditMode={isEditMode}
+          onHistorico={setAlunoHistorico}
+          onAmpliarFoto={setAlunoFotoAmpliada}
           onAnexos={setAlunoAnexos}
           onEditar={(aluno) => {
             setAlunoEditando(aluno)
