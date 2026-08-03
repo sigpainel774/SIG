@@ -151,8 +151,12 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     setMounted(true)
 
     // Preload de imagens
-    const logoPrefeitura = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-prefeitura.png`
-    const logoSecretaria = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/logo-secretaria.jpg`
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+    const logoPrefeitura = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
+    const logoEducacao = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
+    const logoSaude = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727067249_icone_saude_clean.png`
+    
+    const logoSecretaria = isSaudeContext ? logoSaude : logoEducacao
     
     const imageUrls = [logoPrefeitura, logoSecretaria]
     if (escolaLogoUrl) imageUrls.push(escolaLogoUrl)

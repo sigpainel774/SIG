@@ -15,9 +15,10 @@ export interface PrintHeaderProps {
   docTitulo?: string
   docSubtitulo?: string
   
-  // Customização de logotipo da escola (se houver, substitui o da secretaria na direita)
+  // Customização de logotipo da escola ou secretaria (se houver, substitui o da secretaria na direita)
   escolaLogoUrl?: string
   escolaNome?: string
+  secretariaLogoUrl?: string
   
   // Customização de textos padrões
   estado?: string
@@ -41,6 +42,7 @@ export function PrintHeader({
   docSubtitulo,
   escolaLogoUrl,
   escolaNome,
+  secretariaLogoUrl,
   estado = "ESTADO DA BAHIA",
   municipio = "PREFEITURA MUNICIPAL DE SAPEAÇU",
   secretaria = "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
@@ -53,14 +55,18 @@ export function PrintHeader({
 }: PrintHeaderProps) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
   const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-  const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg`
+  const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
+  const defaultSaudeLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727067249_icone_saude_clean.png`
+
+  const isSaudeHeader = /sa[uú]de/i.test(secretaria)
+  const resolvedSecretariaLogoUrl = secretariaLogoUrl || (isSaudeHeader ? defaultSaudeLogoUrl : defaultEducacaoLogoUrl)
 
   const getCacheBustedUrl = (url?: string) => {
     if (!url) return ''
     return getVersaoImagemUrl(url, timestamp) || ''
   }
 
-  const nomeExibicaoEscola = escolaNome ?? "Secretaria Municipal de Educação"
+  const nomeExibicaoEscola = escolaNome ?? (isSaudeHeader ? "Secretaria Municipal de Saúde" : "Secretaria Municipal de Educação")
 
   const resolvedLogoPrefeituraClass = logoPrefeituraClassName ?? logoClassName ?? "doc-header-logo-prefeitura"
   const resolvedLogoSecretariaClass = logoSecretariaClassName ?? logoClassName ?? "doc-header-logo-secretaria"
@@ -112,13 +118,13 @@ export function PrintHeader({
       {/* Logo Escola ou Secretaria (Direita) */}
       <div className="flex items-center justify-end max-w-[180px] shrink-0">
         <img
-          src={escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : getCacheBustedUrl(logoSecretariaUrl)}
+          src={escolaLogoUrl ? getCacheBustedUrl(escolaLogoUrl) : getCacheBustedUrl(resolvedSecretariaLogoUrl)}
           alt={nomeExibicaoEscola}
           className={resolvedLogoSecretariaClass}
           onError={(e) => {
             if (e.currentTarget.dataset.failed) return
             e.currentTarget.dataset.failed = 'true'
-            e.currentTarget.src = '/img/logo-secretaria.png'
+            e.currentTarget.src = isSaudeHeader ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
           }}
         />
       </div>
