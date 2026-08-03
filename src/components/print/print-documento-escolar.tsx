@@ -21,11 +21,17 @@ function generateVerificacaoToken() {
 interface PrintDocumentoProps {
   aluno?: any
   docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga' | 'atestado-transferencia' | 'oficio'
+  dadosOficio?: {
+    numeroOficio: string
+    destinatario: string
+    assunto: string
+    conteudoHtml: string
+  }
   tokenExistente?: string | null
   onClose: () => void
 }
 
-export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose }: PrintDocumentoProps) {
+export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExistente, onClose }: PrintDocumentoProps) {
   const [mounted, setMounted] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   
@@ -176,21 +182,24 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
 
   const renderDocumentContent = () => {
     if (docType === 'oficio') {
+      const numOficio = dadosOficio?.numeroOficio || `_____ / ${anoLetivo}`
+      const dest = dadosOficio?.destinatario || 'Ao(À) Senhor(a): ________________________________________'
+      const ass = dadosOficio?.assunto || 'Assunto: ________________________________________________'
+      const htmlBody = dadosOficio?.conteudoHtml || `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
+
       return (
-        <div className="space-y-6 min-h-[280px]">
+        <div className="space-y-6 min-h-[300px]">
           <div className="text-left font-bold text-sm text-gray-900">
-            OFÍCIO Nº _____ / {anoLetivo}
+            OFÍCIO Nº {numOficio}
           </div>
           <div className="text-left text-xs font-semibold text-gray-800 space-y-1">
-            <p>Ao(À) Senhor(a): ________________________________________</p>
-            <p>Assunto: ________________________________________________</p>
+            <p>{dest.startsWith('Ao') ? dest : `Ao(À) Senhor(a): ${dest}`}</p>
+            <p>{ass.startsWith('Assunto') ? ass : `Assunto: ${ass}`}</p>
           </div>
-          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12 pt-4">
-            Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.
-          </p>
-          <p className="text-justify text-sm text-gray-800 leading-relaxed indent-12">
-            Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.
-          </p>
+          <div
+            className="oficio-print-body text-justify text-sm text-gray-900 leading-relaxed pt-2"
+            dangerouslySetInnerHTML={{ __html: htmlBody }}
+          />
         </div>
       )
     }
@@ -540,41 +549,61 @@ export function PrintDocumentoEscolar({ aluno, docType, tokenExistente, onClose 
 
         {/* Rodapé e Área de Assinatura */}
         <div className="px-6 pb-4">
-          <div className="grid grid-cols-2 gap-8 text-center text-xs font-semibold mt-3">
-            {/* Diretor da Unidade */}
-            <div className="flex flex-col items-center justify-end min-h-[80px]">
-              {diretorAssinaturaUrl ? (
-                <img
-                  src={getCacheBustedUrl(diretorAssinaturaUrl)}
-                  alt="Assinatura Diretor"
-                  className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
-                />
-              ) : (
-                <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
-              )}
-              <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
-                {diretorNome || 'Diretor(a) Escolar'}
-              </span>
-              <span className="text-gray-500 text-[9px] mt-0.5">Direção Escolar</span>
-            </div>
-
-            {/* Secretário / Emitente */}
-            <div className="flex flex-col items-center justify-end min-h-[80px]">
+          {docType === 'oficio' ? (
+            <div className="flex flex-col items-center justify-end min-h-[90px] mx-auto text-center mt-3">
               {funcionario?.assinatura_url ? (
                 <img
                   src={getCacheBustedUrl(funcionario.assinatura_url)}
-                  alt="Assinatura Servidor"
-                  className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
+                  alt="Assinatura Redator"
+                  className="max-h-[55px] w-auto object-contain mb-1 select-none pointer-events-none"
                 />
               ) : (
-                <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
+                <div className="w-36 h-[40px] border-b border-dashed border-gray-400 mb-1"></div>
               )}
-              <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
-                {funcionario?.nome || 'Responsável p/ Emissão'}
+              <span className="font-bold text-[11px] uppercase border-t border-black pt-1 w-full max-w-[260px]">
+                {funcionario?.nome || 'Responsável p/ Redação'}
               </span>
-              <span className="text-gray-500 text-[9px] mt-0.5">Secretaria / Coordenação</span>
+              <span className="text-gray-600 text-[10px] mt-0.5 font-semibold">
+                {funcionario?.cargo || 'Secretaria Municipal de Saúde'}
+              </span>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-8 text-center text-xs font-semibold mt-3">
+              {/* Diretor da Unidade */}
+              <div className="flex flex-col items-center justify-end min-h-[80px]">
+                {diretorAssinaturaUrl ? (
+                  <img
+                    src={getCacheBustedUrl(diretorAssinaturaUrl)}
+                    alt="Assinatura Diretor"
+                    className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
+                  />
+                ) : (
+                  <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
+                )}
+                <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
+                  {diretorNome || 'Diretor(a) Escolar'}
+                </span>
+                <span className="text-gray-500 text-[9px] mt-0.5">Direção Escolar</span>
+              </div>
+
+              {/* Secretário / Emitente */}
+              <div className="flex flex-col items-center justify-end min-h-[80px]">
+                {funcionario?.assinatura_url ? (
+                  <img
+                    src={getCacheBustedUrl(funcionario.assinatura_url)}
+                    alt="Assinatura Servidor"
+                    className="max-h-[50px] w-auto object-contain mb-1 select-none pointer-events-none"
+                  />
+                ) : (
+                  <div className="w-28 h-[35px] border-b border-dashed border-gray-400 mb-1"></div>
+                )}
+                <span className="font-bold text-[10px] uppercase border-t border-black pt-1 w-full max-w-[200px]">
+                  {funcionario?.nome || 'Responsável p/ Emissão'}
+                </span>
+                <span className="text-gray-500 text-[9px] mt-0.5">Secretaria / Coordenação</span>
+              </div>
+            </div>
+          )}
 
           {/* Autenticação com QR Code */}
           {qrCodeUrl && (
