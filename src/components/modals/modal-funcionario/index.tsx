@@ -21,6 +21,8 @@ import { SaudeTab } from './components/SaudeTab'
 import { EscolaridadeTab } from './components/EscolaridadeTab'
 import { AnexosTab } from './components/AnexosTab'
 
+import { useSchoolStore } from '@/store/useSchoolStore'
+
 function ModalFuncionarioContent() {
   const [activeTab, setActiveTab] = useState<'pessoais' | 'documentos' | 'emprego' | 'saude' | 'escolaridade' | 'anexos'>('pessoais')
 
@@ -29,15 +31,33 @@ function ModalFuncionarioContent() {
     empId,
     nome,
     loadingData,
+    escolaId,
     escolaNome,
     escolaInep,
     escolaLocalizacao,
+    handleEscolaChange,
     fotoPreview,
     handleFotoChange,
     handleSubmit,
     lotacoesModalOpen,
     setLotacoesModalOpen,
   } = useFuncionarioForm()
+
+  const { escolas, selectedSecretaria } = useSchoolStore((state) => ({
+    escolas: state.escolas,
+    selectedSecretaria: state.selectedSecretaria
+  }))
+
+  const availableUnits = React.useMemo(() => {
+    if (!selectedSecretaria) return escolas
+    const secId = selectedSecretaria.id
+    const secNome = (selectedSecretaria.nome || '').toLowerCase()
+    return escolas.filter(e => {
+      if (secId && e.secretaria_id === secId) return true
+      if (secNome && (e.secretariaNome?.toLowerCase().includes(secNome) || (e.secretarias as any)?.nome?.toLowerCase().includes(secNome))) return true
+      return false
+    })
+  }, [escolas, selectedSecretaria])
 
   const tabClass = (tab: typeof activeTab) =>
     `px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
@@ -103,24 +123,48 @@ function ModalFuncionarioContent() {
           </div>
         </div>
 
-        {/* Dados da Escola (Auto-preenchidos) */}
+        {/* Dados da Escola (Auto-preenchidos ou Selecionáveis) */}
         <div className="md:col-span-2 space-y-1.5 text-xs border-l border-zinc-800 pl-6 flex items-center justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1 w-full">
             <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Vinculada</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-              <div>
-                <span className="text-zinc-500 block">Nome da UE:</span>
-                <span className="font-medium text-zinc-200">{escolaNome || 'Sem vínculo ativo'}</span>
+            {!isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                <div>
+                  <span className="text-zinc-500 block mb-1">Selecione a Unidade:</span>
+                  <select
+                    value={escolaId}
+                    onChange={(e) => handleEscolaChange(e.target.value)}
+                    className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-zinc-200 text-xs outline-none focus:border-[#3ea6ff]"
+                  >
+                    <option value="">Selecione a unidade...</option>
+                    {availableUnits.map((esc) => (
+                      <option key={esc.id} value={esc.id}>
+                        {esc.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <span className="text-zinc-500 block mb-1">Código INEP:</span>
+                  <span className="font-medium text-zinc-200 leading-8 block">{escolaInep || '—'}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-zinc-500 block">Código INEP:</span>
-                <span className="font-medium text-zinc-200">{escolaInep || '—'}</span>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div>
+                  <span className="text-zinc-500 block">Nome da UE:</span>
+                  <span className="font-medium text-zinc-200">{escolaNome || 'Sem vínculo ativo'}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-500 block">Código INEP:</span>
+                  <span className="font-medium text-zinc-200">{escolaInep || '—'}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-zinc-500">Localização da UE: </span>
+                  <span className="font-medium text-zinc-200">{escolaLocalizacao || '—'}</span>
+                </div>
               </div>
-              <div className="col-span-2">
-                <span className="text-zinc-500">Localização da UE: </span>
-                <span className="font-medium text-zinc-200">{escolaLocalizacao || '—'}</span>
-              </div>
-            </div>
+            )}
           </div>
           {isEditing && empId && (
             <Button
