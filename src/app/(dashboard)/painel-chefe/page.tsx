@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { ModalEscala } from '@/components/ModalEscala'
 import { HorariosSlotsSection } from '@/components/HorariosSlotsSection'
 import { GradeSemanalSection } from '@/components/GradeSemanalSection'
@@ -43,6 +44,8 @@ export default function PainelChefePage() {
   const [busca, setBusca] = useState('')
   const [cargosGerenciados, setCargosGerenciados] = useState<string[]>([])
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
 
   useEffect(() => {
     if (funcionario && !isDiretor() && !isChefe() && !isAdminGlobalOrRoot()) {
@@ -285,8 +288,10 @@ export default function PainelChefePage() {
           { id: 'equipe', label: 'Minha Equipe', icon: Users },
           { id: 'escalas', label: 'Escalas de Turno', icon: Calendar },
           { id: 'alertas', label: 'Atestados & Justificativas', icon: Bell },
-          { id: 'horarios', label: 'Configurar Horários', icon: Clock },
-          { id: 'grade', label: 'Montar Grade Semanal', icon: Calendar },
+          ...(isSaude ? [] : [
+            { id: 'horarios', label: 'Configurar Horários', icon: Clock },
+            { id: 'grade', label: 'Montar Grade Semanal', icon: Calendar }
+          ])
         ].map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -518,11 +523,11 @@ export default function PainelChefePage() {
         </div>
       )}
 
-      {activeTab === 'horarios' && (
+      {!isSaude && activeTab === 'horarios' && (
         <HorariosSlotsSection />
       )}
 
-      {activeTab === 'grade' && (
+      {!isSaude && activeTab === 'grade' && (
         <GradeSemanalSection />
       )}
 

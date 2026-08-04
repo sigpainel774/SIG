@@ -8,6 +8,7 @@ import { Plus, Trash2, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 import { Graduacao, PosGraduacao } from '../types'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export function EscolaridadeTab() {
   const {
@@ -19,6 +20,9 @@ export function EscolaridadeTab() {
     outrosCursos, setOutrosCursos,
     toggleOutroCurso,
   } = useFuncionarioForm()
+
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
 
   const addGraduacao = () => {
     if (graduacoes.length >= 6) {
@@ -260,15 +264,17 @@ export function EscolaridadeTab() {
                       />
                     </div>
 
-                    <div>
-                      <Label className="text-[10px] text-zinc-400">Código do Curso (opcional)</Label>
-                      <Input
-                        value={item.codigo || ''}
-                        onChange={(e) => updateGraduacao(idx, 'codigo', e.target.value)}
-                        placeholder="Código INEP/MEC"
-                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
-                      />
-                    </div>
+                    {!isSaude && (
+                      <div>
+                        <Label className="text-[10px] text-zinc-400">Código do Curso (opcional)</Label>
+                        <Input
+                          value={item.codigo || ''}
+                          onChange={(e) => updateGraduacao(idx, 'codigo', e.target.value)}
+                          placeholder="Código INEP/MEC"
+                          className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

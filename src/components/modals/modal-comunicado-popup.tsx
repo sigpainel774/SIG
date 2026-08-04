@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { BellRing, X, Paperclip, CheckCircle2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -20,34 +21,11 @@ interface ComunicadoPopup {
   } | null
 }
 
-const STORAGE_PREFIX = 'sig_dismissed_popups_'
-
-function getDismissedPopups(userId: string): string[] {
-  if (typeof window === 'undefined' || !userId) return []
-  try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}${userId}`)
-    return raw ? JSON.parse(raw) : []
-  } catch (err) {
-    console.warn('Erro ao ler localStorage de popups descartados:', err)
-    return []
-  }
-}
-
-function addDismissedPopup(userId: string, noticeId: string) {
-  if (typeof window === 'undefined' || !userId || !noticeId) return
-  try {
-    const existing = getDismissedPopups(userId)
-    if (!existing.includes(noticeId)) {
-      const updated = [...existing, noticeId]
-      localStorage.setItem(`${STORAGE_PREFIX}${userId}`, JSON.stringify(updated))
-    }
-  } catch (err) {
-    console.warn('Erro ao salvar popup descartado no localStorage:', err)
-  }
-}
+// Funções removidas: agora o status de lido fica na tabela comunicados_lidos
 
 export function ModalComunicadoPopup() {
   const { funcionario, acessos, vinculos } = useAuthStore()
+  const { selectedSecretaria } = useSchoolStore()
   const [popups, setPopups] = useState<ComunicadoPopup[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [open, setOpen] = useState(false)
@@ -90,11 +68,24 @@ export function ModalComunicadoPopup() {
     const fetchPopups = async () => {
       try {
         const supabase = createClient()
-        const { data, error } = await (supabase.from as any)('comunicados')
+        
+        const { data: readData } = await (supabase.from as any)('comunicados_lidos')
+          .select('comunicado_id')
+          .eq('user_id', userId)
+          
+        const dismissedIds = readData ? readData.map((r: any) => r.comunicado_id) : []
+
+        let query = (supabase.from as any)('comunicados')
           .select('id, title, body, target, date, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
           .eq('is_popup', true)
           .order('created_at', { ascending: false })
           .limit(10)
+          
+        if (selectedSecretaria?.id) {
+          query = query.eq('secretaria_id', selectedSecretaria.id)
+        }
+
+        const { data, error } = await query
 
         if (!active) return
 
@@ -104,7 +95,6 @@ export function ModalComunicadoPopup() {
         }
 
         if (data && data.length > 0) {
-          const dismissedIds = getDismissedPopups(userId)
           const pending = data.filter((item: any) => {
             const isUnread = !dismissedIds.includes(item.id)
             const targeted = isTargetForUser(item.target)
@@ -129,7 +119,7 @@ export function ModalComunicadoPopup() {
     return () => {
       active = false
     }
-  }, [userId, isTargetForUser])
+  }, [userId, isTargetForUser, selectedSecretaria?.id])
 
   // Scroll lock no body do celular/desktop quando o modal estiver aberto
   useEffect(() => {
@@ -144,10 +134,15 @@ export function ModalComunicadoPopup() {
 
   const activeNotice = popups[currentIndex]
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     if (!activeNotice || !userId) return
 
-    addDismissedPopup(userId, activeNotice.id)
+    try {
+      const supabase = createClient()
+      await (supabase.from as any)('comunicados_lidos').insert({ user_id: userId, comunicado_id: activeNotice.id })
+    } catch (e) {
+      console.error('Erro ao registrar leitura de popup', e)
+    }
 
     if (currentIndex + 1 < popups.length) {
       setCurrentIndex((prev) => prev + 1)

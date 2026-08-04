@@ -78,3 +78,4 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 59 | `20260803000000_add_historico_to_alunos.sql` | 2026-08-03 | Adiciona a coluna `historico` do tipo `text` na tabela `public.alunos` para armazenar o histórico do aluno. | `public.alunos` | Mantém RLS Existente |
 | 60 | `20260803020000_add_dados_documento_to_assinatura.sql` | 2026-08-03 | Adiciona a coluna `dados_documento` (`jsonb`) na tabela `public.assinatura` para persistência dos textos de ofícios e documentos. | `public.assinatura` | Mantém RLS Existente |
 
+| 61 | `20260803223000_comunicados_isolamento_secretaria.sql` | 2026-08-03 | Cria tabela comunicados_lidos, adiciona secretaria_id em comunicados e atualiza RPC get_birthdays_of_month para filtrar por secretaria_id. | public.comunicados_lidos, public.comunicados | Isolamento de Contexto |
