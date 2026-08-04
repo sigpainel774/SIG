@@ -199,7 +199,7 @@ export function useRelatorioNotas(escolaId: string | null) {
         }
 
         const [escolasRes, turmasRes, alunosRes, notasRes, freqsRes] = await Promise.all([
-          supabase.from('escolas').select('id, nome').is('deleted_at', null),
+          supabase.from('escolas').select('id, nome, tipo, secretaria_id, secretarias:secretaria_id(id, nome)').is('deleted_at', null),
           supabase.from('turmas').select('id, escola_id').is('deleted_at', null),
           supabase.from('alunos').select('id, escola_id').is('deleted_at', null),
           supabase.from('notas').select('id, aluno_id, materia_id, escola_id, unidade, nota1, nota2, nota3, nota4'),
@@ -214,11 +214,18 @@ export function useRelatorioNotas(escolaId: string | null) {
 
         if (currentFetchId !== fetchIdRef.current) return
 
-        const allEscolas = escolasRes.data || []
-        const allTurmas = turmasRes.data || []
-        const allAlunos = alunosRes.data || []
-        const allNotas = notasRes.data || []
-        const allFreqs = freqsRes.data || []
+        const rawEscolas = escolasRes.data || []
+        const allEscolas = rawEscolas.filter((esc: any) => {
+          const secNome = esc.secretarias?.nome || ''
+          const isSaude = /sa[uú]de/i.test(secNome) || esc.tipo === 'SAUDE' || esc.tipo === 'UNIDADE_SAUDE'
+          return !isSaude
+        })
+        const eduEscolaIds = new Set(allEscolas.map((e: any) => e.id))
+
+        const allTurmas = (turmasRes.data || []).filter((t) => eduEscolaIds.has(t.escola_id))
+        const allAlunos = (alunosRes.data || []).filter((a) => eduEscolaIds.has(a.escola_id))
+        const allNotas = (notasRes.data || []).filter((n) => eduEscolaIds.has(n.escola_id))
+        const allFreqs = (freqsRes.data || []).filter((f) => eduEscolaIds.has(f.escola_id))
 
         setFrequencias(allFreqs as FrequenciaRecord[])
 

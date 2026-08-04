@@ -494,7 +494,9 @@ export default function FuncionariosPage() {
       const isRootOrNivel1 =
         isAdminGlobalOrRoot() ||
         (acessos && acessos.some((a: any) => a.nivel === 1 && a.ativo))
-      const logoSecretariaUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.jpg?t=${Date.now()}`
+      const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
+      const defaultSaudeLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785815672933_saude_oficial.png`
+      const logoSecretariaUrl = isSaude ? defaultSaudeLogoUrl : defaultEducacaoLogoUrl
       const logoDireitoUrl = isRootOrNivel1
         ? logoSecretariaUrl
         : schoolLogoUrl

@@ -504,8 +504,13 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
 
   // --- VISÃO CONSOLIDADA DA REDE (Macro / Sem Escola Selecionada) ---
   
-  // Agrupa os alunos por escola
-  const consolidadoEscolas = escolas.map((esc: any) => {
+  // Agrupa os alunos por escola (apenas unidades de Educação)
+  const escolasEducacao = escolas.filter((e: any) => {
+    const secNome = e.secretariaNome || (e.secretarias as any)?.nome || ''
+    return !(/sa[uú]de/i.test(secNome) || e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE')
+  })
+
+  const consolidadoEscolas = escolasEducacao.map((esc: any) => {
     const alunosDaEscola = alunos.filter(a => a.escola_id === esc.id)
     return {
       id: esc.id,
