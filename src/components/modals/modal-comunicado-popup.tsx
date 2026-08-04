@@ -31,7 +31,7 @@ export function ModalComunicadoPopup() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const userId = funcionario?.id || funcionario?.auth_user_id || null
+  const authUserId = funcionario?.auth_user_id || null
 
   const isTargetForUser = useMemo(() => {
     return (target: string): boolean => {
@@ -62,17 +62,23 @@ export function ModalComunicadoPopup() {
   }, [funcionario, acessos, vinculos])
 
   useEffect(() => {
-    if (!userId) return
-
     let active = true
     const fetchPopups = async () => {
       try {
         const supabase = createClient()
-        
-        const { data: readData } = await (supabase.from as any)('comunicados_lidos')
+        const { data: { user } } = await supabase.auth.getUser()
+        const currentAuthUserId = user?.id || authUserId
+
+        if (!currentAuthUserId) return
+
+        const { data: readData, error: readError } = await (supabase.from as any)('comunicados_lidos')
           .select('comunicado_id')
-          .eq('user_id', userId)
-          
+          .eq('user_id', currentAuthUserId)
+
+        if (readError) {
+          console.error('Erro ao buscar comunicados lidos:', readError)
+        }
+
         const dismissedIds = readData ? readData.map((r: any) => r.comunicado_id) : []
 
         let query = (supabase.from as any)('comunicados')
@@ -105,6 +111,8 @@ export function ModalComunicadoPopup() {
             setPopups(pending as ComunicadoPopup[])
             setCurrentIndex(0)
             setOpen(true)
+          } else {
+            setOpen(false)
           }
         }
       } catch (err) {
@@ -119,7 +127,7 @@ export function ModalComunicadoPopup() {
     return () => {
       active = false
     }
-  }, [userId, isTargetForUser, selectedSecretaria?.id])
+  }, [authUserId, isTargetForUser, selectedSecretaria?.id])
 
   // Scroll lock no body do celular/desktop quando o modal estiver aberto
   useEffect(() => {
@@ -135,11 +143,19 @@ export function ModalComunicadoPopup() {
   const activeNotice = popups[currentIndex]
 
   const handleDismiss = async () => {
-    if (!activeNotice || !userId) return
+    if (!activeNotice) return
 
     try {
       const supabase = createClient()
-      await (supabase.from as any)('comunicados_lidos').insert({ user_id: userId, comunicado_id: activeNotice.id })
+      const { data: { user } } = await supabase.auth.getUser()
+      const currentAuthUserId = user?.id || authUserId
+
+      if (currentAuthUserId) {
+        await (supabase.from as any)('comunicados_lidos').upsert(
+          { user_id: currentAuthUserId, comunicado_id: activeNotice.id },
+          { onConflict: 'comunicado_id,user_id' }
+        )
+      }
     } catch (e) {
       console.error('Erro ao registrar leitura de popup', e)
     }
