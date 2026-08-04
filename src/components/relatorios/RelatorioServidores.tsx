@@ -32,6 +32,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { PrintRelatorioServidores, ServidorNominalPrint } from '@/components/print/print-relatorio-servidores'
+import { ModalServidoresDiscriminados } from '@/components/modals/modal-servidores-discriminados'
 
 interface ResumoData {
   total_servidores_unicos: number
@@ -113,6 +114,15 @@ export default function RelatorioServidores() {
   const [printModoView, setPrintModoView] = useState<'sintetico' | 'nominal'>('sintetico')
   const [servidoresNominais, setServidoresNominais] = useState<ServidorNominalPrint[]>([])
   const [isLoadingNominal, setIsLoadingNominal] = useState(false)
+
+  // Estados do Modal de Detalhamento de Servidores por Vínculo (Secretarias/Unidades)
+  const [isDiscriminadosModalOpen, setIsDiscriminadosModalOpen] = useState(false)
+  const [selectedVinculoModal, setSelectedVinculoModal] = useState<string>('Total')
+
+  const handleAbrirDiscriminadosModal = useCallback((tipoVinculo: string) => {
+    setSelectedVinculoModal(tipoVinculo)
+    setIsDiscriminadosModalOpen(true)
+  }, [])
 
   // Estados do Modal de Detalhamento dos Ocupantes por Cargo
   const [isCargoModalOpen, setIsCargoModalOpen] = useState(false)
@@ -644,16 +654,20 @@ export default function RelatorioServidores() {
           {/* Cards KPI (Destaques) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: Servidores Únicos */}
-            <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => handleAbrirDiscriminadosModal('Total')}
+              className="bg-card border border-border hover:border-primary/60 rounded-2xl p-5 flex items-center gap-4 shadow-sm cursor-pointer transition-all group"
+              title="Clique para ver a lista de servidores discriminada por secretarias e unidades"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-semibold">Total de Servidores (Pessoas)</p>
+                <p className="text-xs text-muted-foreground font-semibold group-hover:text-primary transition-colors">Total de Servidores (Pessoas)</p>
                 <h3 className="text-2xl font-bold text-foreground mt-0.5">
                   {isLoading ? '...' : reportData.resumo.total_servidores_unicos ?? 0}
                 </h3>
-                <span className="text-[10px] text-blue-400 font-medium">Deduplicado por servidor</span>
+                <span className="text-[10px] text-blue-400 font-medium">Clique para ver secretarias</span>
               </div>
             </div>
 
@@ -927,13 +941,43 @@ export default function RelatorioServidores() {
                     <tr>
                       <td className="py-3.5 px-4">TOTAL GERAL MUNICIPAL</td>
                       <td className="py-3.5 px-4 text-center text-primary font-extrabold text-sm">
-                        {reportData.resumo.total_cargos_ocupados ?? 0}
+                        <button
+                          onClick={() => handleAbrirDiscriminadosModal('Total')}
+                          className="hover:underline focus:outline-none cursor-pointer"
+                          title="Ver todos por secretarias e unidades"
+                        >
+                          {reportData.resumo.total_cargos_ocupados ?? 0}
+                        </button>
                       </td>
                       <td className="py-3.5 px-4 text-center">{reportData.resumo.total_regular ?? 0}</td>
                       <td className="py-3.5 px-4 text-center text-amber-400">{reportData.resumo.total_eja ?? 0}</td>
-                      <td className="py-3.5 px-4 text-center text-blue-400">{reportData.resumo.total_concursados ?? 0}</td>
-                      <td className="py-3.5 px-4 text-center text-emerald-400">{reportData.resumo.total_contratados ?? 0}</td>
-                      <td className="py-3.5 px-4 text-center text-purple-400">{reportData.resumo.total_nomeados ?? 0}</td>
+                      <td className="py-3.5 px-4 text-center text-blue-400">
+                        <button
+                          onClick={() => handleAbrirDiscriminadosModal('Concursado')}
+                          className="hover:underline focus:outline-none cursor-pointer"
+                          title="Ver Concursados discriminados por secretarias"
+                        >
+                          {reportData.resumo.total_concursados ?? 0}
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-emerald-400">
+                        <button
+                          onClick={() => handleAbrirDiscriminadosModal('Contratado')}
+                          className="hover:underline focus:outline-none cursor-pointer"
+                          title="Ver Contratados discriminados por secretarias"
+                        >
+                          {reportData.resumo.total_contratados ?? 0}
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-purple-400">
+                        <button
+                          onClick={() => handleAbrirDiscriminadosModal('Nomeado')}
+                          className="hover:underline focus:outline-none cursor-pointer"
+                          title="Ver Nomeados discriminados por secretarias"
+                        >
+                          {reportData.resumo.total_nomeados ?? 0}
+                        </button>
+                      </td>
                       <td className="py-3.5 px-4 text-center text-muted-foreground">{reportData.resumo.total_outros ?? 0}</td>
                     </tr>
                   </tfoot>
@@ -1007,76 +1051,151 @@ export default function RelatorioServidores() {
               </p>
             </div>
           ) : (
-            <div className="border border-border rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-secondary/80 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border sticky top-0 z-10 backdrop-blur-md">
-                  <tr>
-                    <th className="py-2.5 px-3 w-10 text-center">#</th>
-                    <th className="py-2.5 px-3">Nome do Servidor</th>
-                    <th className="py-2.5 px-3">Unidade / Escola</th>
-                    <th className="py-2.5 px-3 text-center">Modalidade</th>
-                    <th className="py-2.5 px-3 text-center">Tipo de Vínculo</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredOccupants.map((serv, idx) => (
-                    <tr key={serv.vinculo_id || idx} className="hover:bg-hoverCustom/60 transition-colors font-medium">
-                      <td className="py-2.5 px-3 text-center font-bold text-muted-foreground text-[11px]">
-                        {idx + 1}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-foreground">
-                        {serv.nome}
-                        {serv.cpf && (
-                          <span className="block font-mono text-[10px] text-muted-foreground font-normal">
-                            CPF: {serv.cpf}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">{serv.orgao}</td>
-                      <td className="py-2.5 px-3 text-center">
-                        {serv.modalidade === 'EJA' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                            EJA
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                            Ensino Regular
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {serv.vinculo.includes('Concursado') ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                            Concursado / Efetivo
-                          </span>
-                        ) : serv.vinculo === 'Contratado' ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            Contratado
-                          </span>
-                        ) : serv.vinculo === 'Nomeado' ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                            Nomeado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-muted-foreground border border-border">
-                            {serv.vinculo}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center uppercase text-[10px] font-bold">
-                        <span className={serv.status === 'ativo' ? 'text-emerald-400' : 'text-muted-foreground'}>
-                          {serv.status}
-                        </span>
-                      </td>
+            <>
+              {/* Visão Desktop: Tabela Tradicional */}
+              <div className="hidden sm:block border border-border rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-secondary/80 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border sticky top-0 z-10 backdrop-blur-md">
+                    <tr>
+                      <th className="py-2.5 px-3 w-10 text-center">#</th>
+                      <th className="py-2.5 px-3">Nome do Servidor</th>
+                      <th className="py-2.5 px-3">Unidade / Escola</th>
+                      <th className="py-2.5 px-3 text-center">Modalidade</th>
+                      <th className="py-2.5 px-3 text-center">Tipo de Vínculo</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredOccupants.map((serv, idx) => (
+                      <tr key={serv.vinculo_id || idx} className="hover:bg-hoverCustom/60 transition-colors font-medium">
+                        <td className="py-2.5 px-3 text-center font-bold text-muted-foreground text-[11px]">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-foreground">
+                          {serv.nome}
+                          {serv.cpf && (
+                            <span className="block font-mono text-[10px] text-muted-foreground font-normal">
+                              CPF: {serv.cpf}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground">{serv.orgao}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          {serv.modalidade === 'EJA' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              EJA
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              Ensino Regular
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {serv.vinculo.includes('Concursado') ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                              Concursado / Efetivo
+                            </span>
+                          ) : serv.vinculo === 'Contratado' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              Contratado
+                            </span>
+                          ) : serv.vinculo === 'Nomeado' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                              Nomeado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-muted-foreground border border-border">
+                              {serv.vinculo}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center uppercase text-[10px] font-bold">
+                          <span className={serv.status === 'ativo' ? 'text-emerald-400' : 'text-muted-foreground'}>
+                            {serv.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Visão Mobile: Cards Inteligentes e Compactos */}
+              <div className="block sm:hidden space-y-2.5 max-h-[55vh] overflow-y-auto pr-0.5">
+                {filteredOccupants.map((serv, idx) => (
+                  <div
+                    key={serv.vinculo_id || idx}
+                    className="bg-card border border-borderCustom/70 rounded-xl p-3.5 space-y-2 shadow-2xs text-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-foreground text-xs leading-tight">{serv.nome}</h4>
+                          {serv.cpf && (
+                            <span className="text-[10px] font-mono text-muted-foreground block">
+                              CPF: {serv.cpf}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[9px] uppercase font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
+                        {serv.status}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                      <span className="font-semibold text-foreground">Unidade: </span>
+                      {serv.orgao}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      {serv.vinculo.includes('Concursado') ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          Concursado / Efetivo
+                        </span>
+                      ) : serv.vinculo === 'Contratado' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          Contratado
+                        </span>
+                      ) : serv.vinculo === 'Nomeado' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                          Nomeado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border">
+                          {serv.vinculo}
+                        </span>
+                      )}
+
+                      {serv.modalidade === 'EJA' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          EJA
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          Ensino Regular
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </StandardDialog>
+
+      {/* Modal Reutilizável de Servidores Discriminados por Secretaria e Unidades */}
+      <ModalServidoresDiscriminados
+        open={isDiscriminadosModalOpen}
+        onOpenChange={setIsDiscriminadosModalOpen}
+        tipoVinculoInicial={selectedVinculoModal}
+        escolaIdAlvo={filtroEscolaId}
+      />
     </div>
   )
 }
