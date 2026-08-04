@@ -16,6 +16,7 @@ import {
   Printer,
   Loader2,
   ChevronLeft,
+  ChevronRight,
   Stethoscope,
   UserCheck,
   FileBarChart,
@@ -23,6 +24,8 @@ import {
   Pin,
   Activity,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -37,6 +40,11 @@ import { FrequenciaBar } from '@/components/FrequenciaBar'
 import { ModalDetalhesFrequenciaHoje } from '@/components/modals/ModalDetalhesFrequenciaHoje'
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
 import { createClient } from '@/lib/supabaseClient'
+
+const RelatorioServidores = dynamic(
+  () => import('@/components/relatorios/RelatorioServidores'),
+  { ssr: false }
+)
 
 interface KPIData {
   totalAlunos: number
@@ -117,6 +125,40 @@ export default function HomePage() {
   const [selectedSecretaria, setSelectedSecretaria] = useState<SecretariaItem | null>(null)
   const [secretarias, setSecretarias] = useState<SecretariaItem[]>([])
   const [loadingSecretarias, setLoadingSecretarias] = useState(false)
+
+  // Estados para o Widget de Relatório de Servidores
+  const [widgetStats, setWidgetStats] = useState<{ total: number; concursados: number; contratados: number; nomeados: number; outros: number } | null>(null)
+  const [loadingWidgetStats, setLoadingWidgetStats] = useState(false)
+  const [isRelatorioServidoresModalOpen, setIsRelatorioServidoresModalOpen] = useState(false)
+
+  // Carrega estatísticas resumidas para o widget de servidores
+  useEffect(() => {
+    let active = true
+    setLoadingWidgetStats(true)
+    const carregarStats = async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase.rpc('get_relatorio_servidores', {})
+        if (!active) return
+        if (!error && data && (data as any).resumo) {
+          const res = (data as any).resumo
+          setWidgetStats({
+            total: res.total_servidores_unicos ?? 0,
+            concursados: res.total_concursados ?? 0,
+            contratados: res.total_contratados ?? 0,
+            nomeados: res.total_nomeados ?? 0,
+            outros: res.total_outros ?? 0,
+          })
+        }
+      } catch (err) {
+        console.error('Erro ao carregar estatísticas do widget:', err)
+      } finally {
+        if (active) setLoadingWidgetStats(false)
+      }
+    }
+    carregarStats()
+    return () => { active = false }
+  }, [])
 
   // Carrega secretarias do banco para o fluxo nível 1
   useEffect(() => {
@@ -382,51 +424,141 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── VISÃO 1A: NÍVEL 1 — SELEÇÃO DE SECRETARIA ── */}
+      {/* ── VISÃO 1A: NÍVEL 1 — SELEÇÃO DE SECRETARIA & PAINEL DE WIDGETS ── */}
       {isNivel1 && !selectedSecretaria ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-[#185FA5] dark:text-[#3ea6ff]" />
-              Selecione uma Secretaria
-            </h1>
-            <p className="text-sm text-muted-foreground hidden md:block">
-              Clique em uma secretaria para acessar suas unidades
-            </p>
+        <div className="space-y-10">
+          {/* Seção Superior: Secretarias em Linha Horizontal (Desktop/Grid) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Secretarias da Rede Municipal</h1>
+                  <p className="text-xs text-muted-foreground">Selecione uma secretaria para filtrar unidades e serviços</p>
+                </div>
+              </div>
+            </div>
+
+            {loadingSecretarias ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 bg-surface-1 border border-borderCustom rounded-2xl">
+                <Loader2 className="w-7 h-7 animate-spin text-sky-400" />
+                <p className="text-xs text-muted-foreground">Carregando secretarias...</p>
+              </div>
+            ) : secretarias.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 bg-surface-1 border border-borderCustom rounded-2xl">
+                <Building2 className="w-8 h-8 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Nenhuma secretaria disponível para o seu acesso.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {secretarias.map((secretaria) => (
+                  <div
+                    key={secretaria.id}
+                    onClick={() => {
+                      setSelectedSecretaria(secretaria)
+                      useSchoolStore.getState().setSelectedSecretaria(secretaria)
+                    }}
+                    className="group flex items-center gap-4 p-4 rounded-2xl bg-surface-1 border border-borderCustom hover:border-sky-500/50 hover:bg-sky-500/5 transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.98]"
+                  >
+                    <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center bg-white p-2 border border-borderCustom shrink-0 group-hover:scale-105 transition-transform">
+                      {secretaria.logo_url ? (
+                        <img src={secretaria.logo_url} alt={secretaria.nome} className="w-full h-full object-contain" />
+                      ) : (
+                        <Building2 className="w-7 h-7 text-sky-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-sm text-foreground group-hover:text-sky-400 transition-colors truncate">
+                        {secretaria.nome}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Clique para acessar o painel
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {loadingSecretarias ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
-              <Loader2 className="w-8 h-8 animate-spin text-[#185FA5] dark:text-[#3ea6ff]" />
-              <p className="text-sm text-muted-foreground">Carregando secretarias...</p>
+          {/* Seção Inferior: Widgets com Dados Importantes */}
+          <div className="space-y-4 pt-6 border-t border-borderCustom">
+            <div className="flex items-center gap-2.5">
+              <FileBarChart className="w-5 h-5 text-emerald-400" />
+              <h2 className="text-lg font-bold text-foreground">Indicadores & Relatórios Consolidados</h2>
             </div>
-          ) : secretarias.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
-              <Building2 className="w-10 h-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Nenhuma secretaria disponível para o seu acesso.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-8 justify-items-center pt-6">
-              {secretarias.map((secretaria) => (
-                <div
-                  key={secretaria.id}
-                  onClick={() => setSelectedSecretaria(secretaria)}
-                  className="flex flex-col items-center cursor-pointer group w-36"
-                >
-                  <div className="w-24 h-24 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95 bg-white border border-borderCustom">
-                    {secretaria.logo_url ? (
-                      <img src={secretaria.logo_url} alt={secretaria.nome} className="w-full h-full object-contain p-2" />
-                    ) : (
-                      <Building2 className="w-10 h-10 text-sky-400" />
-                    )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Widget 1: Relatório de Servidores */}
+              <div
+                onClick={() => setIsRelatorioServidoresModalOpen(true)}
+                className="group bg-surface-1 border border-borderCustom hover:border-emerald-500/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer space-y-4 relative overflow-hidden"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-foreground group-hover:text-emerald-400 transition-colors">
+                        Relatório de Servidores
+                      </h3>
+                      <p className="text-xs text-muted-foreground">Consolidado por Vínculo Empregatício</p>
+                    </div>
                   </div>
-                  <span className="mt-2.5 text-xs font-semibold text-center text-foreground group-hover:text-highlight transition-colors line-clamp-3 max-w-[130px] leading-snug">
-                    {secretaria.nome}
+                  <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    Ver Detalhes
                   </span>
                 </div>
-              ))}
+
+                {/* Métricas resumidas no widget */}
+                {loadingWidgetStats ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
+                      <span className="text-[11px] text-muted-foreground block font-medium">Total de Servidores</span>
+                      <span className="text-xl font-bold text-foreground">{widgetStats?.total ?? 0}</span>
+                    </div>
+                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
+                      <span className="text-[11px] text-blue-400 block font-medium">Concursados</span>
+                      <span className="text-xl font-bold text-blue-400">{widgetStats?.concursados ?? 0}</span>
+                    </div>
+                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
+                      <span className="text-[11px] text-emerald-400 block font-medium">Contratados</span>
+                      <span className="text-xl font-bold text-emerald-400">{widgetStats?.contratados ?? 0}</span>
+                    </div>
+                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
+                      <span className="text-[11px] text-purple-400 block font-medium">Nomeados</span>
+                      <span className="text-xl font-bold text-purple-400">{widgetStats?.nomeados ?? 0}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-[11px] text-muted-foreground pt-1 flex items-center justify-between border-t border-borderCustom/40">
+                  <span>Clique para abrir o relatório gerencial completo</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Modal de Relatório de Servidores */}
+          <StandardDialog
+            open={isRelatorioServidoresModalOpen}
+            onOpenChange={setIsRelatorioServidoresModalOpen}
+            title="Relatório Geral de Servidores da Rede Municipal"
+            description="Consolidado de pessoal, distribuição por cargos, modalidades e tipos de vínculo."
+            maxWidth="sm:max-w-6xl"
+          >
+            <div className="py-2">
+              <RelatorioServidores />
+            </div>
+          </StandardDialog>
         </div>
 
       ) : isNivel1 && selectedSecretaria && !selectedEscola ? (
