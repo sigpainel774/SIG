@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MapPin, Plus } from 'lucide-react'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export function EmpregoTab() {
   const {
@@ -22,8 +23,11 @@ export function EmpregoTab() {
     atestadoAnexoExistenteUrl,
     cargos,
     isEditing,
-    setLotacoesModalOpen,
+    setLotacoesModalOpen
   } = useFuncionarioForm()
+
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
 
   return (
     <div className="space-y-5">
@@ -118,17 +122,19 @@ export function EmpregoTab() {
             className="bg-[#181818] border-borderCustom text-white mt-1"
           />
         </div>
-        <div>
-          <Label>Modalidade de Atuação</Label>
-          <select
-            value={modalidadeEnsino}
-            onChange={(e) => setModalidadeEnsino(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
-          >
-            <option value="Regular">Regular (Ensino Regular)</option>
-            <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
-          </select>
-        </div>
+        {!isSaude && (
+          <div>
+            <Label>Modalidade de Atuação</Label>
+            <select
+              value={modalidadeEnsino}
+              onChange={(e) => setModalidadeEnsino(e.target.value)}
+              className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
+            >
+              <option value="Regular">Regular (Ensino Regular)</option>
+              <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
+            </select>
+          </div>
+        )}
         <div>
           <Label>Data de Admissão</Label>
           <Input

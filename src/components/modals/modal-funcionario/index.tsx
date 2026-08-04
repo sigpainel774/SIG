@@ -106,7 +106,7 @@ function ModalFuncionarioContent() {
         {/* Dados da Escola (Auto-preenchidos) */}
         <div className="md:col-span-2 space-y-1.5 text-xs border-l border-zinc-800 pl-6 flex items-center justify-between">
           <div className="space-y-1">
-            <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Escolar Vinculada</p>
+            <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Vinculada</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
                 <span className="text-zinc-500 block">Nome da UE:</span>

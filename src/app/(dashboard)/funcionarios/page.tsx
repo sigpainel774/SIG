@@ -66,6 +66,7 @@ export interface Funcionario {
   longitude?: number | null
   telefone?: string | null
   modalidade_ensino?: string | null
+  tipo_vinculo?: string | null
 }
 
 export default function FuncionariosPage() {
@@ -77,6 +78,8 @@ export default function FuncionariosPage() {
     isDiretor
   } = useAuthStore()
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
   const { isEditMode } = useEditModeStore()
   const isAdmin = isAdminGlobalOrRoot()
   const isDir = isDiretor()
@@ -92,7 +95,7 @@ export default function FuncionariosPage() {
   const [busca, setBusca] = useState('')
   const [filtroCargo, setFiltroCargo] = useState('todos')
   const [filtroStatus, setFiltroStatus] = useState('todos')
-  const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('regular')
+  const [filtroModalidade, setFiltroModalidade] = useState<string>(isSaude ? 'todos' : 'regular')
 
   /* Modais */
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
@@ -144,18 +147,16 @@ export default function FuncionariosPage() {
       const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot()
       const escolaId = useAuthStore.getState().escolaAtivaId
 
-      // Define os campos dinamicamente. Se houver escolaId, faz INNER JOIN imediato via PostgREST
-      const selectFields =
-        escolaId || !isAdminUser
-          ? `
+      const selectFields = escolaId
+        ? `
           id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
-          endereco, latitude, longitude, telefone, modalidade_ensino,
+          endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
           vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
-          : `
+        : `
           id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
-          endereco, latitude, longitude, telefone, modalidade_ensino,
+          endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
           vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
           acessos_usuarios(nivel, ativo)
         `
@@ -184,14 +185,10 @@ export default function FuncionariosPage() {
 
       const formatados: Funcionario[] = (data ?? [])
         .filter((f: Record<string, any>) => {
-          // Contas marcadas como especiais não aparecem na listagem de funcionários
           if (f.is_conta_especial) return false
-
-          // Desduplicação defensiva caso o mesmo funcionário tenha mais de um vínculo ativo na mesma escola
           if (vistos.has(f.id)) return false
           vistos.add(f.id)
 
-          // Se estiver visualizando o painel de uma escola ativa, oculta root e nível 1
           if (escolaId) {
             if (f.is_superadmin) return false
             if (
@@ -210,7 +207,6 @@ export default function FuncionariosPage() {
             }
           }
           if (isDirUser) {
-            // Se for diretor (nível 2), oculta superadmin, root, nível 1 e nível 2 de outras escolas
             if (f.is_superadmin) return false
             if (
               f.nome?.toLowerCase() === 'root' ||
@@ -235,7 +231,6 @@ export default function FuncionariosPage() {
           return true
         })
         .map((f: Record<string, any>) => {
-          // Pegar o primeiro vínculo ativo como órgão principal
           const vincs =
             (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
           const vinculoAtivo = vincs.find((v) => v.ativo)
@@ -261,7 +256,8 @@ export default function FuncionariosPage() {
             latitude: f.latitude ? Number(f.latitude) : null,
             longitude: f.longitude ? Number(f.longitude) : null,
             telefone: f.telefone as string | null,
-            modalidade_ensino: f.modalidade_ensino as string | null
+            modalidade_ensino: f.modalidade_ensino as string | null,
+            tipo_vinculo: f.tipo_vinculo as string | null
           }
         })
 
@@ -318,14 +314,22 @@ export default function FuncionariosPage() {
         filtroStatus === 'todos' ||
         (f.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
 
-      const mod = (f.modalidade_ensino ?? '').trim().toUpperCase()
-      const matchModalidade =
-        filtroModalidade === 'todos' ||
-        (filtroModalidade === 'eja' ? mod === 'EJA' : mod !== 'EJA')
+      let matchModalidade = false
+      if (isSaude) {
+        const vinc = (f.tipo_vinculo ?? '').trim().toLowerCase()
+        matchModalidade =
+          filtroModalidade === 'todos' ||
+          vinc.includes(filtroModalidade) // ex: 'efetivo' vs 'Efetivo', 'nomeado' vs 'Nomeado'
+      } else {
+        const mod = (f.modalidade_ensino ?? '').trim().toUpperCase()
+        matchModalidade =
+          filtroModalidade === 'todos' ||
+          (filtroModalidade === 'eja' ? mod === 'EJA' : mod !== 'EJA')
+      }
 
       return matchCargo && matchStatus && matchModalidade
     })
-  }, [funcionariosBuscados, filtroCargo, filtroStatus, filtroModalidade])
+  }, [funcionariosBuscados, filtroCargo, filtroStatus, filtroModalidade, isSaude])
 
   /* ── Ações dos cards ────────────────────────────────────────── */
 
@@ -606,12 +610,12 @@ export default function FuncionariosPage() {
           </h1>
         </div>
 
-        {/* Toggle Triplo de Modalidade (Todos / Regular / EJA) */}
-        <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto">
+        {/* Toggle Triplo de Modalidade ou Vínculo */}
+        <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setFiltroModalidade('todos')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
               filtroModalidade === 'todos'
                 ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -619,28 +623,71 @@ export default function FuncionariosPage() {
           >
             Todos
           </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('regular')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              filtroModalidade === 'regular'
-                ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Regular
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('eja')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              filtroModalidade === 'eja'
-                ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            EJA
-          </button>
+          
+          {!isSaude && (
+            <>
+              <button
+                type="button"
+                onClick={() => setFiltroModalidade('regular')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  filtroModalidade === 'regular'
+                    ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Regular
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroModalidade('eja')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  filtroModalidade === 'eja'
+                    ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                EJA
+              </button>
+            </>
+          )}
+
+          {isSaude && (
+            <>
+              <button
+                type="button"
+                onClick={() => setFiltroModalidade('efetivo')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  filtroModalidade === 'efetivo'
+                    ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Efetivos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroModalidade('contratado')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  filtroModalidade === 'contratado'
+                    ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Contratados
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroModalidade('nomeado')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  filtroModalidade === 'nomeado'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Nomeados
+              </button>
+            </>
+          )}
         </div>
       </div>
 

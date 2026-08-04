@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { CachedImage } from '@/components/ui/cached-image'
@@ -17,6 +18,7 @@ import { sendPushToUser } from '@/lib/push/sendPushToUser'
 
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
+  const { selectedSecretaria } = useSchoolStore()
   const [selectedDate, setSelectedDate] = useState('')
   const [showComposer, setShowComposer] = useState(false)
   const [notices, setNotices] = useState<any[]>([])
@@ -58,7 +60,7 @@ export default function MuralPage() {
     setLoadingBirthdays(true)
     try {
       const supabase = createClient()
-      const { data, error } = await (supabase as any).rpc('get_birthdays_of_month', { month_num: monthNum })
+      const { data, error } = await (supabase as any).rpc('get_birthdays_of_month', { month_num: monthNum, p_secretaria_id: selectedSecretaria?.id || null })
       if (error) {
         toast.error('Erro ao carregar aniversariantes: ' + error.message)
       } else if (data) {
@@ -87,9 +89,15 @@ export default function MuralPage() {
 
   const fetchNotices = async () => {
     const supabase = createClient()
-    const { data, error } = await supabase.from('comunicados')
+    let query = supabase.from('comunicados')
       .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
       .order('date', { ascending: false })
+      
+    if (selectedSecretaria?.id) {
+      query = (query as any).eq('secretaria_id', selectedSecretaria.id)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       toast.error('Erro ao recarregar comunicados: ' + error.message)
@@ -106,11 +114,17 @@ export default function MuralPage() {
       try {
         const currentMonth = viewDate.getMonth() + 1 // 1-based for PG
 
+        let query = supabase.from('comunicados')
+          .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
+          .order('date', { ascending: false })
+          
+        if (selectedSecretaria?.id) {
+          query = (query as any).eq('secretaria_id', selectedSecretaria.id)
+        }
+
         const [comunicadosRes, birthdayRes] = await Promise.all([
-          supabase.from('comunicados')
-            .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
-            .order('date', { ascending: false }),
-          (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth })
+          query,
+          (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth, p_secretaria_id: selectedSecretaria?.id || null })
         ])
 
         if (comunicadosRes.error) {
@@ -133,7 +147,7 @@ export default function MuralPage() {
     }
 
     fetchData()
-  }, [])
+  }, [selectedSecretaria?.id])
 
   const filteredNotices = useMemo(() => {
     if (!selectedDate) return notices
@@ -213,6 +227,7 @@ export default function MuralPage() {
       target: alvo,
       is_popup: isPopup,
       criado_por: funcionario?.id ?? null,
+      secretaria_id: selectedSecretaria?.id ?? null,
       anexo_url: anexoUrl,
       anexo_nome: anexoNome
     })

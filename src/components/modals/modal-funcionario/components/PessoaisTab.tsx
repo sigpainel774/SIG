@@ -4,6 +4,7 @@ import React from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export function PessoaisTab() {
   const {
@@ -25,6 +26,9 @@ export function PessoaisTab() {
     municipioNasc, setMunicipioNasc,
     ufNasc, setUfNasc,
   } = useFuncionarioForm()
+
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
 
   return (
     <div className="space-y-4">
@@ -69,15 +73,17 @@ export function PessoaisTab() {
             className="bg-[#181818] border-borderCustom text-white mt-1"
           />
         </div>
-        <div>
-          <Label>Identificação CENSO (INEP)</Label>
-          <Input
-            value={censo}
-            onChange={(e) => setCenso(e.target.value)}
-            placeholder="Código INEP do Professor"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
-          />
-        </div>
+        {!isSaude && (
+          <div>
+            <Label>Identificação CENSO (INEP)</Label>
+            <Input
+              value={censo}
+              onChange={(e) => setCenso(e.target.value)}
+              placeholder="Código INEP do Professor"
+              className="bg-[#181818] border-borderCustom text-white mt-1"
+            />
+          </div>
+        )}
         <div>
           <Label>E-mail de Login *</Label>
           <Input
