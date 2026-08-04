@@ -166,9 +166,23 @@ function AvaliacoesContent() {
     abrirAtividadePorId()
   }, [searchParams])
 
+  // Contexto de Saúde
+  const { selectedSecretaria, escolas } = useSchoolStore()
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isSaude = /sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE'
+
   // Buscar atividades do banco
   const fetchAtividades = async () => {
     setLoading(true)
+
+    if (isSaude) {
+      // Atividades pedagógicas de diário são exclusivas da Educação
+      setAtividades([])
+      calcularKpis([])
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
 
     let query = (supabase as any)

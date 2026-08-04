@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { usePessoaForm } from '@/hooks/usePessoaForm'
 import { Cargo, Doencas, PosGraduacao, FuncionarioFormContextType, ModalFuncionarioProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
@@ -447,24 +448,51 @@ export function useFuncionarioFormStates({
         setAtestadoFile(null)
         setAtestadoAnexoExistenteUrl(null)
 
-        // Tentar autopreencher escola ativa logada
-        const currentEscolaId = useAuthStore.getState().escolaAtivaId
-        if (currentEscolaId) {
-          const supabase = createClient()
-          supabase
-            .from('escolas')
-            .select('id, nome, inep, localizacao')
-            .eq('id', currentEscolaId)
-            .single()
-            .then(({ data }) => {
-              if (!active) return
-              if (data) {
-                setEscolaId(data.id)
-                setEscolaNome(data.nome)
-                setEscolaInep(data.inep ?? '')
-                setEscolaLocalizacao(data.localizacao ?? '')
-              }
-            })
+        // Tentar autopreencher escola ativa logada ou da secretaria ativa
+        const currentEscolaId = useAuthStore.getState().escolaAtivaId || useSchoolStore.getState().selectedEscola?.id
+        const escolasList = useSchoolStore.getState().escolas
+        const selectedSec = useSchoolStore.getState().selectedSecretaria
+
+        let targetIdToUse = currentEscolaId
+        if (!targetIdToUse && selectedSec) {
+          const secId = selectedSec.id
+          const secNome = (selectedSec.nome || '').toLowerCase()
+          const matching = escolasList.filter(e => {
+            if (secId && e.secretaria_id === secId) return true
+            if (secNome && (e.secretariaNome?.toLowerCase().includes(secNome) || (e.secretarias as any)?.nome?.toLowerCase().includes(secNome))) return true
+            return false
+          })
+          if (matching.length > 0) {
+            targetIdToUse = matching[0].id
+          }
+        } else if (!targetIdToUse && escolasList.length > 0) {
+          targetIdToUse = escolasList[0].id
+        }
+
+        if (targetIdToUse) {
+          const found = escolasList.find(e => e.id === targetIdToUse)
+          if (found) {
+            setEscolaId(found.id)
+            setEscolaNome(found.nome)
+            setEscolaInep(found.inep ? String(found.inep) : '')
+            setEscolaLocalizacao(found.localizacao ?? '')
+          } else {
+            const supabase = createClient()
+            supabase
+              .from('escolas')
+              .select('id, nome, inep, localizacao')
+              .eq('id', targetIdToUse)
+              .single()
+              .then(({ data }) => {
+                if (!active) return
+                if (data) {
+                  setEscolaId(data.id)
+                  setEscolaNome(data.nome)
+                  setEscolaInep(data.inep ? String(data.inep) : '')
+                  setEscolaLocalizacao(data.localizacao ?? '')
+                }
+              })
+          }
         }
       }
     }
@@ -945,10 +973,11 @@ export function useFuncionarioFormStates({
         // Executar rotina de verificação de retorno à ativa
         verificarEAtualizarRetornosAfastamentos(supabase).catch((e) => console.error(e))
 
+        const temAfastamento = status === 'afastado' && Boolean(cid.trim())
         if (existingFunc || isEditing) {
-          toast.success('Ficha cadastral e dados de afastamento atualizados com sucesso!')
+          toast.success(temAfastamento ? 'Ficha cadastral e dados de afastamento atualizados com sucesso!' : 'Ficha cadastral atualizada com sucesso!')
         } else {
-          toast.success('Funcionário cadastrado e afastamento registrado com sucesso!')
+          toast.success(temAfastamento ? 'Funcionário cadastrado e afastamento registrado com sucesso!' : 'Funcionário cadastrado com sucesso!')
         }
       }
 
@@ -966,6 +995,21 @@ export function useFuncionarioFormStates({
     }
   }
 
+  const handleEscolaChange = (selectedId: string) => {
+    setEscolaId(selectedId)
+    const escolasList = useSchoolStore.getState().escolas
+    const found = escolasList.find((e) => e.id === selectedId)
+    if (found) {
+      setEscolaNome(found.nome)
+      setEscolaInep(found.inep ? String(found.inep) : '')
+      setEscolaLocalizacao(found.localizacao ?? '')
+    } else {
+      setEscolaNome('')
+      setEscolaInep('')
+      setEscolaLocalizacao('')
+    }
+  }
+
   return {
     isEditing,
     funcionario,
@@ -979,6 +1023,7 @@ export function useFuncionarioFormStates({
     escolaNome,
     escolaInep,
     escolaLocalizacao,
+    handleEscolaChange,
     nome, setNome,
     apelido, setApelido,
     email, setEmail,

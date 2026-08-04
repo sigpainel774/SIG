@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { SchoolSelector } from '@/components/SchoolSelector'
@@ -19,7 +20,8 @@ import {
   Printer,
   Trash2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -46,7 +48,9 @@ export default function CentralAtividadesPage() {
   const urlLogId = searchParams.get('log_id')
   const urlEscolaId = searchParams.get('escola_id')
 
-  const { selectedEscola, loadEscolas } = useSchoolStore()
+  const { selectedEscola, selectedSecretaria, escolas, loadEscolas } = useSchoolStore()
+  const { isAdminGlobalOrRoot } = useAuthStore()
+
   const [logs, setLogs] = useState<AuditLogItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -72,11 +76,28 @@ export default function CentralAtividadesPage() {
     loadEscolas()
   }, [loadEscolas])
 
+  // Contexto de Secretaria & Unidade
+  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
+  const isSaude = /sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE'
+  const isEducacao = !isSaude && (/educa/i.test(secNome) || selectedEscola?.tipo === 'MUNICIPAL' || (!selectedEscola && !selectedSecretaria))
+
+  const saudeEscolaIds = useMemo(() => {
+    return (escolas || [])
+      .filter((e) => /sa[uú]de/i.test(e.secretariaNome || '') || e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE' || (e.secretarias as any)?.nome?.toLowerCase().includes('saúde'))
+      .map((e) => e.id)
+  }, [escolas])
+
+  const educacaoEscolaIds = useMemo(() => {
+    const saudeSet = new Set(saudeEscolaIds)
+    return (escolas || []).filter((e) => !saudeSet.has(e.id)).map((e) => e.id)
+  }, [escolas, saudeEscolaIds])
+
   const targetEscolaId = selectedEscola?.id || urlEscolaId || null
 
   const fetchLogs = async () => {
     if (isMounted.current) setLoading(true)
     const supabase = createClient()
+    const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
     let query = supabase
       .from('audit_logs')
@@ -84,9 +105,19 @@ export default function CentralAtividadesPage() {
       .order('created_at', { ascending: false })
       .limit(1000)
 
-    // Filtrar estritamente por Escola ativa quando selecionada
+    // Filtrar por unidade específica se selecionada
     if (targetEscolaId) {
       query = query.eq('tenant_id', targetEscolaId)
+    } else if (isSaude) {
+      // Se estiver no contexto da Saúde, limitar a busca às unidades de saúde
+      if (saudeEscolaIds.length > 0) {
+        query = query.in('tenant_id', saudeEscolaIds)
+      }
+    } else if (isEducacao && !isAdmin) {
+      // Se estiver no contexto da Educação e não for superadmin macro, limitar a unidades de educação
+      if (educacaoEscolaIds.length > 0) {
+        query = query.in('tenant_id', educacaoEscolaIds)
+      }
     }
 
     // Aplicar filtro de período (a partir das 00:00:00 do dia correspondente)
@@ -111,7 +142,7 @@ export default function CentralAtividadesPage() {
       query = query.eq('action', filtroAcao)
     }
 
-    // Aplicar filtro de Entidade (usando ilike prefix para abranger alunos, alunos_anexos, etc.)
+    // Aplicar filtro de Entidade (usando ilike prefix)
     if (filtroEntidade !== 'todas') {
       query = query.ilike('entity', `${filtroEntidade}%`)
     }
@@ -133,18 +164,63 @@ export default function CentralAtividadesPage() {
 
   useEffect(() => {
     fetchLogs()
-  }, [filtroPeriodo, filtroAcao, filtroEntidade, targetEscolaId])
+  }, [filtroPeriodo, filtroAcao, filtroEntidade, targetEscolaId, isSaude, saudeEscolaIds, educacaoEscolaIds])
 
   // Resetar para a primeira página ao alterar qualquer filtro
   useEffect(() => {
     setPaginaAtual(1)
   }, [busca, filtroAcao, filtroEntidade, filtroPeriodo, targetEscolaId])
 
-  // Filtragem local por texto de busca + salvaguarda no cliente
+  // Filtragem local por texto de busca + salvaguarda estrita no cliente (Multi-tenant por Secretaria)
   const logsFiltrados = useMemo(() => {
+    const saudeSet = new Set(saudeEscolaIds)
+    const educacaoSet = new Set(educacaoEscolaIds)
+    const isAdmin = isAdminGlobalOrRoot?.() ?? false
+
+    // Entidades exclusivas do módulo escolar/pedagógico (Educação)
+    const eduEntities = [
+      'alunos',
+      'turmas',
+      'materias',
+      'notas',
+      'frequencias',
+      'ocorrencias',
+      'transferencias_alunos',
+      'atividades_secretaria',
+      'grade_semanal',
+      'boletim',
+      'matriculas',
+      'solicitacoes_edicao_aluno',
+      'recuperacoes_finais',
+      'prazos_unidades',
+    ]
+
     return logs.filter((log) => {
-      if (targetEscolaId) {
-        const logEscolaId = log.tenant_id || log.new_data?.escola_id || log.old_data?.escola_id
+      const entityLower = (log.entity ?? '').toLowerCase()
+      const logEscolaId = log.tenant_id || log.new_data?.escola_id || log.old_data?.escola_id
+
+      if (isSaude) {
+        // No contexto da Saúde: Bloquear estritamente qualquer log de entidade escolar/pedagógica
+        if (eduEntities.some((ent) => entityLower.startsWith(ent))) {
+          return false
+        }
+        // Se o log contiver escola_id de escola da Educação, bloquear
+        if (logEscolaId && educacaoSet.has(logEscolaId)) {
+          return false
+        }
+        // Se houver unidade de saúde alvo selecionada, exigir correspondência estrita
+        if (targetEscolaId && logEscolaId && logEscolaId !== targetEscolaId) {
+          return false
+        }
+      } else if (isEducacao && !isAdmin) {
+        // No contexto da Educação: Bloquear logs vinculados a unidades de Saúde
+        if (logEscolaId && saudeSet.has(logEscolaId)) {
+          return false
+        }
+        if (targetEscolaId && logEscolaId && logEscolaId !== targetEscolaId) {
+          return false
+        }
+      } else if (targetEscolaId) {
         if (logEscolaId && logEscolaId !== targetEscolaId) {
           return false
         }
@@ -168,7 +244,7 @@ export default function CentralAtividadesPage() {
         detalheNew.includes(termo)
       )
     })
-  }, [logs, busca, targetEscolaId])
+  }, [logs, busca, targetEscolaId, isSaude, isEducacao, saudeEscolaIds, educacaoEscolaIds, isAdminGlobalOrRoot])
 
   // Cálculos de Paginação
   const totalItens = logsFiltrados.length
@@ -185,13 +261,13 @@ export default function CentralAtividadesPage() {
       case 'CREATE':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <PlusCircle className="w-3.5 h-3.5" /> Cadastro / Matrícula
+            <PlusCircle className="w-3.5 h-3.5" /> Cadastro / Criação
           </span>
         )
       case 'UPDATE':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <Edit3 className="w-3.5 h-3.5" /> Edição de Ficha
+            <Edit3 className="w-3.5 h-3.5" /> Edição de Registro
           </span>
         )
       case 'DELETE':
@@ -245,11 +321,20 @@ export default function CentralAtividadesPage() {
     },
     {
       header: 'Módulo / Entidade',
-      accessor: (log) => (
-        <span className="text-xs font-mono font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md border border-border">
-          {log.entity.startsWith('alunos') ? '🎓 Aluno' : log.entity.startsWith('funcionarios') ? '👤 Funcionário' : log.entity}
-        </span>
-      ),
+      accessor: (log) => {
+        let label = log.entity
+        if (log.entity.startsWith('alunos')) label = '🎓 Alunos'
+        else if (log.entity.startsWith('funcionarios')) label = '👤 Servidores'
+        else if (log.entity.startsWith('atestados')) label = '🩺 Atestados'
+        else if (log.entity.startsWith('comunicados')) label = '📢 Mural'
+        else if (log.entity.startsWith('trash_bin')) label = '🗑️ Lixeira'
+
+        return (
+          <span className="text-xs font-mono font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md border border-border">
+            {label}
+          </span>
+        )
+      },
     },
     {
       header: 'Detalhes do Registro',
@@ -281,11 +366,13 @@ export default function CentralAtividadesPage() {
           <div className="h-6 w-px bg-border" />
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
-              <Activity className="w-7 h-7 text-sky-400" />
-              Central de Atividades da Escola
+              <Activity className={`w-7 h-7 ${isSaude ? 'text-emerald-400' : 'text-sky-400'}`} />
+              {isSaude ? 'Central de Atividades da Saúde' : 'Central de Atividades da Escola'}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Trilha de auditoria e acompanhamento de matrículas, edições e acessos a fichas na unidade escolar.
+              {isSaude
+                ? 'Trilha de auditoria e acompanhamento de servidores, atestados e movimentações na Secretaria de Saúde.'
+                : 'Trilha de auditoria e acompanhamento de matrículas, edições e acessos a fichas na unidade escolar.'}
             </p>
           </div>
         </div>
@@ -301,19 +388,23 @@ export default function CentralAtividadesPage() {
         </div>
       </div>
 
-      {/* Banner de Isolamento e Contexto de Escola */}
+      {/* Banner de Isolamento e Contexto de Unidade */}
       <div className="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-2.5">
-          <div className={`w-3 h-3 rounded-full ${selectedEscola ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <div className={`w-3 h-3 rounded-full ${selectedEscola ? 'bg-emerald-500' : 'bg-sky-500'}`} />
           <span>
             {selectedEscola ? (
               <>Exibindo atividades <strong>exclusivas</strong> da unidade: <strong className="text-foreground">{selectedEscola.nome}</strong></>
+            ) : isSaude ? (
+              <>Visão Consolidada da Saúde — Exibindo histórico da <strong>Secretaria Municipal de Saúde</strong></>
             ) : (
-              <>Visão Macro da Rede — Exibindo histórico global (Selecione uma escola no topo para isolar os dados)</>
+              <>Visão Consolidada da Educação — Exibindo histórico da <strong>Secretaria Municipal de Educação</strong></>
             )}
           </span>
         </div>
-        <span className="text-muted-foreground font-medium">Filtro de Segurança Multi-tenant Ativo</span>
+        <span className="text-emerald-400 font-medium flex items-center gap-1">
+          <ShieldCheck className="w-4 h-4" /> Isolamento por Secretaria Ativo
+        </span>
       </div>
 
       {/* Barra de Filtros */}
@@ -326,7 +417,7 @@ export default function CentralAtividadesPage() {
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nome do secretário, aluno ou detalhes..."
+              placeholder={isSaude ? "Buscar por servidor, responsável ou detalhe..." : "Buscar por nome do secretário, aluno ou detalhes..."}
               className="w-full bg-surface-1 border border-border text-foreground text-xs rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -340,7 +431,7 @@ export default function CentralAtividadesPage() {
               className="bg-surface-1 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary cursor-pointer font-medium"
             >
               <option value="todas">Todas as Ações</option>
-              <option value="CREATE">Matrículas / Cadastros</option>
+              <option value="CREATE">Cadastros / Inserções</option>
               <option value="UPDATE">Edições de Fichas</option>
               <option value="DELETE">Exclusões / Arquivamentos</option>
               <option value="READ">Visualizações de Fichas</option>
@@ -353,8 +444,22 @@ export default function CentralAtividadesPage() {
               className="bg-surface-1 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary cursor-pointer font-medium"
             >
               <option value="todas">Todos os Módulos</option>
-              <option value="alunos">Alunos</option>
-              <option value="funcionarios">Funcionários</option>
+              {isSaude ? (
+                <>
+                  <option value="funcionarios">Servidores da Saúde</option>
+                  <option value="atestados">Atestados Médicos</option>
+                  <option value="documentos">Documentos Oficiais</option>
+                  <option value="trash_bin">Lixeira Geral</option>
+                </>
+              ) : (
+                <>
+                  <option value="alunos">Alunos</option>
+                  <option value="funcionarios">Funcionários</option>
+                  <option value="turmas">Turmas & Matérias</option>
+                  <option value="ocorrencias">Ocorrências Disciplinares</option>
+                  <option value="trash_bin">Lixeira Geral</option>
+                </>
+              )}
             </select>
 
             {/* Select Período */}

@@ -75,6 +75,7 @@ export interface FuncionarioFormContextType {
   escolaNome: string
   escolaInep: string
   escolaLocalizacao: string
+  handleEscolaChange: (id: string) => void
 
   // Dados Pessoais & Endereço (Hook usePessoaForm)
   nome: string
