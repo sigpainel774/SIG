@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { ModalAtestado } from '@/components/ModalAtestado'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 
@@ -21,6 +22,7 @@ export default function AtestadosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const supabase = createClient()
   const { escolaAtivaId } = useAuthStore()
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
 
   const isMounted = useRef(true)
 
@@ -35,11 +37,32 @@ export default function AtestadosPage() {
     if (isMounted.current) setLoading(true)
     try {
       await verificarEAtualizarRetornosAfastamentos(supabase)
+      const currentSelectedSecretaria = useSchoolStore.getState().selectedSecretaria
+      const todasEscolas = useSchoolStore.getState().escolas
+
+      let escolaIdsFiltradas: string[] | null = null
+      if (escolaAtivaId) {
+        escolaIdsFiltradas = [escolaAtivaId]
+      } else if (currentSelectedSecretaria) {
+        const secId = currentSelectedSecretaria.id
+        const secNome = (currentSelectedSecretaria.nome || '').toLowerCase()
+        const matching = todasEscolas.filter((e: any) => {
+          if (secId && e.secretaria_id === secId) return true
+          if (secNome && (e.secretariaNome?.toLowerCase().includes(secNome) || (e.secretarias as any)?.nome?.toLowerCase().includes(secNome))) return true
+          return false
+        })
+        escolaIdsFiltradas = matching.map((e: any) => e.id)
+      }
+
       let query = supabase.from('atestados')
         .select('*, funcionarios(nome, cargo, is_superadmin, acessos_usuarios(nivel, ativo))')
 
-      if (escolaAtivaId) {
-        query = query.eq('escola_id', escolaAtivaId)
+      if (escolaIdsFiltradas !== null) {
+        if (escolaIdsFiltradas.length === 0) {
+          setAtestados([])
+          return
+        }
+        query = query.in('escola_id', escolaIdsFiltradas)
       }
 
       const { data, error } = await query.order('data_inclusao', { ascending: false })
@@ -75,7 +98,7 @@ export default function AtestadosPage() {
 
   useEffect(() => {
     fetchAtestados()
-  }, [escolaAtivaId])
+  }, [escolaAtivaId, selectedSecretaria?.id, selectedSecretaria?.nome])
 
   const atestadosFiltrados = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 
 export interface Escola {
@@ -161,11 +162,28 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
             if (acessosList.some((a: any) => a.ativo && (a.nivel === 1 || (a.nivel === 2 && a.escola_id !== escolaAtivaId)))) return false
           }
 
+          const selectedSecretaria = useSchoolStore.getState().selectedSecretaria
+          const todasEscolas = useSchoolStore.getState().escolas
+
+          let escolaIdsFiltradas: Set<string> | null = null
           if (escolaAtivaId) {
-            const temLotacaoNaEscolaAtiva = f.lotacoes.some((v) => v.escola_id === escolaAtivaId && v.ativo)
+            escolaIdsFiltradas = new Set([escolaAtivaId])
+          } else if (selectedSecretaria) {
+            const secId = selectedSecretaria.id
+            const secNome = (selectedSecretaria.nome || '').toLowerCase()
+            const matching = todasEscolas.filter((e: any) => {
+              if (secId && e.secretaria_id === secId) return true
+              if (secNome && (e.secretariaNome?.toLowerCase().includes(secNome) || (e.secretarias as any)?.nome?.toLowerCase().includes(secNome))) return true
+              return false
+            })
+            escolaIdsFiltradas = new Set(matching.map((e: any) => e.id))
+          }
+
+          if (escolaIdsFiltradas !== null) {
+            const temLotacaoNaFoco = f.lotacoes.some((v) => escolaIdsFiltradas!.has(v.escola_id) && v.ativo)
             const temQualquerLotacao = f.lotacoes.some((v) => v.ativo)
 
-            if (temLotacaoNaEscolaAtiva) return true
+            if (temLotacaoNaFoco) return true
             if (!temQualquerLotacao && isGlobalAdmin) return true
             return false
           }

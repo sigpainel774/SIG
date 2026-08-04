@@ -146,18 +146,36 @@ export default function FuncionariosPage() {
       await verificarEAtualizarRetornosAfastamentos(supabase)
       const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot()
       const escolaId = useAuthStore.getState().escolaAtivaId
+      const currentSelectedSecretaria = useSchoolStore.getState().selectedSecretaria
+      const todasEscolas = useSchoolStore.getState().escolas
 
-      const selectFields = escolaId
+      let escolaIdsFiltradas: string[] | null = null
+      if (escolaId) {
+        escolaIdsFiltradas = [escolaId]
+      } else if (currentSelectedSecretaria) {
+        const secId = currentSelectedSecretaria.id
+        const secNome = (currentSelectedSecretaria.nome || '').toLowerCase()
+        const matching = todasEscolas.filter(e => {
+          if (secId && e.secretaria_id === secId) return true
+          if (secNome && (e.secretariaNome?.toLowerCase().includes(secNome) || (e.secretarias as any)?.nome?.toLowerCase().includes(secNome))) return true
+          return false
+        })
+        escolaIdsFiltradas = matching.map(e => e.id)
+      }
+
+      const mustFilterVinculos = escolaIdsFiltradas !== null || !isAdminUser
+
+      const selectFields = mustFilterVinculos
         ? `
           id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
-          vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome)),
+          vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome, secretaria_id)),
           acessos_usuarios(nivel, ativo)
         `
         : `
           id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
           endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
-          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome)),
+          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome, secretaria_id)),
           acessos_usuarios(nivel, ativo)
         `
 
@@ -167,7 +185,15 @@ export default function FuncionariosPage() {
         .is('deleted_at', null)
         .order('nome')
 
-      if (escolaId || !isAdminUser) {
+      if (escolaIdsFiltradas !== null) {
+        if (escolaIdsFiltradas.length === 0) {
+          setFuncionarios([])
+          return
+        }
+        query = query
+          .in('vinculos_funcionarios.escola_id', escolaIdsFiltradas)
+          .eq('vinculos_funcionarios.ativo', true)
+      } else if (!isAdminUser) {
         if (!escolaId) {
           setFuncionarios([])
           return
@@ -273,7 +299,7 @@ export default function FuncionariosPage() {
   useEffect(() => {
     carregarFuncionarios()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEscola?.id])
+  }, [selectedEscola?.id, selectedSecretaria?.id, selectedSecretaria?.nome])
 
   /* ── Listas para dropdowns ─────────────────────────────────── */
 

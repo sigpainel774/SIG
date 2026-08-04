@@ -138,7 +138,8 @@ export function SchoolSelector() {
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedSecretaria({ id: unidades[0]?.secretaria_id || '', nome: secNome })
+                      const secId = unidades.find(u => u.secretaria_id)?.secretaria_id || escolas.find(e => e.secretariaNome === secNome || (e.secretarias as any)?.nome === secNome)?.secretaria_id || ''
+                      setSelectedSecretaria({ id: secId, nome: secNome })
                       useAuthStore.getState().setEscolaAtivaId(null)
                       setIsOpen(false)
                     }}

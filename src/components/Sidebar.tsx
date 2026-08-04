@@ -45,6 +45,8 @@ export function Sidebar() {
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
 
+  const isSelecaoSecretaria = !selectedEscola && !selectedSecretaria
+
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -366,7 +368,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none print:hidden shrink-0">
+      <aside className={cn(
+        "hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground h-screen sticky top-0 transition-colors duration-200 select-none print:hidden shrink-0",
+        isSelecaoSecretaria && "!hidden"
+      )}>
         <SidebarContent />
       </aside>
 
