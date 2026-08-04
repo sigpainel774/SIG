@@ -27,6 +27,7 @@ export interface Escola {
 export interface SecretariaState {
   id: string
   nome: string
+  logo_url?: string | null
 }
 
 interface SchoolState {

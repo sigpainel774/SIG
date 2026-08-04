@@ -88,7 +88,7 @@ interface SecretariaItem {
 }
 
 export default function HomePage() {
-  const { escolas, selectedEscola, setSelectedEscola, loadEscolas } = useSchoolStore()
+  const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
   const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
 
   const isMounted = useRef(true)
@@ -121,8 +121,7 @@ export default function HomePage() {
     return (acessoNivel1 as any)?.secretarias_ids ?? null
   }, [isNivel1, acessos])
 
-  // Estado da secretaria selecionada (passo 1 do fluxo nível 1)
-  const [selectedSecretaria, setSelectedSecretaria] = useState<SecretariaItem | null>(null)
+  // Lista de secretarias do banco (para o fluxo nível 1)
   const [secretarias, setSecretarias] = useState<SecretariaItem[]>([])
   const [loadingSecretarias, setLoadingSecretarias] = useState(false)
 
@@ -456,10 +455,7 @@ export default function HomePage() {
                 {secretarias.map((secretaria) => (
                   <div
                     key={secretaria.id}
-                    onClick={() => {
-                      setSelectedSecretaria(secretaria)
-                      useSchoolStore.getState().setSelectedSecretaria(secretaria)
-                    }}
+                    onClick={() => setSelectedSecretaria(secretaria)}
                     className="group flex items-center gap-4 p-4 rounded-2xl bg-surface-1 border border-borderCustom hover:border-sky-500/50 hover:bg-sky-500/5 transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.98]"
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center bg-white p-2 border border-borderCustom shrink-0 group-hover:scale-105 transition-transform">
