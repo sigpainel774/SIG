@@ -41,6 +41,8 @@ import { ModalDetalhesFrequenciaHoje } from '@/components/modals/ModalDetalhesFr
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
 import { createClient } from '@/lib/supabaseClient'
 
+import { ModalServidoresDiscriminados } from '@/components/modals/modal-servidores-discriminados'
+
 const RelatorioServidores = dynamic(
   () => import('@/components/relatorios/RelatorioServidores'),
   { ssr: false }
@@ -129,6 +131,14 @@ export default function HomePage() {
   const [widgetStats, setWidgetStats] = useState<{ total: number; concursados: number; contratados: number; nomeados: number; outros: number } | null>(null)
   const [loadingWidgetStats, setLoadingWidgetStats] = useState(false)
   const [isRelatorioServidoresModalOpen, setIsRelatorioServidoresModalOpen] = useState(false)
+  const [isDiscriminadosModalOpen, setIsDiscriminadosModalOpen] = useState(false)
+  const [selectedTipoVinculoModal, setSelectedTipoVinculoModal] = useState<string>('Total')
+
+  const handleOpenDiscriminadosModal = (e: React.MouseEvent, vinculo: string) => {
+    e.stopPropagation()
+    setSelectedTipoVinculoModal(vinculo)
+    setIsDiscriminadosModalOpen(true)
+  }
 
   // Carrega estatísticas resumidas para o widget de servidores
   useEffect(() => {
@@ -516,20 +526,39 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
-                      <span className="text-[11px] text-muted-foreground block font-medium">Total de Servidores</span>
+                    <div
+                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Total')}
+                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-primary/50 transition-all cursor-pointer group/item"
+                      title="Clique para ver todos os servidores discriminados por secretarias"
+                    >
+                      <span className="text-[11px] text-muted-foreground block font-medium group-hover/item:text-foreground transition-colors">Total de Servidores</span>
                       <span className="text-xl font-bold text-foreground">{widgetStats?.total ?? 0}</span>
                     </div>
-                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
-                      <span className="text-[11px] text-blue-400 block font-medium">Concursados</span>
+
+                    <div
+                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Concursado')}
+                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-blue-500/50 transition-all cursor-pointer group/item"
+                      title="Clique para ver Concursados discriminados por secretarias"
+                    >
+                      <span className="text-[11px] text-blue-400 block font-medium group-hover/item:underline">Concursados</span>
                       <span className="text-xl font-bold text-blue-400">{widgetStats?.concursados ?? 0}</span>
                     </div>
-                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
-                      <span className="text-[11px] text-emerald-400 block font-medium">Contratados</span>
+
+                    <div
+                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Contratado')}
+                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-emerald-500/50 transition-all cursor-pointer group/item"
+                      title="Clique para ver Contratados discriminados por secretarias"
+                    >
+                      <span className="text-[11px] text-emerald-400 block font-medium group-hover/item:underline">Contratados</span>
                       <span className="text-xl font-bold text-emerald-400">{widgetStats?.contratados ?? 0}</span>
                     </div>
-                    <div className="bg-background/50 p-3 rounded-xl border border-borderCustom/50">
-                      <span className="text-[11px] text-purple-400 block font-medium">Nomeados</span>
+
+                    <div
+                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Nomeado')}
+                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-purple-500/50 transition-all cursor-pointer group/item"
+                      title="Clique para ver Nomeados discriminados por secretarias"
+                    >
+                      <span className="text-[11px] text-purple-400 block font-medium group-hover/item:underline">Nomeados</span>
                       <span className="text-xl font-bold text-purple-400">{widgetStats?.nomeados ?? 0}</span>
                     </div>
                   </div>
@@ -555,6 +584,13 @@ export default function HomePage() {
               <RelatorioServidores />
             </div>
           </StandardDialog>
+
+          {/* Modal de Servidores Discriminados por Secretaria e Unidades */}
+          <ModalServidoresDiscriminados
+            open={isDiscriminadosModalOpen}
+            onOpenChange={setIsDiscriminadosModalOpen}
+            tipoVinculoInicial={selectedTipoVinculoModal}
+          />
         </div>
 
       ) : isNivel1 && selectedSecretaria && !selectedEscola ? (
