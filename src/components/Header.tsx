@@ -32,9 +32,12 @@ const ModalComunicadoPopup = dynamic(
 
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
-  const { funcionario } = useAuthStore()
+  const { funcionario, acessos } = useAuthStore()
   const { toggleMobile } = useSidebarStore()
-  const { selectedEscola } = useSchoolStore()
+  const { selectedEscola, selectedSecretaria } = useSchoolStore()
+
+  const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
+  const isSelecaoSecretaria = isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
   const [modalMensagensOpen, setModalMensagensOpen] = useState(false)
@@ -150,29 +153,31 @@ export function Header() {
       <header className="h-16 border-b border-borderCustom bg-surface-1 flex items-center justify-between px-4 sm:px-6 shadow-sm sticky top-0 z-30 print:hidden min-w-0">
         {/* Title / Logo & Mobile Menu Button */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={toggleMobile}
-            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer shrink-0"
-            title="Menu Principal"
-            aria-label="Alternar Menu Lateral"
-          >
-            <Menu className="w-6 h-6 text-[#185FA5] dark:text-[#3ea6ff]" />
-          </button>
-          {selectedEscola?.logo_url ? (
+          {!isSelecaoSecretaria && (
+            <button
+              type="button"
+              onClick={toggleMobile}
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-hoverCustom transition-colors cursor-pointer shrink-0"
+              title="Menu Principal"
+              aria-label="Alternar Menu Lateral"
+            >
+              <Menu className="w-6 h-6 text-[#185FA5] dark:text-[#3ea6ff]" />
+            </button>
+          )}
+          {(selectedEscola?.logo_url || selectedSecretaria?.logo_url) ? (
             <img
-              src={selectedEscola.logo_url}
-              alt={selectedEscola.nome}
+              src={selectedEscola?.logo_url || selectedSecretaria?.logo_url || ''}
+              alt={selectedEscola?.nome || selectedSecretaria?.nome || 'Logo'}
               className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-surface-1"
             />
           ) : (
             <School className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff] shrink-0" />
           )}
           <h1 className="font-bold text-base md:text-lg text-foreground tracking-tight hidden sm:block truncate">
-            {selectedEscola ? selectedEscola.nome : 'Sapeaçu Painel Escolar'}
+            {selectedEscola ? selectedEscola.nome : selectedSecretaria ? selectedSecretaria.nome : 'Sapeaçu Painel Escolar'}
           </h1>
           <h1 className="font-bold text-sm text-foreground tracking-tight sm:hidden truncate">
-            {selectedEscola ? selectedEscola.nome : 'Painel Escolar'}
+            {selectedEscola ? selectedEscola.nome : selectedSecretaria ? selectedSecretaria.nome : 'Painel Escolar'}
           </h1>
         </div>
 

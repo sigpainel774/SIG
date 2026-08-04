@@ -44,8 +44,8 @@ export function Sidebar() {
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
-
-  const isSelecaoSecretaria = !selectedEscola && !selectedSecretaria
+  const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
+  const isSelecaoSecretaria = isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
@@ -376,7 +376,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile Drawer Overlay */}
-      {isMobileOpen && (
+      {isMobileOpen && !isSelecaoSecretaria && (
         <>
           <div 
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200" 
