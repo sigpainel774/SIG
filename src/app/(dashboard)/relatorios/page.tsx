@@ -705,6 +705,25 @@ export default function RelatoriosPage() {
       {/* Grid of Cards Matching Screenshot Layout & Colors */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
+          const moduloPorReportCard: Record<string, string> = {
+            'servidores': 'funcionarios-basico',
+            'desempenho': 'alunos',
+            'censo': 'alunos',
+            'ocorrencias': 'ocorrencias',
+            'mapa': 'geolocalizacao',
+            'presenca': 'geolocalizacao',
+            'atividades': 'central-atividades',
+            'necessidades_especiais': 'pacientes',
+            'fila_espera': 'fila-espera',
+          }
+          const modulosSecretaria = selectedSecretaria?.modulos_ativos
+          if (modulosSecretaria) {
+            const moduloNecessario = moduloPorReportCard[card.id]
+            if (moduloNecessario && !modulosSecretaria.includes(moduloNecessario)) {
+              return false
+            }
+          }
+
           if (isEMAEE) {
             const permitidosEMAEE = ['necessidades_especiais', 'fila_espera', 'mapa']
             return permitidosEMAEE.includes(card.id)

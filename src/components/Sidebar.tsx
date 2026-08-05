@@ -62,6 +62,38 @@ export function Sidebar() {
   const isEducacao = !isEMAEE && ((!selectedEscola && !selectedSecretaria) || !secNome || /educa/i.test(secNome))
   const isSaude = !isEMAEE && (!isEducacao && /sa[uú]de/i.test(secNome))
 
+  const modulosSecretaria = selectedSecretaria?.modulos_ativos || (
+    isEMAEE 
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'pacientes', 'fila-espera', 'especialistas', 'relatorios-escola', 'arquivos', 'relatorios']
+      : isEducacao
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'alunos', 'turmas', 'matriculas', 'avaliacoes', 'ocorrencias', 'documentos', 'transferencias', 'arquivos', 'relatorios', 'central-atividades', 'lideranca']
+      : isSaude
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'atestados', 'documentos', 'relatorios', 'central-atividades', 'lideranca', 'arquivos']
+      : ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico']
+  )
+
+  const moduloPorHref: Record<string, string> = {
+    '/mural': 'mural',
+    '/alunos': 'alunos',
+    '/turmas': 'turmas',
+    '/matriculas': 'matriculas',
+    '/avaliacoes': 'avaliacoes',
+    '/ocorrencias': 'ocorrencias',
+    '/documentos': 'documentos',
+    '/transferencias': 'transferencias',
+    '/arquivos': 'arquivos',
+    '/relatorios/atividades': 'central-atividades',
+    '/painel-chefe': 'lideranca',
+    '/funcionarios': 'funcionarios-basico',
+    '/atestados': 'atestados',
+    '/coleta-local': 'coleta-local',
+    '/configuracoes': 'configuracoes-basicas',
+    '/emaee/pacientes': 'pacientes',
+    '/emaee/fila-espera': 'fila-espera',
+    '/emaee/vincular-profissionais': 'especialistas',
+    '/emaee/solicitacoes-escola': 'relatorios-escola',
+  }
+
   const handleLogout = async () => {
     closeMobile()
     setIsLoggingOut(true)
@@ -316,6 +348,21 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {menuGroups.map((group, groupIndex) => {
           const filteredItems = group.items.filter((item) => {
+            const moduloNecessario = moduloPorHref[item.href]
+            if (moduloNecessario) {
+              if (item.href === '/relatorios') {
+                if (!modulosSecretaria.includes('geolocalizacao') && !modulosSecretaria.includes('relatorios')) {
+                  return false
+                }
+              } else if (!modulosSecretaria.includes(moduloNecessario)) {
+                return false
+              }
+            } else if (item.href === '/relatorios') {
+              if (!modulosSecretaria.includes('geolocalizacao') && !modulosSecretaria.includes('relatorios')) {
+                return false
+              }
+            }
+
             const isAdmin = isAdminGlobalOrRoot()
             if (!isAdmin && isProfessor) {
               const permitidos = ['/home', '/mural', '/alunos', '/turmas', '/avaliacoes']
@@ -359,6 +406,10 @@ export function Sidebar() {
           <hr className="border-sidebar-border/40 mx-3 my-1" />
           <div className="space-y-1.5 mt-1">
             {systemItems.filter((item) => {
+              const moduloNecessario = moduloPorHref[item.href]
+              if (moduloNecessario && !modulosSecretaria.includes(moduloNecessario)) {
+                return false
+              }
               if (isProfessor || isChefe()) {
                 const permitidos = ['/configuracoes', '/ajuda']
                 return permitidos.includes(item.href)
