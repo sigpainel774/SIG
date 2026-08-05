@@ -15,8 +15,10 @@ export function SecaoDadosClinicos() {
     cidCodigo, setCidCodigo,
     observacoes, setObservacoes,
     deficiencias, toggleDeficiencia,
-    especialidades, toggleEspecialidade,
-    outraEspecialidade, setOutraEspecialidade
+    profissionaisAEE,
+    profissionaisSelecionados,
+    toggleProfissional,
+    updateFrequenciaProfissional
   } = useMatriculaEmaeeContext()
 
   return (
@@ -159,9 +161,9 @@ export function SecaoDadosClinicos() {
           {profissionaisAEE.length === 0 ? (
             <p className="text-xs text-gray-400">Nenhum profissional especializado vinculado a esta unidade.</p>
           ) : (
-            profissionaisAEE.map(prof => {
-              const isSelected = profissionaisSelecionados.some(p => p.profissional_id === prof.id)
-              const freq = profissionaisSelecionados.find(p => p.profissional_id === prof.id)?.frequencia || 'SEMANAL'
+            profissionaisAEE.map((prof: any) => {
+              const isSelected = profissionaisSelecionados.some((p: any) => p.profissional_id === prof.id)
+              const freq = profissionaisSelecionados.find((p: any) => p.profissional_id === prof.id)?.frequencia || 'SEMANAL'
               return (
                 <div key={prof.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
                   <label className="flex items-center gap-3 cursor-pointer flex-1">
@@ -179,7 +181,7 @@ export function SecaoDadosClinicos() {
                   
                   {isSelected && (
                     <div className="w-full sm:w-40 mt-2 sm:mt-0">
-                      <Select value={freq} onValueChange={(val) => updateFrequenciaProfissional(prof.id, val)}>
+                      <Select value={freq} onValueChange={(val) => updateFrequenciaProfissional(prof.id, val || 'SEMANAL')}>
                         <SelectTrigger className="h-8 text-xs bg-[#222] border-[#333] text-white">
                           <SelectValue placeholder="Frequência" />
                         </SelectTrigger>
