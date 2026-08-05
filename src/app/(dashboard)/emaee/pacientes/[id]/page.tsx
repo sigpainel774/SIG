@@ -60,7 +60,7 @@ export default function PacienteDetalhesPage() {
         .from('emaee_matriculas')
         .select(`
           *,
-          alunos!inner (
+          alunos (
             nome,
             cpf,
             telefone,
@@ -70,8 +70,8 @@ export default function PacienteDetalhesPage() {
             cor_raca,
             profissao_mae,
             profissao_pai,
-            telefone_emergencia,
-            nome_contato_emergencia
+            nome_contato_emergencia,
+            dados_matricula
           ),
           escolas:escola_regular_id (
             nome
