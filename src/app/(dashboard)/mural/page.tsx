@@ -18,7 +18,7 @@ import { sendPushToUser } from '@/lib/push/sendPushToUser'
 
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
-  const { selectedSecretaria } = useSchoolStore()
+  const { selectedSecretaria, selectedEscola } = useSchoolStore()
   const [selectedDate, setSelectedDate] = useState('')
   const [showComposer, setShowComposer] = useState(false)
   const [notices, setNotices] = useState<any[]>([])
@@ -60,7 +60,11 @@ export default function MuralPage() {
     setLoadingBirthdays(true)
     try {
       const supabase = createClient()
-      const { data, error } = await (supabase as any).rpc('get_birthdays_of_month', { month_num: monthNum, p_secretaria_id: selectedSecretaria?.id || null })
+      const { data, error } = await (supabase as any).rpc('get_birthdays_of_month', { 
+        month_num: monthNum, 
+        p_secretaria_id: selectedSecretaria?.id || null,
+        p_escola_id: selectedEscola?.id || null
+      })
       if (error) {
         toast.error('Erro ao carregar aniversariantes: ' + error.message)
       } else if (data) {
@@ -97,6 +101,10 @@ export default function MuralPage() {
       query = (query as any).eq('secretaria_id', selectedSecretaria.id)
     }
 
+    if (selectedEscola?.created_at) {
+      query = (query as any).gte('created_at', selectedEscola.created_at)
+    }
+
     const { data, error } = await query
 
     if (error) {
@@ -122,9 +130,17 @@ export default function MuralPage() {
           query = (query as any).eq('secretaria_id', selectedSecretaria.id)
         }
 
+        if (selectedEscola?.created_at) {
+          query = (query as any).gte('created_at', selectedEscola.created_at)
+        }
+
         const [comunicadosRes, birthdayRes] = await Promise.all([
           query,
-          (supabase as any).rpc('get_birthdays_of_month', { month_num: currentMonth, p_secretaria_id: selectedSecretaria?.id || null })
+          (supabase as any).rpc('get_birthdays_of_month', { 
+            month_num: currentMonth, 
+            p_secretaria_id: selectedSecretaria?.id || null,
+            p_escola_id: selectedEscola?.id || null
+          })
         ])
 
         if (comunicadosRes.error) {
@@ -147,7 +163,7 @@ export default function MuralPage() {
     }
 
     fetchData()
-  }, [selectedSecretaria?.id])
+  }, [selectedSecretaria?.id, selectedEscola?.id, selectedEscola?.created_at])
 
   const filteredNotices = useMemo(() => {
     if (!selectedDate) return notices

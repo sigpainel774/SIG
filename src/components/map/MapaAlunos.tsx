@@ -8,6 +8,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSchoolStore } from '@/store/useSchoolStore';
 import { preloadFotos, prewarmSapeacuTiles, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
 
 // Criador estático de ícone de agrupamento (evita re-render / memory leaks - ES-3)
@@ -30,6 +31,8 @@ export interface AlunoMapeado {
   latitude: number;
   longitude: number;
   modalidade?: string;
+  cidade?: string;
+  zona?: string;
 }
 
 interface MapaAlunosProps {
@@ -37,10 +40,23 @@ interface MapaAlunosProps {
 }
 
 export default function MapaAlunos({ alunos }: MapaAlunosProps) {
+  const selectedEscola = useSchoolStore((state) => state.selectedEscola);
+  const isEmaee = selectedEscola?.tipo === 'EMAEE';
+
   const [busca, setBusca] = useState('');
   const buscaDebounced = React.useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
+  const [filtroZona, setFiltroZona] = useState<'todos' | 'Urbana' | 'Rural'>('todos');
+  const [filtroCidade, setFiltroCidade] = useState<string>('todos');
   const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
+
+  const cidadesUnicas = useMemo(() => {
+    const set = new Set<string>();
+    alunos.forEach((a) => {
+      if (a.cidade) set.add(a.cidade.trim());
+    });
+    return Array.from(set).sort();
+  }, [alunos]);
   const mapRef = useRef<L.Map>(null);
 
   // Pre-warming dos tiles de Sapeaçu - BA na montagem
@@ -48,13 +64,23 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
     prewarmSapeacuTiles();
   }, []);
 
-  // 1. Filtra alunos baseado no input de pesquisa e modalidade
+  // 1. Filtra alunos baseado no input de pesquisa e modalidade / cidade / zona
   const alunosFiltrados = useMemo(() => {
     const termo = buscaDebounced.toLowerCase().trim();
     return alunos.filter((a) => {
-      // Filtro de modalidade
-      if (filtroModalidade === 'eja' && a.modalidade !== 'EJA') return false;
-      if (filtroModalidade === 'regular' && a.modalidade === 'EJA') return false;
+      if (isEmaee) {
+        if (filtroZona !== 'todos') {
+          const aZona = (a.zona || '').toLowerCase();
+          const filterZ = filtroZona.toLowerCase();
+          if (!aZona.includes(filterZ)) return false;
+        }
+        if (filtroCidade !== 'todos') {
+          if (a.cidade !== filtroCidade) return false;
+        }
+      } else {
+        if (filtroModalidade === 'eja' && a.modalidade !== 'EJA') return false;
+        if (filtroModalidade === 'regular' && a.modalidade === 'EJA') return false;
+      }
 
       // Filtro de texto
       if (!termo) return true;
@@ -62,10 +88,11 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         a.nome.toLowerCase().includes(termo) ||
         a.escola.toLowerCase().includes(termo) ||
         (a.turma && a.turma.toLowerCase().includes(termo)) ||
-        (a.modalidade && a.modalidade.toLowerCase().includes(termo))
+        (a.modalidade && a.modalidade.toLowerCase().includes(termo)) ||
+        (a.cidade && a.cidade.toLowerCase().includes(termo))
       );
     });
-  }, [buscaDebounced, filtroModalidade, alunos]);
+  }, [buscaDebounced, filtroModalidade, filtroZona, filtroCidade, isEmaee, alunos]);
 
   // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
   const alunosValidos = useMemo(() => {
@@ -135,9 +162,9 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
   const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
-  // 4. Criação do Pino DivIcon Customizado (verde esmeralda para regular, roxo para EJA com cache)
-  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string) => {
-    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}`;
+  // 4. Criação do Pino DivIcon Customizado (com cache)
+  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string, zona?: string) => {
+    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}_${zona || 'nozona'}`;
     if (iconCacheRef.current.has(cacheKey)) {
       return iconCacheRef.current.get(cacheKey)!;
     }
@@ -150,9 +177,10 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         : '';
 
     const isEJA = modalidade === 'EJA';
-    const bgGradient = isEJA
-      ? 'linear-gradient(135deg, #a855f7, #7e22ce)'
-      : 'linear-gradient(135deg, #34d399, #059669)';
+    const isRural = isEmaee && (zona === 'Rural' || (zona || '').toLowerCase().includes('rural'));
+    const bgGradient = isEmaee
+      ? (isRural ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #10b981, #047857)')
+      : (isEJA ? 'linear-gradient(135deg, #a855f7, #7e22ce)' : 'linear-gradient(135deg, #34d399, #059669)');
 
     const icon = L.divIcon({
       className: 'custom-div-icon',
@@ -208,48 +236,87 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           />
         </div>
 
-        {/* Seletor de Filtro de Modalidade (Todos, Regular, EJA) */}
-        <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
-          <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
-            <Filter className="w-3 h-3" /> Ensino:
-          </span>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('todos')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'todos'
-                ? "bg-emerald-500 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            Todos
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('regular')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'regular'
-                ? "bg-emerald-500 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            Regular
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('eja')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'eja'
-                ? "bg-purple-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            EJA
-          </button>
-        </div>
+        {/* Seletor de Filtro de Modalidade ou Cidade/Zona */}
+        {isEmaee ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Filtro de Cidade */}
+            <div className="flex items-center gap-1.5 bg-[#1e283b] px-2.5 py-1.5 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                <Filter className="w-3 h-3" /> Cidade:
+              </span>
+              <select
+                value={filtroCidade}
+                onChange={(e) => setFiltroCidade(e.target.value)}
+                className="bg-transparent border-none text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="todos" className="bg-[#1e283b] text-slate-200">Todas</option>
+                {cidadesUnicas.map((c) => (
+                  <option key={c} value={c} className="bg-[#1e283b] text-slate-200">
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro de Zona */}
+            <div className="flex items-center gap-1.5 bg-[#1e283b] px-2.5 py-1.5 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                <Filter className="w-3 h-3" /> Zona:
+              </span>
+              <select
+                value={filtroZona}
+                onChange={(e) => setFiltroZona(e.target.value as any)}
+                className="bg-transparent border-none text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="todos" className="bg-[#1e283b] text-slate-200">Todas</option>
+                <option value="Urbana" className="bg-[#1e283b] text-slate-200">Zona Urbana</option>
+                <option value="Rural" className="bg-[#1e283b] text-slate-200">Zona Rural</option>
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+            <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+              <Filter className="w-3 h-3" /> Ensino:
+            </span>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('todos')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'todos'
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('regular')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'regular'
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              Regular
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('eja')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'eja'
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              EJA
+            </button>
+          </div>
+        )}
 
         <button
           type="button"
@@ -297,7 +364,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
             showCoverageOnHover={false}
           >
             {alunosValidos.map((aluno) => {
-              const icone = criarIconeCustomizado(aluno.id, aluno.nome, (getAvatarUrl(aluno) ?? undefined), aluno.modalidade);
+              const icone = criarIconeCustomizado(aluno.id, aluno.nome, (getAvatarUrl(aluno) ?? undefined), aluno.modalidade, aluno.zona);
               const iniciais = obterIniciais(aluno.nome);
 
               return (
@@ -362,11 +429,15 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                             </strong>
                             <span className={cn(
                               "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0",
-                              aluno.modalidade === 'EJA'
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              isEmaee
+                                ? ((aluno.zona || '').toLowerCase().includes('rural')
+                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30")
+                                : (aluno.modalidade === 'EJA'
+                                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30")
                             )}>
-                              {aluno.modalidade ?? 'Regular'}
+                              {isEmaee ? (aluno.zona || 'Urbana') : (aluno.modalidade ?? 'Regular')}
                             </span>
                           </div>
                           {aluno.turma && (
@@ -447,11 +518,15 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                 <h3 className="text-lg font-bold text-white leading-snug">{fotoModal.nome}</h3>
                 <span className={cn(
                   "text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
-                  fotoModal.modalidade === 'EJA'
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  isEmaee
+                    ? ((fotoModal.zona || '').toLowerCase().includes('rural')
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30")
+                    : (fotoModal.modalidade === 'EJA'
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30")
                 )}>
-                  {fotoModal.modalidade ?? 'Regular'}
+                  {isEmaee ? (fotoModal.zona || 'Urbana') : (fotoModal.modalidade ?? 'Regular')}
                 </span>
               </div>
               {fotoModal.turma && <p className="text-sm font-semibold text-emerald-400">Turma: {fotoModal.turma}</p>}
@@ -487,8 +562,16 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
-        <strong className="text-emerald-400">{alunosFiltrados.length}</strong> aluno(s) encontrado(s) {filtroModalidade !== 'todos' ? `[Filtro: ${filtroModalidade.toUpperCase()}]` : ''} de um total de{' '}
-        {alunos.length}. Clique em um pino para detalhes.
+        <strong className="text-emerald-400">{alunosFiltrados.length}</strong> aluno(s) encontrado(s){' '}
+        {isEmaee ? (
+          <>
+            {filtroCidade !== 'todos' && `[Cidade: ${filtroCidade}] `}
+            {filtroZona !== 'todos' && `[Zona: ${filtroZona.toUpperCase()}] `}
+          </>
+        ) : (
+          filtroModalidade !== 'todos' ? `[Filtro: ${filtroModalidade.toUpperCase()}] ` : ''
+        )}
+        de um total de {alunos.length}. Clique em um pino para detalhes.
       </p>
     </div>
   );

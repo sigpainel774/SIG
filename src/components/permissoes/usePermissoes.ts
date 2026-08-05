@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { nivelLabel } from './utils'
@@ -14,6 +15,7 @@ import type { Escola, FuncionarioSimples, RegistroPermissao } from './types'
 export function usePermissoes() {
   const { isEditMode, setEditMode } = useEditModeStore()
   const { funcionario, isAdminGlobalOrRoot, isDiretor, escolaAtivaId } = useAuthStore()
+  const { selectedSecretaria } = useSchoolStore()
   const pathname = usePathname()
   const autocompleteRef = useRef<HTMLDivElement>(null)
 
@@ -209,6 +211,8 @@ export function usePermissoes() {
 
       if (restringirNivel && schoolIdToUse) {
         escolasQuery = escolasQuery.eq('id', schoolIdToUse)
+      } else if (selectedSecretaria?.id) {
+        escolasQuery = escolasQuery.eq('secretaria_id', selectedSecretaria.id)
       }
 
       const { data: escolasData } = await escolasQuery.order('nome')
@@ -281,7 +285,7 @@ export function usePermissoes() {
 
     fetchAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restringirNivel, schoolIdToUse, isGlobalAdmin])
+  }, [restringirNivel, schoolIdToUse, isGlobalAdmin, selectedSecretaria?.id])
 
   // Auto-seleção de escola para usuários não-admins globais (ex: diretores)
   useEffect(() => {
