@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
 
 export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMatriculaEmaeeProps, isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const supabase = createBrowserClient()
+  const { funcionario } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [alunosEncontrados, setAlunosEncontrados] = useState<AlunoSearchData[]>([])
@@ -65,16 +68,35 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_outros: false,
   })
 
+  // 5. Assinaturas Integradas (Responsável & Servidor)
+  const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
+  const [assinaturaServidorUrl, setAssinaturaServidorUrl] = useState<string | null>(funcionario?.assinatura_url || null)
+
+  // Polling de assinatura remota pelo celular (QR Code)
+  const {
+    celularSigningField,
+    celularSigningCode,
+    iniciarAssinaturaCelular,
+    cancelarAssinaturaCelular,
+  } = useAlunoSignaturePolling({
+    alunoId: alunoSelecionado?.id,
+    setAssinaturaResponsavelUrl,
+    setAssinaturaFuncionarioUrl: setAssinaturaServidorUrl,
+  })
+
   // Listas de apoio
   const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
   const [unidadesEmaee, setUnidadesEmaee] = useState<{id: string, nome: string}[]>([])
 
-  // Sincroniza unidade EMAEE selecionada
+  // Sincroniza unidade EMAEE selecionada e assinatura padrão do funcionário logado
   useEffect(() => {
     if (props.escolaEmaeeId) {
       setEscolaAtendimentoId(props.escolaEmaeeId)
     }
-  }, [props.escolaEmaeeId])
+    if (funcionario?.assinatura_url && !assinaturaServidorUrl) {
+      setAssinaturaServidorUrl(funcionario.assinatura_url)
+    }
+  }, [props.escolaEmaeeId, funcionario?.assinatura_url, assinaturaServidorUrl])
 
   // Carga das escolas no modal
   useEffect(() => {
@@ -131,6 +153,12 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
     setContatoEmergencia(aluno.nome_contato_emergencia ?? '')
     setTelefoneEmergencia(aluno.telefone ?? '')
+
+    // Carregar assinatura existente do responsável se já salva na ficha do aluno
+    const dadosMatricula = (aluno as any).dados_matricula || {}
+    if (dadosMatricula.assinatura_responsavel_url) {
+      setAssinaturaResponsavelUrl(dadosMatricula.assinatura_responsavel_url)
+    }
   }
 
   // Busca de alunos com debounce e cancelamento
@@ -178,7 +206,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         municipio_nascimento: a.municipio_nascimento || null,
         zona_residencial: a.zona_residencial || 'Urbana',
         nome_contato_emergencia: a.nome_contato_emergencia || null,
-        telefone: a.telefone || null
+        telefone: a.telefone || null,
+        dados_matricula: a.dados_matricula
       }))
       
       setAlunosEncontrados(mapped)
@@ -209,7 +238,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
     setLoading(true)
     try {
-      // 1. Atualizar dados do aluno se houver modificações
+      // 1. Atualizar dados do aluno se houver modificações + preservar/atualizar assinatura do responsável em dados_matricula
+      const currentDadosMatricula = (alunoSelecionado as any)?.dados_matricula || {}
+      const updatedDadosMatricula = {
+        ...currentDadosMatricula,
+        cor_raca: corRaca || currentDadosMatricula.cor_raca,
+        assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
+      }
+
       const updatePayload: any = {
         nome: nomeCompleto || alunoSelecionado.nome,
         cpf: cpf || null,
@@ -229,6 +265,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         zona_residencial: zonaResidencial || 'Urbana',
         nome_contato_emergencia: contatoEmergencia || null,
         telefone: telefoneEmergencia || null,
+        dados_matricula: updatedDadosMatricula
       }
 
       const { error: alunoUpdateError } = await (supabase
@@ -258,6 +295,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         cid_codigo: cidCodigo || null,
         outros_transtornos: outrosTranstornos || null,
         observacoes_requerimento: observacoes || null,
+        assinatura_responsavel_matricula_url: assinaturaServidorUrl || null,
+        assinatura_responsavel_aluno_url: assinaturaResponsavelUrl || null,
+        autorizado_pelo_responsavel: !!assinaturaResponsavelUrl,
+        data_autorizacao: assinaturaResponsavelUrl ? new Date().toISOString() : null,
+        responsavel_assinatura_nome: nomeMae || nomePai || null,
         ...deficiencias,
         status: 'FILA_ESPERA'
       }
@@ -333,6 +375,15 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     outrosTranstornos, setOutrosTranstornos,
     observacoes, setObservacoes,
     deficiencias, toggleDeficiencia,
+
+    // Assinaturas Integradas (Conta do Responsável / Servidor / QR Code Celular)
+    assinaturaResponsavelUrl, setAssinaturaResponsavelUrl,
+    assinaturaServidorUrl, setAssinaturaServidorUrl,
+    celularSigningField,
+    celularSigningCode,
+    iniciarAssinaturaCelular,
+    cancelarAssinaturaCelular,
+    funcionario,
 
     handleSubmit
   }
