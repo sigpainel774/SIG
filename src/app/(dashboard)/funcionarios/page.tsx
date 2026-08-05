@@ -146,13 +146,18 @@ export default function FuncionariosPage() {
     try {
       await verificarEAtualizarRetornosAfastamentos(supabase)
       const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot()
-      const escolaId = useAuthStore.getState().escolaAtivaId
+      const authEscolaId = useAuthStore.getState().escolaAtivaId
+      const currentSelectedEscola = useSchoolStore.getState().selectedEscola
       const currentSelectedSecretaria = useSchoolStore.getState().selectedSecretaria
       const todasEscolas = useSchoolStore.getState().escolas
 
       let escolaIdsFiltradas: string[] | null = null
-      if (escolaId) {
-        escolaIdsFiltradas = [escolaId]
+      
+      // Priorizar a escola selecionada no header (para admins) ou a restrita no auth
+      const escolaAtivaEfetiva = currentSelectedEscola?.id || authEscolaId
+
+      if (escolaAtivaEfetiva) {
+        escolaIdsFiltradas = [escolaAtivaEfetiva]
       } else if (currentSelectedSecretaria) {
         const secId = currentSelectedSecretaria.id
         const secNome = (currentSelectedSecretaria.nome || '').toLowerCase()
@@ -195,12 +200,12 @@ export default function FuncionariosPage() {
           .in('vinculos_funcionarios.escola_id', escolaIdsFiltradas)
           .eq('vinculos_funcionarios.ativo', true)
       } else if (!isAdminUser) {
-        if (!escolaId) {
+        if (!escolaAtivaEfetiva) {
           setFuncionarios([])
           return
         }
         query = query
-          .eq('vinculos_funcionarios.escola_id', escolaId)
+          .eq('vinculos_funcionarios.escola_id', escolaAtivaEfetiva)
           .eq('vinculos_funcionarios.ativo', true)
       }
 
@@ -216,7 +221,7 @@ export default function FuncionariosPage() {
           if (vistos.has(f.id)) return false
           vistos.add(f.id)
 
-          if (escolaId) {
+          if (escolaAtivaEfetiva) {
             if (f.is_superadmin) return false
             if (
               f.nome?.toLowerCase() === 'root' ||
@@ -249,7 +254,7 @@ export default function FuncionariosPage() {
               }>) ?? []
             if (
               acessosList.some(
-                (a) => a.ativo && (a.nivel === 1 || (a.nivel === 2 && a.escola_id !== escolaId))
+                (a) => a.ativo && (a.nivel === 1 || (a.nivel === 2 && a.escola_id !== escolaAtivaEfetiva))
               )
             ) {
               return false
