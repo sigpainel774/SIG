@@ -128,9 +128,14 @@ function TransferenciasContent() {
               {
                 header: 'Fluxo',
                 accessor: (sol: any) => (
-                  <div className="text-xs text-[#ccc] flex flex-col">
+                  <div className="text-xs text-[#ccc] flex flex-col gap-0.5">
                     <span>Origem: {sol.origem?.nome ?? 'Rede'}</span>
                     <span className="text-[#888]">Destino: {sol.fora_da_rede ? 'Fora da Rede' : (sol.destino?.nome ?? 'Rede')}</span>
+                    {sol.tipo_movimentacao === 'ENCAMINHAMENTO_EMMAE' && (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded w-fit font-bold mt-1">
+                        Encaminhamento AEE (EMMAE)
+                      </span>
+                    )}
                     {activeTab === 'funcionarios' && (
                       <span className="text-[10px] text-sky-400 font-semibold mt-1">
                         {sol.lotacao_id ? 'Lotação Específica' : 'Transferência Completa'}

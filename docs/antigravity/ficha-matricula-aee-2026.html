@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Ficha de Matrícula AEE 2026 — SIG</title>
+  <!--
+    PROTÓTIPO DE ENTREGA PARA O ANTIGRAVITY
+
+    Ao integrar no SIG:
+    - converter esta estrutura em React/TSX no Next.js App Router;
+    - trocar os controles HTML pelos primitivos shadcn/ui do projeto;
+    - usar lucide-react para os ícones de interface;
+    - buscar aluno, escolas e sessão no fluxo EMAEE já existente;
+    - salvar via Server Action ou camada segura do servidor, com validação;
+    - não copiar JavaScript imperativo nem expor credenciais Supabase no cliente.
+  -->
+  <style>
+    :root {
+      --background: #0b0e14;
+      --surface-1: #121621;
+      --surface-2: #1a202c;
+      --surface-3: #1e2430;
+      --input: #121621;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --text: #f2f3f5;
+      --muted: #94a3b8;
+      --primary: #3ea6ff;
+      --primary-soft: rgba(62, 166, 255, 0.12);
+      --success: #34d399;
+      --danger: #fb7185;
+      --radius: 14px;
+      --shadow: 0 22px 55px rgba(0, 0, 0, 0.32);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(62, 166, 255, 0.09), transparent 26rem),
+        var(--background);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button, label, select, input[type="radio"], input[type="checkbox"] { cursor: pointer; }
+
+    .app-shell { min-height: 100vh; }
+    .print-only { display: none; }
+
+    .official-header {
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #777;
+    }
+
+    .official-header img { width: auto; height: 42px; object-fit: contain; }
+    .official-header-copy { flex: 1; text-align: center; }
+    .official-header-copy strong { display: block; font-size: 12px; text-transform: uppercase; }
+    .official-header-copy span { display: block; margin-top: 3px; color: #444; font-size: 9px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 68px;
+      padding: 12px clamp(16px, 4vw, 44px);
+      background: rgba(11, 14, 20, 0.88);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 12px;
+      color: #07111c;
+      background: linear-gradient(135deg, #79c4ff, var(--primary));
+      box-shadow: 0 8px 24px rgba(62, 166, 255, 0.2);
+    }
+
+    .brand-mark svg, .button svg { width: 19px; height: 19px; }
+    .brand-copy { min-width: 0; }
+    .brand-copy strong { display: block; font-size: 14px; }
+    .brand-copy span { display: block; color: var(--muted); font-size: 12px; }
+
+    .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+    .button {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 15px;
+      border: 1px solid var(--border-strong);
+      border-radius: 11px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 700;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .button:hover { border-color: rgba(62, 166, 255, .5); background: var(--surface-3); }
+    .button:active { transform: translateY(1px); }
+    .button-primary { border-color: transparent; background: var(--primary); color: #07111c; }
+    .button-primary:hover { background: #6bbaff; }
+
+    .layout {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 70px;
+    }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); line-height: 1.12; letter-spacing: -.03em; }
+    .page-heading p:last-child { max-width: 720px; margin: 10px 0 0; color: var(--muted); }
+
+    .status-chip {
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border: 1px solid rgba(52, 211, 153, .25);
+      border-radius: 999px;
+      color: var(--success);
+      background: rgba(52, 211, 153, .08);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(18, 22, 33, .78);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .step:first-child { color: var(--text); border-color: rgba(62, 166, 255, .28); background: var(--primary-soft); }
+    .step-number {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      border-radius: 8px;
+      color: var(--primary);
+      background: rgba(62, 166, 255, .14);
+    }
+
+    form { display: grid; gap: 18px; }
+
+    .section-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(26, 32, 44, .96), rgba(18, 22, 33, .96));
+      box-shadow: var(--shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, .012);
+    }
+
+    .section-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      border-radius: 10px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-weight: 900;
+    }
+
+    .section-header h2 { margin: 0; font-size: 15px; }
+    .section-header p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .section-body { padding: 20px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-7 { grid-column: span 7; }
+    .span-6 { grid-column: span 6; }
+    .span-5 { grid-column: span 5; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+
+    .field { min-width: 0; }
+    .field-label { display: block; margin-bottom: 7px; color: #d7dce5; font-size: 12px; font-weight: 700; }
+    .required::after { content: " *"; color: var(--danger); }
+    .field-help { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+
+    .control {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      outline: none;
+      background: var(--input);
+      color: var(--text);
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .control::placeholder { color: #667085; }
+    .control:hover { border-color: rgba(255, 255, 255, .22); }
+    .control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(62, 166, 255, .13); background: #151b27; }
+    textarea.control { min-height: 100px; resize: vertical; }
+    select.control { appearance: auto; }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { width: 100%; }
+
+    .choice-panel {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: rgba(11, 14, 20, .44);
+    }
+
+    .choice-panel legend { margin-bottom: 10px; color: #d7dce5; font-size: 12px; font-weight: 700; }
+    .choice-row, .choice-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .choice-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .choice {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 39px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-1);
+      color: #d7dce5;
+      font-size: 12px;
+      transition: border-color .18s ease, background .18s ease;
+    }
+
+    .choice:hover { border-color: rgba(62, 166, 255, .4); background: var(--surface-3); }
+    .choice input { width: 16px; height: 16px; margin: 0; accent-color: var(--primary); }
+    .choice:has(input:checked) { color: var(--text); border-color: rgba(62, 166, 255, .55); background: var(--primary-soft); }
+
+    .subsection-title {
+      grid-column: span 12;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 5px 0 -2px;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .subsection-title::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+
+    .signature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .signature-box { padding: 16px; border: 1px dashed rgba(255, 255, 255, .18); border-radius: 12px; background: rgba(11, 14, 20, .4); }
+    .signature-box strong { display: block; margin-bottom: 6px; font-size: 12px; }
+    .signature-box p { margin: 0 0 14px; color: var(--muted); font-size: 11px; }
+    .signature-line { height: 55px; border-bottom: 1px solid rgba(255, 255, 255, .34); }
+
+    .receipt {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px dashed rgba(62, 166, 255, .35);
+      border-radius: 12px;
+      background: rgba(62, 166, 255, .045);
+    }
+
+    .receipt-title { margin: 0 0 15px; text-align: center; font-size: 14px; }
+
+    .form-footer {
+      position: sticky;
+      bottom: 14px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      background: rgba(18, 22, 33, .92);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .42);
+      backdrop-filter: blur(16px);
+    }
+
+    .privacy-note { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
+    .privacy-note svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--success); }
+    .footer-actions { display: flex; gap: 9px; }
+
+    @media (max-width: 900px) {
+      .stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .step:last-child { grid-column: span 2; }
+      .choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-8, .span-7, .span-6, .span-5, .span-4, .span-3 { grid-column: span 6; }
+    }
+
+    @media (max-width: 620px) {
+      .topbar { align-items: flex-start; }
+      .brand-copy span, .topbar .button span, .status-chip { display: none; }
+      .layout { width: min(100% - 20px, 1180px); padding-top: 22px; }
+      .page-heading { align-items: flex-start; }
+      .stepper { grid-template-columns: 1fr; }
+      .step:last-child { grid-column: auto; }
+      .section-header, .section-body { padding: 16px; }
+      .grid { gap: 13px; }
+      .span-8, .span-7, .span-6, .span-5, .span-4, .span-3 { grid-column: span 12; }
+      .choice-grid, .signature-grid { grid-template-columns: 1fr; }
+      .form-footer { align-items: stretch; flex-direction: column; }
+      .footer-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    }
+
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      :root { color-scheme: light; }
+      body { background: #fff !important; color: #111 !important; font-size: 10px; }
+      .no-print, .topbar, .page-heading, .stepper, .form-footer { display: none !important; }
+      .print-only { display: flex !important; }
+      .layout { width: 100%; margin: 0; padding: 0; }
+      form { display: block; }
+      .section-card {
+        margin: 0 0 8px;
+        border: 1px solid #333;
+        border-radius: 0;
+        background: #fff;
+        color: #111;
+        box-shadow: none;
+        break-inside: avoid;
+      }
+      .section-header { padding: 8px 10px; border-color: #777; background: #f2f2f2; }
+      .section-icon { display: none; }
+      .section-header h2 { color: #111; font-size: 11px; text-transform: uppercase; }
+      .section-header p { display: none; }
+      .section-body { padding: 10px; }
+      .grid { gap: 7px 10px; }
+      .field-label, .choice-panel legend { margin-bottom: 3px; color: #111; font-size: 9px; }
+      .control { min-height: 24px; padding: 3px 5px; border: 0; border-bottom: 1px solid #555; border-radius: 0; background: #fff; color: #111; }
+      textarea.control { min-height: 46px; border: 1px solid #777; }
+      .field-help { display: none; }
+      .choice-panel { padding: 7px; border-color: #777; border-radius: 0; background: #fff; }
+      .choice-grid { gap: 3px 9px; }
+      .choice { min-height: 21px; padding: 2px 4px; border: 0; background: #fff; color: #111; font-size: 8px; }
+      .choice input { width: 11px; height: 11px; }
+      .subsection-title { margin-top: 3px; color: #111; font-size: 8px; }
+      .signature-box { padding: 8px; border-color: #777; border-radius: 0; background: #fff; }
+      .signature-box p { display: none; }
+      .signature-line { height: 30px; border-color: #555; }
+      .receipt { margin-top: 10px; padding: 10px; border-color: #555; border-radius: 0; background: #fff; }
+      .print-page-break { break-before: page; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar no-print">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+        </div>
+        <div class="brand-copy">
+          <strong>SIG • Educação Especial</strong>
+          <span>Prefeitura de Sapeaçu — Secretaria Municipal de Educação</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="button" type="button" data-action="print" aria-label="Imprimir ficha" title="Na integração React, vincular ao fluxo de impressão do SIG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+          <span>Imprimir</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">EMAEE • Ano letivo 2026</p>
+          <h1>Ficha de matrícula para AEE</h1>
+          <p>Cadastro do estudante para Atendimento Educacional Especializado, com informações escolares, familiares e clínicas.</p>
+        </div>
+        <span class="status-chip">Rascunho não salvo</span>
+      </div>
+
+      <nav class="stepper no-print" aria-label="Etapas do formulário">
+        <a class="step" href="#atendimento"><span class="step-number">1</span><span>Atendimento</span></a>
+        <a class="step" href="#aluno"><span class="step-number">2</span><span>Aluno</span></a>
+        <a class="step" href="#escola-regular"><span class="step-number">3</span><span>Escola regular</span></a>
+        <a class="step" href="#deficiencia"><span class="step-number">4</span><span>Dados clínicos</span></a>
+        <a class="step" href="#assinaturas"><span class="step-number">5</span><span>Assinaturas</span></a>
+      </nav>
+
+      <form id="ficha-aee" autocomplete="on">
+        <header class="official-header print-only">
+          <img src="../../public/img/logo-prefeitura.png" alt="Prefeitura de Sapeaçu">
+          <div class="official-header-copy">
+            <strong>Ficha de Matrícula de Atendimento Educacional Especializado — AEE 2026</strong>
+            <span>Secretaria Municipal de Educação • Sapeaçu — Bahia</span>
+          </div>
+          <img src="../../public/img/logo-secretaria.png" alt="Secretaria Municipal de Educação">
+        </header>
+
+        <section class="section-card" id="atendimento">
+          <div class="section-header">
+            <span class="section-icon">01</span>
+            <div><h2>Dados do atendimento</h2><p>Identifique a unidade EMAEE, a localização e a data desta matrícula.</p></div>
+          </div>
+          <div class="section-body grid">
+            <div class="field span-7">
+              <label class="field-label required" for="unidade-atendimento">Unidade escolar de atendimento</label>
+              <select class="control" id="unidade-atendimento" name="escola_atendimento_id" required>
+                <option value="">Selecione a unidade EMAEE</option>
+                <option>EMAEE — Unidade Sede</option>
+              </select>
+            </div>
+            <fieldset class="choice-panel span-3">
+              <legend class="required">Localização</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="localizacao_atendimento" value="Urbana" required> Urbana</label>
+                <label class="choice"><input type="radio" name="localizacao_atendimento" value="Rural"> Rural</label>
+              </div>
+            </fieldset>
+            <div class="field span-2">
+              <label class="field-label required" for="data-matricula">Data da matrícula</label>
+              <input class="control" id="data-matricula" name="data_matricula" type="date" required>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card" id="aluno">
+          <div class="section-header">
+            <span class="section-icon">02</span>
+            <div><h2>Dados do aluno</h2><p>Na implementação, localizar primeiro um aluno já cadastrado no SIG e preencher os dados automaticamente.</p></div>
+          </div>
+          <div class="section-body grid">
+            <div class="field span-12">
+              <label class="field-label required" for="aluno-busca">Buscar aluno no SIG</label>
+              <input class="control" id="aluno-busca" name="aluno_busca" type="search" placeholder="Digite nome, CPF ou identificação do Censo" required>
+              <p class="field-help">O resultado selecionado deve fornecer o <code>aluno_id</code>; evite duplicar cadastros.</p>
+            </div>
+
+            <p class="subsection-title">Identificação</p>
+            <div class="field span-8"><label class="field-label required" for="nome">Nome completo</label><input class="control" id="nome" name="nome_completo" autocomplete="name" required></div>
+            <div class="field span-4"><label class="field-label" for="nascimento">Data de nascimento</label><input class="control" id="nascimento" name="data_nascimento" type="date"></div>
+            <div class="field span-4"><label class="field-label" for="cpf">CPF</label><input class="control" id="cpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+            <div class="field span-4"><label class="field-label" for="censo">Identificação única (Censo)</label><input class="control" id="censo" name="identificacao_censo"></div>
+            <div class="field span-4"><label class="field-label" for="rg">Carteira de identidade</label><input class="control" id="rg" name="rg"></div>
+            <div class="field span-6"><label class="field-label" for="nis">Nº de Identificação Social (NIS)</label><input class="control" id="nis" name="nis" inputmode="numeric"></div>
+            <div class="field span-6"><label class="field-label" for="certidao">Certidão de nascimento (modelo novo)</label><input class="control" id="certidao" name="certidao_nascimento"></div>
+
+            <fieldset class="choice-panel span-8">
+              <legend>Cor / raça</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="cor_raca" value="Branco"> Branco</label>
+                <label class="choice"><input type="radio" name="cor_raca" value="Pardo"> Pardo</label>
+                <label class="choice"><input type="radio" name="cor_raca" value="Preto"> Preto</label>
+                <label class="choice"><input type="radio" name="cor_raca" value="Amarelo"> Amarelo</label>
+                <label class="choice"><input type="radio" name="cor_raca" value="Indígena"> Indígena</label>
+              </div>
+            </fieldset>
+            <fieldset class="choice-panel span-4">
+              <legend>Sexo</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="sexo" value="Feminino"> Feminino</label>
+                <label class="choice"><input type="radio" name="sexo" value="Masculino"> Masculino</label>
+              </div>
+            </fieldset>
+
+            <div class="field span-7"><label class="field-label" for="cidade-nascimento">Cidade de nascimento</label><input class="control" id="cidade-nascimento" name="cidade_nascimento"></div>
+            <div class="field span-5"><label class="field-label" for="estado-nascimento">Estado de nascimento</label><select class="control" id="estado-nascimento" name="estado_nascimento"><option value="">Selecione a UF</option><option>BA</option><option>AL</option><option>ES</option><option>GO</option><option>MG</option><option>PE</option><option>RJ</option><option>SE</option><option>SP</option></select></div>
+
+            <p class="subsection-title">Família e contato</p>
+            <div class="field span-8"><label class="field-label" for="mae">Nome da mãe</label><input class="control" id="mae" name="nome_mae" autocomplete="section-mother name"></div>
+            <div class="field span-4"><label class="field-label" for="profissao-mae">Profissão</label><input class="control" id="profissao-mae" name="profissao_mae"></div>
+            <div class="field span-8"><label class="field-label" for="pai">Nome do pai</label><input class="control" id="pai" name="nome_pai" autocomplete="section-father name"></div>
+            <div class="field span-4"><label class="field-label" for="profissao-pai">Profissão</label><input class="control" id="profissao-pai" name="profissao_pai"></div>
+            <div class="field span-8"><label class="field-label" for="endereco">Endereço</label><input class="control" id="endereco" name="endereco" autocomplete="street-address"></div>
+            <fieldset class="choice-panel span-4">
+              <legend>Zona residencial</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="zona_residencial" value="Rural"> Rural</label>
+                <label class="choice"><input type="radio" name="zona_residencial" value="Urbana"> Urbana</label>
+              </div>
+            </fieldset>
+            <div class="field span-8"><label class="field-label" for="emergencia">Contato em caso de emergência</label><input class="control" id="emergencia" name="contato_emergencia" autocomplete="name"></div>
+            <div class="field span-4"><label class="field-label" for="telefone">Telefone</label><input class="control" id="telefone" name="telefone_emergencia" type="tel" autocomplete="tel" placeholder="(75) 00000-0000"></div>
+
+            <fieldset class="choice-panel span-12">
+              <legend class="required">Turno da matrícula para atendimento</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="turno_atendimento" value="Matutino" required> Matutino</label>
+                <label class="choice"><input type="radio" name="turno_atendimento" value="Vespertino"> Vespertino</label>
+              </div>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="section-card" id="escola-regular">
+          <div class="section-header">
+            <span class="section-icon">03</span>
+            <div><h2>Unidade escolar da escolarização regular</h2><p>Informe onde o aluno está matriculado no ensino regular.</p></div>
+          </div>
+          <div class="section-body grid">
+            <div class="field span-12"><label class="field-label" for="escola-regular-select">Escola municipal</label><select class="control" id="escola-regular-select" name="escola_regular_id"><option value="">Selecione a escola de origem</option></select></div>
+            <div class="field span-4"><label class="field-label" for="ano-escolarizacao">Ano de escolarização</label><input class="control" id="ano-escolarizacao" name="ano_escolarizacao" placeholder="Ex.: 5º ano"></div>
+            <div class="field span-4"><label class="field-label" for="turno-regular">Turno</label><select class="control" id="turno-regular" name="turno_regular"><option value="">Selecione</option><option>Matutino</option><option>Vespertino</option><option>Integral</option></select></div>
+            <div class="field span-4"><label class="field-label" for="turma">Turma</label><input class="control" id="turma" name="turma_regular" placeholder="Ex.: A"></div>
+            <div class="field span-6"><label class="field-label" for="professor">Professor</label><input class="control" id="professor" name="professor_regular"></div>
+            <div class="field span-6"><label class="field-label" for="gestor">Gestor</label><input class="control" id="gestor" name="gestor_regular"></div>
+          </div>
+        </section>
+
+        <section class="section-card print-page-break" id="deficiencia">
+          <div class="section-header">
+            <span class="section-icon">04</span>
+            <div><h2>Dados de deficiência</h2><p>Marque todas as condições informadas nos documentos do aluno.</p></div>
+          </div>
+          <div class="section-body grid">
+            <fieldset class="choice-panel span-12">
+              <legend>Tipo de deficiência</legend>
+              <div class="choice-grid">
+                <label class="choice"><input type="checkbox" name="deficiencias" value="baixa_visao"> Baixa visão</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="cegueira"> Cegueira</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="auditiva"> Deficiência auditiva</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="fisica"> Deficiência física</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="intelectual"> Deficiência intelectual</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="surdez"> Surdez</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="surdocegueira"> Surdocegueira</label>
+                <label class="choice"><input type="checkbox" name="deficiencias" value="multipla"> Deficiência múltipla</label>
+              </div>
+            </fieldset>
+            <fieldset class="choice-panel span-12">
+              <legend>Transtornos</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="checkbox" name="transtorno_tea" value="true"> Transtorno do espectro autista (TEA)</label>
+              </div>
+            </fieldset>
+            <div class="field span-8"><label class="field-label" for="outros-transtornos">Outros transtornos</label><input class="control" id="outros-transtornos" name="outros_transtornos" placeholder="Especifique, se houver"></div>
+            <div class="field span-4"><label class="field-label" for="cid">CID</label><input class="control" id="cid" name="cid_codigo" placeholder="Ex.: F84.0"></div>
+            <div class="field span-12"><label class="field-label" for="observacoes">Observações sobre o aluno para requerer o atendimento</label><textarea class="control" id="observacoes" name="observacoes" placeholder="Registre informações relevantes para a solicitação de atendimento..."></textarea></div>
+          </div>
+        </section>
+
+        <section class="section-card" id="assinaturas">
+          <div class="section-header">
+            <span class="section-icon">05</span>
+            <div><h2>Responsáveis e comprovante</h2><p>Assinaturas da matrícula e comprovante destacável para entrega.</p></div>
+          </div>
+          <div class="section-body">
+            <div class="signature-grid">
+              <div class="signature-box"><strong>Responsável pela matrícula</strong><p>Assinatura manual ou componente SignaturePad do SIG.</p><div class="signature-line" aria-label="Área de assinatura do responsável pela matrícula"></div></div>
+              <div class="signature-box"><strong>Responsável pelo aluno</strong><p>Assinatura manual ou componente SignaturePad do SIG.</p><div class="signature-line" aria-label="Área de assinatura do responsável pelo aluno"></div></div>
+            </div>
+
+            <div class="receipt">
+              <h3 class="receipt-title">Comprovante de matrícula</h3>
+              <div class="grid">
+                <div class="field span-12"><label class="field-label" for="comprovante-unidade">Unidade escolar de atendimento</label><input class="control" id="comprovante-unidade" name="comprovante_unidade" readonly placeholder="Preenchido automaticamente pela unidade selecionada"></div>
+                <div class="field span-8"><label class="field-label" for="comprovante-nome">Nome completo</label><input class="control" id="comprovante-nome" name="comprovante_nome" readonly placeholder="Preenchido automaticamente pelo aluno selecionado"></div>
+                <div class="field span-2"><label class="field-label" for="comprovante-turno">Turno</label><input class="control" id="comprovante-turno" name="comprovante_turno" readonly></div>
+                <div class="field span-2"><label class="field-label" for="comprovante-data">Data</label><input class="control" id="comprovante-data" name="comprovante_data" readonly></div>
+                <div class="signature-box span-12"><strong>Responsável pela matrícula</strong><div class="signature-line" aria-label="Área de assinatura do comprovante"></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="form-footer no-print">
+          <div class="privacy-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Dados pessoais e clínicos: aplicar permissões, RLS e tratamento compatível com a LGPD.</span>
+          </div>
+          <div class="footer-actions">
+            <button class="button" type="reset">Limpar</button>
+            <button class="button button-primary" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+              Salvar matrícula
+            </button>
+          </div>
+        </footer>
+      </form>
+    </main>
+  </div>
+</body>
+</html>
