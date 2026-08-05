@@ -38,11 +38,14 @@ export default function PacientesPage() {
       setCarregando(true)
       const supabase = createClient()
       try {
+        const { selectedEscola } = useSchoolStore.getState()
+        const isEmaeeUnit = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
+
         let query = supabase
           .from('emaee_matriculas')
           .select(`
             *,
-            alunos!inner (
+            alunos (
               nome,
               foto_url,
               foto_avatar_path,
@@ -56,7 +59,7 @@ export default function PacientesPage() {
           `)
           .is('deleted_at', null)
 
-        if (escolaAtivaId) {
+        if (escolaAtivaId && isEmaeeUnit) {
           query = query.eq('escola_atendimento_id', escolaAtivaId)
         }
 
