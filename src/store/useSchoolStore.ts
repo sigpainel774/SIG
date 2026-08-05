@@ -20,6 +20,8 @@ export interface Escola {
   tipo?: string | null
   inep?: string | null
   localizacao?: string | null
+  created_at?: string | null
+  deleted_at?: string | null
   secretarias?: {
     id: string
     nome: string

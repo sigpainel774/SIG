@@ -80,6 +80,7 @@ export default function FuncionariosPage() {
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
   const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
+  const isEmaee = selectedEscola?.tipo === 'EMAEE' || false
   const { isEditMode } = useEditModeStore()
   const isAdmin = isAdminGlobalOrRoot()
   const isDir = isDiretor()
@@ -95,7 +96,7 @@ export default function FuncionariosPage() {
   const [busca, setBusca] = useState('')
   const [filtroCargo, setFiltroCargo] = useState('todos')
   const [filtroStatus, setFiltroStatus] = useState('todos')
-  const [filtroModalidade, setFiltroModalidade] = useState<string>(isSaude ? 'todos' : 'regular')
+  const [filtroModalidade, setFiltroModalidade] = useState<string>(isSaude || isEmaee ? 'todos' : 'regular')
 
   /* Modais */
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
@@ -639,7 +640,8 @@ export default function FuncionariosPage() {
         </div>
 
         {/* Toggle Triplo de Modalidade ou Vínculo */}
-        <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto overflow-x-auto max-w-full">
+        {!isEmaee && (
+          <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setFiltroModalidade('todos')}
@@ -716,7 +718,8 @@ export default function FuncionariosPage() {
               </button>
             </>
           )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── Painel de Ações Rápidas ─────────────────────────── */}

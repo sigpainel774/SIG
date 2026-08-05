@@ -339,69 +339,135 @@ export default function RelatoriosPage() {
         }
         const supabase = createClient()
         try {
-          let query = supabase
-            .from('alunos')
-            .select(`
-              id,
-              nome,
-              foto_url,
-              foto_avatar_path,
-              foto_visualizacao_path,
-              foto_updated_at,
-              latitude,
-              longitude,
-              escola_id,
-              turma_id,
-              serie,
-              modalidade_mat:dados_matricula->>modalidade,
-              etapa_mat:dados_matricula->>etapa,
-              escolas (nome),
-              turmas (nome)
-            `)
-            .is('deleted_at', null)
-            .not('latitude', 'is', null)
-            .not('longitude', 'is', null)
+          const isEmaee = selectedEscola?.tipo === 'EMAEE'
+          let mapped: any[] = []
 
-          if (selectedEscola) {
-            query = query.eq('escola_id', selectedEscola.id)
+          if (isEmaee) {
+            const { data, error } = await supabase
+              .from('emaee_matriculas')
+              .select(`
+                id,
+                status,
+                localizacao_atendimento,
+                ano_escolarizacao,
+                alunos!inner (
+                  id,
+                  nome,
+                  foto_url,
+                  foto_avatar_path,
+                  foto_visualizacao_path,
+                  foto_updated_at,
+                  latitude,
+                  longitude,
+                  dados_matricula
+                ),
+                escolas:escola_regular_id (
+                  nome
+                )
+              `)
+              .eq('escola_atendimento_id', selectedEscola.id)
+              .eq('status', 'ATIVO')
+              .is('deleted_at', null)
+
+            if (error) throw error
+
+            if (data && active) {
+              mapped = (data as any[])
+                .filter(m => 
+                  m.alunos?.latitude != null && 
+                  m.alunos?.longitude != null &&
+                  Number(m.alunos.latitude) !== 0 && 
+                  Number(m.alunos.longitude) !== 0 && 
+                  !isNaN(Number(m.alunos.latitude)) && 
+                  !isNaN(Number(m.alunos.longitude))
+                )
+                .map((m) => {
+                  const a = m.alunos
+                  const dm = a.dados_matricula || {}
+                  return {
+                    id: a.id,
+                    nome: a.nome,
+                    foto_url: getAvatarUrl(a) || a.foto_url,
+                    foto_avatar_path: a.foto_avatar_path,
+                    foto_visualizacao_path: a.foto_visualizacao_path,
+                    foto_updated_at: a.foto_updated_at,
+                    escola: m.escolas?.nome ?? 'Sem Escola Regular',
+                    turma: m.ano_escolarizacao || undefined,
+                    latitude: Number(a.latitude),
+                    longitude: Number(a.longitude),
+                    modalidade: 'Regular',
+                    cidade: dm.cidadeEndAluno || 'Sapeaçu',
+                    zona: dm.localizacaoAluno || m.localizacao_atendimento || 'Zona Urbana'
+                  }
+                })
+            }
+          } else {
+            let query = supabase
+              .from('alunos')
+              .select(`
+                id,
+                nome,
+                foto_url,
+                foto_avatar_path,
+                foto_visualizacao_path,
+                foto_updated_at,
+                latitude,
+                longitude,
+                escola_id,
+                turma_id,
+                serie,
+                modalidade_mat:dados_matricula->>modalidade,
+                etapa_mat:dados_matricula->>etapa,
+                escolas (nome),
+                turmas (nome)
+              `)
+              .is('deleted_at', null)
+              .not('latitude', 'is', null)
+              .not('longitude', 'is', null)
+
+            if (selectedEscola) {
+              query = query.eq('escola_id', selectedEscola.id)
+            }
+
+            const { data, error } = await query
+            if (error) throw error
+
+            if (data && active) {
+              mapped = (data as any[])
+                .filter(a => 
+                  Number(a.latitude) !== 0 && 
+                  Number(a.longitude) !== 0 && 
+                  !isNaN(Number(a.latitude)) && 
+                  !isNaN(Number(a.longitude))
+                )
+                .map((a) => {
+                  const turmaNome = (a.turmas as any)?.nome ?? ''
+                  const serieNome = a.serie ?? ''
+                  const matMod = a.modalidade_mat || a.etapa_mat || ''
+
+                  const isEJA = 
+                    turmaNome.toUpperCase().includes('EJA') ||
+                    serieNome.toUpperCase().includes('EJA') ||
+                    String(matMod).toUpperCase().includes('EJA')
+
+                  return {
+                    id: a.id,
+                    nome: a.nome,
+                    foto_url: getAvatarUrl(a) || a.foto_url,
+                    foto_avatar_path: a.foto_avatar_path,
+                    foto_visualizacao_path: a.foto_visualizacao_path,
+                    foto_updated_at: a.foto_updated_at,
+                    escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
+                    turma: turmaNome || undefined,
+                    latitude: Number(a.latitude),
+                    longitude: Number(a.longitude),
+                    modalidade: isEJA ? 'EJA' : 'Regular'
+                  }
+                })
+            }
           }
 
-          const { data, error } = await query
-          if (error) throw error
-
-          if (data && active) {
-            const anyData = data as any[]
-            const mapped = anyData
-              .filter(a => 
-                Number(a.latitude) !== 0 && 
-                Number(a.longitude) !== 0 && 
-                !isNaN(Number(a.latitude)) && 
-                !isNaN(Number(a.longitude))
-              )
-              .map((a) => {
-                const turmaNome = (a.turmas as any)?.nome ?? ''
-                const serieNome = a.serie ?? ''
-                const matMod = a.modalidade_mat || a.etapa_mat || ''
-
-                const isEJA = 
-                  turmaNome.toUpperCase().includes('EJA') ||
-                  serieNome.toUpperCase().includes('EJA') ||
-                  String(matMod).toUpperCase().includes('EJA')
-
-                return {
-                  id: a.id,
-                  nome: a.nome,
-                  foto_url: getAvatarUrl(a) || a.foto_url,
-                  foto_avatar_path: a.foto_avatar_path,
-                  foto_visualizacao_path: a.foto_visualizacao_path,
-                  foto_updated_at: a.foto_updated_at,
-                  escola: (a.escolas as any)?.nome ?? 'Escola Não Informada',
-                  turma: turmaNome || undefined,
-                  latitude: Number(a.latitude),
-                  longitude: Number(a.longitude),
-                  modalidade: isEJA ? 'EJA' : 'Regular'
-                }
-              })
+          if (active) {
             setMapDataAlunos(mapped)
             preloadFotos(mapped.map(a => a.foto_url).filter(Boolean))
             try {

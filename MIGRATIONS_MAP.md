@@ -80,3 +80,5 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 
 | 61 | `20260803223000_comunicados_isolamento_secretaria.sql` | 2026-08-03 | Cria tabela comunicados_lidos, adiciona secretaria_id em comunicados e atualiza RPC get_birthdays_of_month para filtrar por secretaria_id. | public.comunicados_lidos, public.comunicados | Isolamento de Contexto |
 | 62 | `20260804000000_create_emaee_schema.sql` | 2026-08-04 | Cria as tabelas específicas para a matrícula clínica e prontuários do EMAEE, vinculando especialidades, evoluções diárias de saúde, RLS e solicitações pedagógicas às escolas da rede municipal. | `emaee_matriculas`, `emaee_especialidades_vinculadas`, `emaee_evolucoes`, `emaee_solicitacoes_relatorios` | `dev_all_authenticated` |
+| 63 | `20260805000000_fix_birthdays_rpc_escola.sql` | 2026-08-05 | Atualiza a RPC get_birthdays_of_month para permitir filtragem opcional por escola_id (incluindo tratamento de matrículas ativas no EMAEE). | public.get_birthdays_of_month | Mantém RLS Existente |
+
