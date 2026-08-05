@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
 
 export default function PacienteDetalhesPage() {
   const params = useParams()
@@ -38,14 +39,6 @@ export default function PacienteDetalhesPage() {
   // Estados de Evolução
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
-  const [modalNovaEvolucao, setModalNovaEvolucao] = useState(false)
-  
-  const [novaEvolucao, setNovaEvolucao] = useState({
-    resumo_evolucao: '',
-    conduta_orientacoes: '',
-    especialidade: '',
-    tipo_atendimento: 'EVOLUCAO_ROTINA'
-  })
 
   // Estados de Especialidades
   const [especialidades, setEspecialidades] = useState<any[]>([])
@@ -188,42 +181,7 @@ export default function PacienteDetalhesPage() {
     }
   }, [id, activeTab])
 
-  const salvarEvolucao = async () => {
-    if (!novaEvolucao.resumo_evolucao.trim()) {
-      toast.error('Preencha o resumo da evolução')
-      return
-    }
-    if (!funcionario?.id) {
-      toast.error('Profissional de saúde não autenticado')
-      return
-    }
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.from('emaee_evolucoes').insert({
-        emaee_matricula_id: id,
-        profissional_id: funcionario.id,
-        especialidade: novaEvolucao.especialidade || funcionario.cargo || 'Especialista',
-        tipo_atendimento: novaEvolucao.tipo_atendimento,
-        resumo_evolucao: novaEvolucao.resumo_evolucao,
-        conduta_orientacoes: novaEvolucao.conduta_orientacoes,
-        data_atendimento: new Date().toISOString().split('T')[0]
-      })
 
-      if (error) throw error
-      toast.success('Evolução clínica registrada com sucesso!')
-      setModalNovaEvolucao(false)
-      setNovaEvolucao({
-        resumo_evolucao: '',
-        conduta_orientacoes: '',
-        especialidade: '',
-        tipo_atendimento: 'EVOLUCAO_ROTINA'
-      })
-      carregarEvolucoes()
-    } catch (err) {
-      console.error('Erro ao salvar evolução:', err)
-      toast.error('Erro ao registrar evolução')
-    }
-  }
 
   const solicitarRelatorioEscola = async () => {
     if (!novaSolicitacao.motivo_solicitacao.trim()) {
@@ -403,9 +361,15 @@ export default function PacienteDetalhesPage() {
                   <h3 className="text-base font-bold text-foreground">Histórico de Atendimento e Evolução</h3>
                   <p className="text-xs text-muted-foreground">Evoluções clínicas chanceladas pelos especialistas</p>
                 </div>
-                <Button onClick={() => setModalNovaEvolucao(true)} className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
-                  <Plus className="w-4 h-4" /> Evolução de Sessão
-                </Button>
+                <ModalEvolucaoEmaee
+                  matriculaEmaeeId={id}
+                  onSuccess={carregarEvolucoes}
+                  trigger={
+                    <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
+                      <Plus className="w-4 h-4" /> Evolução de Sessão
+                    </Button>
+                  }
+                />
               </div>
 
               {loadingEvolucoes ? (
@@ -535,65 +499,6 @@ export default function PacienteDetalhesPage() {
         </div>
       </div>
 
-      {/* Modal Nova Evolução */}
-      <StandardDialog
-        open={modalNovaEvolucao}
-        onOpenChange={setModalNovaEvolucao}
-        title="Registrar Nova Evolução Clínica"
-      >
-        <div className="space-y-4 text-xs">
-          <div>
-            <label className="text-muted-foreground block mb-1 font-bold">Tipo de Atendimento</label>
-            <select
-              value={novaEvolucao.tipo_atendimento}
-              onChange={(e) => setNovaEvolucao({ ...novaEvolucao, tipo_atendimento: e.target.value })}
-              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none font-semibold"
-            >
-              <option value="EVOLUCAO_ROTINA">Evolução de Rotina / Sessão</option>
-              <option value="AVALIACAO_INICIAL">Avaliação Inicial / Triagem</option>
-              <option value="PARECER">Parecer Técnico / Clínico</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-muted-foreground block mb-1 font-bold">Especialidade / Função</label>
-            <input
-              type="text"
-              placeholder={funcionario?.cargo || 'Ex: Psicóloga'}
-              value={novaEvolucao.especialidade}
-              onChange={(e) => setNovaEvolucao({ ...novaEvolucao, especialidade: e.target.value })}
-              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-muted-foreground block mb-1 font-bold">Evolução da Sessão / Observações</label>
-            <textarea
-              rows={4}
-              placeholder="Descreva detalhadamente a evolução e comportamento do paciente na sessão..."
-              value={novaEvolucao.resumo_evolucao}
-              onChange={(e) => setNovaEvolucao({ ...novaEvolucao, resumo_evolucao: e.target.value })}
-              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-muted-foreground block mb-1 font-bold">Conduta e Próximos Passos</label>
-            <input
-              type="text"
-              placeholder="Ex: Manter conduta semanal; encaminhar para neurologista..."
-              value={novaEvolucao.conduta_orientacoes}
-              onChange={(e) => setNovaEvolucao({ ...novaEvolucao, conduta_orientacoes: e.target.value })}
-              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setModalNovaEvolucao(false)}>Cancelar</Button>
-            <Button onClick={salvarEvolucao} className="bg-primary hover:bg-hoverCustom text-white">Chancelar & Salvar</Button>
-          </div>
-        </div>
-      </StandardDialog>
 
       {/* Modal Solicitar Relatório Escola */}
       <StandardDialog

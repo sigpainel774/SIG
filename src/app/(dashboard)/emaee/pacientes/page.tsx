@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { ModalMatriculaEmaee } from '@/components/modals/modal-matricula-emaee'
 
 export default function PacientesPage() {
   const { escolaAtivaId } = useAuthStore()
@@ -29,6 +30,7 @@ export default function PacientesPage() {
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroZona, setFiltroZona] = useState('todos')
+  const [refreshKey, setRefreshKey] = useState(0) // Adicionado refreshKey
 
   useEffect(() => {
     let isMounted = true
@@ -77,7 +79,7 @@ export default function PacientesPage() {
     return () => {
       isMounted = false
     }
-  }, [escolaAtivaId])
+  }, [escolaAtivaId, refreshKey])
 
   const prontuariosFiltrados = prontuarios.filter(p => {
     const nomeAluno = (p.alunos?.nome || '').toLowerCase()
@@ -106,11 +108,23 @@ export default function PacientesPage() {
           </div>
         </div>
 
-        <Link href="/emaee/fila-espera">
-          <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2.5 shadow-md">
-            <Plus className="w-4 h-4" /> Admitir da Fila de Espera
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/emaee/fila-espera">
+            <Button variant="outline" className="border-border text-foreground hover:bg-hoverCustom rounded-xl gap-2 font-semibold text-xs py-2.5 shadow-sm">
+              Fila de Espera
+            </Button>
+          </Link>
+          
+          <ModalMatriculaEmaee 
+            escolaEmaeeId={escolaAtivaId || ''} 
+            onSuccess={() => setRefreshKey(prev => prev + 1)}
+            trigger={
+              <Button className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] rounded-xl gap-2 font-bold text-xs py-2.5 shadow-md">
+                <Plus className="w-4 h-4" /> Nova Matrícula EMAEE
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {/* Filtros */}
