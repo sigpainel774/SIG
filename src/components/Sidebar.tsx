@@ -25,7 +25,11 @@ import {
   FileBadge,
   Fingerprint,
   Activity,
-  Stethoscope
+  Stethoscope,
+  Heart,
+  Clock,
+  UserPlus,
+  FileSpreadsheet
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -54,8 +58,9 @@ export function Sidebar() {
   const [showSchoolWarningModal, setShowSchoolWarningModal] = useState(false)
 
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || selectedEscola?.secretarias?.nome || ''
-  const isEducacao = (!selectedEscola && !selectedSecretaria) || !secNome || /educa/i.test(secNome)
-  const isSaude = !isEducacao && /sa[uú]de/i.test(secNome)
+  const isEMAEE = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
+  const isEducacao = !isEMAEE && ((!selectedEscola && !selectedSecretaria) || !secNome || /educa/i.test(secNome))
+  const isSaude = !isEMAEE && (!isEducacao && /sa[uú]de/i.test(secNome))
 
   const handleLogout = async () => {
     closeMobile()
@@ -93,7 +98,34 @@ export function Sidebar() {
   type MenuItem = { href: string; label: string; icon: React.ElementType }
   type MenuGroup = { label: string | null; items: MenuItem[] }
 
-  const menuGroups: MenuGroup[] = isEducacao
+  const menuGroups: MenuGroup[] = isEMAEE
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+            { href: '/mural', label: 'Mural de Avisos', icon: Pin },
+          ]
+        },
+        {
+          label: 'ATENDIMENTO MULTIDISCIPLINAR',
+          items: [
+            { href: '/emaee/pacientes', label: 'Pastas de Alunos / Saúde', icon: Heart },
+            { href: '/emaee/fila-espera', label: 'Fila de Espera & Admissão', icon: Clock },
+            { href: '/emaee/vincular-profissionais', label: 'Vincular Especialistas', icon: UserPlus },
+            { href: '/emaee/solicitacoes-escola', label: 'Relatórios das Escolas', icon: FileSpreadsheet },
+          ]
+        },
+        {
+          label: 'EQUIPE & GESTÃO',
+          items: [
+            { href: '/funcionarios', label: 'Equipe de Saúde', icon: Stethoscope },
+            { href: '/relatorios', label: 'Relatórios & Mapas', icon: FileBarChart },
+            { href: '/arquivos', label: 'Arquivo Geral de Laudos', icon: Archive },
+          ]
+        }
+      ]
+    : isEducacao
     ? [
         {
           label: null,
