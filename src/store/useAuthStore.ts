@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { Database } from '@/types/supabase';
+import { useSchoolStore } from './useSchoolStore';
+import { limparCacheIndexedDB } from '@/lib/swr/indexedDBCache';
+import { mutate } from 'swr';
 
 type Funcionario = Database['public']['Tables']['funcionarios']['Row'];
 type AcessoUsuario = Database['public']['Tables']['acessos_usuarios']['Row'];
@@ -37,7 +40,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setEscolaAtivaId: (escolaAtivaId) => {
     if (get().escolaAtivaId === escolaAtivaId) return
     set({ escolaAtivaId })
-    const { useSchoolStore } = require('./useSchoolStore')
     useSchoolStore.getState().selectEscolaById(escolaAtivaId)
   },
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
@@ -47,12 +49,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Expurgo profundo de caches autenticados no navegador
     if (typeof window !== 'undefined') {
       try {
-        const { limparCacheIndexedDB } = require('@/lib/swr/indexedDBCache')
         await limparCacheIndexedDB().catch(() => {})
       } catch (e) {}
 
       try {
-        const { mutate } = require('swr')
         mutate(() => true, undefined, { revalidate: false }).catch(() => {})
       } catch (e) {}
 
