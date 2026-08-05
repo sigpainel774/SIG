@@ -68,7 +68,7 @@ export function EmpregoTab() {
               </option>
             ))}
             {/* Fallback para cargos antigos não listados no banco */}
-            {cargo && !cargos.some(c => c.nome === cargo) && cargo !== 'Outro' && (
+            {!!cargo && !cargos.some(c => c.nome === cargo) && cargo !== 'Outro' && (
               <option value={cargo}>{cargo}</option>
             )}
             <option value="Outro">Outro (especificar)</option>
