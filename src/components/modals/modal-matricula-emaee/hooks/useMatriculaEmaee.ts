@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
@@ -9,10 +9,37 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [searchLoading, setSearchLoading] = useState(false)
   const [alunosEncontrados, setAlunosEncontrados] = useState<AlunoSearchData[]>([])
   
-  // Dados Selecionados
-  const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSearchData | null>(null)
+  // 1. Dados do Atendimento
+  const [escolaAtendimentoId, setEscolaAtendimentoId] = useState(props.escolaEmaeeId || '')
+  const [localizacaoAtendimento, setLocalizacaoAtendimento] = useState('Urbana')
+  const [dataMatricula, setDataMatricula] = useState(() => new Date().toISOString().split('T')[0])
   
-  // Escolarização Regular
+  // 2. Dados do Aluno Selecionado e Edição
+  const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSearchData | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  const [nomeCompleto, setNomeCompleto] = useState('')
+  const [dataNascimento, setDataNascimento] = useState('')
+  const [cpf, setCpf] = useState('')
+  const [identificacaoCenso, setIdentificacaoCenso] = useState('')
+  const [rg, setRg] = useState('')
+  const [nis, setNis] = useState('')
+  const [certidaoNascimento, setCertidaoNascimento] = useState('')
+  const [corRaca, setCorRaca] = useState('')
+  const [sexo, setSexo] = useState('')
+  const [cidadeNascimento, setCidadeNascimento] = useState('')
+  const [estadoNascimento, setEstadoNascimento] = useState('')
+  const [nomeMae, setNomeMae] = useState('')
+  const [profissaoMae, setProfissaoMae] = useState('')
+  const [nomePai, setNomePai] = useState('')
+  const [profissaoPai, setProfissaoPai] = useState('')
+  const [endereco, setEndereco] = useState('')
+  const [zonaResidencial, setZonaResidencial] = useState('Urbana')
+  const [contatoEmergencia, setContatoEmergencia] = useState('')
+  const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
+  const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
+
+  // 3. Escola Regular
   const [escolaRegularId, setEscolaRegularId] = useState<string>('')
   const [anoEscolarizacao, setAnoEscolarizacao] = useState('')
   const [turnoRegular, setTurnoRegular] = useState('')
@@ -20,14 +47,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [professorRegular, setProfessorRegular] = useState('')
   const [gestorRegular, setGestorRegular] = useState('')
   
-  // Dados de Matrícula (EMAEE)
-  const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
-  const [localizacaoAtendimento, setLocalizacaoAtendimento] = useState('Urbana')
-  const [principalQueixa, setPrincipalQueixa] = useState('')
+  // 4. Dados Clínicos e Deficiências
   const [cidCodigo, setCidCodigo] = useState('')
+  const [outrosTranstornos, setOutrosTranstornos] = useState('')
   const [observacoes, setObservacoes] = useState('')
   
-  // Deficiências e Transtornos
   const [deficiencias, setDeficiencias] = useState({
     def_baixa_visao: false,
     def_cegueira: false,
@@ -40,53 +64,78 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_tea: false,
     transtorno_outros: false,
   })
-  
-  // Profissionais Vinculados
-  const [profissionaisSelecionados, setProfissionaisSelecionados] = useState<{
-    profissional_id: string;
-    especialidade: string;
-    frequencia: string;
-  }[]>([])
-  
-  // Lista de Escolas Regulares e Profissionais da EMAEE
-  const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
-  const [profissionaisAEE, setProfissionaisAEE] = useState<any[]>([])
 
-  // Busca inicial
-  React.useEffect(() => {
+  // Listas de apoio
+  const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
+  const [unidadesEmaee, setUnidadesEmaee] = useState<{id: string, nome: string}[]>([])
+
+  // Sincroniza unidade EMAEE selecionada
+  useEffect(() => {
+    if (props.escolaEmaeeId) {
+      setEscolaAtendimentoId(props.escolaEmaeeId)
+    }
+  }, [props.escolaEmaeeId])
+
+  // Carga das escolas no modal
+  useEffect(() => {
     let isMounted = true
     async function fetchData() {
-      // 1. Busca escolas regulares
-      const { data: escolasData } = await supabase
-        .from('escolas')
-        .select('id, nome')
-        .eq('ativo', true)
-        .order('nome')
-      if (escolasData && isMounted) setEscolas(escolasData)
-
-      // 2. Busca profissionais desta EMAEE
-      if (props.escolaEmaeeId) {
-        const { data: profData } = await supabase
-          .from('funcionarios')
-          .select(`
-            id, nome, cargo, foto_avatar_path,
-            vinculos_funcionarios!inner(escola_id, ativo)
-          `)
-          .eq('vinculos_funcionarios.escola_id', props.escolaEmaeeId)
-          .eq('vinculos_funcionarios.ativo', true)
-          .is('deleted_at', null)
+      try {
+        const { data: escolasData } = await supabase
+          .from('escolas')
+          .select('id, nome, tipo')
+          .eq('ativo', true)
           .order('nome')
-        
-        if (profData && isMounted) setProfissionaisAEE(profData)
+          
+        if (escolasData && isMounted) {
+          setEscolas(escolasData)
+          const emaeeList = escolasData.filter(e => e.tipo === 'EMAEE' || /emaee/i.test(e.nome))
+          setUnidadesEmaee(emaeeList.length > 0 ? emaeeList : escolasData)
+          if (!escolaAtendimentoId && emaeeList.length > 0) {
+            setEscolaAtendimentoId(emaeeList[0].id)
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar escolas:', err)
       }
     }
     if (isOpen) {
       fetchData()
     }
     return () => { isMounted = false }
-  }, [isOpen, props.escolaEmaeeId, supabase])
+  }, [isOpen, supabase, escolaAtendimentoId])
 
+  // Preenchimento dos campos ao selecionar aluno
+  const handleSelectAluno = (aluno: AlunoSearchData) => {
+    setAlunoSelecionado(aluno)
+    setAlunosEncontrados([])
+    setSearchTerm(aluno.nome)
+    
+    // Auto-preenchimento
+    setNomeCompleto(aluno.nome ?? '')
+    setDataNascimento(aluno.data_nascimento ?? '')
+    setCpf(aluno.cpf ?? '')
+    setIdentificacaoCenso(aluno.identif_unica_censo ?? '')
+    setRg(aluno.rg ?? '')
+    setNis(aluno.nis ?? '')
+    setCertidaoNascimento(aluno.certidao_nascimento ?? '')
+    setCorRaca(aluno.cor_raca ?? '')
+    setSexo(aluno.sexo ?? '')
+    setCidadeNascimento(aluno.municipio_nascimento ?? '')
+    setEstadoNascimento(aluno.uf_nascimento ?? 'BA')
+    setNomeMae(aluno.nome_mae ?? '')
+    setProfissaoMae(aluno.profissao_mae ?? '')
+    setNomePai(aluno.nome_pai ?? '')
+    setProfissaoPai(aluno.profissao_pai ?? '')
+    setEndereco(aluno.endereco ?? '')
+    setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
+    setContatoEmergencia(aluno.nome_contato_emergencia ?? '')
+    setTelefoneEmergencia(aluno.telefone ?? '')
+  }
+
+  // Busca de alunos com debounce e cancelamento
   const handleSearchAluno = async (term: string) => {
+    setSearchTerm(term)
     if (!term || term.length < 3) {
       setAlunosEncontrados([])
       return
@@ -94,35 +143,48 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     
     setSearchLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('alunos')
         .select(`
-          id, nome, cpf, data_nascimento, certidao_nascimento,
-          nome_mae, nome_pai, endereco, sexo, dados_matricula
-        `)
+          id, nome, cpf, rg, nis, data_nascimento, certidao_nascimento,
+          certidao_nascimento_novo_modelo, identif_unica_censo,
+          nome_mae, profissao_mae, nome_pai, profissao_pai, endereco,
+          sexo, dados_matricula, uf_nascimento, municipio_nascimento,
+          zona_residencial, nome_contato_emergencia, telefone
+        `) as any)
         .ilike('nome', `%${term}%`)
         .is('deleted_at', null)
         .limit(10)
         
       if (error) throw error
       
-      const mapped = data.map(a => ({
+      const mapped: AlunoSearchData[] = (data || []).map((a: any) => ({
         id: a.id,
         nome: a.nome,
         cpf: a.cpf,
+        rg: a.rg,
+        nis: a.nis,
+        identif_unica_censo: a.identif_unica_censo || null,
         data_nascimento: a.data_nascimento,
-        certidao_nascimento: a.certidao_nascimento,
+        certidao_nascimento: a.certidao_nascimento_novo_modelo || a.certidao_nascimento,
         nome_mae: a.nome_mae,
+        profissao_mae: a.profissao_mae || null,
         nome_pai: a.nome_pai,
+        profissao_pai: a.profissao_pai || null,
         endereco: a.endereco,
         sexo: a.sexo,
-        cor_raca: (a.dados_matricula as any)?.cor_raca || null
+        cor_raca: (a.dados_matricula as any)?.cor_raca || null,
+        uf_nascimento: a.uf_nascimento || null,
+        municipio_nascimento: a.municipio_nascimento || null,
+        zona_residencial: a.zona_residencial || 'Urbana',
+        nome_contato_emergencia: a.nome_contato_emergencia || null,
+        telefone: a.telefone || null
       }))
       
       setAlunosEncontrados(mapped)
     } catch (err) {
-      console.error(err)
-      toast.error('Erro ao buscar alunos')
+      console.error('Erro na busca de alunos:', err)
+      toast.error('Erro ao pesquisar alunos no SIG')
     } finally {
       setSearchLoading(false)
     }
@@ -132,73 +194,83 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setDeficiencias(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
-  const toggleProfissional = (profissionalId: string, cargo: string) => {
-    setProfissionaisSelecionados(prev => {
-      const exists = prev.find(p => p.profissional_id === profissionalId)
-      if (exists) return prev.filter(p => p.profissional_id !== profissionalId)
-      return [...prev, { profissional_id: profissionalId, especialidade: cargo || 'Outros', frequencia: 'SEMANAL' }]
-    })
-  }
-
-  const updateFrequenciaProfissional = (profissionalId: string, freq: string) => {
-    setProfissionaisSelecionados(prev => prev.map(p => 
-      p.profissional_id === profissionalId ? { ...p, frequencia: freq } : p
-    ))
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!alunoSelecionado) {
-      toast.error('Selecione um aluno primeiro')
+    
+    if (!alunoSelecionado?.id) {
+      toast.error('Localize e selecione um aluno cadastrado no SIG')
+      return
+    }
+
+    if (!escolaAtendimentoId) {
+      toast.error('Selecione a unidade de atendimento EMAEE')
       return
     }
 
     setLoading(true)
     try {
-      // 1. Inserir matrícula
-      const { data: matricula, error: matriculaError } = await supabase
+      // 1. Atualizar dados do aluno se houver modificações
+      const updatePayload: any = {
+        nome: nomeCompleto || alunoSelecionado.nome,
+        cpf: cpf || null,
+        rg: rg || null,
+        nis: nis || null,
+        identif_unica_censo: identificacaoCenso || null,
+        data_nascimento: dataNascimento || null,
+        certidao_nascimento_novo_modelo: certidaoNascimento || null,
+        sexo: sexo || null,
+        uf_nascimento: estadoNascimento || null,
+        municipio_nascimento: cidadeNascimento || null,
+        nome_mae: nomeMae || null,
+        profissao_mae: profissaoMae || null,
+        nome_pai: nomePai || null,
+        profissao_pai: profissaoPai || null,
+        endereco: endereco || null,
+        zona_residencial: zonaResidencial || 'Urbana',
+        nome_contato_emergencia: contatoEmergencia || null,
+        telefone: telefoneEmergencia || null,
+      }
+
+      const { error: alunoUpdateError } = await (supabase
+        .from('alunos')
+        .update(updatePayload) as any)
+        .eq('id', alunoSelecionado.id)
+
+      if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
+
+      // 2. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro ES-1)
+      const validEscolaAtendimento = escolaAtendimentoId.trim() ? escolaAtendimentoId.trim() : props.escolaEmaeeId
+      const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
+
+      const insertPayload: any = {
+        aluno_id: alunoSelecionado.id,
+        escola_atendimento_id: validEscolaAtendimento,
+        data_matricula: dataMatricula,
+        turno_atendimento: turnoAtendimento,
+        localizacao_atendimento: localizacaoAtendimento,
+        escola_regular_id: validEscolaRegular,
+        ano_escolarizacao: anoEscolarizacao || null,
+        turno_regular: turnoRegular || null,
+        turma_regular: turmaRegular || null,
+        professor_regular: professorRegular || null,
+        gestor_regular: gestorRegular || null,
+        principal_queixa: observacoes || null,
+        cid_codigo: cidCodigo || null,
+        outros_transtornos: outrosTranstornos || null,
+        observacoes_requerimento: observacoes || null,
+        ...deficiencias,
+        status: 'FILA_ESPERA'
+      }
+
+      const { data: matricula, error: matriculaError } = await (supabase
         .from('emaee_matriculas')
-        .insert({
-          aluno_id: alunoSelecionado.id,
-          escola_atendimento_id: props.escolaEmaeeId,
-          turno_atendimento: turnoAtendimento,
-          localizacao_atendimento: localizacaoAtendimento,
-          escola_regular_id: escolaRegularId || null,
-          ano_escolarizacao: anoEscolarizacao || null,
-          turno_regular: turnoRegular || null,
-          turma_regular: turmaRegular || null,
-          professor_regular: professorRegular || null,
-          gestor_regular: gestorRegular || null,
-          principal_queixa: principalQueixa || null,
-          cid_codigo: cidCodigo || null,
-          observacoes_requerimento: observacoes || null,
-          ...deficiencias,
-          status: 'FILA_ESPERA'
-        })
+        .insert(insertPayload) as any)
         .select('id')
         .single()
 
       if (matriculaError) throw matriculaError
 
-      // 2. Inserir especialidades se houver
-      if (profissionaisSelecionados.length > 0) {
-        const specsToInsert = profissionaisSelecionados.map(p => ({
-          emaee_matricula_id: matricula.id,
-          profissional_id: p.profissional_id,
-          especialidade: p.especialidade,
-          frequencia: p.frequencia,
-          dia_semana: 1, // Default
-          horario_inicio: '08:00:00'
-        }))
-
-        const { error: specError } = await supabase
-          .from('emaee_especialidades_vinculadas')
-          .insert(specsToInsert)
-
-        if (specError) throw specError
-      }
-
-      toast.success('Matrícula registrada com sucesso! Paciente na Fila de Espera.')
+      toast.success('Ficha de Matrícula AEE 2026 salva com sucesso!')
       if (props.onSuccess) props.onSuccess()
       setIsOpen(false)
     } catch (err: any) {
@@ -214,9 +286,40 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     searchLoading,
     alunosEncontrados,
     alunoSelecionado,
-    setAlunoSelecionado,
+    handleSelectAluno,
     handleSearchAluno,
+    searchTerm,
+    setSearchTerm,
     
+    // Atendimento
+    escolaAtendimentoId, setEscolaAtendimentoId,
+    localizacaoAtendimento, setLocalizacaoAtendimento,
+    dataMatricula, setDataMatricula,
+    unidadesEmaee,
+
+    // Identificação do Aluno
+    nomeCompleto, setNomeCompleto,
+    dataNascimento, setDataNascimento,
+    cpf, setCpf,
+    identificacaoCenso, setIdentificacaoCenso,
+    rg, setRg,
+    nis, setNis,
+    certidaoNascimento, setCertidaoNascimento,
+    corRaca, setCorRaca,
+    sexo, setSexo,
+    cidadeNascimento, setCidadeNascimento,
+    estadoNascimento, setEstadoNascimento,
+    nomeMae, setNomeMae,
+    profissaoMae, setProfissaoMae,
+    nomePai, setNomePai,
+    profissaoPai, setProfissaoPai,
+    endereco, setEndereco,
+    zonaResidencial, setZonaResidencial,
+    contatoEmergencia, setContatoEmergencia,
+    telefoneEmergencia, setTelefoneEmergencia,
+    turnoAtendimento, setTurnoAtendimento,
+
+    // Escola Regular
     escolaRegularId, setEscolaRegularId,
     escolas,
     anoEscolarizacao, setAnoEscolarizacao,
@@ -224,17 +327,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     turmaRegular, setTurmaRegular,
     professorRegular, setProfessorRegular,
     gestorRegular, setGestorRegular,
-    
-    turnoAtendimento, setTurnoAtendimento,
-    localizacaoAtendimento, setLocalizacaoAtendimento,
-    principalQueixa, setPrincipalQueixa,
+
+    // Clínicos
     cidCodigo, setCidCodigo,
+    outrosTranstornos, setOutrosTranstornos,
     observacoes, setObservacoes,
-    
     deficiencias, toggleDeficiencia,
-    profissionaisAEE,
-    profissionaisSelecionados, toggleProfissional, updateFrequenciaProfissional,
-    
+
     handleSubmit
   }
 }
