@@ -109,7 +109,6 @@ export type Database = {
         Row: {
           ativo: boolean | null
           cargos_gerenciados: string[] | null
-          secretarias_ids: string[] | null
           created_at: string
           escola_id: string | null
           funcionario_id: string | null
@@ -123,11 +122,11 @@ export type Database = {
           pode_mural: boolean | null
           pode_ocorrencias: boolean | null
           pode_turmas: boolean | null
+          secretarias_ids: string[] | null
         }
         Insert: {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
-          secretarias_ids?: string[] | null
           created_at?: string
           escola_id?: string | null
           funcionario_id?: string | null
@@ -141,11 +140,11 @@ export type Database = {
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
           pode_turmas?: boolean | null
+          secretarias_ids?: string[] | null
         }
         Update: {
           ativo?: boolean | null
           cargos_gerenciados?: string[] | null
-          secretarias_ids?: string[] | null
           created_at?: string
           escola_id?: string | null
           funcionario_id?: string | null
@@ -159,6 +158,7 @@ export type Database = {
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
           pode_turmas?: boolean | null
+          secretarias_ids?: string[] | null
         }
         Relationships: [
           {
@@ -382,6 +382,7 @@ export type Database = {
         Row: {
           cartao_sus: string | null
           certidao_nascimento: string | null
+          certidao_nascimento_novo_modelo: string | null
           codigo_temp_func: string | null
           codigo_temp_func_criado_em: string | null
           codigo_temp_resp: string | null
@@ -393,29 +394,35 @@ export type Database = {
           deleted_at: string | null
           endereco: string | null
           escola_id: string | null
-          foto_url: string | null
           foto_avatar_path: string | null
-          foto_visualizacao_path: string | null
           foto_original_path: string | null
           foto_updated_at: string | null
+          foto_url: string | null
+          foto_visualizacao_path: string | null
+          historico: string | null
           id: string
+          identif_unica_censo: string | null
           inep: string | null
           latitude: number | null
           longitude: number | null
           nis: string | null
           nome: string
+          nome_contato_emergencia: string | null
           nome_mae: string | null
           nome_pai: string | null
           numero_matricula: string | null
+          profissao_mae: string | null
+          profissao_pai: string | null
           rg: string | null
           serie: string | null
+          sexo: string | null
           telefone: string | null
           turma_id: string | null
-          historico: string | null
         }
         Insert: {
           cartao_sus?: string | null
           certidao_nascimento?: string | null
+          certidao_nascimento_novo_modelo?: string | null
           codigo_temp_func?: string | null
           codigo_temp_func_criado_em?: string | null
           codigo_temp_resp?: string | null
@@ -427,29 +434,35 @@ export type Database = {
           deleted_at?: string | null
           endereco?: string | null
           escola_id?: string | null
-          foto_url?: string | null
           foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
           foto_original_path?: string | null
           foto_updated_at?: string | null
+          foto_url?: string | null
+          foto_visualizacao_path?: string | null
+          historico?: string | null
           id?: string
+          identif_unica_censo?: string | null
           inep?: string | null
           latitude?: number | null
           longitude?: number | null
           nis?: string | null
           nome: string
+          nome_contato_emergencia?: string | null
           nome_mae?: string | null
           nome_pai?: string | null
           numero_matricula?: string | null
+          profissao_mae?: string | null
+          profissao_pai?: string | null
           rg?: string | null
           serie?: string | null
+          sexo?: string | null
           telefone?: string | null
           turma_id?: string | null
-          historico?: string | null
         }
         Update: {
           cartao_sus?: string | null
           certidao_nascimento?: string | null
+          certidao_nascimento_novo_modelo?: string | null
           codigo_temp_func?: string | null
           codigo_temp_func_criado_em?: string | null
           codigo_temp_resp?: string | null
@@ -461,25 +474,30 @@ export type Database = {
           deleted_at?: string | null
           endereco?: string | null
           escola_id?: string | null
-          foto_url?: string | null
           foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
           foto_original_path?: string | null
           foto_updated_at?: string | null
+          foto_url?: string | null
+          foto_visualizacao_path?: string | null
+          historico?: string | null
           id?: string
+          identif_unica_censo?: string | null
           inep?: string | null
           latitude?: number | null
           longitude?: number | null
           nis?: string | null
           nome?: string
+          nome_contato_emergencia?: string | null
           nome_mae?: string | null
           nome_pai?: string | null
           numero_matricula?: string | null
+          profissao_mae?: string | null
+          profissao_pai?: string | null
           rg?: string | null
           serie?: string | null
+          sexo?: string | null
           telefone?: string | null
           turma_id?: string | null
-          historico?: string | null
         }
         Relationships: [
           {
@@ -728,6 +746,7 @@ export type Database = {
           aluno_id: string | null
           arquivo_pdf_url: string | null
           criado_em: string | null
+          dados_documento: Json | null
           data_funcionario: string | null
           data_responsavel: string | null
           dispositivo_funcionario: string | null
@@ -745,6 +764,7 @@ export type Database = {
           aluno_id?: string | null
           arquivo_pdf_url?: string | null
           criado_em?: string | null
+          dados_documento?: Json | null
           data_funcionario?: string | null
           data_responsavel?: string | null
           dispositivo_funcionario?: string | null
@@ -762,6 +782,7 @@ export type Database = {
           aluno_id?: string | null
           arquivo_pdf_url?: string | null
           criado_em?: string | null
+          dados_documento?: Json | null
           data_funcionario?: string | null
           data_responsavel?: string | null
           dispositivo_funcionario?: string | null
@@ -798,6 +819,7 @@ export type Database = {
           anexo_url: string | null
           cid: string
           created_at: string | null
+          data_fim: string | null
           data_inclusao: string | null
           dias_afastamento: number
           escola_id: string | null
@@ -810,6 +832,7 @@ export type Database = {
           anexo_url?: string | null
           cid: string
           created_at?: string | null
+          data_fim?: string | null
           data_inclusao?: string | null
           dias_afastamento: number
           escola_id?: string | null
@@ -822,6 +845,7 @@ export type Database = {
           anexo_url?: string | null
           cid?: string
           created_at?: string | null
+          data_fim?: string | null
           data_inclusao?: string | null
           dias_afastamento?: number
           escola_id?: string | null
@@ -1179,35 +1203,8 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secretarias"
             referencedColumns: ["id"]
-          }
+          },
         ]
-      }
-      secretarias: {
-        Row: {
-          id: string
-          nome: string
-          logo_url: string | null
-          ativo: boolean
-          created_at: string | null
-          deleted_at: string | null
-        }
-        Insert: {
-          id?: string
-          nome: string
-          logo_url?: string | null
-          ativo?: boolean
-          created_at?: string | null
-          deleted_at?: string | null
-        }
-        Update: {
-          id?: string
-          nome?: string
-          logo_url?: string | null
-          ativo?: boolean
-          created_at?: string | null
-          deleted_at?: string | null
-        }
-        Relationships: []
       }
       comunicados: {
         Row: {
@@ -1219,6 +1216,7 @@ export type Database = {
           date: string
           id: string
           is_popup: boolean | null
+          secretaria_id: string | null
           target: string
           title: string
         }
@@ -1231,6 +1229,7 @@ export type Database = {
           date: string
           id?: string
           is_popup?: boolean | null
+          secretaria_id?: string | null
           target: string
           title: string
         }
@@ -1243,6 +1242,7 @@ export type Database = {
           date?: string
           id?: string
           is_popup?: boolean | null
+          secretaria_id?: string | null
           target?: string
           title?: string
         }
@@ -1259,6 +1259,39 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicados_lidos: {
+        Row: {
+          comunicado_id: string
+          created_at: string | null
+          user_id: string
+        }
+        Insert: {
+          comunicado_id: string
+          created_at?: string | null
+          user_id: string
+        }
+        Update: {
+          comunicado_id?: string
+          created_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicados_lidos_comunicado_id_fkey"
+            columns: ["comunicado_id"]
+            isOneToOne: false
+            referencedRelation: "comunicados"
             referencedColumns: ["id"]
           },
         ]
@@ -1436,6 +1469,359 @@ export type Database = {
           },
         ]
       }
+      emaee_especialidades_vinculadas: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          dia_semana: number
+          emaee_matricula_id: string
+          especialidade: string
+          especialidade_outros: string | null
+          frequencia: string | null
+          horario_inicio: string
+          id: string
+          profissional_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          dia_semana: number
+          emaee_matricula_id: string
+          especialidade: string
+          especialidade_outros?: string | null
+          frequencia?: string | null
+          horario_inicio: string
+          id?: string
+          profissional_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          dia_semana?: number
+          emaee_matricula_id?: string
+          especialidade?: string
+          especialidade_outros?: string | null
+          frequencia?: string | null
+          horario_inicio?: string
+          id?: string
+          profissional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emaee_especialidades_vinculadas_emaee_matricula_id_fkey"
+            columns: ["emaee_matricula_id"]
+            isOneToOne: false
+            referencedRelation: "emaee_matriculas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_especialidades_vinculadas_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_especialidades_vinculadas_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emaee_evolucoes: {
+        Row: {
+          anexos_sessao: Json | null
+          assinado_em: string | null
+          assinatura_profissional_url: string | null
+          conduta_orientacoes: string | null
+          created_at: string | null
+          data_atendimento: string
+          deleted_at: string | null
+          emaee_matricula_id: string
+          especialidade: string
+          id: string
+          profissional_id: string
+          resumo_evolucao: string
+          tipo_atendimento: string | null
+        }
+        Insert: {
+          anexos_sessao?: Json | null
+          assinado_em?: string | null
+          assinatura_profissional_url?: string | null
+          conduta_orientacoes?: string | null
+          created_at?: string | null
+          data_atendimento?: string
+          deleted_at?: string | null
+          emaee_matricula_id: string
+          especialidade: string
+          id?: string
+          profissional_id: string
+          resumo_evolucao: string
+          tipo_atendimento?: string | null
+        }
+        Update: {
+          anexos_sessao?: Json | null
+          assinado_em?: string | null
+          assinatura_profissional_url?: string | null
+          conduta_orientacoes?: string | null
+          created_at?: string | null
+          data_atendimento?: string
+          deleted_at?: string | null
+          emaee_matricula_id?: string
+          especialidade?: string
+          id?: string
+          profissional_id?: string
+          resumo_evolucao?: string
+          tipo_atendimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emaee_evolucoes_emaee_matricula_id_fkey"
+            columns: ["emaee_matricula_id"]
+            isOneToOne: false
+            referencedRelation: "emaee_matriculas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_evolucoes_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_evolucoes_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emaee_matriculas: {
+        Row: {
+          aluno_id: string
+          ano_escolarizacao: string | null
+          autorizado_pelo_responsavel: boolean | null
+          cid_codigo: string | null
+          created_at: string | null
+          data_autorizacao: string | null
+          data_matricula: string
+          def_auditiva: boolean | null
+          def_baixa_visao: boolean | null
+          def_cegueira: boolean | null
+          def_fisica: boolean | null
+          def_intelectual: boolean | null
+          def_multipla: boolean | null
+          def_surdez: boolean | null
+          def_surdocegueira: boolean | null
+          deleted_at: string | null
+          escola_atendimento_id: string
+          escola_regular_id: string | null
+          gestor_regular: string | null
+          id: string
+          localizacao_atendimento: string | null
+          observacoes_requerimento: string | null
+          principal_queixa: string | null
+          professor_regular: string | null
+          responsavel_assinatura_cpf: string | null
+          responsavel_assinatura_nome: string | null
+          status: string | null
+          transtorno_outros: boolean | null
+          transtorno_tea: boolean | null
+          turma_regular: string | null
+          turno_atendimento: string
+          turno_regular: string | null
+        }
+        Insert: {
+          aluno_id: string
+          ano_escolarizacao?: string | null
+          autorizado_pelo_responsavel?: boolean | null
+          cid_codigo?: string | null
+          created_at?: string | null
+          data_autorizacao?: string | null
+          data_matricula?: string
+          def_auditiva?: boolean | null
+          def_baixa_visao?: boolean | null
+          def_cegueira?: boolean | null
+          def_fisica?: boolean | null
+          def_intelectual?: boolean | null
+          def_multipla?: boolean | null
+          def_surdez?: boolean | null
+          def_surdocegueira?: boolean | null
+          deleted_at?: string | null
+          escola_atendimento_id: string
+          escola_regular_id?: string | null
+          gestor_regular?: string | null
+          id?: string
+          localizacao_atendimento?: string | null
+          observacoes_requerimento?: string | null
+          principal_queixa?: string | null
+          professor_regular?: string | null
+          responsavel_assinatura_cpf?: string | null
+          responsavel_assinatura_nome?: string | null
+          status?: string | null
+          transtorno_outros?: boolean | null
+          transtorno_tea?: boolean | null
+          turma_regular?: string | null
+          turno_atendimento?: string
+          turno_regular?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          ano_escolarizacao?: string | null
+          autorizado_pelo_responsavel?: boolean | null
+          cid_codigo?: string | null
+          created_at?: string | null
+          data_autorizacao?: string | null
+          data_matricula?: string
+          def_auditiva?: boolean | null
+          def_baixa_visao?: boolean | null
+          def_cegueira?: boolean | null
+          def_fisica?: boolean | null
+          def_intelectual?: boolean | null
+          def_multipla?: boolean | null
+          def_surdez?: boolean | null
+          def_surdocegueira?: boolean | null
+          deleted_at?: string | null
+          escola_atendimento_id?: string
+          escola_regular_id?: string | null
+          gestor_regular?: string | null
+          id?: string
+          localizacao_atendimento?: string | null
+          observacoes_requerimento?: string | null
+          principal_queixa?: string | null
+          professor_regular?: string | null
+          responsavel_assinatura_cpf?: string | null
+          responsavel_assinatura_nome?: string | null
+          status?: string | null
+          transtorno_outros?: boolean | null
+          transtorno_tea?: boolean | null
+          turma_regular?: string | null
+          turno_atendimento?: string
+          turno_regular?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emaee_matriculas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_matriculas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_matriculas_escola_atendimento_id_fkey"
+            columns: ["escola_atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_matriculas_escola_regular_id_fkey"
+            columns: ["escola_regular_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emaee_solicitacoes_relatorios: {
+        Row: {
+          created_at: string | null
+          emaee_matricula_id: string
+          escola_origem_id: string
+          id: string
+          motivo_solicitacao: string
+          prazo_resposta: string | null
+          relatorio_resposta_anexo_url: string | null
+          relatorio_resposta_texto: string | null
+          respondido_em: string | null
+          respondido_por: string | null
+          solicitante_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          emaee_matricula_id: string
+          escola_origem_id: string
+          id?: string
+          motivo_solicitacao: string
+          prazo_resposta?: string | null
+          relatorio_resposta_anexo_url?: string | null
+          relatorio_resposta_texto?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          emaee_matricula_id?: string
+          escola_origem_id?: string
+          id?: string
+          motivo_solicitacao?: string
+          prazo_resposta?: string | null
+          relatorio_resposta_anexo_url?: string | null
+          relatorio_resposta_texto?: string | null
+          respondido_em?: string | null
+          respondido_por?: string | null
+          solicitante_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_emaee_matricula_id_fkey"
+            columns: ["emaee_matricula_id"]
+            isOneToOne: false
+            referencedRelation: "emaee_matriculas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_escola_origem_id_fkey"
+            columns: ["escola_origem_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_solicitacoes_relatorios_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escalas_servico: {
         Row: {
           created_at: string | null
@@ -1515,7 +1901,7 @@ export type Database = {
           anexos_padrao?: string[] | null
           assinatura_diretor_url?: string | null
           ativo?: boolean | null
-          codigo?: number
+          codigo: number
           created_at?: string
           deleted_at?: string | null
           diretor_id?: string | null
@@ -1564,18 +1950,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "escolas_secretaria_id_fkey"
-            columns: ["secretaria_id"]
-            isOneToOne: false
-            referencedRelation: "secretarias"
-            referencedColumns: ["id"]
-          },
-
-          {
             foreignKeyName: "escolas_diretor_id_fkey"
             columns: ["diretor_id"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escolas_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
             referencedColumns: ["id"]
           },
         ]
@@ -1736,15 +2121,15 @@ export type Database = {
           escolaridade_nivel: string | null
           estado_civil: string | null
           formacao: string | null
-          foto_url: string | null
           foto_avatar_path: string | null
-          foto_visualizacao_path: string | null
           foto_original_path: string | null
           foto_updated_at: string | null
+          foto_url: string | null
+          foto_visualizacao_path: string | null
           funcao_especifica: string | null
           graduacoes: Json | null
           id: string
-          is_conta_especial: boolean | null
+          is_conta_especial: boolean
           is_superadmin: boolean | null
           latitude: number | null
           logradouro: string | null
@@ -1826,15 +2211,15 @@ export type Database = {
           escolaridade_nivel?: string | null
           estado_civil?: string | null
           formacao?: string | null
-          foto_url?: string | null
           foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
           foto_original_path?: string | null
           foto_updated_at?: string | null
+          foto_url?: string | null
+          foto_visualizacao_path?: string | null
           funcao_especifica?: string | null
           graduacoes?: Json | null
           id?: string
-          is_conta_especial?: boolean | null
+          is_conta_especial?: boolean
           is_superadmin?: boolean | null
           latitude?: number | null
           logradouro?: string | null
@@ -1916,15 +2301,15 @@ export type Database = {
           escolaridade_nivel?: string | null
           estado_civil?: string | null
           formacao?: string | null
-          foto_url?: string | null
           foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
           foto_original_path?: string | null
           foto_updated_at?: string | null
+          foto_url?: string | null
+          foto_visualizacao_path?: string | null
           funcao_especifica?: string | null
           graduacoes?: Json | null
           id?: string
-          is_conta_especial?: boolean | null
+          is_conta_especial?: boolean
           is_superadmin?: boolean | null
           latitude?: number | null
           logradouro?: string | null
@@ -2227,6 +2612,110 @@ export type Database = {
             columns: ["turma_id"]
             isOneToOne: false
             referencedRelation: "turmas_ativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens_internas: {
+        Row: {
+          anexo_nome: string | null
+          anexo_url: string | null
+          assunto: string
+          conteudo: string
+          created_at: string
+          deletado_destinatario: boolean
+          deletado_remetente: boolean
+          destinatario_id: string
+          escola_id: string | null
+          id: string
+          lida: boolean
+          lida_em: string | null
+          mensagem_resposta_id: string | null
+          orgao_id: string | null
+          remetente_id: string
+        }
+        Insert: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
+          assunto: string
+          conteudo: string
+          created_at?: string
+          deletado_destinatario?: boolean
+          deletado_remetente?: boolean
+          destinatario_id: string
+          escola_id?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          mensagem_resposta_id?: string | null
+          orgao_id?: string | null
+          remetente_id: string
+        }
+        Update: {
+          anexo_nome?: string | null
+          anexo_url?: string | null
+          assunto?: string
+          conteudo?: string
+          created_at?: string
+          deletado_destinatario?: boolean
+          deletado_remetente?: boolean
+          destinatario_id?: string
+          escola_id?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          mensagem_resposta_id?: string | null
+          orgao_id?: string | null
+          remetente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_internas_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_mensagem_resposta_id_fkey"
+            columns: ["mensagem_resposta_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens_internas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_orgao_id_fkey"
+            columns: ["orgao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_internas_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
         ]
@@ -2709,6 +3198,54 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          funcionario_id: string | null
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          funcionario_id?: string | null
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          funcionario_id?: string | null
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recuperacoes_finais: {
         Row: {
           aluno_id: string
@@ -2785,10 +3322,6 @@ export type Database = {
       registros_ronda: {
         Row: {
           foto_url: string | null
-          foto_avatar_path: string | null
-          foto_visualizacao_path: string | null
-          foto_original_path: string | null
-          foto_updated_at: string | null
           funcionario_id: string | null
           id: string
           latitude: number | null
@@ -2800,10 +3333,6 @@ export type Database = {
         }
         Insert: {
           foto_url?: string | null
-          foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
-          foto_original_path?: string | null
-          foto_updated_at?: string | null
           funcionario_id?: string | null
           id?: string
           latitude?: number | null
@@ -2815,10 +3344,6 @@ export type Database = {
         }
         Update: {
           foto_url?: string | null
-          foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
-          foto_original_path?: string | null
-          foto_updated_at?: string | null
           funcionario_id?: string | null
           id?: string
           latitude?: number | null
@@ -2995,6 +3520,33 @@ export type Database = {
           },
         ]
       }
+      secretarias: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          deleted_at: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
       solicitacoes_edicao_aluno: {
         Row: {
           aluno_id: string | null
@@ -3113,6 +3665,48 @@ export type Database = {
           {
             foreignKeyName: "solicitacoes_rh_funcionario_id_fkey"
             columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_ativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_config: {
+        Row: {
+          chave: string
+          descricao: string | null
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+          valor: string
+        }
+        Insert: {
+          chave: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor: string
+        }
+        Update: {
+          chave?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_config_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
@@ -3675,10 +4269,6 @@ export type Database = {
           deleted_at: string | null
           escola_id: string | null
           foto_url: string | null
-          foto_avatar_path: string | null
-          foto_visualizacao_path: string | null
-          foto_original_path: string | null
-          foto_updated_at: string | null
           id: string | null
           nome: string | null
         }
@@ -3687,10 +4277,6 @@ export type Database = {
           deleted_at?: string | null
           escola_id?: string | null
           foto_url?: string | null
-          foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
-          foto_original_path?: string | null
-          foto_updated_at?: string | null
           id?: string | null
           nome?: string | null
         }
@@ -3699,10 +4285,6 @@ export type Database = {
           deleted_at?: string | null
           escola_id?: string | null
           foto_url?: string | null
-          foto_avatar_path?: string | null
-          foto_visualizacao_path?: string | null
-          foto_original_path?: string | null
-          foto_updated_at?: string | null
           id?: string | null
           nome?: string | null
         }
@@ -3846,6 +4428,7 @@ export type Database = {
           deleted_at: string | null
           email: string | null
           id: string | null
+          is_conta_especial: boolean | null
           is_superadmin: boolean | null
           nome: string | null
           primeiro_acesso: boolean | null
@@ -3858,6 +4441,7 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id?: string | null
+          is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
           nome?: string | null
           primeiro_acesso?: boolean | null
@@ -3870,6 +4454,7 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id?: string | null
+          is_conta_especial?: boolean | null
           is_superadmin?: boolean | null
           nome?: string | null
           primeiro_acesso?: boolean | null
@@ -3930,15 +4515,6 @@ export type Database = {
       }
     }
     Functions: {
-      get_relatorio_servidores: {
-        Args: {
-          p_cargo?: string | null
-          p_escola_id?: string | null
-          p_modalidade?: string | null
-          p_vinculo_tipo?: string | null
-        }
-        Returns: Json
-      }
       check_chefe_gerencia_funcionario: {
         Args: { f_cargo: string; f_id: string }
         Returns: boolean
@@ -4010,17 +4586,29 @@ export type Database = {
         Returns: string
       }
       get_auth_funcionario_id: { Args: never; Returns: string }
-      get_birthdays_of_month: {
-        Args: { month_num: number }
-        Returns: {
-          day: number
-          name: string
-          role: string
-          foto_url: string | null
-          foto_avatar_path: string | null
-          foto_visualizacao_path: string | null
-        }[]
-      }
+      get_birthdays_of_month:
+        | {
+            Args: { month_num: number }
+            Returns: {
+              day: number
+              foto_avatar_path: string
+              foto_url: string
+              foto_visualizacao_path: string
+              name: string
+              role: string
+            }[]
+          }
+        | {
+            Args: { month_num: number; p_secretaria_id?: string }
+            Returns: {
+              day: number
+              foto_avatar_path: string
+              foto_url: string
+              foto_visualizacao_path: string
+              name: string
+              role: string
+            }[]
+          }
       get_dashboard_resumo: {
         Args: { p_escola_id: string; p_funcionario_id?: string }
         Returns: Json
@@ -4068,6 +4656,15 @@ export type Database = {
       }
       get_performance_dashboard_stats: {
         Args: { period_days?: number }
+        Returns: Json
+      }
+      get_relatorio_servidores: {
+        Args: {
+          p_cargo?: string
+          p_escola_id?: string
+          p_modalidade?: string
+          p_vinculo_tipo?: string
+        }
         Returns: Json
       }
       get_storage_objects: {
@@ -4135,6 +4732,14 @@ export type Database = {
       }
       salvar_frequencias_lote: { Args: { p_frequencias: Json }; Returns: Json }
       tem_acesso_a_escola: { Args: { escola_alvo: string }; Returns: boolean }
+      tem_acesso_a_escola_audit: {
+        Args: { p_tenant_id: string }
+        Returns: boolean
+      }
+      tem_acesso_a_secretaria: {
+        Args: { p_secretaria_id: string }
+        Returns: boolean
+      }
       tem_permissao: {
         Args: { p_escola_id?: string; p_permissao: string }
         Returns: boolean

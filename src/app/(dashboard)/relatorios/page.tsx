@@ -55,7 +55,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | 'fila_espera' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
@@ -116,6 +116,13 @@ const REPORT_CARDS = [
     icon: ShieldAlert,
     variant: 'warning' as const,
   },
+  {
+    id: 'fila_espera' as const,
+    title: 'Fila de Espera & Admissão',
+    description: 'Estatísticas de encaminhamentos, triagens e tempo médio de espera no AEE.',
+    icon: Clock,
+    variant: 'warning' as const,
+  },
 ]
 
 export default function RelatoriosPage() {
@@ -124,8 +131,9 @@ export default function RelatoriosPage() {
   const { acessos, isAdminGlobalOrRoot } = useAuthStore()
 
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
-  const isEducacao = (!selectedEscola && !selectedSecretaria) || (!secNome || /educa/i.test(secNome))
-  const isSaude = !isEducacao && (/sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE')
+  const isEMAEE = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
+  const isEducacao = !isEMAEE && ((!selectedEscola && !selectedSecretaria) || (!secNome || /educa/i.test(secNome)))
+  const isSaude = !isEMAEE && (!isEducacao && (/sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE'))
 
   const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
   const isDiretor = acessos?.some(a => a.nivel === 2 && a.ativo)
@@ -631,6 +639,10 @@ export default function RelatoriosPage() {
       {/* Grid of Cards Matching Screenshot Layout & Colors */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
+          if (isEMAEE) {
+            const permitidosEMAEE = ['necessidades_especiais', 'fila_espera', 'mapa']
+            return permitidosEMAEE.includes(card.id)
+          }
           if (isSaude) {
             const permitidosSaude = ['mapa', 'presenca', 'servidores']
             if (!permitidosSaude.includes(card.id)) return false
