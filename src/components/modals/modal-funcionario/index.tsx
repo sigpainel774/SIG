@@ -43,10 +43,8 @@ function ModalFuncionarioContent() {
     setLotacoesModalOpen,
   } = useFuncionarioForm()
 
-  const { escolas, selectedSecretaria } = useSchoolStore((state) => ({
-    escolas: state.escolas,
-    selectedSecretaria: state.selectedSecretaria
-  }))
+  const escolas = useSchoolStore((state) => state.escolas)
+  const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
 
   const availableUnits = React.useMemo(() => {
     if (!selectedSecretaria) return escolas

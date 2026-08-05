@@ -465,7 +465,10 @@ export function useFuncionarioFormStates({
           if (matching.length > 0) {
             targetIdToUse = matching[0].id
           }
-        } else if (!targetIdToUse && escolasList.length > 0) {
+        } 
+        
+        // Fallback garantido se a secretaria não gerou match e ainda estivermos sem ID
+        if (!targetIdToUse && escolasList.length > 0) {
           targetIdToUse = escolasList[0].id
         }
 
