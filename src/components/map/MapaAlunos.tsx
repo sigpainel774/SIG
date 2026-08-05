@@ -47,7 +47,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const buscaDebounced = React.useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const [filtroZona, setFiltroZona] = useState<'todos' | 'Urbana' | 'Rural'>('todos');
-  const [filtroCidade, setFiltroCidade] = useState<string>('todos');
+  const [filtroCidade, setFiltroCidade] = useState<'todos' | 'sapeacu' | 'outras'>('todos');
   const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
 
   const cidadesUnicas = useMemo(() => {
@@ -74,8 +74,12 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
           const filterZ = filtroZona.toLowerCase();
           if (!aZona.includes(filterZ)) return false;
         }
-        if (filtroCidade !== 'todos') {
-          if (a.cidade !== filtroCidade) return false;
+        if (filtroCidade === 'sapeacu') {
+          const cid = (a.cidade || '').toLowerCase().trim();
+          if (!cid.includes('sapeaçu') && !cid.includes('sapeacu')) return false;
+        } else if (filtroCidade === 'outras') {
+          const cid = (a.cidade || '').toLowerCase().trim();
+          if (cid.includes('sapeaçu') || cid.includes('sapeacu')) return false;
         }
       } else {
         if (filtroModalidade === 'eja' && a.modalidade !== 'EJA') return false;
@@ -240,38 +244,89 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         {isEmaee ? (
           <div className="flex items-center gap-2 flex-wrap">
             {/* Filtro de Cidade */}
-            <div className="flex items-center gap-1.5 bg-[#1e283b] px-2.5 py-1.5 rounded-lg border border-[#2d3a54]">
-              <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
                 <Filter className="w-3 h-3" /> Cidade:
               </span>
-              <select
-                value={filtroCidade}
-                onChange={(e) => setFiltroCidade(e.target.value)}
-                className="bg-transparent border-none text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('todos')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'todos'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
               >
-                <option value="todos" className="bg-[#1e283b] text-slate-200">Todas</option>
-                {cidadesUnicas.map((c) => (
-                  <option key={c} value={c} className="bg-[#1e283b] text-slate-200">
-                    {c}
-                  </option>
-                ))}
-              </select>
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('sapeacu')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'sapeacu'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Sapeaçu
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('outras')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'outras'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Outras Cidades
+              </button>
             </div>
 
             {/* Filtro de Zona */}
-            <div className="flex items-center gap-1.5 bg-[#1e283b] px-2.5 py-1.5 rounded-lg border border-[#2d3a54]">
-              <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
                 <Filter className="w-3 h-3" /> Zona:
               </span>
-              <select
-                value={filtroZona}
-                onChange={(e) => setFiltroZona(e.target.value as any)}
-                className="bg-transparent border-none text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
+              <button
+                type="button"
+                onClick={() => setFiltroZona('todos')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'todos'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
               >
-                <option value="todos" className="bg-[#1e283b] text-slate-200">Todas</option>
-                <option value="Urbana" className="bg-[#1e283b] text-slate-200">Zona Urbana</option>
-                <option value="Rural" className="bg-[#1e283b] text-slate-200">Zona Rural</option>
-              </select>
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroZona('Urbana')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'Urbana'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Urbana
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroZona('Rural')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'Rural'
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Rural
+              </button>
             </div>
           </div>
         ) : (
@@ -565,7 +620,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         <strong className="text-emerald-400">{alunosFiltrados.length}</strong> aluno(s) encontrado(s){' '}
         {isEmaee ? (
           <>
-            {filtroCidade !== 'todos' && `[Cidade: ${filtroCidade}] `}
+            {filtroCidade !== 'todos' && `[Cidade: ${filtroCidade === 'sapeacu' ? 'SAPEAÇU' : 'OUTRAS CIDADES'}] `}
             {filtroZona !== 'todos' && `[Zona: ${filtroZona.toUpperCase()}] `}
           </>
         ) : (

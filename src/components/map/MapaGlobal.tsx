@@ -32,13 +32,16 @@ export interface FuncionarioMapeado {
   longitude: number;
   modalidade?: string;
   tipo_vinculo?: string | null;
+  cidade?: string;
+  zona?: string;
 }
 
 interface MapaGlobalProps {
   funcionarios: FuncionarioMapeado[];
+  isEmaee?: boolean;
 }
 
-export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
+export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
   const isAdminGlobalOrRoot = useAuthStore((state) => state.isAdminGlobalOrRoot);
   const isLevel1OrSuperadmin = isAdminGlobalOrRoot();
 
@@ -46,6 +49,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   const buscaDebounced = useDeferredValue(busca);
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const [filtroVinculo, setFiltroVinculo] = useState<'todos' | 'contratados' | 'nomeados' | 'efetivos'>('contratados');
+  const [filtroCidade, setFiltroCidade] = useState<'todos' | 'sapeacu' | 'outras'>('todos');
+  const [filtroZona, setFiltroZona] = useState<'todos' | 'Urbana' | 'Rural'>('todos');
   const [fotoModal, setFotoModal] = useState<FuncionarioMapeado | null>(null);
   const mapRef = useRef<L.Map>(null);
 
@@ -59,10 +64,25 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   const funcionariosFiltrados = useMemo(() => {
     const termo = buscaDebounced.toLowerCase().trim();
     return funcionarios.filter((f) => {
-      // Filtro de modalidade
-      const isEJA = (f.modalidade ?? '').toString().toUpperCase().includes('EJA');
-      if (filtroModalidade === 'eja' && !isEJA) return false;
-      if (filtroModalidade === 'regular' && isEJA) return false;
+      if (isEmaee) {
+        if (filtroZona !== 'todos') {
+          const fZona = (f.zona || '').toLowerCase();
+          const filterZ = filtroZona.toLowerCase();
+          if (!fZona.includes(filterZ)) return false;
+        }
+        if (filtroCidade === 'sapeacu') {
+          const cid = (f.cidade || '').toLowerCase().trim();
+          if (!cid.includes('sapeaçu') && !cid.includes('sapeacu')) return false;
+        } else if (filtroCidade === 'outras') {
+          const cid = (f.cidade || '').toLowerCase().trim();
+          if (cid.includes('sapeaçu') || cid.includes('sapeacu')) return false;
+        }
+      } else {
+        // Filtro de modalidade
+        const isEJA = (f.modalidade ?? '').toString().toUpperCase().includes('EJA');
+        if (filtroModalidade === 'eja' && !isEJA) return false;
+        if (filtroModalidade === 'regular' && isEJA) return false;
+      }
 
       // Filtro de tipo de vínculo (Visível e ativo apenas para Nível 1 & Superadmin)
       if (isLevel1OrSuperadmin && filtroVinculo !== 'todos') {
@@ -87,7 +107,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         (f.modalidade && f.modalidade.toLowerCase().includes(termo))
       );
     });
-  }, [buscaDebounced, filtroModalidade, filtroVinculo, funcionarios, isLevel1OrSuperadmin]);
+  }, [buscaDebounced, filtroModalidade, filtroVinculo, filtroCidade, filtroZona, funcionarios, isLevel1OrSuperadmin, isEmaee]);
 
   // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
   const funcionariosValidos = useMemo(() => {
@@ -158,8 +178,8 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
   const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
   // 4. Criação do Pino DivIcon Customizado usando Leaflet nativo (com memoization de cache)
-  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string) => {
-    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}`;
+  const criarIconeCustomizado = (id: string, nome: string, fotoUrl?: string, modalidade?: string, zona?: string) => {
+    const cacheKey = `${id}_${modalidade || 'Regular'}_${fotoUrl || 'nofoto'}_${zona || 'nozona'}`;
     if (iconCacheRef.current.has(cacheKey)) {
       return iconCacheRef.current.get(cacheKey)!;
     }
@@ -171,9 +191,12 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
         ? `<img src="${safeFotoUrl}" alt="${nome.replace(/"/g, '&quot;')}" decoding="async" loading="eager" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: absolute; inset: 0;" onerror="this.style.display='none'" />`
         : '';
     const isEJA = modalidade === 'EJA';
-    const bgGradient = isEJA 
-      ? 'linear-gradient(135deg, #a855f7, #7e22ce)' 
-      : 'linear-gradient(135deg, #38bdf8, #0284c7)';
+    const isRural = isEmaee && (zona === 'Rural' || (zona || '').toLowerCase().includes('rural'));
+    const bgGradient = isEmaee
+      ? (isRural ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #38bdf8, #0284c7)')
+      : (isEJA 
+          ? 'linear-gradient(135deg, #a855f7, #7e22ce)' 
+          : 'linear-gradient(135deg, #38bdf8, #0284c7)');
 
     const icon = L.divIcon({
       className: 'custom-div-icon',
@@ -229,48 +252,138 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
           />
         </div>
         
-        {/* Seletor de Filtro de Modalidade (Todos, Regular, EJA) */}
-        <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
-          <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
-            <Filter className="w-3 h-3" /> Ensino:
-          </span>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('todos')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'todos'
-                ? "bg-sky-500 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            Todos
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('regular')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'regular'
-                ? "bg-sky-500 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            Regular
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroModalidade('eja')}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-              filtroModalidade === 'eja'
-                ? "bg-purple-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            )}
-          >
-            EJA
-          </button>
-        </div>
+        {/* Seletor de Filtro de Modalidade (Todos, Regular, EJA) ou Cidade/Zona (se EMAEE) */}
+        {isEmaee ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Filtro de Cidade */}
+            <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+                <Filter className="w-3 h-3" /> Cidade:
+              </span>
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('todos')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'todos'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('sapeacu')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'sapeacu'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Sapeaçu
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroCidade('outras')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroCidade === 'outras'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Outras Cidades
+              </button>
+            </div>
+
+            {/* Filtro de Zona */}
+            <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+              <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+                <Filter className="w-3 h-3" /> Zona:
+              </span>
+              <button
+                type="button"
+                onClick={() => setFiltroZona('todos')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'todos'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroZona('Urbana')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'Urbana'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Urbana
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroZona('Rural')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroZona === 'Rural'
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Rural
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
+            <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+              <Filter className="w-3 h-3" /> Ensino:
+            </span>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('todos')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'todos'
+                  ? "bg-sky-500 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('regular')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'regular'
+                  ? "bg-sky-500 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              Regular
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroModalidade('eja')}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                filtroModalidade === 'eja'
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              EJA
+            </button>
+          </div>
+        )}
 
         {/* Seletor de Tipo de Vínculo (Exclusivo Nível 1 & Superadmin) */}
         {isLevel1OrSuperadmin && (
@@ -339,7 +452,7 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
             showCoverageOnHover={false}
           >
             {funcionariosValidos.map((func) => {
-              const icone = criarIconeCustomizado(func.id, func.nome, getAvatarUrl(func), func.modalidade);
+              const icone = criarIconeCustomizado(func.id, func.nome, getAvatarUrl(func), func.modalidade, func.zona);
               const iniciais = obterIniciais(func.nome);
               
               return (
@@ -377,7 +490,9 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                               alt={func.nome}
                               className={cn(
                                 "w-full h-full rounded-full object-cover border-2 absolute inset-0 z-10 transition-transform duration-200 group-hover/avatar:scale-110",
-                                func.modalidade === 'EJA' ? "border-purple-500" : "border-sky-500"
+                                isEmaee
+                                  ? ((func.zona || '').toLowerCase().includes('rural') ? "border-amber-500" : "border-sky-500")
+                                  : (func.modalidade === 'EJA' ? "border-purple-500" : "border-sky-500")
                               )}
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
@@ -387,9 +502,13 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                           {/* Fallback que fica atrás da imagem ou aparece se ela falhar */}
                           <div className={cn(
                             "w-full h-full rounded-full text-white font-bold text-lg flex items-center justify-center border-2 border-slate-700 absolute inset-0 z-0 transition-transform duration-200 group-hover/avatar:scale-110",
-                            func.modalidade === 'EJA' 
-                              ? "bg-gradient-to-br from-purple-600 to-purple-400"
-                              : "bg-gradient-to-br from-sky-600 to-sky-400"
+                            isEmaee
+                              ? ((func.zona || '').toLowerCase().includes('rural')
+                                  ? "bg-gradient-to-br from-amber-600 to-amber-400"
+                                  : "bg-gradient-to-br from-sky-600 to-sky-400")
+                              : (func.modalidade === 'EJA' 
+                                  ? "bg-gradient-to-br from-purple-600 to-purple-400"
+                                  : "bg-gradient-to-br from-sky-600 to-sky-400")
                           )}>
                             {iniciais}
                           </div>
@@ -405,11 +524,15 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                             </strong>
                             <span className={cn(
                               "text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0",
-                              func.modalidade === 'EJA'
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                              isEmaee
+                                ? ((func.zona || '').toLowerCase().includes('rural')
+                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                    : "bg-sky-500/20 text-sky-300 border border-sky-500/30")
+                                : (func.modalidade === 'EJA'
+                                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                    : "bg-sky-500/20 text-sky-300 border border-sky-500/30")
                             )}>
-                              {func.modalidade ?? 'Regular'}
+                              {isEmaee ? (func.zona || 'Urbana') : (func.modalidade ?? 'Regular')}
                             </span>
                           </div>
                           <span className="text-xs text-sky-400 font-medium block mt-0.5 truncate">
@@ -475,9 +598,13 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
 
               <div className={cn(
                 "w-full h-full text-white font-bold text-5xl flex items-center justify-center",
-                fotoModal.modalidade === 'EJA'
-                  ? "bg-gradient-to-br from-purple-600 to-purple-800"
-                  : "bg-gradient-to-br from-sky-600 to-sky-800"
+                isEmaee
+                  ? ((fotoModal.zona || '').toLowerCase().includes('rural')
+                      ? "bg-gradient-to-br from-amber-600 to-amber-800"
+                      : "bg-gradient-to-br from-sky-600 to-sky-800")
+                  : (fotoModal.modalidade === 'EJA'
+                      ? "bg-gradient-to-br from-purple-600 to-purple-800"
+                      : "bg-gradient-to-br from-sky-600 to-sky-800")
               )}>
                 {obterIniciais(fotoModal.nome)}
               </div>
@@ -489,11 +616,15 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
                 <h3 className="text-lg font-bold text-white leading-snug">{fotoModal.nome}</h3>
                 <span className={cn(
                   "text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
-                  fotoModal.modalidade === 'EJA'
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                  isEmaee
+                    ? ((fotoModal.zona || '').toLowerCase().includes('rural')
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        : "bg-sky-500/20 text-sky-300 border border-sky-500/30")
+                    : (fotoModal.modalidade === 'EJA'
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        : "bg-sky-500/20 text-sky-300 border border-sky-500/30")
                 )}>
-                  {fotoModal.modalidade ?? 'Regular'}
+                  {isEmaee ? (fotoModal.zona || 'Urbana') : (fotoModal.modalidade ?? 'Regular')}
                 </span>
               </div>
               <p className="text-sm font-semibold text-sky-400">{fotoModal.cargo}</p>
@@ -530,7 +661,14 @@ export default function MapaGlobal({ funcionarios }: MapaGlobalProps) {
       {/* Info Inferior Dinâmica */}
       <p className="text-center text-xs text-slate-400">
         <strong className="text-sky-400">{funcionariosFiltrados.length}</strong> funcionário(s) encontrado(s){' '}
-        {filtroModalidade !== 'todos' ? `[Ensino: ${filtroModalidade.toUpperCase()}] ` : ''}
+        {isEmaee ? (
+          <>
+            {filtroCidade !== 'todos' && `[Cidade: ${filtroCidade === 'sapeacu' ? 'SAPEAÇU' : 'OUTRAS CIDADES'}] `}
+            {filtroZona !== 'todos' && `[Zona: ${filtroZona.toUpperCase()}] `}
+          </>
+        ) : (
+          filtroModalidade !== 'todos' ? `[Ensino: ${filtroModalidade.toUpperCase()}] ` : ''
+        )}
         {isLevel1OrSuperadmin && filtroVinculo !== 'todos' ? `[Vínculo: ${filtroVinculo.toUpperCase()}] ` : ''}
         de um total de {funcionarios.length}. Clique em um pino para detalhes.
       </p>

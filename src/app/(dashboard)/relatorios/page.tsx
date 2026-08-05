@@ -227,6 +227,8 @@ export default function RelatoriosPage() {
                 longitude,
                 modalidade_ensino,
                 tipo_vinculo,
+                cidade,
+                area_residencia,
                 deleted_at
               )
             `)
@@ -271,7 +273,9 @@ export default function RelatoriosPage() {
                   latitude: Number(v.funcionarios.latitude),
                   longitude: Number(v.funcionarios.longitude),
                   modalidade: isEJA ? 'EJA' : 'Regular',
-                  tipo_vinculo: v.funcionarios.tipo_vinculo || null
+                  tipo_vinculo: v.funcionarios.tipo_vinculo || null,
+                  cidade: v.funcionarios.cidade || 'Sapeaçu',
+                  zona: v.funcionarios.area_residencia || 'Zona Urbana'
                 }
               })
             
@@ -612,7 +616,7 @@ export default function RelatoriosPage() {
                     <span className="text-sm font-semibold">Buscando dados geográficos...</span>
                   </div>
                 ) : (
-                  <MapaGlobal funcionarios={mapData} />
+                  <MapaGlobal funcionarios={mapData} isEmaee={isEMAEE} />
                 )
               ) : (
                 isLoadingMapAlunos ? (

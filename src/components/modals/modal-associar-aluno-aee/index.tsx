@@ -171,7 +171,7 @@ export function ModalAssociarAlunoAEE({
         <div className="space-y-4">
           <div>
             <Label className="text-xs text-gray-300">Selecione o Aluno (Prontuário EMAEE)</Label>
-            <Select value={alunoSelecionadoId} onValueChange={setAlunoSelecionadoId}>
+            <Select value={alunoSelecionadoId} onValueChange={(val) => setAlunoSelecionadoId(val || '')}>
               <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
                 <SelectValue placeholder={loading ? "Carregando..." : "Selecione o aluno..."} />
               </SelectTrigger>
@@ -194,7 +194,7 @@ export function ModalAssociarAlunoAEE({
 
           <div>
             <Label className="text-xs text-gray-300">Frequência de Atendimento</Label>
-            <Select value={frequencia} onValueChange={setFrequencia}>
+            <Select value={frequencia} onValueChange={(val) => setFrequencia(val || '')}>
               <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
                 <SelectValue placeholder="Frequência" />
               </SelectTrigger>
