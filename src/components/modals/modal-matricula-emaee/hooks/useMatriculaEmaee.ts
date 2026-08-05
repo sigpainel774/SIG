@@ -41,27 +41,50 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_outros: false,
   })
   
-  // Especialidades Vinculadas
-  const [especialidades, setEspecialidades] = useState<string[]>([])
-  const [outraEspecialidade, setOutraEspecialidade] = useState('')
+  // Profissionais Vinculados
+  const [profissionaisSelecionados, setProfissionaisSelecionados] = useState<{
+    profissional_id: string;
+    especialidade: string;
+    frequencia: string;
+  }[]>([])
   
-  // Lista de Escolas Regulares
+  // Lista de Escolas Regulares e Profissionais da EMAEE
   const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
+  const [profissionaisAEE, setProfissionaisAEE] = useState<any[]>([])
 
-  // Busca inicial das escolas
+  // Busca inicial
   React.useEffect(() => {
-    async function fetchEscolas() {
-      const { data } = await supabase
+    let isMounted = true
+    async function fetchData() {
+      // 1. Busca escolas regulares
+      const { data: escolasData } = await supabase
         .from('escolas')
         .select('id, nome')
         .eq('ativo', true)
         .order('nome')
-      if (data) setEscolas(data)
+      if (escolasData && isMounted) setEscolas(escolasData)
+
+      // 2. Busca profissionais desta EMAEE
+      if (props.escolaEmaeeId) {
+        const { data: profData } = await supabase
+          .from('funcionarios')
+          .select(`
+            id, nome, cargo, foto_avatar_path,
+            vinculos_funcionarios!inner(escola_id, ativo)
+          `)
+          .eq('vinculos_funcionarios.escola_id', props.escolaEmaeeId)
+          .eq('vinculos_funcionarios.ativo', true)
+          .is('deleted_at', null)
+          .order('nome')
+        
+        if (profData && isMounted) setProfissionaisAEE(profData)
+      }
     }
     if (isOpen) {
-      fetchEscolas()
+      fetchData()
     }
-  }, [isOpen])
+    return () => { isMounted = false }
+  }, [isOpen, props.escolaEmaeeId, supabase])
 
   const handleSearchAluno = async (term: string) => {
     if (!term || term.length < 3) {
@@ -109,12 +132,18 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setDeficiencias(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
-  const toggleEspecialidade = (especialidade: string) => {
-    setEspecialidades(prev => 
-      prev.includes(especialidade) 
-        ? prev.filter(e => e !== especialidade)
-        : [...prev, especialidade]
-    )
+  const toggleProfissional = (profissionalId: string, cargo: string) => {
+    setProfissionaisSelecionados(prev => {
+      const exists = prev.find(p => p.profissional_id === profissionalId)
+      if (exists) return prev.filter(p => p.profissional_id !== profissionalId)
+      return [...prev, { profissional_id: profissionalId, especialidade: cargo || 'Outros', frequencia: 'SEMANAL' }]
+    })
+  }
+
+  const updateFrequenciaProfissional = (profissionalId: string, freq: string) => {
+    setProfissionaisSelecionados(prev => prev.map(p => 
+      p.profissional_id === profissionalId ? { ...p, frequencia: freq } : p
+    ))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,27 +181,15 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       if (matriculaError) throw matriculaError
 
       // 2. Inserir especialidades se houver
-      if (especialidades.length > 0 || outraEspecialidade) {
-        const specsToInsert = especialidades.map(esp => ({
+      if (profissionaisSelecionados.length > 0) {
+        const specsToInsert = profissionaisSelecionados.map(p => ({
           emaee_matricula_id: matricula.id,
-          profissional_id: null as any, // Será definido ao admitir
-          especialidade: esp,
-          especialidade_outros: esp === 'Outros' ? outraEspecialidade : null,
-          dia_semana: 1, // Default, será preenchido ao admitir
+          profissional_id: p.profissional_id,
+          especialidade: p.especialidade,
+          frequencia: p.frequencia,
+          dia_semana: 1, // Default
           horario_inicio: '08:00:00'
         }))
-
-        // Se houver "Outros" mas não estiver no array (caso o checkbox não seja usado)
-        if (outraEspecialidade && !especialidades.includes('Outros')) {
-          specsToInsert.push({
-            emaee_matricula_id: matricula.id,
-            profissional_id: null as any,
-            especialidade: 'Outros',
-            especialidade_outros: outraEspecialidade,
-            dia_semana: 1,
-            horario_inicio: '08:00:00'
-          })
-        }
 
         const { error: specError } = await supabase
           .from('emaee_especialidades_vinculadas')
@@ -215,8 +232,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     observacoes, setObservacoes,
     
     deficiencias, toggleDeficiencia,
-    especialidades, toggleEspecialidade,
-    outraEspecialidade, setOutraEspecialidade,
+    profissionaisAEE,
+    profissionaisSelecionados, toggleProfissional, updateFrequenciaProfissional,
     
     handleSubmit
   }

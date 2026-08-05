@@ -144,7 +144,7 @@ export function Sidebar() {
           items: [
             { href: '/emaee/pacientes', label: 'Pastas de Alunos / Saúde', icon: Heart },
             { href: '/emaee/fila-espera', label: 'Fila de Espera & Admissão', icon: Clock },
-            { href: '/emaee/vincular-profissionais', label: 'Vincular Especialistas', icon: UserPlus },
+            { href: '/emaee/vincular-profissionais', label: 'Profissionais AEE', icon: UserPlus },
             { href: '/emaee/solicitacoes-escola', label: 'Relatórios das Escolas', icon: FileSpreadsheet },
           ]
         },

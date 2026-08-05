@@ -116,13 +116,6 @@ const REPORT_CARDS = [
     icon: ShieldAlert,
     variant: 'warning' as const,
   },
-  {
-    id: 'fila_espera' as const,
-    title: 'Fila de Espera & Admissão',
-    description: 'Estatísticas de encaminhamentos, triagens e tempo médio de espera no AEE.',
-    icon: Clock,
-    variant: 'warning' as const,
-  },
 ]
 
 export default function RelatoriosPage() {

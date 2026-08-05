@@ -150,49 +150,51 @@ export function SecaoDadosClinicos() {
         </div>
       </div>
 
-      {/* Especialidades */}
+      {/* Profissionais AEE */}
       <div>
         <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
-          5. Atendimento Especializado Solicitado
+          5. Profissionais AEE Solicitados
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs text-zinc-300 bg-[#121212] border border-[#2a2a2a] p-4 rounded-xl">
-          {[
-            'Atendimento Educacional Especializado',
-            'Psicóloga',
-            'Psicopedagoga',
-            'Fonoaudióloga',
-            'Fisioterapeuta',
-            'Neuropediatra'
-          ].map((esp) => (
-            <label key={esp} className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-              <input 
-                type="checkbox" 
-                checked={especialidades.includes(esp)}
-                onChange={() => toggleEspecialidade(esp)}
-                className="rounded border-[#2a2a2a] bg-[#1a1a1a] text-[#3ea6ff] focus:ring-[#3ea6ff]/50"
-              />
-              {esp}
-            </label>
-          ))}
-          
-          <div className="flex items-center gap-2 w-full md:col-span-2 lg:col-span-3 mt-1">
-            <label className="flex items-center gap-2 cursor-pointer hover:text-white shrink-0">
-              <input 
-                type="checkbox" 
-                checked={especialidades.includes('Outros')}
-                onChange={() => toggleEspecialidade('Outros')}
-                className="rounded border-[#2a2a2a] bg-[#1a1a1a] text-[#3ea6ff] focus:ring-[#3ea6ff]/50"
-              />
-              Outros:
-            </label>
-            <Input 
-              value={outraEspecialidade}
-              onChange={(e) => setOutraEspecialidade(e.target.value)}
-              disabled={!especialidades.includes('Outros')}
-              placeholder="Especifique..."
-              className="h-7 text-xs bg-[#1a1a1a] border-[#2a2a2a] text-white flex-1"
-            />
-          </div>
+        <div className="bg-[#121212] border border-[#2a2a2a] p-4 rounded-xl space-y-4">
+          {profissionaisAEE.length === 0 ? (
+            <p className="text-xs text-gray-400">Nenhum profissional especializado vinculado a esta unidade.</p>
+          ) : (
+            profissionaisAEE.map(prof => {
+              const isSelected = profissionaisSelecionados.some(p => p.profissional_id === prof.id)
+              const freq = profissionaisSelecionados.find(p => p.profissional_id === prof.id)?.frequencia || 'SEMANAL'
+              return (
+                <div key={prof.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
+                  <label className="flex items-center gap-3 cursor-pointer flex-1">
+                    <input 
+                      type="checkbox" 
+                      checked={isSelected}
+                      onChange={() => toggleProfissional(prof.id, prof.cargo)}
+                      className="rounded border-[#333] bg-[#222] text-[#3ea6ff] focus:ring-[#3ea6ff]/50 w-4 h-4"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-white font-medium">{prof.nome}</span>
+                      <span className="text-xs text-gray-400">{prof.cargo || 'Especialista'}</span>
+                    </div>
+                  </label>
+                  
+                  {isSelected && (
+                    <div className="w-full sm:w-40 mt-2 sm:mt-0">
+                      <Select value={freq} onValueChange={(val) => updateFrequenciaProfissional(prof.id, val)}>
+                        <SelectTrigger className="h-8 text-xs bg-[#222] border-[#333] text-white">
+                          <SelectValue placeholder="Frequência" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+                          <SelectItem value="SEMANAL">Semanal</SelectItem>
+                          <SelectItem value="QUINZENAL">Quinzenal</SelectItem>
+                          <SelectItem value="MENSAL">Mensal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     </div>
