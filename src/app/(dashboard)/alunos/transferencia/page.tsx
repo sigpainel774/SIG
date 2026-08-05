@@ -116,7 +116,7 @@ export default function TransferenciaAlunoPage() {
           aluno: alunoSelecionado,
           motivo: `TRANSFERENCIA_FORA_REDE: ${motivo}`,
           escolaOrigemId: alunoSelecionado.escola_id || undefined,
-          arquivadoPor: { id: funcionario?.id ?? '', name: funcionario?.nome ?? '', email: funcionario?.email ?? '' }
+          arquivadoPor: { id: funcionario?.id ?? null, name: funcionario?.nome ?? '', email: funcionario?.email ?? '' }
         })
         if (res.success) {
           toast.success('Aluno transferido para Fora da Rede e arquivado com sucesso!')

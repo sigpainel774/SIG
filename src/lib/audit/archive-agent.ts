@@ -6,7 +6,7 @@ export async function arquivarAluno(params: {
   aluno: any
   motivo: string
   escolaOrigemId?: string
-  arquivadoPor: { id: string; name: string; email: string }
+  arquivadoPor: { id: string | null; name: string; email: string }
   arquivosAnexos?: object[]
 }) {
   try {
@@ -58,7 +58,7 @@ export async function arquivarAluno(params: {
 export async function reverterArquivado(params: {
   supabaseAdmin: SupabaseClient // Must use admin client to bypass RLS/views if needed
   arquivadoId: string
-  revertidoPor: { id: string; name: string; email: string }
+  revertidoPor: { id: string | null; name: string; email: string }
 }) {
   try {
     const performedById = params.revertidoPor.id && params.revertidoPor.id !== '' ? params.revertidoPor.id : null
@@ -113,7 +113,7 @@ export async function reverterArquivado(params: {
 export async function excluirDefinitivamenteArquivado(params: {
   supabaseAdmin: SupabaseClient
   arquivadoId: string
-  excluidoPor: { id: string; name: string; email: string }
+  excluidoPor: { id: string | null; name: string; email: string }
 }) {
   try {
     const performedById = params.excluidoPor.id && params.excluidoPor.id !== '' ? params.excluidoPor.id : null
@@ -185,7 +185,7 @@ export async function excluirDefinitivamenteArquivado(params: {
 export async function purgeAlunoArquivadoDirect(params: {
   supabaseAdmin: SupabaseClient
   alunoId: string
-  performedBy: { id: string; name: string; email: string }
+  performedBy: { id: string | null; name: string; email: string }
 }) {
   try {
     const performedById = params.performedBy.id && params.performedBy.id !== '' ? params.performedBy.id : null
@@ -247,7 +247,7 @@ export async function arquivarAnexo(params: {
   anexo: any
   motivo: string
   escolaId?: string
-  arquivadoPor: { id: string; name: string; email: string }
+  arquivadoPor: { id: string | null; name: string; email: string }
 }) {
   try {
     const performedById = params.arquivadoPor.id && params.arquivadoPor.id !== '' ? params.arquivadoPor.id : null
