@@ -190,22 +190,22 @@ export default function PacientesPage() {
                 className="bg-card border border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-sm relative group"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 border-b border-border/50 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                         {paciente.alunos?.nome?.substring(0, 2).toUpperCase()}
                       </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground truncate max-w-[160px]">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground truncate" title={paciente.alunos?.nome}>
                           {paciente.alunos?.nome}
                         </h3>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground truncate block">
                           Matrícula: {paciente.numero_matricula_emaee ?? 'Investigando'}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 whitespace-nowrap ${
                       paciente.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                       paciente.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
                       'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
