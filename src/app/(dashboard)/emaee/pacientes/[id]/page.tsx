@@ -17,7 +17,8 @@ import {
   Plus,
   Activity,
   CheckCircle,
-  FileText
+  FileText,
+  Printer
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -25,11 +26,16 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
+import { PrintEvolucoesEmaee, EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
+import { useSchoolStore } from '@/store/useSchoolStore'
+
+const sessionTimestamp = Date.now()
 
 export default function PacienteDetalhesPage() {
   const params = useParams()
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id || '')
   const { funcionario } = useAuthStore()
+  const { selectedEscola } = useSchoolStore()
   
   const [prontuario, setProntuario] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -39,6 +45,7 @@ export default function PacienteDetalhesPage() {
   // Estados de Evolução
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
+  const [printData, setPrintData] = useState<EvolucaoPrintData[] | null>(null)
 
   // Estados de Especialidades
   const [especialidades, setEspecialidades] = useState<any[]>([])
@@ -101,7 +108,8 @@ export default function PacienteDetalhesPage() {
         .select(`
           *,
           funcionarios (
-            nome
+            nome,
+            assinatura_url
           )
         `)
         .eq('emaee_matricula_id', id)
@@ -390,15 +398,26 @@ export default function PacienteDetalhesPage() {
                   <h3 className="text-base font-bold text-foreground">Histórico de Atendimento e Evolução</h3>
                   <p className="text-xs text-muted-foreground">Evoluções clínicas chanceladas pelos especialistas</p>
                 </div>
-                <ModalEvolucaoEmaee
-                  matriculaEmaeeId={id}
-                  onSuccess={carregarEvolucoes}
-                  trigger={
-                    <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
-                      <Plus className="w-4 h-4" /> Evolução de Sessão
+                <div className="flex items-center gap-2">
+                  {evolucoes.length > 0 && (
+                    <Button
+                      onClick={() => setPrintData(evolucoes)}
+                      variant="outline"
+                      className="border-border text-foreground hover:bg-hoverCustom rounded-xl gap-2 font-semibold text-xs py-2 shadow-sm"
+                    >
+                      <Printer className="w-4 h-4" /> Imprimir Todas
                     </Button>
-                  }
-                />
+                  )}
+                  <ModalEvolucaoEmaee
+                    matriculaEmaeeId={id}
+                    onSuccess={carregarEvolucoes}
+                    trigger={
+                      <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
+                        <Plus className="w-4 h-4" /> Evolução de Sessão
+                      </Button>
+                    }
+                  />
+                </div>
               </div>
 
               {loadingEvolucoes ? (
@@ -411,27 +430,51 @@ export default function PacienteDetalhesPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {evolucoes.map((evo) => (
-                    <div key={evo.id} className="border border-border/80 rounded-xl p-4 space-y-2 bg-secondary/30 relative">
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-2 text-xs">
-                        <div className="flex items-center gap-2 font-semibold text-primary">
-                          <Activity className="w-4 h-4" />
-                          <span>{evo.especialidade}</span>
+                  {evolucoes.map((evo) => {
+                    const sigUrl = evo.assinatura_profissional_url || evo.funcionarios?.assinatura_url
+                    return (
+                      <div key={evo.id} className="border border-border/80 rounded-xl p-4 space-y-2 bg-secondary/30 relative">
+                        <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-2 text-xs">
+                          <div className="flex items-center gap-2 font-semibold text-primary">
+                            <Activity className="w-4 h-4" />
+                            <span>{evo.especialidade}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-muted-foreground">{new Date(evo.data_atendimento).toLocaleDateString('pt-BR')}</span>
+                            <button
+                              onClick={() => setPrintData([evo])}
+                              title="Imprimir esta evolução"
+                              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer p-0.5 rounded hover:bg-secondary"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        <span className="text-muted-foreground">{new Date(evo.data_atendimento).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                      <p className="text-xs text-foreground font-normal leading-relaxed">{evo.resumo_evolucao}</p>
-                      {evo.conduta_orientacoes && (
-                        <div className="pt-2 border-t border-dashed border-border text-xs text-muted-foreground">
-                          <strong>Conduta: </strong>{evo.conduta_orientacoes}
+                        <p className="text-xs text-foreground font-normal leading-relaxed">{evo.resumo_evolucao}</p>
+                        {evo.conduta_orientacoes && (
+                          <div className="pt-2 border-t border-dashed border-border text-xs text-muted-foreground">
+                            <strong>Conduta: </strong>{evo.conduta_orientacoes}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2.5 border-t border-dashed border-border mt-2">
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Assinado por: {evo.funcionarios?.nome || 'Profissional'}</span>
+                          </div>
+                          {sigUrl && (
+                            <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-gray-200">
+                              <span className="text-[8px] text-gray-500 font-bold uppercase">Assinatura:</span>
+                              <img
+                                src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
+                                alt="Assinatura"
+                                className="h-5 object-contain max-w-[120px]"
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <div className="flex justify-end pt-2 text-[10px] text-emerald-400 font-semibold items-center gap-1">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Assinado por: {evo.funcionarios?.nome || 'Profissional'}</span>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -568,6 +611,15 @@ export default function PacienteDetalhesPage() {
           </div>
         </div>
       </StandardDialog>
+
+      {printData && prontuario && (
+        <PrintEvolucoesEmaee
+          aluno={prontuario}
+          evolucoes={printData}
+          escolaLogoUrl={selectedEscola?.logo_url}
+          onClose={() => setPrintData(null)}
+        />
+      )}
     </div>
   )
 }
