@@ -14,6 +14,7 @@ export interface FuncionarioBasico {
   longitude?: number | null
   telefone?: string | null
   modalidade_ensino?: string | null
+  registro_profissional?: string | null
 }
 
 export interface ModalFuncionarioProps {
@@ -70,6 +71,8 @@ export interface FuncionarioFormContextType {
   // Identificação Básica
   empId: string
   authUserId: string | null
+  registroProfissional: string
+  setRegistroProfissional: (v: string) => void
   escolaId: string
   setEscolaId: (v: string) => void
   escolaNome: string

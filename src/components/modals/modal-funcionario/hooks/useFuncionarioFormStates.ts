@@ -138,6 +138,7 @@ export function useFuncionarioFormStates({
 
   // Contato extra
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
+  const [registroProfissional, setRegistroProfissional] = useState('')
 
   // Saúde
   const [possuiDeficiencia, setPossuiDeficiencia] = useState(false)
@@ -245,6 +246,7 @@ export function useFuncionarioFormStates({
             setAuthUserId(data.auth_user_id || null)
             populatePessoais(data)
             setTelefoneEmergencia(data.telefone_emergencia ?? '')
+            setRegistroProfissional((data as any).registro_profissional ?? '')
             setDataAdmissao(data.data_admissao ?? '')
             setTipoSanguineo(data.tipo_sanguineo ?? 'Não informado')
             setCargo(data.cargo ?? '')
@@ -392,6 +394,7 @@ export function useFuncionarioFormStates({
         // Reset states
         resetPessoais()
         setTelefoneEmergencia('')
+        setRegistroProfissional('')
         setDataAdmissao('')
         setTipoSanguineo('Não informado')
         setCargo('')
@@ -608,6 +611,7 @@ export function useFuncionarioFormStates({
         email: cleanEmail,
         cpf: cpf || null,
         cargo: cargo || null,
+        registro_profissional: registroProfissional || null,
         status,
         formacao: escolaridadeNivel || null,
         data_nascimento: nascimento || null,
@@ -1031,6 +1035,7 @@ export function useFuncionarioFormStates({
     apelido, setApelido,
     email, setEmail,
     cpf, setCpf,
+    registroProfissional, setRegistroProfissional,
     censo, setCenso,
     estadoCivil, setEstadoCivil,
     corRaca, setCorRaca,

@@ -35,6 +35,16 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
   const [conduta, setConduta] = useState('')
   const [assinaturaBase64, setAssinaturaBase64] = useState<string | null>(null)
 
+  const [profissionalNome, setProfissionalNome] = useState(funcionario?.nome || '')
+  const [profissionalRegistro, setProfissionalRegistro] = useState((funcionario as any)?.registro_profissional || '')
+
+  React.useEffect(() => {
+    if (funcionario) {
+      setProfissionalNome((prev: string) => prev || funcionario.nome || '')
+      setProfissionalRegistro((prev: string) => prev || (funcionario as any)?.registro_profissional || '')
+    }
+  }, [funcionario])
+
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
     setIsOpen(val)
@@ -45,6 +55,8 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
       setConduta('')
       setAssinaturaBase64(null)
       setDataAtendimento(new Date().toISOString().split('T')[0])
+      setProfissionalNome(funcionario?.nome || '')
+      setProfissionalRegistro((funcionario as any)?.registro_professional || '')
     }
   }
 
@@ -82,8 +94,10 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
           tipo_atendimento: tipoAtendimento,
           resumo_evolucao: resumo,
           conduta_orientacoes: conduta || '',
-          assinado_em: new Date().toISOString()
-        })
+          assinado_em: new Date().toISOString(),
+          profissional_nome: profissionalNome || null,
+          profissional_registro: profissionalRegistro || null
+        } as any)
         .select('id')
         .single()
         
@@ -160,6 +174,29 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
         }
       >
         <form id="form-evolucao-emaee" onSubmit={handleSubmit} className="space-y-6 pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-gray-300">Nome do Profissional *</Label>
+              <Input
+                required
+                value={profissionalNome}
+                onChange={e => setProfissionalNome(e.target.value)}
+                className="bg-[#121212] border-[#2a2a2a] text-white mt-1"
+                placeholder="Nome do profissional"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-300">Registro Profissional *</Label>
+              <Input
+                required
+                value={profissionalRegistro}
+                onChange={e => setProfissionalRegistro(e.target.value)}
+                className="bg-[#121212] border-[#2a2a2a] text-white mt-1"
+                placeholder="Ex: CRP 03/12345"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-gray-300">Especialidade do Atendimento *</Label>
