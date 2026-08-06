@@ -15,6 +15,8 @@ export interface EvolucaoPrintData {
   conduta_orientacoes?: string | null
   assinado_em?: string | null
   assinatura_profissional_url?: string | null
+  profissional_nome?: string | null
+  profissional_registro?: string | null
   funcionarios?: {
     nome: string
     assinatura_url?: string | null
@@ -228,10 +230,10 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
                             )}
                           </div>
                           <div className="text-[10px] font-bold text-gray-800 leading-none">
-                            {evo.funcionarios?.nome || 'Profissional'}
+                            {evo.profissional_nome || evo.funcionarios?.nome || 'Profissional'}
                           </div>
                           <div className="text-[8px] text-gray-500 uppercase mt-0.5">
-                            {evo.especialidade}
+                            {evo.especialidade} {evo.profissional_registro ? ` - ${evo.profissional_registro}` : ''}
                           </div>
                           <div className="text-[7.5px] text-gray-400 mt-0.5">
                             Assinado digitalmente em: {assinadoEmFormatada ?? dataFormatada}

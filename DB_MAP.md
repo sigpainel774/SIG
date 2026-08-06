@@ -66,6 +66,7 @@ Cadastro principal de servidores e servidores municipais.
 *   `doc_identidade_url`, `doc_cpf_url`, `doc_comprovante_residencia_url`, `doc_ensino_fundamental_url`, `doc_ensino_medio_url`, `doc_curso_superior_url`, `doc_pos_graduacao_url`, `doc_mestrado_url`, `doc_doutorado_url`: Documentos comprobatórios (Nullable)
 *   `observacoes`: `text` (Nullable)
 *   `data_preenchimento`: `date` (Nullable)
+*   `registro_profissional`: `text` (Número de registro profissional / conselho regional, ex: CRP, CRM, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -665,6 +666,24 @@ Organização estrutural dos órgãos macro (ex: Secretaria de Educação, Secre
 *   `logo_url`: `text` (Nullable)
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `deleted_at`: `timestamp with time zone` (Nullable)
+
+### 56. `public.emaee_evolucoes`
+Histórico de atendimentos e evolução clínica dos pacientes do EMAEE.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `emaee_matricula_id`: `uuid` (FK -> `public.emaee_matriculas.id`, NOT NULL)
+*   `profissional_id`: `uuid` (FK -> `public.funcionarios.id`, NOT NULL)
+*   `especialidade`: `text` (NOT NULL)
+*   `data_atendimento`: `date` (NOT NULL)
+*   `tipo_atendimento`: `text` (Nullable)
+*   `resumo_evolucao`: `text` (NOT NULL)
+*   `conduta_orientacoes`: `text` (Nullable)
+*   `anexos_sessao`: `jsonb` (Nullable)
+*   `assinatura_profissional_url`: `text` (Nullable)
+*   `assinado_em`: `timestamp with time zone` (Nullable)
+*   `profissional_nome`: `text` (Nome do profissional no momento do registro, Nullable)
+*   `profissional_registro`: `text` (Número de registro profissional no momento do registro, Nullable)
+*   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
 ---

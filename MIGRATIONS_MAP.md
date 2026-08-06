@@ -13,7 +13,7 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 
 ---
 
-## 🗺️ Inventário Completo de Migrations (55 Arquivos)
+## 🗺️ Inventário Completo de Migrations (68 Arquivos)
 
 | # | Arquivo / Migration | Data / Prefixo | Propósito & Descrição | Tabelas / Entidades Afetadas | RLS / Segurança |
 |---|---------------------|----------------|-----------------------|------------------------------|-----------------|
@@ -84,4 +84,5 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 65 | `20260805120000_fix_escolas_rls.sql` | 2026-08-05 | Separa policy ALL da tabela escolas em INSERT/UPDATE/DELETE. Previne infinite recursion no PostgREST SELECT da tela de listagem de unidades e postos de saúde. | `escolas` (policies) | Proteção Recursão RLS |
 | 66 | `20260805191500_encaminhamentos_emaee.sql` | 2026-08-05 | Adiciona `tipo_movimentacao` em `transferencias_alunos`, colunas de anexos de requerimento em `emaee_matriculas` e RPC `solicitar_encaminhamento_emaee` para encaminhamento direto da escola para a fila do EMMAE com notificação aos usuários Nível 2 do EMMAE. | `transferencias_alunos`, `emaee_matriculas`, `acessos_usuarios` | `SECURITY DEFINER` + RLS |
 | 67 | `20260805202000_update_emaee_matriculas_prototype_fields.sql` | 2026-08-05 | Adiciona colunas complementares para a Ficha AEE 2026 (`outros_transtornos`, `assinatura_responsavel_matricula_url`, `assinatura_responsavel_aluno_url` em `emaee_matriculas` e `uf_nascimento`, `municipio_nascimento`, `zona_residencial` em `alunos`). | `emaee_matriculas`, `alunos` | `dev_all_authenticated` / Mantém RLS |
+| 68 | `20260805235000_add_profissional_details_to_emaee_evolucoes.sql` | 2026-08-05 | Adiciona coluna `registro_profissional` na tabela `funcionarios` e colunas `profissional_nome`/`profissional_registro` na tabela `emaee_evolucoes`. | `funcionarios`, `emaee_evolucoes` | `dev_all_authenticated` / Mantém RLS |
 

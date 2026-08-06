@@ -16,6 +16,7 @@ export function DocumentosTab() {
     consultarCep,
     rg, setRg,
     nis, setNis,
+    registroProfissional, setRegistroProfissional,
     logradouro, setLogradouro,
     numero, setNumero,
     cep, setCep,
@@ -62,7 +63,7 @@ export function DocumentosTab() {
   return (
     <div className="space-y-4">
       <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Documentação Básica</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <div className="flex items-center justify-between">
             <Label>CPF</Label>
@@ -96,6 +97,15 @@ export function DocumentosTab() {
             value={nis}
             onChange={(e) => setNis(e.target.value)}
             placeholder="Número do NIS"
+            className="bg-[#181818] border-borderCustom text-white mt-1"
+          />
+        </div>
+        <div>
+          <Label>Registro Profissional (ex: CRP, CRM)</Label>
+          <Input
+            value={registroProfissional}
+            onChange={(e) => setRegistroProfissional(e.target.value)}
+            placeholder="Ex: CRP 03/12345"
             className="bg-[#181818] border-borderCustom text-white mt-1"
           />
         </div>

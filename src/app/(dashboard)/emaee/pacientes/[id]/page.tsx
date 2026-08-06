@@ -413,7 +413,7 @@ export default function PacienteDetalhesPage() {
                     onSuccess={carregarEvolucoes}
                     trigger={
                       <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
-                        <Plus className="w-4 h-4" /> Evolução de Sessão
+                        <Plus className="w-4 h-4" /> Evolução
                       </Button>
                     }
                   />
@@ -457,9 +457,12 @@ export default function PacienteDetalhesPage() {
                           </div>
                         )}
                         <div className="flex items-center justify-between pt-2.5 border-t border-dashed border-border mt-2">
-                          <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold flex-wrap">
                             <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Assinado por: {evo.funcionarios?.nome || 'Profissional'}</span>
+                            <span>Assinado por: {evo.profissional_nome || evo.funcionarios?.nome || 'Profissional'}</span>
+                            {evo.profissional_registro && (
+                              <span className="text-zinc-400 font-normal ml-1">({evo.profissional_registro})</span>
+                            )}
                           </div>
                           {sigUrl && (
                             <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-gray-200">
