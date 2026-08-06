@@ -232,6 +232,24 @@ export default function PacienteDetalhesPage() {
   const aluno = prontuario.alunos
   const regularEscola = prontuario.escolas?.nome ?? 'Não matriculado em escola regular / Encaminhamento externo'
 
+  const atualizarStatusProntuario = async (novoStatus: string) => {
+    const supabase = createClient()
+    try {
+      const { error } = await supabase
+        .from('emaee_matriculas')
+        .update({ status: novoStatus })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setProntuario((prev: any) => ({ ...prev, status: novoStatus }))
+      toast.success('Status do prontuário atualizado com sucesso!')
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Erro ao atualizar status do prontuário')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -243,16 +261,27 @@ export default function PacienteDetalhesPage() {
             </Button>
           </Link>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-foreground">{aluno?.nome}</h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
-              }`}>
-                {prontuario.status === 'ATIVO' ? 'Em Atendimento' :
-                 prontuario.status === 'EM_INVESTIGACAO' ? 'Em Investigação' : 'Fila de Espera'}
-              </span>
+              
+              {/* Select de Status */}
+              <select
+                value={prontuario.status || 'FILA_ESPERA'}
+                onChange={(e) => atualizarStatusProntuario(e.target.value)}
+                className={`px-3 py-1 rounded-full text-xs font-bold outline-none border cursor-pointer transition-all ${
+                  prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                  prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                  prontuario.status === 'ALTA' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                  prontuario.status === 'INATIVO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
+                  'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+                }`}
+              >
+                <option value="FILA_ESPERA" className="bg-[#121621] text-zinc-300">Fila de Espera</option>
+                <option value="EM_INVESTIGACAO" className="bg-[#121621] text-amber-300">Em Investigação</option>
+                <option value="ATIVO" className="bg-[#121621] text-emerald-300">Em Atendimento</option>
+                <option value="ALTA" className="bg-[#121621] text-blue-300">Alta Médica</option>
+                <option value="INATIVO" className="bg-[#121621] text-rose-300">Inativo</option>
+              </select>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Matrícula EMAEE: {prontuario.numero_matricula_emaee ?? 'Investigando'} | regular: {regularEscola}
