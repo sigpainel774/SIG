@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,11 @@ import {
   Upload, 
   CheckCircle2, 
   AlertCircle, 
-  FileText 
+  FileText,
+  User,
+  Folder,
+  ChevronDown,
+  X
 } from 'lucide-react'
 
 interface Anexo {
@@ -25,6 +29,7 @@ interface Anexo {
   nome: string
   arquivo_url: string
   created_at: string
+  tipo: string
 }
 
 interface ModalAlunosAnexosProps {
@@ -47,6 +52,14 @@ export function ModalAlunosAnexos({
   const [anexosPadrao, setAnexosPadrao] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   
+  // Controle de abas
+  const [activeTab, setActiveTab] = useState<'laudos' | 'pessoais' | 'outros' | 'checklist'>('laudos')
+
+  // Controle do formulário de upload
+  const [uploadFormOpen, setUploadFormOpen] = useState(false)
+  const [tipoSelecionado, setTipoSelecionado] = useState<'Laudos' | 'Documentos Pessoais' | 'Outros' | null>(null)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
   // Estados para novo anexo personalizado
   const [novoNome, setNovoNome] = useState('')
   const [novoArquivo, setNovoArquivo] = useState<File | null>(null)
@@ -55,7 +68,15 @@ export function ModalAlunosAnexos({
   // Estado para indicar qual anexo padrão está fazendo upload
   const [uploadingPadraoName, setUploadingPadraoName] = useState<string | null>(null)
 
+  const isMounted = useRef(true)
   const supabase = createClient()
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   const carregarAnexos = async () => {
     if (!aluno?.id) return
@@ -64,13 +85,16 @@ export function ModalAlunosAnexos({
       // 1. Carregar anexos existentes do aluno
       const { data: anexosData, error: anexosError } = await supabase
         .from('alunos_anexos')
-        .select('id, aluno_id, nome, arquivo_url, created_at, deleted_at, arquivado_por, motivo_arquivamento')
+        .select('id, aluno_id, nome, arquivo_url, created_at, deleted_at, arquivado_por, motivo_arquivamento, tipo')
         .eq('aluno_id', aluno.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       if (anexosError) throw anexosError
-      setAnexos(anexosData ?? [])
+      
+      if (isMounted.current) {
+        setAnexos(anexosData ?? [])
+      }
 
       // 2. Carregar anexos padrão da escola
       const escolaId = escolaAtivaId || aluno.escola_id
@@ -81,21 +105,36 @@ export function ModalAlunosAnexos({
           .eq('id', escolaId)
           .single()
 
-        if (!escolaError && escolaData) {
-          setAnexosPadrao(escolaData.anexos_padrao ?? [])
+        if (!escolaError && escolaData && isMounted.current) {
+          const listPadrao = escolaData.anexos_padrao ?? []
+          setAnexosPadrao(listPadrao)
+          
+          // Se não houver anexos padrão configurados para a escola, ajusta a aba ativa caso estivesse nela
+          if (listPadrao.length === 0 && activeTab === 'checklist') {
+            setActiveTab('laudos')
+          }
         }
       }
     } catch (error) {
       console.error('Erro ao carregar anexos:', error)
       toast.error('Erro ao carregar anexos do aluno.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
     if (open && aluno?.id) {
       carregarAnexos()
+    } else if (!open) {
+      // Resetar estados de upload ao fechar para mitigar vazamentos e lixo de estados de UX
+      setNovoNome('')
+      setNovoArquivo(null)
+      setUploadFormOpen(false)
+      setTipoSelecionado(null)
+      setDropdownOpen(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, aluno?.id])
@@ -120,6 +159,10 @@ export function ModalAlunosAnexos({
 
   // Upload de anexo personalizado
   const handleUpload = async () => {
+    if (!tipoSelecionado) {
+      toast.error('Por favor, selecione o tipo de anexo.')
+      return
+    }
     if (!novoNome.trim()) {
       toast.error('Por favor, digite um nome para o anexo.')
       return
@@ -138,23 +181,42 @@ export function ModalAlunosAnexos({
         .insert({
           aluno_id: aluno.id,
           nome: novoNome.trim(),
-          arquivo_url: publicUrl
+          arquivo_url: publicUrl,
+          tipo: tipoSelecionado
         })
 
       if (dbError) throw dbError
 
-      toast.success('Anexo personalizado adicionado!')
-      setNovoNome('')
-      setNovoArquivo(null)
-      const fileInput = document.getElementById('novo-anexo-file') as HTMLInputElement
-      if (fileInput) fileInput.value = ''
+      toast.success('Anexo adicionado com sucesso!')
+      
+      if (isMounted.current) {
+        setNovoNome('')
+        setNovoArquivo(null)
+        setUploadFormOpen(false)
+        
+        // Direcionar o usuário para a aba que acabou de receber o upload
+        if (tipoSelecionado === 'Laudos') {
+          setActiveTab('laudos')
+        } else if (tipoSelecionado === 'Documentos Pessoais') {
+          setActiveTab('pessoais')
+        } else {
+          setActiveTab('outros')
+        }
+        
+        setTipoSelecionado(null)
+        
+        const fileInput = document.getElementById('novo-anexo-file') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
+      }
       
       carregarAnexos()
     } catch (error) {
       console.error('Erro no upload de anexo:', error)
       toast.error('Erro ao enviar o anexo.')
     } finally {
-      setUploading(false)
+      if (isMounted.current) {
+        setUploading(false)
+      }
     }
   }
 
@@ -169,18 +231,24 @@ export function ModalAlunosAnexos({
         .insert({
           aluno_id: aluno.id,
           nome: nomePadrao,
-          arquivo_url: publicUrl
+          arquivo_url: publicUrl,
+          tipo: 'Documentos Pessoais' // Salva como documentos pessoais por padrão
         })
 
       if (dbError) throw dbError
 
       toast.success(`Documento "${nomePadrao}" anexado com sucesso!`)
+      if (isMounted.current) {
+        setActiveTab('pessoais') // Direciona para aba onde o documento estará visível
+      }
       carregarAnexos()
     } catch (error) {
       console.error('Erro no upload de anexo padrão:', error)
       toast.error(`Erro ao anexar o documento "${nomePadrao}".`)
     } finally {
-      setUploadingPadraoName(null)
+      if (isMounted.current) {
+        setUploadingPadraoName(null)
+      }
     }
   }
 
@@ -205,7 +273,9 @@ export function ModalAlunosAnexos({
       console.error('Erro ao atualizar arquivo:', error)
       toast.error('Erro ao atualizar o arquivo do anexo.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) {
+        setLoading(false)
+      }
     }
   }
 
@@ -239,14 +309,92 @@ export function ModalAlunosAnexos({
       console.error('Erro ao arquivar anexo:', error)
       toast.error('Erro ao arquivar o anexo.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) {
+        setLoading(false)
+      }
     }
   }
 
-  // Filtrar anexos personalizados (que não correspondem a nenhum padrão configurado)
-  const anexosPersonalizados = anexos.filter(
-    (a) => !anexosPadrao.some((p) => p.toLowerCase() === a.nome.toLowerCase())
-  )
+  // Filtrar anexos por categoria com coalescência nula para fallbacks de registros antigos
+  const anexosLaudos = anexos.filter((a) => (a.tipo ?? 'Outros') === 'Laudos')
+  const anexosPessoais = anexos.filter((a) => (a.tipo ?? 'Outros') === 'Documentos Pessoais')
+  const anexosOutros = anexos.filter((a) => (a.tipo ?? 'Outros') === 'Outros')
+
+  const renderCardAnexo = (anexo: Anexo) => {
+    const Icone = (anexo.tipo ?? 'Outros') === 'Laudos' 
+      ? FileText 
+      : (anexo.tipo ?? 'Outros') === 'Documentos Pessoais' 
+      ? User 
+      : Folder;
+      
+    const iconeCor = (anexo.tipo ?? 'Outros') === 'Laudos' 
+      ? 'text-rose-400' 
+      : (anexo.tipo ?? 'Outros') === 'Documentos Pessoais' 
+      ? 'text-indigo-400' 
+      : 'text-amber-400';
+
+    return (
+      <div
+        key={anexo.id}
+        className="flex items-center justify-between p-3 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
+      >
+        <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
+          <Icone className={`w-5 h-5 ${iconeCor} mt-0.5 shrink-0`} />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-white truncate">{anexo.nome}</p>
+            <p className="text-[9px] text-zinc-500 mt-0.5">
+              Enviado em {new Date(anexo.created_at).toLocaleDateString('pt-BR')}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <a
+            href={anexo.arquivo_url}
+            target="_blank"
+            rel="noreferrer"
+            className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+            title="Visualizar documento"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </a>
+
+          {isEditMode && (
+            <>
+              <input
+                type="file"
+                id={`update-custom-${anexo.id}`}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    handleAtualizarArquivo(anexo.id, file, anexo.nome)
+                  }
+                }}
+              />
+              <label
+                htmlFor={`update-custom-${anexo.id}`}
+                className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-[#7c3aed] border border-[#7c3aed]/20 cursor-pointer transition-colors"
+                title="Substituir arquivo"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </label>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleArquivarAnexo(anexo)}
+                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 hover:text-rose-400 text-rose-500 border border-rose-500/20 h-7 w-7 cursor-pointer"
+                title="Arquivar documento"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <StandardDialog
@@ -256,56 +404,188 @@ export function ModalAlunosAnexos({
       description="Gerencie e envie os documentos deste aluno."
       maxWidth="sm:max-w-[650px]"
     >
-      {/* Formulário de Novo Anexo Personalizado */}
+      {/* Botão de Upload com Dropdown de Seleção de Categoria */}
       {isEditMode && (
-        <div className="bg-black/30 border border-[#26262a] p-4 rounded-2xl space-y-3">
-          <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Plus className="w-3.5 h-3.5 text-[#3ea6ff]" />
-            Adicionar Anexo Personalizado
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              placeholder="Nome do documento (ex: Declaração...)"
-              value={novoNome}
-              onChange={(e) => setNovoNome(e.target.value)}
-              className="bg-black/50 border-[#26262a] text-white placeholder-zinc-500 rounded-xl h-10 text-sm focus:border-[#3ea6ff]/40"
-              disabled={uploading}
-            />
-            <div className="flex gap-2">
-              <input
-                type="file"
-                id="novo-anexo-file"
-                onChange={(e) => setNovoArquivo(e.target.files?.[0] ?? null)}
-                className="hidden"
-                disabled={uploading}
-              />
-              <label
-                htmlFor="novo-anexo-file"
-                className="flex-1 flex items-center justify-center gap-1.5 h-10 px-3 border border-dashed border-[#26262a] hover:border-[#3ea6ff]/40 rounded-xl text-xs font-medium text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              >
-                <Upload className="w-4 h-4 shrink-0" />
-                <span className="truncate max-w-[130px]">
-                  {novoArquivo ? novoArquivo.name : 'Selecionar Arquivo'}
-                </span>
-              </label>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="relative">
               <Button
-                onClick={handleUpload}
-                disabled={uploading || !novoNome || !novoArquivo}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs py-2 px-3.5 rounded-xl flex items-center gap-1.5 cursor-pointer shadow border-none h-9"
               >
-                {uploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>Adicionar</span>
-                )}
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar Laudo ou Anexo</span>
+                <ChevronDown className="w-3 h-3 text-primary-foreground/80 shrink-0" />
               </Button>
+
+              {dropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                  
+                  <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#141416] border border-[#26262a] shadow-xl z-20 py-1.5 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setTipoSelecionado('Laudos')
+                        setUploadFormOpen(true)
+                        setDropdownOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-rose-400" />
+                      <span>+ Novo Laudo</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTipoSelecionado('Documentos Pessoais')
+                        setUploadFormOpen(true)
+                        setDropdownOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                    >
+                      <User className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>+ Novo Documento Pessoal</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTipoSelecionado('Outros')
+                        setUploadFormOpen(true)
+                        setDropdownOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                    >
+                      <Folder className="w-3.5 h-3.5 text-amber-400" />
+                      <span>+ Outros Anexos</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Form de upload inline dinâmico */}
+          {uploadFormOpen && tipoSelecionado && (
+            <div className="bg-black/30 border border-[#26262a] p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center justify-between border-b border-[#26262a]/50 pb-2">
+                <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  {tipoSelecionado === 'Laudos' && <FileText className="w-3.5 h-3.5 text-rose-400" />}
+                  {tipoSelecionado === 'Documentos Pessoais' && <User className="w-3.5 h-3.5 text-indigo-400" />}
+                  {tipoSelecionado === 'Outros' && <Folder className="w-3.5 h-3.5 text-amber-400" />}
+                  Novo Upload: <span className="text-[#3ea6ff]">{tipoSelecionado}</span>
+                </h4>
+                <button
+                  onClick={() => {
+                    setUploadFormOpen(false)
+                    setTipoSelecionado(null)
+                    setNovoNome('')
+                    setNovoArquivo(null)
+                  }}
+                  className="text-zinc-500 hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  placeholder={
+                    tipoSelecionado === 'Laudos'
+                      ? "ex: Laudo Médico de AEE"
+                      : tipoSelecionado === 'Documentos Pessoais'
+                      ? "ex: RG do Aluno"
+                      : "ex: Declaração de Matrícula..."
+                  }
+                  value={novoNome}
+                  onChange={(e) => setNovoNome(e.target.value)}
+                  className="bg-black/50 border-[#26262a] text-white placeholder-zinc-500 rounded-xl h-10 text-sm focus:border-[#3ea6ff]/40"
+                  disabled={uploading}
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    id="novo-anexo-file"
+                    onChange={(e) => setNovoArquivo(e.target.files?.[0] ?? null)}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                  <label
+                    htmlFor="novo-anexo-file"
+                    className="flex-1 flex items-center justify-center gap-1.5 h-10 px-3 border border-dashed border-[#26262a] hover:border-[#3ea6ff]/40 rounded-xl text-xs font-medium text-zinc-400 hover:text-white cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="truncate max-w-[130px]">
+                      {novoArquivo ? novoArquivo.name : 'Selecionar Arquivo'}
+                    </span>
+                  </label>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading || !novoNome || !novoArquivo}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer border-none shadow"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <span>Enviar</span>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Scrollable Document Sections */}
-      <div className="space-y-6 max-h-[380px] overflow-y-auto pr-1.5 py-2">
+      {/* Navegação de Abas */}
+      <div className="flex flex-wrap items-center gap-1.5 p-1 bg-black/40 border border-[#26262a] rounded-xl my-4">
+        <button
+          onClick={() => setActiveTab('laudos')}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+            activeTab === 'laudos' 
+              ? 'bg-primary text-primary-foreground shadow' 
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+          <span>Laudos ({anexosLaudos.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('pessoais')}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+            activeTab === 'pessoais' 
+              ? 'bg-primary text-primary-foreground shadow' 
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+          }`}
+        >
+          <User className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+          <span>Docs Pessoais ({anexosPessoais.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('outros')}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+            activeTab === 'outros' 
+              ? 'bg-primary text-primary-foreground shadow' 
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+          }`}
+        >
+          <Folder className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+          <span>Outros ({anexosOutros.length})</span>
+        </button>
+        {anexosPadrao.length > 0 && (
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+              activeTab === 'checklist' 
+                ? 'bg-primary text-primary-foreground shadow' 
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            <span>Checklist Unidade</span>
+          </button>
+        )}
+      </div>
+
+      {/* Conteúdo das Abas */}
+      <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 py-1">
         {loading && (
           <div className="flex items-center justify-center py-12 text-zinc-400 gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-[#3ea6ff]" />
@@ -315,210 +595,154 @@ export function ModalAlunosAnexos({
 
         {!loading && (
           <>
-            {/* 1. SEÇÃO DOCUMENTOS OBRIGATÓRIOS (Checklist) */}
-            {anexosPadrao.length > 0 && (
+            {/* Aba Laudos */}
+            {activeTab === 'laudos' && (
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
-                  Documentos Obrigatórios da Unidade
-                </h4>
-                <div className="space-y-2">
-                  {anexosPadrao.map((padrao, i) => {
-                    const anexoCorrespondente = anexos.find(
-                      (a) => a.nome.toLowerCase() === padrao.toLowerCase()
-                    )
+                {anexosLaudos.map((anexo) => renderCardAnexo(anexo))}
+                {anexosLaudos.length === 0 && (
+                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
+                    <p className="text-zinc-500 text-xs">Nenhum laudo anexado a este aluno.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-                    return (
-                      <div
-                        key={`padrao-${i}`}
-                        className="flex items-center justify-between p-3.5 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
-                      >
-                        <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
-                          <div className="mt-0.5 shrink-0">
-                            {anexoCorrespondente ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                            ) : (
-                              <AlertCircle className="w-5 h-5 text-amber-500" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-white truncate">{padrao}</p>
-                            <p className="text-[10px] text-zinc-500 mt-0.5">
-                              {anexoCorrespondente
-                                ? `Enviado em ${new Date(anexoCorrespondente.created_at).toLocaleDateString('pt-BR')}`
-                                : 'Pendente'}
-                            </p>
-                          </div>
-                        </div>
+            {/* Aba Documentos Pessoais */}
+            {activeTab === 'pessoais' && (
+              <div className="space-y-2">
+                {anexosPessoais.map((anexo) => renderCardAnexo(anexo))}
+                {anexosPessoais.length === 0 && (
+                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
+                    <p className="text-zinc-500 text-xs">Nenhum documento pessoal anexado.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+            {/* Aba Outros */}
+            {activeTab === 'outros' && (
+              <div className="space-y-2">
+                {anexosOutros.map((anexo) => renderCardAnexo(anexo))}
+                {anexosOutros.length === 0 && (
+                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
+                    <p className="text-zinc-500 text-xs">Nenhum anexo adicional disponível.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Aba Checklist Escolar */}
+            {activeTab === 'checklist' && anexosPadrao.length > 0 && (
+              <div className="space-y-2">
+                {anexosPadrao.map((padrao, i) => {
+                  const anexoCorrespondente = anexos.find(
+                    (a) => a.nome.toLowerCase() === padrao.toLowerCase()
+                  )
+
+                  return (
+                    <div
+                      key={`padrao-${i}`}
+                      className="flex items-center justify-between p-3.5 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
+                    >
+                      <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
+                        <div className="mt-0.5 shrink-0">
                           {anexoCorrespondente ? (
-                            <>
-                              <a
-                                href={anexoCorrespondente.arquivo_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
-                                title="Visualizar documento"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </a>
-
-                              {isEditMode && (
-                                <>
-                                  <input
-                                    type="file"
-                                    id={`update-padrao-${anexoCorrespondente.id}`}
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0]
-                                      if (file) {
-                                        handleAtualizarArquivo(anexoCorrespondente.id, file, padrao)
-                                      }
-                                    }}
-                                  />
-                                  <label
-                                    htmlFor={`update-padrao-${anexoCorrespondente.id}`}
-                                    className="p-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-[#7c3aed] border border-[#7c3aed]/20 cursor-pointer transition-colors"
-                                    title="Substituir arquivo"
-                                  >
-                                    <Upload className="w-4 h-4" />
-                                  </label>
-
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleArquivarAnexo(anexoCorrespondente)}
-                                    className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 hover:text-rose-400 text-rose-500 border border-rose-500/20 h-8 w-8 cursor-pointer"
-                                    title="Arquivar documento"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </>
-                              )}
-                            </>
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                           ) : (
-                            isEditMode && (
+                            <AlertCircle className="w-5 h-5 text-amber-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{padrao}</p>
+                          <p className="text-[9px] text-zinc-500 mt-0.5">
+                            {anexoCorrespondente
+                              ? `Enviado em ${new Date(anexoCorrespondente.created_at).toLocaleDateString('pt-BR')}`
+                              : 'Pendente'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {anexoCorrespondente ? (
+                          <>
+                            <a
+                              href={anexoCorrespondente.arquivo_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                              title="Visualizar documento"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </a>
+
+                            {isEditMode && (
                               <>
                                 <input
                                   type="file"
-                                  id={`upload-padrao-input-${i}`}
+                                  id={`update-padrao-${anexoCorrespondente.id}`}
                                   className="hidden"
-                                  disabled={uploadingPadraoName === padrao}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0]
                                     if (file) {
-                                      handleUploadPadrao(padrao, file)
+                                      handleAtualizarArquivo(anexoCorrespondente.id, file, padrao)
                                     }
                                   }}
                                 />
                                 <label
-                                  htmlFor={`upload-padrao-input-${i}`}
-                                  className="flex items-center gap-1.5 h-8 px-3 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 text-indigo-400 hover:text-indigo-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                                  htmlFor={`update-padrao-${anexoCorrespondente.id}`}
+                                  className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-[#7c3aed] border border-[#7c3aed]/20 cursor-pointer transition-colors"
+                                  title="Substituir arquivo"
                                 >
-                                  {uploadingPadraoName === padrao ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Upload className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Anexar</span>
+                                  <Upload className="w-3.5 h-3.5" />
                                 </label>
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleArquivarAnexo(anexoCorrespondente)}
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 hover:text-rose-400 text-rose-500 border border-rose-500/20 h-7 w-7 cursor-pointer"
+                                  title="Arquivar documento"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                               </>
-                            )
-                          )}
-                        </div>
+                            )}
+                          </>
+                        ) : (
+                          isEditMode && (
+                            <>
+                              <input
+                                type="file"
+                                id={`upload-padrao-input-${i}`}
+                                className="hidden"
+                                disabled={uploadingPadraoName === padrao}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    handleUploadPadrao(padrao, file)
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`upload-padrao-input-${i}`}
+                                className="flex items-center gap-1 h-7 px-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 text-indigo-400 hover:text-indigo-300 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors"
+                              >
+                                {uploadingPadraoName === padrao ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Upload className="w-3 h-3" />
+                                )}
+                                <span>Anexar</span>
+                              </label>
+                            </>
+                          )
+                        )}
                       </div>
-                    )
-                  })}
-                </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
-
-            {/* 2. SEÇÃO DOCUMENTOS PERSONALIZADOS */}
-            <div className="space-y-2">
-              {anexosPadrao.length > 0 && (
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1 mt-4">
-                  Outros Documentos / Anexos Livres
-                </h4>
-              )}
-              
-              <div className="space-y-2">
-                {anexosPersonalizados.map((anexo) => (
-                  <div
-                    key={anexo.id}
-                    className="flex items-center justify-between p-3.5 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
-                  >
-                    <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{anexo.nome}</p>
-                        <p className="text-[10px] text-zinc-500 mt-0.5">
-                          Enviado em {new Date(anexo.created_at).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <a
-                        href={anexo.arquivo_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
-                        title="Visualizar documento"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </a>
-
-                      {isEditMode && (
-                        <>
-                          <input
-                            type="file"
-                            id={`update-custom-${anexo.id}`}
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handleAtualizarArquivo(anexo.id, file, anexo.nome)
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={`update-custom-${anexo.id}`}
-                            className="p-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-[#7c3aed] border border-[#7c3aed]/20 cursor-pointer transition-colors"
-                            title="Substituir arquivo"
-                          >
-                            <Upload className="w-4 h-4" />
-                          </label>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleArquivarAnexo(anexo)}
-                            className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 hover:text-rose-400 text-rose-500 border border-rose-500/20 h-8 w-8 cursor-pointer"
-                            title="Arquivar documento"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Empty state se não houver NENHUM anexo */}
-                {anexos.length === 0 && (
-                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
-                    <p className="text-zinc-500 text-sm">Nenhum anexo disponível para este aluno.</p>
-                  </div>
-                )}
-
-                {/* Empty state específico para customizados se houver padrão mas nenhum personalizado */}
-                {anexosPadrao.length > 0 && anexosPersonalizados.length === 0 && (
-                  <div className="text-center py-4 border border-dashed border-[#26262a]/50 rounded-xl bg-black/5">
-                    <p className="text-zinc-500 text-xs">Nenhum documento complementar enviado.</p>
-                  </div>
-                )}
-              </div>
-            </div>
           </>
         )}
       </div>

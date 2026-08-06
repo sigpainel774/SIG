@@ -533,6 +533,7 @@ export type Database = {
           id: string
           motivo_arquivamento: string | null
           nome: string
+          tipo: string
         }
         Insert: {
           aluno_id: string
@@ -543,6 +544,7 @@ export type Database = {
           id?: string
           motivo_arquivamento?: string | null
           nome: string
+          tipo?: string
         }
         Update: {
           aluno_id?: string
@@ -553,6 +555,7 @@ export type Database = {
           id?: string
           motivo_arquivamento?: string | null
           nome?: string
+          tipo?: string
         }
         Relationships: [
           {
