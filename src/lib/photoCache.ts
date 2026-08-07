@@ -24,14 +24,10 @@ export async function obterFotoCache(
   // Sanitiza a URL removendo query params para chave única no cache
   const cleanUrl = url.split('?')[0]
 
-  // A chave de memória incorpora o updatedAt para que uma nova foto (com novo timestamp)
-  // force o re-fetch mesmo que a URL base seja a mesma (ex: substituição de foto).
-  const updatedAtKey = updatedAt ? new Date(updatedAt).getTime().toString() : 'static'
-  const memKey = `${cleanUrl}::${updatedAtKey}`
-
-  // Se já existe no map de memória da sessão ativa para ESTA versão, retorna imediatamente
-  if (memoryBlobMap.has(memKey)) {
-    return memoryBlobMap.get(memKey)!
+  // Chave de memória usa cleanUrl (estável). O invalidarCacheFoto é responsável por
+  // limpar a entrada quando a foto é substituída (o nome do arquivo já muda a cada upload).
+  if (memoryBlobMap.has(cleanUrl)) {
+    return memoryBlobMap.get(cleanUrl)!
   }
 
   // Fallback seguro caso 'caches' não esteja disponível no ambiente (SSR / guias ultra privadas)
@@ -48,7 +44,7 @@ export async function obterFotoCache(
     if (cachedResponse && cachedResponse.ok) {
       const blob = await cachedResponse.blob()
       const blobUrl = URL.createObjectURL(blob)
-      memoryBlobMap.set(memKey, blobUrl)
+      memoryBlobMap.set(cleanUrl, blobUrl)
       return blobUrl
     }
 
@@ -60,7 +56,7 @@ export async function obterFotoCache(
       await cache.put(cleanUrl, response.clone())
       const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
-      memoryBlobMap.set(memKey, blobUrl)
+      memoryBlobMap.set(cleanUrl, blobUrl)
       return blobUrl
     }
   } catch (err) {
@@ -73,28 +69,17 @@ export async function obterFotoCache(
 
 /**
  * Invalida e limpa a foto do CacheStorage local.
- * Deve ser chamado sempre que uma nova foto for salva/enviada no Supabase Storage.
+ * IMPORTANTE: NÃO chama URL.revokeObjectURL() — o blob pode ainda estar em uso por
+ * um <img> do CachedImage. Apenas remove do mapa de memória e do CacheStorage;
+ * o browser libera o blob naturalmente quando não há mais referências.
  */
 export async function invalidarCacheFoto(url: string | null | undefined): Promise<void> {
   if (!url) return
 
   const cleanUrl = url.split('?')[0]
 
-  // Revoga todas as Blob URLs em memória que tenham essa URL base (qualquer versão/timestamp)
-  const keysToDelete: string[] = []
-  for (const [key, blobUrl] of memoryBlobMap.entries()) {
-    if (key.startsWith(`${cleanUrl}::`)) {
-      keysToDelete.push(key)
-      if (blobUrl && blobUrl.startsWith('blob:')) {
-        try {
-          URL.revokeObjectURL(blobUrl)
-        } catch (err) {
-          // Ignora erro ao revogar
-        }
-      }
-    }
-  }
-  keysToDelete.forEach((k) => memoryBlobMap.delete(k))
+  // Remove da memória sem revogar — o React pode ainda ter o blob renderizado no DOM
+  memoryBlobMap.delete(cleanUrl)
 
   if (typeof window === 'undefined' || !('caches' in window)) return
 
