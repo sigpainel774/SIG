@@ -145,6 +145,7 @@ export function FuncionarioLotacaoList({
                     alt={f.nome}
                     className="w-full h-full"
                     fallback={getInitials(f.nome)}
+                    updatedAt={f.foto_updated_at}
                   />
                 </div>
                 <div className="min-w-0 flex-1">

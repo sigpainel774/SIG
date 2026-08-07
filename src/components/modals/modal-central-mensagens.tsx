@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { CachedImage } from '@/components/ui/cached-image'
+import { getAvatarUrl } from '@/lib/photoHelper'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { 
@@ -51,6 +53,9 @@ export interface MensagemInterna {
     nome: string
     cargo?: string | null
     foto_url?: string | null
+    foto_avatar_path?: string | null
+    foto_visualizacao_path?: string | null
+    foto_updated_at?: string | null
     email?: string | null
   }
   destinatario?: {
@@ -58,6 +63,9 @@ export interface MensagemInterna {
     nome: string
     cargo?: string | null
     foto_url?: string | null
+    foto_avatar_path?: string | null
+    foto_visualizacao_path?: string | null
+    foto_updated_at?: string | null
     email?: string | null
   }
 }
@@ -68,6 +76,9 @@ export interface FuncionarioOption {
   cargo?: string | null
   escola_id?: string | null
   foto_url?: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
 }
 
 interface ConversationGroup {
@@ -75,6 +86,7 @@ interface ConversationGroup {
   contactName: string
   contactCargo?: string | null
   contactFotoUrl?: string | null
+  contactFotoUpdatedAt?: string | null
   lastMessage: MensagemInterna
   unreadCount: number
   messages: MensagemInterna[]
@@ -132,8 +144,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         .from('mensagens_internas')
         .select(`
           *,
-          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, email),
-          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, email)
+          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email),
+          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email)
         `)
         .or(`destinatario_id.eq.${funcionario.id},remetente_id.eq.${funcionario.id}`)
         .order('created_at', { ascending: true })
@@ -170,7 +182,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       if (isLevel1) {
         const { data, error } = await supabase
           .from('funcionarios')
-          .select('id, nome, cargo, foto_url')
+          .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at')
           .eq('status', 'ativo')
           .neq('id', funcionario.id)
           .order('nome', { ascending: true })
@@ -183,7 +195,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         if (targetEscolaId) {
           const { data: vinculos, error: errVinculos } = await supabase
             .from('vinculos_funcionarios')
-            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url)')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at)')
             .eq('escola_id', targetEscolaId)
             .eq('ativo', true)
 
@@ -199,7 +211,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         if (isLevel2) {
           const { data: acessosNivel1 } = await supabase
             .from('acessos_usuarios')
-            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url)')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at)')
             .eq('nivel', 1)
             .eq('ativo', true)
 
@@ -213,7 +225,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
 
           const { data: superadmins } = await supabase
             .from('funcionarios')
-            .select('id, nome, cargo, foto_url')
+            .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at')
             .eq('is_superadmin', true)
             .eq('status', 'ativo')
 
@@ -270,8 +282,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               .from('mensagens_internas')
               .select(`
                 *,
-                remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, email),
-                destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, email)
+                remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email),
+                destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email)
               `)
               .eq('id', newMsg.id)
               .single()
@@ -316,7 +328,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
 
       const contactName = contact?.nome || 'Servidor Municipal'
       const contactCargo = contact?.cargo || null
-      const contactFotoUrl = contact?.foto_url || null
+      const contactFotoUrl = getAvatarUrl(contact as any) || null
+      const contactFotoUpdatedAt = contact?.foto_updated_at || null
 
       if (!groups.has(contactId)) {
         groups.set(contactId, {
@@ -324,6 +337,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
           contactName,
           contactCargo,
           contactFotoUrl,
+          contactFotoUpdatedAt,
           lastMessage: msg,
           unreadCount: 0,
           messages: [],
@@ -478,8 +492,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         .insert(payload)
         .select(`
           *,
-          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, email),
-          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, email)
+          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email),
+          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email)
         `)
         .single()
 
@@ -538,8 +552,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         .insert(payload)
         .select(`
           *,
-          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, email),
-          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, email)
+          remetente:funcionarios!remetente_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email),
+          destinatario:funcionarios!destinatario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, email)
         `)
         .single()
 
@@ -723,11 +737,14 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                         {/* Avatar */}
                         <div className="relative shrink-0">
                           {conv.contactFotoUrl ? (
-                            <img
-                              src={conv.contactFotoUrl}
-                              alt={conv.contactName}
-                              className="w-10 h-10 rounded-full object-cover border border-[#333]"
-                            />
+                            <div className="w-10 h-10 rounded-full shrink-0 overflow-hidden shadow-sm border border-[#333]">
+                              <CachedImage
+                                src={conv.contactFotoUrl}
+                                alt={conv.contactName}
+                                className="w-full h-full"
+                                updatedAt={conv.contactFotoUpdatedAt}
+                              />
+                            </div>
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-600 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
                               {conv.contactName.charAt(0).toUpperCase()}
@@ -779,11 +796,14 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                   <div className="p-3 bg-[#141416] border-b border-[#27272a] flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                       {activeConversation.contactFotoUrl ? (
-                        <img
-                          src={activeConversation.contactFotoUrl}
-                          alt={activeConversation.contactName}
-                          className="w-9 h-9 rounded-full object-cover border border-[#333]"
-                        />
+                        <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm border border-[#333]">
+                          <CachedImage
+                            src={activeConversation.contactFotoUrl}
+                            alt={activeConversation.contactName}
+                            className="w-full h-full"
+                            updatedAt={activeConversation.contactFotoUpdatedAt}
+                          />
+                        </div>
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-600 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
                           {activeConversation.contactName.charAt(0).toUpperCase()}
@@ -974,10 +994,17 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          {dest.foto_url ? (
-                            <img src={dest.foto_url} alt={dest.nome} className="w-7 h-7 rounded-full object-cover" />
+                          {getAvatarUrl(dest as any) ? (
+                            <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+                              <CachedImage
+                                src={getAvatarUrl(dest as any)}
+                                alt={dest.nome}
+                                className="w-full h-full"
+                                updatedAt={dest.foto_updated_at}
+                              />
+                            </div>
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-sky-600/30 text-sky-400 flex items-center justify-center font-bold text-[11px]">
+                            <div className="w-7 h-7 rounded-full bg-sky-600/30 text-sky-400 flex items-center justify-center font-bold text-[11px] shrink-0">
                               {dest.nome.charAt(0)}
                             </div>
                           )}
