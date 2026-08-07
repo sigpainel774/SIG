@@ -1328,6 +1328,7 @@ export type Database = {
       }
       configuracoes_rede: {
         Row: {
+          bloquear_edicao_funcionarios_rede: boolean | null
           cargo_secretario: string | null
           id: string
           nome_rede: string | null
@@ -1337,6 +1338,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bloquear_edicao_funcionarios_rede?: boolean | null
           cargo_secretario?: string | null
           id?: string
           nome_rede?: string | null
@@ -1346,6 +1348,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bloquear_edicao_funcionarios_rede?: boolean | null
           cargo_secretario?: string | null
           id?: string
           nome_rede?: string | null
@@ -2143,6 +2146,7 @@ export type Database = {
           municipio_nascimento: string | null
           nacionalidade: string | null
           nacionalidade_especificacao: string | null
+          permitir_mensagens_globais: boolean | null
           nis: string | null
           nome: string
           nome_mae: string | null
@@ -2327,6 +2331,7 @@ export type Database = {
           municipio_nascimento?: string | null
           nacionalidade?: string | null
           nacionalidade_especificacao?: string | null
+          permitir_mensagens_globais?: boolean | null
           nis?: string | null
           nome?: string
           nome_mae?: string | null
