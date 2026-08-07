@@ -19,6 +19,21 @@ interface PageProps {
   }>
 }
 
+function maskNomeLGPD(nome?: string | null): string {
+  if (!nome || !nome.trim()) return 'Não informado'
+  return nome
+    .trim()
+    .split(/\s+/)
+    .map((palavra) => {
+      if (palavra.length <= 2) return palavra
+      const visible = palavra.slice(0, 2)
+      const visibleCapitalized = visible.charAt(0).toUpperCase() + visible.slice(1).toLowerCase()
+      const masked = '*'.repeat(Math.min(palavra.length - 2, 5))
+      return `${visibleCapitalized}${masked}`
+    })
+    .join(' ')
+}
+
 export default async function VerificarPage({ params }: PageProps) {
   const { token } = await params
 
@@ -31,6 +46,13 @@ export default async function VerificarPage({ params }: PageProps) {
 
   const assinatura = rawAssinatura as any
   const valid = !!assinatura && !error
+
+  const isOficio = assinatura?.tipo_documento === 'oficio' || (!assinatura?.aluno_id && !!assinatura?.dados_documento)
+  const nomeExibido = isOficio
+    ? (assinatura?.dados_documento?.destinatario ?? 'Ofício Institucional')
+    : maskNomeLGPD(assinatura?.alunos?.nome)
+
+  const escolaExibida = assinatura?.alunos?.escolas?.nome ?? 'Secretaria / Órgão Municipal'
 
   return (
     <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex items-center justify-center p-4 font-sans selection:bg-[#3ea6ff]/30 selection:text-white relative overflow-hidden">
@@ -74,7 +96,7 @@ export default async function VerificarPage({ params }: PageProps) {
               </p>
             </div>
 
-            {/* Informações da Matrícula */}
+            {/* Informações do Documento com LGPD */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-[#3ea6ff]" />
@@ -83,12 +105,14 @@ export default async function VerificarPage({ params }: PageProps) {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#18181b]/60 border border-[#27272a] p-4 rounded-xl text-sm leading-relaxed">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">Aluno(a)</span>
-                  <span className="font-bold text-white uppercase">{assinatura.alunos?.nome ?? 'Aluno não identificado'}</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">
+                    {isOficio ? 'Destinatário / Titular' : 'Aluno(a) (Protegido por LGPD)'}
+                  </span>
+                  <span className="font-bold text-white uppercase">{nomeExibido}</span>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">Escola</span>
-                  <span className="font-medium text-zinc-300">{assinatura.alunos?.escolas?.nome ?? 'Escola Municipal'}</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">Unidade Emissora</span>
+                  <span className="font-medium text-zinc-300">{escolaExibida}</span>
                 </div>
                 <div className="space-y-1">
                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">Tipo do Documento</span>
@@ -101,7 +125,11 @@ export default async function VerificarPage({ params }: PageProps) {
                       ? 'Atestado de Frequência'
                       : assinatura.tipo_documento === 'declaracao-vaga'
                       ? 'Declaração de Vaga'
-                      : assinatura.tipo_documento || 'Documento Escolar'}
+                      : assinatura.tipo_documento === 'atestado-transferencia'
+                      ? 'Atestado de Transferência'
+                      : assinatura.tipo_documento === 'oficio'
+                      ? 'Ofício Oficial'
+                      : assinatura.tipo_documento || 'Documento Oficial'}
                   </span>
                 </div>
                 <div className="space-y-1">

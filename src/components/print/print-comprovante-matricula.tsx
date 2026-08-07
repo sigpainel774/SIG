@@ -53,11 +53,15 @@ export function PrintComprovanteMatricula({ aluno, onClose }: PrintComprovantePr
     }
   }, [dm.pdf_assinado_token])
 
-  // Prevenção de Cache com timestamp
+// Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
+const sessionTimestamp = Date.now()
+
+  // Prevenção de Cache com timestamp estável
   const getCacheBustedUrl = (url: string) => {
     if (!url) return ''
+    if (url.startsWith('data:')) return url
     const separator = url.includes('?') ? '&' : '?'
-    return `${url}${separator}t=${Date.now()}`
+    return `${url}${separator}t=${sessionTimestamp}`
   }
 
   useEffect(() => {
