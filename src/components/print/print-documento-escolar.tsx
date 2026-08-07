@@ -10,15 +10,6 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import QRCode from 'qrcode'
 import { toast } from 'sonner'
 
-function generateVerificacaoToken() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let token = ''
-  for (let i = 0; i < 8; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return token
-}
-
 interface PrintDocumentoProps {
   aluno?: any
   docType: 'atestado-matricula' | 'atestado-frequencia' | 'declaracao-vaga' | 'atestado-transferencia' | 'oficio'
@@ -377,49 +368,8 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     }
 
     setRegistrandoAssinatura(true)
-    const supabase = createClient()
 
     try {
-      // 1. Obter IP externo (com fallback rápido)
-      let ip = '127.0.0.1'
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json')
-        if (ipRes.ok) {
-          const ipData = await ipRes.json()
-          ip = ipData.ip
-        }
-      } catch (ipErr) {
-        console.error('Erro ao obter IP externo:', ipErr)
-      }
-
-      // 2. Gerar Token e Hash
-      const token = generateVerificacaoToken()
-      
-      const nomeAluno = aluno.nome?.toUpperCase() || ''
-      const matriculaId = aluno.numero_matricula || aluno.id || ''
-      const cursoTurma = turmaNome?.toUpperCase() || ''
-      
-      let hashHex = ''
-      const payload = nomeAluno + matriculaId + cursoTurma + anoLetivo + new Date().toISOString() + token
-      if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
-        const msgUint8 = new TextEncoder().encode(payload)
-        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgUint8)
-        const hashArray = Array.from(new Uint8Array(hashBuffer))
-        hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-      } else {
-        // Fallback para hashes sem HTTPS / crypto.subtle indisponível
-        let hash = 0
-        for (let i = 0; i < payload.length; i++) {
-          const char = payload.charCodeAt(i)
-          hash = (hash << 5) - hash + char
-          hash = hash & hash // Convert to 32bit integer
-        }
-        hashHex = Math.abs(hash).toString(16).padEnd(64, 'a')
-      }
-
-      // 3. Salvar no banco
-      const targetAlunoId = (aluno?.id && aluno.id !== 'oficio') ? aluno.id : null
-
       const activeDadosPayload = (dadosOficio || localDadosOficio) ? {
         numeroOficio: (dadosOficio || localDadosOficio)?.numeroOficio,
         destinatario: (dadosOficio || localDadosOficio)?.destinatario,
@@ -427,42 +377,36 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
         conteudoHtml: (dadosOficio || localDadosOficio)?.conteudoHtml,
       } : null
 
-      const { error: insertError } = await supabase
-        .from('assinatura')
-        .insert({
-          aluno_id: targetAlunoId,
-          tipo_documento: docType,
-          token_verificacao: token,
-          hash_sha256: hashHex,
-          ip_funcionario: ip,
-          user_agent_funcionario: navigator.userAgent,
-          dispositivo_funcionario: window.innerWidth < 768 ? 'Celular' : 'Computador',
-          data_funcionario: new Date().toISOString(),
-          dados_documento: activeDadosPayload
-        } as any)
+      const res = await fetch('/api/documentos/gerar-assinatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alunoId: (aluno?.id && aluno.id !== 'oficio') ? aluno.id : null,
+          docType,
+          dadosOficio: activeDadosPayload
+        })
+      })
 
-      if (insertError) throw insertError
+      const data = await res.json()
 
-      // 4. Deletar atestados/documentos anteriores deste mesmo tipo
-      if (targetAlunoId) {
-        await supabase
-          .from('assinatura')
-          .delete()
-          .eq('aluno_id', targetAlunoId)
-          .eq('tipo_documento', docType)
-          .neq('token_verificacao', token)
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Falha ao registrar assinatura eletrônica no servidor.')
       }
 
-      // 5. Atualizar QR Code no state
+      const token = data.token_verificacao
+      const hashHex = data.hash_sha256
+      const emissaoIso = data.data_emissao || new Date().toISOString()
+
+      // Gerar QR Code para o front-end
       const siteUrl = window.location.origin
       const qrUrl = await QRCode.toDataURL(`${siteUrl}/verificar/${token}`, { margin: 1, width: 80 })
-      
+
       setQrCodeUrl(qrUrl)
       setTokenVerificacao(token)
       setHashSha256(hashHex)
-      setDataEmissao(new Date().toISOString())
+      setDataEmissao(emissaoIso)
 
-      // Pequeno timeout para garantir a renderização antes de disparar o print do browser
+      // Pequeno timeout para garantir a renderização do QR Code antes de disparar a impressão
       setTimeout(() => {
         triggerPrintWithTitle()
       }, 300)
