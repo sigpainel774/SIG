@@ -25,6 +25,12 @@ export function getAvatarUrl(registro?: FotoRegistro | null): string | undefined
     } else {
       url = `${SUPABASE_URL}/storage/v1/object/public/fotos-avatar/${registro.foto_avatar_path}`
     }
+  } else if (registro.foto_visualizacao_path) {
+    if (registro.foto_visualizacao_path.startsWith('http://') || registro.foto_visualizacao_path.startsWith('https://')) {
+      url = registro.foto_visualizacao_path
+    } else {
+      url = `${SUPABASE_URL}/storage/v1/object/public/fotos-visualizacao/${registro.foto_visualizacao_path}`
+    }
   } else if (registro.foto_url) {
     url = registro.foto_url
   }
@@ -37,7 +43,7 @@ export function getAvatarUrl(registro?: FotoRegistro | null): string | undefined
 /**
  * Retorna a URL pública de visualização otimizada (bucket fotos-visualizacao).
  * Utilizada para modais, impressões e fichas de alunos/funcionários.
- * Caso não exista, faz o fallback para o foto_url antigo ou null.
+ * Caso não exista, faz o fallback para o foto_avatar_path, foto_url antigo ou null.
  */
 export function getVisualizacaoUrl(registro?: FotoRegistro | null): string | undefined {
   if (!registro) return undefined
@@ -49,6 +55,12 @@ export function getVisualizacaoUrl(registro?: FotoRegistro | null): string | und
       url = registro.foto_visualizacao_path
     } else {
       url = `${SUPABASE_URL}/storage/v1/object/public/fotos-visualizacao/${registro.foto_visualizacao_path}`
+    }
+  } else if (registro.foto_avatar_path) {
+    if (registro.foto_avatar_path.startsWith('http://') || registro.foto_avatar_path.startsWith('https://')) {
+      url = registro.foto_avatar_path
+    } else {
+      url = `${SUPABASE_URL}/storage/v1/object/public/fotos-avatar/${registro.foto_avatar_path}`
     }
   } else if (registro.foto_url) {
     url = registro.foto_url

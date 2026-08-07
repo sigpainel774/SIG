@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { CachedImage } from '@/components/ui/cached-image'
+import { getAvatarUrl } from '@/lib/photoHelper'
 import { 
   Search, 
   Building2, 
@@ -35,6 +37,32 @@ interface ServidorItem {
   escolaNome: string
   secretariaId: string
   secretariaNome: string
+  foto_url?: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
+}
+
+function getInitials(nome: string): string {
+  const parts = nome.trim().split(' ').filter(p => p.length > 0)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+}
+
+function avatarColor(nome: string) {
+  const hash = Array.from(nome).reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const colors = [
+    { bg: 'bg-blue-500/10', text: 'text-blue-500' },
+    { bg: 'bg-emerald-500/10', text: 'text-emerald-500' },
+    { bg: 'bg-violet-500/10', text: 'text-violet-500' },
+    { bg: 'bg-amber-500/10', text: 'text-amber-500' },
+    { bg: 'bg-rose-500/10', text: 'text-rose-500' },
+    { bg: 'bg-cyan-500/10', text: 'text-cyan-500' },
+    { bg: 'bg-indigo-500/10', text: 'text-indigo-500' },
+    { bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-500' },
+  ]
+  return colors[hash % colors.length]
 }
 
 interface UnidadeGroup {
@@ -122,7 +150,11 @@ export function ModalServidoresDiscriminados({
             modalidade_ensino,
             tipo_vinculo,
             is_conta_especial,
-            deleted_at
+            deleted_at,
+            foto_url,
+            foto_avatar_path,
+            foto_visualizacao_path,
+            foto_updated_at
           )
         `)
         .eq('ativo', true)
@@ -193,6 +225,10 @@ export function ModalServidoresDiscriminados({
               escolaNome: esc?.nome ?? 'Unidade Administrativa Não Informada',
               secretariaId: sec?.id ?? 'sem-secretaria',
               secretariaNome: sec?.nome ?? 'Secretaria Geral / Administração Central',
+              foto_url: f.foto_url,
+              foto_avatar_path: f.foto_avatar_path,
+              foto_visualizacao_path: f.foto_visualizacao_path,
+              foto_updated_at: f.foto_updated_at,
             }
           })
 
@@ -543,13 +579,26 @@ export function ModalServidoresDiscriminados({
                                           <td className="py-2 px-3 text-center font-bold text-muted-foreground text-[10px]">
                                             {idx + 1}
                                           </td>
-                                          <td className="py-2 px-3 font-semibold text-foreground">
-                                            {serv.nome}
-                                            {serv.cpf && (
-                                              <span className="block font-mono text-[10px] text-muted-foreground font-normal">
-                                                CPF: {serv.cpf}
-                                              </span>
-                                            )}
+                                          <td className="py-2 px-3">
+                                            <div className="flex items-center gap-3">
+                                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden ${avatarColor(serv.nome).bg} ${avatarColor(serv.nome).text}`}>
+                                                <CachedImage
+                                                  src={getAvatarUrl(serv)}
+                                                  alt={serv.nome}
+                                                  className="w-full h-full"
+                                                  fallback={getInitials(serv.nome)}
+                                                  updatedAt={serv.foto_updated_at}
+                                                />
+                                              </div>
+                                              <div>
+                                                <div className="font-semibold text-foreground">{serv.nome}</div>
+                                                {serv.cpf && (
+                                                  <span className="block font-mono text-[10px] text-muted-foreground font-normal">
+                                                    CPF: {serv.cpf}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
                                           </td>
                                           <td className="py-2 px-3 text-foreground">{serv.cargo}</td>
                                           <td className="py-2 px-3 text-center">
@@ -602,8 +651,14 @@ export function ModalServidoresDiscriminados({
                                     >
                                       <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                          <div className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0">
-                                            {idx + 1}
+                                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden shadow-sm ${avatarColor(serv.nome).bg} ${avatarColor(serv.nome).text}`}>
+                                            <CachedImage
+                                              src={getAvatarUrl(serv)}
+                                              alt={serv.nome}
+                                              className="w-full h-full"
+                                              fallback={getInitials(serv.nome)}
+                                              updatedAt={serv.foto_updated_at}
+                                            />
                                           </div>
                                           <div>
                                             <h4 className="font-bold text-foreground text-xs leading-tight">{serv.nome}</h4>
