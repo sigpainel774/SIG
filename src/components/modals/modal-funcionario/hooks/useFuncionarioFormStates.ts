@@ -9,6 +9,7 @@ import { usePessoaForm } from '@/hooks/usePessoaForm'
 import { Cargo, Doencas, PosGraduacao, FuncionarioFormContextType, ModalFuncionarioProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
 import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
+import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -53,6 +54,7 @@ export function useFuncionarioFormStates({
   const [cargos, setCargos] = useState<Cargo[]>([])
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [fotoRemovidaManualmente, setFotoRemovidaManualmente] = useState(false)
   const [lotacoesModalOpen, setLotacoesModalOpen] = useState(false)
 
   const isEditing = !!funcionario
@@ -318,11 +320,13 @@ export function useFuncionarioFormStates({
 
             setOutrosCursos(data.outros_cursos ?? [])
 
-            // Cache bust estável para foto
-            const fotoComCacheBust = data.foto_url
-              ? `${data.foto_url}${data.foto_url.includes('?') ? '&' : '?'}t=${sessionTimestamp}`
+            // Cache bust estável para foto (resolve via foto_visualizacao_path, foto_avatar_path ou foto_url)
+            const rawFotoUrl = getVisualizacaoUrl(data) || getAvatarUrl(data) || data.foto_url || null
+            const fotoComCacheBust = rawFotoUrl
+              ? `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}`
               : null
             setFotoPreview(fotoComCacheBust)
+            setFotoRemovidaManualmente(false)
 
             setDocIdentidadeUrl(data.doc_identidade_url ?? '')
             setDocCpfUrl(data.doc_cpf_url ?? '')
@@ -515,9 +519,16 @@ export function useFuncionarioFormStates({
     const file = e.target.files?.[0]
     if (!file) return
     setFotoFile(file)
+    setFotoRemovidaManualmente(false)
     const reader = new FileReader()
     reader.onload = () => setFotoPreview(reader.result as string)
     reader.readAsDataURL(file)
+  }
+
+  const handleRemoverFoto = () => {
+    setFotoFile(null)
+    setFotoPreview(null)
+    setFotoRemovidaManualmente(true)
   }
 
   // Upload handler for documents
@@ -579,6 +590,7 @@ export function useFuncionarioFormStates({
     if (!val) {
       setFotoFile(null)
       setFotoPreview(null)
+      setFotoRemovidaManualmente(false)
       setActiveTab('pessoais')
     }
   }
@@ -594,9 +606,8 @@ export function useFuncionarioFormStates({
     const supabase = createClient()
 
     try {
-      // O upload da foto será feito APÓS o funcionário ser criado/atualizado,
-      // para garantir que o ID já exista no banco quando a API /process for chamada.
-      const isFotoRemoved = !fotoPreview && !fotoFile
+      // A foto só é zerada do banco se o usuário tiver removido manualmente a imagem prévia
+      const isFotoRemoved = fotoRemovidaManualmente && !fotoFile
 
       // Mitigação do Bug Silencioso de UX no Endereço: se os campos básicos de endereço estão vazios, limpa do banco (salva como null)
       const hasEnderecoPreenchido = !!(logradouro?.trim() || bairro?.trim() || cidade?.trim())
@@ -1116,6 +1127,7 @@ export function useFuncionarioFormStates({
     fotoFile, setFotoFile,
     fotoPreview, setFotoPreview,
     handleFotoChange,
+    handleRemoverFoto,
     lotacoesModalOpen,
     setLotacoesModalOpen,
     handleSubmit,
