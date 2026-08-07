@@ -59,6 +59,9 @@ export interface Funcionario {
   data_nascimento?: string | null
   formacao?: string | null
   foto_url?: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
   is_superadmin?: boolean | null
   is_conta_especial?: boolean | null
   endereco?: string | null
