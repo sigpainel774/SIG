@@ -110,10 +110,13 @@ export function EscolaridadeTab() {
             className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
           >
             <option value="Não concluiu o Ensino Fundamental">Não concluiu o Ensino Fundamental</option>
-            <option value="Ensino Fundamental">Ensino Fundamental Completo</option>
-            <option value="Ensino Médio">Ensino Médio Completo</option>
-            <option value="Educação Superior">Educação Superior Completa</option>
-            {!!escolaridadeNivel && !['Não concluiu o Ensino Fundamental', 'Ensino Fundamental', 'Ensino Médio', 'Educação Superior'].includes(escolaridadeNivel) && (
+            <option value="Ensino Fundamental">Ensino Fundamental</option>
+            <option value="Ensino Médio">Ensino Médio</option>
+            <option value="Ensino Superior">Ensino Superior</option>
+            {escolaridadeNivel === 'Educação Superior' && (
+              <option value="Educação Superior">Ensino Superior</option>
+            )}
+            {!!escolaridadeNivel && !['Não concluiu o Ensino Fundamental', 'Ensino Fundamental', 'Ensino Médio', 'Educação Superior', 'Ensino Superior'].includes(escolaridadeNivel) && (
               <option value={escolaridadeNivel}>{escolaridadeNivel}</option>
             )}
           </select>
