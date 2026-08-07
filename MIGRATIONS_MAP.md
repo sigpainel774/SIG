@@ -87,5 +87,6 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 68 | `20260805235000_add_profissional_details_to_emaee_evolucoes.sql` | 2026-08-05 | Adiciona coluna `registro_profissional` na tabela `funcionarios` e colunas `profissional_nome`/`profissional_registro` na tabela `emaee_evolucoes`. | `funcionarios`, `emaee_evolucoes` | `dev_all_authenticated` / Mantém RLS |
 | 69 | `20260806000000_add_tipo_to_alunos_anexos.sql` | 2026-08-06 | Adiciona coluna "tipo" na tabela "alunos_anexos" para categorização de arquivos (Laudos, Documentos Pessoais, Outros). | `public.alunos_anexos` | `dev_all_authenticated` / Mantém RLS |
 | 70 | `20260807200000_add_is_profissional_aee_to_funcionarios.sql` | 2026-08-07 | Adiciona a coluna `is_profissional_aee` na tabela `funcionarios` para identificação dos Profissionais AEE no EMAEE. | `public.funcionarios` | Mantém RLS |
+| 71 | `20260807210000_controles_globais_rede.sql` | 2026-08-07 | Adiciona `permitir_mensagens_globais` em `funcionarios` e `bloquear_edicao_funcionarios_rede` em `configuracoes_rede`. | `funcionarios`, `configuracoes_rede` | Mantém RLS |
 
 
