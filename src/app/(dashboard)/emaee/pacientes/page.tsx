@@ -23,6 +23,8 @@ import Link from 'next/link'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalMatriculaEmaee } from '@/components/modals/modal-matricula-emaee'
 
+import { getAvatarUrl } from '@/lib/photoHelper'
+
 export default function PacientesPage() {
   const { escolaAtivaId } = useAuthStore()
   const [prontuarios, setProntuarios] = useState<any[]>([])
@@ -50,6 +52,7 @@ export default function PacientesPage() {
               foto_url,
               foto_avatar_path,
               foto_visualizacao_path,
+              foto_updated_at,
               cpf,
               telefone
             ),
@@ -130,13 +133,13 @@ export default function PacientesPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-4">
-        <div className="flex-1 relative">
+      {/* Barra de Filtro e Pesquisa */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card border border-border p-4 rounded-2xl shadow-sm">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Pesquisar por nome do aluno ou CPF..."
+            placeholder="Buscar por nome do paciente ou CPF..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="w-full bg-secondary border border-border text-foreground rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary/50 transition-colors"
@@ -184,6 +187,7 @@ export default function PacientesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {prontuariosFiltrados.map((paciente) => {
             const regularEscola = paciente.escolas?.nome ?? 'Sem Escola Regular';
+            const avatarUrl = getAvatarUrl(paciente.alunos);
             return (
               <div
                 key={paciente.id}
@@ -192,8 +196,12 @@ export default function PacientesPage() {
                 <div>
                   <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-                        {paciente.alunos?.nome?.substring(0, 2).toUpperCase()}
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 overflow-hidden border border-border/50">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={paciente.alunos?.nome || 'Foto 3x4'} className="w-full h-full object-cover" />
+                        ) : (
+                          paciente.alunos?.nome?.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h3 className="text-sm font-semibold text-foreground truncate" title={paciente.alunos?.nome}>
