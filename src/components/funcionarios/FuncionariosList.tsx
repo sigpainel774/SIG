@@ -356,6 +356,7 @@ export function FuncionariosList({
                                 alt={func.nome}
                                 className="w-full h-full"
                                 fallback={getInitials(func.nome)}
+                                updatedAt={func.foto_updated_at}
                               />
                             </div>
 

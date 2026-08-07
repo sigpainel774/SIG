@@ -24,9 +24,14 @@ export async function obterFotoCache(
   // Sanitiza a URL removendo query params para chave única no cache
   const cleanUrl = url.split('?')[0]
 
-  // Se já existe no map de memória da sessão ativa, retorna imediatamente
-  if (memoryBlobMap.has(cleanUrl)) {
-    return memoryBlobMap.get(cleanUrl)!
+  // A chave de memória incorpora o updatedAt para que uma nova foto (com novo timestamp)
+  // force o re-fetch mesmo que a URL base seja a mesma (ex: substituição de foto).
+  const updatedAtKey = updatedAt ? new Date(updatedAt).getTime().toString() : 'static'
+  const memKey = `${cleanUrl}::${updatedAtKey}`
+
+  // Se já existe no map de memória da sessão ativa para ESTA versão, retorna imediatamente
+  if (memoryBlobMap.has(memKey)) {
+    return memoryBlobMap.get(memKey)!
   }
 
   // Fallback seguro caso 'caches' não esteja disponível no ambiente (SSR / guias ultra privadas)
@@ -43,7 +48,7 @@ export async function obterFotoCache(
     if (cachedResponse && cachedResponse.ok) {
       const blob = await cachedResponse.blob()
       const blobUrl = URL.createObjectURL(blob)
-      memoryBlobMap.set(cleanUrl, blobUrl)
+      memoryBlobMap.set(memKey, blobUrl)
       return blobUrl
     }
 
@@ -55,7 +60,7 @@ export async function obterFotoCache(
       await cache.put(cleanUrl, response.clone())
       const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
-      memoryBlobMap.set(cleanUrl, blobUrl)
+      memoryBlobMap.set(memKey, blobUrl)
       return blobUrl
     }
   } catch (err) {
@@ -75,18 +80,21 @@ export async function invalidarCacheFoto(url: string | null | undefined): Promis
 
   const cleanUrl = url.split('?')[0]
 
-  // Revoga Blob URL da memória se existir
-  if (memoryBlobMap.has(cleanUrl)) {
-    const blobUrl = memoryBlobMap.get(cleanUrl)
-    if (blobUrl && blobUrl.startsWith('blob:')) {
-      try {
-        URL.revokeObjectURL(blobUrl)
-      } catch (err) {
-        // Ignora erro ao revogar
+  // Revoga todas as Blob URLs em memória que tenham essa URL base (qualquer versão/timestamp)
+  const keysToDelete: string[] = []
+  for (const [key, blobUrl] of memoryBlobMap.entries()) {
+    if (key.startsWith(`${cleanUrl}::`)) {
+      keysToDelete.push(key)
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(blobUrl)
+        } catch (err) {
+          // Ignora erro ao revogar
+        }
       }
     }
-    memoryBlobMap.delete(cleanUrl)
   }
+  keysToDelete.forEach((k) => memoryBlobMap.delete(k))
 
   if (typeof window === 'undefined' || !('caches' in window)) return
 

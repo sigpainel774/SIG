@@ -8,6 +8,9 @@ export interface FuncionarioBasico {
   status: string
   formacao?: string | null
   foto_url?: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
   data_nascimento?: string | null
   endereco?: string | null
   latitude?: number | null

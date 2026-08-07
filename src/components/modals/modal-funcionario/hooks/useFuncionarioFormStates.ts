@@ -823,6 +823,12 @@ export function useFuncionarioFormStates({
             body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
           })
           if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+
+          // Invalida o cache local do navegador para que a nova foto apareça imediatamente
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+          await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${funcionario.foto_avatar_path}`)
+          await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${funcionario.foto_visualizacao_path}`)
+          await invalidarCacheFoto(funcionario.foto_url)
         }
         // --- FIM UPLOAD OTIMIZADO ---
 
@@ -875,6 +881,16 @@ export function useFuncionarioFormStates({
             body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
           })
           if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+
+          // Invalida o cache local do navegador para que a nova foto apareça imediatamente (cadastro novo)
+          // Para cadastro novo o funcionário ainda não tem foto antiga, mas limpamos por precaução
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+          const oldAvatarPath = (funcionario as any)?.foto_avatar_path
+          const oldVisPath = (funcionario as any)?.foto_visualizacao_path
+          const oldFotoUrl = (funcionario as any)?.foto_url
+          if (oldAvatarPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${oldAvatarPath}`)
+          if (oldVisPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${oldVisPath}`)
+          if (oldFotoUrl) await invalidarCacheFoto(oldFotoUrl)
         }
         // --- FIM UPLOAD OTIMIZADO ---
 
