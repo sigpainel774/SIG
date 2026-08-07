@@ -77,8 +77,13 @@ export function CachedImage({
           alt={alt}
           onError={() => {
             if (isMounted.current) {
-              setErro(true)
-              setCarregando(false)
+              if (src && displaySrc !== src) {
+                // Tenta fallback direto para a URL remota original
+                setDisplaySrc(src)
+              } else {
+                setErro(true)
+                setCarregando(false)
+              }
             }
           }}
           className={`w-full h-full object-cover transition-opacity duration-200 ${

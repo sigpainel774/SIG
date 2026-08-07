@@ -8,7 +8,7 @@ export interface FotoRegistro {
   foto_updated_at?: string | null | undefined
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
 
 /**
  * Retorna a URL pública do avatar otimizado (bucket fotos-avatar).
@@ -22,14 +22,16 @@ export function getAvatarUrl(registro?: FotoRegistro | null): string | undefined
   if (registro.foto_avatar_path) {
     if (registro.foto_avatar_path.startsWith('http://') || registro.foto_avatar_path.startsWith('https://')) {
       url = registro.foto_avatar_path
-    } else if (SUPABASE_URL) {
+    } else {
       url = `${SUPABASE_URL}/storage/v1/object/public/fotos-avatar/${registro.foto_avatar_path}`
     }
   } else if (registro.foto_url) {
     url = registro.foto_url
   }
 
-  return getVersaoImagemUrl(url ?? null, registro.foto_updated_at) ?? undefined
+  if (!url) return undefined
+
+  return getVersaoImagemUrl(url, registro.foto_updated_at) ?? url
 }
 
 /**
@@ -45,12 +47,14 @@ export function getVisualizacaoUrl(registro?: FotoRegistro | null): string | und
   if (registro.foto_visualizacao_path) {
     if (registro.foto_visualizacao_path.startsWith('http://') || registro.foto_visualizacao_path.startsWith('https://')) {
       url = registro.foto_visualizacao_path
-    } else if (SUPABASE_URL) {
+    } else {
       url = `${SUPABASE_URL}/storage/v1/object/public/fotos-visualizacao/${registro.foto_visualizacao_path}`
     }
   } else if (registro.foto_url) {
     url = registro.foto_url
   }
 
-  return getVersaoImagemUrl(url ?? null, registro.foto_updated_at) ?? undefined
+  if (!url) return undefined
+
+  return getVersaoImagemUrl(url, registro.foto_updated_at) ?? url
 }
