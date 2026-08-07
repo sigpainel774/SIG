@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { arquivarAnexo } from '@/lib/audit/archive-agent'
+import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 import { 
   Loader2, 
   Plus, 
@@ -139,14 +140,21 @@ export function ModalAlunosAnexos({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, aluno?.id])
 
-  // Helper centralizado para upload de arquivo no Supabase Storage
+  // Helper centralizado para upload de arquivo no Supabase Storage com compressão inteligente
   const uploadFileToStorage = async (file: File): Promise<string> => {
-    const sanitizedFileName = file.name.replace(/[^\w.-]/g, '_')
+    const compResult = await compressImageBeforeUpload(file)
+    const finalFile = compResult.file
+
+    if (compResult.wasCompressed) {
+      toast.info(`Imagem otimizada de ${formatBytes(compResult.originalSize)} para ${formatBytes(compResult.compressedSize)} (-${compResult.savingsPercent}%)`)
+    }
+
+    const sanitizedFileName = finalFile.name.replace(/[^\w.-]/g, '_')
     const filePath = `${aluno.id}/${Date.now()}_${sanitizedFileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('alunos-anexos')
-      .upload(filePath, file)
+      .upload(filePath, finalFile)
 
     if (uploadError) throw uploadError
 
