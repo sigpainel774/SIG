@@ -123,7 +123,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 8. Atualizar o Banco de Dados com os novos caminhos
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+    const publicVisUrl = `${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${visualizacaoPath}`
+
     const dbUpdate = {
+      foto_url: publicVisUrl,
       foto_avatar_path: avatarPath,
       foto_visualizacao_path: visualizacaoPath,
       foto_original_path: finalOriginalPath,

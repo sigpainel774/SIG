@@ -252,6 +252,7 @@ export interface FuncionarioFormContextType {
   fotoPreview: string | null
   setFotoPreview: (v: string | null) => void
   handleFotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handleRemoverFoto?: () => void
 
   // Lotações Sub-modal
   lotacoesModalOpen: boolean
