@@ -4,7 +4,7 @@ import React from 'react'
 import { useMatriculaEmaeeContext } from '../context/MatriculaEmaeeContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Search, CheckCircle2, User, Loader2 } from 'lucide-react'
+import { Search, CheckCircle2, User, Loader2, Camera } from 'lucide-react'
 
 export function SecaoDadosAluno() {
   const {
@@ -15,6 +15,9 @@ export function SecaoDadosAluno() {
     handleSearchAluno,
     searchTerm,
     setSearchTerm,
+
+    fotoUrl,
+    handleFotoUpload,
 
     nomeCompleto, setNomeCompleto,
     dataNascimento, setDataNascimento,
@@ -109,6 +112,41 @@ export function SecaoDadosAluno() {
             </div>
           </div>
         )}
+
+        {/* Upload / Captura de Foto 3x4 do Aluno */}
+        <div className="flex items-center gap-4 p-3.5 rounded-xl bg-[#121621] border border-[#26262a]">
+          <div 
+            onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
+            className="w-20 h-20 rounded-full bg-[#0b0e14] border-2 border-[#3ea6ff] flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+          >
+            {fotoUrl ? (
+              <img src={fotoUrl} alt="Foto 3x4 do Aluno" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="w-8 h-8 text-[#3ea6ff]" />
+            )}
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-slate-200 block">Foto 3x4 do Aluno</Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Clique no círculo para selecionar um arquivo ou capturar pela câmera.
+            </p>
+            <button
+              type="button"
+              onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
+              className="mt-2 text-xs font-semibold text-[#3ea6ff] hover:underline"
+            >
+              {fotoUrl ? 'Alterar Foto 3x4' : 'Capturar/Enviar Foto 3x4'}
+            </button>
+            <input 
+              id="modalFotoEmaeeInput" 
+              type="file" 
+              accept="image/*" 
+              capture="user"
+              className="hidden" 
+              onChange={handleFotoUpload} 
+            />
+          </div>
+        </div>
 
         {/* Subseção 1: Identificação */}
         <div>

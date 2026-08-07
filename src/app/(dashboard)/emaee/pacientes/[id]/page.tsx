@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import {
   Heart,
   ArrowLeft,
@@ -99,6 +100,10 @@ export default function PacienteDetalhesPage() {
           *,
           alunos (
             nome,
+            foto_url,
+            foto_avatar_path,
+            foto_visualizacao_path,
+            foto_updated_at,
             cpf,
             telefone,
             rg,
@@ -165,7 +170,11 @@ export default function PacienteDetalhesPage() {
         .select(`
           *,
           funcionarios (
-            nome
+            nome,
+            foto_url,
+            foto_avatar_path,
+            foto_visualizacao_path,
+            foto_updated_at
           )
         `)
         .eq('emaee_matricula_id', id)
@@ -409,6 +418,8 @@ export default function PacienteDetalhesPage() {
       )
     : []
 
+  const foto3x4Url = getVisualizacaoUrl(aluno)
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -419,32 +430,44 @@ export default function PacienteDetalhesPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground">{aluno?.nome}</h1>
-              
-              {/* Select de Status */}
-              <select
-                value={prontuario.status ?? 'FILA_ESPERA'}
-                onChange={(e) => atualizarStatusProntuario(e.target.value)}
-                className={`px-3 py-1 rounded-full text-xs font-bold outline-none border cursor-pointer transition-all ${
-                  prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                  prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
-                  prontuario.status === 'ALTA' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
-                  prontuario.status === 'INATIVO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
-                  'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
-                }`}
-              >
-                <option value="FILA_ESPERA" className="bg-[#121621] text-zinc-300">Fila de Espera</option>
-                <option value="EM_INVESTIGACAO" className="bg-[#121621] text-amber-300">Em Investigação</option>
-                <option value="ATIVO" className="bg-[#121621] text-emerald-300">Em Atendimento</option>
-                <option value="ALTA" className="bg-[#121621] text-blue-300">Alta Médica</option>
-                <option value="INATIVO" className="bg-[#121621] text-rose-300">Inativo</option>
-              </select>
+          
+          <div className="flex items-center gap-3.5">
+            {/* Thumbnail Foto 3x4 do Paciente */}
+            <div className="w-12 h-12 rounded-xl bg-primary/10 border border-border/60 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0">
+              {foto3x4Url ? (
+                <img src={foto3x4Url} alt={aluno?.nome || 'Foto 3x4'} className="w-full h-full object-cover" />
+              ) : (
+                aluno?.nome?.substring(0, 2).toUpperCase()
+              )}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Matrícula EMAEE: {prontuario.numero_matricula_emaee ?? 'Investigando'} | regular: {regularEscola}
-            </p>
+
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-foreground">{aluno?.nome}</h1>
+
+                {/* Select de Status */}
+                <select
+                  value={prontuario.status ?? 'FILA_ESPERA'}
+                  onChange={(e) => atualizarStatusProntuario(e.target.value)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold outline-none border cursor-pointer transition-all ${
+                    prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                    prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                    prontuario.status === 'ALTA' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                    prontuario.status === 'INATIVO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
+                    'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+                  }`}
+                >
+                  <option value="FILA_ESPERA" className="bg-[#121621] text-zinc-300">Fila de Espera</option>
+                  <option value="EM_INVESTIGACAO" className="bg-[#121621] text-amber-300">Em Investigação</option>
+                  <option value="ATIVO" className="bg-[#121621] text-emerald-300">Em Atendimento</option>
+                  <option value="ALTA" className="bg-[#121621] text-blue-300">Alta Médica</option>
+                  <option value="INATIVO" className="bg-[#121621] text-rose-300">Inativo</option>
+                </select>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Matrícula EMAEE: {prontuario.numero_matricula_emaee ?? 'Investigando'} | regular: {regularEscola}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -670,9 +693,18 @@ export default function PacienteDetalhesPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs">
-                              {esp.especialidade ? esp.especialidade.charAt(0).toUpperCase() : 'E'}
-                            </div>
+                            {(() => {
+                              const profAvatarUrl = getAvatarUrl(esp.funcionarios)
+                              return (
+                                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs overflow-hidden shrink-0">
+                                  {profAvatarUrl ? (
+                                    <img src={profAvatarUrl} alt={esp.funcionarios?.nome || 'Foto'} className="w-full h-full object-cover" />
+                                  ) : (
+                                    esp.especialidade ? esp.especialidade.charAt(0).toUpperCase() : 'E'
+                                  )}
+                                </div>
+                              )
+                            })()}
                             <div>
                               <div className="text-xs text-primary font-bold">{esp.especialidade}</div>
                               <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">

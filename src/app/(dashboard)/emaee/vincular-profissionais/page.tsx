@@ -10,6 +10,8 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
 
+import { getAvatarUrl } from '@/lib/photoHelper'
+
 export default function ProfissionaisAEEPage() {
   const { selectedEscola } = useSchoolStore()
   const escolaEmaeeId = selectedEscola?.id
@@ -21,9 +23,6 @@ export default function ProfissionaisAEEPage() {
   // Controle de modal
   const [modalOpen, setModalOpen] = useState(false)
   const [profSelecionado, setProfSelecionado] = useState<any>(null)
-  
-  // Cache busting
-  const sessionTimestamp = useMemo(() => Date.now(), [])
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -42,7 +41,7 @@ export default function ProfissionaisAEEPage() {
       const { data, error } = await supabase
         .from('funcionarios')
         .select(`
-          id, nome, cargo, foto_url, foto_avatar_path,
+          id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at,
           vinculos_funcionarios!inner(escola_id, ativo)
         `)
         .eq('vinculos_funcionarios.escola_id', escolaEmaeeId)
@@ -127,11 +126,7 @@ export default function ProfissionaisAEEPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {profissionais.map(p => {
             const colors = getColorByCargo(p.cargo)
-            // Lógica de cache-busting do avatar
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-            let avatarUrl = p.foto_url
-            if (p.foto_avatar_path) avatarUrl = `${supabaseUrl}/storage/v1/object/public/fotos-avatars/${p.foto_avatar_path}`
-            if (avatarUrl) avatarUrl = `${avatarUrl.split('?')[0]}?t=${sessionTimestamp}`
+            const avatarUrl = getAvatarUrl(p)
 
             return (
               <div 

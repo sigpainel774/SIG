@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
+import { getVisualizacaoUrl } from '@/lib/photoHelper'
 
 export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMatriculaEmaeeProps, isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const supabase = createBrowserClient()
@@ -41,6 +42,22 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [contatoEmergencia, setContatoEmergencia] = useState('')
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
   const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
+
+  // Foto 3x4 do Aluno
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+
+  const handleFotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setFotoFile(file)
+    const reader = new FileReader()
+    reader.onload = () => {
+      setFotoUrl(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   // 3. Escola Regular
   const [escolaRegularId, setEscolaRegularId] = useState<string>('')
@@ -154,6 +171,16 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setContatoEmergencia(aluno.nome_contato_emergencia ?? '')
     setTelefoneEmergencia(aluno.telefone ?? '')
 
+    // Carregar foto existente
+    const visualUrl = getVisualizacaoUrl({
+      foto_url: aluno.foto_url,
+      foto_avatar_path: aluno.foto_avatar_path,
+      foto_visualizacao_path: aluno.foto_visualizacao_path,
+      foto_updated_at: aluno.foto_updated_at
+    })
+    setFotoUrl(visualUrl || aluno.foto_url || null)
+    setFotoFile(null)
+
     // Carregar assinatura existente do responsável se já salva na ficha do aluno
     const dadosMatricula = (aluno as any).dados_matricula || {}
     if (dadosMatricula.assinatura_responsavel_url) {
@@ -178,7 +205,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           certidao_nascimento_novo_modelo, identif_unica_censo,
           nome_mae, profissao_mae, nome_pai, profissao_pai, endereco,
           sexo, dados_matricula, uf_nascimento, municipio_nascimento,
-          zona_residencial, nome_contato_emergencia, telefone
+          zona_residencial, nome_contato_emergencia, telefone,
+          foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at
         `) as any)
         .ilike('nome', `%${term}%`)
         .is('deleted_at', null)
@@ -207,6 +235,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         zona_residencial: a.zona_residencial || 'Urbana',
         nome_contato_emergencia: a.nome_contato_emergencia || null,
         telefone: a.telefone || null,
+        foto_url: a.foto_url || null,
+        foto_avatar_path: a.foto_avatar_path || null,
+        foto_visualizacao_path: a.foto_visualizacao_path || null,
+        foto_updated_at: a.foto_updated_at || null,
         dados_matricula: a.dados_matricula
       }))
       
@@ -238,7 +270,33 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
     setLoading(true)
     try {
-      // 1. Atualizar dados do aluno se houver modificações + preservar/atualizar assinatura do responsável em dados_matricula
+      // 1. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
+      if (fotoFile) {
+        try {
+          const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
+          const dataUrl = await resUrl.json()
+          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto 3x4.')
+
+          const uploadRes = await fetch(dataUrl.signedUrl, {
+            method: 'PUT',
+            body: fotoFile,
+            headers: { 'Content-Type': fotoFile.type }
+          })
+          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo da foto 3x4.')
+
+          const processRes = await fetch('/api/fotos/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entity: 'alunos', id: alunoSelecionado.id, originalPath: dataUrl.path })
+          })
+          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto 3x4.')
+        } catch (fotoErr: any) {
+          console.error('Erro no upload da foto 3x4:', fotoErr)
+          toast.error('Aviso: Houve um problema ao processar a foto 3x4 do aluno.')
+        }
+      }
+
+      // 2. Atualizar dados do aluno se houver modificações + preservar/atualizar assinatura do responsável em dados_matricula
       const currentDadosMatricula = (alunoSelecionado as any)?.dados_matricula || {}
       const updatedDadosMatricula = {
         ...currentDadosMatricula,
@@ -275,7 +333,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
       if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
 
-      // 2. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro ES-1)
+      // 3. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro ES-1)
       const validEscolaAtendimento = escolaAtendimentoId.trim() ? escolaAtendimentoId.trim() : props.escolaEmaeeId
       const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
 
@@ -312,7 +370,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
       if (matriculaError) throw matriculaError
 
-      toast.success('Ficha de Matrícula AEE 2026 salva com sucesso!')
+      toast.success('Ficha de Matrícula AEE salva com sucesso!')
       if (props.onSuccess) props.onSuccess()
       setIsOpen(false)
     } catch (err: any) {
@@ -332,6 +390,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     handleSearchAluno,
     searchTerm,
     setSearchTerm,
+
+    // Foto 3x4
+    fotoUrl,
+    handleFotoUpload,
     
     // Atendimento
     escolaAtendimentoId, setEscolaAtendimentoId,
@@ -388,3 +450,4 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     handleSubmit
   }
 }
+

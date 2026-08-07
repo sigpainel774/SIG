@@ -27,4 +27,9 @@ export interface AlunoSearchData {
   zona_residencial: string | null
   nome_contato_emergencia: string | null
   telefone: string | null
+  foto_url?: string | null
+  foto_avatar_path?: string | null
+  foto_visualizacao_path?: string | null
+  foto_updated_at?: string | null
 }
+
