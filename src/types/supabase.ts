@@ -2239,6 +2239,7 @@ export type Database = {
           municipio_nascimento?: string | null
           nacionalidade?: string | null
           nacionalidade_especificacao?: string | null
+          permitir_mensagens_globais?: boolean | null
           nis?: string | null
           nome: string
           nome_mae?: string | null
