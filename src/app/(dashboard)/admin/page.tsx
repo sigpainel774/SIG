@@ -273,11 +273,125 @@ export default function AdminHubPage() {
   const { funcionario, logout } = useAuthStore()
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [loadingControles, setLoadingControles] = useState(true)
+
+  // Estados dos Controles Globais
+  const [permitirMensagensGlobais, setPermitirMensagensGlobais] = useState<boolean>(true)
+  const [bloquearEdicaoFuncionariosRede, setBloquearEdicaoFuncionariosRede] = useState<boolean>(false)
+  const [updatingMensagens, setUpdatingMensagens] = useState(false)
+  const [updatingEdicao, setUpdatingEdicao] = useState(false)
 
   // All groups expanded by default
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set(adminGroups.map((g) => g.id))
   )
+
+  // Carregar estados iniciais dos toggles
+  React.useEffect(() => {
+    async function loadControlesGlobais() {
+      try {
+        setLoadingControles(true)
+
+        // 1. Carrega visibilidade de mensagens do usuário logado
+        if (funcionario?.id) {
+          const { data: funcData } = await supabase
+            .from('funcionarios')
+            .select('permitir_mensagens_globais')
+            .eq('id', funcionario.id)
+            .single()
+
+          if (funcData) {
+            setPermitirMensagensGlobais(funcData.permitir_mensagens_globais ?? true)
+          }
+        }
+
+        // 2. Carrega trava de edição de funcionários na rede
+        const { data: redeData } = await supabase
+          .from('configuracoes_rede')
+          .select('bloquear_edicao_funcionarios_rede')
+          .limit(1)
+          .single()
+
+        if (redeData) {
+          setBloquearEdicaoFuncionariosRede(redeData.bloquear_edicao_funcionarios_rede ?? false)
+        }
+      } catch (err) {
+        console.error('Erro ao carregar controles globais:', err)
+      } finally {
+        setLoadingControles(false)
+      }
+    }
+
+    loadControlesGlobais()
+  }, [funcionario?.id])
+
+  // Handlers para os Toggles
+  const handleToggleMensagens = async () => {
+    if (!funcionario?.id) return
+    const newValue = !permitirMensagensGlobais
+    setUpdatingMensagens(true)
+
+    try {
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ permitir_mensagens_globais: newValue })
+        .eq('id', funcionario.id)
+
+      if (error) throw error
+
+      setPermitirMensagensGlobais(newValue)
+      toast.success(
+        newValue
+          ? 'Visibilidade no chat ativada: qualquer usuário pode te localizar no chat interno.'
+          : 'Visibilidade no chat restrita: apenas quem já possui conversa aberta conseguirá te enviar mensagens.'
+      )
+    } catch (err: any) {
+      console.error('Erro ao atualizar permissão de mensagens:', err)
+      toast.error('Erro ao atualizar preferência de chat.')
+    } finally {
+      setUpdatingMensagens(false)
+    }
+  }
+
+  const handleToggleBloqueioEdicao = async () => {
+    const newValue = !bloquearEdicaoFuncionariosRede
+    setUpdatingEdicao(true)
+
+    try {
+      const { data: config } = await supabase
+        .from('configuracoes_rede')
+        .select('id')
+        .limit(1)
+        .single()
+
+      if (config?.id) {
+        const { error } = await supabase
+          .from('configuracoes_rede')
+          .update({ bloquear_edicao_funcionarios_rede: newValue })
+          .eq('id', config.id)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('configuracoes_rede').insert({
+          bloquear_edicao_funcionarios_rede: newValue,
+          secretario_educacao: 'MARCUS ALANO CORREIA OLIVEIRA',
+        })
+        if (error) throw error
+      }
+
+      setBloquearEdicaoFuncionariosRede(newValue)
+      toast.success(
+        newValue
+          ? 'Restrição ATIVADA: Edição de ficha de funcionários bloqueada para usuários com nível abaixo de 1.'
+          : 'Restrição DESATIVADA: Edição de ficha de funcionários liberada conforme regras ABAC normais.'
+      )
+    } catch (err: any) {
+      console.error('Erro ao atualizar trava de edição de funcionários:', err)
+      toast.error('Erro ao salvar parâmetro global da rede.')
+    } finally {
+      setUpdatingEdicao(false)
+    }
+  }
 
   const toggleGroup = (id: string) => {
     setExpandedGroups((prev) => {
@@ -352,6 +466,90 @@ export default function AdminHubPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Seção Controles Globais ── */}
+      <div className="bg-gradient-to-r from-[#18181b] via-[#141416] to-[#18181b] border border-amber-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+        <div className="flex items-center gap-3 mb-4 border-b border-border/60 pb-3">
+          <SlidersHorizontal className="w-5 h-5 text-amber-400" />
+          <div>
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              Controles Globais do Sistema
+              <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md">
+                Parâmetros ROOT
+              </span>
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Gerencie visibilidade no sistema de comunicações e travas globais de permissões da rede municipal.
+            </p>
+          </div>
+        </div>
+
+        {loadingControles ? (
+          <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+            Carregando controles globais...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Toggle 1: Chat Interno */}
+            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-foreground block">
+                  Visibilidade no Chat Interno (adm@sig.com)
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Quando ativo, todos os usuários conseguem te achar na busca e enviar mensagens. Desativado, apenas quem já possui chat aberto poderá enviar.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleMensagens}
+                disabled={updatingMensagens}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
+                  permitirMensagensGlobais ? 'bg-emerald-500' : 'bg-zinc-700'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    permitirMensagensGlobais ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Toggle 2: Bloqueio de Edição de Funcionários */}
+            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-foreground block">
+                  Bloquear Edição de Funcionários (&lt; Nível 1)
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Quando ativo, desativa a capacidade de alteração de ficha de funcionários para todos da rede municipal com nível abaixo de 1.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleBloqueioEdicao}
+                disabled={updatingEdicao}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
+                  bloquearEdicaoFuncionariosRede ? 'bg-rose-500' : 'bg-zinc-700'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    bloquearEdicaoFuncionariosRede ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
 
       {/* ── Accordion Groups ── */}
       <div className="space-y-3">

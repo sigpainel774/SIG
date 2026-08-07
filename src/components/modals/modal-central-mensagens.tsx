@@ -176,26 +176,26 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
     if (!funcionario?.id) return
     const supabase = createClient()
     try {
-      let list: FuncionarioOption[] = []
-      const map = new Map<string, FuncionarioOption>()
+      let list: (FuncionarioOption & { permitir_mensagens_globais?: boolean; email?: string })[] = []
+      const map = new Map<string, FuncionarioOption & { permitir_mensagens_globais?: boolean; email?: string }>()
 
       if (isLevel1) {
         const { data, error } = await supabase
           .from('funcionarios')
-          .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at')
+          .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, permitir_mensagens_globais, email')
           .eq('status', 'ativo')
           .neq('id', funcionario.id)
           .order('nome', { ascending: true })
 
         if (error) throw error
-        list = (data as unknown as FuncionarioOption[]) ?? []
+        list = (data as unknown as any[]) ?? []
       } else {
         const targetEscolaId = selectedEscola?.id ?? (funcionario as any)?.escola_id
 
         if (targetEscolaId) {
           const { data: vinculos, error: errVinculos } = await supabase
             .from('vinculos_funcionarios')
-            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at)')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, permitir_mensagens_globais, email)')
             .eq('escola_id', targetEscolaId)
             .eq('ativo', true)
 
@@ -211,7 +211,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         if (isLevel2) {
           const { data: acessosNivel1 } = await supabase
             .from('acessos_usuarios')
-            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at)')
+            .select('funcionario:funcionarios!funcionario_id(id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, permitir_mensagens_globais, email)')
             .eq('nivel', 1)
             .eq('ativo', true)
 
@@ -225,7 +225,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
 
           const { data: superadmins } = await supabase
             .from('funcionarios')
-            .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at')
+            .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, permitir_mensagens_globais, email')
             .eq('is_superadmin', true)
             .eq('status', 'ativo')
 
@@ -238,11 +238,41 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
           }
         }
 
+        // Buscar sempre a conta master adm@sig.com (ou superadmin master) para permitir envio global
+        const { data: masterAccount } = await supabase
+          .from('funcionarios')
+          .select('id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, permitir_mensagens_globais, email')
+          .or('email.ilike.adm@sig.com,email.ilike.adm@super.com,is_superadmin.eq.true')
+          .eq('status', 'ativo')
+
+        if (masterAccount) {
+          masterAccount.forEach((m: any) => {
+            if (m.id !== funcionario.id) {
+              map.set(m.id, m)
+            }
+          })
+        }
+
         list = Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome))
       }
 
+      // Filtrar contatos com base na preferência permitir_mensagens_globais
+      // Se permitir_mensagens_globais === false, mantém na lista APENAS se o usuário logado já possuir um chat/conversa com esse contato ou se for adm@sig.com
+      const openChatContactIds = new Set<string>()
+      allMessages.forEach((msg) => {
+        const contactId = msg.remetente_id === funcionario.id ? msg.destinatario_id : msg.remetente_id
+        if (contactId) openChatContactIds.add(contactId)
+      })
+
+      const filteredList = list.filter((item) => {
+        const isMaster = item.email?.toLowerCase().includes('adm@sig.com') || item.email?.toLowerCase().includes('adm@super.com')
+        if (isMaster) return true
+        if (item.permitir_mensagens_globais !== false) return true
+        return openChatContactIds.has(item.id)
+      })
+
       if (isMounted.current) {
-        setDestinatarios(list)
+        setDestinatarios(filteredList)
       }
     } catch (error) {
       console.error('Erro ao carregar lista de destinatários:', error)

@@ -603,13 +603,32 @@ export function useFuncionarioFormStates({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const supabase = createClient()
+
+    // Verificação de Restrição Global da Rede (< Nível 1)
+    const { funcionario: usuarioLogado, acessos, isAdminGlobalOrRoot } = useAuthStore.getState()
+    const isLevel1 = usuarioLogado?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
+
+    if (!isLevel1) {
+      const { data: configRede } = await supabase
+        .from('configuracoes_rede')
+        .select('bloquear_edicao_funcionarios_rede')
+        .limit(1)
+        .single()
+
+      if (configRede?.bloquear_edicao_funcionarios_rede) {
+        toast.error('A edição de ficha de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        return
+      }
+    }
+
     if (!nome || !email) {
       toast.error('Preencha os campos obrigatórios: Nome e E-mail.')
       return
     }
 
     setLoading(true)
-    const supabase = createClient()
 
     try {
       // A foto só é zerada do banco se o usuário tiver removido manualmente a imagem prévia
