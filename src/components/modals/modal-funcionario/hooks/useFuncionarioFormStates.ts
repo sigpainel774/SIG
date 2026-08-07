@@ -130,8 +130,10 @@ export function useFuncionarioFormStates({
   const [modalidadeEnsino, setModalidadeEnsino] = useState('Regular')
   const [dataAdmissao, setDataAdmissao] = useState('')
   const [status, setStatus] = useState('ativo')
+  const [isProfissionalAee, setIsProfissionalAee] = useState(false)
 
   // Licença Médica & Afastamento
+
   const [cid, setCid] = useState('')
   const [diasAfastamento, setDiasAfastamento] = useState('1')
   const [dataFimAfastamento, setDataFimAfastamento] = useState('')
@@ -257,7 +259,9 @@ export function useFuncionarioFormStates({
             setTipoVinculoEspec(data.tipo_vinculo_especificacao ?? '')
             setModalidadeEnsino(data.modalidade_ensino ?? 'Regular')
             setStatus(data.status ?? 'ativo')
+            setIsProfissionalAee(!!data.is_profissional_aee)
             setPossuiDeficiencia(!!data.possui_deficiencia)
+
             setDeficiencias(data.deficiencias ?? [])
             setTea(!!data.tea)
             setAltasHabilidades(!!data.altas_habilidades)
@@ -408,7 +412,9 @@ export function useFuncionarioFormStates({
         setTipoVinculoEspec('')
         setModalidadeEnsino('Regular')
         setStatus('ativo')
+        setIsProfissionalAee(false)
         setPossuiDeficiencia(false)
+
         setDeficiencias([])
         setTea(false)
         setAltasHabilidades(false)
@@ -624,7 +630,9 @@ export function useFuncionarioFormStates({
         cargo: cargo || null,
         registro_profissional: registroProfissional || null,
         status,
+        is_profissional_aee: isProfissionalAee,
         formacao: escolaridadeNivel || null,
+
         data_nascimento: nascimento || null,
         endereco: enderecoFinal,
         latitude: latitude ?? null,
@@ -1104,7 +1112,9 @@ export function useFuncionarioFormStates({
     modalidadeEnsino, setModalidadeEnsino,
     dataAdmissao, setDataAdmissao,
     status, setStatus,
+    isProfissionalAee, setIsProfissionalAee,
     cid, setCid,
+
     diasAfastamento, setDiasAfastamento,
     dataFimAfastamento, setDataFimAfastamento,
     atestadoFile, setAtestadoFile,

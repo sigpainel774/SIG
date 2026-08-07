@@ -16,7 +16,9 @@ export function EmpregoTab() {
     modalidadeEnsino, setModalidadeEnsino,
     dataAdmissao, setDataAdmissao,
     status, setStatus,
+    isProfissionalAee, setIsProfissionalAee,
     cid, setCid,
+
     diasAfastamento, setDiasAfastamento,
     dataFimAfastamento, setDataFimAfastamento,
     atestadoFile, setAtestadoFile,
@@ -157,7 +159,23 @@ export function EmpregoTab() {
             <option value="suspenso">Suspenso</option>
           </select>
         </div>
+
+        <div className="flex flex-col justify-end">
+          <label className="flex items-center gap-2.5 p-2.5 rounded-md bg-[#181818] border border-borderCustom cursor-pointer hover:border-[#3ea6ff]/50 transition-colors h-10 mt-1">
+            <input
+              type="checkbox"
+              checked={isProfissionalAee}
+              onChange={(e) => setIsProfissionalAee(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-600 text-[#3ea6ff] focus:ring-[#3ea6ff] bg-[#121212] accent-[#3ea6ff] cursor-pointer"
+            />
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-white leading-tight">Profissional AEE</span>
+              <span className="text-[10px] text-zinc-400 leading-tight">EMAEE Painel</span>
+            </div>
+          </label>
+        </div>
       </div>
+
 
       {/* Seção Condicional de Licença Médica quando Status for Afastado */}
       {status === 'afastado' && (

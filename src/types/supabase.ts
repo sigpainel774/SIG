@@ -2133,7 +2133,9 @@ export type Database = {
           graduacoes: Json | null
           id: string
           is_conta_especial: boolean
+          is_profissional_aee?: boolean | null
           is_superadmin: boolean | null
+
           latitude: number | null
           logradouro: string | null
           longitude: number | null
@@ -2223,7 +2225,9 @@ export type Database = {
           graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean
+          is_profissional_aee?: boolean | null
           is_superadmin?: boolean | null
+
           latitude?: number | null
           logradouro?: string | null
           longitude?: number | null
@@ -2313,7 +2317,9 @@ export type Database = {
           graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean
+          is_profissional_aee?: boolean | null
           is_superadmin?: boolean | null
+
           latitude?: number | null
           logradouro?: string | null
           longitude?: number | null

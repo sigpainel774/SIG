@@ -67,6 +67,7 @@ Cadastro principal de servidores e servidores municipais.
 *   `observacoes`: `text` (Nullable)
 *   `data_preenchimento`: `date` (Nullable)
 *   `registro_profissional`: `text` (Número de registro profissional / conselho regional, ex: CRP, CRM, Nullable)
+*   `is_profissional_aee`: `boolean` (Default: false, Indica se o servidor é um Profissional AEE para exibição no EMAEE, NOT NULL)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
