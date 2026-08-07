@@ -18,9 +18,11 @@ export interface FuncionarioBasico {
   telefone?: string | null
   modalidade_ensino?: string | null
   registro_profissional?: string | null
+  is_profissional_aee?: boolean | null
 }
 
 export interface ModalFuncionarioProps {
+
   open?: boolean
   onOpenChange?: (open: boolean) => void
   trigger?: React.ReactNode
@@ -170,7 +172,10 @@ export interface FuncionarioFormContextType {
   setDataAdmissao: (v: string) => void
   status: string
   setStatus: (v: string) => void
+  isProfissionalAee: boolean
+  setIsProfissionalAee: (v: boolean) => void
   cid: string
+
   setCid: (v: string) => void
   diasAfastamento: string
   setDiasAfastamento: (v: string) => void
