@@ -92,37 +92,44 @@ export async function POST(req: NextRequest) {
       .eq('id', id)
       .maybeSingle()
 
-    // 5. Upload simultâneo para os 3 buckets usando Promise.all
-    await Promise.all([
+    // 5. Encapsular buffers em Blobs nativos para evitar corrupção UTF-8 (EF BF BD)
+    const avatarBlob = new Blob([new Uint8Array(avatarBuffer)], { type: 'image/webp' })
+    const visualizacaoBlob = new Blob([new Uint8Array(visualizacaoBuffer)], { type: 'image/webp' })
+    const originalOtimizadoBlob = new Blob([new Uint8Array(originalOtimizadoBuffer)], { type: 'image/webp' })
+
+    // Upload simultâneo para os 3 buckets usando Promise.all e checagem de erros
+    const [avatarRes, visualizacaoRes, originalRes] = await Promise.all([
       supabaseAdmin.storage
         .from('fotos-avatar')
-        .upload(avatarPath, avatarBuffer, { contentType: 'image/webp', upsert: true }),
+        .upload(avatarPath, avatarBlob, { contentType: 'image/webp', upsert: true }),
       supabaseAdmin.storage
         .from('fotos-visualizacao')
-        .upload(visualizacaoPath, visualizacaoBuffer, { contentType: 'image/webp', upsert: true }),
+        .upload(visualizacaoPath, visualizacaoBlob, { contentType: 'image/webp', upsert: true }),
       supabaseAdmin.storage
         .from('fotos-originais')
-        .upload(finalOriginalPath, originalOtimizadoBuffer, { contentType: 'image/webp', upsert: true })
+        .upload(finalOriginalPath, originalOtimizadoBlob, { contentType: 'image/webp', upsert: true })
     ])
 
-    // 6. Deletar a foto temporária enviada via Signed URL (limpeza)
-    await supabaseAdmin.storage.from('fotos-originais').remove([originalPath])
+    // Verificar se algum upload retornou erro
+    const uploadErrors = [avatarRes.error, visualizacaoRes.error, originalRes.error].filter(Boolean)
+    if (uploadErrors.length > 0) {
+      console.error('[API fotos/process] Erro durante o upload de fotos ao Supabase Storage:', uploadErrors)
+      
+      // Rollback de segurança: remove arquivos da tentativa atual que possam ter sido gravados
+      const cleanupAttempts = []
+      if (!avatarRes.error) cleanupAttempts.push(supabaseAdmin.storage.from('fotos-avatar').remove([avatarPath]))
+      if (!visualizacaoRes.error) cleanupAttempts.push(supabaseAdmin.storage.from('fotos-visualizacao').remove([visualizacaoPath]))
+      if (!originalRes.error) cleanupAttempts.push(supabaseAdmin.storage.from('fotos-originais').remove([finalOriginalPath]))
+      
+      // Também remove a foto original temporária
+      cleanupAttempts.push(supabaseAdmin.storage.from('fotos-originais').remove([originalPath]))
+      
+      await Promise.allSettled(cleanupAttempts)
 
-    // 7. Deletar as fotos antigas (limpeza do lixo ES-Storage-Bloat)
-    if (oldRecord) {
-      const pathsToDeleteAvatar = oldRecord.foto_avatar_path ? [oldRecord.foto_avatar_path] : []
-      const pathsToDeleteVis = oldRecord.foto_visualizacao_path ? [oldRecord.foto_visualizacao_path] : []
-      const pathsToDeleteOrig = oldRecord.foto_original_path ? [oldRecord.foto_original_path] : []
-      
-      const deletes = []
-      if (pathsToDeleteAvatar.length > 0) deletes.push(supabaseAdmin.storage.from('fotos-avatar').remove(pathsToDeleteAvatar))
-      if (pathsToDeleteVis.length > 0) deletes.push(supabaseAdmin.storage.from('fotos-visualizacao').remove(pathsToDeleteVis))
-      if (pathsToDeleteOrig.length > 0) deletes.push(supabaseAdmin.storage.from('fotos-originais').remove(pathsToDeleteOrig))
-      
-      await Promise.allSettled(deletes)
+      return NextResponse.json({ error: 'Erro ao fazer upload das versões otimizadas da foto' }, { status: 500 })
     }
 
-    // 8. Atualizar o Banco de Dados com os novos caminhos
+    // 6. Atualizar o Banco de Dados com os novos caminhos ANTES de apagar os arquivos antigos
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
     const publicVisUrl = `${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${visualizacaoPath}`
 
@@ -141,8 +148,27 @@ export async function POST(req: NextRequest) {
 
     if (updateError) {
       console.error('[API fotos/process] Erro ao atualizar BD:', updateError)
-      throw updateError
+      
+      // Rollback de segurança: remove arquivos recém-gravados no storage se a atualização do BD falhar
+      await Promise.allSettled([
+        supabaseAdmin.storage.from('fotos-avatar').remove([avatarPath]),
+        supabaseAdmin.storage.from('fotos-visualizacao').remove([visualizacaoPath]),
+        supabaseAdmin.storage.from('fotos-originais').remove([finalOriginalPath]),
+        supabaseAdmin.storage.from('fotos-originais').remove([originalPath])
+      ])
+      
+      return NextResponse.json({ error: 'Erro ao atualizar os registros de foto no banco de dados' }, { status: 500 })
     }
+
+    // 7. Sucesso! Agora sim apaga a foto temporária e limpa as fotos antigas
+    await Promise.allSettled([
+      supabaseAdmin.storage.from('fotos-originais').remove([originalPath]),
+      ...(oldRecord ? [
+        oldRecord.foto_avatar_path ? supabaseAdmin.storage.from('fotos-avatar').remove([oldRecord.foto_avatar_path]) : Promise.resolve(),
+        oldRecord.foto_visualizacao_path ? supabaseAdmin.storage.from('fotos-visualizacao').remove([oldRecord.foto_visualizacao_path]) : Promise.resolve(),
+        oldRecord.foto_original_path ? supabaseAdmin.storage.from('fotos-originais').remove([oldRecord.foto_original_path]) : Promise.resolve()
+      ] : [])
+    ])
 
     return NextResponse.json({
       success: true,
