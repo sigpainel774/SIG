@@ -37,6 +37,7 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
 import { PrintEvolucoesEmaee, EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 
 const sessionTimestamp = Date.now()
 
@@ -262,13 +263,16 @@ export default function PacienteDetalhesPage() {
     setUploadingAnexo(true)
     const supabase = createClient()
     try {
-      const fileExt = novoArquivoAnexo.name.split('.').pop()
-      const sanitizedName = novoArquivoAnexo.name.replace(/[^\w.-]/g, '_')
+      // Compressão Híbrida Client-Side (Imagens -> WebP 82%, PDFs -> bypass intacto)
+      const compResult = await compressImageBeforeUpload(novoArquivoAnexo)
+      const finalFile = compResult.file
+
+      const sanitizedName = finalFile.name.replace(/[^\w.-]/g, '_')
       const filePath = `${prontuario.aluno_id}/${Date.now()}_${sanitizedName}`
 
       const { error: uploadError } = await supabase.storage
         .from('alunos-anexos')
-        .upload(filePath, novoArquivoAnexo)
+        .upload(filePath, finalFile)
 
       if (uploadError) throw uploadError
 
@@ -290,7 +294,12 @@ export default function PacienteDetalhesPage() {
 
       if (dbError) throw dbError
 
-      toast.success('Laudo/Documento anexado ao prontuário com sucesso!')
+      if (compResult.wasCompressed) {
+        toast.success(`Laudo anexado! Otimizado de ${formatBytes(compResult.originalSize)} para ${formatBytes(compResult.compressedSize)} (-${compResult.savingsPercent}% de espaço).`)
+      } else {
+        toast.success('Laudo/Documento anexado ao prontuário com sucesso!')
+      }
+
       setModalAnexoOpen(false)
       setNovoNomeAnexo('')
       setNovoArquivoAnexo(null)
