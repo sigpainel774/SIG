@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
@@ -18,7 +18,16 @@ import {
   Activity,
   CheckCircle,
   FileText,
-  Printer
+  Printer,
+  Upload,
+  Trash2,
+  Eye,
+  User,
+  Folder,
+  Loader2,
+  ChevronRight,
+  History,
+  Sparkles
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -36,6 +45,15 @@ export default function PacienteDetalhesPage() {
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id || '')
   const { funcionario } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
+
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
   
   const [prontuario, setProntuario] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -47,9 +65,20 @@ export default function PacienteDetalhesPage() {
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
   const [printData, setPrintData] = useState<EvolucaoPrintData[] | null>(null)
 
-  // Estados de Especialidades
+  // Estados de Especialidades & Widget
   const [especialidades, setEspecialidades] = useState<any[]>([])
   const [loadingEspecialidades, setLoadingEspecialidades] = useState(false)
+  const [especialistaSelecionado, setEspecialistaSelecionado] = useState<any | null>(null)
+  const [modalHistoricoEspecialistaOpen, setModalHistoricoEspecialistaOpen] = useState(false)
+
+  // Estados de Anexos
+  const [anexos, setAnexos] = useState<any[]>([])
+  const [loadingAnexos, setLoadingAnexos] = useState(false)
+  const [modalAnexoOpen, setModalAnexoOpen] = useState(false)
+  const [novoNomeAnexo, setNovoNomeAnexo] = useState('')
+  const [novoTipoAnexo, setNovoTipoAnexo] = useState('Laudos')
+  const [novoArquivoAnexo, setNovoArquivoAnexo] = useState<File | null>(null)
+  const [uploadingAnexo, setUploadingAnexo] = useState(false)
 
   // Estados de Relatórios Escolares
   const [solicitacoesRelatorios, setSolicitacoesRelatorios] = useState<any[]>([])
@@ -88,14 +117,14 @@ export default function PacienteDetalhesPage() {
         .maybeSingle()
 
       if (error) throw error
-      if (data) {
+      if (data && isMounted.current) {
         setProntuario(data)
       }
     } catch (err) {
       console.error('Erro ao carregar prontuário completo:', err)
       toast.error('Erro ao carregar prontuário')
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }
 
@@ -116,13 +145,13 @@ export default function PacienteDetalhesPage() {
         .order('data_atendimento', { ascending: false })
 
       if (error) throw error
-      if (data) {
+      if (data && isMounted.current) {
         setEvolucoes(data)
       }
     } catch (err) {
       console.error('Erro ao carregar evoluções:', err)
     } finally {
-      setLoadingEvolucoes(false)
+      if (isMounted.current) setLoadingEvolucoes(false)
     }
   }
 
@@ -142,13 +171,36 @@ export default function PacienteDetalhesPage() {
         .eq('ativo', true)
 
       if (error) throw error
-      if (data) {
+      if (data && isMounted.current) {
         setEspecialidades(data)
       }
     } catch (err) {
       console.error('Erro ao carregar especialidades:', err)
     } finally {
-      setLoadingEspecialidades(false)
+      if (isMounted.current) setLoadingEspecialidades(false)
+    }
+  }
+
+  const carregarAnexos = async () => {
+    if (!prontuario?.aluno_id) return
+    setLoadingAnexos(true)
+    const supabase = createClient()
+    try {
+      const { data, error } = await supabase
+        .from('alunos_anexos')
+        .select('*')
+        .eq('aluno_id', prontuario.aluno_id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      if (data && isMounted.current) {
+        setAnexos(data)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar anexos do aluno:', err)
+    } finally {
+      if (isMounted.current) setLoadingAnexos(false)
     }
   }
 
@@ -167,7 +219,7 @@ export default function PacienteDetalhesPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      if (data) {
+      if (data && isMounted.current) {
         setSolicitacoesRelatorios(data)
       }
     } catch (err) {
@@ -184,12 +236,93 @@ export default function PacienteDetalhesPage() {
   useEffect(() => {
     if (id) {
       if (activeTab === 'evolucao') carregarEvolucoes()
-      if (activeTab === 'especialistas') carregarEspecialidades()
+      if (activeTab === 'especialistas') {
+        carregarEspecialidades()
+        carregarEvolucoes()
+      }
+      if (activeTab === 'anexos') carregarAnexos()
       if (activeTab === 'relatorios') carregarSolicitacoesRelatorios()
     }
-  }, [id, activeTab])
+  }, [id, activeTab, prontuario?.aluno_id])
 
+  const handleUploadAnexo = async () => {
+    if (!novoNomeAnexo.trim()) {
+      toast.error('Digite um nome para o documento ou laudo')
+      return
+    }
+    if (!novoArquivoAnexo) {
+      toast.error('Selecione um arquivo PDF ou imagem')
+      return
+    }
+    if (!prontuario?.aluno_id) {
+      toast.error('Aluno não vinculado ao prontuário')
+      return
+    }
 
+    setUploadingAnexo(true)
+    const supabase = createClient()
+    try {
+      const fileExt = novoArquivoAnexo.name.split('.').pop()
+      const sanitizedName = novoArquivoAnexo.name.replace(/[^\w.-]/g, '_')
+      const filePath = `${prontuario.aluno_id}/${Date.now()}_${sanitizedName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('alunos-anexos')
+        .upload(filePath, novoArquivoAnexo)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('alunos-anexos')
+        .getPublicUrl(filePath)
+
+      const performedBy = funcionario?.id && funcionario.id !== '' ? funcionario.id : null
+
+      const { error: dbError } = await supabase
+        .from('alunos_anexos')
+        .insert({
+          aluno_id: prontuario.aluno_id,
+          nome: novoNomeAnexo.trim(),
+          arquivo_url: publicUrl,
+          tipo: novoTipoAnexo,
+          arquivado_por: performedBy
+        })
+
+      if (dbError) throw dbError
+
+      toast.success('Laudo/Documento anexado ao prontuário com sucesso!')
+      setModalAnexoOpen(false)
+      setNovoNomeAnexo('')
+      setNovoArquivoAnexo(null)
+      carregarAnexos()
+    } catch (err: any) {
+      console.error('Erro no upload do anexo:', err)
+      toast.error(err.message || 'Erro ao anexar arquivo ao prontuário')
+    } finally {
+      if (isMounted.current) setUploadingAnexo(false)
+    }
+  }
+
+  const handleExcluirAnexo = async (anexoId: string, nome: string) => {
+    const confirm = window.confirm(`Deseja realmente remover o anexo "${nome}" do prontuário?`)
+    if (!confirm) return
+
+    const supabase = createClient()
+    try {
+      const { error } = await supabase
+        .from('alunos_anexos')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', anexoId)
+
+      if (error) throw error
+
+      toast.success(`Anexo "${nome}" removido do prontuário.`)
+      carregarAnexos()
+    } catch (err: any) {
+      console.error('Erro ao excluir anexo:', err)
+      toast.error('Erro ao remover anexo')
+    }
+  }
 
   const solicitarRelatorioEscola = async () => {
     if (!novaSolicitacao.motivo_solicitacao.trim()) {
@@ -258,6 +391,15 @@ export default function PacienteDetalhesPage() {
     }
   }
 
+  // Filtragem de evoluções para o modal do Especialista selecionado
+  const evolucoesDoEspecialista = especialidades && especialistaSelecionado
+    ? evolucoes.filter(
+        (evo) =>
+          (evo.profissional_id && evo.profissional_id === especialistaSelecionado.profissional_id) ||
+          (evo.especialidade && evo.especialidade.toLowerCase() === especialistaSelecionado.especialidade?.toLowerCase())
+      )
+    : []
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -274,7 +416,7 @@ export default function PacienteDetalhesPage() {
               
               {/* Select de Status */}
               <select
-                value={prontuario.status || 'FILA_ESPERA'}
+                value={prontuario.status ?? 'FILA_ESPERA'}
                 onChange={(e) => atualizarStatusProntuario(e.target.value)}
                 className={`px-3 py-1 rounded-full text-xs font-bold outline-none border cursor-pointer transition-all ${
                   prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
@@ -483,48 +625,168 @@ export default function PacienteDetalhesPage() {
             </div>
           )}
 
-          {/* Conteúdo Aba 2: Especialistas */}
+          {/* Conteúdo Aba 2: Especialistas (Widget Interativo) */}
           {activeTab === 'especialistas' && (
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-              <h3 className="text-base font-bold text-foreground pb-2 border-b border-border/50">Profissionais Responsáveis pelo Acompanhamento</h3>
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+              <div className="border-b border-border/50 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Profissionais Responsáveis pelo Acompanhamento</h3>
+                  <p className="text-xs text-muted-foreground">Clique em um especialista para consultar o histórico de atualizações feito por ele para o aluno</p>
+                </div>
+              </div>
+
               {loadingEspecialidades ? (
-                <div className="text-center py-6 text-muted-foreground text-xs animate-pulse">Carregando especialistas...</div>
+                <div className="text-center py-8 text-muted-foreground text-xs animate-pulse">Carregando especialistas...</div>
               ) : especialidades.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-xs">Nenhum especialista vinculado a este paciente.</div>
+                <div className="text-center py-10 border border-dashed border-border/80 rounded-2xl bg-secondary/15 text-muted-foreground text-xs">
+                  Nenhum especialista vinculado a este paciente.
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {especialidades.map((esp) => (
-                    <div key={esp.id} className="border border-border p-4 rounded-xl space-y-1.5 bg-secondary/35">
-                      <div className="text-xs text-primary font-bold">{esp.especialidade}</div>
-                      <div className="text-xs font-semibold text-foreground">{esp.funcionarios?.nome}</div>
-                      <div className="text-[10px] text-muted-foreground">Frequência: {esp.frequencia} | {esp.horario_inicio ? `Horário: ${esp.horario_inicio}` : ''}</div>
-                    </div>
-                  ))}
+                  {especialidades.map((esp) => {
+                    const countEvolucoes = evolucoes.filter(
+                      (evo) =>
+                        (evo.profissional_id && evo.profissional_id === esp.profissional_id) ||
+                        (evo.especialidade && evo.especialidade.toLowerCase() === esp.especialidade?.toLowerCase())
+                    ).length
+
+                    return (
+                      <div
+                        key={esp.id}
+                        onClick={() => {
+                          setEspecialistaSelecionado(esp)
+                          setModalHistoricoEspecialistaOpen(true)
+                        }}
+                        className="group border border-border hover:border-primary p-4 rounded-xl space-y-3 bg-secondary/35 hover:bg-secondary/70 transition-all cursor-pointer shadow-sm relative overflow-hidden"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs">
+                              {esp.especialidade ? esp.especialidade.charAt(0).toUpperCase() : 'E'}
+                            </div>
+                            <div>
+                              <div className="text-xs text-primary font-bold">{esp.especialidade}</div>
+                              <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                                {esp.funcionarios?.nome ?? 'Especialista não identificado'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/20 flex items-center gap-1">
+                            <History className="w-3 h-3" />
+                            {countEvolucoes} {countEvolucoes === 1 ? 'Atualização' : 'Atualizações'}
+                          </span>
+                        </div>
+
+                        <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-2 border-t border-border/40">
+                          <span>Frequência: <strong>{esp.frequencia ?? 'Conforme demanda'}</strong></span>
+                          <span>{esp.horario_inicio ? `Horário: ${esp.horario_inicio}` : ''}</span>
+                        </div>
+
+                        <div className="flex items-center justify-end text-[11px] text-primary font-semibold pt-1 group-hover:translate-x-0.5 transition-transform">
+                          <span>Ver histórico de atualizações</span>
+                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* Conteúdo Aba 3: Anexos */}
+          {/* Conteúdo Aba 3: Laudos & Anexos */}
           {activeTab === 'anexos' && (
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-              <h3 className="text-base font-bold text-foreground pb-2 border-b border-border/50">Laudos Médicos, Exames e Requisições</h3>
-              
-              {prontuario.requisicao_medica_url ? (
-                <div className="flex items-center justify-between border border-border p-3.5 rounded-xl bg-secondary/25 text-xs">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-rose-400" />
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
+              <div className="flex items-center justify-between border-b border-border/50 pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Laudos Médicos, Exames e Requisições</h3>
+                  <p className="text-xs text-muted-foreground">Documentos comprobatórios e pareceres clínicos arquivados no prontuário</p>
+                </div>
+                <Button
+                  onClick={() => setModalAnexoOpen(true)}
+                  className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow"
+                >
+                  <Plus className="w-4 h-4" /> Anexar Arquivo / Laudo
+                </Button>
+              </div>
+
+              {/* Requisição Médica de Entrada no Prontuário */}
+              {prontuario.requisicao_medica_url && (
+                <div className="flex items-center justify-between border border-emerald-500/30 p-4 rounded-xl bg-emerald-500/5 text-xs shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-6 h-6 text-emerald-400 shrink-0" />
                     <div>
-                      <strong className="text-foreground block">Encaminhamento Médico Inicial</strong>
-                      <span className="text-muted-foreground text-[10px]">Documento PDF/Imagem</span>
+                      <strong className="text-foreground block text-xs">Encaminhamento Médico Inicial (Triagem)</strong>
+                      <span className="text-muted-foreground text-[10px]">Anexado no Requerimento de Entrada no EMAEE</span>
                     </div>
                   </div>
                   <a href={prontuario.requisicao_medica_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="text-xs rounded-lg py-1 hover:bg-hoverCustom">Download</Button>
+                    <Button variant="outline" className="text-xs rounded-lg py-1.5 hover:bg-hoverCustom gap-1.5">
+                      <Eye className="w-3.5 h-3.5" /> Visualizar / Download
+                    </Button>
                   </a>
                 </div>
+              )}
+
+              {/* Lista de Anexos da tabela alunos_anexos */}
+              {loadingAnexos ? (
+                <div className="text-center py-8 text-muted-foreground text-xs animate-pulse">Carregando anexos...</div>
+              ) : anexos.length === 0 && !prontuario.requisicao_medica_url ? (
+                <div className="text-center py-10 border border-dashed border-border/80 rounded-2xl bg-secondary/15 text-muted-foreground text-xs space-y-2">
+                  <FolderOpen className="w-8 h-8 mx-auto text-muted-foreground/60" />
+                  <p>Nenhum laudo ou documento médico anexado ao prontuário.</p>
+                  <Button onClick={() => setModalAnexoOpen(true)} variant="outline" className="text-xs rounded-xl mt-2">
+                    Clique aqui para anexar o primeiro arquivo
+                  </Button>
+                </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground text-xs">Nenhum documento médico anexado ao prontuário.</div>
+                <div className="space-y-3">
+                  {anexos.map((anexo) => {
+                    const isLaudo = (anexo.tipo ?? 'Laudos') === 'Laudos'
+                    return (
+                      <div
+                        key={anexo.id}
+                        className="flex items-center justify-between border border-border p-3.5 rounded-xl bg-secondary/25 text-xs hover:border-border/80 transition-all"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 pr-3">
+                          {isLaudo ? (
+                            <FileText className="w-5 h-5 text-rose-400 shrink-0" />
+                          ) : (
+                            <Folder className="w-5 h-5 text-amber-400 shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <strong className="text-foreground block truncate">{anexo.nome}</strong>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <span className="px-1.5 py-0.2 rounded bg-secondary text-zinc-300 font-semibold border border-border">
+                                {anexo.tipo ?? 'Laudo'}
+                              </span>
+                              <span>Enviado em {new Date(anexo.created_at).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a href={anexo.arquivo_url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm" className="text-xs rounded-lg gap-1.5 h-8">
+                              <Eye className="w-3.5 h-3.5" /> Download
+                            </Button>
+                          </a>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleExcluirAnexo(anexo.id, anexo.nome)}
+                            className="h-8 w-8 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg"
+                            title="Remover anexo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           )}
@@ -574,6 +836,159 @@ export default function PacienteDetalhesPage() {
         </div>
       </div>
 
+      {/* Modal Upload Anexo (Laudos & Exames) */}
+      <StandardDialog
+        open={modalAnexoOpen}
+        onOpenChange={setModalAnexoOpen}
+        title="Anexar Laudo ou Documento Clínico"
+        description={`Adicione um novo documento ao prontuário de ${aluno?.nome}`}
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="text-muted-foreground block mb-1 font-bold">Tipo de Documento</label>
+            <select
+              value={novoTipoAnexo}
+              onChange={(e) => setNovoTipoAnexo(e.target.value)}
+              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none cursor-pointer"
+            >
+              <option value="Laudos">Laudo Médico (AEE / Especializado)</option>
+              <option value="Exame Clínico">Exame Clínico / Avaliação</option>
+              <option value="Receita / Prescrição">Receita / Prescrição Médica</option>
+              <option value="Encaminhamento">Encaminhamento Externo</option>
+              <option value="Outros">Outros Documentos</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-muted-foreground block mb-1 font-bold">Nome / Descrição do Anexo</label>
+            <input
+              type="text"
+              placeholder="ex: Laudo Neurológico TEA 2026, Avaliação Fonoaudiológica..."
+              value={novoNomeAnexo}
+              onChange={(e) => setNovoNomeAnexo(e.target.value)}
+              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2.5 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-muted-foreground block mb-1 font-bold">Arquivo (PDF ou Imagem)</label>
+            <input
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(e) => setNovoArquivoAnexo(e.target.files?.[0] ?? null)}
+              className="w-full bg-secondary border border-border text-foreground rounded-xl p-2 outline-none text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3">
+            <Button variant="outline" onClick={() => setModalAnexoOpen(false)} disabled={uploadingAnexo}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUploadAnexo} disabled={uploadingAnexo || !novoNomeAnexo || !novoArquivoAnexo} className="bg-primary hover:bg-hoverCustom text-white gap-2">
+              {uploadingAnexo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              <span>{uploadingAnexo ? 'Enviando...' : 'Salvar Anexo'}</span>
+            </Button>
+          </div>
+        </div>
+      </StandardDialog>
+
+      {/* Modal Histórico de Atualizações por Especialista */}
+      {especialistaSelecionado && (
+        <StandardDialog
+          open={modalHistoricoEspecialistaOpen}
+          onOpenChange={setModalHistoricoEspecialistaOpen}
+          title={`Histórico de Atualizações - ${especialistaSelecionado.funcionarios?.nome ?? especialistaSelecionado.especialidade}`}
+          description={`Evoluções registradas em ${especialistaSelecionado.especialidade} para ${aluno?.nome}`}
+          maxWidth="sm:max-w-[750px]"
+        >
+          <div className="space-y-4 text-xs">
+            <div className="flex items-center justify-between bg-secondary/40 border border-border p-3 rounded-xl">
+              <div>
+                <strong className="text-foreground block text-sm">{especialistaSelecionado.especialidade}</strong>
+                <span className="text-muted-foreground">Profissional: {especialistaSelecionado.funcionarios?.nome ?? 'Especialista'}</span>
+              </div>
+              {evolucoesDoEspecialista.length > 0 && (
+                <Button
+                  onClick={() => setPrintData(evolucoesDoEspecialista)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs rounded-lg"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Imprimir Histórico do Especialista
+                </Button>
+              )}
+            </div>
+
+            {evolucoesDoEspecialista.length === 0 ? (
+              <div className="text-center py-10 border border-dashed border-border rounded-xl bg-secondary/10 text-muted-foreground text-xs space-y-3">
+                <History className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                <p>Nenhuma atualização ou evolução registrada por este especialista para este aluno ainda.</p>
+                <ModalEvolucaoEmaee
+                  matriculaEmaeeId={id}
+                  onSuccess={() => {
+                    carregarEvolucoes()
+                  }}
+                  trigger={
+                    <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow mx-auto">
+                      <Plus className="w-4 h-4" /> Registrar Nova Evolução
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+                {evolucoesDoEspecialista.map((evo) => {
+                  const sigUrl = evo.assinatura_profissional_url || evo.funcionarios?.assinatura_url
+                  return (
+                    <div key={evo.id} className="border border-border/80 rounded-xl p-4 space-y-2 bg-secondary/25 relative shadow-sm">
+                      <div className="flex items-center justify-between border-b border-border/40 pb-2 text-xs">
+                        <div className="flex items-center gap-2 font-bold text-primary">
+                          <Activity className="w-4 h-4" />
+                          <span>{evo.tipo_atendimento || evo.especialidade}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground font-semibold">
+                            Data: {new Date(evo.data_atendimento).toLocaleDateString('pt-BR')}
+                          </span>
+                          <button
+                            onClick={() => setPrintData([evo])}
+                            title="Imprimir esta evolução"
+                            className="text-muted-foreground hover:text-primary transition-colors cursor-pointer p-0.5 rounded hover:bg-secondary"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-foreground font-normal leading-relaxed">{evo.resumo_evolucao}</p>
+                      {evo.conduta_orientacoes && (
+                        <div className="pt-2 border-t border-dashed border-border text-xs text-muted-foreground">
+                          <strong>Conduta e Orientações: </strong>{evo.conduta_orientacoes}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between pt-2 border-t border-dashed border-border mt-2">
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Assinado por: {evo.profissional_nome || evo.funcionarios?.nome || 'Profissional'}</span>
+                        </div>
+                        {sigUrl && (
+                          <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-gray-200">
+                            <span className="text-[8px] text-gray-500 font-bold uppercase">Assinatura:</span>
+                            <img
+                              src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
+                              alt="Assinatura"
+                              className="h-5 object-contain max-w-[120px]"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </StandardDialog>
+      )}
 
       {/* Modal Solicitar Relatório Escola */}
       <StandardDialog
