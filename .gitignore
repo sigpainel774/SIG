@@ -50,6 +50,9 @@ PERMISSOES_ARQUITETURA.md
 
 # Backups locais de banco de dados
 /backups/
+/backup_funcionarios/
+*.bak
+*.backup
 
 # Supabase
 supabase/.temp/
