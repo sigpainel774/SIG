@@ -29,6 +29,50 @@ async function getAuthenticatedSuperadmin() {
   return funcionario
 }
 
+export async function GET() {
+  try {
+    const admin = await getAuthenticatedSuperadmin()
+    if (!admin) {
+      return NextResponse.json({ error: 'Não autorizado. Acesso restrito a Superadmins.' }, { status: 403 })
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('system_config')
+      .select('chave, valor, updated_at, updated_by')
+      .in('chave', ['pwa_version', 'pwa_update_message', 'pwa_stagger_seconds'])
+
+    if (error) throw error
+
+    const config = new Map((data ?? []).map((item) => [item.chave, item]))
+    const versionConfig = config.get('pwa_version')
+
+    let updatedByName: string | null = null
+    if (versionConfig?.updated_by) {
+      const { data: updatedBy } = await supabaseAdmin
+        .from('funcionarios')
+        .select('nome')
+        .eq('id', versionConfig.updated_by)
+        .maybeSingle()
+
+      updatedByName = updatedBy?.nome ?? null
+    }
+
+    const parsedStagger = Number.parseInt(config.get('pwa_stagger_seconds')?.valor ?? '60', 10)
+
+    return NextResponse.json({
+      version: versionConfig?.valor ?? 'v12',
+      message: config.get('pwa_update_message')?.valor ?? '',
+      stagger_seconds: Number.isFinite(parsedStagger) ? parsedStagger : 60,
+      updated_at: versionConfig?.updated_at ?? null,
+      updated_by_name: updatedByName,
+    })
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Erro interno do servidor'
+    console.error('[pwa-update-api:get]', error)
+    return NextResponse.json({ error: errMessage }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const admin = await getAuthenticatedSuperadmin()

@@ -129,25 +129,24 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
       localStorage.setItem(LOCAL_STORAGE_KEY, verToSave)
     }
 
-    // 2. Avisa o Service Worker para pular a espera (SKIP_WAITING)
+    // 2. Atualiza o registro e ativa somente um worker que esteja aguardando.
+    // O listener global de `controllerchange` cuida do recarregamento quando
+    // houver troca de worker; o timer abaixo é apenas um fallback.
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' })
-      }
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((reg) => {
-          reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
-          reg.update().catch(() => {})
+      navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+        await Promise.allSettled(registrations.map((registration) => registration.update()))
+        registrations.forEach((registration) => {
+          registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         })
-      })
+      }).catch(() => {})
     }
 
-    // 3. Força recarregamento da página após curto delay
+    // 3. Fallback para instalações sem um novo Service Worker aguardando.
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         window.location.reload()
       }
-    }, 1500)
+    }, 4000)
   }, [newVersion, currentVersion])
 
   const dismissModal = useCallback(() => {

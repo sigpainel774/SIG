@@ -32,12 +32,19 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { executeWithToast } from '@/lib/action-handler'
-import { usePwaUpdateWatcher } from '@/hooks/usePwaUpdateWatcher'
+
+interface PwaConfigResponse {
+  version: string
+  message: string
+  stagger_seconds: number
+  updated_at: string | null
+  updated_by_name: string | null
+  error?: string
+}
 
 export default function AdminDispositivosPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
-  const { currentVersion, lastUpdatedAt, updatedByName } = usePwaUpdateWatcher()
 
   const [dispositivos, setDispositivos] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -54,6 +61,9 @@ export default function AdminDispositivosPage() {
   const [pwaCustomMessage, setPwaCustomMessage] = useState('')
   const [pwaStaggerSeconds, setPwaStaggerSeconds] = useState(60)
   const [pwaSubmitting, setPwaSubmitting] = useState(false)
+  const [currentVersion, setCurrentVersion] = useState('v12')
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
+  const [updatedByName, setUpdatedByName] = useState<string | null>(null)
 
   const isMounted = useRef(true)
 
@@ -86,8 +96,28 @@ export default function AdminDispositivosPage() {
     }
   }
 
+  const loadPwaConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/pwa-update', { cache: 'no-store' })
+      const data = await response.json() as PwaConfigResponse
+
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Erro ao carregar a configuração do PWA')
+      }
+
+      if (!isMounted.current) return
+      setCurrentVersion(data.version)
+      setLastUpdatedAt(data.updated_at)
+      setUpdatedByName(data.updated_by_name)
+      setPwaStaggerSeconds(data.stagger_seconds)
+    } catch (error) {
+      console.error('Erro ao carregar configuração do PWA:', error)
+    }
+  }
+
   useEffect(() => {
     loadDispositivos()
+    loadPwaConfig()
   }, [])
 
   const handleNovoDispositivo = () => {
@@ -172,12 +202,15 @@ export default function AdminDispositivosPage() {
         })
       })
 
-      const data = await res.json()
+      const data = await res.json() as PwaConfigResponse
       if (!res.ok) {
         throw new Error(data.error || 'Erro ao disparar atualização')
       }
 
       toast.success(`Comando enviado! Versão ${data.version} disponibilizada para a rede.`)
+      setCurrentVersion(data.version)
+      setLastUpdatedAt(data.updated_at)
+      setUpdatedByName(data.updated_by_name)
       setPwaDialogOpen(false)
     } catch (err: any) {
       console.error('Erro ao enviar PWA update:', err)
