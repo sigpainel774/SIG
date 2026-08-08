@@ -294,13 +294,13 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
       title="Nova Atividade"
       maxWidth="sm:max-w-[560px]"
       footer={
-        <div className="flex justify-end gap-3 w-full pt-4 border-t border-[#26262a]">
+        <div className="flex justify-end gap-3 w-full pt-4 border-t border-borderCustom">
           <Button
             type="button"
             variant="ghost"
             onClick={() => handleOpenChange(false)}
             disabled={loading}
-            className="text-zinc-400 hover:text-white hover:bg-[#26262a]"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>
@@ -329,28 +329,28 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
           <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
             {/* Escola (somente leitura) */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">Escola</Label>
+              <Label className="text-muted-foreground text-sm">Escola</Label>
               <Input
                 readOnly
                 value={selectedEscola?.nome ?? escolaAtivaId ?? '—'}
-                className="bg-[#1c1c1e] border-[#26262a] text-zinc-300 cursor-not-allowed"
+                className="bg-muted border-borderCustom text-foreground/70 cursor-not-allowed"
               />
             </div>
 
             {/* Turma */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Turma <span className="text-red-400">*</span>
               </Label>
               <Select value={turmaId} onValueChange={(v) => setTurmaId(v ?? '')}>
-                <SelectTrigger className="bg-[#1c1c1e] border-[#26262a] text-white focus:ring-[#3ea6ff]">
+                <SelectTrigger className="bg-input border-borderCustom text-foreground focus:ring-highlight">
                   <SelectValue placeholder="Selecione a turma">
                     {turmaId
                       ? (turmas.find((t) => t.id === turmaId)?.nome || (turmas.length === 0 ? 'Carregando...' : turmaId))
                       : undefined}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-[#1c1c1e] border-[#26262a] text-white">
+                <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
                   {turmas.length === 0 ? (
                     <SelectItem value="_empty" disabled>Nenhuma turma vinculada</SelectItem>
                   ) : (
@@ -364,7 +364,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
             {/* Disciplina */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Disciplina <span className="text-red-400">*</span>
               </Label>
               <Select
@@ -372,7 +372,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                 onValueChange={(v) => setMateriaId(v ?? '')}
                 disabled={!turmaId}
               >
-                <SelectTrigger className="bg-[#1c1c1e] border-[#26262a] text-white focus:ring-[#3ea6ff] disabled:opacity-50">
+                <SelectTrigger className="bg-input border-borderCustom text-foreground focus:ring-highlight disabled:opacity-50">
                   <SelectValue
                     placeholder={!turmaId ? 'Selecione a turma primeiro' : 'Selecione a disciplina'}
                   >
@@ -381,7 +381,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                       : undefined}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-[#1c1c1e] border-[#26262a] text-white">
+                <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
                   {materias.length === 0 ? (
                     <SelectItem value="_empty" disabled>Nenhuma disciplina encontrada</SelectItem>
                   ) : (
@@ -395,28 +395,28 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
             {/* Título */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Título <span className="text-red-400">*</span>
               </Label>
               <Input
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ex.: Prova de Matemática — 1º Trimestre"
-                className="bg-[#1c1c1e] border-[#26262a] text-white placeholder:text-zinc-600 focus-visible:ring-[#3ea6ff]"
+                className="bg-input border-borderCustom text-foreground placeholder:text-muted-foreground focus-visible:ring-highlight"
               />
             </div>
 
             {/* Trimestre e Data em linha */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-400 text-sm">
+                <Label className="text-muted-foreground text-sm">
                   Trimestre <span className="text-red-400">*</span>
                 </Label>
                 <Select value={trimestre} onValueChange={(v) => setTrimestre(v ?? '')}>
-                  <SelectTrigger className="bg-[#1c1c1e] border-[#26262a] text-white focus:ring-[#3ea6ff]">
+                  <SelectTrigger className="bg-input border-borderCustom text-foreground focus:ring-highlight">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1c1c1e] border-[#26262a] text-white">
+                  <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
                     <SelectItem value="1">1º Trimestre</SelectItem>
                     <SelectItem value="2">2º Trimestre</SelectItem>
                     <SelectItem value="3">3º Trimestre</SelectItem>
@@ -425,7 +425,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-zinc-400 text-sm">
+                <Label className="text-muted-foreground text-sm">
                   Data de Aplicação <span className="text-red-400">*</span>
                 </Label>
                 <Input
@@ -433,7 +433,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                   value={dataAplicacao}
                   min={!isDiretoria && prazoMinimoDias > 0 ? getMinDataAplicacaoStr(prazoMinimoDias) : undefined}
                   onChange={(e) => setDataAplicacao(e.target.value)}
-                  className="bg-[#1c1c1e] border-[#26262a] text-white focus-visible:ring-[#3ea6ff]"
+                  className="bg-input border-borderCustom text-foreground focus-visible:ring-highlight"
                 />
                 {!isDiretoria && prazoMinimoDias > 0 && (
                   <p className="text-[11px] text-amber-400/90 font-medium">
@@ -445,24 +445,24 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
             {/* Observações */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">Observações</Label>
+              <Label className="text-muted-foreground text-sm">Observações</Label>
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
                 rows={3}
                 placeholder="Instruções adicionais para a secretaria (opcional)"
-                className="w-full rounded-md border border-[#26262a] bg-[#1c1c1e] px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#3ea6ff] resize-none"
+                className="w-full rounded-md border border-borderCustom bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-highlight resize-none"
               />
             </div>
 
             {/* Arquivo */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Arquivo <span className="text-red-400">*</span>
               </Label>
-              <label className="flex items-center gap-3 cursor-pointer w-full rounded-md border border-dashed border-[#26262a] bg-[#1c1c1e] px-4 py-3 hover:border-[#3ea6ff]/50 transition-colors group">
+              <label className="flex items-center gap-3 cursor-pointer w-full rounded-md border border-dashed border-borderCustom bg-muted/60 px-4 py-3 hover:border-highlight/50 transition-colors group">
                 <Upload className="w-4 h-4 text-zinc-500 group-hover:text-[#3ea6ff] shrink-0" />
-                <span className="text-sm text-zinc-400 truncate">
+                <span className="text-sm text-muted-foreground truncate">
                   {arquivo ? arquivo.name : 'Clique para selecionar (PDF, DOCX, DOC, imagens)'}
                 </span>
                 <input

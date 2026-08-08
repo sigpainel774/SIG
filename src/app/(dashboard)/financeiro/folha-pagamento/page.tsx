@@ -127,15 +127,15 @@ export default function FolhaPagamentoPage() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho do Módulo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#26262a]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div className="flex items-center gap-3">
           <Link href="/financeiro">
-            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-9 w-9 bg-surface-1">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground h-9 w-9 bg-surface-1">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Banknote className="w-6 h-6 text-yellow-500" />
               Folha de Pagamento — Painel Administrativo
             </h2>
@@ -148,13 +148,13 @@ export default function FolhaPagamentoPage() {
         {/* Atalhos rápidos */}
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/financeiro/folha-pagamento/desligamentos">
-            <Button variant="outline" className="bg-transparent border-[#27272a] text-slate-300 hover:text-white h-9">
+            <Button variant="outline" className="bg-card border-borderCustom text-foreground/80 hover:bg-muted hover:text-foreground h-9">
               <CalendarRange className="w-4 h-4 mr-2 text-rose-400" />
               Desligamentos
             </Button>
           </Link>
           <Link href="/financeiro/folha-pagamento/configuracoes">
-            <Button variant="outline" className="bg-transparent border-[#27272a] text-slate-300 hover:text-white h-9">
+            <Button variant="outline" className="bg-card border-borderCustom text-foreground/80 hover:bg-muted hover:text-foreground h-9">
               <Settings className="w-4 h-4 mr-2 text-sky-400" />
               Configuração
             </Button>
@@ -164,7 +164,7 @@ export default function FolhaPagamentoPage() {
             size="icon"
             onClick={fetchFuncionarios}
             disabled={loading}
-            className="text-muted-foreground hover:text-white h-9 w-9 bg-surface-1"
+            className="text-muted-foreground hover:text-foreground h-9 w-9 bg-surface-1"
           >
             <RefreshCw className={`w-4 h-4 ${loading && 'animate-spin'}`} />
           </Button>
@@ -172,15 +172,15 @@ export default function FolhaPagamentoPage() {
       </div>
 
       {/* Painel de Filtros */}
-      <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-card border border-borderCustom rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 shadow-sm">
         {/* Filtro: Tipo de Vínculo */}
         <div className="space-y-1.5">
-          <label className="text-xs text-[#aaa] font-semibold">Tipo de Vínculo</label>
+          <label className="text-xs text-muted-foreground font-semibold">Tipo de Vínculo</label>
           <Select value={tipoVinculo} onValueChange={(val: any) => setTipoVinculo(val)}>
-            <SelectTrigger className="w-full bg-[#121214] border-[#27272a] text-white h-9">
+            <SelectTrigger className="w-full bg-input border-borderCustom text-foreground h-9">
               <SelectValue placeholder="Selecione o Vínculo" />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+            <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
               <SelectItem value="todos">Todos os Vínculos</SelectItem>
               <SelectItem value="contratado">Contratado</SelectItem>
               <SelectItem value="nomeado">Nomeado</SelectItem>
@@ -191,14 +191,14 @@ export default function FolhaPagamentoPage() {
 
         {/* Filtro: Escola */}
         <div className="space-y-1.5">
-          <label className="text-xs text-[#aaa] font-semibold">Escola / Unidade</label>
+          <label className="text-xs text-muted-foreground font-semibold">Escola / Unidade</label>
           <Select value={escolaId} onValueChange={(val: any) => setEscolaId(val)}>
-            <SelectTrigger className="w-full bg-[#121214] border-[#27272a] text-white h-9">
+            <SelectTrigger className="w-full bg-input border-borderCustom text-foreground h-9">
               <SelectValue>
                 {escolaId === 'todas' ? 'Todas as Escolas' : (escolas.find((e) => e.id === escolaId)?.nome ?? (escolas.length === 0 ? 'Carregando...' : escolaId))}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+            <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
               <SelectItem value="todas">Todas as Escolas</SelectItem>
               {escolas.map((esc) => (
                 <SelectItem key={esc.id} value={esc.id}>
@@ -211,12 +211,12 @@ export default function FolhaPagamentoPage() {
 
         {/* Filtro: Status */}
         <div className="space-y-1.5">
-          <label className="text-xs text-[#aaa] font-semibold">Status do Vínculo</label>
+          <label className="text-xs text-muted-foreground font-semibold">Status do Vínculo</label>
           <Select value={status} onValueChange={(val: any) => setStatus(val)}>
-            <SelectTrigger className="w-full bg-[#121214] border-[#27272a] text-white h-9">
+            <SelectTrigger className="w-full bg-input border-borderCustom text-foreground h-9">
               <SelectValue placeholder="Selecione o Status" />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+            <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
               <SelectItem value="todos">Todos os Status</SelectItem>
               <SelectItem value="ativo">Ativos</SelectItem>
               <SelectItem value="inativo">Inativos</SelectItem>
@@ -226,7 +226,7 @@ export default function FolhaPagamentoPage() {
       </div>
 
       {/* Listagem de Funcionários */}
-      <div className="bg-[#141416] border border-[#26262a] rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-card border border-borderCustom rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 text-yellow-500 animate-spin" />
@@ -238,14 +238,14 @@ export default function FolhaPagamentoPage() {
           </div>
         ) : (
           <Table>
-            <TableHeader className="bg-[#18181b] border-b border-[#26262a]">
-              <TableRow className="border-[#26262a] hover:bg-[#18181b]">
-                <TableHead className="text-white font-bold text-xs py-3.5">Nome</TableHead>
-                <TableHead className="text-white font-bold text-xs">Vínculo (Cargo)</TableHead>
-                <TableHead className="text-white font-bold text-xs">Escola</TableHead>
-                <TableHead className="text-white font-bold text-xs">Tipo de Vínculo</TableHead>
-                <TableHead className="text-white font-bold text-xs text-center">Status</TableHead>
-                <TableHead className="text-white font-bold text-xs text-right pr-6 w-52">Ações</TableHead>
+            <TableHeader className="bg-muted/60 border-b border-borderCustom">
+              <TableRow className="border-borderCustom hover:bg-transparent">
+                <TableHead className="text-muted-foreground font-bold text-xs py-3.5">Nome</TableHead>
+                <TableHead className="text-muted-foreground font-bold text-xs">Vínculo (Cargo)</TableHead>
+                <TableHead className="text-muted-foreground font-bold text-xs">Escola</TableHead>
+                <TableHead className="text-muted-foreground font-bold text-xs">Tipo de Vínculo</TableHead>
+                <TableHead className="text-muted-foreground font-bold text-xs text-center">Status</TableHead>
+                <TableHead className="text-muted-foreground font-bold text-xs text-right pr-6 w-52">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,7 +255,7 @@ export default function FolhaPagamentoPage() {
                 const vStatus = f.status === 'ativo' || f.vinculoAtivo?.ativo === true
 
                 return (
-                  <TableRow key={f.id} className="border-b border-[#26262a] hover:bg-[#1b1b1d] transition-colors">
+                  <TableRow key={f.id} className="border-b border-borderCustom hover:bg-muted/50 transition-colors">
                     <TableCell className="font-semibold text-slate-200 py-3 text-xs">{f.nome}</TableCell>
                     <TableCell className="text-xs text-slate-400 capitalize">{cargoDisplay}</TableCell>
                     <TableCell className="text-xs text-slate-400">

@@ -199,7 +199,7 @@ export default function DesempenhoPage() {
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {/* Seletor de Período */}
-            <div className="flex bg-[#121214] border border-[#27272a] rounded-lg p-1">
+            <div className="flex bg-muted/60 border border-borderCustom rounded-lg p-1">
               {[
                 { label: '24 Horas', value: 1 },
                 { label: '7 Dias', value: 7 },
@@ -214,7 +214,7 @@ export default function DesempenhoPage() {
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
                     period === opt.value
                       ? 'bg-violet-600 text-white shadow'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {opt.label}
@@ -226,7 +226,7 @@ export default function DesempenhoPage() {
               variant="outline"
               onClick={() => loadData()}
               disabled={loading || clearing}
-              className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] h-10"
+              className="bg-card border-borderCustom text-foreground hover:bg-muted h-10"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
@@ -248,7 +248,7 @@ export default function DesempenhoPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1 */}
-        <Card className="bg-[#121214] border-[#232326] text-white">
+        <Card className="bg-card border-borderCustom text-foreground">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P95</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
@@ -266,7 +266,7 @@ export default function DesempenhoPage() {
         </Card>
 
         {/* KPI 2 */}
-        <Card className="bg-[#121214] border-[#232326] text-white">
+        <Card className="bg-card border-borderCustom text-foreground">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P99</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
@@ -284,7 +284,7 @@ export default function DesempenhoPage() {
         </Card>
 
         {/* KPI 3 - Tratar Nullish para mitigar ES-3 */}
-        <Card className="bg-[#121214] border-[#232326] text-white">
+        <Card className="bg-card border-borderCustom text-foreground">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Score Geral de Navegação</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
@@ -308,7 +308,7 @@ export default function DesempenhoPage() {
         </Card>
 
         {/* KPI 4 */}
-        <Card className="bg-[#121214] border-[#232326] text-white">
+        <Card className="bg-card border-borderCustom text-foreground">
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Amostras de Navegação</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
@@ -327,10 +327,10 @@ export default function DesempenhoPage() {
       {/* Main Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Ranking de Gargalos por Rota com Percentis */}
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-4">
+        <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-violet-400" />
-            <h3 className="font-bold text-white text-lg">Tempo de Renderização por Rota</h3>
+            <h3 className="font-bold text-foreground text-lg">Tempo de Renderização por Rota</h3>
           </div>
           <p className="text-xs text-slate-400">Telas ordenadas por latência média no cliente (com percentis P50, P75 e P95).</p>
           
@@ -378,10 +378,10 @@ export default function DesempenhoPage() {
         </div>
 
         {/* Right: Análise por Fatores (Hardware e Conexão) */}
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-5">
+        <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-5 shadow-sm">
           <div className="flex items-center gap-2">
             <Cpu className="w-5 h-5 text-violet-400" />
-            <h3 className="font-bold text-white text-lg">Gargalos Externos (Hardware e Rede)</h3>
+            <h3 className="font-bold text-foreground text-lg">Gargalos Externos (Hardware e Rede)</h3>
           </div>
           <p className="text-xs text-slate-400">Verificação do impacto da rede, memória RAM e núcleos de CPU no carregamento no período.</p>
 
@@ -391,9 +391,9 @@ export default function DesempenhoPage() {
               <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
                 <Wifi className="w-4 h-4 text-sky-400" /> Por Rede
               </h4>
-              <div className="rounded-xl border border-[#232326] bg-[#17171a] p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
                 {dashboardStats.network_stats.map((c, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-[#232326]/30 last:border-0">
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
                     <span className="text-slate-400 uppercase font-semibold">{c.type}</span>
                     <span className={`font-bold ${c.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {c.avg}ms <span className="text-[10px] text-slate-500 font-normal">({c.count}x)</span>
@@ -411,9 +411,9 @@ export default function DesempenhoPage() {
               <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
                 <Monitor className="w-4 h-4 text-emerald-400" /> Por RAM
               </h4>
-              <div className="rounded-xl border border-[#232326] bg-[#17171a] p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
                 {dashboardStats.ram_stats.map((m, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-[#232326]/30 last:border-0">
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
                     <span className="text-slate-400">{m.ram}</span>
                     <span className={`font-bold ${m.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {m.avg}ms <span className="text-[10px] text-slate-500 font-normal">({m.count}x)</span>
@@ -431,9 +431,9 @@ export default function DesempenhoPage() {
               <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
                 <Activity className="w-4 h-4 text-violet-400" /> Por Cores CPU
               </h4>
-              <div className="rounded-xl border border-[#232326] bg-[#17171a] p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
                 {dashboardStats.cpu_stats.map((cpu, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-[#232326]/30 last:border-0">
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
                     <span className="text-slate-400">{cpu.cpu} Cores</span>
                     <span className={`font-bold ${cpu.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {cpu.avg}ms <span className="text-[10px] text-slate-500 font-normal">({cpu.count}x)</span>
@@ -450,7 +450,7 @@ export default function DesempenhoPage() {
           <div className="bg-[#1c1917]/20 border border-[#ea580c]/20 p-3.5 rounded-xl flex gap-3 text-xs text-amber-200">
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <strong className="text-white block mb-0.5">Dica de Diagnóstico:</strong>
+              <strong className="text-foreground block mb-0.5">Dica de Diagnóstico:</strong>
               Se a latência P95 de rota estiver abaixo de 300ms em conexões rápidas (Wi-Fi/4G) mas aumentar muito em 3G/2G, o gargalo é o tamanho dos payloads de dados e requisições HTTP redundantes.
             </div>
           </div>
@@ -458,16 +458,16 @@ export default function DesempenhoPage() {
       </div>
 
       {/* Bottom: Tabela de Logs Recentes Paginada */}
-      <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 space-y-4">
+      <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-violet-400" />
-          <h3 className="font-bold text-white text-lg">Histórico de Medições Recentes</h3>
+          <h3 className="font-bold text-foreground text-lg">Histórico de Medições Recentes</h3>
         </div>
         <p className="text-xs text-slate-400">Auditoria das métricas capturadas em tempo real nos navegadores para o período selecionado.</p>
 
-        <div className="rounded-xl border border-[#232326] bg-[#17171a] overflow-hidden">
+        <div className="rounded-xl border border-borderCustom bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-[#1e1e24] border-b border-[#232326]">
+            <TableHeader className="bg-muted/60 border-b border-borderCustom">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="text-slate-300 font-semibold">Data/Hora</TableHead>
                 <TableHead className="text-slate-300 font-semibold">Usuário</TableHead>
@@ -480,7 +480,7 @@ export default function DesempenhoPage() {
             </TableHeader>
             <TableBody>
               {recentLogs.map((log) => (
-                <TableRow key={log.id} className="border-b border-[#232326]/50 hover:bg-[#202024]/40 transition-colors">
+                <TableRow key={log.id} className="border-b border-borderCustom/60 hover:bg-muted/50 transition-colors">
                   <TableCell className="text-slate-400 text-xs whitespace-nowrap">
                     {new Date(log.created_at).toLocaleString('pt-BR')}
                   </TableCell>
@@ -533,7 +533,7 @@ export default function DesempenhoPage() {
 
         {/* Paginação */}
         {totalLogsCount > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#232326]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-borderCustom">
             <p className="text-xs text-slate-400">
               Mostrando <strong className="text-slate-300">{Math.min(totalLogsCount, (currentPage - 1) * pageSize + 1)}</strong> a{' '}
               <strong className="text-slate-300">{Math.min(currentPage * pageSize, totalLogsCount)}</strong> de{' '}
@@ -545,7 +545,7 @@ export default function DesempenhoPage() {
                 size="sm"
                 disabled={currentPage === 1 || loading}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] disabled:opacity-50"
+                className="bg-card border-borderCustom text-foreground hover:bg-muted disabled:opacity-50"
               >
                 Anterior
               </Button>
@@ -557,7 +557,7 @@ export default function DesempenhoPage() {
                 size="sm"
                 disabled={currentPage >= Math.ceil(totalLogsCount / pageSize) || loading}
                 onClick={() => setCurrentPage(prev => prev + 1)}
-                className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] disabled:opacity-50"
+                className="bg-card border-borderCustom text-foreground hover:bg-muted disabled:opacity-50"
               >
                 Próxima
               </Button>

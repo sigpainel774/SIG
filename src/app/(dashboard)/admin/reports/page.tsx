@@ -203,16 +203,16 @@ export default function AdminReportsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#232328]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
             <Bug className="w-8 h-8 text-rose-500" />
             Central de Reports & Feedbacks
             <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
               ROOT
             </span>
           </h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Canal exclusivo para o SuperAdmin receber, analisar e marcar reports de bugs ou sugestões enviadas pelos usuários.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function AdminReportsPage() {
         <Button
           onClick={loadReports}
           disabled={buscando}
-          className="bg-[#18181b] border border-[#3f3f46] text-white hover:bg-[#27272a] gap-2 shadow-sm shrink-0"
+          className="bg-card border border-borderCustom text-foreground hover:bg-muted gap-2 shadow-sm shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${buscando ? 'animate-spin' : ''}`} />
           <span>Atualizar Reports</span>
@@ -229,17 +229,17 @@ export default function AdminReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md flex items-center justify-between">
+        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Total Reports</p>
-            <p className="text-2xl font-bold text-white mt-1">{totalReports}</p>
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Total Reports</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{totalReports}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
             <Bug className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md flex items-center justify-between">
+        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">Pendentes</p>
             <p className="text-2xl font-bold text-amber-400 mt-1">{totalPendentes}</p>
@@ -249,7 +249,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md flex items-center justify-between">
+        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-sky-400 font-semibold uppercase tracking-wider">Em Análise</p>
             <p className="text-2xl font-bold text-sky-400 mt-1">{totalEmAnalise}</p>
@@ -259,7 +259,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md flex items-center justify-between">
+        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Resolvidos</p>
             <p className="text-2xl font-bold text-emerald-400 mt-1">{totalResolvidos}</p>
@@ -269,7 +269,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md flex items-center justify-between col-span-2 md:col-span-1">
+        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between col-span-2 md:col-span-1">
           <div>
             <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider">Rejeitados</p>
             <p className="text-2xl font-bold text-rose-400 mt-1">{totalRejeitados}</p>
@@ -281,17 +281,17 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4 shadow-md space-y-3">
+      <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {/* Busca */}
           <div className="relative">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
             <Input
               type="text"
               placeholder="Buscar por título, usuário ou escola..."
               value={busca}
               onChange={e => setBusca(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white pl-9 placeholder:text-zinc-500 h-11 rounded-xl focus:ring-[#0090ff] focus:border-[#0090ff]"
+              className="bg-input border-borderCustom text-foreground pl-9 placeholder:text-muted-foreground h-11 rounded-xl focus:ring-highlight focus:border-highlight"
             />
           </div>
 
@@ -299,7 +299,7 @@ export default function AdminReportsPage() {
           <select
             value={filtroStatus}
             onChange={e => setFiltroStatus(e.target.value)}
-            className="w-full bg-[#18181b] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff]"
+            className="w-full bg-input border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
           >
             <option value="TODOS">Todos os Status</option>
             <option value="pendente">Pendentes</option>
@@ -312,7 +312,7 @@ export default function AdminReportsPage() {
           <select
             value={filtroTipo}
             onChange={e => setFiltroTipo(e.target.value)}
-            className="w-full bg-[#18181b] border border-[#3f3f46] text-white h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0090ff]"
+            className="w-full bg-input border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
           >
             <option value="TODOS">Todos os Tipos</option>
             <option value="bug">Erro / Bug</option>
@@ -327,7 +327,7 @@ export default function AdminReportsPage() {
               setFiltroStatus('TODOS')
               setFiltroTipo('TODOS')
             }}
-            className="h-11 px-4 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors cursor-pointer"
+            className="h-11 px-4 bg-muted hover:bg-muted/80 text-foreground border border-borderCustom rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
             <span>Limpar Filtros</span>
@@ -338,12 +338,12 @@ export default function AdminReportsPage() {
       {/* Reports List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="bg-[#121214] border border-[#232326] rounded-2xl p-12 text-center text-zinc-400 space-y-3">
+          <div className="bg-card border border-borderCustom rounded-2xl p-12 text-center text-muted-foreground space-y-3">
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0090ff]" />
             <p>Carregando reports de erros e sugestões...</p>
           </div>
         ) : reportsFiltrados.length === 0 ? (
-          <div className="bg-[#121214] border border-dashed border-[#3f3f46] rounded-2xl p-12 text-center text-zinc-400">
+          <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
             Nenhum report encontrado para os filtros selecionados.
           </div>
         ) : (
@@ -352,7 +352,7 @@ export default function AdminReportsPage() {
             return (
               <div
                 key={report.id}
-                className="bg-[#121214] border border-[#232326] hover:border-[#3f3f46] rounded-2xl p-5 shadow-md transition-all space-y-4"
+                className="bg-card border border-borderCustom hover:border-highlight/30 rounded-2xl p-5 shadow-sm transition-all space-y-4"
               >
                 {/* Header do Card */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -377,7 +377,7 @@ export default function AdminReportsPage() {
                         {getStatusBadge(report.status)}
                       </div>
 
-                      <h3 className="text-base font-bold text-white mt-1.5 leading-snug">
+                      <h3 className="text-base font-bold text-foreground mt-1.5 leading-snug">
                         {report.titulo}
                       </h3>
                     </div>
@@ -399,7 +399,7 @@ export default function AdminReportsPage() {
                 </div>
 
                 {/* Descrição */}
-                <p className="text-sm text-zinc-300 bg-[#17171a] p-3.5 rounded-xl border border-[#232326] leading-relaxed">
+                <p className="text-sm text-foreground/80 bg-muted/60 p-3.5 rounded-xl border border-borderCustom leading-relaxed">
                   {report.descricao}
                 </p>
 
@@ -416,15 +416,15 @@ export default function AdminReportsPage() {
                 )}
 
                 {/* Footer do Card: Autor Info & Botões de Ação ROOT */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#232328]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-borderCustom">
                   {/* Informações do Solicitante */}
-                  <div className="flex items-center gap-4 text-xs text-zinc-400 flex-wrap">
-                    <span className="flex items-center gap-1.5 font-medium text-zinc-300">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1.5 font-medium text-foreground/80">
                       <User className="w-3.5 h-3.5 text-sky-400" />
                       {report.autor_nome} ({report.autor_email})
                     </span>
                     {report.escola && (
-                      <span className="flex items-center gap-1.5 text-zinc-400">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
                         <School className="w-3.5 h-3.5 text-purple-400" />
                         {report.escola}
                       </span>
@@ -436,7 +436,7 @@ export default function AdminReportsPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenDetailModal(report)}
-                      className="px-3 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-borderCustom rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Detalhes / Responder</span>
@@ -482,12 +482,12 @@ export default function AdminReportsPage() {
           description={`Por: ${selectedReport.autor_nome ?? 'Usuário'} — ${selectedReport.escola ?? 'Escola'}`}
           maxWidth="sm:max-w-xl"
           footer={
-            <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-end w-full border-t border-[#27272a]">
+            <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-end w-full border-t border-borderCustom">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setModalOpen(false)}
-                className="bg-[#18181b] border-[#3f3f46] text-white hover:bg-[#27272a]"
+                className="bg-card border-borderCustom text-foreground hover:bg-muted"
               >
                 Fechar
               </Button>
@@ -526,12 +526,12 @@ export default function AdminReportsPage() {
         >
 
             <div className="space-y-4 py-2">
-              <div className="flex items-center justify-between bg-[#18181b] p-3 rounded-xl border border-[#27272a]">
+              <div className="flex items-center justify-between bg-muted/60 p-3 rounded-xl border border-borderCustom">
                 <div>
-                  <h4 className="font-bold text-white text-base leading-snug">
+                  <h4 className="font-bold text-foreground text-base leading-snug">
                     {selectedReport.titulo}
                   </h4>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Por: {selectedReport.autor_nome} — {selectedReport.escola}
                   </p>
                 </div>
@@ -539,23 +539,23 @@ export default function AdminReportsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   Descrição do Usuário
                 </label>
-                <div className="bg-[#17171a] p-3.5 rounded-xl border border-[#27272a] text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                <div className="bg-muted/60 p-3.5 rounded-xl border border-borderCustom text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed">
                   {selectedReport.descricao}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   Resposta / Resolução do Administrador (Opcional)
                 </label>
                 <Textarea
                   value={respostaInput}
                   onChange={e => setRespostaInput(e.target.value)}
                   placeholder="Escreva uma observação ou detalhes da solução para este reporte..."
-                  className="bg-[#17171a] border-[#3f3f46] text-white focus:ring-[#0090ff] focus:border-[#0090ff] min-h-[90px] rounded-xl text-sm"
+                  className="bg-input border-borderCustom text-foreground focus:ring-highlight focus:border-highlight min-h-[90px] rounded-xl text-sm"
                 />
               </div>
             </div>

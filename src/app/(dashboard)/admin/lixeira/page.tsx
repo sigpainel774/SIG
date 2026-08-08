@@ -430,14 +430,14 @@ export default function AdminLixeiraPage() {
     {
       header: 'Tabela',
       accessor: (item) => (
-        <Badge variant="outline" className="text-xs font-semibold bg-zinc-500/10 text-zinc-400 border-zinc-500/20 uppercase">
+        <Badge variant="outline" className="text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-zinc-400 border-slate-500/20 uppercase">
           {item.table_name}
         </Badge>
       )
     },
     {
       header: 'Registro',
-      accessor: (item) => <span className="text-white font-medium">{item.record_summary}</span>
+      accessor: (item) => <span className="text-foreground font-medium">{item.record_summary}</span>
     },
     {
       header: 'Excluído por',
@@ -451,7 +451,7 @@ export default function AdminLixeiraPage() {
     {
       header: 'Data da Exclusão',
       accessor: (item) => (
-        <span className="text-zinc-400 whitespace-nowrap">
+        <span className="text-muted-foreground whitespace-nowrap">
           {item.deleted_at ? new Date(item.deleted_at).toLocaleString('pt-BR') : '-'}
         </span>
       )
@@ -490,18 +490,18 @@ export default function AdminLixeiraPage() {
       header: 'Funcionário / Cargo',
       accessor: (func) => (
         <div className="flex flex-col">
-          <span className="text-sm font-semibold text-white uppercase">{func.nome}</span>
-          <span className="text-xs text-zinc-400">{func.cargo ?? 'Sem cargo definido'}</span>
+          <span className="text-sm font-semibold text-foreground uppercase">{func.nome}</span>
+          <span className="text-xs text-muted-foreground">{func.cargo ?? 'Sem cargo definido'}</span>
         </div>
       )
     },
     {
       header: 'E-mail',
-      accessor: (func) => <span className="text-zinc-300 text-sm">{func.email ?? '-'}</span>
+      accessor: (func) => <span className="text-foreground/80 text-sm">{func.email ?? '-'}</span>
     },
     {
       header: 'CPF',
-      accessor: (func) => <span className="text-zinc-400 text-sm font-mono">{func.cpf ?? '-'}</span>
+      accessor: (func) => <span className="text-muted-foreground text-sm font-mono">{func.cpf ?? '-'}</span>
     },
     {
       header: 'Status',
@@ -514,7 +514,7 @@ export default function AdminLixeiraPage() {
     {
       header: 'Data de Desligamento',
       accessor: (func) => (
-        <span className="text-zinc-400 text-sm whitespace-nowrap">
+        <span className="text-muted-foreground text-sm whitespace-nowrap">
           {func.deleted_at 
             ? new Date(func.deleted_at).toLocaleString('pt-BR') 
             : (func.created_at ? new Date(func.created_at).toLocaleDateString('pt-BR') : '-')}
@@ -544,27 +544,27 @@ export default function AdminLixeiraPage() {
       header: 'Aluno',
       accessor: (aluno) => (
         <div className="flex flex-col">
-          <span className="text-sm font-semibold text-white uppercase">{aluno.nome}</span>
+          <span className="text-sm font-semibold text-foreground uppercase">{aluno.nome}</span>
           <span className="text-[10px] text-zinc-500 font-mono">ID: {aluno.aluno_id}</span>
         </div>
       )
     },
     {
       header: 'CPF / Matrícula',
-      accessor: (aluno) => <span className="text-zinc-300 text-sm font-mono">{aluno.cpf_matricula}</span>
+      accessor: (aluno) => <span className="text-foreground/80 text-sm font-mono">{aluno.cpf_matricula}</span>
     },
     {
       header: 'Escola de Origem',
-      accessor: (aluno) => <span className="text-zinc-400 text-sm">{aluno.escola_nome}</span>
+      accessor: (aluno) => <span className="text-muted-foreground text-sm">{aluno.escola_nome}</span>
     },
     {
       header: 'Motivo',
-      accessor: (aluno) => <span className="text-zinc-400 text-sm max-w-[200px] truncate block">{aluno.motivo}</span>
+      accessor: (aluno) => <span className="text-muted-foreground text-sm max-w-[200px] truncate block">{aluno.motivo}</span>
     },
     {
       header: 'Data Arquivamento',
       accessor: (aluno) => (
-        <span className="text-zinc-400 text-sm whitespace-nowrap">
+        <span className="text-muted-foreground text-sm whitespace-nowrap">
           {aluno.data_arquivamento ? new Date(aluno.data_arquivamento).toLocaleDateString('pt-BR') : '-'}
         </span>
       )
@@ -592,7 +592,7 @@ export default function AdminLixeiraPage() {
       header: 'Aluno / ID',
       accessor: (student) => (
         <div>
-          <div className="font-semibold text-white">{student.studentName}</div>
+          <div className="font-semibold text-foreground">{student.studentName}</div>
           <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{student.studentId}</div>
         </div>
       )
@@ -636,7 +636,7 @@ export default function AdminLixeiraPage() {
     {
       header: 'Última Atividade',
       accessor: (student) => (
-        <span className="text-zinc-400 whitespace-nowrap">
+        <span className="text-muted-foreground whitespace-nowrap">
           {student.lastUpdate ? new Date(student.lastUpdate).toLocaleString('pt-BR') : '-'}
         </span>
       )
@@ -650,7 +650,7 @@ export default function AdminLixeiraPage() {
           size="sm"
           variant="ghost"
           onClick={() => setSelectedStudent(student)}
-          className="hover:bg-[#202024] text-zinc-400 hover:text-white rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer inline-flex"
+          className="hover:bg-muted text-muted-foreground hover:text-foreground rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer inline-flex"
           title="Ver Histórico Completo"
         >
           <History className="w-4 h-4 text-[#3ea6ff]" />
@@ -668,13 +668,13 @@ export default function AdminLixeiraPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#232328]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Trash2 className="w-6 h-6 text-rose-500" />
             <span>Lixeira Global & Expurgo</span>
           </h2>
-          <p className="text-zinc-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {activeTab === 'trash' && 'Registros apagados e pendentes de restauração ou expurgo.'}
             {activeTab === 'signatures' && 'Histórico de alteração e coleta de assinaturas digitais da rede.'}
             {activeTab === 'inactives' && 'Expurgo definitivo de funcionários desligados e alunos arquivados (cadastros de teste).'}
@@ -686,7 +686,7 @@ export default function AdminLixeiraPage() {
             <Button 
               variant="outline"
               onClick={() => router.push('/admin/lixeira/relatorio')}
-              className="bg-transparent border-[#27272a] hover:bg-[#1f1f23] text-zinc-300 hover:text-white rounded-xl h-10 px-4 text-xs font-semibold"
+              className="bg-card border-borderCustom hover:bg-muted text-foreground/80 hover:text-foreground rounded-xl h-10 px-4 text-xs font-semibold"
             >
               <FileText className="w-4 h-4 mr-2" /> Relatório de Exclusões
             </Button>
@@ -697,7 +697,7 @@ export default function AdminLixeiraPage() {
               variant="outline"
               onClick={() => setIsPrintOpen(true)}
               disabled={filteredSigLogs.length === 0}
-              className="bg-transparent border-[#27272a] hover:bg-[#1f1f23] text-zinc-300 hover:text-white rounded-xl h-10 px-4 text-xs font-semibold"
+              className="bg-card border-borderCustom hover:bg-muted text-foreground/80 hover:text-foreground rounded-xl h-10 px-4 text-xs font-semibold"
             >
               <Printer className="w-4 h-4 mr-2 text-[#3ea6ff]" /> Imprimir Relatório
             </Button>
@@ -707,7 +707,7 @@ export default function AdminLixeiraPage() {
             variant="outline"
             onClick={handleRefresh}
             disabled={loading || sigLogsLoading || inactivesLoading}
-            className="bg-[#121214] border-[#27272a] text-white hover:bg-[#202024] rounded-xl h-10 w-10 flex items-center justify-center p-0"
+            className="bg-card border-borderCustom text-foreground hover:bg-muted rounded-xl h-10 w-10 flex items-center justify-center p-0"
             title="Atualizar Dados"
           >
             <RefreshCw className={cn("w-4 h-4", (loading || sigLogsLoading || inactivesLoading) ? "animate-spin" : "")} />
@@ -716,14 +716,14 @@ export default function AdminLixeiraPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap border-b border-[#26262a] gap-2">
+      <div className="flex flex-wrap border-b border-borderCustom gap-2">
         <button
           onClick={() => setActiveTab('trash')}
           className={cn(
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'trash'
               ? "border-[#3ea6ff] text-[#3ea6ff]"
-              : "border-transparent text-zinc-400 hover:text-zinc-200"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <Trash2 className="w-4.5 h-4.5" />
@@ -735,8 +735,8 @@ export default function AdminLixeiraPage() {
           className={cn(
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'inactives'
-              ? "border-rose-500 text-rose-400"
-              : "border-transparent text-zinc-400 hover:text-zinc-200"
+              ? "border-rose-500 text-rose-600 dark:text-rose-400"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <UserX className="w-4.5 h-4.5" />
@@ -749,7 +749,7 @@ export default function AdminLixeiraPage() {
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'signatures'
               ? "border-[#3ea6ff] text-[#3ea6ff]"
-              : "border-transparent text-zinc-400 hover:text-zinc-200"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           <PenTool className="w-4.5 h-4.5" />
@@ -759,7 +759,7 @@ export default function AdminLixeiraPage() {
 
       {/* Search Filter Bar */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder={
@@ -771,7 +771,7 @@ export default function AdminLixeiraPage() {
           }
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-[#121214] border-[#26262a] pl-10 text-white rounded-xl focus-visible:ring-[#3ea6ff] h-10 text-sm placeholder:text-zinc-500"
+          className="bg-input border-borderCustom pl-10 text-foreground rounded-xl focus-visible:ring-highlight h-10 text-sm placeholder:text-muted-foreground"
         />
       </div>
 
@@ -789,14 +789,14 @@ export default function AdminLixeiraPage() {
       {activeTab === 'inactives' && (
         <div className="space-y-4">
           {/* Sub-tab Selector */}
-          <div className="flex items-center gap-2 bg-[#141416] p-1.5 rounded-2xl border border-[#26262a] w-fit">
+          <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-2xl border border-borderCustom w-fit">
             <button
               onClick={() => setInactiveSubTab('funcionarios')}
               className={cn(
                 "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
                 inactiveSubTab === 'funcionarios'
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Users className="w-4 h-4" />
@@ -808,8 +808,8 @@ export default function AdminLixeiraPage() {
               className={cn(
                 "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
                 inactiveSubTab === 'alunos'
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <GraduationCap className="w-4 h-4" />
@@ -843,7 +843,7 @@ export default function AdminLixeiraPage() {
             <select
               value={sigFilter}
               onChange={(e: any) => setSigFilter(e.target.value)}
-              className="bg-[#121214] border border-[#26262a] text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#3ea6ff] h-10 w-full md:w-56"
+              className="bg-input border border-borderCustom text-foreground rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-highlight h-10 w-full md:w-56"
             >
               <option value="ALL">Todos os Tipos</option>
               <option value="RESP">Apenas Responsável</option>
@@ -878,10 +878,10 @@ export default function AdminLixeiraPage() {
           description="Linha do tempo de todas as coletas, atualizações e exclusões registradas."
           maxWidth="sm:max-w-2xl"
           footer={
-            <div className="flex justify-end w-full pt-3.5 border-t border-[#26262a]">
+            <div className="flex justify-end w-full pt-3.5 border-t border-borderCustom">
               <Button
                 onClick={() => setSelectedStudent(null)}
-                className="bg-[#27272a] hover:bg-[#3f3f46] text-white font-semibold rounded-xl h-10 px-5 cursor-pointer text-xs"
+                className="bg-muted hover:bg-muted/80 text-foreground font-semibold rounded-xl h-10 px-5 cursor-pointer text-xs"
               >
                 Fechar Histórico
               </Button>
@@ -889,18 +889,18 @@ export default function AdminLixeiraPage() {
           }
         >
           <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4 bg-[#17171a] p-3.5 rounded-xl border border-[#26262a]">
+            <div className="grid grid-cols-2 gap-4 bg-muted/60 p-3.5 rounded-xl border border-borderCustom">
               <div>
                 <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Aluno Auditado</span>
-                <span className="font-semibold text-white">{selectedStudent.studentName}</span>
+                <span className="font-semibold text-foreground">{selectedStudent.studentName}</span>
               </div>
               <div>
                 <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
-                <span className="font-mono text-xs text-zinc-400">{selectedStudent.studentId}</span>
+                <span className="font-mono text-xs text-muted-foreground">{selectedStudent.studentId}</span>
               </div>
             </div>
 
-            <div className="relative pl-4 space-y-4 before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#26262a]">
+            <div className="relative pl-4 space-y-4 before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-borderCustom">
               {selectedStudent.logs.map((log: any) => {
                 const sigUrl = log.new_data?.url || log.old_data?.url
                 const isResp = log.entity === 'alunos_assinatura_responsavel'
@@ -913,8 +913,8 @@ export default function AdminLixeiraPage() {
                       isDelete ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
                     )} />
                     
-                    <div className="bg-[#17171a] border border-[#26262a] p-4 rounded-xl space-y-3 shadow-inner">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#232328] pb-2">
+                    <div className="bg-muted/60 border border-borderCustom p-4 rounded-xl space-y-3 shadow-inner">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-borderCustom pb-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn(
                             "text-[10px] font-bold border-none px-2 py-0.5 rounded-md uppercase",
@@ -938,20 +938,20 @@ export default function AdminLixeiraPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                           <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Assinante / Operador</span>
-                          <span className="text-white font-medium block">{log.user_name || '-'}</span>
-                          {log.user_email && <span className="text-zinc-400 block">{log.user_email}</span>}
+                          <span className="text-foreground font-medium block">{log.user_name || '-'}</span>
+                          {log.user_email && <span className="text-muted-foreground block">{log.user_email}</span>}
                         </div>
                         
                         <div>
                           <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Conexão & IP</span>
-                          <span className="text-white font-mono block">{log.ip_address || 'IP não registrado'}</span>
+                          <span className="text-foreground font-mono block">{log.ip_address || 'IP não registrado'}</span>
                           <span className="text-zinc-500 block leading-tight mt-0.5 text-[10px]">
                             {formatUserAgent(log.new_data?.user_agent || log.old_data?.user_agent)}
                           </span>
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-[#232328]">
+                      <div className="pt-2 border-t border-borderCustom">
                         <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Assinatura no Registro</span>
                         {sigUrl && !isDelete ? (
                           <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
@@ -983,12 +983,12 @@ export default function AdminLixeiraPage() {
           description="Esta ação é permanente e irreversível."
           maxWidth="sm:max-w-lg"
           footer={
-            <div className="flex justify-end gap-2 w-full pt-3.5 border-t border-[#26262a]">
+            <div className="flex justify-end gap-2 w-full pt-3.5 border-t border-borderCustom">
               <Button
                 disabled={isPurging}
                 onClick={() => setConfirmPurgeModal(null)}
                 variant="outline"
-                className="border-[#27272a] text-zinc-300 hover:bg-[#202024] rounded-xl h-10 px-4 text-xs font-semibold"
+                className="border-borderCustom text-foreground/80 hover:bg-muted rounded-xl h-10 px-4 text-xs font-semibold"
               >
                 Cancelar
               </Button>
@@ -1015,29 +1015,29 @@ export default function AdminLixeiraPage() {
               </div>
             </div>
 
-            <div className="bg-[#17171a] p-3.5 rounded-xl border border-[#26262a] text-xs space-y-2">
+            <div className="bg-muted/60 p-3.5 rounded-xl border border-borderCustom text-xs space-y-2">
               <span className="text-[10px] text-zinc-500 uppercase font-bold block">Registro Selecionado</span>
               
               {confirmPurgeModal.type === 'trash' && (
                 <div>
-                  <span className="font-bold text-white block">{confirmPurgeModal.item.record_summary}</span>
-                  <span className="text-zinc-400 block">Tabela: {confirmPurgeModal.item.table_name}</span>
+                  <span className="font-bold text-foreground block">{confirmPurgeModal.item.record_summary}</span>
+                  <span className="text-muted-foreground block">Tabela: {confirmPurgeModal.item.table_name}</span>
                 </div>
               )}
 
               {confirmPurgeModal.type === 'funcionario' && (
                 <div>
-                  <span className="font-bold text-white block">{confirmPurgeModal.item.nome}</span>
-                  <span className="text-zinc-400 block">Cargo: {confirmPurgeModal.item.cargo ?? 'Não informado'}</span>
-                  <span className="text-zinc-400 block">E-mail: {confirmPurgeModal.item.email ?? '-'}</span>
+                  <span className="font-bold text-foreground block">{confirmPurgeModal.item.nome}</span>
+                  <span className="text-muted-foreground block">Cargo: {confirmPurgeModal.item.cargo ?? 'Não informado'}</span>
+                  <span className="text-muted-foreground block">E-mail: {confirmPurgeModal.item.email ?? '-'}</span>
                 </div>
               )}
 
               {confirmPurgeModal.type === 'aluno' && (
                 <div>
-                  <span className="font-bold text-white block">{confirmPurgeModal.item.nome}</span>
-                  <span className="text-zinc-400 block">CPF / Matrícula: {confirmPurgeModal.item.cpf_matricula}</span>
-                  <span className="text-zinc-400 block">Escola: {confirmPurgeModal.item.escola_nome}</span>
+                  <span className="font-bold text-foreground block">{confirmPurgeModal.item.nome}</span>
+                  <span className="text-muted-foreground block">CPF / Matrícula: {confirmPurgeModal.item.cpf_matricula}</span>
+                  <span className="text-muted-foreground block">Escola: {confirmPurgeModal.item.escola_nome}</span>
                 </div>
               )}
             </div>

@@ -226,11 +226,11 @@ export default function PainelChefePage() {
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-2">
               <UserCheck className="w-8 h-8 text-highlight" />
               Painel da Liderança (Chefia de Equipe)
             </h1>
@@ -247,15 +247,15 @@ export default function PainelChefePage() {
 
       {/* Main Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-borderCustom bg-[#121212] p-4 flex items-center justify-between shadow-md">
+        <Card className="border-borderCustom bg-card p-4 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold">Total da Equipe</p>
-            <div className="text-2xl font-bold text-white mt-1">{equipe.length}</div>
+            <div className="text-2xl font-bold text-foreground mt-1">{equipe.length}</div>
           </div>
           <Users className="w-8 h-8 text-highlight opacity-80" />
         </Card>
 
-        <Card className="border-borderCustom bg-[#121212] p-4 flex items-center justify-between shadow-md">
+        <Card className="border-borderCustom bg-card p-4 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold">Em Turno Agora</p>
             <div className="text-2xl font-bold text-emerald-400 mt-1">
@@ -265,7 +265,7 @@ export default function PainelChefePage() {
           <Clock className="w-8 h-8 text-emerald-400 opacity-80" />
         </Card>
 
-        <Card className="border-borderCustom bg-[#121212] p-4 flex items-center justify-between shadow-md">
+        <Card className="border-borderCustom bg-card p-4 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold">Escalas Pendentes</p>
             <div className="text-2xl font-bold text-amber-400 mt-1">{escalas.filter(e => e.status === 'Pendente').length}</div>
@@ -273,7 +273,7 @@ export default function PainelChefePage() {
           <Calendar className="w-8 h-8 text-amber-400 opacity-80" />
         </Card>
 
-        <Card className="border-borderCustom bg-[#121212] p-4 flex items-center justify-between shadow-md">
+        <Card className="border-borderCustom bg-card p-4 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold">Solicitações Pendentes</p>
             <div className="text-2xl font-bold text-rose-400 mt-1">{alertas.filter(a => a.status === 'Pendente').length}</div>
@@ -302,7 +302,7 @@ export default function PainelChefePage() {
               className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
                 isActive 
                   ? 'border-highlight text-highlight bg-highlight/5' 
-                  : 'border-transparent text-foregroundCustom/70 hover:text-white'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -329,7 +329,7 @@ export default function PainelChefePage() {
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Buscar membro por nome, cargo ou escola..."
-                className="pl-9 bg-[#121212] border-borderCustom text-white"
+                className="pl-9 bg-input border-borderCustom text-foreground"
               />
             </div>
             {cargosGerenciados.length > 0 && (
@@ -344,9 +344,9 @@ export default function PainelChefePage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-borderCustom bg-[#121212] overflow-hidden shadow-md">
+          <div className="rounded-2xl border border-borderCustom bg-card overflow-hidden shadow-sm">
             <Table>
-              <TableHeader className="bg-[#0d0d0d]">
+              <TableHeader className="bg-muted/60">
                 <TableRow className="border-borderCustom hover:bg-transparent">
                   <TableHead className="text-foregroundCustom font-semibold">Nome do Membro</TableHead>
                   <TableHead className="text-foregroundCustom font-semibold">Cargo</TableHead>
@@ -373,7 +373,7 @@ export default function PainelChefePage() {
                 ) : (
                   equipeFiltrada.map((membro) => (
                     <TableRow key={membro.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
-                      <TableCell className="font-semibold text-white">{membro.nome}</TableCell>
+                      <TableCell className="font-semibold text-foreground">{membro.nome}</TableCell>
                       <TableCell className="text-muted-foreground">{membro.cargo || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{membro.orgao || '-'}</TableCell>
                       <TableCell>
@@ -399,20 +399,20 @@ export default function PainelChefePage() {
       {/* TAB 2: ESCALAS */}
       {activeTab === 'escalas' && (
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Calendar className="w-5 h-5 text-highlight" />
             Escalas de Trabalho da Equipe
           </h2>
-          <div className="rounded-2xl border border-borderCustom bg-[#121212] overflow-hidden shadow-md">
+          <div className="rounded-2xl border border-borderCustom bg-card overflow-hidden shadow-sm">
             <Table>
-              <TableHeader className="bg-[#0d0d0d]">
+              <TableHeader className="bg-muted/60">
                 <TableRow className="border-borderCustom">
-                  <TableHead className="text-white">Funcionário</TableHead>
-                  <TableHead className="text-white">Data</TableHead>
-                  <TableHead className="text-white">Turno</TableHead>
-                  <TableHead className="text-white">Escola</TableHead>
-                  <TableHead className="text-white">Status</TableHead>
-                  <TableHead className="text-right text-white">Ações</TableHead>
+                  <TableHead className="text-muted-foreground">Funcionário</TableHead>
+                  <TableHead className="text-muted-foreground">Data</TableHead>
+                  <TableHead className="text-muted-foreground">Turno</TableHead>
+                  <TableHead className="text-muted-foreground">Escola</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-right text-muted-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -434,8 +434,8 @@ export default function PainelChefePage() {
                 ) : (
                   escalas.map((esc) => (
                     <TableRow key={esc.id} className="border-borderCustom hover:bg-hoverCustom">
-                      <TableCell className="font-semibold text-white">{esc.funcionarios?.nome || '-'}</TableCell>
-                      <TableCell className="font-mono text-xs text-white">{formatarDataBR(esc.data)}</TableCell>
+                      <TableCell className="font-semibold text-foreground">{esc.funcionarios?.nome || '-'}</TableCell>
+                      <TableCell className="font-mono text-xs text-foreground">{formatarDataBR(esc.data)}</TableCell>
                       <TableCell className="text-muted-foreground">{esc.turno || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{esc.escolas?.nome || '-'}</TableCell>
                       <TableCell>
@@ -473,7 +473,7 @@ export default function PainelChefePage() {
       {/* TAB 3: ATESTADOS & JUSTIFICATIVAS */}
       {activeTab === 'alertas' && (
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Bell className="w-5 h-5 text-rose-400" />
             Solicitações de Atestados e Trocas de Turno
           </h2>
@@ -489,9 +489,9 @@ export default function PainelChefePage() {
               </div>
             ) : (
               alertas.map((alerta) => (
-                <Card key={alerta.id} className="bg-[#121212] border-borderCustom p-5 space-y-3 shadow-md">
+                <Card key={alerta.id} className="bg-card border-borderCustom p-5 space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white">{alerta.funcionarios?.nome || 'Servidor'}</span>
+                    <span className="font-bold text-foreground">{alerta.funcionarios?.nome || 'Servidor'}</span>
                     <span className="text-xs font-mono text-muted-foreground">{formatarDataBR(alerta.data)}</span>
                   </div>
                   <div>
