@@ -50,19 +50,19 @@ type StatusAtividade = 'recebida' | 'em_impressao' | 'impressa' | 'entregue_prof
 const STATUS_CONFIG: Record<StatusAtividade, { label: string; class: string }> = {
   recebida: {
     label: 'Recebida',
-    class: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    class: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400',
   },
   em_impressao: {
     label: 'Em Impressão',
-    class: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    class: 'bg-blue-500/15 text-blue-700 border-blue-500/30 dark:bg-blue-500/20 dark:text-blue-400',
   },
   impressa: {
     label: 'Impressa',
-    class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    class: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400',
   },
   entregue_professor: {
     label: 'Entregue ao Professor',
-    class: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+    class: 'bg-slate-500/10 text-slate-700 border-slate-500/25 dark:bg-zinc-500/20 dark:text-zinc-400 dark:border-zinc-500/30',
   },
 }
 
@@ -351,20 +351,20 @@ function AvaliacoesContent() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#26262a]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
-              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <ClipboardList className="w-6 h-6 text-[#3ea6ff]" />
               Central de Atividades
             </h2>
           </div>
-          <p className="text-zinc-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Gestão, controle de impressão e entrega de atividades avaliativas.
           </p>
         </div>
@@ -392,7 +392,7 @@ function AvaliacoesContent() {
       )}
 
       {/* ── ABAS DE NAVEGAÇÃO ── */}
-      <div className="flex border-b border-[#26262a] overflow-x-auto select-none gap-2">
+      <div className="flex border-b border-borderCustom overflow-x-auto select-none gap-2">
         {isProfessor && (
           <TabButton
             active={activeTab === 'minhas_atividades'}
@@ -452,22 +452,22 @@ function AvaliacoesContent() {
       {/* ── FILTROS ── */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por título ou professor..."
-            className="pl-9 bg-[#141416] border-[#26262a] text-white placeholder:text-zinc-600 focus-visible:ring-[#3ea6ff]"
+            className="pl-9 bg-input border-borderCustom text-foreground placeholder:text-muted-foreground focus-visible:ring-highlight"
           />
         </div>
 
         <div className="flex gap-3">
           {/* Trimestre */}
           <Select value={filtroTrimestre} onValueChange={(v) => setFiltroTrimestre(v || 'all')}>
-            <SelectTrigger className="w-[160px] bg-[#141416] border-[#26262a] text-white focus:ring-[#3ea6ff]">
+            <SelectTrigger className="w-[160px] bg-input border-borderCustom text-foreground focus:ring-highlight">
               <SelectValue placeholder="Trimestre" />
             </SelectTrigger>
-            <SelectContent className="bg-[#141416] border-[#26262a] text-white">
+            <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
               <SelectItem value="all">Todos Trimestres</SelectItem>
               <SelectItem value="1">1º Trimestre</SelectItem>
               <SelectItem value="2">2º Trimestre</SelectItem>
@@ -478,10 +478,10 @@ function AvaliacoesContent() {
           {/* Status (oculto quando abas já pré-filtram status) */}
           {activeTab !== 'recebidas_impressao' && activeTab !== 'impressas_entregues' && (
             <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v || 'all')}>
-              <SelectTrigger className="w-[160px] bg-[#141416] border-[#26262a] text-white focus:ring-[#3ea6ff]">
+              <SelectTrigger className="w-[160px] bg-input border-borderCustom text-foreground focus:ring-highlight">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent className="bg-[#141416] border-[#26262a] text-white">
+              <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
                 <SelectItem value="all">Todos Status</SelectItem>
                 <SelectItem value="recebida">Recebida</SelectItem>
                 <SelectItem value="em_impressao">Em Impressão</SelectItem>
@@ -494,61 +494,61 @@ function AvaliacoesContent() {
       </div>
 
       {/* ── TABELA DE DADOS ── */}
-      <Card className="bg-[#141416] border-[#26262a] overflow-hidden rounded-2xl">
+      <Card className="bg-card border-borderCustom overflow-hidden rounded-2xl">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-3">
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#3ea6ff]" />
             <span>Buscando atividades...</span>
           </div>
         ) : activitiesListEmpty(atividadesFiltradas) ? (
-          <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-4">
-            <ClipboardList className="w-16 h-16 text-zinc-700" />
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4">
+            <ClipboardList className="w-16 h-16 text-slate-300 dark:text-zinc-700" />
             <div className="text-center">
-              <p className="text-lg font-semibold text-zinc-400">Nenhuma atividade encontrada</p>
-              <p className="text-sm text-zinc-600 mt-1">Experimente ajustar os filtros ou pesquisar outro termo.</p>
+              <p className="text-lg font-semibold text-foreground">Nenhuma atividade encontrada</p>
+              <p className="text-sm text-muted-foreground mt-1">Experimente ajustar os filtros ou pesquisar outro termo.</p>
             </div>
           </div>
         ) : (
           <Table>
-            <TableHeader className="bg-[#1c1c1e] hover:bg-[#1c1c1e] border-b border-[#26262a]">
-              <TableRow className="border-b border-[#26262a]">
-                <TableHead className="text-zinc-400 font-semibold h-12">Atividade</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12">Professor</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12">Turma / Matéria</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12">Data Aplicação</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12">Trimestre</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12">Status</TableHead>
-                <TableHead className="text-zinc-400 font-semibold h-12 text-right">Ações</TableHead>
+            <TableHeader className="bg-muted/60 border-b border-borderCustom">
+              <TableRow className="border-b border-borderCustom hover:bg-transparent">
+                <TableHead className="text-muted-foreground font-semibold h-12">Atividade</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12">Professor</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12">Turma / Matéria</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12">Data Aplicação</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12">Trimestre</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12">Status</TableHead>
+                <TableHead className="text-muted-foreground font-semibold h-12 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {atividadesFiltradas.map((at) => {
                 const sInfo = STATUS_CONFIG[at.status as StatusAtividade] ?? {
                   label: at.status,
-                  class: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+                  class: 'bg-slate-500/10 text-slate-700 border-slate-500/25 dark:bg-zinc-500/20 dark:text-zinc-400 dark:border-zinc-500/30',
                 }
                 return (
                   <TableRow
                     key={at.id}
                     onClick={() => abrirDetalhes(at)}
-                    className="border-b border-[#26262a]/50 hover:bg-[#1c1c1e]/30 cursor-pointer transition-colors"
+                    className="border-b border-borderCustom/60 hover:bg-muted/50 cursor-pointer transition-colors"
                   >
-                    <TableCell className="font-semibold text-white h-14">
+                    <TableCell className="font-semibold text-foreground h-14">
                       {at.titulo}
                     </TableCell>
-                    <TableCell className="text-zinc-300">
+                    <TableCell className="text-foreground/85">
                       {at.professor_nome}
                     </TableCell>
-                    <TableCell className="text-zinc-400">
+                    <TableCell className="text-muted-foreground">
                       <div className="text-sm">{at.turma_nome}</div>
-                      <div className="text-xs text-zinc-500">{at.materia_name}</div>
+                      <div className="text-xs text-muted-foreground/80">{at.materia_name}</div>
                     </TableCell>
-                    <TableCell className="text-zinc-300">
+                    <TableCell className="text-foreground/85">
                       {at.data_aplicacao
                         ? new Date(at.data_aplicacao + 'T00:00:00').toLocaleDateString('pt-BR')
                         : '—'}
                     </TableCell>
-                    <TableCell className="text-zinc-400">
+                    <TableCell className="text-muted-foreground">
                       {at.trimestre ? `${at.trimestre}º Trim` : '—'}
                     </TableCell>
                     <TableCell>
@@ -563,7 +563,7 @@ function AvaliacoesContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-[#26262a]"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                               title="Visualizar arquivo"
                             >
                               <Download className="w-4 h-4" />
@@ -618,8 +618,8 @@ function TabButton({
       className={cn(
         'px-4 py-3 text-sm font-semibold transition-all duration-200 border-b-2 outline-none cursor-pointer whitespace-nowrap',
         active
-          ? 'border-[#3ea6ff] text-[#3ea6ff]'
-          : 'border-transparent text-zinc-400 hover:text-white hover:border-zinc-700'
+          ? 'border-highlight text-highlight'
+          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
       )}
     >
       {label}
@@ -639,11 +639,11 @@ function KPICardMini({
   color: 'blue' | 'amber' | 'emerald' | 'violet' | 'rose'
 }) {
   const colors = {
-    blue:    { bg: 'bg-[#1b253b]', text: 'text-[#3ea6ff]', border: 'border-[#3ea6ff]/20' },
-    amber:   { bg: 'bg-[#2c1a0e]', text: 'text-amber-400', border: 'border-amber-500/20' },
-    emerald: { bg: 'bg-[#0d1f18]', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-    violet:  { bg: 'bg-[#1e1b2e]', text: 'text-violet-400', border: 'border-violet-500/20' },
-    rose:    { bg: 'bg-[#1f0d0d]', text: 'text-rose-400', border: 'border-rose-500/20' },
+    blue:    { bg: 'bg-blue-50 dark:bg-[#1b253b]', text: 'text-blue-600 dark:text-[#3ea6ff]', border: 'border-blue-200 dark:border-[#3ea6ff]/20' },
+    amber:   { bg: 'bg-amber-50 dark:bg-[#2c1a0e]', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/20' },
+    emerald: { bg: 'bg-emerald-50 dark:bg-[#0d1f18]', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/20' },
+    violet:  { bg: 'bg-violet-50 dark:bg-[#1e1b2e]', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-200 dark:border-violet-500/20' },
+    rose:    { bg: 'bg-rose-50 dark:bg-[#1f0d0d]', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/20' },
   }
   const c = colors[color]
 
@@ -653,8 +653,8 @@ function KPICardMini({
         <Icon className={cn('w-4 h-4', c.text)} />
       </div>
       <div>
-        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider leading-tight">{label}</p>
-        <p className="text-xl font-bold text-white mt-0.5 tabular-nums leading-none">{value}</p>
+        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider leading-tight">{label}</p>
+        <p className="text-xl font-bold text-foreground mt-0.5 tabular-nums leading-none">{value}</p>
       </div>
     </Card>
   )

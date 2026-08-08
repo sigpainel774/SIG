@@ -150,11 +150,11 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label className="text-xs text-[#aaa]">Secretaria *</Label>
+          <Label className="text-xs text-muted-foreground">Secretaria *</Label>
           <select
             value={secretariaId}
             onChange={(e) => setSecretariaId(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-input border border-borderCustom text-foreground text-sm outline-none mt-1 focus:border-highlight focus:ring-2 focus:ring-highlight/20"
             required
           >
             <option value="">Selecione uma secretaria...</option>
@@ -165,23 +165,23 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
         </div>
 
         <div>
-          <Label className="text-xs text-[#aaa]">Nome do Cargo *</Label>
+          <Label className="text-xs text-muted-foreground">Nome do Cargo *</Label>
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Coordenador Pedagógico"
-            className="bg-[#18181a] border-[#27272a] text-white mt-1"
+            className="bg-input border-borderCustom text-foreground mt-1"
             required
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-[#aaa]">Nível Hierárquico</Label>
+            <Label className="text-xs text-muted-foreground">Nível Hierárquico</Label>
             <select
               value={nivel}
               onChange={(e) => setNivel(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+              className="w-full h-10 px-3 rounded-md bg-input border border-borderCustom text-foreground text-sm outline-none mt-1 focus:border-highlight focus:ring-2 focus:ring-highlight/20"
             >
               <option value="1">Nível 1 (Direção Geral)</option>
               <option value="2">Nível 2 (Gestão / Coordenação)</option>
@@ -191,23 +191,23 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
           </div>
 
           <div>
-            <Label className="text-xs text-[#aaa]">Salário Base (R$)</Label>
+            <Label className="text-xs text-muted-foreground">Salário Base (R$)</Label>
             <Input
               value={salarioBase}
               onChange={(e) => setSalarioBase(e.target.value)}
               placeholder="Ex: 3500.00"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              className="bg-input border-borderCustom text-foreground mt-1"
             />
           </div>
         </div>
 
         <div>
-          <Label className="text-xs text-[#aaa]">Descrição / Atribuições</Label>
+          <Label className="text-xs text-muted-foreground">Descrição / Atribuições</Label>
           <Input
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Descrição sucinta das atribuições do cargo"
-            className="bg-[#18181a] border-[#27272a] text-white mt-1"
+            className="bg-input border-borderCustom text-foreground mt-1"
           />
         </div>
 
@@ -217,19 +217,19 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
             id="cargoAtivo"
             checked={ativo}
             onChange={(e) => setAtivo(e.target.checked)}
-            className="w-4 h-4 accent-amber-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
+            className="w-4 h-4 accent-amber-500 rounded border-borderCustom bg-input cursor-pointer"
           />
-          <label htmlFor="cargoAtivo" className="text-sm text-slate-300 font-medium cursor-pointer">
+          <label htmlFor="cargoAtivo" className="text-sm text-foreground font-medium cursor-pointer">
             Cargo Ativo para Lotação
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-[#27272a] mt-4">
+        <div className="flex justify-end gap-2 pt-4 border-t border-borderCustom mt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
+            className="bg-card border-borderCustom text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>
