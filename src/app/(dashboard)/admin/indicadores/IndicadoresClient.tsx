@@ -460,13 +460,13 @@ export function IndicadoresClient() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-purple-500" />
             Indicadores e Prazos do Sistema
           </h2>
-          <p className="text-[#aaa] text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Controle de prazos de encerramento de notas e acompanhamento do limite de lançamento de frequências dos professores.
           </p>
         </div>
@@ -474,20 +474,20 @@ export function IndicadoresClient() {
         <Button 
           variant="outline"
           onClick={() => router.push('/admin')}
-          className="bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white"
+          className="bg-card border-borderCustom text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Painel Geral
         </Button>
       </div>
 
       {/* Tabs de Seleção Principal */}
-      <div className="flex bg-[#121214] p-1.5 rounded-2xl border border-[#232326] gap-2 max-w-md">
+      <div className="flex bg-muted/60 p-1.5 rounded-2xl border border-borderCustom gap-2 max-w-md">
         <button
           onClick={() => setActiveTab('frequencias')}
           className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 ${
             activeTab === 'frequencias'
               ? 'bg-purple-600 text-white shadow-md'
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           <UserCheck className="w-4 h-4" />
@@ -504,7 +504,7 @@ export function IndicadoresClient() {
           className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 ${
             activeTab === 'notas'
               ? 'bg-purple-600 text-white shadow-md'
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           <GraduationCap className="w-4 h-4" />
@@ -515,18 +515,18 @@ export function IndicadoresClient() {
       {/* ── VISÃO 1: FREQUÊNCIA DOS PROFESSORES ── */}
       {activeTab === 'frequencias' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 shadow-xl space-y-4 h-fit">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+          <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-sm space-y-4 h-fit">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <Clock className="w-5 h-5 text-purple-400" />
               Prazo Limite de Frequência
             </h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Defina o tempo limite (em dias) que os professores possuem para registrar a frequência diária após a aplicação da aula.
             </p>
 
             <form onSubmit={handleSavePrazoFreq} className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label htmlFor="prazo-freq-input" className="text-xs text-[#aaa]">
+                <Label htmlFor="prazo-freq-input" className="text-xs text-muted-foreground">
                   Prazo de Tolerância (Dias)
                 </Label>
                 <Input
@@ -536,16 +536,16 @@ export function IndicadoresClient() {
                   max={60}
                   value={prazoFreqDias}
                   onChange={(e) => setPrazoFreqDias(Number(e.target.value))}
-                  className="bg-[#18181a] border-[#27272a] text-white w-full font-bold"
+                  className="bg-input border-borderCustom text-foreground w-full font-bold"
                   required
                 />
               </div>
 
-              <div className="p-3 bg-[#17171a] rounded-xl border border-[#27272a] space-y-1">
-                <p className="text-[11px] text-zinc-300 font-semibold flex items-center gap-1.5">
+              <div className="p-3 bg-muted/60 rounded-xl border border-borderCustom space-y-1">
+                <p className="text-[11px] text-foreground/80 font-semibold flex items-center gap-1.5">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-400" /> Regra do Sistema:
                 </p>
-                <p className="text-[11px] text-zinc-400 leading-snug">
+                <p className="text-[11px] text-muted-foreground leading-snug">
                   Após <strong>{prazoFreqDias} dias</strong>, o lançamento no aplicativo do professor é bloqueado, exigindo solicitação à Direção da Escola.
                 </p>
               </div>
@@ -567,11 +567,11 @@ export function IndicadoresClient() {
 
           <div className="lg:col-span-2 space-y-6">
             {pendenciasCriticasFreq.length > 0 ? (
-              <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-5 flex items-start gap-4 text-white">
+              <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-5 flex items-start gap-4 text-foreground">
                 <AlertTriangle className="w-8 h-8 text-rose-500 shrink-0 mt-0.5" />
                 <div className="space-y-2 flex-1">
                   <h4 className="font-bold text-base text-rose-400">Aviso: Prazo de Frequência prestes a esgotar</h4>
-                  <p className="text-sm text-zinc-300">
+                  <p className="text-sm text-foreground/80">
                     Existem <strong>{pendenciasCriticasFreq.length}</strong> chamadas pendentes em estado crítico ($\le 3$ dias para expirar ou já expiradas), impactando <strong>{professoresImpactados}</strong> professor(es).
                   </p>
                   <div className="pt-1 flex flex-wrap gap-3">
@@ -591,12 +591,12 @@ export function IndicadoresClient() {
                 </div>
               </div>
             ) : (
-              <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 flex items-center justify-between gap-4 text-white">
+              <div className="bg-card border border-borderCustom rounded-2xl p-5 flex items-center justify-between gap-4 text-foreground shadow-sm">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-7 h-7 text-emerald-500 shrink-0" />
                   <div>
                     <h4 className="font-bold text-sm">Frequências em Dia</h4>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted-foreground">
                       Não existem chamadas críticas prestes a esgotar o prazo limite de {prazoFreqDias} dias.
                     </p>
                   </div>
@@ -619,24 +619,24 @@ export function IndicadoresClient() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4.5 space-y-1">
-                <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Prazo Tolerância</p>
+              <div className="bg-card border border-borderCustom rounded-2xl p-4.5 space-y-1 shadow-sm">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Prazo Tolerância</p>
                 <div className="flex items-center gap-2 pt-1">
                   <Clock className="w-5 h-5 text-purple-400" />
-                  <span className="text-lg font-extrabold text-white">{prazoFreqDias} Dias</span>
+                  <span className="text-lg font-extrabold text-foreground">{prazoFreqDias} Dias</span>
                 </div>
               </div>
 
-              <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4.5 space-y-1">
-                <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Chamadas Pendentes</p>
+              <div className="bg-card border border-borderCustom rounded-2xl p-4.5 space-y-1 shadow-sm">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Chamadas Pendentes</p>
                 <div className="flex items-center gap-2 pt-1">
                   <BookOpen className="w-5 h-5 text-amber-400" />
-                  <span className="text-lg font-extrabold text-white">{frequenciasPendentes.length}</span>
+                  <span className="text-lg font-extrabold text-foreground">{frequenciasPendentes.length}</span>
                 </div>
               </div>
 
-              <div className="bg-[#121214] border border-[#232326] rounded-2xl p-4.5 space-y-1">
-                <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Professores em Alerta</p>
+              <div className="bg-card border border-borderCustom rounded-2xl p-4.5 space-y-1 shadow-sm">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Professores em Alerta</p>
                 <div className="flex items-center gap-2 pt-1">
                   <Users className="w-5 h-5 text-rose-400" />
                   <span className="text-lg font-extrabold text-rose-400">{professoresImpactados}</span>
@@ -644,13 +644,13 @@ export function IndicadoresClient() {
               </div>
             </div>
 
-            <div className="bg-[#121214] border border-[#232326] rounded-2xl p-5 shadow-xl space-y-3">
+            <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-purple-400" />
                   Auditoria de Registro de Frequência por Professor
                 </h3>
-                <span className="text-xs text-zinc-400 font-medium">
+                <span className="text-xs text-muted-foreground font-medium">
                   {frequenciasPendentes.length} registro(s) encontrado(s)
                 </span>
               </div>
@@ -660,11 +660,11 @@ export function IndicadoresClient() {
                 columns={[
                   {
                     header: 'Professor / Escola',
-                    className: 'font-medium text-white',
+                    className: 'font-medium text-foreground',
                     accessor: (item) => (
                       <div>
-                        <div className="font-bold text-white text-xs">{item.professor_nome}</div>
-                        <div className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5">
+                        <div className="font-bold text-foreground text-xs">{item.professor_nome}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <Building2 className="w-3 h-3 text-zinc-500" />
                           {item.escola_nome}
                         </div>
@@ -673,10 +673,10 @@ export function IndicadoresClient() {
                   },
                   {
                     header: 'Turma & Matéria',
-                    className: 'text-zinc-300 text-xs',
+                    className: 'text-foreground/80 text-xs',
                     accessor: (item) => (
                       <div>
-                        <div className="font-semibold text-zinc-200">{item.turma_nome}</div>
+                        <div className="font-semibold text-foreground">{item.turma_nome}</div>
                         <div className="text-[11px] text-purple-400">{item.materia_nome}</div>
                       </div>
                     )
@@ -684,7 +684,7 @@ export function IndicadoresClient() {
                   {
                     header: 'Data da Aula',
                     headClassName: 'text-center',
-                    className: 'text-center text-xs text-zinc-300 font-medium',
+                    className: 'text-center text-xs text-foreground/80 font-medium',
                     accessor: (item) => item.data_aula ? item.data_aula.split('-').reverse().join('/') : '-'
                   },
                   {

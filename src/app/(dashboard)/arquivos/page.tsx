@@ -254,7 +254,7 @@ function ArquivosContent() {
           description={selectedOficio ? "Registro criptográfico e metadados de autenticidade jurídica do documento emitido." : "Snapshot dos dados gravados no momento em que o registro foi transferido ou arquivado."}
           maxWidth="sm:max-w-[600px]"
           footer={
-            <div className="flex items-center justify-between w-full pt-3 border-t border-[#26262a]">
+            <div className="flex items-center justify-between w-full pt-3 border-t border-borderCustom">
               {selectedOficio ? (
                 <div className="flex items-center gap-2 w-full justify-between flex-wrap sm:flex-nowrap">
                   <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ function ArquivosContent() {
                         navigator.clipboard.writeText(url)
                         toast.success('Link de verificação copiado!')
                       }}
-                      className="border-[#3f3f46] text-white hover:bg-[#27272a] text-xs font-semibold gap-1.5"
+                      className="border-borderCustom text-foreground hover:bg-muted text-xs font-semibold gap-1.5"
                     >
                       <Copy className="w-3.5 h-3.5 text-sky-400" />
                       Copiar Link
@@ -294,7 +294,7 @@ function ArquivosContent() {
                 <Button 
                   variant="ghost" 
                   onClick={() => setModalOpen(false)}
-                  className="text-[#aaa] hover:bg-[#27272a] hover:text-white text-xs ml-auto"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground text-xs ml-auto"
                 >
                   Fechar Ficha
                 </Button>
@@ -309,40 +309,40 @@ function ArquivosContent() {
                   <ShieldCheck className="w-4 h-4" />
                   <span>DOCUMENTO ASSINADO E REGISTRADO ELETRONICAMENTE</span>
                 </div>
-                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                <p className="text-[11px] text-foreground/80 leading-relaxed">
                   Este ofício foi gerado e autenticado digitalmente pelo sistema. Todos os registros criptográficos encontram-se armazenados.
                 </p>
               </div>
 
               {/* Informações do Ofício (se disponíveis) */}
               {selectedOficio.dados_documento && (
-                <div className="space-y-2 bg-[#18181b] border border-sky-500/20 rounded-xl p-3.5 text-xs">
+                <div className="space-y-2 bg-blue-50/70 dark:bg-[#18181b] border border-sky-500/20 rounded-xl p-3.5 text-xs">
                   <div className="font-bold text-sky-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5" />
                     <span>Dados do Documento Redigido</span>
                   </div>
                   {selectedOficio.dados_documento.numeroOficio && (
-                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5 pt-1">
-                      <span className="text-zinc-400 font-medium">Número:</span>
-                      <span className="col-span-2 font-bold text-white">{selectedOficio.dados_documento.numeroOficio}</span>
+                    <div className="grid grid-cols-3 border-b border-borderCustom pb-1.5 pt-1">
+                      <span className="text-muted-foreground font-medium">Número:</span>
+                      <span className="col-span-2 font-bold text-foreground">{selectedOficio.dados_documento.numeroOficio}</span>
                     </div>
                   )}
                   {selectedOficio.dados_documento.destinatario && (
-                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5">
-                      <span className="text-zinc-400 font-medium">Destinatário:</span>
+                    <div className="grid grid-cols-3 border-b border-borderCustom pb-1.5">
+                      <span className="text-muted-foreground font-medium">Destinatário:</span>
                       <span className="col-span-2 font-medium text-zinc-200">{selectedOficio.dados_documento.destinatario}</span>
                     </div>
                   )}
                   {selectedOficio.dados_documento.assunto && (
-                    <div className="grid grid-cols-3 border-b border-[#26262a] pb-1.5">
-                      <span className="text-zinc-400 font-medium">Assunto:</span>
+                    <div className="grid grid-cols-3 border-b border-borderCustom pb-1.5">
+                      <span className="text-muted-foreground font-medium">Assunto:</span>
                       <span className="col-span-2 font-medium text-zinc-200">{selectedOficio.dados_documento.assunto}</span>
                     </div>
                   )}
                   {selectedOficio.dados_documento.conteudoHtml && (
                     <div className="pt-1">
-                      <span className="text-zinc-400 font-medium block mb-1">Resumo do Texto:</span>
-                      <div className="p-2 bg-[#121214] border border-[#26262a] rounded-lg text-[11px] text-zinc-300 line-clamp-4 italic">
+                      <span className="text-muted-foreground font-medium block mb-1">Resumo do Texto:</span>
+                      <div className="p-2 bg-muted/60 border border-borderCustom rounded-lg text-[11px] text-foreground/80 line-clamp-4 italic">
                         {selectedOficio.dados_documento.conteudoHtml.replace(/<[^>]*>?/gm, '')}
                       </div>
                     </div>
@@ -350,32 +350,32 @@ function ArquivosContent() {
                 </div>
               )}
 
-              <div className="space-y-2.5 bg-[#121214] border border-[#26262a] rounded-xl p-4 text-xs">
-                <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
-                  <span className="text-zinc-400">Tipo de Documento:</span>
-                  <span className="col-span-2 font-bold text-white uppercase">Ofício Oficial</span>
+              <div className="space-y-2.5 bg-muted/60 border border-borderCustom rounded-xl p-4 text-xs">
+                <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
+                  <span className="text-muted-foreground">Tipo de Documento:</span>
+                  <span className="col-span-2 font-bold text-foreground uppercase">Ofício Oficial</span>
                 </div>
-                <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
-                  <span className="text-zinc-400">Chave de Verificação:</span>
+                <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
+                  <span className="text-muted-foreground">Chave de Verificação:</span>
                   <span className="col-span-2 font-mono font-bold text-sky-400">{selectedOficio.token_verificacao}</span>
                 </div>
-                <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
-                  <span className="text-zinc-400">Hash SHA-256:</span>
-                  <span className="col-span-2 font-mono text-[10px] text-zinc-300 truncate">{selectedOficio.hash_sha256}</span>
+                <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
+                  <span className="text-muted-foreground">Hash SHA-256:</span>
+                  <span className="col-span-2 font-mono text-[10px] text-foreground/80 truncate">{selectedOficio.hash_sha256}</span>
                 </div>
-                <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
-                  <span className="text-zinc-400">Data de Emissão:</span>
-                  <span className="col-span-2 font-semibold text-white">
+                <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
+                  <span className="text-muted-foreground">Data de Emissão:</span>
+                  <span className="col-span-2 font-semibold text-foreground">
                     {selectedOficio.data_funcionario ? new Date(selectedOficio.data_funcionario).toLocaleString('pt-BR') : (selectedOficio.criado_em ? new Date(selectedOficio.criado_em).toLocaleString('pt-BR') : '-')}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 border-b border-[#26262a] pb-2">
-                  <span className="text-zinc-400">Dispositivo Emissor:</span>
-                  <span className="col-span-2 text-white">{selectedOficio.dispositivo_funcionario ?? 'Computador'}</span>
+                <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
+                  <span className="text-muted-foreground">Dispositivo Emissor:</span>
+                  <span className="col-span-2 text-foreground">{selectedOficio.dispositivo_funcionario ?? 'Computador'}</span>
                 </div>
                 <div className="grid grid-cols-3">
-                  <span className="text-zinc-400">Endereço IP:</span>
-                  <span className="col-span-2 font-mono text-zinc-400">{selectedOficio.ip_funcionario ?? '127.0.0.1'}</span>
+                  <span className="text-muted-foreground">Endereço IP:</span>
+                  <span className="col-span-2 font-mono text-muted-foreground">{selectedOficio.ip_funcionario ?? '127.0.0.1'}</span>
                 </div>
               </div>
             </div>
@@ -383,15 +383,15 @@ function ArquivosContent() {
             <div className="space-y-5 py-3">
               {/* Snapshot da Ficha */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-[#3ea6ff]" />
                   <span>Ficha Cadastral (Snapshot)</span>
                 </h4>
-                <div className="bg-[#121212] border border-[#26262a] rounded-xl p-3.5 space-y-2.5 text-xs">
+                <div className="bg-muted/60 border border-borderCustom rounded-xl p-3.5 space-y-2.5 text-xs">
                   {getFichaDetalhes(selectedArq).map((d, index) => (
-                    <div key={index} className="grid grid-cols-3 border-b border-[#26262a]/50 pb-2 last:border-b-0 last:pb-0">
-                      <span className="text-zinc-400 font-medium">{d.label}</span>
-                      <span className="col-span-2 text-white font-semibold truncate">{d.value}</span>
+                    <div key={index} className="grid grid-cols-3 border-b border-borderCustom/50 pb-2 last:border-b-0 last:pb-0">
+                      <span className="text-muted-foreground font-medium">{d.label}</span>
+                      <span className="col-span-2 text-foreground font-semibold truncate">{d.value}</span>
                     </div>
                   ))}
                 </div>
@@ -399,7 +399,7 @@ function ArquivosContent() {
 
               {/* Justificativa e Motivo */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
                   <span>Justificativa / Motivo</span>
                 </h4>
@@ -410,14 +410,14 @@ function ArquivosContent() {
 
               {/* Auditoria */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-indigo-400" />
                   <span>Auditoria</span>
                 </h4>
-                <div className="bg-black/20 border border-[#26262a] p-3.5 rounded-xl text-xs space-y-1">
-                  <p className="text-zinc-400">Status: <span className="text-white font-semibold">{selectedArq.status}</span></p>
-                  <p className="text-zinc-400">Data de Registro: <span className="text-white font-semibold">{selectedArq.created_at ? new Date(selectedArq.created_at).toLocaleString('pt-BR') : '-'}</span></p>
-                  <p className="text-zinc-400">Processado por: <span className="text-white font-semibold">{selectedArq.arquivado_por_user?.nome ?? 'Sistema / Root'}</span></p>
+                <div className="bg-muted/60 border border-borderCustom p-3.5 rounded-xl text-xs space-y-1">
+                  <p className="text-muted-foreground">Status: <span className="text-foreground font-semibold">{selectedArq.status}</span></p>
+                  <p className="text-muted-foreground">Data de Registro: <span className="text-foreground font-semibold">{selectedArq.created_at ? new Date(selectedArq.created_at).toLocaleString('pt-BR') : '-'}</span></p>
+                  <p className="text-muted-foreground">Processado por: <span className="text-foreground font-semibold">{selectedArq.arquivado_por_user?.nome ?? 'Sistema / Root'}</span></p>
                 </div>
               </div>
             </div>
@@ -426,7 +426,7 @@ function ArquivosContent() {
       )}
 
       {/* Título da Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
           <div className="flex items-center gap-3">
             <Link href="/home">
@@ -434,10 +434,10 @@ function ArquivosContent() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="p-2.5 rounded-2xl bg-[#e0f2fe] text-[#185FA5] dark:bg-[#1b253b] dark:text-[#3ea6ff] border-[0.5px] border-[#3f3f46] shadow-sm flex items-center justify-center">
+            <div className="p-2.5 rounded-2xl bg-[#e0f2fe] text-[#185FA5] dark:bg-[#1b253b] dark:text-[#3ea6ff] border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center">
               <Archive className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               {isSaude ? 'Arquivo Geral — Secretaria de Saúde' : 'Arquivo Escolar'}
             </h1>
           </div>
@@ -453,7 +453,7 @@ function ArquivosContent() {
             variant="outline" 
             onClick={loadDados} 
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-11"
+            className="bg-card border-borderCustom text-foreground hover:bg-muted h-11"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -463,7 +463,7 @@ function ArquivosContent() {
       {/* Grid Central */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Filtros e Abas do Painel Lateral */}
-        <div className="bg-[#121212] border border-[#3f3f46] p-4 rounded-2xl space-y-4">
+        <div className="bg-card border border-borderCustom p-4 rounded-2xl space-y-4 shadow-sm">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-[#666] uppercase tracking-wider px-2">Categorias</span>
             
@@ -471,14 +471,14 @@ function ArquivosContent() {
               <>
                 <button
                   onClick={() => setActiveTab('oficios')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'oficios' ? 'bg-sky-600/10 text-sky-400 font-bold border border-sky-600/20' : 'text-[#aaa] hover:bg-[#1c1c1e] hover:text-white'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'oficios' ? 'bg-sky-600/10 text-sky-700 dark:text-sky-400 font-bold border border-sky-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
                   <FileText className="w-4 h-4" />
                   Documentos & Ofícios Emitidos
                 </button>
                 <button
                   onClick={() => setActiveTab('funcionarios')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'funcionarios' ? 'bg-sky-600/10 text-sky-400 font-bold border border-sky-600/20' : 'text-[#aaa] hover:bg-[#1c1c1e] hover:text-white'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'funcionarios' ? 'bg-sky-600/10 text-sky-700 dark:text-sky-400 font-bold border border-sky-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
                   <Building2 className="w-4 h-4" />
                   Servidores Arquivados
@@ -488,14 +488,14 @@ function ArquivosContent() {
               <>
                 <button
                   onClick={() => setActiveTab('alunos')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'alunos' ? 'bg-sky-600/10 text-sky-400 font-bold border border-sky-600/20' : 'text-[#aaa] hover:bg-[#1c1c1e] hover:text-white'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'alunos' ? 'bg-sky-600/10 text-sky-700 dark:text-sky-400 font-bold border border-sky-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
                   <User className="w-4 h-4" />
                   Alunos Arquivados
                 </button>
                 <button
                   onClick={() => setActiveTab('funcionarios')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'funcionarios' ? 'bg-sky-600/10 text-sky-400 font-bold border border-sky-600/20' : 'text-[#aaa] hover:bg-[#1c1c1e] hover:text-white'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${activeTab === 'funcionarios' ? 'bg-sky-600/10 text-sky-700 dark:text-sky-400 font-bold border border-sky-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
                   <Building2 className="w-4 h-4" />
                   Funcionários Arquivados
@@ -504,7 +504,7 @@ function ArquivosContent() {
             )}
           </div>
 
-          <div className="pt-2 border-t border-[#26262a] space-y-2">
+          <div className="pt-2 border-t border-borderCustom space-y-2">
             <span className="text-[10px] font-bold text-[#666] uppercase tracking-wider px-2">Filtro Rápido</span>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
@@ -512,7 +512,7 @@ function ArquivosContent() {
                 placeholder={isSaude ? (activeTab === 'oficios' ? "Buscar por token de verificação..." : "Buscar por nome ou CPF...") : "Buscar por nome ou CPF..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-[#18181b] border-[#3f3f46] text-white text-xs h-9 rounded-xl focus-visible:ring-sky-500"
+                className="pl-9 bg-input border-borderCustom text-foreground text-xs h-9 rounded-xl focus-visible:ring-sky-500"
               />
             </div>
           </div>
@@ -520,13 +520,13 @@ function ArquivosContent() {
 
         {/* Tabela de Arquivados ou Ofícios */}
         <div className="lg:col-span-3">
-          <div className="bg-[#121212] border border-[#3f3f46] rounded-2xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-[#3f3f46] bg-[#18181b] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 m-0">
+          <div className="bg-card border border-borderCustom rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-borderCustom bg-muted/60 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2 m-0">
                 {isSaude 
                   ? (activeTab === 'oficios' ? 'Documentos e Ofícios Oficiais Emitidos' : 'Servidores em Arquivo Histórico')
                   : 'Fichas em Arquivo Histórico'}
-                <span className="bg-[#27272a] text-zinc-400 text-xs px-2 py-0.5 rounded-full font-bold">
+                <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-bold">
                   {isSaude && activeTab === 'oficios' ? oficiosItems.length : arquivadosItems.length}
                 </span>
               </h3>
@@ -535,7 +535,7 @@ function ArquivosContent() {
             {isSaude && activeTab === 'oficios' ? (
               /* Tabela de Ofícios Assinados */
               <Table>
-                <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
+                <TableHeader className="bg-muted/50 border-b border-borderCustom">
                   <TableRow className="border-none hover:bg-transparent">
                     <TableHead className="text-[#ccc] font-semibold">Documento / Chave de Verificação</TableHead>
                     <TableHead className="text-[#ccc] font-semibold">Data de Registro</TableHead>
@@ -546,14 +546,14 @@ function ArquivosContent() {
                 </TableHeader>
                 <TableBody>
                   {oficiosItems.map((of) => (
-                    <TableRow key={of.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
+                    <TableRow key={of.id} className="border-b border-borderCustom hover:bg-muted/50">
                       <TableCell>
-                        <div className="font-bold text-white flex items-center gap-2">
+                        <div className="font-bold text-foreground flex items-center gap-2">
                           <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
                           <span>{of.dados_documento?.numeroOficio ? `Ofício Nº ${of.dados_documento.numeroOficio}` : 'Ofício Oficial'}</span>
                         </div>
                         {of.dados_documento?.destinatario && (
-                          <div className="text-xs text-zinc-300 font-medium truncate max-w-[260px] mt-0.5" title={of.dados_documento.destinatario}>
+                          <div className="text-xs text-foreground/80 font-medium truncate max-w-[260px] mt-0.5" title={of.dados_documento.destinatario}>
                             {of.dados_documento.destinatario}
                           </div>
                         )}
@@ -561,10 +561,10 @@ function ArquivosContent() {
                           Chave: {of.token_verificacao}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-[#aaa]">
+                      <TableCell className="text-xs text-muted-foreground">
                         {of.data_funcionario ? new Date(of.data_funcionario).toLocaleString('pt-BR') : of.criado_em ? new Date(of.criado_em).toLocaleString('pt-BR') : '-'}
                       </TableCell>
-                      <TableCell className="text-xs text-zinc-300">
+                      <TableCell className="text-xs text-foreground/80">
                         {of.dispositivo_funcionario ?? 'Computador'}
                       </TableCell>
                       <TableCell>
@@ -611,7 +611,7 @@ function ArquivosContent() {
                   )}
                   {loading && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-[#aaa]">
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         Buscando histórico de ofícios...
                       </TableCell>
                     </TableRow>
@@ -621,7 +621,7 @@ function ArquivosContent() {
             ) : (
               /* Tabela de Arquivados (Servidores / Alunos) */
               <Table>
-                <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
+                <TableHeader className="bg-muted/50 border-b border-borderCustom">
                   <TableRow className="border-none hover:bg-transparent">
                     <TableHead className="text-[#ccc] font-semibold">
                       {isSaude ? 'Servidor' : (activeTab === 'alunos' ? 'Aluno' : 'Funcionário')}
@@ -643,9 +643,9 @@ function ArquivosContent() {
                           : (payload.cargo ?? 'Funcionário'))
                     
                     return (
-                      <TableRow key={arq.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
+                      <TableRow key={arq.id} className="border-b border-borderCustom hover:bg-muted/50">
                         <TableCell>
-                          <div className="font-bold text-white">{nome}</div>
+                          <div className="font-bold text-foreground">{nome}</div>
                           <div className="text-xs text-[#888]">{subinfo}</div>
                         </TableCell>
                         <TableCell>
@@ -653,7 +653,7 @@ function ArquivosContent() {
                             {arq.motivo}
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs text-[#aaa]">
+                        <TableCell className="text-xs text-muted-foreground">
                           {arq.created_at ? new Date(arq.created_at).toLocaleDateString('pt-BR') : '-'}
                         </TableCell>
                         <TableCell>
@@ -696,7 +696,7 @@ function ArquivosContent() {
                   )}
                   {loading && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-[#aaa]">
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         Buscando arquivos históricos...
                       </TableCell>
                     </TableRow>
@@ -713,7 +713,7 @@ function ArquivosContent() {
 
 export default function ArquivosPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-[#aaa]">Carregando arquivo geral...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando arquivo geral...</div>}>
       <ArquivosContent />
     </Suspense>
   )

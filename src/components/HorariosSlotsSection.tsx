@@ -208,8 +208,8 @@ export function HorariosSlotsSection() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Formulário de Criação / Edição */}
       {isEditMode && (
-        <Card className="bg-[#121212] border-borderCustom p-5 h-fit shadow-md">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <Card className="bg-card border-borderCustom p-5 h-fit shadow-sm">
+          <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-highlight" />
             {editingSlotId ? 'Editar Slot' : 'Configurar Novo Slot'}
           </h3>
@@ -221,7 +221,7 @@ export function HorariosSlotsSection() {
               <select
                 value={turno}
                 onChange={(e) => setTurno(e.target.value)}
-                className="w-full rounded-md border border-borderCustom bg-[#1c1c1e] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
+                className="w-full rounded-md border border-borderCustom bg-input text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
               >
                 <option value="Matutino">Matutino (Manhã)</option>
                 <option value="Vespertino">Vespertino (Tarde)</option>
@@ -241,7 +241,7 @@ export function HorariosSlotsSection() {
                   max="10"
                   value={ordemAula}
                   onChange={(e) => setOrdemAula(parseInt(e.target.value) || 1)}
-                  className="bg-[#1c1c1e] border-borderCustom text-white text-center"
+                  className="bg-input border-borderCustom text-foreground text-center"
                   required
                 />
               </div>
@@ -253,7 +253,7 @@ export function HorariosSlotsSection() {
                   type="time"
                   value={horarioInicio}
                   onChange={(e) => setHorarioInicio(e.target.value)}
-                  className="bg-[#1c1c1e] border-borderCustom text-white"
+                  className="bg-input border-borderCustom text-foreground"
                   required
                 />
               </div>
@@ -265,7 +265,7 @@ export function HorariosSlotsSection() {
                   type="time"
                   value={horarioFim}
                   onChange={(e) => setHorarioFim(e.target.value)}
-                  className="bg-[#1c1c1e] border-borderCustom text-white"
+                  className="bg-input border-borderCustom text-foreground"
                   required
                 />
               </div>
@@ -291,7 +291,7 @@ export function HorariosSlotsSection() {
                   type="button"
                   onClick={handleCancelEdit}
                   variant="outline"
-                  className="border-borderCustom text-muted-foreground hover:text-white"
+                  className="border-borderCustom text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -302,16 +302,16 @@ export function HorariosSlotsSection() {
       )}
 
       {/* Tabela de Visualização */}
-      <Card className={`bg-[#121212] border-borderCustom p-5 shadow-md ${isEditMode ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-        <h3 className="text-lg font-bold text-white mb-4">Grade de Slots Cadastrados</h3>
-        <div className="rounded-xl border border-borderCustom overflow-hidden bg-[#0d0d0d]">
+      <Card className={`bg-card border-borderCustom p-5 shadow-sm ${isEditMode ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+        <h3 className="text-lg font-bold text-foreground mb-4">Grade de Slots Cadastrados</h3>
+        <div className="rounded-xl border border-borderCustom overflow-hidden bg-card">
           <Table>
             <TableHeader className="bg-[#080808]">
               <TableRow className="border-borderCustom">
-                <TableHead className="text-white">Turno</TableHead>
-                <TableHead className="text-white text-center">Horário de Aula</TableHead>
-                <TableHead className="text-white text-center">Intervalo de Duração</TableHead>
-                {isEditMode && <TableHead className="text-white text-right">Ação</TableHead>}
+                <TableHead className="text-muted-foreground">Turno</TableHead>
+                <TableHead className="text-muted-foreground text-center">Horário de Aula</TableHead>
+                <TableHead className="text-muted-foreground text-center">Intervalo de Duração</TableHead>
+                {isEditMode && <TableHead className="text-muted-foreground text-right">Ação</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -341,10 +341,10 @@ export function HorariosSlotsSection() {
 
                   return (
                     <TableRow key={slot.id} className="border-borderCustom hover:bg-[#1a1a1c] transition-colors">
-                      <TableCell className="font-semibold text-white">
+                      <TableCell className="font-semibold text-foreground">
                         {turnosMap[slot.turno] || slot.turno}
                       </TableCell>
-                      <TableCell className="text-center text-white font-medium">
+                      <TableCell className="text-center text-foreground font-medium">
                         <span className="px-2.5 py-1 bg-highlight/10 border border-highlight/20 text-highlight rounded-lg text-xs font-mono">
                           {slot.ordem_aula}º Horário: {slot.horario_inicio.slice(0, 5)} - {slot.horario_fim.slice(0, 5)}
                         </span>

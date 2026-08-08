@@ -115,8 +115,8 @@ export default function HistoricoNotificacoesPage() {
 
   return (
     <div className="space-y-6 pb-20 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <History className="w-6 h-6 text-highlight" /> 
           Histórico de Notificações
         </h2>
@@ -134,7 +134,7 @@ export default function HistoricoNotificacoesPage() {
           <Button 
             variant="outline"
             onClick={() => router.push('/home')}
-            className="bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white"
+            className="bg-card border-borderCustom text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Home className="w-4 h-4 mr-2" /> Menu Inicial
           </Button>
@@ -143,7 +143,7 @@ export default function HistoricoNotificacoesPage() {
 
       {/* Banner de Ativação / Status de Push Notifications */}
       {isSupported && (
-        <div className="bg-[#1f1f23] border border-[#2f2f33] rounded-xl p-4 sm:p-5 space-y-4">
+        <div className="bg-card border border-borderCustom rounded-xl p-4 sm:p-5 space-y-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-lg bg-[#3ea6ff]/10 text-[#3ea6ff] shrink-0 mt-0.5 sm:mt-0">
@@ -151,7 +151,7 @@ export default function HistoricoNotificacoesPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-white text-base">Notificações Push no Dispositivo</h3>
+                  <h3 className="font-semibold text-foreground text-base">Notificações Push no Dispositivo</h3>
                   {isSubscribed && permissionState === 'granted' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       <CheckCircle2 className="w-3 h-3" /> Ativado
@@ -163,7 +163,7 @@ export default function HistoricoNotificacoesPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#aaa] mt-1 leading-relaxed">
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   Receba alertas nativos instantâneos de mensagens, comunicados do mural e solicitações neste aparelho.
                 </p>
               </div>
@@ -189,7 +189,7 @@ export default function HistoricoNotificacoesPage() {
                 disabled={pushLoading}
                 className={`shrink-0 cursor-pointer text-xs font-semibold transition-all h-9 px-4 ${
                   isSubscribed
-                    ? 'bg-[#2a2a2e] hover:bg-[#333338] text-white border border-[#3f3f46]'
+                    ? 'bg-muted hover:bg-muted/80 text-foreground border border-borderCustom'
                     : 'bg-[#3ea6ff] hover:bg-[#2b95ee] text-zinc-950 font-bold'
                 }`}
               >
@@ -234,32 +234,32 @@ export default function HistoricoNotificacoesPage() {
       )}
 
       {/* Filtros */}
-      <div className="bg-[#1f1f23] border border-[#2f2f33] rounded-xl p-4 flex flex-wrap gap-4 items-end">
+      <div className="bg-card border border-borderCustom rounded-xl p-4 flex flex-wrap gap-4 items-end shadow-sm">
         <div className="flex-1 min-w-[180px]">
-          <Label className="text-[#aaa] text-xs mb-1.5 block">Data de Início</Label>
+          <Label className="text-muted-foreground text-xs mb-1.5 block">Data de Início</Label>
           <Input 
             type="date" 
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
-            className="bg-[#121212] border-[#3f3f46] text-white" 
+            className="bg-input border-borderCustom text-foreground"
           />
         </div>
         <div className="flex-1 min-w-[180px]">
-          <Label className="text-[#aaa] text-xs mb-1.5 block">Data de Fim</Label>
+          <Label className="text-muted-foreground text-xs mb-1.5 block">Data de Fim</Label>
           <Input 
             type="date" 
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
-            className="bg-[#121212] border-[#3f3f46] text-white" 
+            className="bg-input border-borderCustom text-foreground"
           />
         </div>
         <div className="flex-1 min-w-[180px]">
-          <Label className="text-[#aaa] text-xs mb-1.5 block">Status / Tipo</Label>
+          <Label className="text-muted-foreground text-xs mb-1.5 block">Status / Tipo</Label>
           <Select value={status} onValueChange={(val) => val && setStatus(val)}>
-            <SelectTrigger className="bg-[#121212] border-[#3f3f46] text-white">
+            <SelectTrigger className="bg-input border-borderCustom text-foreground">
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectContent className="bg-popover border-borderCustom text-popover-foreground">
               <SelectItem value="todas">Todas</SelectItem>
               <SelectItem value="lidas">Lidas</SelectItem>
               <SelectItem value="nao_lidas">Não Lidas</SelectItem>
@@ -269,13 +269,13 @@ export default function HistoricoNotificacoesPage() {
           </Select>
         </div>
         <div className="flex-[2] min-w-[220px]">
-          <Label className="text-[#aaa] text-xs mb-1.5 block">Pesquisa rápida</Label>
+          <Label className="text-muted-foreground text-xs mb-1.5 block">Pesquisa rápida</Label>
           <Input 
             type="text" 
             placeholder="Buscar no título ou mensagem..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="bg-[#121212] border-[#3f3f46] text-white" 
+            className="bg-input border-borderCustom text-foreground"
           />
         </div>
         <div className="flex gap-2">
@@ -291,7 +291,7 @@ export default function HistoricoNotificacoesPage() {
           <Button 
             variant="ghost" 
             onClick={limparFiltros}
-            className="h-10 text-[#aaa] hover:bg-[#2f2f33] hover:text-white cursor-pointer"
+            className="h-10 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
           >
             <RefreshCw className="w-4 h-4 mr-2" /> Limpar
           </Button>
@@ -300,11 +300,11 @@ export default function HistoricoNotificacoesPage() {
 
       {/* Lista */}
       <div className="flex flex-col gap-3 min-h-[200px]">
-        {loading && <div className="text-center py-6 text-sm text-[#aaa]">Carregando...</div>}
+        {loading && <div className="text-center py-6 text-sm text-muted-foreground">Carregando...</div>}
         {!loading && notificacoes.map((notif) => (
           <div 
             key={notif.id} 
-            className={`p-4 rounded-xl border flex gap-4 cursor-pointer transition-colors group ${notif.read ? 'bg-[#181818] border-[#2f2f33] hover:bg-[#222226]' : 'bg-[#1f1f23] border-[#3ea6ff]/30 hover:bg-[#25252a]'}`}
+            className={`p-4 rounded-xl border flex gap-4 cursor-pointer transition-colors group ${notif.read ? 'bg-card border-borderCustom hover:bg-muted/70' : 'bg-blue-50 border-highlight/30 hover:bg-blue-100/70 dark:bg-[#1f1f23] dark:hover:bg-[#25252a]'}`}
             onClick={async (e) => {
               if (!notif.read) {
                 await markAsRead(notif.id, e)
@@ -316,22 +316,22 @@ export default function HistoricoNotificacoesPage() {
           >
             <div className="pt-1 shrink-0">
               {notif.read ? (
-                <Bell className="w-5 h-5 text-[#aaa]" />
+                <Bell className="w-5 h-5 text-muted-foreground" />
               ) : (
                 <Circle className="w-4 h-4 fill-[#3ea6ff] text-[#3ea6ff] mt-0.5" />
               )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start mb-1 gap-2">
-                <h4 className="text-white font-medium truncate">{notif.title}</h4>
+                <h4 className="text-foreground font-medium truncate">{notif.title}</h4>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-[#aaa] whitespace-nowrap">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(notif.created_at).toLocaleString('pt-BR')}
                   </span>
                   {!notif.read && (
                     <button 
                       onClick={(e) => markAsRead(notif.id, e)}
-                      className="text-[#aaa] hover:text-white p-1 rounded hover:bg-[#3f3f46]/50 transition-colors"
+                      className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors"
                       title="Marcar como lida"
                     >
                       <Check className="w-4 h-4" />
@@ -344,7 +344,7 @@ export default function HistoricoNotificacoesPage() {
           </div>
         ))}
         {!loading && notificacoes.length === 0 && (
-          <div className="text-center py-6 text-sm text-[#aaa]">Nenhuma notificação encontrada com os filtros selecionados.</div>
+          <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma notificação encontrada com os filtros selecionados.</div>
         )}
       </div>
 

@@ -280,7 +280,7 @@ export function GradeSemanalSection() {
   return (
     <div className="space-y-6">
       {/* Seletor de Turma e Status */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#121212] border border-borderCustom rounded-2xl p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card border border-borderCustom rounded-2xl p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Turma Ativa:</span>
           {loadingTurmas ? (
@@ -289,7 +289,7 @@ export function GradeSemanalSection() {
             <select
               value={selectedTurmaId}
               onChange={(e) => setSelectedTurmaId(e.target.value)}
-              className="rounded-lg border border-borderCustom bg-[#1c1c1e] text-white px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+              className="rounded-lg border border-borderCustom bg-input text-foreground px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
             >
               {turmas.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -301,10 +301,10 @@ export function GradeSemanalSection() {
         </div>
 
         {currentTurma && (
-          <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground bg-[#0d0d0d] px-3 py-1.5 rounded-xl border border-borderCustom">
-            <span>Turno: <strong className="text-white uppercase">{currentTurma.turno}</strong></span>
+          <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-xl border border-borderCustom">
+            <span>Turno: <strong className="text-foreground uppercase">{currentTurma.turno}</strong></span>
             <span className="h-3 w-px bg-borderCustom"></span>
-            <span>Ano Letivo: <strong className="text-white">{currentTurma.ano_letivo}</strong></span>
+            <span>Ano Letivo: <strong className="text-foreground">{currentTurma.ano_letivo}</strong></span>
           </div>
         )}
       </div>
@@ -313,8 +313,8 @@ export function GradeSemanalSection() {
         {/* Lado Esquerdo: Ações e Geração */}
         <div className="space-y-6 xl:col-span-1">
           {/* Instruções */}
-          <Card className="bg-[#121212] border-borderCustom p-5 space-y-3 shadow-md">
-            <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+          <Card className="bg-card border-borderCustom p-5 space-y-3 shadow-sm">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-highlight animate-pulse" />
               Como funciona?
             </h4>
@@ -327,8 +327,8 @@ export function GradeSemanalSection() {
           </Card>
 
           {/* Form Gerador */}
-          <Card className="bg-[#121212] border-borderCustom p-5 shadow-md">
-            <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+          <Card className="bg-card border-borderCustom p-5 shadow-sm">
+            <h4 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Calendar className="w-4 h-4 text-highlight" />
               Gerar Agenda Escolar
             </h4>
@@ -339,7 +339,7 @@ export function GradeSemanalSection() {
                   type="number"
                   value={anoLetivo}
                   onChange={(e) => setAnoLetivo(parseInt(e.target.value) || new Date().getFullYear())}
-                  className="bg-[#1c1c1e] border-borderCustom text-white text-sm"
+                  className="bg-input border-borderCustom text-foreground text-sm"
                   required
                 />
               </div>
@@ -350,7 +350,7 @@ export function GradeSemanalSection() {
                   type="date"
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
-                  className="bg-[#1c1c1e] border-borderCustom text-white text-sm"
+                  className="bg-input border-borderCustom text-foreground text-sm"
                   required
                 />
               </div>
@@ -361,7 +361,7 @@ export function GradeSemanalSection() {
                   type="date"
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
-                  className="bg-[#1c1c1e] border-borderCustom text-white text-sm"
+                  className="bg-input border-borderCustom text-foreground text-sm"
                   required
                 />
               </div>
@@ -384,9 +384,9 @@ export function GradeSemanalSection() {
 
         {/* Lado Direito: A Grade Semanal */}
         <div className="xl:col-span-3">
-          <Card className="bg-[#121212] border-borderCustom p-5 shadow-md">
+          <Card className="bg-card border-borderCustom p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">Quadro de Horários Semanais</h3>
+              <h3 className="text-lg font-bold text-foreground">Quadro de Horários Semanais</h3>
               {loadingGrid && <Loader2 className="w-4 h-4 animate-spin text-highlight" />}
             </div>
 
@@ -399,13 +399,13 @@ export function GradeSemanalSection() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-borderCustom overflow-hidden bg-[#0d0d0d] overflow-x-auto">
+              <div className="rounded-xl border border-borderCustom overflow-hidden bg-card overflow-x-auto">
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-[#080808]">
                     <TableRow className="border-borderCustom hover:bg-transparent">
-                      <TableHead className="text-white w-32 font-semibold">Horário</TableHead>
+                      <TableHead className="text-muted-foreground w-32 font-semibold">Horário</TableHead>
                       {weekdays.map((day) => (
-                        <TableHead key={day.value} className="text-white text-center font-semibold">
+                        <TableHead key={day.value} className="text-muted-foreground text-center font-semibold">
                           {day.label}
                         </TableHead>
                       ))}
@@ -414,8 +414,8 @@ export function GradeSemanalSection() {
                   <TableBody>
                     {slots.map((slot) => (
                       <TableRow key={slot.id} className="border-borderCustom hover:bg-[#151517] transition-colors">
-                        <TableCell className="font-semibold text-white text-xs">
-                          <div className="text-white font-bold">{slot.ordem_aula}º Horário</div>
+                        <TableCell className="font-semibold text-foreground text-xs">
+                          <div className="text-foreground font-bold">{slot.ordem_aula}º Horário</div>
                           <div className="text-muted-foreground font-mono text-[10px] mt-0.5">
                             {slot.horario_inicio.slice(0, 5)} - {slot.horario_fim.slice(0, 5)}
                           </div>
@@ -428,7 +428,7 @@ export function GradeSemanalSection() {
                                 <select
                                   value={val}
                                   onChange={(e) => handleCellChange(day.value, slot.ordem_aula, e.target.value)}
-                                  className="w-full text-center rounded-lg border border-borderCustom bg-[#1c1c1e] text-white px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+                                  className="w-full text-center rounded-lg border border-borderCustom bg-input text-foreground px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
                                 >
                                   <option value="">-- Vazio --</option>
                                   {materias.map((m) => (
