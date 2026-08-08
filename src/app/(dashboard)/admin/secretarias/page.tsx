@@ -142,10 +142,10 @@ export default function AdminSecretariasPage() {
             onClick={() => handleAbrirDetalhes(sec)}
             className="cursor-pointer group"
           >
-            <div className="font-bold text-white group-hover:text-sky-400 transition-colors flex items-center gap-2">
+            <div className="font-bold text-foreground group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors flex items-center gap-2">
               {sec.nome}
             </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {isEducacao ? 'Secretaria de Ensino (Escolas)' : 'Secretaria Administrativa'}
             </p>
           </div>
@@ -161,7 +161,7 @@ export default function AdminSecretariasPage() {
           <Badge 
             variant="outline" 
             onClick={() => handleAbrirDetalhes(sec)}
-            className="bg-sky-500/10 text-sky-300 border-sky-500/30 text-xs cursor-pointer hover:bg-sky-500/20"
+            className="bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30 text-xs cursor-pointer hover:bg-sky-500/20"
           >
             {qtd} {qtd === 1 ? (isEducacao ? 'Escola' : 'Unidade') : (isEducacao ? 'Escolas' : 'Unidades')}
           </Badge>
@@ -186,7 +186,7 @@ export default function AdminSecretariasPage() {
             variant="outline" 
             size="sm" 
             onClick={(e) => handleAbrirDetalhes(sec, e)}
-            className="h-8 px-2.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border-sky-500/30 font-semibold gap-1 rounded-lg cursor-pointer"
+            className="h-8 px-2.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30 font-semibold gap-1 rounded-lg cursor-pointer"
             title="Abrir Modal com Unidades"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -197,7 +197,7 @@ export default function AdminSecretariasPage() {
             variant="ghost" 
             size="sm" 
             onClick={(e) => handleGerenciarCargos(sec, e)}
-            className="h-8 w-8 p-0 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg"
+            className="h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/10 rounded-lg"
             title="Cargos da Secretaria"
           >
             <Briefcase className="w-4 h-4" />
@@ -207,7 +207,7 @@ export default function AdminSecretariasPage() {
             variant="ghost" 
             size="sm" 
             onClick={(e) => handleEditarSecretaria(sec, e)}
-            className="h-8 w-8 p-0 text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 rounded-lg"
+            className="h-8 w-8 p-0 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-500/10 rounded-lg"
             title="Editar Secretaria"
           >
             <Edit className="w-4 h-4" />
@@ -217,7 +217,7 @@ export default function AdminSecretariasPage() {
             variant="ghost" 
             size="sm" 
             onClick={(e) => handleExcluirSecretaria(sec, e)}
-            className="h-8 w-8 p-0 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg"
+            className="h-8 w-8 p-0 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg"
             title="Excluir Secretaria (Lixeira)"
           >
             <Trash2 className="w-4 h-4" />
@@ -230,12 +230,12 @@ export default function AdminSecretariasPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="w-6 h-6 text-sky-500" /> Secretarias Municipais
           </h2>
-          <p className="text-[#aaa] text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Gestão dos órgãos mantenedores das unidades escolares e administrativas da Rede Municipal.
           </p>
         </div>
@@ -245,7 +245,7 @@ export default function AdminSecretariasPage() {
             variant="outline"
             onClick={loadSecretarias}
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            className="bg-card border-borderCustom text-foreground hover:bg-muted"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -256,13 +256,13 @@ export default function AdminSecretariasPage() {
       </div>
 
       {/* Busca */}
-      <div className="flex items-center gap-3 bg-[#121214] border border-[#27272a] p-3 rounded-xl max-w-md">
-        <Search className="w-4 h-4 text-[#aaa]" />
+      <div className="flex items-center gap-3 bg-card border border-borderCustom p-3 rounded-xl max-w-md shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
         <Input 
           placeholder="Buscar secretaria por nome..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-transparent border-none text-white focus-visible:ring-0 placeholder:text-[#aaa] h-7 text-sm"
+          className="bg-transparent border-none text-foreground focus-visible:ring-0 placeholder:text-muted-foreground h-7 text-sm"
         />
       </div>
 
@@ -274,7 +274,7 @@ export default function AdminSecretariasPage() {
         loading={loading}
         loadingMessage="Carregando lista de secretarias..."
         emptyMessage="Nenhuma secretaria encontrada."
-        className="border-[#3f3f46]"
+        className="border-borderCustom"
       />
 
       {/* Modal Criar / Editar Secretaria */}
