@@ -66,21 +66,21 @@ const adminGroups: AdminGroup[] = [
     id: 'rede',
     label: 'Rede Municipal',
     icon: Building2,
-    headerColor: 'text-sky-400',
-    badgeColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    headerColor: 'text-sky-600 dark:text-sky-400',
+    badgeColor: 'bg-sky-500/10 text-sky-700 border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30',
     items: [
       {
         title: 'Secretarias',
         subtitle: 'Gerenciar secretarias',
         icon: Building2,
-        iconColor: 'text-sky-300',
+        iconColor: 'text-sky-600 dark:text-sky-300',
         path: '/admin/secretarias',
       },
       {
         title: 'Escolas & Unidades',
         subtitle: 'Todas as unidades',
         icon: Building2,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/admin/escolas',
       },
     ],
@@ -89,35 +89,35 @@ const adminGroups: AdminGroup[] = [
     id: 'pessoal',
     label: 'Pessoal & Acessos',
     icon: Users,
-    headerColor: 'text-emerald-400',
-    badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    headerColor: 'text-emerald-600 dark:text-emerald-400',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/25 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30',
     items: [
       {
         title: 'Funcionários',
         subtitle: 'Contas de login',
         icon: UserCheck,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/funcionarios',
       },
       {
         title: 'Acessos',
         subtitle: 'Níveis e permissões',
         icon: KeyRound,
-        iconColor: 'text-emerald-400',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
         path: '/admin/acessos',
       },
       {
         title: 'Cargos',
         subtitle: 'Cargos e funções',
         icon: Briefcase,
-        iconColor: 'text-amber-400',
+        iconColor: 'text-amber-600 dark:text-amber-400',
         path: '/admin/cargos',
       },
       {
         title: 'Solicitações',
         subtitle: 'Lotação e escalas',
         icon: UserPlus,
-        iconColor: 'text-amber-400',
+        iconColor: 'text-amber-600 dark:text-amber-400',
         path: '/admin/solicitacoes',
       },
     ],
@@ -126,28 +126,28 @@ const adminGroups: AdminGroup[] = [
     id: 'monitoramento',
     label: 'Monitoramento',
     icon: Activity,
-    headerColor: 'text-purple-400',
-    badgeColor: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+    headerColor: 'text-purple-600 dark:text-purple-400',
+    badgeColor: 'bg-purple-500/10 text-purple-700 border-purple-500/25 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
     items: [
       {
         title: 'Logs de Auditoria',
         subtitle: 'Histórico e ficha de auditoria',
         icon: Activity,
-        iconColor: 'text-purple-400',
+        iconColor: 'text-purple-600 dark:text-purple-400',
         path: '/admin/logs',
       },
       {
         title: 'Desempenho',
         subtitle: 'Métricas e gargalos',
         icon: Gauge,
-        iconColor: 'text-violet-400',
+        iconColor: 'text-violet-600 dark:text-violet-400',
         path: '/admin/desempenho',
       },
       {
         title: 'Indicadores',
         subtitle: 'Prazos e pendências',
         icon: TrendingUp,
-        iconColor: 'text-purple-400',
+        iconColor: 'text-purple-600 dark:text-purple-400',
         path: '/admin/indicadores',
       },
     ],
@@ -156,8 +156,8 @@ const adminGroups: AdminGroup[] = [
     id: 'dados',
     label: 'Dados & Arquivo',
     icon: Database,
-    headerColor: 'text-slate-300',
-    badgeColor: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+    headerColor: 'text-slate-600 dark:text-slate-300',
+    badgeColor: 'bg-slate-500/10 text-slate-700 border-slate-500/25 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30',
     items: [
       {
         title: 'Lixeira Global',
@@ -170,21 +170,21 @@ const adminGroups: AdminGroup[] = [
         title: 'Arquivados',
         subtitle: 'Fora da rede / Arquivo morto',
         icon: ArchiveRestore,
-        iconColor: 'text-indigo-400',
+        iconColor: 'text-indigo-600 dark:text-indigo-400',
         path: '/admin/arquivados',
       },
       {
         title: 'Banco de Dados',
         subtitle: 'Tabelas e encerramento',
         icon: Database,
-        iconColor: 'text-slate-300',
+        iconColor: 'text-slate-600 dark:text-slate-300',
         path: '/admin/banco',
       },
       {
         title: 'Armazenamento',
         subtitle: 'Detalhes do disco',
         icon: HardDrive,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/admin/armazenamento',
       },
     ],
@@ -193,21 +193,21 @@ const adminGroups: AdminGroup[] = [
     id: 'operacoes',
     label: 'Operações',
     icon: ScanLine,
-    headerColor: 'text-cyan-400',
-    badgeColor: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+    headerColor: 'text-cyan-600 dark:text-cyan-400',
+    badgeColor: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/25 dark:bg-cyan-500/15 dark:text-cyan-400 dark:border-cyan-500/30',
     items: [
       {
         title: 'Controle de Rondas',
         subtitle: 'Escalas e rotas',
         icon: ScanLine,
-        iconColor: 'text-cyan-400',
+        iconColor: 'text-cyan-600 dark:text-cyan-400',
         path: '/admin/rondas',
       },
       {
         title: 'Transporte',
         subtitle: 'Frota e rotas escolares',
         icon: Bus,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/admin/transporte',
       },
       {
@@ -221,14 +221,14 @@ const adminGroups: AdminGroup[] = [
         title: 'Ocorrências',
         subtitle: 'Histórico disciplinar',
         icon: AlertTriangle,
-        iconColor: 'text-amber-400',
+        iconColor: 'text-amber-600 dark:text-amber-400',
         path: '/ocorrencias',
       },
       {
         title: 'Reports de Bugs',
         subtitle: 'Feedbacks de erros',
         icon: Flag,
-        iconColor: 'text-slate-300',
+        iconColor: 'text-slate-600 dark:text-slate-300',
         path: '/admin/reports',
       },
     ],
@@ -237,28 +237,28 @@ const adminGroups: AdminGroup[] = [
     id: 'sistema',
     label: 'Sistema',
     icon: SlidersHorizontal,
-    headerColor: 'text-sky-300',
-    badgeColor: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+    headerColor: 'text-sky-600 dark:text-sky-300',
+    badgeColor: 'bg-sky-500/10 text-sky-700 border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30',
     items: [
       {
         title: 'Relatórios',
         subtitle: 'Gráficos e estatísticas',
         icon: BarChart3,
-        iconColor: 'text-emerald-400',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
         path: '/relatorios',
       },
       {
         title: 'Configurações',
         subtitle: 'Parâmetros do sistema',
         icon: SlidersHorizontal,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/configuracoes',
       },
       {
         title: 'Dispositivos',
         subtitle: 'Dispositivos & PWA',
         icon: MonitorSmartphone,
-        iconColor: 'text-sky-400',
+        iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/admin/dispositivos',
       },
     ],
@@ -421,13 +421,13 @@ export default function AdminHubPage() {
   return (
     <div className="space-y-6 select-none -mt-3">
       {/* ── Top Header Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-borderCustom pb-4">
         {/* Title + ROOT badge */}
         <div className="flex items-center gap-3">
           <ShieldCheck className="w-7 h-7 text-foreground stroke-[2.2]" />
           <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
             Sapeaçu — Administração do Sistema
-            <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
+            <span className="bg-violet-500/10 text-violet-700 border border-violet-500/25 dark:bg-[#7c3aed]/20 dark:text-[#a78bfa] dark:border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
               ROOT
             </span>
           </h1>
@@ -435,7 +435,7 @@ export default function AdminHubPage() {
 
         {/* User Status & Actions */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-card px-3 py-1.5 rounded-xl border border-border">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-card px-3 py-1.5 rounded-xl border border-borderCustom shadow-sm">
             <User className="w-4 h-4 text-muted-foreground" />
             <span>
               Logado como: <strong className="text-foreground">{userEmail}</strong>
@@ -444,7 +444,7 @@ export default function AdminHubPage() {
 
           <button
             onClick={handleRefreshCache}
-            className="bg-[#052e16]/70 border border-[#166534] hover:bg-[#052e16] text-[#4ade80] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+            className="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 dark:bg-[#052e16]/70 dark:border-[#166534] dark:hover:bg-[#052e16] dark:text-[#4ade80] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Atualizar Cache</span>
@@ -455,7 +455,7 @@ export default function AdminHubPage() {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="bg-[#450a0a]/70 border border-[#991b1b] hover:bg-[#7f1d1d] hover:text-white text-[#f87171] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+            className="bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 dark:bg-[#450a0a]/70 dark:border-[#991b1b] dark:hover:bg-[#7f1d1d] dark:hover:text-white dark:text-[#f87171] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoggingOut ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -468,13 +468,13 @@ export default function AdminHubPage() {
       </div>
 
       {/* ── Seção Controles Globais ── */}
-      <div className="bg-gradient-to-r from-[#18181b] via-[#141416] to-[#18181b] border border-amber-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-50 via-card to-orange-50/70 dark:from-[#18181b] dark:via-[#141416] dark:to-[#18181b] border border-amber-500/25 dark:border-amber-500/30 rounded-2xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden">
         <div className="flex items-center gap-3 mb-4 border-b border-border/60 pb-3">
-          <SlidersHorizontal className="w-5 h-5 text-amber-400" />
+          <SlidersHorizontal className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           <div>
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               Controles Globais do Sistema
-              <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md">
+              <span className="bg-amber-500/10 text-amber-700 border border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md">
                 Parâmetros ROOT
               </span>
             </h2>
@@ -507,7 +507,7 @@ export default function AdminHubPage() {
                 disabled={updatingMensagens}
                 className={cn(
                   'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
-                  permitirMensagensGlobais ? 'bg-emerald-500' : 'bg-zinc-700'
+                  permitirMensagensGlobais ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'
                 )}
               >
                 <span
@@ -535,7 +535,7 @@ export default function AdminHubPage() {
                 disabled={updatingEdicao}
                 className={cn(
                   'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
-                  bloquearEdicaoFuncionariosRede ? 'bg-rose-500' : 'bg-zinc-700'
+                  bloquearEdicaoFuncionariosRede ? 'bg-rose-500' : 'bg-slate-300 dark:bg-zinc-700'
                 )}
               >
                 <span
@@ -560,7 +560,7 @@ export default function AdminHubPage() {
           return (
             <div
               key={group.id}
-              className="bg-card border border-border rounded-2xl shadow-md overflow-hidden"
+              className="bg-card border border-borderCustom rounded-2xl shadow-sm dark:shadow-md overflow-hidden"
             >
               {/* Group Header */}
               <button
@@ -613,7 +613,7 @@ export default function AdminHubPage() {
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => e.key === 'Enter' && router.push(item.path)}
-                          className="bg-background hover:bg-muted/70 border border-border hover:border-foreground/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm min-h-[110px]"
+                          className="bg-surface-2 hover:bg-muted border border-borderCustom hover:border-highlight/30 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm min-h-[110px]"
                         >
                           <div className="mb-2.5 flex items-center justify-center">
                             <ItemIcon
