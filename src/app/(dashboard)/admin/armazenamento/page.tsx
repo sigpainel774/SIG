@@ -54,11 +54,11 @@ export default function AdminArmazenamentoPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center max-w-md mx-auto gap-4">
         <ShieldAlert className="w-12 h-12 text-rose-500" />
-        <h3 className="text-white font-bold text-lg">Erro ao processar dados</h3>
-        <p className="text-[#8e8e93] text-sm">
+        <h3 className="text-lg font-bold text-foreground">Erro ao processar dados</h3>
+        <p className="text-sm text-muted-foreground">
           Não foi possível conectar ao storage do Supabase. Verifique suas políticas de acesso ou tente novamente.
         </p>
-        <Button onClick={() => loadStorageData()} className="mt-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white">
+        <Button onClick={() => loadStorageData()} className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90">
           Tentar Novamente
         </Button>
       </div>
@@ -78,7 +78,7 @@ export default function AdminArmazenamentoPage() {
             onClick={() => loadStorageData(true)}
             disabled={refreshing}
             variant="outline"
-            className="border-[#2a2a2a] hover:bg-[#272727] text-white cursor-pointer h-10"
+            className="h-10 cursor-pointer border-border text-foreground hover:bg-muted"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Sincronizando...' : 'Atualizar Dados'}
@@ -88,61 +88,61 @@ export default function AdminArmazenamentoPage() {
 
       {/* Métricas Principais (Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+        <Card className="rounded-2xl border-border bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Armazenamento Total
             </CardDescription>
-            <CardTitle className="text-2xl font-black text-white mt-1">
+            <CardTitle className="mt-1 text-2xl font-black text-foreground">
               {formatBytes(data.totalBytes)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#8e8e93]">Espaço ocupado por toda a rede municipal.</p>
+            <p className="text-xs text-muted-foreground">Espaço ocupado por toda a rede municipal.</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+        <Card className="rounded-2xl border-border bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Rede Compartilhada
             </CardDescription>
-            <CardTitle className="text-2xl font-black text-sky-400 mt-1">
+            <CardTitle className="mt-1 text-2xl font-black text-sky-600 dark:text-sky-400">
               {formatBytes(data.sharedBytes)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#8e8e93]">
+            <p className="text-xs text-muted-foreground">
               Logos, murais e anexos de comunicados globais.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+        <Card className="rounded-2xl border-border bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Total de Arquivos
             </CardDescription>
-            <CardTitle className="text-2xl font-black text-emerald-400 mt-1">
+            <CardTitle className="mt-1 text-2xl font-black text-emerald-600 dark:text-emerald-400">
               {data.totalFileCount}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#8e8e93]">Arquivos cadastrados nos buckets públicos.</p>
+            <p className="text-xs text-muted-foreground">Arquivos cadastrados nos buckets públicos.</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+        <Card className="rounded-2xl border-border bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Eficiência e Custo
             </CardDescription>
-            <CardTitle className="text-2xl font-black text-purple-400 mt-1">
+            <CardTitle className="mt-1 text-2xl font-black text-violet-600 dark:text-purple-400">
               {((data.totalBytes / (5 * 1024 * 1024 * 1024)) * 100).toFixed(2)}%
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#8e8e93]">Consumido do limite padrão grátis de 5 GB.</p>
+            <p className="text-xs text-muted-foreground">Consumido do limite padrão grátis de 5 GB.</p>
           </CardContent>
         </Card>
       </div>
