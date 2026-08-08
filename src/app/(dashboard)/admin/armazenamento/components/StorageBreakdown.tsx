@@ -29,9 +29,9 @@ interface StorageBreakdownProps {
 
 export function StorageBreakdown({ totalBytes, percentages }: StorageBreakdownProps) {
   return (
-    <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+    <Card className="rounded-2xl border-border bg-card">
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm font-bold text-white uppercase tracking-wider">
+        <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground">
           Breakdown por Tipo de Arquivo
         </CardTitle>
         <CardDescription className="text-xs">
@@ -40,7 +40,7 @@ export function StorageBreakdown({ totalBytes, percentages }: StorageBreakdownPr
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Stacked Progress Bar */}
-        <div className="w-full bg-[#1e1e22] rounded-full h-4 overflow-hidden flex border border-[#2d2d33]">
+        <div className="flex h-4 w-full overflow-hidden rounded-full border border-border bg-muted">
           {percentages.images > 0 && (
             <div
               className="bg-purple-500 h-full transition-all"
@@ -74,61 +74,61 @@ export function StorageBreakdown({ totalBytes, percentages }: StorageBreakdownPr
 
         {/* Grid Indicators */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3 bg-[#17171a] p-3 rounded-xl border border-[#27272a]">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
             <div className="p-2 bg-purple-500/10 text-purple-400 rounded-lg">
               <ImageIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-[#8e8e93] font-semibold uppercase">Imagens</p>
-              <h4 className="text-sm font-bold text-white mt-0.5">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Imagens</p>
+              <h4 className="mt-0.5 text-sm font-bold text-foreground">
                 {formatBytes(percentages.imagesBytes ?? 0)}
               </h4>
-              <p className="text-[10px] text-[#8e8e93] mt-0.5">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 {percentages.images.toFixed(1)}% do disco
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#17171a] p-3 rounded-xl border border-[#27272a]">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
             <div className="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-[#8e8e93] font-semibold uppercase">Documentos</p>
-              <h4 className="text-sm font-bold text-white mt-0.5">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Documentos</p>
+              <h4 className="mt-0.5 text-sm font-bold text-foreground">
                 {formatBytes(percentages.docsBytes ?? 0)}
               </h4>
-              <p className="text-[10px] text-[#8e8e93] mt-0.5">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 {percentages.docs.toFixed(1)}% do disco
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#17171a] p-3 rounded-xl border border-[#27272a]">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
             <div className="p-2 bg-rose-500/10 text-rose-400 rounded-lg">
               <VideoIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-[#8e8e93] font-semibold uppercase">Vídeos</p>
-              <h4 className="text-sm font-bold text-white mt-0.5">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Vídeos</p>
+              <h4 className="mt-0.5 text-sm font-bold text-foreground">
                 {formatBytes(percentages.videosBytes ?? 0)}
               </h4>
-              <p className="text-[10px] text-[#8e8e93] mt-0.5">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 {percentages.videos.toFixed(1)}% do disco
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#17171a] p-3 rounded-xl border border-[#27272a]">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
             <div className="p-2 bg-slate-500/10 text-slate-400 rounded-lg">
               <FileIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-[#8e8e93] font-semibold uppercase">Outros</p>
-              <h4 className="text-sm font-bold text-white mt-0.5">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Outros</p>
+              <h4 className="mt-0.5 text-sm font-bold text-foreground">
                 {formatBytes(percentages.othersBytes ?? 0)}
               </h4>
-              <p className="text-[10px] text-[#8e8e93] mt-0.5">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 {percentages.others.toFixed(1)}% do disco
               </p>
             </div>

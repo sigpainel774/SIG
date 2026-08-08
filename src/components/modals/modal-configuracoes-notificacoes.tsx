@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, ShieldAlert, Sliders, Loader2, Info } from 'lucide-react'
+import type { Database } from '@/types/supabase'
+import { Info } from 'lucide-react'
 
 
 interface ModalConfiguracoesNotificacoesProps {
@@ -14,13 +15,10 @@ interface ModalConfiguracoesNotificacoesProps {
   onOpenChange: (open: boolean) => void
 }
 
-interface ConfigRule {
-  id?: string
-  nivel: number | null
-  cargo_pattern: string | null
-  tipo_notificacao: string
-  enviar_web: boolean
-}
+type ConfigRule = Pick<
+  Database['public']['Tables']['configuracao_notificacoes_niveis']['Row'],
+  'id' | 'nivel' | 'cargo_pattern' | 'tipo_notificacao' | 'enviar_web'
+>
 
 interface UserLevelItem {
   label: string
@@ -53,28 +51,30 @@ export function ModalConfiguracoesNotificacoes({
     { key: 'alerta_prazo', label: 'Alertas de Prazos' }
   ]
 
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
+    await Promise.resolve()
     setLoading(true)
-    const supabase = createClient() as any
+    const supabase = createClient()
     try {
       const { data, error } = await supabase
         .from('configuracao_notificacoes_niveis')
-        .select('id, nivel, cargo_pattern, tipo_notificacao, enviar_web, created_at')
+        .select('id, nivel, cargo_pattern, tipo_notificacao, enviar_web')
       if (error) throw error
       setRules(data ?? [])
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
       toast.error('Erro ao carregar configurações de notificações.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    if (open) {
-      loadConfig()
-    }
-  }, [open])
+    if (!open) return
+
+    const loadTimer = window.setTimeout(() => void loadConfig(), 0)
+    return () => window.clearTimeout(loadTimer)
+  }, [loadConfig, open])
 
   const handleToggle = async (
     nivel: number | null, 
@@ -83,7 +83,7 @@ export function ModalConfiguracoesNotificacoes({
     currentVal: boolean
   ) => {
     setUpdating(true)
-    const supabase = createClient() as any
+    const supabase = createClient()
     try {
       // Tenta achar regra existente na lista local
       const existingRule = rules.find(r => 
@@ -110,8 +110,8 @@ export function ModalConfiguracoesNotificacoes({
       }
 
       toast.success('Configuração de notificação atualizada!')
-      loadConfig()
-    } catch (err: any) {
+      void loadConfig()
+    } catch (err: unknown) {
       console.error(err)
       toast.error('Erro ao salvar alteração.')
     } finally {
@@ -124,7 +124,7 @@ export function ModalConfiguracoesNotificacoes({
       (nivel !== null ? r.nivel === nivel : r.cargo_pattern === cargo) && 
       r.tipo_notificacao === tipo
     )
-    return rule ? rule.enviar_web : false
+    return rule?.enviar_web ?? false
   }
 
   // Componente de Switch customizado usando Tailwind CSS
@@ -133,8 +133,10 @@ export function ModalConfiguracoesNotificacoes({
       type="button"
       onClick={() => onChange(checked)}
       disabled={disabled}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-        checked ? 'bg-purple-600' : 'bg-zinc-700'
+      role="switch"
+      aria-checked={checked}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+        checked ? 'bg-primary' : 'bg-muted-foreground/45 dark:bg-zinc-700'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <span
@@ -151,13 +153,13 @@ export function ModalConfiguracoesNotificacoes({
       onOpenChange={onOpenChange}
       title="Configuração de Notificações"
       description="Selecione quais tipos de notificações no painel cada nível ou cargo de usuário da rede receberá."
-      maxWidth="sm:max-w-[700px]"
+      maxWidth="sm:max-w-5xl"
       footer={
-        <div className="flex justify-end w-full pt-2 border-t border-[#27272a]">
+        <div className="flex w-full justify-end pt-2 border-t border-border">
           <Button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold cursor-pointer"
+            className="cursor-pointer bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
           >
             Concluir
           </Button>
@@ -165,22 +167,23 @@ export function ModalConfiguracoesNotificacoes({
       }
     >
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2 sm:py-4">
           <StandardTable
             data={userLevels}
             loading={loading}
             loadingMessage="Carregando configurações..."
+            tableClassName="min-w-[900px]"
             columns={[
               {
                 header: 'Nível / Cargo',
-                headClassName: 'pl-4',
-                className: 'pl-4 font-medium text-white',
+                headClassName: 'min-w-[320px] pl-4',
+                className: 'min-w-[320px] pl-4 font-medium text-foreground',
                 accessor: (level) => level.label
               },
               ...notificationTypes.map((type): TableColumn<UserLevelItem> => ({
                 header: type.label,
-                headClassName: 'text-center',
-                className: 'text-center',
+                headClassName: 'min-w-[140px] text-center',
+                className: 'min-w-[140px] text-center',
                 accessor: (level) => {
 
                   const checked = isChecked(level.nivel, level.cargo, type.key)
@@ -199,9 +202,9 @@ export function ModalConfiguracoesNotificacoes({
             keyExtractor={(level, idx) => `${level.nivel ?? level.cargo ?? idx}`}
           />
 
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-3 flex gap-2.5 items-start text-xs text-zinc-400 leading-normal">
+          <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
 
-            <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p>
               As alterações feitas nesta matriz entram em vigor imediatamente para todos os funcionários da rede. Desativar uma linha impedirá que o sistema realize o envio físico daquele tipo de aviso no menu de notificações dos usuários correspondentes.
             </p>

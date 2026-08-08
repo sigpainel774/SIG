@@ -56,7 +56,7 @@ export function StorageBySchoolTable({ data }: StorageBySchoolTableProps) {
     {
       header: 'Escola / Origem',
       accessor: (item) => (
-        <div className="font-semibold text-white flex items-center gap-2">
+        <div className="flex items-center gap-2 font-semibold text-foreground">
           {item.isGlobal ? (
             <>
               <Globe className="w-4 h-4 text-sky-400 shrink-0" />
@@ -79,14 +79,14 @@ export function StorageBySchoolTable({ data }: StorageBySchoolTableProps) {
     {
       header: 'Nº Arquivos',
       headClassName: 'text-center w-32',
-      className: 'text-center font-medium text-[#8e8e93]',
+      className: 'text-center font-medium text-muted-foreground',
       accessor: (item) => item.fileCount
     },
     {
       header: 'Consumo por Categoria (Proporção)',
       headClassName: 'w-48',
       accessor: (item) => (
-        <div className="w-full bg-[#202024] rounded-full h-1.5 overflow-hidden flex">
+        <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
           {item.totalBytes > 0 ? (
             <>
               <div className="bg-purple-500 h-full" style={{ width: `${(item.breakdown.images / item.totalBytes) * 100}%` }} />
@@ -107,9 +107,9 @@ export function StorageBySchoolTable({ data }: StorageBySchoolTableProps) {
       accessor: (item) => {
         const pct = data.totalBytes > 0 ? ((item.totalBytes / data.totalBytes) * 100).toFixed(1) : '0'
         return (
-          <div className={item.isGlobal ? 'text-sky-400' : 'text-white'}>
+          <div className={item.isGlobal ? 'text-sky-600 dark:text-sky-400' : 'text-foreground'}>
             {formatBytes(item.totalBytes)}
-            <span className="text-[10px] text-[#8e8e93] font-normal block mt-0.5">
+            <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
               {pct}% do total
             </span>
           </div>
@@ -119,9 +119,9 @@ export function StorageBySchoolTable({ data }: StorageBySchoolTableProps) {
   ], [data.totalBytes])
 
   return (
-    <Card className="bg-[#121214] border-[#232326] rounded-2xl">
+    <Card className="rounded-2xl border-border bg-card">
       <CardHeader>
-        <CardTitle className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-foreground">
           <Building2 className="w-5 h-5 text-purple-500" />
           Consumo por Escola da Rede
         </CardTitle>
@@ -140,4 +140,3 @@ export function StorageBySchoolTable({ data }: StorageBySchoolTableProps) {
     </Card>
   )
 }
-

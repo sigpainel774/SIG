@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { StandardTable, TableColumn } from '@/components/ui/table'
+import { StandardTable } from '@/components/ui/table'
 import { 
   Search, 
   Building2, 
@@ -67,11 +67,11 @@ export function StorageFileInspector({
   }
 
   return (
-    <Card className="bg-[#121214] border-[#232326] rounded-2xl">
-      <CardHeader className="pb-3 border-b border-[#232326]">
+    <Card className="rounded-2xl border-border bg-card">
+      <CardHeader className="border-b border-border pb-3">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <CardTitle className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-foreground">
               <FolderOpen className="w-5 h-5 text-purple-500" />
               Inspetor de Arquivos em Armazenamento
             </CardTitle>
@@ -86,28 +86,28 @@ export function StorageFileInspector({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           {/* Campo de Busca */}
           <div className="relative md:col-span-2">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-[#8e8e93]" />
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar por nome do arquivo..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full bg-[#17171a] border border-[#2a2a2a] hover:border-white/10 focus:border-purple-500 rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder-[#8e8e93] outline-none transition-all"
+              className="w-full rounded-xl border border-border bg-input py-2 pl-10 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground hover:border-foreground/20 focus:border-primary focus:ring-2 focus:ring-primary/15"
             />
           </div>
 
           {/* Filtro de Escola */}
-          <div className="flex items-center gap-2 bg-[#17171a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#8e8e93]">
-            <Building2 className="w-4 h-4 shrink-0 text-[#8e8e93]" />
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-input px-3 py-2 text-sm text-muted-foreground">
+            <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
             <select
               value={selectedSchool}
               onChange={e => setSelectedSchool(e.target.value)}
-              className="bg-transparent border-none text-white outline-none w-full cursor-pointer text-xs font-semibold"
+              className="w-full cursor-pointer border-none bg-transparent text-xs font-semibold text-foreground outline-none"
             >
-              <option value="ALL" className="bg-[#17171a]">Filtrar Escola: Todas</option>
-              <option value="SHARED" className="bg-[#17171a]">Filtrar Escola: Rede Global</option>
+              <option value="ALL" className="bg-popover text-popover-foreground">Filtrar Escola: Todas</option>
+              <option value="SHARED" className="bg-popover text-popover-foreground">Filtrar Escola: Rede Global</option>
               {bySchool.map(s => (
-                <option key={s.escolaId} value={s.escolaId} className="bg-[#17171a]">
+                <option key={s.escolaId} value={s.escolaId} className="bg-popover text-popover-foreground">
                   {s.escolaNome}
                 </option>
               ))}
@@ -115,16 +115,16 @@ export function StorageFileInspector({
           </div>
 
           {/* Filtro de Bucket */}
-          <div className="flex items-center gap-2 bg-[#17171a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#8e8e93]">
-            <FolderOpen className="w-4 h-4 shrink-0 text-[#8e8e93]" />
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-input px-3 py-2 text-sm text-muted-foreground">
+            <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
             <select
               value={selectedBucket}
               onChange={e => setSelectedBucket(e.target.value)}
-              className="bg-transparent border-none text-white outline-none w-full cursor-pointer text-xs font-semibold"
+              className="w-full cursor-pointer border-none bg-transparent text-xs font-semibold text-foreground outline-none"
             >
-              <option value="ALL" className="bg-[#17171a]">Filtrar Bucket: Todos</option>
+              <option value="ALL" className="bg-popover text-popover-foreground">Filtrar Bucket: Todos</option>
               {bucketsList.map(b => (
-                <option key={b} value={b} className="bg-[#17171a]">
+                <option key={b} value={b} className="bg-popover text-popover-foreground">
                   {b}
                 </option>
               ))}
@@ -132,41 +132,41 @@ export function StorageFileInspector({
           </div>
 
           {/* Filtro de Tipo */}
-          <div className="flex items-center gap-2 bg-[#17171a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-[#8e8e93]">
-            <Filter className="w-4 h-4 shrink-0 text-[#8e8e93]" />
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-input px-3 py-2 text-sm text-muted-foreground">
+            <Filter className="h-4 w-4 shrink-0 text-muted-foreground" />
             <select
               value={selectedType}
               onChange={e => setSelectedType(e.target.value)}
-              className="bg-transparent border-none text-white outline-none w-full cursor-pointer text-xs font-semibold"
+              className="w-full cursor-pointer border-none bg-transparent text-xs font-semibold text-foreground outline-none"
             >
-              <option value="ALL" className="bg-[#17171a]">Filtrar Tipo: Todos</option>
-              <option value="images" className="bg-[#17171a]">Imagens</option>
-              <option value="docs" className="bg-[#17171a]">Documentos</option>
-              <option value="videos" className="bg-[#17171a]">Vídeos</option>
-              <option value="others" className="bg-[#17171a]">Outros</option>
+              <option value="ALL" className="bg-popover text-popover-foreground">Filtrar Tipo: Todos</option>
+              <option value="images" className="bg-popover text-popover-foreground">Imagens</option>
+              <option value="docs" className="bg-popover text-popover-foreground">Documentos</option>
+              <option value="videos" className="bg-popover text-popover-foreground">Vídeos</option>
+              <option value="others" className="bg-popover text-popover-foreground">Outros</option>
             </select>
           </div>
         </div>
 
         {/* Opções extras (Ordenação e Resultados) */}
-        <div className="flex items-center justify-between text-xs text-[#8e8e93] px-1">
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
           <div>
-            Mostrando <strong className="text-white">{filteredFiles.length}</strong> de{' '}
-            <strong className="text-white">{totalFilesCount}</strong> arquivos auditados.
+            Mostrando <strong className="text-foreground">{filteredFiles.length}</strong> de{' '}
+            <strong className="text-foreground">{totalFilesCount}</strong> arquivos auditados.
           </div>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#8e8e93]" /> Ordenar por:
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /> Ordenar por:
             </span>
             <button
               onClick={() => setSortBy('size')}
-              className={`font-semibold cursor-pointer ${sortBy === 'size' ? 'text-purple-400 underline decoration-2 underline-offset-4' : 'text-[#8e8e93] hover:text-white'}`}
+              className={`cursor-pointer font-semibold ${sortBy === 'size' ? 'text-primary underline decoration-2 underline-offset-4' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Maior Tamanho
             </button>
             <button
               onClick={() => setSortBy('date')}
-              className={`font-semibold cursor-pointer ${sortBy === 'date' ? 'text-purple-400 underline decoration-2 underline-offset-4' : 'text-[#8e8e93] hover:text-white'}`}
+              className={`cursor-pointer font-semibold ${sortBy === 'date' ? 'text-primary underline decoration-2 underline-offset-4' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Recentes
             </button>
@@ -200,10 +200,10 @@ export function StorageFileInspector({
                       <TypeIcon className="w-4 h-4" />
                     </div>
                     <div className="truncate flex flex-col min-w-0">
-                      <span className="font-bold text-white truncate text-[13px]" title={file.name}>
+                      <span className="truncate text-[13px] font-bold text-foreground" title={file.name}>
                         {file.name.split('/').pop() ?? file.name}
                       </span>
-                      <span className="text-[10px] text-[#8e8e93] truncate mt-0.5" title={file.name}>
+                      <span className="mt-0.5 truncate text-[10px] text-muted-foreground" title={file.name}>
                         Caminho: {file.name}
                       </span>
                     </div>
@@ -216,7 +216,7 @@ export function StorageFileInspector({
               headClassName: 'w-48',
               className: 'py-3',
               accessor: (file: MappedFile) => (
-                <span className="font-mono text-xs text-[#8e8e93] bg-[#202024] border border-[#2a2a2a] px-2 py-0.5 rounded">
+                <span className="rounded border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
                   {file.bucketId}
                 </span>
               )
@@ -226,7 +226,7 @@ export function StorageFileInspector({
               headClassName: 'w-56',
               className: 'py-3',
               accessor: (file: MappedFile) => (
-                <span className="text-xs font-semibold text-white">
+                <span className="text-xs font-semibold text-foreground">
                   {file.escolaId ? file.escolaNome : 'Rede Compartilhada'}
                 </span>
               )
@@ -234,7 +234,7 @@ export function StorageFileInspector({
             {
               header: 'Tamanho',
               headClassName: 'text-right w-36',
-              className: 'text-right py-3 font-bold text-white text-[13px]',
+              className: 'text-right py-3 text-[13px] font-bold text-foreground',
               accessor: (file: MappedFile) => formatBytes(file.size)
             },
             {
@@ -262,4 +262,3 @@ export function StorageFileInspector({
     </Card>
   )
 }
-

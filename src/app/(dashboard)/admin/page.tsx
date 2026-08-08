@@ -345,7 +345,7 @@ export default function AdminHubPage() {
           ? 'Visibilidade no chat ativada: qualquer usuário pode te localizar no chat interno.'
           : 'Visibilidade no chat restrita: apenas quem já possui conversa aberta conseguirá te enviar mensagens.'
       )
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao atualizar permissão de mensagens:', err)
       toast.error('Erro ao atualizar preferência de chat.')
     } finally {
@@ -385,7 +385,7 @@ export default function AdminHubPage() {
           ? 'Restrição ATIVADA: Edição de ficha de funcionários bloqueada para usuários com nível abaixo de 1.'
           : 'Restrição DESATIVADA: Edição de ficha de funcionários liberada conforme regras ABAC normais.'
       )
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao atualizar trava de edição de funcionários:', err)
       toast.error('Erro ao salvar parâmetro global da rede.')
     } finally {
