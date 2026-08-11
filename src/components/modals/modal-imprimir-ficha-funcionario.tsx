@@ -295,9 +295,9 @@ export function ModalImprimirFichaFuncionario({
             </div>
 
             {/* Conteúdo Principal (Grade com Coluna de Dados e Coluna de Foto) */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Coluna Esquerda: Seções Principais (3 Colunas) */}
-              <div className="md:col-span-3 space-y-2.5">
+            <div className="flex flex-row gap-3 items-start">
+              {/* Coluna Esquerda: Seções Principais (Preenche a largura restante) */}
+              <div className="flex-1 min-w-0 space-y-2.5">
                 {/* DADOS PESSOAIS */}
                 <div className="border border-black rounded overflow-hidden">
                   <div className="bg-gray-100 font-bold px-2 py-1 uppercase text-[10px] border-b border-black tracking-wide">
@@ -412,8 +412,8 @@ export function ModalImprimirFichaFuncionario({
                 </div>
               </div>
 
-              {/* Coluna Direita: Foto 3x4 + QR Code Autenticidade (1 Coluna) */}
-              <div className="flex flex-col items-center gap-4 border-l border-gray-200 pl-2">
+              {/* Coluna Direita: Foto 3x4 + QR Code Autenticidade (1 Coluna Fixa) */}
+              <div className="w-[115px] shrink-0 flex flex-col items-center gap-3 border-l border-gray-200 pl-2">
                 {/* Foto 3x4 */}
                 <div className="w-[105px] h-[135px] border-2 border-black rounded overflow-hidden flex items-center justify-center bg-gray-100 shrink-0">
                   {fotoCleanUrl ? (
