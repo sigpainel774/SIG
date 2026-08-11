@@ -164,11 +164,12 @@ export async function POST(req: NextRequest) {
     await Promise.allSettled([
       supabaseAdmin.storage.from('fotos-originais').remove([originalPath]),
       ...(oldRecord ? [
-        oldRecord.foto_avatar_path ? supabaseAdmin.storage.from('fotos-avatar').remove([oldRecord.foto_avatar_path]) : Promise.resolve(),
-        oldRecord.foto_visualizacao_path ? supabaseAdmin.storage.from('fotos-visualizacao').remove([oldRecord.foto_visualizacao_path]) : Promise.resolve(),
-        oldRecord.foto_original_path ? supabaseAdmin.storage.from('fotos-originais').remove([oldRecord.foto_original_path]) : Promise.resolve()
+        oldRecord.foto_avatar_path && oldRecord.foto_avatar_path !== avatarPath ? supabaseAdmin.storage.from('fotos-avatar').remove([oldRecord.foto_avatar_path]) : Promise.resolve(),
+        oldRecord.foto_visualizacao_path && oldRecord.foto_visualizacao_path !== visualizacaoPath ? supabaseAdmin.storage.from('fotos-visualizacao').remove([oldRecord.foto_visualizacao_path]) : Promise.resolve(),
+        oldRecord.foto_original_path && oldRecord.foto_original_path !== finalOriginalPath ? supabaseAdmin.storage.from('fotos-originais').remove([oldRecord.foto_original_path]) : Promise.resolve()
       ] : [])
     ])
+
 
     return NextResponse.json({
       success: true,
