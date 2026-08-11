@@ -117,14 +117,13 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-transparent border-[#3f3f46] text-white hover:bg-[#27272a]"
             disabled={loading}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-highlight text-black hover:bg-highlight/90 font-bold gap-2"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2"
             disabled={loading}
           >
             {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}
@@ -135,12 +134,12 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
     >
       <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Tipo</label>
+          <label className="text-sm font-medium text-foreground">Tipo</label>
           <div className="flex gap-2">
             <Button 
               type="button" 
               variant={tipo === 'Receita' ? 'default' : 'outline'}
-              className={tipo === 'Receita' ? 'bg-green-600 hover:bg-green-700 flex-1' : 'bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white flex-1'}
+              className={tipo === 'Receita' ? 'bg-emerald-600 hover:bg-emerald-700 text-white flex-1' : 'flex-1'}
               onClick={() => setTipo('Receita')}
             >
               Receita
@@ -148,7 +147,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
             <Button 
               type="button" 
               variant={tipo === 'Despesa' ? 'default' : 'outline'}
-              className={tipo === 'Despesa' ? 'bg-red-600 hover:bg-red-700 flex-1' : 'bg-transparent border-[#3f3f46] text-[#aaa] hover:text-white flex-1'}
+              className={tipo === 'Despesa' ? 'bg-rose-600 hover:bg-rose-700 text-white flex-1' : 'flex-1'}
               onClick={() => setTipo('Despesa')}
             >
               Despesa
@@ -157,18 +156,18 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Descrição</label>
+          <label className="text-sm font-medium text-foreground">Descrição</label>
           <Input
             placeholder="Ex: Pagamento Fornecedor X"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            className="bg-[#18181b] border-[#3f3f46] text-white"
+            className="bg-background border-border text-foreground"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Valor (R$)</label>
+            <label className="text-sm font-medium text-foreground">Valor (R$)</label>
             <Input
               type="number"
               step="0.01"
@@ -176,28 +175,28 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
               placeholder="0.00"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
+              className="bg-background border-border text-foreground"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Data</label>
+            <label className="text-sm font-medium text-foreground">Data</label>
             <Input
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
+              className="bg-background border-border text-foreground"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Categoria</label>
+            <label className="text-sm font-medium text-foreground">Categoria</label>
             <Select value={categoria} onValueChange={(val) => val && setCategoria(val)}>
-              <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectTrigger className="w-full bg-background border-border text-foreground font-normal">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectContent className="bg-popover text-popover-foreground border-border">
                 {tipo === 'Receita' ? (
                   <>
                     <SelectItem value="Mensalidade">Mensalidade</SelectItem>
@@ -216,12 +215,12 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Conta / Verba</label>
+            <label className="text-sm font-medium text-foreground">Conta / Verba</label>
             <Select value={conta} onValueChange={(val) => val && setConta(val)}>
-              <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectTrigger className="w-full bg-background border-border text-foreground font-normal">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+              <SelectContent className="bg-popover text-popover-foreground border-border">
                 <SelectItem value="Caixa Escolar">Caixa Escolar</SelectItem>
                 <SelectItem value="Conta do Brasil">Conta do Brasil</SelectItem>
               </SelectContent>
@@ -230,7 +229,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Comprovante / Nota Fiscal (Opcional)</label>
+          <label className="text-sm font-medium text-foreground">Comprovante / Nota Fiscal (Opcional)</label>
           <FileUpload
             file={arquivo}
             onChange={setArquivo}

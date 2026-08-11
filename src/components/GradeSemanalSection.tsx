@@ -73,7 +73,11 @@ export function GradeSemanalSection() {
 
   // 1. Carregar turmas da escola
   const fetchTurmas = async () => {
-    if (!selectedEscola?.id) return
+    if (!selectedEscola?.id) {
+      setTurmas([])
+      setLoadingTurmas(false)
+      return
+    }
     setLoadingTurmas(true)
     try {
       const { data, error } = await (supabase as any)
@@ -401,11 +405,11 @@ export function GradeSemanalSection() {
             ) : (
               <div className="rounded-xl border border-borderCustom overflow-hidden bg-card overflow-x-auto">
                 <Table className="min-w-[800px]">
-                  <TableHeader className="bg-[#080808]">
+                  <TableHeader className="bg-muted/60">
                     <TableRow className="border-borderCustom hover:bg-transparent">
-                      <TableHead className="text-muted-foreground w-32 font-semibold">Horário</TableHead>
+                      <TableHead className="text-foreground w-32 font-semibold">Horário</TableHead>
                       {weekdays.map((day) => (
-                        <TableHead key={day.value} className="text-muted-foreground text-center font-semibold">
+                        <TableHead key={day.value} className="text-foreground text-center font-semibold">
                           {day.label}
                         </TableHead>
                       ))}
@@ -413,7 +417,7 @@ export function GradeSemanalSection() {
                   </TableHeader>
                   <TableBody>
                     {slots.map((slot) => (
-                      <TableRow key={slot.id} className="border-borderCustom hover:bg-[#151517] transition-colors">
+                      <TableRow key={slot.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
                         <TableCell className="font-semibold text-foreground text-xs">
                           <div className="text-foreground font-bold">{slot.ordem_aula}º Horário</div>
                           <div className="text-muted-foreground font-mono text-[10px] mt-0.5">

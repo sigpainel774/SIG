@@ -78,14 +78,13 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-transparent border-[#3f3f46] text-white hover:bg-[#27272a]"
             disabled={loading}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-highlight text-background hover:bg-highlight/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
             disabled={loading}
           >
             {loading ? 'Salvando...' : 'Salvar'}
@@ -95,9 +94,9 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
     >
       <div className="grid gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Funcionário</label>
+          <label className="text-sm font-medium text-foreground">Funcionário</label>
           <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)}>
-            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectTrigger className="w-full bg-background border-border text-foreground font-normal">
               <SelectValue placeholder="Selecione um membro da equipe">
                 {funcionarioId 
                   ? (() => {
@@ -107,7 +106,7 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
                   : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
+            <SelectContent className="bg-popover text-popover-foreground border-border max-h-60">
               {equipe.map((membro) => (
                 <SelectItem key={membro.id} value={membro.id}>
                   {membro.nome} {membro.cargo ? `(${membro.cargo})` : ''}
@@ -118,22 +117,22 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Data</label>
+          <label className="text-sm font-medium text-foreground">Data</label>
           <Input
             type="date"
             value={data}
             onChange={(e) => setData(e.target.value)}
-            className="bg-[#18181b] border-[#3f3f46] text-white"
+            className="bg-background border-border text-foreground"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Turno</label>
+          <label className="text-sm font-medium text-foreground">Turno</label>
           <Select value={turno} onValueChange={(val) => val && setTurno(val)}>
-            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectTrigger className="w-full bg-background border-border text-foreground font-normal">
               <SelectValue placeholder="Selecione o turno" />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectContent className="bg-popover text-popover-foreground border-border">
               <SelectItem value="Matutino">Matutino</SelectItem>
               <SelectItem value="Vespertino">Vespertino</SelectItem>
               <SelectItem value="Noturno">Noturno</SelectItem>
