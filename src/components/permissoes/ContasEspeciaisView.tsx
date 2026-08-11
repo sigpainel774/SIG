@@ -234,15 +234,15 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
           </div>
 
           {/* Filtro por status */}
-          <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shrink-0 self-start sm:self-auto">
+          <div className="inline-flex items-center bg-slate-200/80 dark:bg-[#141416] p-1 rounded-xl border border-slate-300/70 dark:border-[#26262a] shrink-0 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setFiltroStatus('todas')}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                 filtroStatus === 'todas'
-                  ? "bg-zinc-800 text-white border border-zinc-700 shadow-sm"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               Todas ({funcionariosAll.length})
@@ -253,11 +253,11 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                 filtroStatus === 'especiais'
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm font-bold"
-                  : "text-zinc-400 hover:text-amber-400"
+                  ? "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm font-bold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400"
               )}
             >
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" />
               Especiais ({totalEspeciais})
             </button>
             <button
@@ -266,8 +266,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                 filtroStatus === 'normais'
-                  ? "bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-[#3ea6ff] border border-blue-200 dark:border-blue-500/40 shadow-sm font-semibold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               Normais ({funcionariosAll.length - totalEspeciais})
