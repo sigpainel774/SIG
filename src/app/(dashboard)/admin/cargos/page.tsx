@@ -217,12 +217,14 @@ export default function AdminCargosPage() {
       />
 
       {/* Modal Criar / Editar Cargo */}
-      <ModalCargo
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        cargoToEdit={cargoToEdit}
-        onSuccess={loadCargos}
-      />
+      {modalOpen && (
+        <ModalCargo
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          cargoToEdit={cargoToEdit}
+          onSuccess={loadCargos}
+        />
+      )}
     </div>
   )
 }
