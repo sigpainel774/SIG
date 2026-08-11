@@ -278,12 +278,14 @@ export default function AdminSecretariasPage() {
       />
 
       {/* Modal Criar / Editar Secretaria */}
-      <ModalSecretaria
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        secretariaToEdit={secretariaToEdit}
-        onSuccess={loadSecretarias}
-      />
+      {modalOpen && (
+        <ModalSecretaria
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          secretariaToEdit={secretariaToEdit}
+          onSuccess={loadSecretarias}
+        />
+      )}
 
       {/* Modal Gerenciar Cargos da Secretaria */}
       {modalCargosOpen && (
