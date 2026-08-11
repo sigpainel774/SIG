@@ -29,13 +29,15 @@ export function EmpregoTab() {
   } = useFuncionarioForm()
 
   const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
+  const isEmaee = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
 
   return (
     <div className="space-y-5">
       {/* Botão '+' / Banner de Gestão de Lotações */}
       {isEditing && (
-        <div className="bg-[#18181a] border border-borderCustom rounded-xl p-4 space-y-2">
+        <div className="bg-zinc-100 dark:bg-[#18181a] border border-zinc-200 dark:border-borderCustom rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-[#3ea6ff] uppercase tracking-wider">
               <MapPin className="w-4 h-4" />
@@ -50,7 +52,7 @@ export function EmpregoTab() {
               Adicionar Lotação
             </Button>
           </div>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Adicione ou altere vínculos deste servidor em diferentes unidades escolares, ajustando a carga horária semanal (ex: 20h) e a modalidade (Regular ou EJA).
           </p>
         </div>
@@ -61,7 +63,7 @@ export function EmpregoTab() {
           <select
             value={cargo}
             onChange={(e) => setCargo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
             <option value="">Selecione a função</option>
             {cargos.map((c) => (
@@ -86,7 +88,7 @@ export function EmpregoTab() {
             value={cargaHoraria}
             onChange={(e) => setCargaHoraria(e.target.value)}
             placeholder="Ex: 20, 30, 40"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
 
@@ -96,7 +98,7 @@ export function EmpregoTab() {
             value={funcaoEspec}
             onChange={(e) => setFuncaoEspec(e.target.value)}
             placeholder="Qual outra função?"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
       </div>
@@ -107,7 +109,7 @@ export function EmpregoTab() {
           <select
             value={tipoVinculo}
             onChange={(e) => setTipoVinculo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
             <option value="Contratado">Contratado</option>
             <option value="Efetivo">Efetivo</option>
@@ -121,7 +123,7 @@ export function EmpregoTab() {
             value={tipoVinculoEspec}
             onChange={(e) => setTipoVinculoEspec(e.target.value)}
             placeholder="Qual outro tipo?"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         {!isSaude && (
@@ -130,10 +132,12 @@ export function EmpregoTab() {
             <select
               value={modalidadeEnsino}
               onChange={(e) => setModalidadeEnsino(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
+              className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1 font-medium"
             >
-              <option value="Regular">Regular (Ensino Regular)</option>
-              <option value="EJA">EJA (Educação de Jovens e Adultos)</option>
+              <option value="Regular" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Regular (Ensino Regular)</option>
+              {(modalidadeEnsino === 'EJA' || !isEmaee) && (
+                <option value="EJA" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">EJA (Educação de Jovens e Adultos)</option>
+              )}
             </select>
           </div>
         )}
@@ -143,7 +147,7 @@ export function EmpregoTab() {
             type="date"
             value={dataAdmissao}
             onChange={(e) => setDataAdmissao(e.target.value)}
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -151,7 +155,7 @@ export function EmpregoTab() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
             <option value="ativo">Ativo</option>
             <option value="afastado">Afastado (Licença Médica)</option>
@@ -161,16 +165,16 @@ export function EmpregoTab() {
         </div>
 
         <div className="flex flex-col justify-end">
-          <label className="flex items-center gap-2.5 p-2.5 rounded-md bg-[#181818] border border-borderCustom cursor-pointer hover:border-[#3ea6ff]/50 transition-colors h-10 mt-1">
+          <label className="flex items-center gap-2.5 p-2.5 rounded-md bg-zinc-100 dark:bg-[#181818] border border-zinc-200 dark:border-borderCustom cursor-pointer hover:border-[#3ea6ff]/50 transition-colors h-10 mt-1">
             <input
               type="checkbox"
               checked={isProfissionalAee}
               onChange={(e) => setIsProfissionalAee(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 text-[#3ea6ff] focus:ring-[#3ea6ff] bg-[#121212] accent-[#3ea6ff] cursor-pointer"
+              className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-[#3ea6ff] focus:ring-[#3ea6ff] bg-background dark:bg-[#121212] accent-[#3ea6ff] cursor-pointer"
             />
             <div className="flex flex-col">
-              <span className="text-xs font-semibold text-white leading-tight">Profissional AEE</span>
-              <span className="text-[10px] text-zinc-400 leading-tight">EMAEE Painel</span>
+              <span className="text-xs font-semibold text-foreground leading-tight">Profissional AEE</span>
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight">EMAEE Painel</span>
             </div>
           </label>
         </div>
@@ -179,7 +183,7 @@ export function EmpregoTab() {
 
       {/* Seção Condicional de Licença Médica quando Status for Afastado */}
       {status === 'afastado' && (
-        <div className="bg-[#141416] border border-amber-500/40 rounded-xl p-5 space-y-4 shadow-lg animate-in fade-in duration-200">
+        <div className="bg-amber-50/20 dark:bg-[#141416] border border-amber-500/40 rounded-xl p-5 space-y-4 shadow-lg animate-in fade-in duration-200">
           <div className="flex items-center gap-2 text-sm font-bold text-amber-400 uppercase tracking-wider border-b border-amber-500/20 pb-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             Dados da Licença Médica & Afastamento
@@ -192,7 +196,7 @@ export function EmpregoTab() {
                 value={cid}
                 onChange={(e) => setCid(e.target.value.toUpperCase())}
                 placeholder="Ex: J01, Z76"
-                className="bg-[#181818] border-amber-500/30 text-white mt-1 uppercase font-bold"
+                className="bg-background dark:bg-[#181818] border-amber-500/30 text-foreground mt-1 uppercase font-bold"
               />
             </div>
 
@@ -213,7 +217,7 @@ export function EmpregoTab() {
                   }
                 }}
                 placeholder="Ex: 15"
-                className="bg-[#181818] border-amber-500/30 text-white mt-1 font-bold"
+                className="bg-background dark:bg-[#181818] border-amber-500/30 text-foreground mt-1 font-bold"
               />
             </div>
 
@@ -236,7 +240,7 @@ export function EmpregoTab() {
                     }
                   }
                 }}
-                className="bg-[#181818] border-amber-500/30 text-white mt-1 font-bold"
+                className="bg-background dark:bg-[#181818] border-amber-500/30 text-foreground mt-1 font-bold"
               />
             </div>
           </div>

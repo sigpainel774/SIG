@@ -35,6 +35,9 @@ export function NovaLotacaoForm({
   const [novaCarga, setNovaCarga] = useState('')
   const [novaModalidade, setNovaModalidade] = useState('Regular')
 
+  const escolaSelecionadaObj = escolas.find((e) => e.id === novaEscola)
+  const isEmaeeLot = escolaSelecionadaObj?.tipo === 'EMAEE' || /emaee/i.test(escolaSelecionadaObj?.nome || '')
+
   const handleSubmete = async () => {
     if (!novaEscola) return
     await onAdicionarLotacao(
@@ -59,7 +62,14 @@ export function NovaLotacaoForm({
         <label className="text-xs text-zinc-400 font-medium">Escola / Órgão:</label>
         <Select
           value={novaEscola}
-          onValueChange={(v) => setNovaEscola(v ?? '')}
+          onValueChange={(v) => {
+            setNovaEscola(v ?? '')
+            const esc = escolas.find((e) => e.id === v)
+            const isEmaee = esc?.tipo === 'EMAEE' || /emaee/i.test(esc?.nome || '')
+            if (isEmaee) {
+              setNovaModalidade('Regular')
+            }
+          }}
         >
           <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
             <SelectValue placeholder="Selecione uma escola...">
@@ -127,7 +137,9 @@ export function NovaLotacaoForm({
           </SelectTrigger>
           <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
             <SelectItem value="Regular">Regular (Ensino Regular)</SelectItem>
-            <SelectItem value="EJA">EJA (Educação de Jovens e Adultos)</SelectItem>
+            {!isEmaeeLot && (
+              <SelectItem value="EJA">EJA (Educação de Jovens e Adultos)</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

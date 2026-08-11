@@ -62,7 +62,7 @@ export function DocumentosTab() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Documentação Básica</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Documentação Básica</h3>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <div className="flex items-center justify-between">
@@ -77,7 +77,7 @@ export function DocumentosTab() {
             value={cpf}
             onChange={(e) => setCpf(formatCPF(e.target.value))}
             placeholder="000.000.000-00"
-            className={`bg-[#181818] border-borderCustom text-white mt-1 ${
+            className={`bg-background dark:bg-[#181818] border-input text-foreground mt-1 ${
               cpf.trim().length > 0 && !isCpfValid ? 'border-rose-500/60 focus:border-rose-500' : ''
             }`}
           />
@@ -88,7 +88,7 @@ export function DocumentosTab() {
             value={rg}
             onChange={(e) => setRg(e.target.value)}
             placeholder="Número do RG"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -97,7 +97,7 @@ export function DocumentosTab() {
             value={nis}
             onChange={(e) => setNis(e.target.value)}
             placeholder="Número do NIS"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -106,12 +106,12 @@ export function DocumentosTab() {
             value={registroProfissional}
             onChange={(e) => setRegistroProfissional(e.target.value)}
             placeholder="Ex: CRP 03/12345"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
       </div>
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1 pt-2">Endereço Residencial</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 pt-2">Endereço Residencial</h3>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="md:col-span-3">
           <Label>Avenida / Rua / Travessa</Label>
@@ -119,7 +119,7 @@ export function DocumentosTab() {
             value={logradouro}
             onChange={(e) => setLogradouro(e.target.value)}
             placeholder="Ex: Av. Sete de Setembro"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -128,7 +128,7 @@ export function DocumentosTab() {
             value={numero}
             onChange={(e) => setNumero(e.target.value)}
             placeholder="Nº"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -145,7 +145,7 @@ export function DocumentosTab() {
               value={cep}
               onChange={(e) => setCep(formatCEP(e.target.value))}
               placeholder="44350-000"
-              className="bg-[#181818] border-borderCustom text-white pr-8"
+              className="bg-background dark:bg-[#181818] border-input text-foreground pr-8"
             />
             <button
               type="button"
@@ -168,7 +168,7 @@ export function DocumentosTab() {
             value={bairro}
             onChange={(e) => setBairro(e.target.value)}
             placeholder="Ex: Centro"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -177,7 +177,7 @@ export function DocumentosTab() {
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Sapeaçu"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -187,7 +187,7 @@ export function DocumentosTab() {
             onChange={(e) => setUfResidencia(e.target.value.toUpperCase())}
             placeholder="Ex: BA"
             maxLength={2}
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -195,10 +195,10 @@ export function DocumentosTab() {
           <select
             value={areaResidencia}
             onChange={(e) => setAreaResidencia(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Urbana">Urbana</option>
-            <option value="Rural">Rural</option>
+            <option value="Urbana" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Urbana</option>
+            <option value="Rural" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Rural</option>
           </select>
         </div>
       </div>
@@ -209,12 +209,12 @@ export function DocumentosTab() {
           <select
             value={areaDiferenciada}
             onChange={(e) => setAreaDiferenciada(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Não está em área diferenciada">Não está em área diferenciada</option>
-            <option value="Comunidade remanescente de quilombos">Comunidade remanescente de quilombos (Quilombola)</option>
-            <option value="Terra indígena">Terra indígena</option>
-            <option value="Área de assentamento cigano">Área de assentamento cigano</option>
+            <option value="Não está em área diferenciada" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Não está em área diferenciada</option>
+            <option value="Comunidade remanescente de quilombos" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Comunidade remanescente de quilombos (Quilombola)</option>
+            <option value="Terra indígena" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Terra indígena</option>
+            <option value="Área de assentamento cigano" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Área de assentamento cigano</option>
           </select>
         </div>
         
@@ -226,13 +226,13 @@ export function DocumentosTab() {
             placeholder="Rua, número, bairro, cidade..."
             value={fullAddress}
             disabled
-            className="bg-zinc-800/40 border-borderCustom text-zinc-400 mt-1 cursor-not-allowed"
+            className="bg-zinc-100 dark:bg-zinc-800/40 border-input text-zinc-500 dark:text-zinc-400 mt-1 cursor-not-allowed"
           />
         </div>
       </div>
 
       <div className="pt-2 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-1.5">
           <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Coordenadas de GPS Residencial</h3>
           <button
             type="button"
@@ -247,29 +247,29 @@ export function DocumentosTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-zinc-300">Latitude (Ex: -12.729993)</Label>
+            <Label className="text-xs text-zinc-600 dark:text-zinc-300">Latitude (Ex: -12.729993)</Label>
             <Input
               type="text"
               value={latitudeStr}
               onChange={(e) => setLatitudeStr(e.target.value)}
               placeholder="-12.729993"
-              className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
+              className="bg-background dark:bg-[#181818] border-input text-foreground mt-1 font-mono text-xs"
             />
           </div>
           <div>
-            <Label className="text-xs text-zinc-300">Longitude (Ex: -39.185819)</Label>
+            <Label className="text-xs text-zinc-600 dark:text-zinc-300">Longitude (Ex: -39.185819)</Label>
             <Input
               type="text"
               value={longitudeStr}
               onChange={(e) => setLongitudeStr(e.target.value)}
               placeholder="-39.185819"
-              className="bg-[#181818] border-borderCustom text-white mt-1 font-mono text-xs"
+              className="bg-background dark:bg-[#181818] border-input text-foreground mt-1 font-mono text-xs"
             />
           </div>
         </div>
 
         <div>
-          <Label className="text-xs text-zinc-400 mb-1.5 block">Visualização no Mapa (Clique ou arraste o pino para ajustar)</Label>
+          <Label className="text-xs text-zinc-550 dark:text-zinc-400 mb-1.5 block">Visualização no Mapa (Clique ou arraste o pino para ajustar)</Label>
           <div className="mt-1 w-full relative z-10">
             <MiniMapa
               initialLat={latitude ?? undefined}

@@ -611,14 +611,26 @@ export function useFuncionarioFormStates({
     const isLevel1 = usuarioLogado?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
 
     if (!isLevel1) {
-      const { data: configRede } = await supabase
-        .from('configuracoes_rede')
-        .select('bloquear_edicao_funcionarios_rede')
-        .limit(1)
-        .single()
+      try {
+        const { data: configRede, error } = await supabase
+          .from('configuracoes_rede')
+          .select('bloquear_edicao_funcionarios_rede')
+          .limit(1)
+          .single()
 
-      if (configRede?.bloquear_edicao_funcionarios_rede) {
-        toast.error('A edição de ficha de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        if (error) {
+          console.error('Erro ao verificar permissão global da rede:', error)
+          toast.error('Não foi possível validar as permissões com a rede de ensino. Operação cancelada por segurança.')
+          return
+        }
+
+        if (configRede?.bloquear_edicao_funcionarios_rede) {
+          toast.error('A edição de ficha de funcionários foi temporariamente bloqueada pela gestão da rede.')
+          return
+        }
+      } catch (err) {
+        console.error('Erro inesperado ao verificar restrição global:', err)
+        toast.error('Erro de conexão ao verificar restrições globais da rede.')
         return
       }
     }

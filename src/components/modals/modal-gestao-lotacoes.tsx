@@ -211,6 +211,9 @@ export function ModalGestaoLotacoes({
                       {selecionado.lotacoes.map((lot) => {
                         const podeGerenciarLotacao = isGlobalAdmin || lot.escola_id === escolaAtivaId
                         const cargoExibido = lot.cargo ?? selecionado.cargo ?? ''
+                        const escolaDaLot = escolas.find((e) => e.id === lot.escola_id)
+                        const isEmaeeLot = escolaDaLot?.tipo === 'EMAEE' || /emaee/i.test(escolaDaLot?.nome || '')
+
                         return (
                           <div
                             key={lot.id}
@@ -269,7 +272,9 @@ export function ModalGestaoLotacoes({
                                       className="bg-[#121216] border border-[#2e2e33] text-white text-xs rounded px-2 py-1.5 sm:py-1 outline-none focus:border-[#3ea6ff] cursor-pointer font-medium"
                                     >
                                       <option value="Regular">Regular</option>
-                                      <option value="EJA">EJA</option>
+                                      {(lot.modalidade_ensino === 'EJA' || !isEmaeeLot) && (
+                                        <option value="EJA">EJA</option>
+                                      )}
                                     </select>
                                   </div>
                                 </div>

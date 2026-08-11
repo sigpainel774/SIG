@@ -39,7 +39,7 @@ export function PessoaisTab() {
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Nome completo conforme documentos"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
             required
           />
         </div>
@@ -49,7 +49,7 @@ export function PessoaisTab() {
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
             placeholder="Ex: Zezinho, Prof. Léo"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -58,7 +58,7 @@ export function PessoaisTab() {
             value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
             placeholder="(75) 99999-8888"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
       </div>
@@ -70,7 +70,7 @@ export function PessoaisTab() {
             value={telefoneEmergencia}
             onChange={(e) => setTelefoneEmergencia(e.target.value)}
             placeholder="(75) 98888-7777 (Contato)"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         {!isSaude && (
@@ -80,7 +80,7 @@ export function PessoaisTab() {
               value={censo}
               onChange={(e) => setCenso(e.target.value)}
               placeholder="Código INEP do Professor"
-              className="bg-[#181818] border-borderCustom text-white mt-1"
+              className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
             />
           </div>
         )}
@@ -91,7 +91,7 @@ export function PessoaisTab() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="maria@escola.com"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
             required
             disabled={isEditing}
           />
@@ -104,12 +104,12 @@ export function PessoaisTab() {
           <select
             value={sexo}
             onChange={(e) => setSexo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Não declarado">Não declarado</option>
-            <option value="Feminino">Feminino</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Outro">Outro</option>
+            <option value="Não declarado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Não declarado</option>
+            <option value="Feminino" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Feminino</option>
+            <option value="Masculino" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Masculino</option>
+            <option value="Outro" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Outro</option>
           </select>
         </div>
         <div>
@@ -117,14 +117,14 @@ export function PessoaisTab() {
           <select
             value={estadoCivil}
             onChange={(e) => setEstadoCivil(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Não declarado">Não declarado</option>
-            <option value="Solteiro">Solteiro(a)</option>
-            <option value="Casado">Casado(a)</option>
-            <option value="Separado">Separado(a)</option>
-            <option value="Divorciado">Divorciado(a)</option>
-            <option value="Viúvo">Viúvo(a)</option>
+            <option value="Não declarado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Não declarado</option>
+            <option value="Solteiro" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Solteiro(a)</option>
+            <option value="Casado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Casado(a)</option>
+            <option value="Separado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Separado(a)</option>
+            <option value="Divorciado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Divorciado(a)</option>
+            <option value="Viúvo" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Viúvo(a)</option>
           </select>
         </div>
         <div>
@@ -132,14 +132,14 @@ export function PessoaisTab() {
           <select
             value={corRaca}
             onChange={(e) => setCorRaca(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Não declarado">Não declarado</option>
-            <option value="Branca">Branca</option>
-            <option value="Preta">Preta</option>
-            <option value="Parda">Parda</option>
-            <option value="Amarela">Amarela</option>
-            <option value="Indígena">Indígena</option>
+            <option value="Não declarado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Não declarado</option>
+            <option value="Branca" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Branca</option>
+            <option value="Preta" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Preta</option>
+            <option value="Parda" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Parda</option>
+            <option value="Amarela" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Amarela</option>
+            <option value="Indígena" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Indígena</option>
           </select>
         </div>
         <div>
@@ -148,7 +148,7 @@ export function PessoaisTab() {
             type="date"
             value={nascimento}
             onChange={(e) => setNascimento(e.target.value)}
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
       </div>
@@ -160,7 +160,7 @@ export function PessoaisTab() {
             value={nomeMae}
             onChange={(e) => setNomeMae(e.target.value)}
             placeholder="Nome completo da mãe"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div>
@@ -169,7 +169,7 @@ export function PessoaisTab() {
             value={nomePai}
             onChange={(e) => setNomePai(e.target.value)}
             placeholder="Nome completo do pai"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
       </div>
@@ -180,11 +180,11 @@ export function PessoaisTab() {
           <select
             value={nacionalidade}
             onChange={(e) => setNacionalidade(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Brasileira">Brasileira</option>
-            <option value="Brasileira exterior">Naturalizado / Nascido no exterior</option>
-            <option value="Estrangeira">Estrangeira</option>
+            <option value="Brasileira" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Brasileira</option>
+            <option value="Brasileira exterior" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Naturalizado / Nascido no exterior</option>
+            <option value="Estrangeira" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Estrangeira</option>
           </select>
         </div>
         <div className={nacionalidade === 'Estrangeira' ? 'block' : 'hidden'}>
@@ -193,7 +193,7 @@ export function PessoaisTab() {
             value={nacionalidadeEspec}
             onChange={(e) => setNacionalidadeEspec(e.target.value)}
             placeholder="Qual país?"
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div className={nacionalidade === 'Estrangeira' ? 'md:col-span-2' : 'md:col-span-3'}>
@@ -204,7 +204,7 @@ export function PessoaisTab() {
                 value={municipioNasc}
                 onChange={(e) => setMunicipioNasc(e.target.value)}
                 placeholder="Cidade de nascimento"
-                className="bg-[#181818] border-borderCustom text-white mt-1"
+                className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
               />
             </div>
             <div>
@@ -214,7 +214,7 @@ export function PessoaisTab() {
                 onChange={(e) => setUfNasc(e.target.value.toUpperCase())}
                 placeholder="Ex: BA"
                 maxLength={2}
-                className="bg-[#181818] border-borderCustom text-white mt-1"
+                className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
               />
             </div>
           </div>
