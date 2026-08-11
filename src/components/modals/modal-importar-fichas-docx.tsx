@@ -32,6 +32,7 @@ interface ModalImportarFichasDocxProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   escolaIdInicial?: string
+  secretariaIdFilter?: string
   onSuccess?: () => void
 }
 
@@ -46,6 +47,7 @@ export function ModalImportarFichasDocx({
   open,
   onOpenChange,
   escolaIdInicial = '',
+  secretariaIdFilter,
   onSuccess
 }: ModalImportarFichasDocxProps) {
   const supabase = createClient()
@@ -72,22 +74,27 @@ export function ModalImportarFichasDocx({
     }
   }, [])
 
-  // Carregar Escolas
+  // Carregar Escolas / Unidades
   useEffect(() => {
     if (!open) return
     const fetchEscolas = async () => {
       setLoadingCatalog(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('escolas')
-        .select('id, nome, inep')
+        .select('id, nome, inep, secretaria_id')
         .is('deleted_at', null)
         .eq('ativo', true)
-        .order('nome', { ascending: true })
+
+      if (secretariaIdFilter) {
+        query = query.eq('secretaria_id', secretariaIdFilter)
+      }
+
+      const { data, error } = await query.order('nome', { ascending: true })
 
       if (!isMounted.current) return
       if (error) {
         console.error('Erro ao carregar escolas:', error)
-        toast.error('Erro ao buscar lista de escolas.')
+        toast.error('Erro ao buscar lista de unidades.')
       } else if (data) {
         setEscolas(data)
         if (!selectedEscolaId && data.length > 0) {
@@ -97,7 +104,7 @@ export function ModalImportarFichasDocx({
       setLoadingCatalog(false)
     }
     fetchEscolas()
-  }, [open, supabase])
+  }, [open, supabase, secretariaIdFilter])
 
   // Carregar Turmas da Escola Selecionada
   useEffect(() => {

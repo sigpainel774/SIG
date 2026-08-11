@@ -5,8 +5,10 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, RefreshCw, CheckCircle2, User, Search, School } from 'lucide-react'
+import { Building2, Plus, Edit, RefreshCw, CheckCircle2, User, Search, School, Stethoscope } from 'lucide-react'
 import { ModalEscola } from '@/components/modals/modal-escola'
+import { ImportDataActions } from '@/components/admin/ImportDataActions'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 
 interface ModalDetalhesSecretariaProps {
@@ -70,7 +72,6 @@ export function ModalDetalhesSecretaria({
     if (open && secretaria?.id) {
       loadUnidades()
       // Atualiza o contexto ativo da secretaria no sistema
-      const { useSchoolStore } = require('@/store/useSchoolStore')
       useSchoolStore.getState().setSelectedSecretaria({ id: secretaria.id, nome: secretaria.nome })
     }
   }, [open, secretaria?.id])
@@ -78,8 +79,19 @@ export function ModalDetalhesSecretaria({
   if (!secretaria) return null
 
   const isEducacao = /educa/i.test(secretaria.nome)
-  const termoUnidade = isEducacao ? 'Unidades Escolares' : 'Unidades Administrativas'
-  const termoSingular = isEducacao ? 'Unidade Escolar' : 'Unidade Administrativa'
+  const isSaude = /sa[uú]de/i.test(secretaria.nome)
+
+  const termoUnidade = isEducacao
+    ? 'Unidades Escolares'
+    : isSaude
+    ? 'Unidades de Saúde da Rede'
+    : 'Unidades Administrativas'
+
+  const termoSingular = isEducacao
+    ? 'Unidade Escolar'
+    : isSaude
+    ? 'Unidade de Saúde'
+    : 'Unidade Administrativa'
 
   const unidadesFiltradas = unidades.filter(u => 
     u.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -104,7 +116,7 @@ export function ModalDetalhesSecretaria({
         onOpenChange={onOpenChange}
         title={secretaria.nome}
         description={`Gestão e listagem de ${termoUnidade.toLowerCase()} mantidas por este órgão.`}
-        maxWidth="sm:max-w-3xl"
+        maxWidth="sm:max-w-4xl"
         footer={
           <div className="flex items-center justify-between w-full pt-3 border-t border-[#27272a]">
             <span className="text-xs text-zinc-400">
@@ -132,6 +144,8 @@ export function ModalDetalhesSecretaria({
                     alt={secretaria.nome} 
                     className="w-full h-full object-contain p-1"
                   />
+                ) : isSaude ? (
+                  <Stethoscope className="w-6 h-6 text-rose-400" />
                 ) : (
                   <Building2 className="w-6 h-6 text-sky-400" />
                 )}
@@ -149,14 +163,22 @@ export function ModalDetalhesSecretaria({
               </div>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleNovaUnidade}
-              className="bg-[#0090ff] text-white hover:bg-[#0077d4] text-xs font-semibold rounded-xl gap-1.5 shrink-0 self-end sm:self-auto cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Nova Unidade</span>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
+              {/* Opções Reutilizáveis de Importação de Dados */}
+              <ImportDataActions 
+                secretariaIdFilter={secretaria.id} 
+                onSuccess={loadUnidades} 
+              />
+
+              <Button
+                type="button"
+                onClick={handleNovaUnidade}
+                className="bg-[#0090ff] text-white hover:bg-[#0077d4] text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-9"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Nova Unidade</span>
+              </Button>
+            </div>
           </div>
 
           {/* Barra de Busca e Atualização */}
