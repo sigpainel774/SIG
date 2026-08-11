@@ -37,7 +37,11 @@ export function HorariosSlotsSection() {
   const supabase = createClient()
 
   const fetchSlots = async () => {
-    if (!selectedEscola?.id) return
+    if (!selectedEscola?.id) {
+      setSlots([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const { data, error } = await (supabase as any)
@@ -221,7 +225,7 @@ export function HorariosSlotsSection() {
               <select
                 value={turno}
                 onChange={(e) => setTurno(e.target.value)}
-                className="w-full rounded-md border border-borderCustom bg-input text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
+                className="w-full rounded-lg border border-borderCustom bg-input text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
               >
                 <option value="Matutino">Matutino (Manhã)</option>
                 <option value="Vespertino">Vespertino (Tarde)</option>
@@ -275,7 +279,7 @@ export function HorariosSlotsSection() {
               <Button
                 type="submit"
                 disabled={salvando}
-                className="flex-1 bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer"
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2 cursor-pointer"
               >
                 {salvando ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -306,12 +310,12 @@ export function HorariosSlotsSection() {
         <h3 className="text-lg font-bold text-foreground mb-4">Grade de Slots Cadastrados</h3>
         <div className="rounded-xl border border-borderCustom overflow-hidden bg-card">
           <Table>
-            <TableHeader className="bg-[#080808]">
-              <TableRow className="border-borderCustom">
-                <TableHead className="text-muted-foreground">Turno</TableHead>
-                <TableHead className="text-muted-foreground text-center">Horário de Aula</TableHead>
-                <TableHead className="text-muted-foreground text-center">Intervalo de Duração</TableHead>
-                {isEditMode && <TableHead className="text-muted-foreground text-right">Ação</TableHead>}
+            <TableHeader className="bg-muted/60">
+              <TableRow className="border-borderCustom hover:bg-transparent">
+                <TableHead className="text-foreground font-semibold">Turno</TableHead>
+                <TableHead className="text-foreground text-center font-semibold">Horário de Aula</TableHead>
+                <TableHead className="text-foreground text-center font-semibold">Intervalo de Duração</TableHead>
+                {isEditMode && <TableHead className="text-foreground text-right font-semibold">Ação</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -340,7 +344,7 @@ export function HorariosSlotsSection() {
                   const duracao = (hFim * 60 + mFim) - (hIni * 60 + mIni)
 
                   return (
-                    <TableRow key={slot.id} className="border-borderCustom hover:bg-[#1a1a1c] transition-colors">
+                    <TableRow key={slot.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
                       <TableCell className="font-semibold text-foreground">
                         {turnosMap[slot.turno] || slot.turno}
                       </TableCell>

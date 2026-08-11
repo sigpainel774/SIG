@@ -190,14 +190,13 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-transparent border-[#3f3f46] text-white hover:bg-[#27272a]"
             disabled={loading}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
             disabled={loading}
           >
             {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}
@@ -208,9 +207,9 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
     >
       <div className="grid gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Servidor</label>
+          <label className="text-sm font-medium text-foreground">Servidor</label>
           <Select value={funcionarioId} onValueChange={(val) => val && setFuncionarioId(val)} disabled={loadingFuncs}>
-            <SelectTrigger className="bg-[#18181b] border-[#3f3f46] text-white">
+            <SelectTrigger className="w-full bg-background border-border text-foreground font-normal">
               <SelectValue placeholder={loadingFuncs ? "Carregando..." : "Selecione o servidor"}>
                 {funcionarioId 
                   ? (() => {
@@ -220,7 +219,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
                   : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white max-h-60">
+            <SelectContent className="bg-popover text-popover-foreground border-border max-h-60">
               {funcionarios.map((f) => (
                 <SelectItem key={f.id} value={f.id}>
                   {f.nome} {f.cargo ? `(${f.cargo})` : ''}
@@ -231,18 +230,18 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">CID</label>
+          <label className="text-sm font-medium text-foreground">CID</label>
           <Input
             placeholder="Ex: J01"
             value={cid}
             onChange={(e) => setCid(e.target.value)}
-            className="bg-[#18181b] border-[#3f3f46] text-white uppercase"
+            className="bg-background border-border text-foreground uppercase"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Dias de Afastamento</label>
+            <label className="text-sm font-medium text-foreground">Dias de Afastamento</label>
             <Input
               type="number"
               min={1}
@@ -256,12 +255,12 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
                   setDataFim(dt.toISOString().split('T')[0])
                 }
               }}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
+              className="bg-background border-border text-foreground"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-300">Data Prevista Término</label>
+            <label className="text-sm font-medium text-foreground">Data Prevista Término</label>
             <Input
               type="date"
               value={dataFim}
@@ -277,13 +276,13 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
                   if (diffDays > 0) setDias(diffDays)
                 }
               }}
-              className="bg-[#18181b] border-[#3f3f46] text-white"
+              className="bg-background border-border text-foreground"
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-300">Anexo do Atestado (Opcional)</label>
+          <label className="text-sm font-medium text-foreground">Anexo do Atestado (Opcional)</label>
           <FileUpload
             file={arquivo}
             onChange={setArquivo}

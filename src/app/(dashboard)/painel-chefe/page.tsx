@@ -240,7 +240,7 @@ export default function PainelChefePage() {
           </p>
         </div>
 
-        <Button onClick={() => setIsModalEscalaOpen(true)} className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer">
+        <Button onClick={() => setIsModalEscalaOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-2 cursor-pointer">
           <Plus className="w-4 h-4" /> Criar Escala de Trabalho
         </Button>
       </div>
