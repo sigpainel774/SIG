@@ -146,7 +146,7 @@ export function ModalAssociarAlunoAEE({
             type="button"
             variant="ghost"
             onClick={() => handleOpenChange(false)}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             Cancelar
           </Button>
@@ -154,7 +154,7 @@ export function ModalAssociarAlunoAEE({
             type="submit"
             form="form-vincular-aee"
             disabled={loading || !alunoSelecionadoId}
-            className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
           >
             {loading ? 'Salvando...' : 'Vincular'}
           </Button>
@@ -163,19 +163,19 @@ export function ModalAssociarAlunoAEE({
     >
       <form id="form-vincular-aee" onSubmit={handleSalvar} className="space-y-6 pb-4">
         <div>
-          <p className="text-sm text-gray-400 mb-4">
-            Associando aluno ao profissional <span className="font-bold text-white">{profissionalNome}</span> ({profissionalCargo}).
+          <p className="text-sm text-muted-foreground mb-4">
+            Associando aluno ao profissional <span className="font-bold text-foreground">{profissionalNome}</span> ({profissionalCargo}).
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label className="text-xs text-gray-300">Selecione o Aluno (Prontuário EMAEE)</Label>
+            <Label className="text-xs text-muted-foreground">Selecione o Aluno (Prontuário EMAEE)</Label>
             <Select value={alunoSelecionadoId} onValueChange={(val) => setAlunoSelecionadoId(val || '')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="bg-background border-border text-foreground mt-1">
                 <SelectValue placeholder={loading ? "Carregando..." : "Selecione o aluno..."} />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#27272a] text-white max-h-60">
+              <SelectContent className="bg-popover border-border text-popover-foreground max-h-60">
                 {alunosDisponiveis.map(m => {
                   const nome = (m.alunos as any)?.nome || 'Sem Nome'
                   const statusLabel = m.status === 'FILA_ESPERA' ? ' (Fila)' : ''
@@ -186,19 +186,19 @@ export function ModalAssociarAlunoAEE({
                   )
                 })}
                 {!loading && alunosDisponiveis.length === 0 && (
-                  <div className="p-3 text-sm text-gray-400 text-center">Nenhum aluno disponível.</div>
+                  <div className="p-3 text-sm text-muted-foreground text-center">Nenhum aluno disponível.</div>
                 )}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label className="text-xs text-gray-300">Frequência de Atendimento</Label>
+            <Label className="text-xs text-muted-foreground">Frequência de Atendimento</Label>
             <Select value={frequencia} onValueChange={(val) => setFrequencia(val || '')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="bg-background border-border text-foreground mt-1">
                 <SelectValue placeholder="Frequência" />
               </SelectTrigger>
-              <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="SEMANAL">Semanal</SelectItem>
                 <SelectItem value="QUINZENAL">Quinzenal</SelectItem>
                 <SelectItem value="MENSAL">Mensal</SelectItem>

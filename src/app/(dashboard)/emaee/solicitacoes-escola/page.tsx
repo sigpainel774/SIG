@@ -33,7 +33,7 @@ export default function SolicitacoesEscolaPage() {
       </div>
 
       {/* Conteúdo Provisório */}
-      <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-[#141416] border border-[#26262a] rounded-2xl shadow-sm">
+      <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
         <FileSpreadsheet className="w-16 h-16 text-muted-foreground/30 mb-4" />
         <h2 className="text-xl font-semibold text-foreground mb-2">
           Página em Construção
