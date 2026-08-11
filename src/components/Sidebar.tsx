@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function Sidebar() {
   const router = useRouter()
@@ -395,6 +396,80 @@ export function Sidebar() {
           })
 
           if (filteredItems.length === 0) return null
+
+          const isNivel1OrSuperior = funcionario?.is_superadmin || Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
+          const requerSelecaoEscolaParaDetalhes = isEducacao && isNivel1OrSuperior
+          const temEscolaSelecionada = Boolean(selectedEscola)
+
+          if (requerSelecaoEscolaParaDetalhes) {
+            if (group.label === 'GESTÃO ACADÊMICA') {
+              const mainItem = filteredItems.find(i => i.href === '/alunos')
+              const extraItems = filteredItems.filter(i => i.href !== '/alunos')
+
+              return (
+                <div key={groupIndex}>
+                  {group.label !== null && (
+                    <>
+                      <hr className="border-sidebar-border/40 mx-3 my-1" />
+                      <div className="px-4 pt-4 pb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/75 dark:text-sidebar-foreground/40">
+                          {group.label}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="space-y-1.5">
+                    {mainItem && <NavLink item={mainItem} />}
+                    <AnimatePresence initial={false}>
+                      {temEscolaSelecionada && extraItems.length > 0 && (
+                        <motion.div
+                          key="gestao-academica-extras"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: 'easeInOut' }}
+                          className="overflow-hidden space-y-1.5"
+                        >
+                          {extraItems.map((item) => (
+                            <NavLink key={item.href} item={item} />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )
+            }
+
+            if (group.label === 'SECRETARIA') {
+              return (
+                <AnimatePresence key={groupIndex} initial={false}>
+                  {temEscolaSelecionada && (
+                    <motion.div
+                      key="secretaria-group-animated"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <hr className="border-sidebar-border/40 mx-3 my-1" />
+                      <div className="px-4 pt-4 pb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/75 dark:text-sidebar-foreground/40">
+                          {group.label}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {filteredItems.map((item) => (
+                          <NavLink key={item.href} item={item} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )
+            }
+          }
 
           return (
             <div key={groupIndex}>
