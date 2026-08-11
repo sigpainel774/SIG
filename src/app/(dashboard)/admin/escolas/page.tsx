@@ -2,19 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, FileSpreadsheet, Printer } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import dynamic from 'next/dynamic'
+import { ImportDataActions } from '@/components/admin/ImportDataActions'
 
 // Imports dinâmicos de modais sob demanda
 const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').then(m => m.ModalEscola), { ssr: false })
 const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
 const ModalConfigSecretario = dynamic(() => import('@/components/modals/modal-config-secretario').then(m => m.ModalConfigSecretario), { ssr: false })
-const ModalImportarFichasDocx = dynamic(() => import('@/components/modals/modal-importar-fichas-docx').then(m => m.ModalImportarFichasDocx), { ssr: false })
-const ModalImportarExcel = dynamic(() => import('@/components/modals/modal-importar-excel').then(m => m.ModalImportarExcel), { ssr: false })
 const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
 
 import { toast } from 'sonner'
@@ -39,8 +38,6 @@ export default function AdminEscolasPage() {
   const [escolaParaAnexos, setEscolaParaAnexos] = useState<any | null>(null)
 
   const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
-  const [importDocxOpen, setImportDocxOpen] = useState(false)
-  const [importExcelOpen, setImportExcelOpen] = useState(false)
   const [filaImpressaoOpen, setFilaImpressaoOpen] = useState(false)
 
   const isMounted = useRef(true)
@@ -55,7 +52,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, created_at')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, created_at, secretarias:secretaria_id(id, nome)')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
@@ -65,7 +62,15 @@ export default function AdminEscolasPage() {
       console.error('Erro ao carregar escolas:', error)
       toast.error('Erro ao carregar lista de escolas.')
     } else if (data) {
-      setEscolas(data)
+      // Filtra exclusivamente escolas/unidades pertencentes à Secretaria de Educação
+      const escolasEducacao = (data || []).filter((e: any) => {
+        const secNome = e.secretarias?.nome || ''
+        const isSaude = /sa[uú]de/i.test(secNome) || /posto de sa[uú]de|usf/i.test(e.nome)
+        if (isSaude) return false
+        if (secNome) return /educa/i.test(secNome)
+        return true
+      })
+      setEscolas(escolasEducacao)
     }
     setLoading(false)
   }
@@ -191,51 +196,39 @@ export default function AdminEscolasPage() {
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Building2 className="w-6 h-6 text-purple-500" /> Escolas da Rede
           </h2>
-          <p className="text-[#aaa] text-sm mt-1">Cadastro, edição e gerenciamento de todas as unidades escolares.</p>
+          <p className="text-[#aaa] text-sm mt-1">Cadastro, edição e gerenciamento de todas as unidades escolares da Secretaria de Educação.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button 
             variant="outline"
             onClick={() => setFilaImpressaoOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-amber-400 hover:text-amber-300 hover:bg-[#202024] font-semibold"
+            className="bg-[#121214] border-[#3f3f46] text-amber-400 hover:text-amber-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
             title="Gerenciar e Excluir Atividades na Fila de Impressão"
           >
-            <Printer className="w-4 h-4 mr-2 text-amber-400" /> Fila de Impressão
+            <Printer className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> Fila de Impressão
           </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setImportDocxOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-emerald-400 hover:text-emerald-300 hover:bg-[#202024] font-semibold"
-            title="Importar Fichas de Alunos via arquivos DOCX"
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" /> Importar Fichas (DOCX)
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setImportExcelOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold"
-            title="Importador 15 de Alunos via arquivos Excel (.xlsx / .xls)"
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2 text-purple-400" /> Importador 15 (Excel)
-          </Button>
+
+          {/* Botões Reutilizáveis de Importação */}
+          <ImportDataActions onSuccess={loadEscolas} />
+
           <Button 
             variant="outline"
             onClick={() => setConfigSecretarioOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold"
+            className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
             title="Configurar Titular da Secretaria de Educação"
           >
-            <UserCheck className="w-4 h-4 mr-2 text-purple-400" /> Secretário de Educação
+            <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Secretário de Educação
           </Button>
           <Button 
             variant="outline"
             onClick={loadEscolas}
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-9"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={handleNovaEscola} className="bg-purple-600 text-white hover:bg-purple-700">
+          <Button onClick={handleNovaEscola} className="bg-purple-600 text-white hover:bg-purple-700 h-9 font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Nova Escola
           </Button>
         </div>
@@ -291,24 +284,6 @@ export default function AdminEscolasPage() {
         />
       )}
 
-      {/* Modal de Importação de Fichas DOCX */}
-      {importDocxOpen && (
-        <ModalImportarFichasDocx
-          open={importDocxOpen}
-          onOpenChange={setImportDocxOpen}
-          onSuccess={loadEscolas}
-        />
-      )}
-
-      {/* Modal do Importador 15 (Excel) */}
-      {importExcelOpen && (
-        <ModalImportarExcel
-          open={importExcelOpen}
-          onOpenChange={setImportExcelOpen}
-          onSuccess={loadEscolas}
-        />
-      )}
-
       {/* Modal de Gerenciamento da Fila de Impressão */}
       {filaImpressaoOpen && (
         <ModalGerenciarFilaImpressao
@@ -319,3 +294,4 @@ export default function AdminEscolasPage() {
     </div>
   )
 }
+
