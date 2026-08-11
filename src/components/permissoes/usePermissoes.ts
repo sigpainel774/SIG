@@ -106,7 +106,7 @@ export function usePermissoes() {
               return
             }
 
-            const nivelNum = ac.nivel ?? null
+            const nivelNum = ac.pode_rh_rede ? 7 : (ac.nivel ?? null)
             let nomeNivel = nivelLabel(nivelNum)
             if (f.is_superadmin) nomeNivel = 'ROOT'
 
@@ -117,7 +117,7 @@ export function usePermissoes() {
               email: f.email ?? f.nome,
               nivel: nomeNivel,
               nivelNum,
-              escola: ac.escolas?.nome ?? nomeEscolaVinculo ?? 'Sem Lotação',
+              escola: ac.escolas?.nome ?? nomeEscolaVinculo ?? (ac.pode_rh_rede ? 'Toda a Rede Municipal' : 'Sem Lotação'),
               escolaId: ac.escola_id ?? null,
               status: f.status || 'ativo',
             })
@@ -183,11 +183,11 @@ export function usePermissoes() {
       const filtrados = formatados.filter((item) => {
         if (schoolIdToUse) {
           if (item.nivel === 'ROOT') return false
-          if (item.nivelNum === 1) return false
+          if (item.nivelNum === 1 || item.nivelNum === 7) return false
         }
         if (restringirNivel) {
           if (item.nivel === 'ROOT') return false
-          if (item.nivelNum !== null && item.nivelNum < 3) return false
+          if (item.nivelNum !== null && (item.nivelNum < 3 || item.nivelNum === 7)) return false
         }
         return true
       })
@@ -359,10 +359,12 @@ export function usePermissoes() {
 
     setSalvando(true)
     const supabase = createClient()
-    const nivelNum = parseInt(nivelSel, 10)
-    const escolaIdToSave = escolaSel || null
+    const nivelNumInput = parseInt(nivelSel, 10)
+    const isRhRedeOption = nivelNumInput === 7
+    const nivelNum = isRhRedeOption ? 1 : nivelNumInput
+    const escolaIdToSave = isRhRedeOption ? null : (escolaSel || null)
 
-    if (restringirNivel && (nivelNum === 1 || nivelNum === 2)) {
+    if (restringirNivel && (nivelNumInput === 1 || nivelNumInput === 2 || isRhRedeOption)) {
       toast.error('Você não tem permissão para conceder este nível de acesso.')
       setSalvando(false)
       return
@@ -382,20 +384,32 @@ export function usePermissoes() {
 
     const { data: existente } = await checkQuery.maybeSingle()
 
-    const isNivel1 = nivelNum === 1
+    const isNivel1 = nivelNum === 1 && !isRhRedeOption
 
     let error
     if (existente?.id) {
       // UPDATE — atualizar nível e reativar
-      const updateData: any = { nivel: nivelNum, ativo: true }
+      const updateData: any = { 
+        nivel: nivelNum, 
+        ativo: true,
+        pode_rh_rede: isRhRedeOption,
+        pode_funcionarios: true,
+      }
       if (isNivel1) {
         updateData.pode_mural = true
         updateData.pode_turmas = true
-        updateData.pode_funcionarios = true
         updateData.pode_matriculas = true
         updateData.pode_alunos = true
         updateData.pode_ocorrencias = true
         updateData.pode_atestados = true
+        updateData.pode_rh_rede = false
+      } else if (isRhRedeOption) {
+        updateData.pode_mural = false
+        updateData.pode_turmas = false
+        updateData.pode_matriculas = false
+        updateData.pode_alunos = false
+        updateData.pode_ocorrencias = false
+        updateData.pode_atestados = false
       }
       const { error: updateError } = await supabase
         .from('acessos_usuarios')
@@ -409,15 +423,24 @@ export function usePermissoes() {
         escola_id: escolaIdToSave,
         nivel: nivelNum,
         ativo: true,
+        pode_rh_rede: isRhRedeOption,
+        pode_funcionarios: true,
       }
       if (isNivel1) {
         insertData.pode_mural = true
         insertData.pode_turmas = true
-        insertData.pode_funcionarios = true
         insertData.pode_matriculas = true
         insertData.pode_alunos = true
         insertData.pode_ocorrencias = true
         insertData.pode_atestados = true
+        insertData.pode_rh_rede = false
+      } else if (isRhRedeOption) {
+        insertData.pode_mural = false
+        insertData.pode_turmas = false
+        insertData.pode_matriculas = false
+        insertData.pode_alunos = false
+        insertData.pode_ocorrencias = false
+        insertData.pode_atestados = false
       }
       const { error: insertError } = await supabase
         .from('acessos_usuarios')

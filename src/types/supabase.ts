@@ -121,6 +121,7 @@ export type Database = {
           pode_matriculas: boolean | null
           pode_mural: boolean | null
           pode_ocorrencias: boolean | null
+          pode_rh_rede: boolean | null
           pode_turmas: boolean | null
           secretarias_ids: string[] | null
         }
@@ -139,6 +140,7 @@ export type Database = {
           pode_matriculas?: boolean | null
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
+          pode_rh_rede?: boolean | null
           pode_turmas?: boolean | null
           secretarias_ids?: string[] | null
         }
@@ -157,6 +159,7 @@ export type Database = {
           pode_matriculas?: boolean | null
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
+          pode_rh_rede?: boolean | null
           pode_turmas?: boolean | null
           secretarias_ids?: string[] | null
         }
