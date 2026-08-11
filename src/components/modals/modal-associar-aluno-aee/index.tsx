@@ -119,7 +119,7 @@ export function ModalAssociarAlunoAEE({
           frequencia: frequencia,
           dia_semana: 1, // Placeholder padrão
           horario_inicio: '08:00:00'
-        })
+        } as any)
 
       if (error) throw error
 

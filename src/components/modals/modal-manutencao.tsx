@@ -82,7 +82,7 @@ export function ModalManutencao({
     setSaving(true)
     try {
       const { error } = await (supabase as any).from('manutencoes_veiculos').insert({
-        veiculo_id: veiculoId,
+        veiculo_id: veiculoId || null,
         data: data,
         tipo: tipo,
         odometro_km: Number(odometroKm),

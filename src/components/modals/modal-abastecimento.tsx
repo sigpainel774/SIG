@@ -83,7 +83,7 @@ export function ModalAbastecimento({
     setSaving(true)
     try {
       const { error } = await (supabase as any).from('abastecimentos_veiculos').insert({
-        veiculo_id: veiculoId,
+        veiculo_id: veiculoId || null,
         data: data,
         odometro_km: Number(odometroKm),
         litros: Number(litros),

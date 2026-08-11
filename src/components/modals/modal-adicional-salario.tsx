@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,7 +44,16 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
   const [mesReferencia, setMesReferencia] = useState(String(new Date().getMonth() + 1))
   const [anoReferencia, setAnoReferencia] = useState(String(new Date().getFullYear()))
 
-  const fetchAdicionais = async () => {
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  const fetchAdicionais = useCallback(async () => {
     if (!funcionarioId) return
     setLoadingList(true)
     try {
@@ -55,13 +64,19 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setAdicionais((data || []) as any[])
+      if (isMounted.current) {
+        setAdicionais((data || []) as any[])
+      }
     } catch (err: any) {
-      toast.error(`Erro ao carregar adicionais: ${err.message}`)
+      if (isMounted.current) {
+        toast.error(`Erro ao carregar adicionais: ${err.message}`)
+      }
     } finally {
-      setLoadingList(false)
+      if (isMounted.current) {
+        setLoadingList(false)
+      }
     }
-  }
+  }, [funcionarioId, supabase])
 
   useEffect(() => {
     if (open && funcionarioId) {
@@ -73,7 +88,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
       setMesReferencia(String(new Date().getMonth() + 1))
       setAnoReferencia(String(new Date().getFullYear()))
     }
-  }, [open, funcionarioId])
+  }, [open, funcionarioId, fetchAdicionais])
 
   const handleAddAdicional = async (e: React.FormEvent) => {
     e.preventDefault()

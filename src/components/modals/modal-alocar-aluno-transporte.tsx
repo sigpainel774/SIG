@@ -227,8 +227,8 @@ export function ModalAlocarAlunoTransporte({
       const pontoEmbarqueFinal = pontoEmbarqueText.trim() || embarqueEndereco.trim() || null
 
       const { error } = await (supabase as any).from('alunos_transporte').insert({
-        aluno_id: alunoSelecionadoId,
-        rota_id: rotaId,
+        aluno_id: alunoSelecionadoId || null,
+        rota_id: rotaId || null,
         ponto_embarque: pontoEmbarqueFinal,
         latitude: typeof embarqueLat === 'number' && !isNaN(embarqueLat) ? embarqueLat : null,
         longitude: typeof embarqueLng === 'number' && !isNaN(embarqueLng) ? embarqueLng : null,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { KeyRound, RefreshCw, Pause, Trash2, Search, ShieldCheck, Check, X, AlertTriangle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -47,7 +47,16 @@ export default function AdminAcessosPage() {
   const [itemParaExcluir, setItemParaExcluir] = useState<AcessoItem | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
-  const loadAcessos = async () => {
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  const loadAcessos = useCallback(async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -57,7 +66,7 @@ export default function AdminAcessosPage() {
 
       if (error) {
         console.error('Erro ao buscar acessos:', error)
-        toast.error('Erro ao carregar lista de acessos do banco de dados.')
+        if (isMounted.current) toast.error('Erro ao carregar lista de acessos do banco de dados.')
         return
       }
 
@@ -78,19 +87,19 @@ export default function AdminAcessosPage() {
           }
         })
 
-        setAcessos(dbItems)
+        if (isMounted.current) setAcessos(dbItems)
       }
     } catch (err: any) {
       console.error('Erro ao carregar acessos:', err)
-      toast.error('Falha de conexão ao carregar lista de acessos.')
+      if (isMounted.current) toast.error('Falha de conexão ao carregar lista de acessos.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadAcessos()
-  }, [])
+  }, [loadAcessos])
 
   // Alternar pausa do acesso (Botão 1)
   const handleTogglePausa = async (item: AcessoItem) => {

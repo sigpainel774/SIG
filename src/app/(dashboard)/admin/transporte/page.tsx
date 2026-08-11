@@ -67,8 +67,8 @@ export default function AdminTransportePage() {
 
   const loadAuxiliares = useCallback(async () => {
     const [{ data: funcs }, { data: esc }, { data: veics }, { data: rotas }] = await Promise.all([
-      supabase.from('funcionarios').select('id, nome').eq('status', 'ativo').order('nome'),
-      supabase.from('escolas').select('id, nome').order('nome'),
+      supabase.from('funcionarios').select('id, nome').eq('status', 'ativo').is('deleted_at', null).order('nome'),
+      supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
       (supabase as any).from('veiculos').select('id, modelo, placa, capacidade').order('modelo'),
       (supabase as any).from('rotas_transporte').select('id, nome, turno, escola_id').order('nome'),
     ])

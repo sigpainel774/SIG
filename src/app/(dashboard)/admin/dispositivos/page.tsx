@@ -143,8 +143,8 @@ export default function AdminDispositivosPage() {
         recordPayload: dispositivo,
         performedBy: {
           id: funcionario?.id ?? null,
-          name: funcionario?.nome || 'Administrador',
-          email: funcionario?.email || 'admin@super.com'
+          name: funcionario?.nome ?? 'Administrador',
+          email: funcionario?.email ?? 'admin@super.com'
         }
       }),
       setLoading,
