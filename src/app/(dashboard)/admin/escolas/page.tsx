@@ -193,17 +193,17 @@ export default function AdminEscolasPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="w-6 h-6 text-purple-500" /> Escolas da Rede
           </h2>
-          <p className="text-[#aaa] text-sm mt-1">Cadastro, edição e gerenciamento de todas as unidades escolares da Secretaria de Educação.</p>
+          <p className="text-muted-foreground text-sm mt-1">Cadastro, edição e gerenciamento de todas as unidades escolares da Secretaria de Educação.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
           <Button 
             variant="outline"
             onClick={() => setFilaImpressaoOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-amber-400 hover:text-amber-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
+            className="bg-surface-2 border-borderCustom text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-hoverCustom font-semibold text-xs rounded-xl h-9"
             title="Gerenciar e Excluir Atividades na Fila de Impressão"
           >
             <Printer className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> Fila de Impressão
@@ -215,7 +215,7 @@ export default function AdminEscolasPage() {
           <Button 
             variant="outline"
             onClick={() => setConfigSecretarioOpen(true)}
-            className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
+            className="bg-surface-2 border-borderCustom text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-hoverCustom font-semibold text-xs rounded-xl h-9"
             title="Configurar Titular da Secretaria de Educação"
           >
             <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Secretário de Educação
@@ -224,7 +224,7 @@ export default function AdminEscolasPage() {
             variant="outline"
             onClick={loadEscolas}
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-9"
+            className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom h-9"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -235,13 +235,13 @@ export default function AdminEscolasPage() {
       </div>
 
       {/* Busca */}
-      <div className="flex items-center gap-3 bg-[#121214] border border-[#27272a] p-3 rounded-xl max-w-md">
-        <Search className="w-4 h-4 text-[#aaa]" />
+      <div className="flex items-center gap-3 bg-input-bg border border-borderCustom p-3 rounded-xl max-w-md">
+        <Search className="w-4 h-4 text-muted-foreground" />
         <Input 
           placeholder="Buscar escola por nome ou INEP..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-transparent border-none text-white focus-visible:ring-0 placeholder:text-[#aaa] h-7 text-sm"
+          className="bg-transparent border-none text-foreground focus-visible:ring-0 placeholder:text-muted-foreground h-7 text-sm"
         />
       </div>
 
@@ -253,7 +253,7 @@ export default function AdminEscolasPage() {
         loading={loading}
         loadingMessage="Carregando escolas da rede..."
         emptyMessage="Nenhuma escola encontrada."
-        className="border-[#3f3f46]"
+        className="border-borderCustom"
       />
 
       {/* Modal de Criar / Editar */}

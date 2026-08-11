@@ -84,7 +84,7 @@
 }
 
 :root {
-  --background: #f1f5f9;
+  --background: #EEF1F8;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -231,6 +231,14 @@
   :root:not(.dark) select:focus-visible {
     background-color: #ffffff !important;
     border-color: #1D6FD6 !important;
+  }
+
+  /* Garante que inputs e selects nativos tenham texto legível no light mode */
+  :root:not(.dark) input,
+  :root:not(.dark) textarea,
+  :root:not(.dark) select {
+    color: var(--foreground);
+    background-color: var(--input-bg);
   }
 }
 

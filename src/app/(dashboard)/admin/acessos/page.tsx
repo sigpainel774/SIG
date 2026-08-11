@@ -226,7 +226,7 @@ export default function AdminAcessosPage() {
     }
 
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-zinc-800 border border-zinc-700 text-zinc-300">
+      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-muted border border-border text-muted-foreground">
         {cleanNivel}
       </span>
     )
@@ -245,16 +245,16 @@ export default function AdminAcessosPage() {
   const columns: TableColumn<AcessoItem>[] = [
     {
       header: 'FUNCIONARIO',
-      accessor: (item) => <span className="font-bold text-white text-sm whitespace-nowrap">{item.funcionario}</span>
+      accessor: (item) => <span className="font-bold text-foreground text-sm whitespace-nowrap">{item.funcionario}</span>
     },
     {
       header: 'EMAIL',
-      accessor: (item) => <span className="text-zinc-400 text-sm whitespace-nowrap">{item.email}</span>
+      accessor: (item) => <span className="text-muted-foreground text-sm whitespace-nowrap">{item.email}</span>
     },
     {
       header: 'ESCOLA / ORGAO',
       accessor: (item) => (
-        <span className={`text-sm whitespace-nowrap ${item.escola === 'Geral' ? 'italic text-zinc-400' : 'text-zinc-200'}`}>
+        <span className={`text-sm whitespace-nowrap ${item.escola === 'Geral' ? 'italic text-muted-foreground' : 'text-foreground'}`}>
           {item.escola}
         </span>
       )
@@ -268,13 +268,13 @@ export default function AdminAcessosPage() {
       accessor: (item) => {
         const isPausado = item.status === 'PAUSADO' || item.status === 'INATIVO'
         return isPausado ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] text-[11px] font-extrabold tracking-wide uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#71717a]" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted border border-border text-muted-foreground text-[11px] font-extrabold tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
             {item.status}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#052e16] border border-[#166534] text-[#4ade80] text-[11px] font-extrabold tracking-wide uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-[#052e16] border border-emerald-300 dark:border-[#166534] text-emerald-700 dark:text-[#4ade80] text-[11px] font-extrabold tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-[#4ade80]" />
             ATIVO
           </span>
         )
@@ -297,8 +297,8 @@ export default function AdminAcessosPage() {
               disabled={!hasAuthAccount}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm ${
                 hasAuthAccount
-                  ? 'bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 text-amber-400 hover:text-white cursor-pointer'
-                  : 'bg-zinc-900 border border-zinc-800 text-zinc-600 opacity-40 cursor-not-allowed'
+                  ? 'bg-amber-100 dark:bg-amber-950/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 border border-amber-400 dark:border-amber-500/40 text-amber-600 dark:text-amber-400 cursor-pointer'
+                  : 'bg-muted border border-border text-muted-foreground opacity-40 cursor-not-allowed'
               }`}
               title={
                 hasAuthAccount
@@ -313,7 +313,7 @@ export default function AdminAcessosPage() {
             <button
               type="button"
               onClick={() => handleTogglePausa(item)}
-              className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+              className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-[#450a0a]/30 hover:bg-rose-200 dark:hover:bg-[#7f1d1d]/60 border border-rose-300 dark:border-[#ef4444]/40 text-rose-600 dark:text-[#f87171] flex items-center justify-center transition-all cursor-pointer shadow-sm"
               title={isPausado ? 'Reativar Acesso' : 'Pausar Acesso'}
             >
               <Pause className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function AdminAcessosPage() {
             <button
               type="button"
               onClick={() => handleConfirmExcluir(item)}
-              className="w-9 h-9 rounded-xl bg-[#450a0a]/30 hover:bg-[#7f1d1d]/60 border border-[#ef4444]/40 text-[#f87171] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+              className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-[#450a0a]/30 hover:bg-rose-200 dark:hover:bg-[#7f1d1d]/60 border border-rose-300 dark:border-[#ef4444]/40 text-rose-600 dark:text-[#f87171] flex items-center justify-center transition-all cursor-pointer shadow-sm"
               title="Excluir Acesso"
             >
               <Trash2 className="w-4 h-4" />
@@ -339,11 +339,11 @@ export default function AdminAcessosPage() {
       {/* Cabeçalho do Superpainel de Acessos */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-borderCustom">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <KeyRound className="w-7 h-7 text-purple-400" />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
+            <KeyRound className="w-7 h-7 text-purple-500 dark:text-purple-400" />
             Gestão Global de Acessos
           </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Superpainel de controle de permissões, níveis hierárquicos e contas especiais.
           </p>
         </div>
@@ -380,19 +380,19 @@ export default function AdminAcessosPage() {
       <div className="space-y-3">
         {/* Campo de Pesquisa em Tempo Real */}
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Buscar por nome, e-mail ou escola..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl pl-11 pr-10 text-sm font-medium focus:ring-purple-500 focus:border-purple-500 shadow-md"
+            className="w-full bg-input-bg border-borderCustom text-foreground h-12 rounded-xl pl-11 pr-10 text-sm font-medium focus:ring-primary focus:border-primary shadow-sm"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1 cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
               title="Limpar busca"
             >
               <X className="w-4 h-4" />
@@ -406,7 +406,7 @@ export default function AdminAcessosPage() {
             <select
               value={filtroNivel}
               onChange={e => setFiltroNivel(e.target.value)}
-              className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
+              className="w-full bg-input-bg border border-borderCustom text-foreground h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-primary cursor-pointer shadow-sm"
             >
               <option value="ALL">Todos os níveis</option>
               <option value="SECRETARIA">Secretaria</option>
@@ -423,7 +423,7 @@ export default function AdminAcessosPage() {
             <select
               value={filtroStatus}
               onChange={e => setFiltroStatus(e.target.value)}
-              className="w-full bg-[#121214] border border-[#232328] text-zinc-200 h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-md"
+              className="w-full bg-input-bg border border-borderCustom text-foreground h-12 rounded-xl px-4 text-sm font-medium focus:outline-none focus:border-primary cursor-pointer shadow-sm"
             >
               <option value="ALL">Todos os status</option>
               <option value="ATIVO">Ativo</option>
@@ -454,12 +454,12 @@ export default function AdminAcessosPage() {
           title="Remover Acesso do Usuário"
           maxWidth="sm:max-w-[400px]"
           footer={
-            <div className="flex justify-end gap-2 w-full pt-2 border-t border-[#3f3f46]">
+            <div className="flex justify-end gap-2 w-full pt-2 border-t border-borderCustom">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setConfirmDeleteOpen(false)}
-                className="bg-[#27272a] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
+                className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom"
               >
                 Cancelar
               </Button>
@@ -473,8 +473,8 @@ export default function AdminAcessosPage() {
             </div>
           }
         >
-          <p className="text-zinc-300 text-sm leading-relaxed">
-            Tem certeza que deseja remover permanentemente o nível de acesso do usuário <strong className="text-white">{itemParaExcluir?.funcionario}</strong>?
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Tem certeza que deseja remover permanentemente o nível de acesso do usuário <strong className="text-foreground">{itemParaExcluir?.funcionario}</strong>?
           </p>
         </StandardDialog>
       )}
