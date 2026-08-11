@@ -90,6 +90,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 71 | `20260807210000_controles_globais_rede.sql` | 2026-08-07 | Adiciona `permitir_mensagens_globais` em `funcionarios` e `bloquear_edicao_funcionarios_rede` em `configuracoes_rede`. | `funcionarios`, `configuracoes_rede` | Mantém RLS |
 | 72 | `20260811000000_add_permissao_rh_rede.sql` | 2026-08-11 | Adiciona coluna `pode_rh_rede` em `acessos_usuarios` e atualiza política RLS de consulta em `funcionarios`. | `acessos_usuarios`, `funcionarios` | RLS de Consulta RH da Rede |
 | 73 | `20260811120000_informacoes_avancadas_acessos.sql` | 2026-08-11 | Tabelas `user_navigation_trail` e `ip_geolocation_cache`, índices e RPCs `get_all_active_sessions_admin`, `revoke_any_user_session_admin`, `get_daily_login_history_admin` e `get_user_navigation_trail_admin`. | `user_navigation_trail`, `ip_geolocation_cache`, `access_logs`, `auth.sessions` | `SECURITY DEFINER` + RLS |
+| 74 | `20260811150000_fix_level3_and_school_access_rls.sql` | 2026-08-11 | Atualização de `tem_acesso_a_escola`, `pode_ler_funcionario` e RLS `funcionarios_escrita`/`funcionarios_update` para suporte pleno a Nível 3 (Secretário Escolar) e Nível 2 (Diretor) via `acessos_usuarios`. | `funcionarios`, `acessos_usuarios`, `vinculos_funcionarios` | `SECURITY DEFINER` + RLS Nível 3 |
+
 
 
 

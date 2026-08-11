@@ -92,19 +92,12 @@ export function useFuncionarios() {
 
       const mustFilterVinculos = !isRhRedeOnly && (escolaIdsFiltradas !== null || !isAdminUser)
 
-      const selectFields = mustFilterVinculos
-        ? `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
-          endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
-          vinculos_funcionarios!inner(escola_id, cargo, ativo, escolas(nome, secretaria_id)),
-          acessos_usuarios(nivel, ativo)
-        `
-        : `
-          id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
-          endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
-          vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome, secretaria_id)),
-          acessos_usuarios(nivel, ativo)
-        `
+      const selectFields = `
+        id, nome, apelido, email, cpf, cargo, status, formacao, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, data_nascimento, is_superadmin, is_conta_especial,
+        endereco, latitude, longitude, telefone, modalidade_ensino, tipo_vinculo,
+        vinculos_funcionarios(escola_id, cargo, ativo, escolas(nome, secretaria_id)),
+        acessos_usuarios(nivel, escola_id, ativo)
+      `
 
       let query = supabase
         .from('funcionarios')
@@ -117,18 +110,8 @@ export function useFuncionarios() {
           setFuncionarios([])
           return
         }
-        query = query
-          .in('vinculos_funcionarios.escola_id', escolaIdsFiltradas)
-          .eq('vinculos_funcionarios.ativo', true)
-      } else if (!isAdminUser) {
-        if (!escolaAtivaEfetiva) {
-          setFuncionarios([])
-          return
-        }
-        query = query
-          .eq('vinculos_funcionarios.escola_id', escolaAtivaEfetiva)
-          .eq('vinculos_funcionarios.ativo', true)
       }
+
 
       const { data, error } = await query
       if (error) throw error
@@ -140,6 +123,16 @@ export function useFuncionarios() {
         .filter((f: Record<string, any>) => {
           if (f.is_conta_especial) return false
           if (vistos.has(f.id)) return false
+
+          // Se houver escolas filtradas, valida se o funcionário possui vínculo ou acesso a uma delas
+          if (escolaIdsFiltradas && escolaIdsFiltradas.length > 0 && !isAdminUser) {
+            const vincs = (f.vinculos_funcionarios as Array<{ escola_id: string; ativo: boolean }>) ?? []
+            const acs = (f.acessos_usuarios as Array<{ escola_id?: string | null; ativo: boolean }>) ?? []
+            const temVinc = vincs.some(v => v.ativo && escolaIdsFiltradas!.includes(v.escola_id))
+            const temAc = acs.some(a => a.ativo && a.escola_id && escolaIdsFiltradas!.includes(a.escola_id))
+            if (!temVinc && !temAc) return false
+          }
+
           vistos.add(f.id)
 
           if (escolaAtivaEfetiva) {
@@ -186,8 +179,16 @@ export function useFuncionarios() {
         .map((f: Record<string, any>) => {
           const vincs =
             (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
+          const acs =
+            (f.acessos_usuarios as Array<Record<string, unknown>>) ?? []
           const vinculoAtivo = vincs.find((v) => v.ativo)
-          const escola = vinculoAtivo?.escolas as { nome: string } | null
+          const acessoAtivo = acs.find((a) => a.ativo && a.escola_id)
+          
+          let nomeEscola: string | null = (vinculoAtivo?.escolas as { nome: string } | null)?.nome ?? null
+          if (!nomeEscola && acessoAtivo?.escola_id) {
+            const esc = todasEscolas.find(e => e.id === acessoAtivo.escola_id)
+            if (esc) nomeEscola = esc.nome
+          }
 
           return {
             id: f.id as string,
@@ -204,7 +205,7 @@ export function useFuncionarios() {
             foto_updated_at: f.foto_updated_at as string | null,
             data_nascimento: f.data_nascimento as string | null,
             is_superadmin: f.is_superadmin as boolean | null,
-            orgao: escola?.nome ?? null,
+            orgao: nomeEscola,
             endereco: f.endereco as string | null,
             latitude: f.latitude ? Number(f.latitude) : null,
             longitude: f.longitude ? Number(f.longitude) : null,

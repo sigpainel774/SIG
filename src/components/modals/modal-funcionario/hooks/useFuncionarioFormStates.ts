@@ -875,6 +875,16 @@ export function useFuncionarioFormStates({
           const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
           await invalidarCachePerfil(authUserId)
         }
+
+        // Sincronizar store global em tempo real se o usuário alterou o próprio perfil
+        if (loggedUser && loggedUser.id === funcionario.id) {
+          useAuthStore.getState().setAuth(
+            { ...loggedUser, nome, email: cleanEmail, cargo, foto_url: basePayload.foto_url ?? loggedUser.foto_url },
+            useAuthStore.getState().acessos,
+            useAuthStore.getState().vinculos
+          )
+        }
+
       } else {
         // Se não estiver editando (novo cadastro), mas o funcionário já existir no Supabase por e-mail
         const targetId = foundExistingId || empId
