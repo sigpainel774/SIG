@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-08-02  
+**Última Atualização:** 2026-08-11  
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -11,7 +11,11 @@
 
 | Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
 |-------------------------|--------|----------------|-------------------|
-| **Mapeamento de Migrations (`MIGRATIONS_MAP.md`)** | ✅ Concluído | 2026-08-02 | Inventário centralizado das 55 migrations do Supabase com regras permanentes em `AGENTS.md` e `.agents/AGENTS.md`. |
+| **Controles Globais de Rede & Permissão RH Rede** | ✅ Concluído | 2026-08-11 | Campo `pode_rh_rede` em `acessos_usuarios` com RLS ajustada para gestão de RH da rede, `permitir_mensagens_globais` e trava global de edição de servidores. |
+| **Módulo EMAEE (Atendimento Especializado) & Encaminhamentos** | ✅ Concluído | 2026-08-07 | Prontuários clínicos (`emaee_matriculas`), evoluções (`emaee_evolucoes`), solicitação de relatórios, RPC `solicitar_encaminhamento_emaee` e ficha AEE (Censo 2026). |
+| **Categorização de Anexos & Histórico de Alunos** | ✅ Concluído | 2026-08-06 | Categorização de anexos em `alunos_anexos` (`tipo`), histórico cadastral em `alunos` e persistência de documentos oficiais `jsonb` em `assinatura`. |
+| **Módulo Multi-Secretarias & RLS Salvaguardas** | ✅ Concluído | 2026-08-05 | Tabela `secretarias`, isolamento de comunicados (`comunicados_lidos`), vínculo de escolas e cargos a secretarias e blindagem de RLS contra recursão. |
+| **Mapeamento de Migrations (`MIGRATIONS_MAP.md`)** | ✅ Concluído | 2026-08-02 | Inventário centralizado das 72 migrations do Supabase com regras permanentes em `AGENTS.md` e `.agents/AGENTS.md`. |
 | **Relatório de Servidores & RPC Aniversariantes** | ✅ Concluído | 2026-08-02 | RPC `obter_relatorio_servidores_completo`, atualização da `get_birthdays_of_month` com foto_avatar/foto_visualizacao e bucket privado LGPD. |
 | **Refatoração de RPCs & Segurança RLS (G-3)** | ✅ Concluído | 2026-07-30 | RPCs `obter_admin_dashboard_kpis` e `obter_multi_escolas_stats` blindadas com verificação `auth.uid()` e restrições de acesso. |
 | **Filtro de Mapa Logístico, Camadas e Impressão** | ✅ Concluído | 2026-07-28 | Filtros avançados por camada de transporte/geolocalização em `MapaGlobal.tsx` e `MapaAlunos.tsx`, relatórios com `MapaImpressao.tsx` e template de impressão `print-relatorio-geolocalizacao.tsx`. |
@@ -22,7 +26,6 @@
 | **Módulo Secretário de Educação & Limpeza Boletim** | ✅ Concluído | 2026-07-23 | Tabela `configuracoes_rede`, modal `/admin/escolas`, integração de assinaturas de relatórios e remoção de dados falsos. |
 | **Integração Resend + Primeiro Acesso** | ✅ Concluído | 2026-07-21 | Rota `/primeiro-acesso` (interceptador no `proxy.ts`), troca obrigatória de senha e envio de e-mails via Resend SMTP. |
 | **Verificação QR Code / Crachá de Funcionário** | ✅ Concluído | 2026-07-20 | Rota pública `/verificar/funcionario/[id]` para leitura de QR Code e validação instantânea de vínculo de funcionário. |
-| **Tiles de Mapas e Resiliência Leaflet** | ✅ Concluído | 2026-07-22 | Fallbacks e servidores alternativos de tiles Leaflet para visualização de escolas, rondas e geolocalização. |
 | **Portal do Aluno / Responsáveis** | ⏳ Pendente | — | Sistema de acesso para pais/responsáveis acompanharem notas, frequências e comunicados. Estrutura e SQL planejados em `PLANOS_FUTUROS.md`. |
 | **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
 | **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
