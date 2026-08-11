@@ -334,7 +334,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
 
       // 3. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro ES-1)
-      const validEscolaAtendimento = escolaAtendimentoId.trim() ? escolaAtendimentoId.trim() : props.escolaEmaeeId
+      const validEscolaAtendimento = (escolaAtendimentoId.trim() || props.escolaEmaeeId || '').trim() || null
       const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
 
       const insertPayload: any = {

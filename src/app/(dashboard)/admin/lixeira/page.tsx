@@ -182,11 +182,11 @@ export default function AdminLixeiraPage() {
               id: sa.id,
               aluno_id: sa.id,
               arquivado_id: null,
-              nome: sa.nome || 'Sem nome',
-              cpf_matricula: sa.cpf || sa.numero_matricula || 'Não informado',
-              escola_nome: esc?.nome || 'Rede Municipal',
+              nome: sa.nome ?? 'Sem nome',
+              cpf_matricula: sa.cpf ?? sa.numero_matricula ?? 'Não informado',
+              escola_nome: esc?.nome ?? 'Rede Municipal',
               motivo: 'Exclusão lógica (Soft delete)',
-              data_arquivamento: sa.deleted_at || sa.created_at,
+              data_arquivamento: sa.deleted_at ?? sa.created_at,
               status: 'DESATIVADO'
             }
           }
@@ -194,19 +194,19 @@ export default function AdminLixeiraPage() {
 
         if (arqData) {
           for (const arq of arqData) {
-            const refId = arq.referencia_id || arq.id
-            const payload = (arq.payload_completo || {}) as Record<string, any>
+            const refId = arq.referencia_id ?? arq.id
+            const payload = (arq.payload_completo ?? {}) as Record<string, any>
             const esc = arq.escolas as any
             mapAlunos[refId] = {
               id: arq.id,
               aluno_id: refId,
               arquivado_id: arq.id,
-              nome: payload.nome || mapAlunos[refId]?.nome || 'Sem nome',
-              cpf_matricula: payload.cpf || payload.numero_matricula || mapAlunos[refId]?.cpf_matricula || 'Não informado',
-              escola_nome: esc?.nome || mapAlunos[refId]?.escola_nome || 'Rede Municipal',
-              motivo: arq.motivo || 'Arquivamento histórico',
+              nome: payload.nome ?? mapAlunos[refId]?.nome ?? 'Sem nome',
+              cpf_matricula: payload.cpf ?? payload.numero_matricula ?? mapAlunos[refId]?.cpf_matricula ?? 'Não informado',
+              escola_nome: esc?.nome ?? mapAlunos[refId]?.escola_nome ?? 'Rede Municipal',
+              motivo: arq.motivo ?? 'Arquivamento histórico',
               data_arquivamento: arq.created_at,
-              status: arq.status || 'ARQUIVADO'
+              status: arq.status ?? 'ARQUIVADO'
             }
           }
         }

@@ -81,8 +81,8 @@ export default function AdminRondasPage() {
                   <TableRow key={rota.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
                     <TableCell className="font-medium text-white">{rota.nome}</TableCell>
                     <TableCell>
-                      <div className="text-sm text-white">{rota.escolas?.nome || 'Escola não vinculada'}</div>
-                      <div className="text-xs text-[#aaa]">{rota.funcionarios?.nome || 'Sem vigia padrão'}</div>
+                      <div className="text-sm text-white">{rota.escolas?.nome ?? 'Escola não vinculada'}</div>
+                      <div className="text-xs text-[#aaa]">{rota.funcionarios?.nome ?? 'Sem vigia padrão'}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs bg-slate-500/20 text-slate-300 border-slate-500/30">

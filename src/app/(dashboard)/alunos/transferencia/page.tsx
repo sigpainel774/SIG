@@ -51,10 +51,12 @@ export default function TransferenciaAlunoPage() {
 
   // Carregar todos os alunos da escola ativa ao iniciar a página
   useEffect(() => {
+    let isMounted = true
+
     const loadAlunos = async () => {
       const isAdmin = useAuthStore.getState().isAdminGlobalOrRoot()
       if (!escolaAtivaId && !isAdmin) {
-        setAlunos([])
+        if (isMounted) setAlunos([])
         return
       }
 
@@ -71,16 +73,20 @@ export default function TransferenciaAlunoPage() {
 
         const { data, error } = await query.order('nome', { ascending: true })
         if (error) throw error
-        setAlunos(data || [])
+        if (isMounted) setAlunos(data || [])
       } catch (err) {
         console.error('Erro ao carregar alunos:', err)
-        toast.error('Erro ao carregar lista de alunos.')
+        if (isMounted) toast.error('Erro ao carregar lista de alunos.')
       } finally {
-        setLoadingAlunos(false)
+        if (isMounted) setLoadingAlunos(false)
       }
     }
 
     loadAlunos()
+
+    return () => {
+      isMounted = false
+    }
   }, [escolaAtivaId, supabase])
 
   // Normalização de strings para a busca dinâmica

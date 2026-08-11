@@ -204,8 +204,8 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         .from('atividades_secretaria')
         .insert({
           escola_id: escolaAtivaId,
-          turma_id: turmaId,
-          materia_id: materiaId,
+          turma_id: turmaId || null,
+          materia_id: materiaId || null,
           professor_id: funcionario.id,
           titulo: titulo.trim(),
           trimestre: Number(trimestre),

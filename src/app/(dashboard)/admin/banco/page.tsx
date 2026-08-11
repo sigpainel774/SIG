@@ -102,14 +102,17 @@ export default function AdminBancoPage() {
         'alunos', 'turmas', 'access_logs', 'audit_logs',
       ]
 
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         tables.map(t =>
           supabase.from(t as any).select('*', { count: 'exact', head: true })
         )
       )
 
       const countMap: Record<string, number> = {}
-      tables.forEach((t, i) => { countMap[t] = results[i].count ?? 0 })
+      tables.forEach((t, i) => {
+        const res = results[i]
+        countMap[t] = res.status === 'fulfilled' ? (res.value.count ?? 0) : 0
+      })
 
       setStats(prev =>
         prev.map(s => ({ ...s, count: countMap[s.key] ?? 0 }))
