@@ -203,6 +203,7 @@ const adminGroups: AdminGroup[] = [
         iconColor: 'text-cyan-600 dark:text-cyan-400',
         path: '/admin/rondas',
       },
+      /*
       {
         title: 'Transporte',
         subtitle: 'Frota e rotas escolares',
@@ -210,6 +211,7 @@ const adminGroups: AdminGroup[] = [
         iconColor: 'text-sky-600 dark:text-sky-400',
         path: '/admin/transporte',
       },
+      */
       {
         title: 'Notificações',
         subtitle: 'Avisos da rede',

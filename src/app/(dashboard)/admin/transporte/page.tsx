@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { Bus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -39,6 +40,7 @@ const ModalManutencao = dynamic(() => import('@/components/modals/modal-manutenc
 const ModalAlocarAlunoTransporte = dynamic(() => import('@/components/modals/modal-alocar-aluno-transporte').then((m) => m.ModalAlocarAlunoTransporte), { ssr: false })
 
 export default function AdminTransportePage() {
+  const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'veiculos' | 'rotas' | 'alunos' | 'combustivel' | 'manutencoes'>('veiculos')
 
@@ -61,30 +63,20 @@ export default function AdminTransportePage() {
   const isMounted = useRef(true)
 
   useEffect(() => {
+    toast.error('O módulo de Transporte está temporariamente inativo.')
+    router.replace('/admin')
+  }, [router])
+
+  useEffect(() => {
     return () => {
       isMounted.current = false
     }
   }, [])
 
   const loadAuxiliares = useCallback(async () => {
-    try {
-      const [funcsRes, escRes, veicsRes, rotasRes] = await Promise.all([
-        supabase.from('funcionarios').select('id, nome').eq('status', 'ativo').is('deleted_at', null).order('nome'),
-        supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
-        (supabase as any).from('veiculos').select('id, modelo, placa, capacidade').order('modelo'),
-        (supabase as any).from('rotas_transporte').select('id, nome, turno, escola_id').order('nome'),
-      ])
-      if (isMounted.current) {
-        if (funcsRes.data) setMotoristas(funcsRes.data)
-        if (escRes.data) setEscolas(escRes.data)
-        if (veicsRes.data) setVeiculosLista(veicsRes.data)
-        if (rotasRes.data) setRotasLista(rotasRes.data)
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar dados auxiliares do transporte:', err)
-      if (isMounted.current) toast.error('Erro ao carregar dados de transporte.')
-    }
-  }, [supabase])
+    // Módulo inativo - impede qualquer chamada ao banco de dados
+    return
+  }, [])
 
   useEffect(() => {
     loadAuxiliares()
@@ -108,6 +100,14 @@ export default function AdminTransportePage() {
   const handleOpenEditarRota = (r: RotaItem) => {
     setEditandoRota(r)
     setModalRotaOpen(true)
+  }
+
+  if (true) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0090ff]" />
+      </div>
+    )
   }
 
   return (
