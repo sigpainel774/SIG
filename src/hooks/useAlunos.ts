@@ -86,14 +86,22 @@ export function useAlunos() {
       const isSecretario =
         acessos.some((a) => a.nivel === 3 && a.ativo) && !checkCoordenador()
 
+      let targetEscolaId = escolaAtivaId
+      if (!isAdmin && !targetEscolaId) {
+        targetEscolaId =
+          acessos.find((a) => a.escola_id && a.ativo)?.escola_id ||
+          vinculos.find((v) => v.escola_id && v.ativo)?.escola_id ||
+          null
+      }
+
       let query = supabase
         .from('alunos')
         .select('*, escolas(nome)', { count: 'exact' })
         .is('deleted_at', null)
 
-      if (!isAdmin && escolaAtivaId) {
-        if (isDiretor || isSecretario) {
-          query = query.eq('escola_id', escolaAtivaId)
+      if (targetEscolaId) {
+        if (isAdmin || isDiretor || isSecretario) {
+          query = query.eq('escola_id', targetEscolaId)
         } else {
           // Professor ou Coordenador: só vê alunos das suas turmas
           if (!funcionario?.id) {
@@ -109,12 +117,12 @@ export function useAlunos() {
             .from('vinculos_turmas')
             .select('turma_id')
             .eq('funcionario_id', funcionario.id)
-            .eq('escola_id', escolaAtivaId)
+            .eq('escola_id', targetEscolaId)
 
           const ids = (vTurmas ?? []).map((vt: any) => vt.turma_id)
           if (ids.length > 0) {
             query = query
-              .eq('escola_id', escolaAtivaId)
+              .eq('escola_id', targetEscolaId)
               .in('turma_id', ids) as typeof query
           } else {
             if (isMounted.current) {
@@ -125,8 +133,6 @@ export function useAlunos() {
             return
           }
         }
-      } else if (isAdmin && escolaAtivaId) {
-        query = query.eq('escola_id', escolaAtivaId)
       }
 
       // ES-4: Sanitização de caracteres especiais antes de passar ao PostgREST
