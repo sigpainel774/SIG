@@ -1190,12 +1190,14 @@ export default function RelatorioServidores() {
       </StandardDialog>
 
       {/* Modal Reutilizável de Servidores Discriminados por Secretaria e Unidades */}
-      <ModalServidoresDiscriminados
-        open={isDiscriminadosModalOpen}
-        onOpenChange={setIsDiscriminadosModalOpen}
-        tipoVinculoInicial={selectedVinculoModal}
-        escolaIdAlvo={filtroEscolaId}
-      />
+      {isDiscriminadosModalOpen && (
+        <ModalServidoresDiscriminados
+          open={isDiscriminadosModalOpen}
+          onOpenChange={setIsDiscriminadosModalOpen}
+          tipoVinculoInicial={selectedVinculoModal}
+          escolaIdAlvo={filtroEscolaId}
+        />
+      )}
     </div>
   )
 }

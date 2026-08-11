@@ -1166,14 +1166,16 @@ export default function AdminAcessosPage() {
       )}
 
       {/* Modal Reset de Senha do Usuário */}
-      <ModalResetSenhaUser
-        open={resetModalState.open}
-        onOpenChange={(open) => setResetModalState((prev) => ({ ...prev, open }))}
-        authUserId={resetModalState.item?.auth_user_id}
-        funcionarioId={resetModalState.item?.id}
-        userName={resetModalState.item?.funcionario}
-        userEmail={resetModalState.item?.email}
-      />
+      {resetModalState.open && (
+        <ModalResetSenhaUser
+          open={resetModalState.open}
+          onOpenChange={(open) => setResetModalState((prev) => ({ ...prev, open }))}
+          authUserId={resetModalState.item?.auth_user_id}
+          funcionarioId={resetModalState.item?.id}
+          userName={resetModalState.item?.funcionario}
+          userEmail={resetModalState.item?.email}
+        />
+      )}
 
       {/* Modal de Confirmação para Excluir Acesso */}
       {confirmDeleteOpen && (

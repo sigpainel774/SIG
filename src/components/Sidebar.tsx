@@ -488,30 +488,32 @@ export function Sidebar() {
       )}
 
       {/* Modal de Alerta de Seleção de Escola padronizado com StandardDialog */}
-      <StandardDialog
-        open={showSchoolWarningModal}
-        onOpenChange={setShowSchoolWarningModal}
-        title="Escola Não Selecionada"
-        description="Para acessar a seção de Turmas, é necessário selecionar uma escola ativa primeiro."
-        maxWidth="sm:max-w-[450px]"
-        footer={
-          <div className="flex justify-center w-full pt-2">
-            <Button
-              type="button"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 px-6 cursor-pointer"
-              onClick={() => setShowSchoolWarningModal(false)}
-            >
-              Entendido
-            </Button>
+      {showSchoolWarningModal && (
+        <StandardDialog
+          open={showSchoolWarningModal}
+          onOpenChange={setShowSchoolWarningModal}
+          title="Escola Não Selecionada"
+          description="Para acessar a seção de Turmas, é necessário selecionar uma escola ativa primeiro."
+          maxWidth="sm:max-w-[450px]"
+          footer={
+            <div className="flex justify-center w-full pt-2">
+              <Button
+                type="button"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 px-6 cursor-pointer"
+                onClick={() => setShowSchoolWarningModal(false)}
+              >
+                Entendido
+              </Button>
+            </div>
+          }
+        >
+          <div className="flex flex-col items-center text-center py-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-2">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
           </div>
-        }
-      >
-        <div className="flex flex-col items-center text-center py-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-2">
-            <AlertTriangle className="h-6 w-6" />
-          </div>
-        </div>
-      </StandardDialog>
+        </StandardDialog>
+      )}
     </>
   )
 }
