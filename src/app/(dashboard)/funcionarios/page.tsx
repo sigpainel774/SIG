@@ -148,7 +148,8 @@ export default function FuncionariosPage() {
     setCarregando(true)
     try {
       await verificarEAtualizarRetornosAfastamentos(supabase)
-      const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot()
+      const isRhRedeOnly = useAuthStore.getState().isRhRedeExclusivo()
+      const isAdminUser = useAuthStore.getState().isAdminGlobalOrRoot() || isRhRedeOnly
       const authEscolaId = useAuthStore.getState().escolaAtivaId
       const currentSelectedEscola = useSchoolStore.getState().selectedEscola
       const currentSelectedSecretaria = useSchoolStore.getState().selectedSecretaria
@@ -156,12 +157,12 @@ export default function FuncionariosPage() {
 
       let escolaIdsFiltradas: string[] | null = null
       
-      // Priorizar a escola selecionada no header (para admins) ou a restrita no auth
-      const escolaAtivaEfetiva = currentSelectedEscola?.id || authEscolaId
+      // Priorizar a escola selecionada no header (para admins), a menos que seja usuário exclusivo de RH da Rede
+      const escolaAtivaEfetiva = isRhRedeOnly ? null : (currentSelectedEscola?.id || authEscolaId)
 
       if (escolaAtivaEfetiva) {
         escolaIdsFiltradas = [escolaAtivaEfetiva]
-      } else if (currentSelectedSecretaria) {
+      } else if (currentSelectedSecretaria && !isRhRedeOnly) {
         const secId = currentSelectedSecretaria.id
         const secNome = (currentSelectedSecretaria.nome || '').toLowerCase()
         const matching = todasEscolas.filter(e => {
@@ -172,7 +173,7 @@ export default function FuncionariosPage() {
         escolaIdsFiltradas = matching.map(e => e.id)
       }
 
-      const mustFilterVinculos = escolaIdsFiltradas !== null || !isAdminUser
+      const mustFilterVinculos = !isRhRedeOnly && (escolaIdsFiltradas !== null || !isAdminUser)
 
       const selectFields = mustFilterVinculos
         ? `

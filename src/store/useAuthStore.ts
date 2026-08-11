@@ -29,6 +29,8 @@ interface AuthState {
   isChefe: () => boolean;
   isProfessor: () => boolean;
   isCoordenador: () => boolean;
+  isRhRede: () => boolean;
+  isRhRedeExclusivo: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -73,7 +75,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAdminGlobalOrRoot: () => {
     const state = get();
     if (state.funcionario?.is_superadmin) return true;
-    return state.acessos.some(a => a.nivel === 1);
+    return state.acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
   },
   isDiretor: () => {
     const state = get();
@@ -93,5 +95,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const state = get();
     const cargo = state.funcionario?.cargo?.toLowerCase() || '';
     return cargo.includes('coordenador');
+  },
+  isRhRede: () => {
+    const state = get();
+    if (state.funcionario?.is_superadmin) return true;
+    return state.acessos.some(a => (a.pode_rh_rede || a.nivel === 1) && a.ativo);
+  },
+  isRhRedeExclusivo: () => {
+    const state = get();
+    if (state.funcionario?.is_superadmin) return false;
+    const temRhRede = state.acessos.some(a => a.pode_rh_rede === true && a.ativo);
+    const temOutroAcessoAmplo = state.acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
+    return temRhRede && !temOutroAcessoAmplo;
   },
 }));

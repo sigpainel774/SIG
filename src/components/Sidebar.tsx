@@ -44,12 +44,13 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo } = useAuthStore()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
+  const isRhRedeOnly = isRhRedeExclusivo()
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
-  const isSelecaoSecretaria = isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)
+  const isSelecaoSecretaria = isRhRedeOnly ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria))
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
@@ -130,7 +131,22 @@ export function Sidebar() {
   type MenuItem = { href: string; label: string; icon: React.ElementType }
   type MenuGroup = { label: string | null; items: MenuItem[] }
 
-  const menuGroups: MenuGroup[] = isEMAEE
+  const menuGroups: MenuGroup[] = isRhRedeOnly
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+          ]
+        },
+        {
+          label: 'RECURSOS HUMANOS',
+          items: [
+            { href: '/funcionarios', label: 'Servidores da Rede', icon: Users },
+          ]
+        }
+      ]
+    : isEMAEE
     ? [
         {
           label: null,

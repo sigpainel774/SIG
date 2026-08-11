@@ -84,6 +84,7 @@ export function PermissoesForm({ hook }: PermissoesFormProps) {
             >
               <option value="">Selecione o nível</option>
               {!restringirNivel && <option value="1">Nível 1 - Administrador Global</option>}
+              {!restringirNivel && <option value="7">RH/ Servidores da rede</option>}
               {!restringirNivel && <option value="2">Nível 2 - Diretor</option>}
               <option value="3">Nível 3 - Coord. / Secretário</option>
               <option value="4">Nível 4 - Professor</option>
