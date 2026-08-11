@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabaseServer'
 import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
+import { AccessTracker } from '@/components/AccessTracker'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const headersList = await headers()
@@ -53,6 +54,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="flex flex-col min-h-screen bg-background text-foregroundCustom">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
         <PerformanceTracker />
+        <AccessTracker />
         <RootAdminHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-8">
           {children}
@@ -66,6 +68,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="flex min-h-screen bg-background text-foregroundCustom">
       <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
       <PerformanceTracker />
+      <AccessTracker />
       {/* Sidebar Component */}
       <Sidebar />
 
