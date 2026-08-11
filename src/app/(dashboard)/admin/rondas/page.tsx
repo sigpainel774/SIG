@@ -1,34 +1,50 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { ScanLine, Plus, Edit, RefreshCw, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 
 export default function AdminRondasPage() {
   const supabase = createClient()
   const [rotas, setRotas] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'rotas' | 'registros'>('rotas')
+  const isMounted = useRef(true)
 
-  const loadRotas = async () => {
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  const loadRotas = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('rotas_ronda')
-      .select('*, escolas(nome), funcionarios(nome)')
-      .order('created_at', { ascending: false })
+    try {
+      const { data, error } = await supabase
+        .from('rotas_ronda')
+        .select('*, escolas(nome), funcionarios(nome)')
+        .order('created_at', { ascending: false })
 
-    if (data) setRotas(data)
-    setLoading(false)
-  }
+      if (error) throw error
+      if (isMounted.current && data) setRotas(data)
+    } catch (err: any) {
+      console.error('Erro ao carregar rotas de ronda:', err)
+      if (isMounted.current) toast.error('Erro ao carregar rotas de ronda.')
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
+  }, [supabase])
 
   useEffect(() => {
     if (activeTab === 'rotas') {
       loadRotas()
     }
-  }, [activeTab])
+  }, [activeTab, loadRotas])
 
   return (
     <div className="space-y-6">

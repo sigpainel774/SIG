@@ -120,12 +120,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     let isMounted = true
     async function fetchData() {
       try {
-        const { data: escolasData } = await supabase
+        const { data: escolasData, error } = await supabase
           .from('escolas')
           .select('id, nome, tipo')
           .eq('ativo', true)
           .order('nome')
           
+        if (error) throw error
+
         if (escolasData && isMounted) {
           setEscolas(escolasData)
           const emaeeList = escolasData.filter(e => e.tipo === 'EMAEE' || /emaee/i.test(e.nome))
@@ -136,6 +138,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         }
       } catch (err) {
         console.error('Erro ao carregar escolas:', err)
+        if (isMounted) toast.error('Erro ao carregar lista de escolas.')
       }
     }
     if (isOpen) {

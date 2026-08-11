@@ -94,6 +94,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         .eq('tipo', 'professor')
       if (error) {
         console.error('Erro ao carregar turmas:', error)
+        toast.error('Erro ao carregar turmas vinculadas ao professor.')
         return
       }
       const lista = (data ?? [])
@@ -120,6 +121,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         .eq('professor_id', funcionario.id)
       if (error) {
         console.error('Erro ao carregar matérias:', error)
+        toast.error('Erro ao carregar disciplinas da turma.')
         return
       }
       setMaterias(data ?? [])
