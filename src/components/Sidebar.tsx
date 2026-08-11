@@ -273,6 +273,7 @@ export function Sidebar() {
   const getIsActive = (href: string): boolean => {
     if (href === '/home') return pathname === '/home' || pathname === '/'
     if (href === '/configuracoes') return pathname.startsWith('/configuracoes') || pathname.startsWith('/perfil') || pathname.startsWith('/permissoes')
+    if (href === '/relatorios') return pathname === '/relatorios' || (pathname.startsWith('/relatorios/') && !pathname.startsWith('/relatorios/atividades'))
     return pathname.startsWith(href)
   }
 
