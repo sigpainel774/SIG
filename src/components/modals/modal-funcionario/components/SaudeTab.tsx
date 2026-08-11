@@ -40,29 +40,29 @@ export function SaudeTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800 space-y-3">
+      <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
         <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Informações Médicas Gerais</h3>
         <div className="max-w-xs">
           <Label className="text-xs">Tipo Sanguíneo e Fator Rh</Label>
           <select
             value={tipoSanguineo}
             onChange={(e) => setTipoSanguineo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#121212] border border-borderCustom text-white text-sm outline-none mt-1"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#121212] border border-input text-foreground text-sm outline-none mt-1"
           >
-            <option value="Não informado">Não informado</option>
-            <option value="A+">A+</option>
-            <option value="A-">A-</option>
-            <option value="B+">B+</option>
-            <option value="B-">B-</option>
-            <option value="AB+">AB+</option>
-            <option value="AB-">AB-</option>
-            <option value="O+">O+</option>
-            <option value="O-">O-</option>
+            <option value="Não informado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">Não informado</option>
+            <option value="A+" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">A+</option>
+            <option value="A-" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">A-</option>
+            <option value="B+" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">B+</option>
+            <option value="B-" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">B-</option>
+            <option value="AB+" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">AB+</option>
+            <option value="AB-" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">AB-</option>
+            <option value="O+" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">O+</option>
+            <option value="O-" className="text-zinc-900 dark:text-white bg-white dark:bg-[#121212]">O-</option>
           </select>
         </div>
       </div>
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Acessibilidade & Deficiências</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Acessibilidade & Deficiências</h3>
       
       <div className="flex items-center gap-3">
         <input
@@ -75,13 +75,13 @@ export function SaudeTab() {
           }}
           className="w-4 h-4 cursor-pointer accent-highlight"
         />
-        <Label htmlFor="possuiDeficiencia" className="font-semibold text-sm cursor-pointer text-zinc-100">
+        <Label htmlFor="possuiDeficiencia" className="font-semibold text-sm cursor-pointer text-zinc-800 dark:text-zinc-100">
           O servidor possui deficiência, TEA ou altas habilidades / superdotação?
         </Label>
       </div>
 
       {possuiDeficiencia && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#18181a] p-4 rounded-xl border border-zinc-800/80 text-xs text-zinc-300">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs text-zinc-700 dark:text-zinc-300">
           {/* Deficiências */}
           <div className="space-y-2">
             <p className="font-bold text-highlight text-[10px] uppercase">Grupo Deficiências:</p>
@@ -110,7 +110,7 @@ export function SaudeTab() {
                 onChange={(e) => setTea(e.target.checked)}
                 className="w-3.5 h-3.5 accent-highlight"
               />
-              <label htmlFor="teaCheck" className="cursor-pointer font-medium text-zinc-200">Transtorno do Espectro Autista (TEA)</label>
+              <label htmlFor="teaCheck" className="cursor-pointer font-medium text-zinc-700 dark:text-zinc-200">Transtorno do Espectro Autista (TEA)</label>
             </div>
           </div>
 
@@ -125,17 +125,17 @@ export function SaudeTab() {
                 onChange={(e) => setAltasHabilidades(e.target.checked)}
                 className="w-3.5 h-3.5 accent-highlight"
               />
-              <label htmlFor="altasHab" className="cursor-pointer font-medium text-zinc-200">Altas Habilidades / Superdotação</label>
+              <label htmlFor="altasHab" className="cursor-pointer font-medium text-zinc-700 dark:text-zinc-200">Altas Habilidades / Superdotação</label>
             </div>
           </div>
         </div>
       )}
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-1">Doenças Crônicas ou Recentes</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Doenças Crônicas ou Recentes</h3>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-zinc-300">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-zinc-700 dark:text-zinc-300">
         {doencasDisponiveis.map((d) => (
-          <div key={d.key} className="flex items-center gap-2 p-2 rounded bg-[#18181a] border border-zinc-800">
+          <div key={d.key} className="flex items-center gap-2 p-2 rounded bg-zinc-100 dark:bg-[#18181a] border border-zinc-200 dark:border-zinc-800">
             <input
               type="checkbox"
               id={`doenca_${d.key}`}
@@ -154,7 +154,7 @@ export function SaudeTab() {
           value={doencas.outra}
           onChange={(e) => setDoencas({ ...doencas, outra: e.target.value })}
           placeholder="Especifique medicamentos ou condições crônicas não listadas"
-          className="bg-[#181818] border-borderCustom text-white mt-1"
+          className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
         />
       </div>
     </div>

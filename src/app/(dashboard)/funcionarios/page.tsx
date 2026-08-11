@@ -379,6 +379,22 @@ export default function FuncionariosPage() {
   }
 
   const handleDesligar = async (func: Funcionario) => {
+    // Validar trava global de edição da rede (< Nível 1)
+    const isLevel1 = authFuncionario?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
+
+    if (!isLevel1) {
+      const { data: configRede } = await supabase
+        .from('configuracoes_rede')
+        .select('bloquear_edicao_funcionarios_rede')
+        .limit(1)
+        .single()
+
+      if (configRede?.bloquear_edicao_funcionarios_rede) {
+        toast.error('A edição e desligamento de funcionários foram temporariamente bloqueados pela gestão da rede.')
+        return
+      }
+    }
+
     if (
       !confirm(
         `Deseja desligar o funcionário "${func.nome}"? Ele será desvinculado de todas as turmas, matérias e acessos.`

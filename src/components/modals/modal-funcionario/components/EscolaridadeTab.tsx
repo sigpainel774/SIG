@@ -107,17 +107,17 @@ export function EscolaridadeTab() {
                 addGraduacao()
               }
             }}
-            className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1 font-medium"
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1 font-medium"
           >
-            <option value="Não concluiu o Ensino Fundamental">Não concluiu o Ensino Fundamental</option>
-            <option value="Ensino Fundamental">Ensino Fundamental</option>
-            <option value="Ensino Médio">Ensino Médio</option>
-            <option value="Ensino Superior">Ensino Superior</option>
+            <option value="Não concluiu o Ensino Fundamental" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Não concluiu o Ensino Fundamental</option>
+            <option value="Ensino Fundamental" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Ensino Fundamental</option>
+            <option value="Ensino Médio" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Ensino Médio</option>
+            <option value="Ensino Superior" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Ensino Superior</option>
             {escolaridadeNivel === 'Educação Superior' && (
-              <option value="Educação Superior">Ensino Superior</option>
+              <option value="Educação Superior" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Ensino Superior</option>
             )}
             {!!escolaridadeNivel && !['Não concluiu o Ensino Fundamental', 'Ensino Fundamental', 'Ensino Médio', 'Educação Superior', 'Ensino Superior'].includes(escolaridadeNivel) && (
-              <option value={escolaridadeNivel}>{escolaridadeNivel}</option>
+              <option value={escolaridadeNivel} className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">{escolaridadeNivel}</option>
             )}
           </select>
         </div>
@@ -128,12 +128,12 @@ export function EscolaridadeTab() {
             <select
               value={ensinoMedioTipo}
               onChange={(e) => setEnsinoMedioTipo(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none mt-1"
+              className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
             >
-              <option value="Formação Geral">Formação Geral</option>
-              <option value="Modalidade Normal/Magistérios">Modalidade Normal / Magistério</option>
-              <option value="Curso Técnico">Curso Técnico</option>
-              <option value="Magistério Indígena - modalidade Normal">Magistério Indígena - modalidade Normal</option>
+              <option value="Formação Geral" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Formação Geral</option>
+              <option value="Modalidade Normal/Magistérios" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Modalidade Normal / Magistério</option>
+              <option value="Curso Técnico" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Curso Técnico</option>
+              <option value="Magistério Indígena - modalidade Normal" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Magistério Indígena - modalidade Normal</option>
             </select>
           </div>
         )}
@@ -141,8 +141,8 @@ export function EscolaridadeTab() {
 
       {/* Graduações / Cursos Superiores */}
       {isSuperior && (
-        <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800 space-y-4">
-          <div className="flex justify-between items-center border-b border-zinc-800/80 pb-3">
+        <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
             <div className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-highlight" />
               <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
@@ -154,7 +154,7 @@ export function EscolaridadeTab() {
               variant="outline"
               size="sm"
               onClick={addGraduacao}
-              className="text-xs h-7 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold gap-1 cursor-pointer"
+              className="text-xs h-7 border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> Adicionar Graduação
             </Button>
@@ -162,13 +162,13 @@ export function EscolaridadeTab() {
 
           {graduacoes.length === 0 ? (
             <div className="text-center py-4 space-y-2">
-              <p className="text-xs text-zinc-400">Nenhuma graduação cadastrada no momento.</p>
+              <p className="text-xs text-zinc-550 dark:text-zinc-400">Nenhuma graduação cadastrada no momento.</p>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={addGraduacao}
-                className="text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-medium"
+                className="text-xs border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-medium"
               >
                 + Adicionar Primeira Graduação
               </Button>
@@ -178,10 +178,10 @@ export function EscolaridadeTab() {
               {graduacoes.map((item, idx) => (
                 <div
                   key={idx}
-                  className="bg-[#121212] p-3.5 rounded-lg border border-zinc-800 space-y-3 relative"
+                  className="bg-zinc-50 dark:bg-[#121212] p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-3 relative"
                 >
-                  <div className="flex justify-between items-center border-b border-zinc-800/60 pb-2">
-                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800/60 pb-2">
+                    <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                       Graduação #{idx + 1}
                     </span>
                     <Button
@@ -196,85 +196,85 @@ export function EscolaridadeTab() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-[10px] text-zinc-400">Grau Acadêmico</Label>
+                      <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Grau Acadêmico</Label>
                       <select
                         value={item.grau || 'Licenciatura'}
                         onChange={(e) => updateGraduacao(idx, 'grau', e.target.value)}
-                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1"
+                        className="w-full h-8 px-2 rounded bg-background dark:bg-[#181818] border border-input text-foreground text-xs outline-none mt-1"
                       >
-                        <option value="Licenciatura">Licenciatura</option>
-                        <option value="Bacharelado">Bacharelado</option>
-                        <option value="Sequencial">Sequencial</option>
-                        <option value="Tecnológico">Tecnológico</option>
+                        <option value="Licenciatura" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Licenciatura</option>
+                        <option value="Bacharelado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Bacharelado</option>
+                        <option value="Sequencial" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Sequencial</option>
+                        <option value="Tecnológico" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Tecnológico</option>
                       </select>
                     </div>
 
                     <div>
-                      <Label className="text-[10px] text-zinc-400">Área do Curso *</Label>
+                      <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">Área do Curso *</Label>
                       <Input
                         value={item.area || ''}
                         onChange={(e) => updateGraduacao(idx, 'area', e.target.value)}
                         placeholder="Ex: Pedagogia, Matemática, História"
-                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                        className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                       />
                     </div>
 
                     <div>
-                      <Label className="text-[10px] text-zinc-400">Instituição de Formação</Label>
+                      <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">Instituição de Formação</Label>
                       <Input
                         value={item.instituicao || ''}
                         onChange={(e) => updateGraduacao(idx, 'instituicao', e.target.value)}
                         placeholder="Nome da faculdade / universidade"
-                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                        className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
-                      <Label className="text-[10px] text-zinc-400">Tipo de Instituição</Label>
+                      <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">Tipo de Instituição</Label>
                       <select
                         value={item.tipoInstituicao || 'Pública'}
                         onChange={(e) => updateGraduacao(idx, 'tipoInstituicao', e.target.value)}
-                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1"
+                        className="w-full h-8 px-2 rounded bg-background dark:bg-[#181818] border border-input text-foreground text-xs outline-none mt-1"
                       >
-                        <option value="Pública">Pública</option>
-                        <option value="Privada">Privada</option>
+                        <option value="Pública" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Pública</option>
+                        <option value="Privada" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Privada</option>
                       </select>
                     </div>
 
                     <div>
-                      <Label className="text-[10px] text-zinc-400">Situação do Curso</Label>
+                      <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">Situação do Curso</Label>
                       <select
                         value={item.situacao || 'Concluído'}
                         onChange={(e) => updateGraduacao(idx, 'situacao', e.target.value)}
-                        className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
+                        className="w-full h-8 px-2 rounded bg-background dark:bg-[#181818] border border-input text-foreground text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
                       >
-                        <option value="Concluído">Concluído</option>
-                        <option value="Cursando">Cursando</option>
+                        <option value="Concluído" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Concluído</option>
+                        <option value="Cursando" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Cursando</option>
                       </select>
                     </div>
 
                     <div>
-                      <Label className="text-[10px] text-zinc-400">
+                      <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">
                         {item.situacao === 'Cursando' ? 'Previsão de Conclusão' : 'Ano de Conclusão'}
                       </Label>
                       <Input
                         value={item.ano || ''}
                         onChange={(e) => updateGraduacao(idx, 'ano', e.target.value)}
                         placeholder="Ex: 2024"
-                        className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                        className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                       />
                     </div>
 
                     {!isSaude && (
                       <div>
-                        <Label className="text-[10px] text-zinc-400">Código do Curso (opcional)</Label>
+                        <Label className="text-[10px] text-zinc-550 dark:text-zinc-400">Código do Curso (opcional)</Label>
                         <Input
                           value={item.codigo || ''}
                           onChange={(e) => updateGraduacao(idx, 'codigo', e.target.value)}
                           placeholder="Código INEP/MEC"
-                          className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                          className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                         />
                       </div>
                     )}
@@ -292,12 +292,12 @@ export function EscolaridadeTab() {
           value={complementacaoPedagogica}
           onChange={(e) => setComplementacaoPedagogica(e.target.value)}
           placeholder="Área de conhecimento/componentes curriculares"
-          className="bg-[#181818] border-borderCustom text-white mt-1"
+          className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
         />
       </div>
 
       {/* Pós-Graduações */}
-      <div className="space-y-3 bg-[#18181a] p-4 rounded-xl border border-zinc-800">
+      <div className="space-y-3 bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
         <div className="flex justify-between items-center">
           <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
             Pós-Graduações (Até 6)
@@ -307,66 +307,66 @@ export function EscolaridadeTab() {
             variant="outline"
             size="sm"
             onClick={addPos}
-            className="text-xs h-7 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold gap-1 cursor-pointer"
+            className="text-xs h-7 border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> Adicionar Pós
           </Button>
         </div>
 
         {posGraduacoes.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-2">Nenhuma pós-graduação inserida.</p>
+          <p className="text-xs text-zinc-550 dark:text-zinc-500 text-center py-2">Nenhuma pós-graduação inserida.</p>
         ) : (
           <div className="space-y-3">
             {posGraduacoes.map((item, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-[#121212] p-2.5 rounded border border-zinc-800 relative"
+                className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-zinc-50 dark:bg-[#121212] p-2.5 rounded border border-zinc-200 dark:border-zinc-800 relative"
               >
                 <div>
-                  <Label className="text-[10px] text-zinc-500">Tipo</Label>
+                  <Label className="text-[10px] text-zinc-550 dark:text-zinc-500">Tipo</Label>
                   <select
                     value={item.tipo}
                     onChange={(e) => updatePos(idx, 'tipo', e.target.value)}
-                    className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1"
+                    className="w-full h-8 px-2 rounded bg-background dark:bg-[#181818] border border-input text-foreground text-xs outline-none mt-1"
                   >
-                    <option value="Especialização">Especialização</option>
-                    <option value="Mestrado">Mestrado</option>
-                    <option value="Doutorado">Doutorado</option>
+                    <option value="Especialização" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Especialização</option>
+                    <option value="Mestrado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Mestrado</option>
+                    <option value="Doutorado" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Doutorado</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label className="text-[10px] text-zinc-500 font-semibold">Área do Curso</Label>
+                  <Label className="text-[10px] text-zinc-550 dark:text-zinc-500 font-semibold">Área do Curso</Label>
                   <Input
                     value={item.area}
                     onChange={(e) => updatePos(idx, 'area', e.target.value)}
                     placeholder="Ex: Gestão Escolar, Psicopedagogia"
-                    className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                    className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-[10px] text-zinc-500">Situação</Label>
+                  <Label className="text-[10px] text-zinc-550 dark:text-zinc-500">Situação</Label>
                   <select
                     value={item.situacao || 'Concluído'}
                     onChange={(e) => updatePos(idx, 'situacao', e.target.value)}
-                    className="w-full h-8 px-2 rounded bg-[#181818] border border-borderCustom text-white text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
+                    className="w-full h-8 px-2 rounded bg-background dark:bg-[#181818] border border-input text-foreground text-xs outline-none mt-1 font-semibold text-[#3ea6ff]"
                   >
-                    <option value="Concluído">Concluído</option>
-                    <option value="Cursando">Cursando</option>
+                    <option value="Concluído" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Concluído</option>
+                    <option value="Cursando" className="text-zinc-900 dark:text-white bg-white dark:bg-[#181818]">Cursando</option>
                   </select>
                 </div>
 
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <Label className="text-[10px] text-zinc-500">
+                    <Label className="text-[10px] text-zinc-550 dark:text-zinc-500">
                       {item.situacao === 'Cursando' ? 'Previsão' : 'Conclusão'}
                     </Label>
                     <Input
                       value={item.ano}
                       onChange={(e) => updatePos(idx, 'ano', e.target.value)}
                       placeholder="Ano"
-                      className="bg-[#181818] border-borderCustom text-white h-8 text-xs mt-1"
+                      className="bg-background dark:bg-[#181818] border-input text-foreground h-8 text-xs mt-1"
                     />
                   </div>
                   <Button
@@ -387,7 +387,7 @@ export function EscolaridadeTab() {
       {/* Outros cursos */}
       <div className="space-y-3">
         <Label className="font-bold text-xs text-highlight">Outros Cursos Específicos / Formação Continuada (mín. 80h)</Label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs bg-[#18181a] p-4 rounded-xl border border-zinc-800/80">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
           {cursosDisponiveis.map((curso) => (
             <div key={curso} className="flex items-center gap-2">
               <input
@@ -397,7 +397,7 @@ export function EscolaridadeTab() {
                 onChange={() => toggleOutroCurso(curso)}
                 className="w-4 h-4 accent-highlight cursor-pointer"
               />
-              <label htmlFor={`curso_${curso}`} className="cursor-pointer select-none text-zinc-300">{curso}</label>
+              <label htmlFor={`curso_${curso}`} className="cursor-pointer select-none text-zinc-700 dark:text-zinc-300">{curso}</label>
             </div>
           ))}
         </div>

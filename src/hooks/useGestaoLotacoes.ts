@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 export interface Escola {
   id: string
   nome: string
+  tipo?: string | null
 }
 
 export interface Cargo {
@@ -54,7 +55,7 @@ interface UseGestaoLotacoesProps {
 
 export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoesProps) {
   const supabase = createClient()
-  const { funcionario: authFuncionario, isDiretor, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
+  const { funcionario: authFuncionario, acessos, isDiretor, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const isDir = isDiretor()
   const isGlobalAdmin = isAdminGlobalOrRoot()
   const restringirNivel = isDir && !isGlobalAdmin
@@ -90,6 +91,29 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     cargo: authFuncionario?.cargo ?? undefined,
   }
 
+  const verificarTravaGlobal = async (): Promise<boolean> => {
+    const isLevel1 = authFuncionario?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
+    if (isLevel1) return false
+
+    try {
+      const { data: configRede, error } = await supabase
+        .from('configuracoes_rede')
+        .select('bloquear_edicao_funcionarios_rede')
+        .limit(1)
+        .single()
+
+      if (error) {
+        console.error('Erro ao verificar trava global de rede:', error)
+        return true // Fail-secure
+      }
+
+      return !!configRede?.bloquear_edicao_funcionarios_rede
+    } catch (err) {
+      console.error('Erro inesperado ao verificar trava global:', err)
+      return true // Fail-secure
+    }
+  }
+
   const carregar = useCallback(async () => {
     if (!isMounted.current) return
     setLoading(true)
@@ -100,7 +124,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           .select('id, nome, email, cpf, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
-        supabase.from('escolas').select('id, nome').is('deleted_at', null).order('nome'),
+        supabase.from('escolas').select('id, nome, tipo').is('deleted_at', null).order('nome'),
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
@@ -258,28 +282,30 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funcionarios])
 
-  const funcsFiltrados = funcionarios.filter((f) => {
-    const buscaTrim = busca.trim().toLowerCase()
-    const matchBusca =
-      !buscaTrim ||
-      f.nome.toLowerCase().includes(buscaTrim) ||
-      f.email.toLowerCase().includes(buscaTrim) ||
-      (f.cpf ?? '').includes(buscaTrim) ||
-      (f.cargo ?? '').toLowerCase().includes(buscaTrim) ||
-      f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase().includes(buscaTrim))
+  const funcsFiltrados = useMemo(() => {
+    return funcionarios.filter((f) => {
+      const buscaTrim = busca.trim().toLowerCase()
+      const matchBusca =
+        !buscaTrim ||
+        f.nome.toLowerCase().includes(buscaTrim) ||
+        f.email.toLowerCase().includes(buscaTrim) ||
+        (f.cpf ?? '').includes(buscaTrim) ||
+        (f.cargo ?? '').toLowerCase().includes(buscaTrim) ||
+        f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase().includes(buscaTrim))
 
-    const matchCargo =
-      filtroCargo === 'todos' ||
-      (f.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase() ||
-      f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase())
+      const matchCargo =
+        filtroCargo === 'todos' ||
+        (f.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase() ||
+        f.lotacoes.some((l) => (l.cargo ?? '').toLowerCase() === filtroCargo.toLowerCase())
 
-    const matchTab =
-      tab === 'todos' ||
-      (tab === 'sem_lotacao' && f.lotacoes.length === 0) ||
-      (tab === 'lotados' && f.lotacoes.length > 0)
+      const matchTab =
+        tab === 'todos' ||
+        (tab === 'sem_lotacao' && f.lotacoes.length === 0) ||
+        (tab === 'lotados' && f.lotacoes.length > 0)
 
-    return matchBusca && matchCargo && matchTab
-  })
+      return matchBusca && matchCargo && matchTab
+    })
+  }, [funcionarios, busca, filtroCargo, tab])
 
   const invalidarCacheHelper = async (userId: string) => {
     try {
@@ -296,12 +322,20 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     cargaHorariaInput?: number | string | null,
     modalidadeInput?: string | null
   ) => {
+    if (salvando) return
     if (!selecionado || !escolaId) {
       toast.error('Selecione a escola de destino.')
       return
     }
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const cargoFinal = cargoNome || selecionado.cargo || ''
       const isCargoDiretor = cargoFinal.toUpperCase().includes('DIRETOR')
       const escolaNome = escolas.find((e) => e.id === escolaId)?.nome ?? escolaId
@@ -398,12 +432,20 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleMoverFuncionario = async (origemId: string, destinoEscolaId: string) => {
+    if (salvando) return
     if (!selecionado || !origemId || !destinoEscolaId) {
       toast.error('Selecione a lotação de origem e a escola de destino.')
       return
     }
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const lotacaoOrigem = selecionado.lotacoes.find((l) => l.id === origemId)
       const escolaDestinoNome = escolas.find((e) => e.id === destinoEscolaId)?.nome ?? destinoEscolaId
 
@@ -477,8 +519,16 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleRemoverLotacao = async (lotacao: Lotacao) => {
+    if (salvando) return
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const { error } = await supabase
         .from('vinculos_funcionarios')
         .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
@@ -540,6 +590,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleSolicitarTransferencia = async (destinoEscolaId: string, motivoSolicitacao: string) => {
+    if (salvando) return
     const lotacaoNaMinhaEscola = selecionado?.lotacoes.find(
       (l) => l.escola_id === escolaAtivaId && l.ativo
     )
@@ -549,6 +600,13 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const escolaOrigemNome = escolas.find((e) => e.id === escolaAtivaId)?.nome ?? 'Escola Origem'
       const escolaDestinoNome = escolas.find((e) => e.id === destinoEscolaId)?.nome ?? 'Escola Destino'
 
@@ -617,12 +675,20 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleAtualizarCargoLotacao = async (lotacaoId: string, novoCargo: string) => {
+    if (salvando) return
     if (!selecionado || !lotacaoId || !novoCargo) {
       toast.error('Selecione o novo cargo.')
       return
     }
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const { error } = await supabase
         .from('vinculos_funcionarios')
         .update({ cargo: novoCargo })
@@ -658,9 +724,17 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleAtualizarCargaHorariaLotacao = async (lotacaoId: string, cargaInput: number | string | null) => {
+    if (salvando) return
     if (!selecionado || !lotacaoId) return
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const parsedCarga = cargaInput !== null && cargaInput !== undefined && String(cargaInput).trim() !== ''
         ? parseInt(String(cargaInput).replace(/\D/g, ''), 10)
         : null
@@ -696,9 +770,17 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   }
 
   const handleAtualizarModalidadeLotacao = async (lotacaoId: string, novaModalidade: string) => {
+    if (salvando) return
     if (!selecionado || !lotacaoId || !novaModalidade) return
     setSalvando(true)
     try {
+      const travaAtiva = await verificarTravaGlobal()
+      if (travaAtiva) {
+        toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
+        setSalvando(false)
+        return
+      }
+
       const { error } = await supabase
         .from('vinculos_funcionarios')
         .update({ modalidade_ensino: novaModalidade })

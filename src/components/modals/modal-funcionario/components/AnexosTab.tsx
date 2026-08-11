@@ -36,17 +36,17 @@ export function AnexosTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#18181a] p-4 rounded-xl border border-zinc-800">
-        <h4 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-800 pb-2 mb-4">
+      <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <h4 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-2 mb-4">
           Documentos Comprovatórios Obrigatórios (PDF, JPG ou PNG)
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           {documentos.map((doc) => (
-            <div key={doc.key} className="flex flex-col gap-1 p-3 rounded bg-[#121212] border border-zinc-800">
-              <span className="font-semibold text-zinc-300">{doc.label}</span>
+            <div key={doc.key} className="flex flex-col gap-1 p-3 rounded bg-zinc-50 dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800">
+              <span className="font-semibold text-zinc-700 dark:text-zinc-300">{doc.label}</span>
               <div className="flex items-center gap-2 mt-1">
-                <label className="flex-1 flex items-center justify-between px-3 py-1.5 rounded bg-[#1a1a1c] border border-zinc-700 hover:bg-[#252528] transition-colors cursor-pointer text-zinc-400 font-medium">
+                <label className="flex-1 flex items-center justify-between px-3 py-1.5 rounded bg-zinc-200 dark:bg-[#1a1a1c] border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-300 dark:hover:bg-[#252528] transition-colors cursor-pointer text-zinc-600 dark:text-zinc-400 font-medium">
                   <span className="flex items-center gap-1.5">
                     <Paperclip className="w-3.5 h-3.5" />
                     {doc.url ? 'Substituir Arquivo' : 'Escolher Arquivo'}
@@ -87,7 +87,7 @@ export function AnexosTab() {
           onChange={(e) => setObservacoes(e.target.value)}
           placeholder="Adicione observações importantes sobre a contratação, licenças ou restrições..."
           rows={4}
-          className="w-full mt-1 p-3 rounded-md bg-[#181818] border border-borderCustom text-white text-sm outline-none focus:border-[#3ea6ff]"
+          className="w-full mt-1 p-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none focus:border-[#3ea6ff]"
         />
       </div>
 
@@ -98,12 +98,12 @@ export function AnexosTab() {
             type="date"
             value={dataPreenchimento}
             onChange={(e) => setDataPreenchimento(e.target.value)}
-            className="bg-[#181818] border-borderCustom text-white mt-1"
+            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
         <div className="flex items-end">
-          <p className="text-[10px] text-zinc-500 leading-normal mb-1 bg-[#18181a] p-2 rounded border border-zinc-800">
-            * Nota: A data de preenchimento e a assinatura do funcionário são impressas para validação em papel. O preenchimento da data é automático no envio.
+          <p className="text-[10px] text-zinc-650 dark:text-zinc-500 leading-normal mb-1 bg-zinc-100 dark:bg-[#18181a] p-2 rounded border border-zinc-200 dark:border-zinc-800">
+            * Nota: A data de preenchimento e a assinatura do funcionário são impressas para validação em papel. O preenchimento da data é automatico no envio.
           </p>
         </div>
       </div>
