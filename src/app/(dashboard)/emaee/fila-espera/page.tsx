@@ -150,28 +150,28 @@ export default function FilaEsperaPage() {
       </div>
 
       {/* Barra de Filtros */}
-      <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4">
+      <div className="bg-card text-card-foreground border border-border rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 shadow-sm">
         <div className="flex-1 relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
           <input
             type="text"
             placeholder="Pesquisar paciente por nome ou CPF..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full bg-[#1b1b1f] border border-[#26262a] text-foreground rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#0090ff]/50 transition-colors placeholder-slate-500"
+            className="w-full bg-background border border-border text-foreground rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/50 transition-colors placeholder-muted-foreground/50"
           />
         </div>
       </div>
 
       {/* Listagem */}
       {carregando ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3 bg-[#141416]/50 rounded-2xl border border-[#26262a] text-zinc-400">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0090ff]" />
+        <div className="flex flex-col items-center justify-center py-24 gap-3 bg-card/50 rounded-2xl border border-border text-muted-foreground shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <span className="text-sm">Carregando lista de espera...</span>
         </div>
       ) : filaFiltrada.length === 0 ? (
-        <div className="text-center py-20 bg-[#141416]/50 rounded-2xl border border-[#26262a] text-muted-foreground flex flex-col items-center gap-3">
-          <Heart className="w-12 h-12 text-[#26262a]" />
+        <div className="text-center py-20 bg-card/50 rounded-2xl border border-border text-muted-foreground flex flex-col items-center gap-3 shadow-sm">
+          <Heart className="w-12 h-12 text-muted-foreground/30" />
           <span className="text-sm">Nenhum paciente aguardando na fila de espera no momento.</span>
         </div>
       ) : (
@@ -184,12 +184,12 @@ export default function FilaEsperaPage() {
             return (
               <Card
                 key={paciente.id}
-                className="bg-[#141416] border border-[#26262a] hover:border-[#0090ff]/30 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-sm relative group"
+                className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-sm relative group"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 border-b border-[#26262a]/50 pb-3">
+                  <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#0090ff]/10 flex items-center justify-center text-[#0090ff] font-bold">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
                         {paciente.alunos?.nome?.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
@@ -203,32 +203,31 @@ export default function FilaEsperaPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs font-normal text-slate-400 pt-3.5">
+                  <div className="space-y-2 text-xs font-normal text-muted-foreground pt-3.5">
                     {paciente.cid_codigo && (
-                      <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+                      <div className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 font-semibold">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>CID-10: {paciente.cid_codigo}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                       <span className="truncate">Escola: {paciente.escolas?.nome ?? 'Sem escola vinculada'}</span>
                     </div>
                     {paciente.principal_queixa && (
-                      <div className="mt-2.5 p-2 bg-[#1b1b1f] rounded-lg border border-[#26262a] text-[11px] leading-relaxed text-slate-400 max-h-[64px] overflow-y-auto">
+                      <div className="mt-2.5 p-2 bg-muted/50 rounded-lg border border-border text-[11px] leading-relaxed text-muted-foreground max-h-[64px] overflow-y-auto">
                         <strong>Queixa Principal:</strong> {paciente.principal_queixa}
                       </div>
                     )}
                   </div>
                 </div>
-
-                <div className="border-t border-[#26262a]/50 pt-3.5">
+                <div className="border-t border-border pt-3.5">
                   <Button
                     onClick={() => {
                       setSelectedPaciente(paciente)
                       setStatusAdmissao('ATIVO')
                     }}
-                    className="w-full bg-[#0090ff] hover:bg-[#0077d4] text-white text-xs rounded-xl font-bold py-2 shadow-md gap-1.5 cursor-pointer"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs rounded-xl font-bold py-2 shadow-md gap-1.5 cursor-pointer"
                   >
                     <UserPlus className="w-4 h-4" /> Admitir Paciente
                   </Button>
@@ -238,7 +237,7 @@ export default function FilaEsperaPage() {
           })}
         </div>
       )}
-
+ 
       {/* Modal de confirmação de admissão */}
       <StandardDialog
         open={!!selectedPaciente}
@@ -255,7 +254,7 @@ export default function FilaEsperaPage() {
               type="button"
               onClick={() => setSelectedPaciente(null)}
               disabled={admitindo}
-              className="border-[#26262a] hover:bg-zinc-800 rounded-xl"
+              className="border-border hover:bg-muted rounded-xl"
             >
               Cancelar
             </Button>
@@ -263,7 +262,7 @@ export default function FilaEsperaPage() {
               type="button"
               onClick={handleAdmitir}
               disabled={admitindo}
-              className="bg-[#0090ff] hover:bg-[#0077d4] text-white font-bold rounded-xl cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl cursor-pointer"
             >
               {admitindo ? (
                 <>
@@ -285,8 +284,8 @@ export default function FilaEsperaPage() {
               onClick={() => setStatusAdmissao('ATIVO')}
               className={`flex flex-col items-center justify-center p-4 rounded-xl border text-center transition-all cursor-pointer ${
                 statusAdmissao === 'ATIVO'
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                  : 'border-[#26262a] bg-[#1b1b1f] text-slate-400 hover:border-slate-700'
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'border-border bg-background text-muted-foreground hover:border-borderCustom'
               }`}
             >
               <CheckCircle2 className="w-6 h-6 mb-2" />
@@ -295,14 +294,14 @@ export default function FilaEsperaPage() {
                 Iniciar consultas e evolução clínica regular.
               </p>
             </button>
-
+ 
             <button
               type="button"
               onClick={() => setStatusAdmissao('EM_INVESTIGACAO')}
               className={`flex flex-col items-center justify-center p-4 rounded-xl border text-center transition-all cursor-pointer ${
                 statusAdmissao === 'EM_INVESTIGACAO'
-                  ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-                  : 'border-[#26262a] bg-[#1b1b1f] text-slate-400 hover:border-slate-700'
+                  ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'border-border bg-background text-muted-foreground hover:border-borderCustom'
               }`}
             >
               <Clock className="w-6 h-6 mb-2" />

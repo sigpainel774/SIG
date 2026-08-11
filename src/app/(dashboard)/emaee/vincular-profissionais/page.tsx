@@ -72,12 +72,12 @@ export default function ProfissionaisAEEPage() {
 
   const getColorByCargo = (cargo: string | null) => {
     const c = (cargo || '').toLowerCase()
-    if (c.includes('psicólogo') || c.includes('psicologa')) return 'border-blue-500/50 shadow-blue-500/10 bg-blue-500/5'
-    if (c.includes('fono')) return 'border-green-500/50 shadow-green-500/10 bg-green-500/5'
-    if (c.includes('psicopedagogo') || c.includes('psicopedagoga')) return 'border-orange-500/50 shadow-orange-500/10 bg-orange-500/5'
-    if (c.includes('neuro')) return 'border-purple-500/50 shadow-purple-500/10 bg-purple-500/5'
-    if (c.includes('fisio')) return 'border-pink-500/50 shadow-pink-500/10 bg-pink-500/5'
-    return 'border-[#2a2a2a] bg-[#1a1a1a]' // Outros
+    if (c.includes('psicólogo') || c.includes('psicologa')) return 'border-blue-500/30 dark:border-blue-500/50 shadow-blue-500/5 dark:shadow-blue-500/10 bg-blue-500/5 dark:bg-blue-500/10'
+    if (c.includes('fono')) return 'border-green-500/30 dark:border-green-500/50 shadow-green-500/5 dark:shadow-green-500/10 bg-green-500/5 dark:bg-green-500/10'
+    if (c.includes('psicopedagogo') || c.includes('psicopedagoga')) return 'border-orange-500/30 dark:border-orange-500/50 shadow-orange-500/5 dark:shadow-orange-500/10 bg-orange-500/5 dark:bg-orange-500/10'
+    if (c.includes('neuro')) return 'border-purple-500/30 dark:border-purple-500/50 shadow-purple-500/5 dark:shadow-purple-500/10 bg-purple-500/5 dark:bg-purple-500/10'
+    if (c.includes('fisio')) return 'border-pink-500/30 dark:border-pink-500/50 shadow-pink-500/5 dark:shadow-pink-500/10 bg-pink-500/5 dark:bg-pink-500/10'
+    return 'border-border bg-card' // Outros
   }
 
   const handleOpenModal = (prof: any) => {
@@ -121,7 +121,7 @@ export default function ProfissionaisAEEPage() {
           Carregando servidores...
         </div>
       ) : profissionais.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-[#141416] border border-[#26262a] rounded-2xl shadow-sm">
+        <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
           <UserPlus className="w-16 h-16 text-muted-foreground/30 mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum Servidor Encontrado</h2>
           <p className="text-muted-foreground max-w-md">
@@ -132,24 +132,24 @@ export default function ProfissionaisAEEPage() {
         <div className="space-y-8">
           {/* SEÇÃO 1: PROFISSIONAIS AEE */}
           <section className="space-y-4">
-            <div className="flex items-center justify-between bg-[#141416] border border-[#26262a] p-4 rounded-xl">
+            <div className="flex items-center justify-between bg-card text-card-foreground border border-border p-4 rounded-xl shadow-sm">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-                <h2 className="text-lg font-bold text-white">Profissionais AEE</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
+                <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                <h2 className="text-lg font-bold text-foreground">Profissionais AEE</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20">
                   {profissionaisAEE.length}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 hidden md:block">
+              <p className="text-xs text-muted-foreground hidden md:block">
                 Servidores com a marcação "Profissional AEE" ativa na ficha cadastral
               </p>
             </div>
 
             {profissionaisAEE.length === 0 ? (
-              <div className="p-8 border border-dashed border-[#2a2a2a] rounded-2xl text-center bg-[#121214]">
-                <UserPlus className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                <p className="text-sm text-zinc-400 font-medium">Nenhum Profissional AEE cadastrado nesta unidade.</p>
-                <p className="text-xs text-zinc-500 mt-1">Para adicionar um profissional a esta lista, marque a opção "Profissional AEE" na ficha de edição do servidor.</p>
+              <div className="p-8 border border-dashed border-border rounded-2xl text-center bg-card shadow-sm">
+                <UserPlus className="w-10 h-10 text-muted-foreground/60 mx-auto mb-2" />
+                <p className="text-sm text-foreground font-medium">Nenhum Profissional AEE cadastrado nesta unidade.</p>
+                <p className="text-xs text-muted-foreground mt-1">Para adicionar um profissional a esta lista, marque a opção "Profissional AEE" na ficha de edição do servidor.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -163,25 +163,25 @@ export default function ProfissionaisAEEPage() {
                       className={`flex flex-col border ${colors} rounded-2xl p-5 hover:scale-[1.02] transition-transform duration-200 shadow-md`}
                     >
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="h-14 w-14 shrink-0 rounded-full border-2 border-white/10 overflow-hidden bg-[#121212] flex items-center justify-center">
+                        <div className="h-14 w-14 shrink-0 rounded-full border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
                           {avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={avatarUrl} alt={p.nome} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-xl font-bold text-gray-500">{p.nome.charAt(0)}</span>
+                            <span className="text-xl font-bold text-muted-foreground">{p.nome.charAt(0)}</span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-bold text-white truncate" title={p.nome}>{p.nome}</h3>
-                          <p className="text-xs text-amber-400 font-medium truncate">{p.cargo || 'Especialista AEE'}</p>
-                          <span className="inline-block mt-1 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">Profissional AEE</span>
+                          <h3 className="text-sm font-bold text-foreground truncate" title={p.nome}>{p.nome}</h3>
+                          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium truncate">{p.cargo || 'Especialista AEE'}</p>
+                          <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded font-semibold border border-amber-500/20">Profissional AEE</span>
                         </div>
                       </div>
                       
-                      <div className="mt-auto pt-4 border-t border-[#2a2a2a]/50">
+                      <div className="mt-auto pt-4 border-t border-border">
                         <Button 
-                          variant="ghost" 
-                          className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white text-xs h-9 rounded-xl border border-[#333]"
+                          variant="outline" 
+                          className="w-full bg-card hover:bg-accent text-foreground text-xs h-9 rounded-xl border border-border transition-colors shadow-sm"
                           onClick={() => handleOpenModal(p)}
                         >
                           Vincular Aluno
@@ -195,16 +195,16 @@ export default function ProfissionaisAEEPage() {
           </section>
 
           {/* SEÇÃO 2: SERVIDORES */}
-          <section className="space-y-4 pt-4 border-t border-[#26262a]">
-            <div className="flex items-center justify-between bg-[#141416] border border-[#26262a] p-4 rounded-xl">
+          <section className="space-y-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between bg-card text-card-foreground border border-border p-4 rounded-xl shadow-sm">
               <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-blue-400" />
-                <h2 className="text-lg font-bold text-white">Servidores</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">
+                <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                <h2 className="text-lg font-bold text-foreground">Servidores</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20">
                   {profissionais.length}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 hidden md:block">
+              <p className="text-xs text-muted-foreground hidden md:block">
                 Todos os servidores e profissionais lotados ativamente nesta unidade
               </p>
             </div>
@@ -217,22 +217,22 @@ export default function ProfissionaisAEEPage() {
                 return (
                   <div 
                     key={p.id} 
-                    className="flex flex-col border border-[#26262a] bg-[#141416] rounded-2xl p-5 hover:border-[#333] transition-colors"
+                    className="flex flex-col border border-border bg-card rounded-2xl p-5 hover:border-borderCustom/80 dark:hover:border-[#333] transition-colors shadow-sm"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 shrink-0 rounded-full border border-white/10 overflow-hidden bg-[#121212] flex items-center justify-center">
+                      <div className="h-12 w-12 shrink-0 rounded-full border border-border overflow-hidden bg-muted flex items-center justify-center">
                         {avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarUrl} alt={p.nome} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-lg font-bold text-gray-500">{p.nome.charAt(0)}</span>
+                          <span className="text-lg font-bold text-muted-foreground">{p.nome.charAt(0)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-white truncate" title={p.nome}>{p.nome}</h3>
-                        <p className="text-xs text-zinc-400 truncate">{p.cargo || 'Servidor'}</p>
+                        <h3 className="text-sm font-bold text-foreground truncate" title={p.nome}>{p.nome}</h3>
+                        <p className="text-xs text-muted-foreground truncate">{p.cargo || 'Servidor'}</p>
                         {isAee && (
-                          <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">AEE Ativo</span>
+                          <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-semibold">AEE Ativo</span>
                         )}
                       </div>
                     </div>

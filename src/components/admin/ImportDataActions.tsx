@@ -36,10 +36,10 @@ export function ImportDataActions({
           type="button"
           variant="outline"
           onClick={() => setImportDocxOpen(true)}
-          className="bg-[#121214] border-[#3f3f46] text-emerald-400 hover:text-emerald-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
+          className="bg-card border-border text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
           title="Importar Fichas de Alunos / Pacientes via arquivos DOCX"
         >
-          <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+          <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
           <span>Importar Fichas (DOCX)</span>
         </Button>
 
@@ -47,10 +47,10 @@ export function ImportDataActions({
           type="button"
           variant="outline"
           onClick={() => setImportExcelOpen(true)}
-          className="bg-[#121214] border-[#3f3f46] text-purple-400 hover:text-purple-300 hover:bg-[#202024] font-semibold text-xs rounded-xl h-9"
+          className="bg-card border-border text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
           title="Importador 15 via arquivos Excel (.xlsx / .xls)"
         >
-          <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+          <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" />
           <span>Importador 15 (Excel)</span>
         </Button>
       </div>

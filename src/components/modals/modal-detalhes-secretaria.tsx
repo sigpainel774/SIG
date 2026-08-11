@@ -118,15 +118,15 @@ export function ModalDetalhesSecretaria({
         description={`Gestão e listagem de ${termoUnidade.toLowerCase()} mantidas por este órgão.`}
         maxWidth="sm:max-w-4xl"
         footer={
-          <div className="flex items-center justify-between w-full pt-3 border-t border-[#27272a]">
-            <span className="text-xs text-zinc-400">
+          <div className="flex items-center justify-between w-full pt-3 border-t border-border">
+            <span className="text-xs text-muted-foreground">
               Total: <strong>{unidades.length}</strong> {unidades.length === 1 ? termoSingular : termoUnidade}
             </span>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
+              className="border-border text-foreground hover:bg-muted"
             >
               Fechar
             </Button>
@@ -151,13 +151,13 @@ export function ModalDetalhesSecretaria({
                 )}
               </div>
               <div>
-                <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
                   {secretaria.nome}
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
                     Ativa
                   </Badge>
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Órgão Mantenedor oficial da Rede Municipal
                 </p>
               </div>
@@ -183,14 +183,14 @@ export function ModalDetalhesSecretaria({
 
           {/* Barra de Busca e Atualização */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 bg-[#121214] border border-[#27272a] px-3 py-1.5 rounded-xl flex-1">
-              <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+            <div className="flex items-center gap-2 bg-background border border-border px-3 py-1.5 rounded-xl flex-1">
+              <Search className="w-4 h-4 text-muted-foreground/60 shrink-0" />
               <input
                 type="text"
                 placeholder={`Buscar por nome ou responsável...`}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                className="bg-transparent border-none text-white text-xs outline-none w-full placeholder:text-zinc-500"
+                className="bg-transparent border-none text-foreground text-xs outline-none w-full placeholder:text-muted-foreground/50"
               />
             </div>
 
@@ -200,7 +200,7 @@ export function ModalDetalhesSecretaria({
               size="sm"
               onClick={loadUnidades}
               disabled={loading}
-              className="bg-[#121214] border-[#27272a] text-zinc-300 hover:text-white rounded-xl text-xs gap-1.5 shrink-0"
+              className="border-border text-foreground hover:bg-muted rounded-xl text-xs gap-1.5 shrink-0"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Atualizar</span>
@@ -209,16 +209,16 @@ export function ModalDetalhesSecretaria({
 
           {/* Lista de Unidades */}
           {loading ? (
-            <div className="py-12 text-center text-zinc-400 text-sm flex items-center justify-center gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin text-[#0090ff]" />
+            <div className="py-12 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin text-primary" />
               <span>Carregando unidades filhas...</span>
             </div>
           ) : unidadesFiltradas.length === 0 ? (
-            <div className="py-10 text-center text-zinc-400 bg-black/20 rounded-2xl border border-dashed border-[#27272a] space-y-3">
-              <Building2 className="w-8 h-8 text-zinc-500 mx-auto opacity-50" />
+            <div className="py-10 text-center text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border space-y-3 animate-fadeIn">
+              <Building2 className="w-8 h-8 text-muted-foreground/40 mx-auto" />
               <div>
-                <p className="text-sm font-semibold text-white">Nenhuma unidade encontrada</p>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-sm font-semibold text-foreground">Nenhuma unidade encontrada</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   {unidades.length === 0
                     ? `Esta secretaria ainda não possui ${termoUnidade.toLowerCase()} vinculadas.`
                     : 'Tente ajustar os termos de busca.'}
@@ -241,10 +241,10 @@ export function ModalDetalhesSecretaria({
                 return (
                   <div
                     key={u.id}
-                    className="p-3.5 bg-[#141416] border border-[#26262a] hover:border-zinc-700 rounded-xl flex items-center justify-between gap-3 transition-colors"
+                    className="p-3.5 bg-card border border-border hover:border-borderCustom/80 dark:hover:border-zinc-700 rounded-xl flex items-center justify-between gap-3 transition-colors shadow-sm"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-black/40 border border-[#27272a] flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
                         {u.logo_url ? (
                           <img
                             src={`${u.logo_url}?t=${sessionTimestamp}`}
@@ -252,23 +252,23 @@ export function ModalDetalhesSecretaria({
                             className="w-full h-full object-contain p-0.5"
                           />
                         ) : isEducacao ? (
-                          <School className="w-4 h-4 text-sky-400" />
+                          <School className="w-4 h-4 text-sky-500 dark:text-sky-400" />
                         ) : (
-                          <Building2 className="w-4 h-4 text-amber-400" />
+                          <Building2 className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         )}
                       </div>
 
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-white truncate flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-foreground truncate flex items-center gap-2">
                           {u.nome}
                           {u.inep && isEducacao && (
-                            <span className="text-[10px] text-zinc-500 font-mono font-normal">
+                            <span className="text-[10px] text-muted-foreground/60 font-mono font-normal">
                               INEP: {u.inep}
                             </span>
                           )}
                         </h4>
-                        <p className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5 truncate">
-                          <User className="w-3 h-3 text-zinc-500 shrink-0" />
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                          <User className="w-3 h-3 text-muted-foreground/60 shrink-0" />
                           <span>{isEducacao ? 'Diretor' : 'Gestor'}: {gestorNome}</span>
                         </p>
                       </div>
@@ -279,8 +279,8 @@ export function ModalDetalhesSecretaria({
                         variant="outline"
                         className={`text-[10px] ${
                           u.ativo !== false
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
                         }`}
                       >
                         {u.ativo !== false ? 'ATIVA' : 'INATIVA'}
