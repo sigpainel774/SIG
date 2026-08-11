@@ -573,24 +573,28 @@ export default function HomePage() {
           </div>
 
           {/* Modal de Relatório de Servidores */}
-          <StandardDialog
-            open={isRelatorioServidoresModalOpen}
-            onOpenChange={setIsRelatorioServidoresModalOpen}
-            title="Relatório Geral de Servidores da Rede Municipal"
-            description="Consolidado de pessoal, distribuição por cargos, modalidades e tipos de vínculo."
-            maxWidth="sm:max-w-6xl"
-          >
-            <div className="py-2">
-              <RelatorioServidores />
-            </div>
-          </StandardDialog>
+          {isRelatorioServidoresModalOpen && (
+            <StandardDialog
+              open={isRelatorioServidoresModalOpen}
+              onOpenChange={setIsRelatorioServidoresModalOpen}
+              title="Relatório Geral de Servidores da Rede Municipal"
+              description="Consolidado de pessoal, distribuição por cargos, modalidades e tipos de vínculo."
+              maxWidth="sm:max-w-6xl"
+            >
+              <div className="py-2">
+                <RelatorioServidores />
+              </div>
+            </StandardDialog>
+          )}
 
           {/* Modal de Servidores Discriminados por Secretaria e Unidades */}
-          <ModalServidoresDiscriminados
-            open={isDiscriminadosModalOpen}
-            onOpenChange={setIsDiscriminadosModalOpen}
-            tipoVinculoInicial={selectedTipoVinculoModal}
-          />
+          {isDiscriminadosModalOpen && (
+            <ModalServidoresDiscriminados
+              open={isDiscriminadosModalOpen}
+              onOpenChange={setIsDiscriminadosModalOpen}
+              tipoVinculoInicial={selectedTipoVinculoModal}
+            />
+          )}
         </div>
 
       ) : isNivel1 && selectedSecretaria && !selectedEscola ? (

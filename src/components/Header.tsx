@@ -241,24 +241,30 @@ export function Header() {
       </header>
 
       {/* Password Modal */}
-      <ModalConfirmacaoSenha
-        open={modalSenhaOpen}
-        onOpenChange={setModalSenhaOpen}
-        onSuccess={() => setEditMode(true)}
-      />
+      {modalSenhaOpen && (
+        <ModalConfirmacaoSenha
+          open={modalSenhaOpen}
+          onOpenChange={setModalSenhaOpen}
+          onSuccess={() => setEditMode(true)}
+        />
+      )}
 
       {/* Notifications Modal */}
-      <ModalNotificacoes
-        open={modalNotifOpen}
-        onOpenChange={setModalNotifOpen}
-      />
+      {modalNotifOpen && (
+        <ModalNotificacoes
+          open={modalNotifOpen}
+          onOpenChange={setModalNotifOpen}
+        />
+      )}
 
       {/* Central de Mensagens Modal */}
-      <ModalCentralMensagens
-        open={modalMensagensOpen}
-        onOpenChange={setModalMensagensOpen}
-        onUnreadCountChange={setUnreadMensagensCount}
-      />
+      {modalMensagensOpen && (
+        <ModalCentralMensagens
+          open={modalMensagensOpen}
+          onOpenChange={setModalMensagensOpen}
+          onUnreadCountChange={setUnreadMensagensCount}
+        />
+      )}
 
       {/* Popup de Comunicado Importante ao Fazer Login */}
       <ModalComunicadoPopup />
