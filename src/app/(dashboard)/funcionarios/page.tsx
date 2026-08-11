@@ -201,14 +201,14 @@ export default function FuncionariosPage() {
 
         {/* Toggle Triplo de Modalidade ou Vínculo */}
         {!isEmaee && (
-          <div className="inline-flex items-center bg-[#141416] p-1 rounded-xl border border-[#26262a] shadow-inner self-start sm:self-auto overflow-x-auto max-w-full">
+          <div className="inline-flex items-center bg-slate-200/80 dark:bg-[#141416] p-1 rounded-xl border border-slate-300/70 dark:border-[#26262a] shadow-inner self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setFiltroModalidade('todos')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
               filtroModalidade === 'todos'
-                ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 shadow-sm'
+                : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
             }`}
           >
             Todos
@@ -221,8 +221,8 @@ export default function FuncionariosPage() {
                 onClick={() => setFiltroModalidade('regular')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   filtroModalidade === 'regular'
-                    ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-[#3ea6ff] border border-blue-200 dark:border-blue-500/40 shadow-sm font-semibold'
+                    : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
                 }`}
               >
                 Regular
@@ -232,8 +232,8 @@ export default function FuncionariosPage() {
                 onClick={() => setFiltroModalidade('eja')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   filtroModalidade === 'eja'
-                    ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-orange-500 dark:bg-[#c85a17] text-white shadow-md shadow-orange-500/20 dark:shadow-orange-500/30 border border-orange-400 font-bold'
+                    : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
                 }`}
               >
                 EJA
@@ -248,8 +248,8 @@ export default function FuncionariosPage() {
                 onClick={() => setFiltroModalidade('efetivo')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   filtroModalidade === 'efetivo'
-                    ? 'bg-blue-500/20 text-[#3ea6ff] border border-blue-500/40 shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-[#3ea6ff] border border-blue-200 dark:border-blue-500/40 shadow-sm font-semibold'
+                    : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
                 }`}
               >
                 Efetivos
@@ -259,8 +259,8 @@ export default function FuncionariosPage() {
                 onClick={() => setFiltroModalidade('contratado')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   filtroModalidade === 'contratado'
-                    ? 'bg-[#c85a17] text-white shadow-md shadow-orange-500/30 border border-orange-400 font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-orange-500 dark:bg-[#c85a17] text-white shadow-md shadow-orange-500/20 dark:shadow-orange-500/30 border border-orange-400 font-bold'
+                    : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
                 }`}
               >
                 Contratados
@@ -270,8 +270,8 @@ export default function FuncionariosPage() {
                 onClick={() => setFiltroModalidade('nomeado')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   filtroModalidade === 'nomeado'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/40 shadow-sm font-bold'
+                    : 'text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground'
                 }`}
               >
                 Nomeados
