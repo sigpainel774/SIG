@@ -359,7 +359,7 @@ export default function AdminDispositivosPage() {
               variant="outline"
               onClick={loadDispositivos}
               disabled={loading}
-              className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+              className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom h-10"
               title="Recarregar dispositivos"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -373,21 +373,21 @@ export default function AdminDispositivosPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 flex flex-col">
-          <span className="text-[#aaa] text-xs font-semibold uppercase tracking-wider mb-1">Total</span>
-          <span className="text-2xl font-bold text-sky-400">{totalDispositivos}</span>
+        <div className="bg-card border border-borderCustom rounded-xl p-4 flex flex-col">
+          <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Total</span>
+          <span className="text-2xl font-bold text-sky-500 dark:text-sky-400">{totalDispositivos}</span>
         </div>
-        <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 flex flex-col">
-          <span className="text-[#aaa] text-xs font-semibold uppercase tracking-wider mb-1">Ativos</span>
-          <span className="text-2xl font-bold text-emerald-500">{totalAtivos}</span>
+        <div className="bg-card border border-borderCustom rounded-xl p-4 flex flex-col">
+          <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Ativos</span>
+          <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-500">{totalAtivos}</span>
         </div>
-        <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 flex flex-col">
-          <span className="text-[#aaa] text-xs font-semibold uppercase tracking-wider mb-1">Manutenção</span>
-          <span className="text-2xl font-bold text-amber-500">{totalManutencao}</span>
+        <div className="bg-card border border-borderCustom rounded-xl p-4 flex flex-col">
+          <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Manutenção</span>
+          <span className="text-2xl font-bold text-amber-600 dark:text-amber-500">{totalManutencao}</span>
         </div>
-        <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 flex flex-col">
-          <span className="text-[#aaa] text-xs font-semibold uppercase tracking-wider mb-1">Bloqueados</span>
-          <span className="text-2xl font-bold text-rose-500">{totalBloqueados}</span>
+        <div className="bg-card border border-borderCustom rounded-xl p-4 flex flex-col">
+          <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Bloqueados</span>
+          <span className="text-2xl font-bold text-rose-600 dark:text-rose-500">{totalBloqueados}</span>
         </div>
       </div>
 
@@ -397,23 +397,23 @@ export default function AdminDispositivosPage() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
               <Radio className="w-5 h-5 text-amber-400 animate-pulse" />
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
                 Controle Remoto de Atualização PWA
                 <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 font-mono text-xs">
                   {currentVersion}
                 </Badge>
               </h2>
             </div>
-            <p className="text-xs text-[#aaa] leading-relaxed max-w-2xl">
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
               Transmita um comando de atualização em tempo real via Supabase Realtime para todos os dispositivos e navegadores conectados na rede. Dispositivos offline verão o aviso ao conectar no início do turno.
             </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#777] pt-1">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground pt-1">
               <span>
-                Último envio: <strong className="text-[#ccc]">{lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleString('pt-BR') : 'Nenhuma atualização recente'}</strong>
+                Último envio: <strong className="text-foreground">{lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleString('pt-BR') : 'Nenhuma atualização recente'}</strong>
               </span>
               {updatedByName && (
                 <span>
-                  Disparado por: <strong className="text-[#ccc]">{updatedByName}</strong>
+                  Disparado por: <strong className="text-foreground">{updatedByName}</strong>
                 </span>
               )}
             </div>
@@ -430,21 +430,21 @@ export default function AdminDispositivosPage() {
       </div>
 
       {/* Filtros e Busca */}
-      <div className="flex flex-col sm:flex-row gap-3 bg-[#121214] border border-[#27272a] p-3 rounded-xl">
-        <div className="flex items-center gap-2 bg-[#18181a] border border-[#27272a] rounded-md px-3 flex-1">
-          <Search className="w-4 h-4 text-[#aaa]" />
+      <div className="flex flex-col sm:flex-row gap-3 bg-input-bg border border-borderCustom p-3 rounded-xl">
+        <div className="flex items-center gap-2 bg-surface-2 border border-borderCustom rounded-md px-3 flex-1">
+          <Search className="w-4 h-4 text-muted-foreground" />
           <Input 
             placeholder="Buscar por nome, IMEI ou alocação..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-transparent border-none text-white focus-visible:ring-0 placeholder:text-[#aaa] h-9 text-sm"
+            className="bg-transparent border-none text-foreground focus-visible:ring-0 placeholder:text-muted-foreground h-9 text-sm"
           />
         </div>
         
         <select
           value={filterTipo}
           onChange={(e) => setFilterTipo(e.target.value)}
-          className="h-9 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none"
+          className="h-9 px-3 rounded-md bg-input-bg border border-borderCustom text-foreground text-sm outline-none"
         >
           <option value="TODOS">Todos os Tipos</option>
           <option value="SMARTPHONE">Smartphone</option>
@@ -455,7 +455,7 @@ export default function AdminDispositivosPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="h-9 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none"
+          className="h-9 px-3 rounded-md bg-input-bg border border-borderCustom text-foreground text-sm outline-none"
         >
           <option value="TODOS">Todos os Status</option>
           <option value="ATIVO">Ativo</option>
@@ -495,7 +495,7 @@ export default function AdminDispositivosPage() {
               variant="ghost"
               onClick={() => setPwaDialogOpen(false)}
               disabled={pwaSubmitting}
-              className="text-[#aaa] hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               Cancelar
             </Button>
@@ -519,11 +519,11 @@ export default function AdminDispositivosPage() {
           </div>
         }
       >
-        <div className="space-y-4 text-sm text-white">
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs text-amber-200">
-              <strong className="font-semibold block text-amber-400">Atenção para Ações em Rede</strong>
+        <div className="space-y-4 text-sm text-foreground">
+          <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs text-amber-700 dark:text-amber-200">
+              <strong className="font-semibold block text-amber-600 dark:text-amber-400">Atenção para Ações em Rede</strong>
               <p>
                 Todos os usuários com o PWA aberto verão a mensagem de atualização com contagem regressiva e recarregamento automático. Dispositivos offline serão forçados a atualizar no início do turno ao conectar.
               </p>
@@ -531,38 +531,38 @@ export default function AdminDispositivosPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#ccc]">Identificador da Nova Versão</label>
+            <label className="text-xs font-semibold text-foreground">Identificador da Nova Versão</label>
             <Input
               value={pwaNextVersion}
               onChange={(e) => setPwaNextVersion(e.target.value)}
               placeholder="Ex: v12"
-              className="bg-[#18181a] border-[#3f3f46] text-white font-mono"
+              className="bg-input-bg border-borderCustom text-foreground font-mono"
             />
-            <p className="text-[11px] text-[#777]">Versão atual cadastrada: <code className="text-amber-400">{currentVersion}</code></p>
+            <p className="text-[11px] text-muted-foreground">Versão atual cadastrada: <code className="text-amber-500 dark:text-amber-400">{currentVersion}</code></p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#ccc]">Estratégia de Distribuição de Carga (Jitter)</label>
+            <label className="text-xs font-semibold text-foreground">Estratégia de Distribuição de Carga (Jitter)</label>
             <select
               value={pwaStaggerSeconds}
               onChange={(e) => setPwaStaggerSeconds(Number(e.target.value))}
-              className="w-full h-9 px-3 rounded-md bg-[#18181a] border border-[#3f3f46] text-white text-xs outline-none"
+              className="w-full h-9 px-3 rounded-md bg-input-bg border border-borderCustom text-foreground text-xs outline-none"
             >
               <option value={60}>🌊 Onda Suave — Distribuir em 1 min (Recomendado para 500+ dispositivos)</option>
               <option value={180}>🌊 Onda Estendida — Distribuir em 3 min (Evita picos em horário de entrada)</option>
               <option value={0}>⚡ Imediata — Sem atraso (Apenas para emergências/poucos dispositivos)</option>
             </select>
-            <p className="text-[11px] text-[#777]">Evita travamentos e picos de acessos simultâneos na Vercel/Supabase.</p>
+            <p className="text-[11px] text-muted-foreground">Evita travamentos e picos de acessos simultâneos na Vercel/Supabase.</p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#ccc]">Mensagem Exibida ao Usuário</label>
+            <label className="text-xs font-semibold text-foreground">Mensagem Exibida ao Usuário</label>
             <Textarea
               value={pwaCustomMessage}
               onChange={(e) => setPwaCustomMessage(e.target.value)}
               rows={3}
               placeholder="Digite a mensagem..."
-              className="bg-[#18181a] border-[#3f3f46] text-white text-xs leading-relaxed"
+              className="bg-input-bg border-borderCustom text-foreground text-xs leading-relaxed"
             />
           </div>
         </div>

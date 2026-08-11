@@ -610,7 +610,7 @@ export default function AdminLixeiraPage() {
           />
         </div>
       ) : (
-        <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+        <Badge variant="outline" className="text-muted-foreground border-border bg-muted text-xs font-semibold px-2.5 py-0.5">
           Pendente
         </Badge>
       )
@@ -628,7 +628,7 @@ export default function AdminLixeiraPage() {
           />
         </div>
       ) : (
-        <Badge variant="outline" className="text-zinc-500 border-zinc-800 bg-zinc-800/10 text-xs font-semibold px-2.5 py-0.5">
+        <Badge variant="outline" className="text-muted-foreground border-border bg-muted text-xs font-semibold px-2.5 py-0.5">
           Pendente
         </Badge>
       )

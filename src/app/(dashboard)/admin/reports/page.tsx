@@ -405,11 +405,11 @@ export default function AdminReportsPage() {
 
                 {/* Resposta do Root (se houver) */}
                 {report.resposta_root && (
-                  <div className="bg-[#1e1b4b]/40 border border-[#4338ca]/30 rounded-xl p-3.5 text-xs text-indigo-200 space-y-1">
-                    <span className="font-bold flex items-center gap-1.5 text-indigo-400 uppercase tracking-wider text-[10px]">
-                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> Resposta da Administração ROOT:
+                  <div className="bg-indigo-50 dark:bg-[#1e1b4b]/40 border border-indigo-200 dark:border-[#4338ca]/30 rounded-xl p-3.5 text-xs text-indigo-700 dark:text-indigo-200 space-y-1">
+                    <span className="font-bold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[10px]">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Resposta da Administração ROOT:
                     </span>
-                    <p className="text-zinc-200 text-sm leading-relaxed">
+                    <p className="text-foreground text-sm leading-relaxed">
                       {report.resposta_root}
                     </p>
                   </div>

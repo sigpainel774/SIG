@@ -100,8 +100,8 @@ export default function AdminCargosPage() {
       header: 'Cargo',
       accessor: (cargo) => (
         <div>
-          <div className="font-medium text-white">{cargo.nome}</div>
-          {cargo.descricao && <div className="text-xs text-[#aaa] mt-0.5">{cargo.descricao}</div>}
+          <div className="font-medium text-foreground">{cargo.nome}</div>
+          {cargo.descricao && <div className="text-xs text-muted-foreground mt-0.5">{cargo.descricao}</div>}
         </div>
       )
     },
@@ -116,7 +116,7 @@ export default function AdminCargosPage() {
     {
       header: 'Secretaria',
       accessor: (cargo) => (
-        <span className="text-sm text-slate-300 font-medium">
+        <span className="text-sm text-foreground font-medium">
           {cargo.secretarias?.nome ?? '-'}
         </span>
       )
@@ -124,7 +124,7 @@ export default function AdminCargosPage() {
     {
       header: 'Salário Base',
       accessor: (cargo) => (
-        <span className="text-[#aaa]">
+        <span className="text-muted-foreground">
           {cargo.salario_base !== null && cargo.salario_base !== undefined
             ? `R$ ${Number(cargo.salario_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             : '-'}
@@ -171,12 +171,12 @@ export default function AdminCargosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Briefcase className="w-6 h-6 text-amber-500" /> Cargos e Funções
           </h2>
-          <p className="text-[#aaa] text-sm mt-1">Gerenciamento da hierarquia de cargos e níveis salariais.</p>
+          <p className="text-muted-foreground text-sm mt-1">Gerenciamento da hierarquia de cargos e níveis salariais.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ export default function AdminCargosPage() {
             variant="outline"
             onClick={loadCargos}
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -195,13 +195,13 @@ export default function AdminCargosPage() {
       </div>
 
       {/* Busca */}
-      <div className="flex items-center gap-3 bg-[#121214] border border-[#27272a] p-3 rounded-xl max-w-md">
-        <Search className="w-4 h-4 text-[#aaa]" />
+      <div className="flex items-center gap-3 bg-input-bg border border-borderCustom p-3 rounded-xl max-w-md">
+        <Search className="w-4 h-4 text-muted-foreground" />
         <Input 
           placeholder="Buscar cargo por nome ou descrição..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-transparent border-none text-white focus-visible:ring-0 placeholder:text-[#aaa] h-7 text-sm"
+          className="bg-transparent border-none text-foreground focus-visible:ring-0 placeholder:text-muted-foreground h-7 text-sm"
         />
       </div>
 
@@ -213,7 +213,7 @@ export default function AdminCargosPage() {
         loading={loading}
         loadingMessage="Carregando lista de cargos..."
         emptyMessage="Nenhum cargo encontrado."
-        className="border-[#3f3f46]"
+        className="border-borderCustom"
       />
 
       {/* Modal Criar / Editar Cargo */}

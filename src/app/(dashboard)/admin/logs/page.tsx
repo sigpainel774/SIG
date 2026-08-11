@@ -117,14 +117,14 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
           {!loading && !error && detail && (
             <div className="space-y-5 py-2">
               {/* Header do Log */}
-              <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-xl flex flex-wrap justify-between items-center gap-4 text-xs">
+              <div className="bg-surface-2 border border-borderCustom p-4 rounded-xl flex flex-wrap justify-between items-center gap-4 text-xs">
                 <div>
-                  <span className="text-slate-400">Módulo/Entidade:</span>{' '}
-                  <strong className="text-white uppercase">{detail.entity}</strong> ({detail.entity_id})
+                  <span className="text-muted-foreground">Módulo/Entidade:</span>{' '}
+                  <strong className="text-foreground uppercase">{detail.entity}</strong> ({detail.entity_id})
                 </div>
                 <div>
-                  <span className="text-slate-400">Responsável:</span>{' '}
-                  <strong className="text-white">{detail.user_name ?? 'Sistema'}</strong> ({detail.user_email ?? 'N/D'})
+                  <span className="text-muted-foreground">Responsável:</span>{' '}
+                  <strong className="text-foreground">{detail.user_name ?? 'Sistema'}</strong> ({detail.user_email ?? 'N/D'})
                 </div>
               </div>
 
@@ -148,10 +148,10 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
               </div>
 
               {/* Lista Detalhada do Diff */}
-              <div className="bg-[#121214] border border-[#27272a] rounded-xl p-4 space-y-3 max-h-[350px] overflow-y-auto scrollbar-thin">
+              <div className="bg-card border border-borderCustom rounded-xl p-4 space-y-3 max-h-[350px] overflow-y-auto scrollbar-thin">
                 {/* Alterados */}
                 {diffResult.changed.map(({ key, oldVal, newVal }) => (
-                  <div key={key} className="bg-[#1a1a1e] border border-amber-500/20 p-3 rounded-lg text-xs space-y-1">
+                  <div key={key} className="bg-surface-2 border border-amber-300 dark:border-amber-500/20 p-3 rounded-lg text-xs space-y-1">
                     <div className="flex items-center justify-between text-amber-400 font-bold">
                       <span className="flex items-center gap-1.5">
                         <Edit3 className="w-3.5 h-3.5" /> {key}
@@ -173,7 +173,7 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
 
                 {/* Adicionados */}
                 {diffResult.added.map(({ key, val }) => (
-                  <div key={key} className="bg-[#1a1a1e] border border-emerald-500/20 p-3 rounded-lg text-xs space-y-1">
+                  <div key={key} className="bg-surface-2 border border-emerald-300 dark:border-emerald-500/20 p-3 rounded-lg text-xs space-y-1">
                     <div className="flex items-center justify-between text-emerald-400 font-bold">
                       <span className="flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5" /> {key}
@@ -188,7 +188,7 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
 
                 {/* Removidos */}
                 {diffResult.removed.map(({ key, val }) => (
-                  <div key={key} className="bg-[#1a1a1e] border border-rose-500/20 p-3 rounded-lg text-xs space-y-1">
+                  <div key={key} className="bg-surface-2 border border-rose-300 dark:border-rose-500/20 p-3 rounded-lg text-xs space-y-1">
                     <div className="flex items-center justify-between text-rose-400 font-bold">
                       <span className="flex items-center gap-1.5">
                         <Minus className="w-3.5 h-3.5" /> {key}
@@ -322,7 +322,7 @@ export default function AdminLogsPage() {
             <select 
               value={filterEntity} 
               onChange={(e) => setFilterEntity(e.target.value)}
-              className="bg-[#121212] border border-[#3f3f46] text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="bg-input-bg border border-borderCustom text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary cursor-pointer"
             >
               <option value="ALL">Todos os Módulos</option>
               <option value="alunos">Alunos</option>
@@ -335,7 +335,7 @@ export default function AdminLogsPage() {
               variant="outline"
               onClick={loadLogs}
               disabled={loading}
-              className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+              className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom h-10"
               title="Recarregar logs"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

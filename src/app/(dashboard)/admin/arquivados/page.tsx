@@ -114,7 +114,7 @@ export default function AdminArquivadosPage() {
     {
       header: 'Tipo',
       accessor: (arq) => (
-        <Badge variant="outline" className="text-xs font-semibold bg-[#1a1a2e] text-[#3ea6ff] border-[#3ea6ff]/30">
+        <Badge variant="outline" className="text-xs font-semibold bg-primary/10 text-primary border-primary/30">
           {arq.entity ?? 'DESCONHECIDO'}
         </Badge>
       )
@@ -123,8 +123,8 @@ export default function AdminArquivadosPage() {
       header: 'Nome / Identificação',
       accessor: (arq) => (
         <div className="flex flex-col">
-          <span className="text-sm font-semibold text-white uppercase">{arq.snapshot_data?.nome ?? arq.nome ?? 'Sem nome'}</span>
-          <span className="text-xs text-zinc-400">ID: {arq.original_id ?? arq.id}</span>
+          <span className="text-sm font-semibold text-foreground uppercase">{arq.snapshot_data?.nome ?? arq.nome ?? 'Sem nome'}</span>
+          <span className="text-xs text-muted-foreground">ID: {arq.original_id ?? arq.id}</span>
         </div>
       )
     },
@@ -200,7 +200,7 @@ export default function AdminArquivadosPage() {
                 placeholder="Buscar por nome, tipo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-[220px] bg-[#121212] border-[#3f3f46] text-white text-xs h-10"
+                className="pl-9 w-[220px] bg-input-bg border-borderCustom text-foreground text-xs h-10"
               />
             </div>
 
@@ -208,7 +208,7 @@ export default function AdminArquivadosPage() {
               variant="outline"
               onClick={loadArquivados}
               disabled={loading}
-              className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+              className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom h-10"
               title="Recarregar arquivados"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

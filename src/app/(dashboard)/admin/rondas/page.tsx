@@ -57,16 +57,16 @@ export default function AdminRondasPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="bg-[#121212] p-1 rounded-lg border border-[#3f3f46] flex">
+          <div className="bg-muted p-1 rounded-lg border border-borderCustom flex">
             <button 
               onClick={() => setActiveTab('rotas')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'rotas' ? 'bg-[#3f3f46] text-white' : 'text-[#aaa] hover:text-white'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'rotas' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Rotas
             </button>
             <button 
               onClick={() => setActiveTab('registros')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'registros' ? 'bg-[#3f3f46] text-white' : 'text-[#aaa] hover:text-white'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'registros' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Registros
             </button>
@@ -81,37 +81,37 @@ export default function AdminRondasPage() {
               <Plus className="w-4 h-4 mr-2" /> Nova Rota
             </Button>
           </div>
-          <div className="rounded-xl border border-[#3f3f46] bg-[#121212] overflow-hidden">
+          <div className="rounded-xl border border-borderCustom bg-card overflow-hidden">
             <Table>
-              <TableHeader className="bg-[#181818] border-b border-[#3f3f46]">
+              <TableHeader className="bg-surface-2 border-b border-borderCustom">
                 <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="text-[#ccc] font-semibold">Nome da Rota</TableHead>
-                  <TableHead className="text-[#ccc] font-semibold">Local/Vigia</TableHead>
-                  <TableHead className="text-[#ccc] font-semibold">Turno</TableHead>
-                  <TableHead className="text-[#ccc] font-semibold">Status</TableHead>
-                  <TableHead className="text-right text-[#ccc] font-semibold">Ações</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Nome da Rota</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Local/Vigia</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Turno</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Status</TableHead>
+                  <TableHead className="text-right text-muted-foreground font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rotas.map((rota) => (
-                  <TableRow key={rota.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                    <TableCell className="font-medium text-white">{rota.nome}</TableCell>
+                  <TableRow key={rota.id} className="border-b border-borderCustom hover:bg-hoverCustom">
+                    <TableCell className="font-medium text-foreground">{rota.nome}</TableCell>
                     <TableCell>
-                      <div className="text-sm text-white">{rota.escolas?.nome ?? 'Escola não vinculada'}</div>
-                      <div className="text-xs text-[#aaa]">{rota.funcionarios?.nome ?? 'Sem vigia padrão'}</div>
+                      <div className="text-sm text-foreground">{rota.escolas?.nome ?? 'Escola não vinculada'}</div>
+                      <div className="text-xs text-muted-foreground">{rota.funcionarios?.nome ?? 'Sem vigia padrão'}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs bg-slate-500/20 text-slate-300 border-slate-500/30">
+                      <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
                         {rota.turno}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={`text-xs ${rota.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+                      <Badge variant="outline" className={`text-xs ${rota.ativo !== false ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-500 border-emerald-300 dark:border-emerald-500/30' : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-500 border-rose-300 dark:border-rose-500/30'}`}>
                         {rota.ativo !== false ? 'ATIVO' : 'INATIVO'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="text-[#aaa] hover:text-white">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                         <Edit className="w-4 h-4" />
                       </Button>
                     </TableCell>
@@ -119,7 +119,7 @@ export default function AdminRondasPage() {
                 ))}
                 {rotas.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-[#aaa]">Nenhuma rota cadastrada.</TableCell>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma rota cadastrada.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -127,10 +127,10 @@ export default function AdminRondasPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 border border-dashed border-[#3f3f46] rounded-xl bg-[#121212]/50">
-          <MapPin className="w-16 h-16 text-[#3f3f46] mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">Registros de Ronda</h3>
-          <p className="text-[#aaa] text-center max-w-md">Os logs de check-in de ronda por GPS aparecerão aqui após iniciadas as atividades.</p>
+        <div className="flex flex-col items-center justify-center p-12 border border-dashed border-borderCustom rounded-xl bg-surface-2">
+          <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
+          <h3 className="text-xl font-bold text-foreground mb-2">Registros de Ronda</h3>
+          <p className="text-muted-foreground text-center max-w-md">Os logs de check-in de ronda por GPS aparecerão aqui após iniciadas as atividades.</p>
         </div>
       )}
     </div>
