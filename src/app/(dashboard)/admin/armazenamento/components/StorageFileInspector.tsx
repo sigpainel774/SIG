@@ -14,6 +14,7 @@ import {
   Video as VideoIcon,
   File as FileIcon
 } from 'lucide-react'
+import { useState } from 'react'
 import { MappedFile, SchoolStat } from '@/hooks/useAdminStorage'
 
 
@@ -60,10 +61,12 @@ export function StorageFileInspector({
   filteredFiles,
   totalFilesCount
 }: StorageFileInspectorProps) {
+  const [sessionTimestamp] = useState(() => Date.now())
+
   // Retorna a URL pública de download do arquivo com cache busting
   const getFilePublicUrl = (bucketId: string, name: string) => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-    return `${supabaseUrl}/storage/v1/object/public/${bucketId}/${name}?t=${Date.now()}`
+    return `${supabaseUrl}/storage/v1/object/public/${bucketId}/${name}?t=${sessionTimestamp}`
   }
 
   return (
