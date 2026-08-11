@@ -51,6 +51,8 @@ export function Sidebar() {
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
+  const isNivel1OrSuperior = funcionario?.is_superadmin || Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
+  const temEscolaSelecionada = Boolean(selectedEscola)
   const isSelecaoSecretaria = isRhRedeOnly ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria))
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
@@ -391,6 +393,9 @@ export function Sidebar() {
               return permitidos.includes(item.href)
             }
             if (item.href === '/painel-chefe') {
+              if (isNivel1OrSuperior && !temEscolaSelecionada) {
+                return false
+              }
               return isDiretor() || isChefe() || isAdmin
             }
             return true
@@ -398,9 +403,7 @@ export function Sidebar() {
 
           if (filteredItems.length === 0) return null
 
-          const isNivel1OrSuperior = funcionario?.is_superadmin || Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
           const requerSelecaoEscolaParaDetalhes = isEducacao && isNivel1OrSuperior
-          const temEscolaSelecionada = Boolean(selectedEscola)
 
           if (requerSelecaoEscolaParaDetalhes) {
             if (group.label === 'GESTÃO ACADÊMICA') {
