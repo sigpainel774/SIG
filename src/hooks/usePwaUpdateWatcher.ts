@@ -110,6 +110,8 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
             }
           } else if (newRow.chave === 'pwa_update_message') {
             setNewMessage(newRow.valor)
+          } else if (newRow.chave === 'pwa_stagger_seconds') {
+            setStaggerSeconds(parseInt(newRow.valor, 10) || 60)
           }
         }
       )
