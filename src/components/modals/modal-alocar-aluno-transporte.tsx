@@ -81,6 +81,7 @@ export function ModalAlocarAlunoTransporte({
         }
       } catch (err) {
         console.error('Erro ao carregar escolas:', err)
+        if (active) toast.error('Erro ao carregar lista de escolas.')
       } finally {
         if (active) setLoadingEscolas(false)
       }

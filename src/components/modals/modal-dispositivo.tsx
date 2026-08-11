@@ -43,13 +43,20 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
 
   useEffect(() => {
     const fetchSelectData = async () => {
-      const [{ data: escolasData }, { data: funcionariosData }] = await Promise.all([
-        supabase.from('escolas').select('id, nome').is('deleted_at', null).eq('ativo', true).order('nome'),
-        supabase.from('funcionarios').select('id, nome').is('deleted_at', null).eq('status', 'ativo').order('nome')
-      ])
-      
-      if (escolasData) setEscolas(escolasData)
-      if (funcionariosData) setFuncionarios(funcionariosData)
+      try {
+        const [escolasRes, funcionariosRes] = await Promise.all([
+          supabase.from('escolas').select('id, nome').is('deleted_at', null).eq('ativo', true).order('nome'),
+          supabase.from('funcionarios').select('id, nome').is('deleted_at', null).eq('status', 'ativo').order('nome')
+        ])
+        if (escolasRes.error) throw escolasRes.error
+        if (funcionariosRes.error) throw funcionariosRes.error
+        
+        if (escolasRes.data) setEscolas(escolasRes.data)
+        if (funcionariosRes.data) setFuncionarios(funcionariosRes.data)
+      } catch (err: any) {
+        console.error('Erro ao carregar dados auxiliares de dispositivos:', err)
+        toast.error('Erro ao carregar lista de escolas/funcionários.')
+      }
     }
 
     if (open) {
