@@ -24,6 +24,13 @@ const PermissoesView = dynamic(
   () => import('@/components/PermissoesView').then((mod) => mod.PermissoesView),
   { ssr: false }
 )
+const ModalImprimirFichaFuncionario = dynamic(
+  () =>
+    import('@/components/modals/modal-imprimir-ficha-funcionario').then(
+      (mod) => mod.ModalImprimirFichaFuncionario
+    ),
+  { ssr: false }
+)
 
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -54,6 +61,7 @@ export default function FuncionariosPage() {
   const [modalEditando, setModalEditando] = useState<Funcionario | null>(null)
   const [modalLotacoesOpen, setModalLotacoesOpen] = useState(false)
   const [funcLotacaoInicial, setFuncLotacaoInicial] = useState<{ id: string } | null>(null)
+  const [funcIdImprimir, setFuncIdImprimir] = useState<string | null>(null)
 
   /* ── Hooks de Estado e Impressão ───────────────────────────── */
   const {
@@ -74,7 +82,7 @@ export default function FuncionariosPage() {
     isEmaee
   } = useFuncionarios()
 
-  const { handleImprimir, handleImprimirLista } = useImprimirFuncionario()
+  const { handleImprimirLista } = useImprimirFuncionario()
 
   /* ── Ações dos cards ────────────────────────────────────────── */
   const handleAbrirLotacoes = (func: Funcionario) => {
@@ -90,6 +98,10 @@ export default function FuncionariosPage() {
     handleImprimirLista(funcsFiltrados, filtroCargo)
   }
 
+  const handleAbrirImprimirFicha = async (funcId: string) => {
+    setFuncIdImprimir(funcId)
+  }
+
   /* ── Render ─────────────────────────────────────────────────── */
   return (
     <div
@@ -98,6 +110,17 @@ export default function FuncionariosPage() {
         filtroModalidade === 'eja' && "bg-eja-pattern"
       )}
     >
+      {/* Modal Imprimir Ficha do Funcionário */}
+      {!!funcIdImprimir && (
+        <ModalImprimirFichaFuncionario
+          open={!!funcIdImprimir}
+          onOpenChange={(v) => {
+            if (!v) setFuncIdImprimir(null)
+          }}
+          funcionarioId={funcIdImprimir}
+        />
+      )}
+
       {/* Modal Novo Funcionário */}
       {modalNovoOpen && (
         <ModalFuncionario
@@ -271,7 +294,7 @@ export default function FuncionariosPage() {
             funcsFiltrados={funcsFiltrados as any}
             isEditMode={isEditMode}
             handleAbrirLotacoes={handleAbrirLotacoes as any}
-            handleImprimir={handleImprimir}
+            handleImprimir={handleAbrirImprimirFicha}
             handleEditar={handleEditar as any}
             handleDesligar={handleDesligar as any}
           />

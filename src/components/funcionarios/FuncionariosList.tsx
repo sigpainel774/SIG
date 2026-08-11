@@ -342,10 +342,10 @@ export function FuncionariosList({
                     return (
                       <div
                         key={func.id}
-                        className={`bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg relative`}
+                        className={`bg-sidebar dark:bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg relative`}
                       >
                         {/* Topo do card: Avatar + Nome + Badges + Ações */}
-                        <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/50">
+                        <div className="flex items-start justify-between gap-3 pb-4 border-b border-sidebar-border/60 dark:border-border/50">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
                             {/* Avatar circular */}
                             <div
@@ -378,8 +378,8 @@ export function FuncionariosList({
                                 <span
                                   className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${
                                     isAtivo
-                                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                      : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
+                                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                      : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400'
                                   }`}
                                 >
                                   <span
@@ -442,45 +442,45 @@ export function FuncionariosList({
                         {/* Informações Adicionais em Grid */}
                         <div className="grid grid-cols-2 gap-3 mt-1">
                           {/* Órgão (2 colunas) */}
-                          <div className="col-span-2 bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-start gap-2.5">
-                            <span className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg shrink-0">
+                          <div className="col-span-2 bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-start gap-2.5">
+                            <span className="p-2 bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg shrink-0">
                               <Building2 className="w-4 h-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <span className="block text-[11px] font-bold tracking-wider text-slate-400 dark:text-zinc-400 uppercase">
+                              <span className="block text-[11px] font-bold tracking-wider text-slate-500 dark:text-zinc-400 uppercase">
                                 Órgão
                               </span>
-                              <span className="text-xs font-semibold text-slate-800 dark:text-zinc-100 leading-snug block mt-0.5">
+                              <span className="text-xs font-semibold text-slate-900 dark:text-zinc-100 leading-snug block mt-0.5">
                                 {func.orgao ?? '—'}
                               </span>
                             </div>
                           </div>
 
                           {/* Nascimento */}
-                          <div className="bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-center gap-2.5 min-w-0">
-                            <span className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg shrink-0">
+                          <div className="bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-center gap-2.5 min-w-0">
+                            <span className="p-2 bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg shrink-0">
                               <Calendar className="w-4 h-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <span className="block text-[11px] font-bold tracking-wider text-slate-400 dark:text-zinc-400 uppercase">
+                              <span className="block text-[11px] font-bold tracking-wider text-slate-500 dark:text-zinc-400 uppercase">
                                 Nascimento
                               </span>
-                              <span className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 block truncate">
+                              <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 mt-0.5 block truncate">
                                 {formatarData(func.data_nascimento)}
                               </span>
                             </div>
                           </div>
 
                           {/* Formação */}
-                          <div className="bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-center gap-2.5 min-w-0">
-                            <span className="p-2 bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 rounded-lg shrink-0">
+                          <div className="bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-zinc-700/50 p-3 rounded-xl flex items-center gap-2.5 min-w-0">
+                            <span className="p-2 bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 rounded-lg shrink-0">
                               <GraduationCap className="w-4 h-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <span className="block text-[11px] font-bold tracking-wider text-slate-400 dark:text-zinc-400 uppercase">
+                              <span className="block text-[11px] font-bold tracking-wider text-slate-500 dark:text-zinc-400 uppercase">
                                 Formação
                               </span>
-                              <span className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 block truncate">
+                              <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 mt-0.5 block truncate">
                                 {func.formacao ?? '—'}
                               </span>
                             </div>
