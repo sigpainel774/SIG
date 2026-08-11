@@ -31,6 +31,13 @@ const ModalImprimirFichaFuncionario = dynamic(
     ),
   { ssr: false }
 )
+const ModalMovimentacoes = dynamic(
+  () =>
+    import('@/components/modals/modal-movimentacoes').then(
+      (mod) => mod.ModalMovimentacoes
+    ),
+  { ssr: false }
+)
 
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -62,6 +69,7 @@ export default function FuncionariosPage() {
   const [modalLotacoesOpen, setModalLotacoesOpen] = useState(false)
   const [funcLotacaoInicial, setFuncLotacaoInicial] = useState<{ id: string } | null>(null)
   const [funcIdImprimir, setFuncIdImprimir] = useState<string | null>(null)
+  const [funcMovimentacoes, setFuncMovimentacoes] = useState<Funcionario | null>(null)
 
   /* ── Hooks de Estado e Impressão ───────────────────────────── */
   const {
@@ -88,6 +96,10 @@ export default function FuncionariosPage() {
   const handleAbrirLotacoes = (func: Funcionario) => {
     setFuncLotacaoInicial({ id: func.id })
     setModalLotacoesOpen(true)
+  }
+
+  const handleAbrirMovimentacoes = (func: Funcionario) => {
+    setFuncMovimentacoes(func)
   }
 
   const handleEditar = (func: Funcionario) => {
@@ -118,6 +130,17 @@ export default function FuncionariosPage() {
             if (!v) setFuncIdImprimir(null)
           }}
           funcionarioId={funcIdImprimir}
+        />
+      )}
+
+      {/* Modal Histórico de Movimentações */}
+      {!!funcMovimentacoes && (
+        <ModalMovimentacoes
+          open={!!funcMovimentacoes}
+          onOpenChange={(v) => {
+            if (!v) setFuncMovimentacoes(null)
+          }}
+          funcionario={funcMovimentacoes as any}
         />
       )}
 
@@ -294,6 +317,7 @@ export default function FuncionariosPage() {
             funcsFiltrados={funcsFiltrados as any}
             isEditMode={isEditMode}
             handleAbrirLotacoes={handleAbrirLotacoes as any}
+            handleAbrirMovimentacoes={handleAbrirMovimentacoes as any}
             handleImprimir={handleAbrirImprimirFicha}
             handleEditar={handleEditar as any}
             handleDesligar={handleDesligar as any}

@@ -10,7 +10,9 @@ import {
   Building2,
   User,
   ArrowLeft,
+  History,
 } from 'lucide-react'
+import { ModalMovimentacoes } from '@/components/modals/modal-movimentacoes'
 import { useGestaoLotacoes, FuncItem } from '@/hooks/useGestaoLotacoes'
 import { TurmasCoordenadorSection } from '@/components/TurmasCoordenadorSection'
 import { FuncionarioLotacaoList } from './lotacoes/FuncionarioLotacaoList'
@@ -78,6 +80,7 @@ export function ModalGestaoLotacoes({
 
   /* Controle de visualização responsiva para mobile/tablet (lista vs detalhe) */
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
+  const [modalMovOpen, setModalMovOpen] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -185,16 +188,34 @@ export function ModalGestaoLotacoes({
                       <p className="text-xs text-zinc-400 truncate">CPF: {selecionado.cpf ?? 'Não informado'}</p>
                     </div>
                   </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0 ml-2 ${
-                      selecionado.status === 'ativo'
-                        ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-zinc-800 text-zinc-400 border border-zinc-600/30'
-                    }`}
-                  >
-                    {selecionado.status}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <button
+                      onClick={() => setModalMovOpen(true)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Ver Histórico de Movimentações"
+                    >
+                      <History className="w-3.5 h-3.5 text-purple-400" />
+                      <span className="hidden sm:inline">Movimentações</span>
+                    </button>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0 ${
+                        selecionado.status === 'ativo'
+                          ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-zinc-800 text-zinc-400 border border-zinc-600/30'
+                      }`}
+                    >
+                      {selecionado.status}
+                    </span>
+                  </div>
                 </div>
+
+                {modalMovOpen && (
+                  <ModalMovimentacoes
+                    open={modalMovOpen}
+                    onOpenChange={setModalMovOpen}
+                    funcionario={selecionado as any}
+                  />
+                )}
 
                 {/* Lotações Ativas */}
                 <div className="space-y-2">

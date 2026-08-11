@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { getAvatarUrl } from '@/lib/photoHelper';
-import { Loader2, Printer, Pencil, UserX, Briefcase, Building2, Calendar, GraduationCap } from 'lucide-react'
+import { Loader2, Printer, Pencil, UserX, Briefcase, Building2, Calendar, GraduationCap, History } from 'lucide-react'
 import { CachedImage } from '@/components/ui/cached-image'
 
 export interface Funcionario {
@@ -31,6 +31,7 @@ interface FuncionariosListProps {
   funcsFiltrados: Funcionario[]
   isEditMode: boolean
   handleAbrirLotacoes: (func: Funcionario) => void
+  handleAbrirMovimentacoes?: (func: Funcionario) => void
   handleImprimir: (funcId: string) => Promise<void>
   handleEditar: (func: Funcionario) => void
   handleDesligar: (func: Funcionario) => Promise<void>
@@ -269,6 +270,7 @@ export function FuncionariosList({
   funcsFiltrados,
   isEditMode,
   handleAbrirLotacoes,
+  handleAbrirMovimentacoes,
   handleImprimir,
   handleEditar,
   handleDesligar
@@ -410,6 +412,16 @@ export function FuncionariosList({
                                 className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
                               >
                                 M
+                              </button>
+                            )}
+                            {/* Histórico de Movimentações */}
+                            {handleAbrirMovimentacoes && (
+                              <button
+                                onClick={() => handleAbrirMovimentacoes(func)}
+                                title="Histórico de Movimentações"
+                                className="w-9 h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                              >
+                                <History className="w-4 h-4" />
                               </button>
                             )}
                             {/* Imprimir ficha */}
