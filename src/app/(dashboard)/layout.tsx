@@ -6,6 +6,7 @@ import { headers } from 'next/headers'
 import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
+import { SimulationBanner } from '@/components/SimulationBanner'
 import { createClient } from '@/lib/supabaseServer'
 import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
@@ -55,6 +56,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
         <PerformanceTracker />
         <AccessTracker />
+        <SimulationBanner />
         <RootAdminHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-8">
           {children}
@@ -74,6 +76,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto flex flex-col min-w-0 print:overflow-visible print:block">
+        <SimulationBanner />
         <Header />
         <div className="p-4 md:p-8 flex-1 print:p-0 print:block">
           {children}
@@ -82,3 +85,4 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     </div>
   )
 }
+

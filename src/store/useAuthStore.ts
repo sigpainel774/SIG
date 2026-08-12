@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Database } from '@/types/supabase';
 import { useSchoolStore } from './useSchoolStore';
+import { usePermissionSimulationStore } from './usePermissionSimulationStore';
 import { limparCacheIndexedDB } from '@/lib/swr/indexedDBCache';
 import { mutate } from 'swr';
 
@@ -24,6 +25,9 @@ interface AuthState {
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
   logout: (supabase: any) => Promise<void>;
+  getFuncionarioAtivo: () => Funcionario | Partial<Funcionario> | null;
+  getAcessosAtivos: () => AcessoUsuario[];
+  getVinculosAtivos: () => VinculoFuncionario[];
   isAdminGlobalOrRoot: () => boolean;
   isDiretor: () => boolean;
   isChefe: () => boolean;
@@ -46,6 +50,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
   logout: async (supabase: any) => {
+    // Encerrar simulação de permissões se estivesse ativa
+    usePermissionSimulationStore.getState().encerrarSimulacao();
+
     get().limparSessao()
 
     // Expurgo profundo de caches autenticados no navegador
@@ -72,40 +79,68 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       window.location.href = '/login'
     }
   },
-  isAdminGlobalOrRoot: () => {
+  getFuncionarioAtivo: () => {
     const state = get();
-    if (state.funcionario?.is_superadmin) return true;
-    return state.acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
+    const simState = usePermissionSimulationStore.getState();
+    if (simState.isSimulating && simState.simulatedFuncionario) {
+      return simState.simulatedFuncionario;
+    }
+    return state.funcionario;
+  },
+  getAcessosAtivos: () => {
+    const state = get();
+    const simState = usePermissionSimulationStore.getState();
+    if (simState.isSimulating && simState.simulatedAcessos) {
+      return simState.simulatedAcessos;
+    }
+    return state.acessos || [];
+  },
+  getVinculosAtivos: () => {
+    const state = get();
+    const simState = usePermissionSimulationStore.getState();
+    if (simState.isSimulating && simState.simulatedVinculos) {
+      return simState.simulatedVinculos as VinculoFuncionario[];
+    }
+    return state.vinculos || [];
+  },
+  isAdminGlobalOrRoot: () => {
+    const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
+    if (funcionario?.is_superadmin) return true;
+    return acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
   },
   isDiretor: () => {
-    const state = get();
-    return state.acessos.some(a => a.nivel === 2 && a.ativo);
+    const acessos = get().getAcessosAtivos();
+    return acessos.some(a => a.nivel === 2 && a.ativo);
   },
   isChefe: () => {
-    const state = get();
-    return state.acessos.some(a => a.nivel === 5 && a.ativo);
+    const acessos = get().getAcessosAtivos();
+    return acessos.some(a => a.nivel === 5 && a.ativo);
   },
   isProfessor: () => {
-    const state = get();
-    const acessos = state.acessos || [];
-    const cargo = state.funcionario?.cargo?.toLowerCase() || '';
+    const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
+    const cargo = funcionario?.cargo?.toLowerCase() || '';
     return acessos.some(a => a.nivel === 4 || a.nivel === 5) || cargo.includes('professor');
   },
   isCoordenador: () => {
-    const state = get();
-    const cargo = state.funcionario?.cargo?.toLowerCase() || '';
+    const funcionario = get().getFuncionarioAtivo();
+    const cargo = funcionario?.cargo?.toLowerCase() || '';
     return cargo.includes('coordenador');
   },
   isRhRede: () => {
-    const state = get();
-    if (state.funcionario?.is_superadmin) return true;
-    return state.acessos.some(a => (a.pode_rh_rede || a.nivel === 1) && a.ativo);
+    const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
+    if (funcionario?.is_superadmin) return true;
+    return acessos.some(a => (a.pode_rh_rede || a.nivel === 1) && a.ativo);
   },
   isRhRedeExclusivo: () => {
-    const state = get();
-    if (state.funcionario?.is_superadmin) return false;
-    const temRhRede = state.acessos.some(a => a.pode_rh_rede === true && a.ativo);
-    const temOutroAcessoAmplo = state.acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
+    const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
+    if (funcionario?.is_superadmin) return false;
+    const temRhRede = acessos.some(a => a.pode_rh_rede === true && a.ativo);
+    const temOutroAcessoAmplo = acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
     return temRhRede && !temOutroAcessoAmplo;
   },
 }));
+

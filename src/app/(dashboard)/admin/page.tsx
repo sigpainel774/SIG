@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
+import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
@@ -37,6 +38,9 @@ import {
   Users,
   LucideIcon,
   HardDrive,
+  ShieldAlert,
+  Play,
+  StopCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -57,6 +61,13 @@ interface AdminGroup {
   headerColor: string
   badgeColor: string
   items: ShortcutItem[]
+}
+
+interface FuncionarioOption {
+  id: string
+  nome: string
+  cargo: string | null
+  email: string
 }
 
 /* ─────────────────────────── data ──────────────────────────── */
@@ -203,15 +214,6 @@ const adminGroups: AdminGroup[] = [
         iconColor: 'text-cyan-600 dark:text-cyan-400',
         path: '/admin/rondas',
       },
-      /*
-      {
-        title: 'Transporte',
-        subtitle: 'Frota e rotas escolares',
-        icon: Bus,
-        iconColor: 'text-sky-600 dark:text-sky-400',
-        path: '/admin/transporte',
-      },
-      */
       {
         title: 'Notificações',
         subtitle: 'Avisos da rede',
@@ -274,6 +276,15 @@ export default function AdminHubPage() {
   const supabase = createClient()
   const { funcionario, logout } = useAuthStore()
 
+  // Store da Simulação de Permissões
+  const {
+    isSimulating,
+    isLoadingSimulation,
+    simulatedFuncionario,
+    iniciarSimulacao,
+    encerrarSimulacao,
+  } = usePermissionSimulationStore()
+
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [loadingControles, setLoadingControles] = useState(true)
 
@@ -283,12 +294,17 @@ export default function AdminHubPage() {
   const [updatingMensagens, setUpdatingMensagens] = useState(false)
   const [updatingEdicao, setUpdatingEdicao] = useState(false)
 
+  // Estados do Simulador de Permissões
+  const [funcionariosOptions, setFuncionariosOptions] = useState<FuncionarioOption[]>([])
+  const [selectedFuncId, setSelectedFuncId] = useState<string>('')
+  const [loadingFuncionariosList, setLoadingFuncionariosList] = useState(false)
+
   // All groups expanded by default
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set(adminGroups.map((g) => g.id))
   )
 
-  // Carregar estados iniciais dos toggles
+  // Carregar estados iniciais dos toggles e lista de funcionários
   React.useEffect(() => {
     async function loadControlesGlobais() {
       try {
@@ -317,15 +333,31 @@ export default function AdminHubPage() {
         if (redeData) {
           setBloquearEdicaoFuncionariosRede(redeData.bloquear_edicao_funcionarios_rede ?? false)
         }
+
+        // 3. Carrega lista de funcionários para o simulador
+        setLoadingFuncionariosList(true)
+        const { data: funcs } = await supabase
+          .from('funcionarios')
+          .select('id, nome, cargo, email')
+          .eq('status', 'ativo')
+          .order('nome', { ascending: true })
+
+        if (funcs) {
+          setFuncionariosOptions(funcs)
+          if (funcs.length > 0) {
+            setSelectedFuncId(funcs[0].id)
+          }
+        }
       } catch (err) {
         console.error('Erro ao carregar controles globais:', err)
       } finally {
         setLoadingControles(false)
+        setLoadingFuncionariosList(false)
       }
     }
 
     loadControlesGlobais()
-  }, [funcionario?.id])
+  }, [funcionario?.id, supabase])
 
   // Handlers para os Toggles
   const handleToggleMensagens = async () => {
@@ -393,6 +425,31 @@ export default function AdminHubPage() {
     } finally {
       setUpdatingEdicao(false)
     }
+  }
+
+  // Handler para iniciar simulação
+  const handleStartSimulation = async () => {
+    if (!selectedFuncId) {
+      toast.error('Selecione um funcionário para simular.')
+      return
+    }
+
+    const targetFunc = funcionariosOptions.find((f) => f.id === selectedFuncId)
+    const success = await iniciarSimulacao(selectedFuncId, supabase)
+
+    if (success) {
+      toast.success(
+        `Modo simulação ativado! Navegando com a experiência de "${targetFunc?.nome ?? 'Servidor'}".`
+      )
+    } else {
+      toast.error('Falha ao carregar dados do usuário para simulação.')
+    }
+  }
+
+  // Handler para encerrar simulação
+  const handleStopSimulation = () => {
+    encerrarSimulacao()
+    toast.success('Simulação encerrada. Privilégios ROOT restaurados!')
   }
 
   const toggleGroup = (id: string) => {
@@ -481,7 +538,7 @@ export default function AdminHubPage() {
               </span>
             </h2>
             <p className="text-xs text-muted-foreground">
-              Gerencie visibilidade no sistema de comunicações e travas globais de permissões da rede municipal.
+              Gerencie visibilidade no sistema de comunicações, travas globais de permissões e simulador de perfis da rede municipal.
             </p>
           </div>
         </div>
@@ -492,61 +549,143 @@ export default function AdminHubPage() {
             Carregando controles globais...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Toggle 1: Chat Interno */}
-            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between gap-4">
+            <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3">
               <div className="space-y-1">
                 <span className="text-xs font-bold text-foreground block">
-                  Visibilidade no Chat Interno (adm@sig.com)
+                  Visibilidade no Chat Interno
                 </span>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  Quando ativo, todos os usuários conseguem te achar na busca e enviar mensagens. Desativado, apenas quem já possui chat aberto poderá enviar.
+                  Quando ativo, qualquer usuário te encontra na busca do chat. Desativado, apenas conversas existentes continuam.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleToggleMensagens}
-                disabled={updatingMensagens}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
-                  permitirMensagensGlobais ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'
-                )}
-              >
-                <span
+              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {permitirMensagensGlobais ? 'Público' : 'Restrito'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleMensagens}
+                  disabled={updatingMensagens}
                   className={cn(
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                    permitirMensagensGlobais ? 'translate-x-5' : 'translate-x-0'
+                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
+                    permitirMensagensGlobais ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'
                   )}
-                />
-              </button>
+                >
+                  <span
+                    className={cn(
+                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                      permitirMensagensGlobais ? 'translate-x-5' : 'translate-x-0'
+                    )}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* Toggle 2: Bloqueio de Edição de Funcionários */}
-            <div className="bg-card border border-border p-4 rounded-xl flex items-center justify-between gap-4">
+            <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3">
               <div className="space-y-1">
                 <span className="text-xs font-bold text-foreground block">
                   Bloquear Edição de Funcionários (&lt; Nível 1)
                 </span>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  Quando ativo, desativa a capacidade de alteração de ficha de funcionários para todos da rede municipal com nível abaixo de 1.
+                  Quando ativo, impede alterações em fichas de servidores por usuários com nível hierárquico abaixo de 1.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleToggleBloqueioEdicao}
-                disabled={updatingEdicao}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
-                  bloquearEdicaoFuncionariosRede ? 'bg-rose-500' : 'bg-slate-300 dark:bg-zinc-700'
-                )}
-              >
-                <span
+              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {bloquearEdicaoFuncionariosRede ? 'Bloqueado' : 'Liberado'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleBloqueioEdicao}
+                  disabled={updatingEdicao}
                   className={cn(
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                    bloquearEdicaoFuncionariosRede ? 'translate-x-5' : 'translate-x-0'
+                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
+                    bloquearEdicaoFuncionariosRede ? 'bg-rose-500' : 'bg-slate-300 dark:bg-zinc-700'
                   )}
-                />
-              </button>
+                >
+                  <span
+                    className={cn(
+                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                      bloquearEdicaoFuncionariosRede ? 'translate-x-5' : 'translate-x-0'
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Controle 3: Simulador de Permissões (Impersonation) */}
+            <div className="bg-card border border-purple-500/30 dark:border-purple-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 bg-purple-500/5 dark:bg-purple-950/20">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    Simulador de Permissões
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 uppercase">
+                    ABAC
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Simule a experiência, menus e visibilidade de qualquer servidor da rede sem exigir a senha dele.
+                </p>
+              </div>
+
+              {isSimulating ? (
+                <div className="pt-2 border-t border-purple-500/20 space-y-2">
+                  <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 p-2 rounded-lg text-xs font-semibold text-purple-300">
+                    <UserCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="truncate">
+                      Simulando: <strong>{simulatedFuncionario?.nome}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStopSimulation}
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                  >
+                    <StopCircle className="w-3.5 h-3.5" />
+                    Encerrar Simulação
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-purple-500/20 space-y-2">
+                  <select
+                    value={selectedFuncId}
+                    onChange={(e) => setSelectedFuncId(e.target.value)}
+                    disabled={loadingFuncionariosList || isLoadingSimulation}
+                    className="w-full bg-background border border-borderCustom text-foreground text-xs rounded-lg p-2 focus:ring-purple-500 focus:border-purple-500 font-medium truncate"
+                  >
+                    {loadingFuncionariosList ? (
+                      <option value="">Carregando funcionários...</option>
+                    ) : funcionariosOptions.length === 0 ? (
+                      <option value="">Nenhum funcionário encontrado</option>
+                    ) : (
+                      funcionariosOptions.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.nome} ({f.cargo || 'Sem cargo'})
+                        </option>
+                      ))
+                    )}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleStartSimulation}
+                    disabled={!selectedFuncId || isLoadingSimulation}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    {isLoadingSimulation ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                    )}
+                    <span>{isLoadingSimulation ? 'Iniciando...' : 'Iniciar Simulação'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -645,3 +784,4 @@ export default function AdminHubPage() {
     </div>
   )
 }
+
