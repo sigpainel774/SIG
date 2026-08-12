@@ -62,8 +62,11 @@ export async function proxy(request: NextRequest) {
       // Zero queries: lê is_superadmin diretamente do JWT (app_metadata populado pelo trigger Postgres)
       const isSuperAdmin = user.app_metadata?.is_superadmin === true
 
-      // Se for superadmin de sistema, a navegação fica no painel root /admin ou em /relatorios
-      if (isSuperAdmin && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
+      // Verifica se há simulação de perfil ativa (cookie gravado pelo client ao iniciar simulação)
+      const isSimulating = request.cookies.get('sig_simulating')?.value === '1'
+
+      // Se for superadmin MAS não estiver simulando, a navegação fica no painel root /admin
+      if (isSuperAdmin && !isSimulating && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin'
         return NextResponse.redirect(url)
