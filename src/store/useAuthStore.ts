@@ -20,8 +20,13 @@ interface AuthState {
   funcionario: Funcionario | Partial<Funcionario> | null;
   acessos: AcessoUsuario[];
   vinculos: VinculoFuncionario[];
+  realFuncionario: Funcionario | Partial<Funcionario> | null;
+  realAcessos: AcessoUsuario[];
+  realVinculos: VinculoFuncionario[];
   escolaAtivaId: string | null;
   setAuth: (func: Funcionario | any, acessos: AcessoUsuario[], vinculos?: VinculoFuncionario[]) => void;
+  syncSimulation: (simFunc: Funcionario | any, simAcessos: AcessoUsuario[], simVinculos: VinculoFuncionario[]) => void;
+  desativarSimulacao: () => void;
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
   logout: (supabase: any) => Promise<void>;
@@ -41,99 +46,139 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   funcionario: null,
   acessos: [],
   vinculos: [],
+  realFuncionario: null,
+  realAcessos: [],
+  realVinculos: [],
   escolaAtivaId: null,
-  setAuth: (funcionario, acessos, vinculos = []) => set({ funcionario, acessos, vinculos }),
-  setEscolaAtivaId: (escolaAtivaId) => {
-    if (get().escolaAtivaId === escolaAtivaId) return
-    set({ escolaAtivaId })
-    useSchoolStore.getState().selectEscolaById(escolaAtivaId)
+
+  setAuth: (funcionario, acessos, vinculos = []) => {
+    const simState = usePermissionSimulationStore.getState();
+    const isSimulating = simState.isSimulating && simState.simulatedFuncionario;
+
+    set({
+      realFuncionario: funcionario,
+      realAcessos: acessos,
+      realVinculos: vinculos,
+      funcionario: isSimulating ? simState.simulatedFuncionario : funcionario,
+      acessos: isSimulating ? simState.simulatedAcessos : acessos,
+      vinculos: isSimulating ? (simState.simulatedVinculos as VinculoFuncionario[]) : vinculos,
+    });
   },
-  limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], escolaAtivaId: null }),
+
+  syncSimulation: (simFunc, simAcessos, simVinculos) => {
+    const current = get();
+    // Preservar o perfil real caso ainda não tenha sido explicitamente capturado
+    const realFunc = current.realFuncionario ?? current.funcionario;
+    const realAc = current.realAcessos.length > 0 ? current.realAcessos : current.acessos;
+    const realVinc = current.realVinculos.length > 0 ? current.realVinculos : current.vinculos;
+
+    set({
+      realFuncionario: realFunc,
+      realAcessos: realAc,
+      realVinculos: realVinc,
+      funcionario: simFunc,
+      acessos: simAcessos,
+      vinculos: simVinculos,
+    });
+  },
+
+  desativarSimulacao: () => {
+    const current = get();
+    set({
+      funcionario: current.realFuncionario ?? current.funcionario,
+      acessos: current.realAcessos ?? current.acessos,
+      vinculos: current.realVinculos ?? current.vinculos,
+    });
+  },
+
+  setEscolaAtivaId: (escolaAtivaId) => {
+    if (get().escolaAtivaId === escolaAtivaId) return;
+    set({ escolaAtivaId });
+    useSchoolStore.getState().selectEscolaById(escolaAtivaId);
+  },
+
+  limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], realFuncionario: null, realAcessos: [], realVinculos: [], escolaAtivaId: null }),
+
   logout: async (supabase: any) => {
     // Encerrar simulação de permissões se estivesse ativa
     usePermissionSimulationStore.getState().encerrarSimulacao();
 
-    get().limparSessao()
+    get().limparSessao();
 
     // Expurgo profundo de caches autenticados no navegador
     if (typeof window !== 'undefined') {
       try {
-        await limparCacheIndexedDB().catch(() => {})
+        await limparCacheIndexedDB().catch(() => {});
       } catch (e) {}
 
       try {
-        mutate(() => true, undefined, { revalidate: false }).catch(() => {})
+        mutate(() => true, undefined, { revalidate: false }).catch(() => {});
       } catch (e) {}
 
       if ('caches' in window) {
         caches.keys().then((keys) => {
-          keys.forEach((key) => caches.delete(key))
-        }).catch(() => {})
+          keys.forEach((key) => caches.delete(key));
+        }).catch(() => {});
       }
     }
 
     if (supabase?.auth) {
-      supabase.auth.signOut().catch((err: any) => console.warn('Erro ao encerrar sessão Supabase:', err))
+      supabase.auth.signOut().catch((err: any) => console.warn('Erro ao encerrar sessão Supabase:', err));
     }
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+      window.location.href = '/login';
     }
   },
+
   getFuncionarioAtivo: () => {
-    const state = get();
-    const simState = usePermissionSimulationStore.getState();
-    if (simState.isSimulating && simState.simulatedFuncionario) {
-      return simState.simulatedFuncionario;
-    }
-    return state.funcionario;
+    return get().funcionario;
   },
+
   getAcessosAtivos: () => {
-    const state = get();
-    const simState = usePermissionSimulationStore.getState();
-    if (simState.isSimulating && simState.simulatedAcessos) {
-      return simState.simulatedAcessos;
-    }
-    return state.acessos || [];
+    return get().acessos || [];
   },
+
   getVinculosAtivos: () => {
-    const state = get();
-    const simState = usePermissionSimulationStore.getState();
-    if (simState.isSimulating && simState.simulatedVinculos) {
-      return simState.simulatedVinculos as VinculoFuncionario[];
-    }
-    return state.vinculos || [];
+    return get().vinculos || [];
   },
+
   isAdminGlobalOrRoot: () => {
     const funcionario = get().getFuncionarioAtivo();
     const acessos = get().getAcessosAtivos();
     if (funcionario?.is_superadmin) return true;
     return acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
   },
+
   isDiretor: () => {
     const acessos = get().getAcessosAtivos();
     return acessos.some(a => a.nivel === 2 && a.ativo);
   },
+
   isChefe: () => {
     const acessos = get().getAcessosAtivos();
     return acessos.some(a => a.nivel === 5 && a.ativo);
   },
+
   isProfessor: () => {
     const funcionario = get().getFuncionarioAtivo();
     const acessos = get().getAcessosAtivos();
     const cargo = funcionario?.cargo?.toLowerCase() || '';
     return acessos.some(a => a.nivel === 4 || a.nivel === 5) || cargo.includes('professor');
   },
+
   isCoordenador: () => {
     const funcionario = get().getFuncionarioAtivo();
     const cargo = funcionario?.cargo?.toLowerCase() || '';
     return cargo.includes('coordenador');
   },
+
   isRhRede: () => {
     const funcionario = get().getFuncionarioAtivo();
     const acessos = get().getAcessosAtivos();
     if (funcionario?.is_superadmin) return true;
     return acessos.some(a => (a.pode_rh_rede || a.nivel === 1) && a.ativo);
   },
+
   isRhRedeExclusivo: () => {
     const funcionario = get().getFuncionarioAtivo();
     const acessos = get().getAcessosAtivos();

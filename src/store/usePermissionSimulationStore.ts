@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { Database } from '@/types/supabase'
 import { mutate } from 'swr'
 import { useSchoolStore } from './useSchoolStore'
+import { useAuthStore } from './useAuthStore'
 
 type Funcionario = Database['public']['Tables']['funcionarios']['Row']
 type AcessoUsuario = Database['public']['Tables']['acessos_usuarios']['Row']
@@ -90,6 +91,9 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
         simulatedVinculos: vinculosFormatados,
       })
 
+      // Synchronize auth store reactively so all UI components re-render immediately under simulated user
+      useAuthStore.getState().syncSimulation(funcionario, acessosData || [], vinculosFormatados)
+
       // Sincronizar escola no seletor global se houver escola vinculada
       if (vinculosFormatados.length > 0 && vinculosFormatados[0].escola_id) {
         useSchoolStore.getState().selectEscolaById(vinculosFormatados[0].escola_id)
@@ -124,6 +128,9 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       simulatedAcessos: [],
       simulatedVinculos: [],
     })
+
+    // Restore real auth state reactively
+    useAuthStore.getState().desativarSimulacao()
 
     // Revalidar caches SWR para restaurar visão original
     if (typeof window !== 'undefined') {
