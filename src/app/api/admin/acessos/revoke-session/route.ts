@@ -1,45 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { requireSuperAdminApi } from '@/lib/authGuard'
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabaseServer = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Contexto Server Component
-            }
-          },
-        },
-      }
-    )
-
-    const { data: { user } } = await supabaseServer.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-    }
-
-    const { data: func } = await supabaseAdmin
-      .from('funcionarios')
-      .select('id, is_superadmin')
-      .eq('auth_user_id', user.id)
-      .maybeSingle()
-
-    if (!func?.is_superadmin) {
-      return NextResponse.json({ error: 'Acesso negado: Apenas Superadmins podem revogar sessões.' }, { status: 403 })
+    const auth = await requireSuperAdminApi(request)
+    if (auth.response) {
+      return auth.response
     }
 
     const { sessionId } = await request.json()

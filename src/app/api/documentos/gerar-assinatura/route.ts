@@ -34,11 +34,11 @@ export async function POST(request: NextRequest) {
       : request.headers.get('x-real-ip') || '127.0.0.1'
     const uaFuncionario = request.headers.get('user-agent') || 'SIG/DocumentosServer'
 
-    const rlResult = checkRateLimit(`doc_sig_${user.id}_${ipFuncionario}`, 10, 60000)
+    const rlResult = checkRateLimit(ipFuncionario, 'general')
     if (!rlResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas solicitações de documentos. Por favor, aguarde alguns instantes.' },
-        { status: 429, headers: { 'Retry-After': String(rlResult.resetInSeconds) } }
+        { status: 429, headers: { 'Retry-After': String(rlResult.retryAfterSeconds) } }
       )
     }
 
