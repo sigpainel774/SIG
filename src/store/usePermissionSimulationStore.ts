@@ -80,6 +80,8 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem(SESSION_KEY, funcionarioId)
+          // Cookie lido pelo proxy.ts (server-side) para liberar /home durante simulação
+          document.cookie = 'sig_simulating=1; path=/; SameSite=Lax'
         } catch (e) {}
       }
 
@@ -118,6 +120,8 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.removeItem(SESSION_KEY)
+        // Remove cookie de sinalização para o proxy.ts
+        document.cookie = 'sig_simulating=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
       } catch (e) {}
     }
 
