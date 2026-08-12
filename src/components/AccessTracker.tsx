@@ -119,14 +119,18 @@ export function AccessTracker() {
     queueRef.current = []
 
     try {
-      const { error } = await (supabase as any).from('user_navigation_trail').insert(batch)
-      if (error) {
-        console.warn('[AccessTracker] Aviso ao salvar lote de navegação:', error.message)
+      const res = await fetch('/api/admin/acessos/trilha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: batch }),
+      })
+      if (!res.ok) {
+        console.warn('[AccessTracker] Aviso ao enviar lote de navegação:', res.statusText)
       }
     } catch {
-      // Absorção silenciosa
+      // Absorção silenciosa para não atrapalhar UX
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -203,7 +207,7 @@ export function AccessTracker() {
       if (navigator.sendBeacon) {
         try {
           const blob = new Blob([JSON.stringify({ events: [item] })], { type: 'application/json' })
-          navigator.sendBeacon('/api/admin/acessos/geolocate', blob)
+          navigator.sendBeacon('/api/admin/acessos/trilha', blob)
         } catch {
           // Ignorar erro de beacon
         }
