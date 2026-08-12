@@ -88,7 +88,7 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
         variant="ghost"
         size="sm"
         onClick={handleOpen}
-        className="text-[#3ea6ff] hover:bg-[#3ea6ff]/10 h-8 font-medium cursor-pointer"
+        className="text-sky-600 hover:bg-sky-500/10 dark:text-[#3ea6ff] dark:hover:bg-[#3ea6ff]/10 h-8 font-medium cursor-pointer"
       >
         <Eye className="w-4 h-4 mr-1.5" /> Diff
       </Button>
@@ -102,13 +102,13 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
         >
           {loading && (
             <div className="py-12 text-center space-y-3">
-              <RefreshCw className="w-6 h-6 animate-spin text-purple-500 mx-auto" />
-              <p className="text-sm text-slate-400">Carregando detalhes e aplicando regras de segurança PII...</p>
+              <RefreshCw className="w-6 h-6 animate-spin text-purple-600 dark:text-purple-400 mx-auto" />
+              <p className="text-sm text-muted-foreground">Carregando detalhes e aplicando regras de segurança PII...</p>
             </div>
           )}
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-xl text-rose-400 text-sm flex items-center gap-3">
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-400 p-4 rounded-xl text-sm flex items-center gap-3">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -119,30 +119,30 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
               {/* Header do Log */}
               <div className="bg-surface-2 border border-borderCustom p-4 rounded-xl flex flex-wrap justify-between items-center gap-4 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Módulo/Entidade:</span>{' '}
-                  <strong className="text-foreground uppercase">{detail.entity}</strong> ({detail.entity_id})
+                  <span className="text-muted-foreground font-medium">Módulo/Entidade:</span>{' '}
+                  <strong className="text-foreground uppercase font-bold">{detail.entity}</strong> <span className="text-muted-foreground">({detail.entity_id})</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Responsável:</span>{' '}
-                  <strong className="text-foreground">{detail.user_name ?? 'Sistema'}</strong> ({detail.user_email ?? 'N/D'})
+                  <span className="text-muted-foreground font-medium">Responsável:</span>{' '}
+                  <strong className="text-foreground font-bold">{detail.user_name ?? 'Sistema'}</strong> <span className="text-muted-foreground">({detail.user_email ?? 'N/D'})</span>
                 </div>
               </div>
 
               {/* Aviso de Mascaramento PII */}
-              <div className="bg-purple-950/20 border border-purple-800/30 p-3 rounded-xl flex items-center gap-2.5 text-xs text-purple-300">
-                <ShieldAlert className="w-4 h-4 text-purple-400 shrink-0" />
+              <div className="bg-purple-50 border border-purple-200 text-purple-900 dark:bg-purple-950/20 dark:border-purple-800/30 dark:text-purple-300 p-3 rounded-xl flex items-center gap-2.5 text-xs font-medium">
+                <ShieldAlert className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                 <span>Campos sensíveis (CPF, RG, tokens, senhas) são mascarados automaticamente pelo backend antes de exibir o diff.</span>
               </div>
 
               {/* Resumo visual do Diff */}
               <div className="grid grid-cols-3 gap-3 text-center text-xs font-semibold">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 py-2 rounded-lg">
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 py-2.5 rounded-lg shadow-xs">
                   {diffResult.added.length} Adicionado(s)
                 </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 py-2 rounded-lg">
+                <div className="bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 py-2.5 rounded-lg shadow-xs">
                   {diffResult.changed.length} Alterado(s)
                 </div>
-                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 py-2 rounded-lg">
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400 py-2.5 rounded-lg shadow-xs">
                   {diffResult.removed.length} Removido(s)
                 </div>
               </div>
@@ -152,19 +152,19 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
                 {/* Alterados */}
                 {diffResult.changed.map(({ key, oldVal, newVal }) => (
                   <div key={key} className="bg-surface-2 border border-amber-300 dark:border-amber-500/20 p-3 rounded-lg text-xs space-y-1">
-                    <div className="flex items-center justify-between text-amber-400 font-bold">
+                    <div className="flex items-center justify-between text-amber-800 dark:text-amber-400 font-bold">
                       <span className="flex items-center gap-1.5">
-                        <Edit3 className="w-3.5 h-3.5" /> {key}
+                        <Edit3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> {key}
                       </span>
-                      <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">Alterado</Badge>
+                      <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">Alterado</Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
-                      <div className="bg-rose-950/20 text-rose-300 p-2 rounded border border-rose-900/30 overflow-x-auto">
-                        <span className="text-[10px] text-rose-400 block font-sans">Anterior:</span>
+                      <div className="bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30 p-2 rounded overflow-x-auto">
+                        <span className="text-[10px] text-rose-700 dark:text-rose-400 block font-sans font-semibold">Anterior:</span>
                         {typeof oldVal === 'object' ? JSON.stringify(oldVal) : String(oldVal ?? 'null')}
                       </div>
-                      <div className="bg-emerald-950/20 text-emerald-300 p-2 rounded border border-emerald-900/30 overflow-x-auto">
-                        <span className="text-[10px] text-emerald-400 block font-sans">Novo:</span>
+                      <div className="bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30 p-2 rounded overflow-x-auto">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-sans font-semibold">Novo:</span>
                         {typeof newVal === 'object' ? JSON.stringify(newVal) : String(newVal ?? 'null')}
                       </div>
                     </div>
@@ -174,13 +174,13 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
                 {/* Adicionados */}
                 {diffResult.added.map(({ key, val }) => (
                   <div key={key} className="bg-surface-2 border border-emerald-300 dark:border-emerald-500/20 p-3 rounded-lg text-xs space-y-1">
-                    <div className="flex items-center justify-between text-emerald-400 font-bold">
+                    <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400 font-bold">
                       <span className="flex items-center gap-1.5">
-                        <Plus className="w-3.5 h-3.5" /> {key}
+                        <Plus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> {key}
                       </span>
-                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30">Adicionado</Badge>
+                      <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">Adicionado</Badge>
                     </div>
-                    <div className="font-mono text-[11px] bg-emerald-950/20 text-emerald-300 p-2 rounded border border-emerald-900/30 overflow-x-auto">
+                    <div className="font-mono text-[11px] bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30 p-2 rounded overflow-x-auto">
                       {typeof val === 'object' ? JSON.stringify(val) : String(val ?? 'null')}
                     </div>
                   </div>
@@ -189,20 +189,20 @@ function LogDiffButton({ logId, action }: { logId: string; action: string }) {
                 {/* Removidos */}
                 {diffResult.removed.map(({ key, val }) => (
                   <div key={key} className="bg-surface-2 border border-rose-300 dark:border-rose-500/20 p-3 rounded-lg text-xs space-y-1">
-                    <div className="flex items-center justify-between text-rose-400 font-bold">
+                    <div className="flex items-center justify-between text-rose-800 dark:text-rose-400 font-bold">
                       <span className="flex items-center gap-1.5">
-                        <Minus className="w-3.5 h-3.5" /> {key}
+                        <Minus className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" /> {key}
                       </span>
-                      <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-400 border-rose-500/30">Removido</Badge>
+                      <Badge variant="outline" className="text-[10px] bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30">Removido</Badge>
                     </div>
-                    <div className="font-mono text-[11px] bg-rose-950/20 text-rose-300 p-2 rounded border border-rose-900/30 overflow-x-auto">
+                    <div className="font-mono text-[11px] bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30 p-2 rounded overflow-x-auto">
                       {typeof val === 'object' ? JSON.stringify(val) : String(val ?? 'null')}
                     </div>
                   </div>
                 ))}
 
                 {diffResult.added.length === 0 && diffResult.changed.length === 0 && diffResult.removed.length === 0 && (
-                  <p className="text-center py-6 text-slate-500 text-xs">Nenhuma alteração de campo registrada neste evento.</p>
+                  <p className="text-center py-6 text-muted-foreground text-xs">Nenhuma alteração de campo registrada neste evento.</p>
                 )}
               </div>
             </div>
@@ -263,12 +263,12 @@ export default function AdminLogsPage() {
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'CREATE': return 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
-      case 'UPDATE': return 'bg-sky-500/20 text-sky-500 border-sky-500/30'
-      case 'DELETE': return 'bg-rose-500/20 text-rose-500 border-rose-500/30'
-      case 'RESTORE': return 'bg-purple-500/20 text-purple-500 border-purple-500/30'
-      case 'PURGE': return 'bg-red-600/20 text-red-600 border-red-600/30'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      case 'CREATE': return 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+      case 'UPDATE': return 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/20 dark:text-sky-400 dark:border-sky-500/30'
+      case 'DELETE': return 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+      case 'RESTORE': return 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
+      case 'PURGE': return 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-red-600/20 dark:text-red-400 dark:border-red-600/30'
+      default: return 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30'
     }
   }
 
@@ -276,7 +276,7 @@ export default function AdminLogsPage() {
     {
       header: 'Data',
       accessor: (log) => (
-        <span className="text-[#aaa] whitespace-nowrap">
+        <span className="text-muted-foreground font-mono text-xs whitespace-nowrap">
           {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
         </span>
       )
@@ -288,7 +288,7 @@ export default function AdminLogsPage() {
           <Badge variant="outline" className={`text-xs font-semibold ${getActionColor(log.action)}`}>
             {log.action ?? 'N/A'}
           </Badge>
-          <span className="text-sm text-gray-300 uppercase">{log.entity ?? 'Geral'}</span>
+          <span className="text-xs text-foreground font-bold uppercase">{log.entity ?? 'Geral'}</span>
         </div>
       )
     },
@@ -296,8 +296,8 @@ export default function AdminLogsPage() {
       header: 'Usuário Responsável',
       accessor: (log) => (
         <div className="flex flex-col">
-          <span className="text-sm text-gray-300 font-medium">{log.user_name ?? 'Sistema / Automático'}</span>
-          <span className="text-xs text-gray-500">{log.user_email ?? '-'}</span>
+          <span className="text-sm text-foreground font-semibold">{log.user_name ?? 'Sistema / Automático'}</span>
+          <span className="text-xs text-muted-foreground">{log.user_email ?? '-'}</span>
         </div>
       )
     },

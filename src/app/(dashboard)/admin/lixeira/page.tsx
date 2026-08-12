@@ -430,7 +430,7 @@ export default function AdminLixeiraPage() {
     {
       header: 'Tabela',
       accessor: (item) => (
-        <Badge variant="outline" className="text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-zinc-400 border-slate-500/20 uppercase">
+        <Badge variant="outline" className="text-xs font-semibold bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-500/10 dark:text-zinc-400 dark:border-slate-500/20 uppercase">
           {item.table_name}
         </Badge>
       )
@@ -443,8 +443,8 @@ export default function AdminLixeiraPage() {
       header: 'Excluído por',
       accessor: (item) => (
         <div className="flex flex-col">
-          <span className="text-sm text-zinc-200 font-medium">{item.deleted_by_name ?? 'Sistema'}</span>
-          <span className="text-xs text-zinc-500">{item.deleted_by_email ?? '-'}</span>
+          <span className="text-sm text-foreground font-semibold">{item.deleted_by_name ?? 'Sistema'}</span>
+          <span className="text-xs text-muted-foreground">{item.deleted_by_email ?? '-'}</span>
         </div>
       )
     },
@@ -466,7 +466,7 @@ export default function AdminLixeiraPage() {
             size="sm"
             variant="outline"
             onClick={() => handleRestore(item)}
-            className="border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 rounded-xl h-8 text-xs font-semibold"
+            className="border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-500/20 dark:text-emerald-400 dark:bg-transparent dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300 rounded-xl h-8 text-xs font-semibold cursor-pointer"
           >
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
             Restaurar
@@ -475,7 +475,7 @@ export default function AdminLixeiraPage() {
             size="sm"
             variant="outline"
             onClick={() => setConfirmPurgeModal({ type: 'trash', item })}
-            className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+            className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:border-rose-500/20 dark:text-rose-400 dark:bg-transparent dark:hover:bg-rose-500/10 dark:hover:text-rose-300 rounded-xl h-8 text-xs font-semibold cursor-pointer"
           >
             <AlertTriangle className="w-3.5 h-3.5 mr-1" />
             Expurgar
@@ -506,7 +506,7 @@ export default function AdminLixeiraPage() {
     {
       header: 'Status',
       accessor: (func) => (
-        <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold uppercase">
+        <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20 text-xs font-semibold uppercase">
           {func.status ?? 'DESLIGADO'}
         </Badge>
       )
@@ -530,7 +530,7 @@ export default function AdminLixeiraPage() {
           size="sm"
           variant="outline"
           onClick={() => setConfirmPurgeModal({ type: 'funcionario', item: func })}
-          className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+          className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:border-rose-500/20 dark:text-rose-400 dark:bg-transparent dark:hover:bg-rose-500/10 dark:hover:text-rose-300 rounded-xl h-8 text-xs font-semibold cursor-pointer"
         >
           <AlertTriangle className="w-3.5 h-3.5 mr-1" />
           Expurgar Definitivo
@@ -545,7 +545,7 @@ export default function AdminLixeiraPage() {
       accessor: (aluno) => (
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-foreground uppercase">{aluno.nome}</span>
-          <span className="text-[10px] text-zinc-500 font-mono">ID: {aluno.aluno_id}</span>
+          <span className="text-[10px] text-muted-foreground font-mono">ID: {aluno.aluno_id}</span>
         </div>
       )
     },
@@ -578,7 +578,7 @@ export default function AdminLixeiraPage() {
           size="sm"
           variant="outline"
           onClick={() => setConfirmPurgeModal({ type: 'aluno', item: aluno })}
-          className="border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl h-8 text-xs font-semibold"
+          className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:border-rose-500/20 dark:text-rose-400 dark:bg-transparent dark:hover:bg-rose-500/10 dark:hover:text-rose-300 rounded-xl h-8 text-xs font-semibold cursor-pointer"
         >
           <AlertTriangle className="w-3.5 h-3.5 mr-1" />
           Expurgar Definitivo
@@ -593,7 +593,7 @@ export default function AdminLixeiraPage() {
       accessor: (student) => (
         <div>
           <div className="font-semibold text-foreground">{student.studentName}</div>
-          <div className="text-[10px] text-zinc-500 font-normal mt-0.5">{student.studentId}</div>
+          <div className="text-[10px] text-muted-foreground font-normal mt-0.5">{student.studentId}</div>
         </div>
       )
     },
@@ -602,7 +602,7 @@ export default function AdminLixeiraPage() {
       className: 'text-center',
       headClassName: 'text-center',
       accessor: (student) => student.respUrl ? (
-        <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
+        <div className="inline-block border border-border rounded-lg bg-card p-1 select-none pointer-events-none shadow-sm">
           <img 
             src={`${student.respUrl}${student.respUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`} 
             alt="Assinatura Responsável" 
@@ -620,7 +620,7 @@ export default function AdminLixeiraPage() {
       className: 'text-center',
       headClassName: 'text-center',
       accessor: (student) => student.funcUrl ? (
-        <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-1 select-none pointer-events-none shadow-sm">
+        <div className="inline-block border border-border rounded-lg bg-card p-1 select-none pointer-events-none shadow-sm">
           <img 
             src={`${student.funcUrl}${student.funcUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`} 
             alt="Assinatura Funcionário" 
@@ -653,7 +653,7 @@ export default function AdminLixeiraPage() {
           className="hover:bg-muted text-muted-foreground hover:text-foreground rounded-xl h-8 w-8 flex items-center justify-center p-0 cursor-pointer inline-flex"
           title="Ver Histórico Completo"
         >
-          <History className="w-4 h-4 text-[#3ea6ff]" />
+          <History className="w-4 h-4 text-sky-600 dark:text-[#3ea6ff]" />
         </Button>
       )
     }
@@ -722,7 +722,7 @@ export default function AdminLixeiraPage() {
           className={cn(
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'trash'
-              ? "border-[#3ea6ff] text-[#3ea6ff]"
+              ? "border-sky-600 text-sky-600 dark:border-[#3ea6ff] dark:text-[#3ea6ff]"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
@@ -735,7 +735,7 @@ export default function AdminLixeiraPage() {
           className={cn(
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'inactives'
-              ? "border-rose-500 text-rose-600 dark:text-rose-400"
+              ? "border-rose-600 text-rose-700 dark:text-rose-400"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
@@ -748,7 +748,7 @@ export default function AdminLixeiraPage() {
           className={cn(
             "px-5 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer",
             activeTab === 'signatures'
-              ? "border-[#3ea6ff] text-[#3ea6ff]"
+              ? "border-sky-600 text-sky-600 dark:border-[#3ea6ff] dark:text-[#3ea6ff]"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
@@ -795,7 +795,7 @@ export default function AdminLixeiraPage() {
               className={cn(
                 "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
                 inactiveSubTab === 'funcionarios'
-                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                  ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -808,7 +808,7 @@ export default function AdminLixeiraPage() {
               className={cn(
                 "px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer",
                 inactiveSubTab === 'alunos'
-                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                  ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -891,11 +891,11 @@ export default function AdminLixeiraPage() {
           <div className="space-y-4 pt-4 text-sm max-h-[55vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 gap-4 bg-muted/60 p-3.5 rounded-xl border border-borderCustom">
               <div>
-                <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Aluno Auditado</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-0.5">Aluno Auditado</span>
                 <span className="font-semibold text-foreground">{selectedStudent.studentName}</span>
               </div>
               <div>
-                <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-0.5">ID do Aluno (UUID)</span>
                 <span className="font-mono text-xs text-muted-foreground">{selectedStudent.studentId}</span>
               </div>
             </div>
@@ -909,7 +909,7 @@ export default function AdminLixeiraPage() {
                 return (
                   <div key={log.id} className="relative pl-5 space-y-2">
                     <span className={cn(
-                      "absolute -left-[15px] top-1.5 w-2.5 h-2.5 rounded-full border border-[#121214]",
+                      "absolute -left-[15px] top-1.5 w-2.5 h-2.5 rounded-full border border-background",
                       isDelete ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
                     )} />
                     
@@ -918,43 +918,43 @@ export default function AdminLixeiraPage() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn(
                             "text-[10px] font-bold border-none px-2 py-0.5 rounded-md uppercase",
-                            isResp ? "bg-[#3ea6ff]/10 text-[#3ea6ff]" : "bg-emerald-500/10 text-emerald-400"
+                            isResp ? "bg-sky-50 text-sky-700 dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                           )}>
                             {isResp ? 'Responsável' : 'Funcionário'}
                           </Badge>
                           <span className={cn(
                             "text-xs font-bold uppercase",
-                            isDelete ? "text-rose-500" : "text-emerald-500"
+                            isDelete ? "text-rose-600 dark:text-rose-500" : "text-emerald-600 dark:text-emerald-500"
                           )}>
                             {isDelete ? 'Exclusão' : 'Atualização'}
                           </span>
                         </div>
                         
-                        <span className="text-zinc-500 text-xs">
+                        <span className="text-muted-foreground text-xs">
                           {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}
                         </span>
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Assinante / Operador</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-0.5">Assinante / Operador</span>
                           <span className="text-foreground font-medium block">{log.user_name || '-'}</span>
                           {log.user_email && <span className="text-muted-foreground block">{log.user_email}</span>}
                         </div>
                         
                         <div>
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-0.5">Conexão & IP</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-0.5 font-mono">Conexão & IP</span>
                           <span className="text-foreground font-mono block">{log.ip_address || 'IP não registrado'}</span>
-                          <span className="text-zinc-500 block leading-tight mt-0.5 text-[10px]">
+                          <span className="text-muted-foreground block leading-tight mt-0.5 text-[10px]">
                             {formatUserAgent(log.new_data?.user_agent || log.old_data?.user_agent)}
                           </span>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-borderCustom">
-                        <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Assinatura no Registro</span>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">Assinatura no Registro</span>
                         {sigUrl && !isDelete ? (
-                          <div className="inline-block border border-[#2a2a2a] rounded-lg bg-white p-2 select-none pointer-events-none shadow-md">
+                          <div className="inline-block border border-border rounded-lg bg-card p-2 select-none pointer-events-none shadow-md">
                             <img 
                               src={`${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${sessionTimestamp}`}
                               alt="Assinatura Auditada" 
@@ -962,7 +962,7 @@ export default function AdminLixeiraPage() {
                             />
                           </div>
                         ) : (
-                          <span className="text-rose-500 italic text-xs font-semibold">Assinatura Excluída</span>
+                          <span className="text-rose-600 dark:text-rose-500 italic text-xs font-semibold">Assinatura Excluída</span>
                         )}
                       </div>
                     </div>
@@ -988,7 +988,7 @@ export default function AdminLixeiraPage() {
                 disabled={isPurging}
                 onClick={() => setConfirmPurgeModal(null)}
                 variant="outline"
-                className="border-borderCustom text-foreground/80 hover:bg-muted rounded-xl h-10 px-4 text-xs font-semibold"
+                className="border-borderCustom text-foreground/80 hover:bg-muted rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
               >
                 Cancelar
               </Button>
@@ -996,7 +996,7 @@ export default function AdminLixeiraPage() {
               <Button
                 disabled={isPurging}
                 onClick={executePurge}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl h-10 px-5 text-xs shadow-md"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl h-10 px-5 text-xs shadow-md cursor-pointer"
               >
                 {isPurging ? 'Expurgando...' : 'Confirmar Expurgo'}
               </Button>
@@ -1004,10 +1004,10 @@ export default function AdminLixeiraPage() {
           }
         >
           <div className="space-y-4 pt-2">
-            <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-xl flex items-start gap-3">
-              <ShieldAlert className="w-6 h-6 text-rose-500 shrink-0 mt-0.5" />
-              <div className="text-xs text-rose-200 space-y-1">
-                <span className="font-bold text-rose-400 block text-sm">AVISO DE EXCLUSÃO DEFINITIVA</span>
+            <div className="bg-rose-50 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/30 p-4 rounded-xl flex items-start gap-3">
+              <ShieldAlert className="w-6 h-6 text-rose-600 dark:text-rose-500 shrink-0 mt-0.5" />
+              <div className="text-xs text-rose-900 dark:text-rose-200 space-y-1">
+                <span className="font-bold text-rose-700 dark:text-rose-400 block text-sm">AVISO DE EXCLUSÃO DEFINITIVA</span>
                 <p>
                   A exclusão expurgará permanentemente o cadastro selecionado do banco de dados do município. 
                   Esta operação não poderá ser desfeita.
@@ -1015,8 +1015,8 @@ export default function AdminLixeiraPage() {
               </div>
             </div>
 
-            <div className="bg-muted/60 p-3.5 rounded-xl border border-borderCustom text-xs space-y-2">
-              <span className="text-[10px] text-zinc-500 uppercase font-bold block">Registro Selecionado</span>
+            <div className="bg-surface-2 p-3.5 rounded-xl border border-borderCustom text-xs space-y-2">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold block">Registro Selecionado</span>
               
               {confirmPurgeModal.type === 'trash' && (
                 <div>
