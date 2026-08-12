@@ -281,20 +281,9 @@ export default function HistoricoNotificacoesPage() {
         <div className="flex gap-2">
           {notificacoes.some((n) => !n.read) && (
             <Button 
-          <Input 
-            type="text" 
-            placeholder="Buscar no título ou mensagem..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="bg-input border-borderCustom text-foreground"
-          />
-        </div>
-        <div className="flex gap-2">
-          {notificacoes.some((n) => !n.read) && (
-            <Button 
               variant="outline" 
               onClick={markAllAsRead}
-              className="h-10 border-[#3ea6ff]/40 bg-[#3ea6ff]/10 text-[#3ea6ff] hover:bg-[#3ea6ff]/20 cursor-pointer"
+              className="h-10 border-[#0067c0]/40 bg-[#0067c0]/10 text-[#0067c0] dark:text-[#3ea6ff] dark:bg-[#3ea6ff]/10 hover:bg-[#0067c0]/20 cursor-pointer"
             >
               <CheckCheck className="w-4 h-4 mr-2" /> Marcar todas como lidas
             </Button>
@@ -360,6 +349,13 @@ export default function HistoricoNotificacoesPage() {
         ))}
         {!loading && notificacoes.length === 0 && (
           <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma notificação encontrada com os filtros selecionados.</div>
+        )}
+      </div>
+
+      {/* Botão flutuante para voltar */}
+      <button 
+        onClick={() => router.push('/home')}
+        className="fixed bottom-6 right-6 w-[50px] h-[50px] rounded-full bg-[#0067c0] text-white flex items-center justify-center border-none shadow-[0_4px_12px_rgba(0,0,0,0.25)] cursor-pointer z-[9999] hover:bg-[#005fb8] transition-transform hover:scale-105"
         title="Voltar ao início"
       >
         <ArrowLeft className="w-6 h-6" />
