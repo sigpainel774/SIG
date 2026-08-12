@@ -1052,10 +1052,16 @@ export default function AdminAcessosPage() {
                               {item.pathname}
                             </span>
                           </div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-3">
+                          <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
                             <span>Abriu: <strong className="text-foreground">{new Date(item.opened_at).toLocaleString('pt-BR')}</strong></span>
                             {item.closed_at && (
                               <span>Fechou: <strong className="text-foreground">{new Date(item.closed_at).toLocaleTimeString('pt-BR')}</strong></span>
+                            )}
+                            {item.ip_address && (
+                              <span className="font-mono text-sky-400">IP: {item.ip_address}</span>
+                            )}
+                            {(item.geo_city || item.geo_region) && (
+                              <span className="text-amber-400 font-medium">📍 {item.geo_city ? `${item.geo_city} - ${item.geo_region}` : item.geo_region}</span>
                             )}
                           </div>
                         </div>
