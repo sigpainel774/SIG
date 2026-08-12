@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Lock } from 'lucide-react'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
@@ -17,10 +17,12 @@ interface ModalConfirmacaoSenhaProps {
 
 export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }: ModalConfirmacaoSenhaProps) {
   const [senha, setSenha] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (open) {
       setSenha('')
+      setShowPassword(false)
     }
   }, [open])
 
@@ -68,12 +70,12 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
       title="Ativar Modo Edição"
       maxWidth="sm:max-w-[400px]"
     >
-      <div className="flex items-center gap-2 mb-2 text-[#0090ff]">
+      <div className="flex items-center gap-2 mb-2 text-primary">
         <Lock className="w-5 h-5" />
         <span className="font-bold text-sm">Confirmação de Identidade</span>
       </div>
       
-      <p className="text-[#aaa] text-sm mb-4 leading-relaxed">
+      <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
         Para alternar para o modo de edição, confirme sua senha de login.
       </p>
 
@@ -89,21 +91,32 @@ export function ModalConfirmacaoSenha({ open = false, onOpenChange, onSuccess }:
           tabIndex={-1}
         />
 
-        <Input
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          placeholder="Senha do usuário"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          autoFocus
-          className="bg-[#121212] border-[#3f3f46] text-white h-12 focus:ring-[#0090ff] focus:border-[#0090ff]"
-        />
+        <div className="relative">
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            name="password"
+            autoComplete="current-password"
+            placeholder="Senha do usuário"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            autoFocus
+            className="h-12 pr-10 focus:ring-primary focus:border-primary font-mono text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+            tabIndex={-1}
+            title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
 
         <Button 
           type="submit"
           disabled={loading}
-          className="w-full h-12 bg-[#0090ff] text-white hover:bg-[#0070f3] font-bold mt-2"
+          className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold mt-2 cursor-pointer shadow"
         >
           {loading ? 'Confirmando...' : 'Confirmar'}
         </Button>

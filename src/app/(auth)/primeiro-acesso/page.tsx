@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
-import { Lock, Loader2, ShieldCheck, LogOut } from 'lucide-react'
+import { Lock, Loader2, ShieldCheck, LogOut, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function PrimeiroAcessoPage() {
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const router = useRouter()
@@ -121,15 +122,24 @@ export default function PrimeiroAcessoPage() {
             <label className="text-xs text-zinc-400 font-medium block pl-1">Nova Senha</label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Mínimo 6 caracteres"
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full h-12 pl-10 pr-4 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60"
+                className="w-full h-12 pl-10 pr-10 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60"
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-4" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors p-1 cursor-pointer"
+                tabIndex={-1}
+                title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -137,15 +147,24 @@ export default function PrimeiroAcessoPage() {
             <label className="text-xs text-zinc-400 font-medium block pl-1">Confirmar Nova Senha</label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Digite a nova senha novamente"
                 value={confirmarSenha}
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full h-12 pl-10 pr-4 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60"
+                className="w-full h-12 pl-10 pr-10 bg-[#ebf3ff] text-slate-900 placeholder:text-slate-500 font-medium rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#389fff] transition-all disabled:opacity-60"
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-4" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors p-1 cursor-pointer"
+                tabIndex={-1}
+                title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
