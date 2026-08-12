@@ -748,6 +748,41 @@ Solicitação de pareceres e relatórios clínico-pedagógicos entre a escola re
 *   `respondido_em`: `timestamp with time zone` (Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
+### 61. `public.user_navigation_trail`
+Histórico de navegação e rastro (trail) de páginas acessadas pelos usuários.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `session_id`: `text` (Nullable)
+*   `user_id`: `uuid` (FK -> `auth.users.id`, Nullable)
+*   `funcionario_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `pathname`: `text` (NOT NULL)
+*   `page_title`: `text` (Nullable)
+*   `opened_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+*   `closed_at`: `timestamp with time zone` (Nullable)
+*   `duration_seconds`: `integer` (Default: 0, Nullable)
+*   `ip_address`: `text` (Nullable)
+*   `user_agent`: `text` (Nullable)
+*   `geo_location`: `jsonb` (Default: '{}'::jsonb, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
+### 62. `public.ip_geolocation_cache`
+Cache de geolocalização de IPs para auditoria de acessos.
+*   `ip_address`: `text` (Primary Key, NOT NULL)
+*   `city`, `region`, `country`, `isp`: `text` (Nullable)
+*   `latitude`, `longitude`: `numeric` (Nullable)
+*   `updated_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
+### 63. `public.backup_registros`
+Auditoria e histórico de execução de backups da base de dados Supabase.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `tipo`: `text` (Default: 'MANUAL', NOT NULL)
+*   `descricao`: `text` (NOT NULL)
+*   `iniciado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `iniciado_por_nome`: `text` (Nullable)
+*   `status`: `text` (Default: 'CONCLUIDO', NOT NULL)
+*   `tamanho_estimado_mb`: `numeric` (Nullable)
+*   `observacoes`: `text` (Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
 ---
 
 ## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
@@ -760,6 +795,10 @@ Solicitação de pareceres e relatórios clínico-pedagógicos entre a escola re
 | `public.obter_relatorio_servidores_completo` | `p_escola_id UUID, p_cargo TEXT, p_status TEXT` | `jsonb` | Relatório completo de servidores por escola/cargo com detalhamento de vínculos e contatos. |
 | `public.obter_boletim_aluno_completo` | `p_aluno_id UUID, p_turma_id UUID` | `jsonb` | Notas, faltas e médias consolidadas por trimestre para exibição no diário/boletim do aluno. |
 | `public.solicitar_encaminhamento_emaee` | `p_aluno_id UUID, p_motivo TEXT, p_documentos TEXT[]` | `jsonb` | Encaminhamento direto de estudantes da escola para a fila de espera do EMAEE com notificações aos gestores. |
+| `public.get_all_active_sessions_admin` | `none` | `TABLE (...)` | Retorna lista de sessões ativas com rastreio de geolocalização e dwell time (Apenas Superadmin/Admin). |
+| `public.revoke_any_user_session_admin` | `target_session_id UUID` | `boolean` | Encerra remotamente a sessão ativa de qualquer usuário (Apenas Superadmin). |
+| `public.get_daily_login_history_admin` | `p_start_date DATE, p_end_date DATE` | `TABLE (...)` | Histórico de acessos diários consolidado com tempo de tela e geolocalização. |
+| `public.get_user_navigation_trail_admin` | `p_funcionario_id UUID, p_limit INT` | `TABLE (...)` | Retorna o histórico sequencial de navegação (trail) das sessões. |
 
 ---
 

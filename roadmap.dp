@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-08-11  
+**Última Atualização:** 2026-08-12  
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -11,6 +11,9 @@
 
 | Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
 |-------------------------|--------|----------------|-------------------|
+| **Módulo de Backup e Auditoria de Dados** | ✅ Concluído | 2026-08-12 | Tabela `backup_registros` e gestão documental de dumps e backups via Supabase. |
+| **Segurança RLS de Produção (Camadas ABAC)** | ✅ Concluído | 2026-08-12 | Remoção de `dev_all_authenticated` em 43 tabelas. Implantação total de RLS restrito a Superadmin, Diretores (Nível 2), Secretários (Nível 3) e Professores. |
+| **Informações Avançadas e Rastros (Navegação/IP)** | ✅ Concluído | 2026-08-11 | Tabelas `user_navigation_trail`, `ip_geolocation_cache` e RPCs para auditoria de sessões (revoke e tracking geolocalizado). |
 | **Controles Globais de Rede & Permissão RH Rede** | ✅ Concluído | 2026-08-11 | Campo `pode_rh_rede` em `acessos_usuarios` com RLS ajustada para gestão de RH da rede, `permitir_mensagens_globais` e trava global de edição de servidores. |
 | **Módulo EMAEE (Atendimento Especializado) & Encaminhamentos** | ✅ Concluído | 2026-08-07 | Prontuários clínicos (`emaee_matriculas`), evoluções (`emaee_evolucoes`), solicitação de relatórios, RPC `solicitar_encaminhamento_emaee` e ficha AEE (Censo 2026). |
 | **Categorização de Anexos & Histórico de Alunos** | ✅ Concluído | 2026-08-06 | Categorização de anexos em `alunos_anexos` (`tipo`), histórico cadastral em `alunos` e persistência de documentos oficiais `jsonb` em `assinatura`. |
