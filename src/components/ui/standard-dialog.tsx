@@ -27,8 +27,8 @@ export function StandardDialog({
 }: StandardDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]", maxWidth, className)}>
-        <DialogHeader>
+      <DialogContent className={cn("bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden", maxWidth, className)}>
+        <DialogHeader className="shrink-0 pb-2">
           <DialogTitle>{title}</DialogTitle>
           {description ? (
             <DialogDescription className="text-muted-foreground">
@@ -40,10 +40,10 @@ export function StandardDialog({
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="py-4 flex flex-col flex-1 min-h-0">
+        <div className="py-2 flex-1 overflow-y-auto min-h-0 pr-1 space-y-2">
           {children}
         </div>
-        {footer && <DialogFooter>{footer}</DialogFooter>}
+        {footer && <DialogFooter className="shrink-0 pt-2">{footer}</DialogFooter>}
       </DialogContent>
     </Dialog>
   )

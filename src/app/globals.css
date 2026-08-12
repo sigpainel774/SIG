@@ -486,11 +486,17 @@
   border: 1px solid var(--student-light-border, #D1D5DB) !important;
   border-radius: 12px !important;
   box-shadow: 0 12px 32px rgba(31, 41, 55, 0.14) !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden !important;
 }
 
 .student-edit-modal__content {
   background: var(--student-light-bg, #F3F4F6) !important;
+  overflow-y: auto !important;
+  max-height: calc(85vh - 120px) !important;
+  padding-right: 6px !important;
 }
 
 .student-edit-modal [data-slot="dialog-title"],
