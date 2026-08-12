@@ -1,5 +1,5 @@
 -- Migration: 20260812013000_fix_comunicacao_notifications_rls.sql
--- Propósito: Liberar o envio de notificações in-app para todos os usuários autenticados e permitir que gestores com permissão pode_mural / mensagens globais possam publicar no mural de comunicados.
+-- Propósito: Liberar o envio de notificações in-app para todos os usuários autenticados, permitir publicação no mural de comunicados para gestores autorizados e liberar criação de registros de assinatura digital.
 
 -- 1. NOTIFICAÇÕES: Adicionar política de INSERT para usuários autenticados
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
@@ -9,7 +9,15 @@ CREATE POLICY "notifications_insert_authenticated" ON public.notifications
   FOR INSERT 
   WITH CHECK (auth.role() = 'authenticated');
 
--- 2. COMUNICADOS: Função auxiliar de segurança para validação de publicação sem recursão RLS
+-- 2. ASSINATURAS: Adicionar política de INSERT para usuários autenticados na emissão de documentos
+ALTER TABLE public.assinatura ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "assinatura_insert_authenticated" ON public.assinatura;
+CREATE POLICY "assinatura_insert_authenticated" ON public.assinatura 
+  FOR INSERT 
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- 3. COMUNICADOS: Função auxiliar de segurança para validação de publicação sem recursão RLS
 CREATE OR REPLACE FUNCTION public.pode_publicar_comunicado(p_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql

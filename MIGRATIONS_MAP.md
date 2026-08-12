@@ -94,7 +94,7 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 75 | `20260812000000_create_backup_registros.sql` | 2026-08-12 | Tabela `backup_registros` para gestão documental e auditoria de backups do sistema SIG. | `public.backup_registros` | RLS Superadmin Only |
 | 76 | `20260812003000_abac_rls_production.sql` | 2026-08-12 | Remoção da policy `dev_all_authenticated` de 43 tabelas e implantação do RLS de produção em camadas ABAC. | Todas as tabelas `public` | RLS ABAC + Security Definer |
 | 77 | `20260812010000_fix_sec_tables_rls.sql` | 2026-08-12 | Aplicação de políticas RLS de leitura e escrita para usuários autenticados nas 45 tabelas operacionais/secundárias (anexos, ocorrências, transferências, atestados, EMAEE, etc.), com restrição de auditoria em `trash_bin` e `access_logs`. | 45 tabelas operacionais do schema `public` | RLS Authenticated / Superadmin |
-| 78 | `20260812013000_fix_comunicacao_notifications_rls.sql` | 2026-08-12 | Correção das RLS de comunicação: adiciona política INSERT em `notifications` para usuários autenticados e função `pode_publicar_comunicado` para publicação no mural em `comunicados`. | `public.notifications`, `public.comunicados` | `SECURITY DEFINER` + Authenticated Insert |
+| 78 | `20260812013000_fix_comunicacao_notifications_rls.sql` | 2026-08-12 | Correção das RLS de comunicação e chancelas: adiciona política INSERT em `notifications` e `assinatura` para usuários autenticados e função `pode_publicar_comunicado` para publicação no mural em `comunicados`. | `public.notifications`, `public.comunicados`, `public.assinatura` | `SECURITY DEFINER` + Authenticated Insert |
 
 
 
