@@ -352,13 +352,13 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
   }, [])
 
   // Classes css do container do modal (centralização flexbox segura no tablet/mobile)
-  const modalClasses = "relative w-[96vw] sm:w-[90vw] max-w-[750px] h-[85vh] max-h-[520px] bg-[#121214] border border-[#26262a] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl my-auto m-auto"
+  const modalClasses = "relative w-[96vw] sm:w-[90vw] max-w-[750px] h-[85vh] max-h-[520px] bg-card text-card-foreground border border-border rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl my-auto m-auto"
 
   return (
     <div className="space-y-2 w-full">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-          <PenTool className="w-3.5 h-3.5 text-[#3ea6ff]" />
+        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <PenTool className="w-3.5 h-3.5 text-primary" />
           {label}
         </label>
         
@@ -378,9 +378,9 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                 toast.error('Erro ao carregar assinatura pessoal.', { id: toastId })
               }
             }}
-            className="h-7 px-2.5 bg-[#185FA5]/10 hover:bg-[#185FA5]/20 text-[#3ea6ff] border-[#3ea6ff]/20 text-[10px] font-bold rounded-lg uppercase flex items-center gap-1 cursor-pointer"
+            className="h-7 px-2.5 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 text-[10px] font-bold rounded-lg uppercase flex items-center gap-1 cursor-pointer"
           >
-            <PenTool className="w-3 h-3 text-[#3ea6ff]" />
+            <PenTool className="w-3 h-3 text-primary" />
             G - Usar Salva
           </Button>
         )}
@@ -389,8 +389,8 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
       <div
         onClick={handleOpenModal}
         className={cn(
-          "relative border border-[#2a2a2a] rounded-xl overflow-hidden bg-white aspect-[3/1] min-h-[90px] flex items-center justify-center transition-all duration-200",
-          isEditMode ? "cursor-pointer hover:border-[#3ea6ff]/40 hover:bg-[#f4f4f5] active:scale-[0.99]" : ""
+          "relative border border-border rounded-xl overflow-hidden bg-white aspect-[3/1] min-h-[90px] flex items-center justify-center transition-all duration-200",
+          isEditMode ? "cursor-pointer hover:border-primary/40 hover:bg-zinc-50 active:scale-[0.99]" : ""
         )}
       >
         {value ? (
@@ -401,31 +401,31 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
               className="max-h-[75px] w-auto object-contain select-none pointer-events-none"
             />
             {isEditMode && (
-              <span className="absolute bottom-2 right-2 text-[10px] text-[#185fa5] dark:text-[#3ea6ff] font-medium flex items-center gap-1">
+              <span className="absolute bottom-2 right-2 text-[10px] text-primary font-medium flex items-center gap-1">
                 <RefreshCw className="w-2.5 h-2.5" />
                 Alterar
               </span>
             )}
           </div>
         ) : (
-          <div className="p-4 w-full h-full flex flex-col items-center justify-center text-zinc-500 gap-1.5">
-            <PenTool className="w-5 h-5 text-zinc-500" />
+          <div className="p-4 w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-1.5">
+            <PenTool className="w-5 h-5 text-muted-foreground" />
             <span className="text-xs font-medium">Toque para Assinar</span>
           </div>
         )}
       </div>
 
       {isModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden p-2 sm:p-4">
+        <div className="fixed inset-0 z-[9999] bg-black/60 dark:bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden p-2 sm:p-4">
           <div className={modalClasses}>
             {/* Header */}
-            <div className="flex justify-between items-start border-b border-[#26262a] pb-3 mb-2">
+            <div className="flex justify-between items-start border-b border-border pb-3 mb-2">
               <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <PenTool className="w-4 h-4 text-[#3ea6ff]" />
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-primary" />
                   {label}
                 </h3>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {isPortraitMobile
                     ? 'Escreva na vertical com espaço total. O sistema ajusta e desentorta a assinatura automaticamente!'
                     : 'Desenhe sua assinatura no quadro abaixo.'}
@@ -435,7 +435,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                 type="button"
                 variant="ghost"
                 onClick={handleClose}
-                className="text-zinc-400 hover:text-white hover:bg-zinc-800/60 rounded-lg p-1.5 h-8 w-8 flex items-center justify-center cursor-pointer -mr-1 -mt-1"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg p-1.5 h-8 w-8 flex items-center justify-center cursor-pointer -mr-1 -mt-1"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -459,12 +459,12 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
             </div>
 
             {/* Footer */}
-            <div className="flex justify-between items-center pt-3 border-t border-[#26262a] mt-2">
+            <div className="flex justify-between items-center pt-3 border-t border-border mt-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={handleClose}
-                className="text-zinc-400 hover:text-white border border-[#27272a] rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
+                className="text-muted-foreground hover:text-foreground border border-border rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
               >
                 Fechar
               </Button>
@@ -475,7 +475,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                   variant="ghost"
                   onClick={clear}
                   disabled={!hasSignature}
-                  className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl h-10 px-4 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 rounded-xl h-10 px-4 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Apagar
@@ -485,7 +485,7 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
                   type="button"
                   onClick={handleConfirm}
                   disabled={!hasSignature}
-                  className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] font-bold rounded-xl h-10 px-5 text-xs flex items-center gap-1.5 shadow-md shadow-[#3ea6ff]/10 disabled:opacity-40 cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-10 px-5 text-xs flex items-center gap-1.5 shadow-md shadow-primary/10 disabled:opacity-40 cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Confirmar
@@ -499,3 +499,4 @@ export function SignaturePad({ label, value, onChange, isEditMode = true, global
     </div>
   )
 }
+

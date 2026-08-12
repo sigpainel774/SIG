@@ -39,11 +39,11 @@ export function SecaoMatricula() {
     <div className="space-y-6">
       {/* 2. Turma Vinculada */}
       <div>
-        <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
           2. Turma Vinculada
         </div>
         <div>
-          <Label className="text-xs text-gray-300">Selecione a Turma no Sistema</Label>
+          <Label className="text-xs text-muted-foreground font-medium">Selecione a Turma no Sistema</Label>
           <Select 
             value={turmaId} 
             onValueChange={(val) => {
@@ -56,7 +56,7 @@ export function SecaoMatricula() {
               }
             }}
           >
-            <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+            <SelectTrigger className="mt-1 w-full">
               <SelectValue placeholder="Selecione uma turma ativa">
                 {turmaId 
                   ? (() => {
@@ -66,7 +66,7 @@ export function SecaoMatricula() {
                   : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+            <SelectContent>
               {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
                 <SelectItem key={t.id} value={t.id}>{t.nome} ({t.ano_letivo})</SelectItem>
               ))}
@@ -77,17 +77,17 @@ export function SecaoMatricula() {
 
       {/* 5. Informações da Matrícula & Etapa */}
       <div>
-        <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
           5. Ano / Etapa de Escolarização & Matrícula
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <Label className="text-xs text-gray-300">Tipo de Matrícula</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Tipo de Matrícula</Label>
             <Select value={tipoMatricula} onValueChange={(val) => setTipoMatricula(val || 'Renovação')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 <SelectItem value="Nova Matrícula">Nova Matrícula</SelectItem>
                 <SelectItem value="Renovação">Renovação</SelectItem>
               </SelectContent>
@@ -95,17 +95,17 @@ export function SecaoMatricula() {
           </div>
 
           <div>
-            <Label className="text-xs text-gray-300">Data da Matrícula</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Data da Matrícula</Label>
             <Input 
               type="date" 
               value={dataMatricula} 
               onChange={(e) => setDataMatricula(e.target.value)} 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
 
           <div>
-            <Label className="text-xs text-gray-300">Ano / Série / Etapa</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Ano / Série / Etapa</Label>
             <Select 
               value={serie} 
               onValueChange={(val) => {
@@ -118,29 +118,29 @@ export function SecaoMatricula() {
                 }
               }}
             >
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1 w-full">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue placeholder="Selecione o Ano / Série / Etapa">
                   {serie || undefined}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
                   <SelectItem key={t.id} value={t.nome}>{t.nome} ({t.ano_letivo})</SelectItem>
                 ))}
                 {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).length === 0 && (
-                  <div className="p-2 text-xs text-zinc-500 text-center">Nenhuma turma cadastrada</div>
+                  <div className="p-2 text-xs text-muted-foreground text-center">Nenhuma turma cadastrada</div>
                 )}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label className="text-xs text-gray-300">Turno</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Turno</Label>
             <Select value={turno} onValueChange={(val) => setTurno(val || 'Matutino')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 <SelectItem value="Matutino">Matutino</SelectItem>
                 <SelectItem value="Vespertino">Vespertino</SelectItem>
                 <SelectItem value="Noturno">Noturno</SelectItem>
@@ -153,17 +153,17 @@ export function SecaoMatricula() {
 
       {/* 8. Recursos SAEB (INEP) */}
       <div>
-        <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
           8. Recursos para Uso em Sala de Aula e Avaliação INEP (SAEB)
         </div>
         <div className="space-y-3">
           <div className="w-48">
-            <Label className="text-xs text-gray-300">Necessita de Recursos Especiais?</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Necessita de Recursos Especiais?</Label>
             <Select value={recursosEspeciais} onValueChange={(val) => setRecursosEspeciais(val || 'Não')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -171,17 +171,17 @@ export function SecaoMatricula() {
           </div>
 
           {recursosEspeciais === 'Sim' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#121212] rounded-xl border border-[#2a2a2a]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-card rounded-xl border border-border shadow-xs">
               {OPCOES_RECURSOS.map((opcao) => (
                 <label 
                   key={opcao}
-                  className="flex items-center gap-2 p-2 bg-[#181818] border border-[#2a2a2a] rounded-lg text-xs cursor-pointer hover:border-[#3ea6ff]/50 transition-colors"
+                  className="flex items-center gap-2 p-2 bg-muted/50 border border-border rounded-lg text-xs cursor-pointer hover:border-primary/50 transition-colors text-foreground"
                 >
                   <input 
                     type="checkbox" 
                     checked={recursosSelecionados.includes(opcao)}
                     onChange={() => toggleArrayItem(recursosSelecionados, opcao, setRecursosSelecionados)}
-                    className="accent-[#3ea6ff]"
+                    className="accent-primary"
                   />
                   <span>{opcao}</span>
                 </label>
@@ -193,3 +193,4 @@ export function SecaoMatricula() {
     </div>
   )
 }
+

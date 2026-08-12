@@ -27,27 +27,27 @@ export function SecaoEndereco() {
 
   return (
     <div>
-      <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+      <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
         7. Endereço Residencial Detalhado
       </div>
       <div className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="md:col-span-3">
-            <Label className="text-xs text-gray-300">Rua / Logradouro</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Rua / Logradouro</Label>
             <Input 
               value={rua} 
               onChange={(e) => setRua(e.target.value)} 
               placeholder="Rua do Brito" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
           <div>
-            <Label className="text-xs text-gray-300">Nº</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Nº</Label>
             <Input 
               value={numero} 
               onChange={(e) => setNumero(e.target.value)} 
               placeholder="78" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
         </div>
@@ -55,9 +55,9 @@ export function SecaoEndereco() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-gray-300">CEP</Label>
+              <Label className="text-xs text-muted-foreground font-medium">CEP</Label>
               {isFetchingCep && (
-                <span className="text-[10px] text-sky-400 flex items-center gap-1">
+                <span className="text-[10px] text-primary flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" /> Buscando...
                 </span>
               )}
@@ -67,58 +67,58 @@ export function SecaoEndereco() {
                 value={cep} 
                 onChange={(e) => setCep(e.target.value)} 
                 placeholder="44540-000" 
-                className="bg-[#121212] border-[#2a2a2a] text-white pr-8" 
+                className="pr-8" 
               />
               <button
                 type="button"
                 onClick={() => consultarCep && consultarCep()}
                 disabled={isFetchingCep}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 title="Consultar CEP nos Correios"
               >
-                {isFetchingCep ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" /> : <Search className="w-3.5 h-3.5" />}
+                {isFetchingCep ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" /> : <Search className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
           <div>
-            <Label className="text-xs text-gray-300">Bairro / Localidade</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Bairro / Localidade</Label>
             <Input 
               value={bairro} 
               onChange={(e) => setBairro(e.target.value)} 
               placeholder="Brito" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
           <div>
-            <Label className="text-xs text-gray-300">Cidade</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Cidade</Label>
 
             <Input 
               value={cidadeEnd} 
               onChange={(e) => setCidadeEnd(e.target.value)} 
               placeholder="SAPE AÇU" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
           <div>
-            <Label className="text-xs text-gray-300">UF</Label>
+            <Label className="text-xs text-muted-foreground font-medium">UF</Label>
             <Input 
               value={ufEnd} 
               maxLength={2}
               onChange={(e) => setUfEnd(e.target.value.toUpperCase())} 
               placeholder="BA" 
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1" 
+              className="mt-1" 
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-gray-300">Área de localização da residência</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Área de localização da residência</Label>
             <Select value={areaLocalizacao} onValueChange={(val) => setAreaLocalizacao(val || 'Urbana')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 <SelectItem value="Urbana">Urbana</SelectItem>
                 <SelectItem value="Rural">Rural</SelectItem>
               </SelectContent>
@@ -126,12 +126,12 @@ export function SecaoEndereco() {
           </div>
 
           <div>
-            <Label className="text-xs text-gray-300">Residência em Área Diferenciada?</Label>
+            <Label className="text-xs text-muted-foreground font-medium">Residência em Área Diferenciada?</Label>
             <Select value={areaDiferenciada} onValueChange={(val) => setAreaDiferenciada(val || 'Não está em área diferenciada')}>
-              <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+              <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+              <SelectContent>
                 <SelectItem value="Não está em área diferenciada">Não está em área diferenciada</SelectItem>
                 <SelectItem value="Área quilombola">Área quilombola</SelectItem>
                 <SelectItem value="Terra indígena">Terra indígena</SelectItem>
@@ -143,7 +143,7 @@ export function SecaoEndereco() {
 
         {/* Seleção de GPS por Mapa - print:hidden */}
         <div className="print:hidden mt-4">
-          <Label className="text-xs text-gray-400 font-medium mb-1.5 block">Coordenadas de GPS (Arraste o pin ou clique no mapa para selecionar)</Label>
+          <Label className="text-xs text-muted-foreground font-medium mb-1.5 block">Coordenadas de GPS (Arraste o pin ou clique no mapa para selecionar)</Label>
           <div className="mt-1 w-full relative z-10">
             <MiniMapa
               initialLat={latitude ?? undefined}
@@ -163,3 +163,4 @@ export function SecaoEndereco() {
     </div>
   )
 }
+
