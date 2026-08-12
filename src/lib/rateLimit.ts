@@ -1,63 +1,89 @@
-interface RateLimitEntry {
-  count: number
-  resetTime: number
+/**
+ * Rate Limiter super leve compatível com Edge Runtime no Next.js 16.
+ * Utiliza janelas de tempo deslizantes (Sliding Window) armazenadas em memória.
+ */
+
+interface RateLimitConfig {
+  windowMs: number
+  maxRequests: number
 }
 
-// Map em memória para armazenar requisições por identificador
-const rateLimitMap = new Map<string, RateLimitEntry>()
+// Configurações por tipo de rota
+const ROUTE_CONFIGS: Record<string, RateLimitConfig> = {
+  login: { windowMs: 60 * 1000, maxRequests: 10 },    // 10 tentativas por min por IP em /login e /api/auth
+  verify: { windowMs: 60 * 1000, maxRequests: 30 },   // 30 verificações por min por IP em /verificar
+  general: { windowMs: 60 * 1000, maxRequests: 300 }, // 300 requisições por min para uso geral (preserva escolas/NAT)
+}
+
+interface RequestRecord {
+  timestamps: number[]
+}
+
+// Armazenamento em memória (Edge-safe)
+const memoryStore = new Map<string, RequestRecord>()
+
+// Limpeza automática periódica a cada 5 minutos para evitar vazamento de memória
+let lastCleanup = Date.now()
+function cleanupExpiredRecords() {
+  const now = Date.now()
+  if (now - lastCleanup < 5 * 60 * 1000) return
+  lastCleanup = now
+
+  const cutoff = now - 10 * 60 * 1000 // descarta registros mais antigos que 10 minutos
+  for (const [key, record] of memoryStore.entries()) {
+    record.timestamps = record.timestamps.filter((ts) => ts > cutoff)
+    if (record.timestamps.length === 0) {
+      memoryStore.delete(key)
+    }
+  }
+}
+
+export interface RateLimitResult {
+  allowed: boolean
+  remaining: number
+  retryAfterSeconds: number
+}
 
 /**
- * Utilitário em memória para limitação de taxa (Rate Limiting) de requisições por janela deslizante.
- * Conta com rotina automática de expiração e limpeza de chaves para evitar vazamento de memória (Memory Leak).
- * 
- * @param identifier Chave única de identificação (ex: `${userId}_${ip}`)
- * @param limit Número máximo de requisições permitidas na janela (padrão: 5)
- * @param windowMs Duração da janela em milissegundos (padrão: 60000ms = 1 minuto)
+ * Verifica se a requisição de um IP para determinado tipo de rota excede o limite estipulado.
  */
 export function checkRateLimit(
-  identifier: string,
-  limit: number = 5,
-  windowMs: number = 60000
-): { allowed: boolean; remaining: number; resetInSeconds: number } {
+  ip: string,
+  routeType: 'login' | 'verify' | 'general' = 'general'
+): RateLimitResult {
+  cleanupExpiredRecords()
+
+  const config = ROUTE_CONFIGS[routeType] || ROUTE_CONFIGS.general
+  const key = `${routeType}:${ip}`
   const now = Date.now()
+  const windowStart = now - config.windowMs
 
-  // Expiração/Limpeza proativa de entradas antigas do Map
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitMap.delete(key)
-    }
+  let record = memoryStore.get(key)
+  if (!record) {
+    record = { timestamps: [] }
+    memoryStore.set(key, record)
   }
 
-  const existingEntry = rateLimitMap.get(identifier)
+  // Filtra timestamps dentro da janela atual
+  record.timestamps = record.timestamps.filter((ts) => ts > windowStart)
 
-  if (!existingEntry || now > existingEntry.resetTime) {
-    // Nova janela para este identificador
-    const resetTime = now + windowMs
-    rateLimitMap.set(identifier, { count: 1, resetTime })
-    return {
-      allowed: true,
-      remaining: limit - 1,
-      resetInSeconds: Math.ceil(windowMs / 1000),
-    }
-  }
-
-  if (existingEntry.count >= limit) {
-    // Limite atingido
-    const resetInSeconds = Math.ceil((existingEntry.resetTime - now) / 1000)
+  if (record.timestamps.length >= config.maxRequests) {
+    const oldestInWindow = record.timestamps[0]
+    const retryAfterSeconds = Math.ceil((oldestInWindow + config.windowMs - now) / 1000)
     return {
       allowed: false,
       remaining: 0,
-      resetInSeconds: Math.max(1, resetInSeconds),
+      retryAfterSeconds: Math.max(1, retryAfterSeconds),
     }
   }
 
-  // Incrementar contagem
-  existingEntry.count += 1
-  const resetInSeconds = Math.ceil((existingEntry.resetTime - now) / 1000)
+  // Registra o acesso atual
+  record.timestamps.push(now)
+  const remaining = Math.max(0, config.maxRequests - record.timestamps.length)
 
   return {
     allowed: true,
-    remaining: limit - existingEntry.count,
-    resetInSeconds: Math.max(1, resetInSeconds),
+    remaining,
+    retryAfterSeconds: 0,
   }
 }

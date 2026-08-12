@@ -84,13 +84,13 @@ export async function POST(request: NextRequest) {
     const ipFuncionario = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip') || '127.0.0.1'
     const uaFuncionario = request.headers.get('user-agent') || 'SIG/Server'
 
-    const rlResult = checkRateLimit(`${user.id}_${ipFuncionario}`, 5, 60000)
+    const rlResult = checkRateLimit(ipFuncionario, 'general')
     if (!rlResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas requisições de geração de PDF. Aguarde um momento antes de tentar novamente.' },
         {
           status: 429,
-          headers: { 'Retry-After': String(rlResult.resetInSeconds) }
+          headers: { 'Retry-After': String(rlResult.retryAfterSeconds) }
         }
       )
     }

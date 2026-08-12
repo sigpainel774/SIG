@@ -1,43 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { requireSuperAdminApi } from '@/lib/authGuard'
 import { cleanFuncionarioDependencies } from '@/lib/audit/audit-agent'
 
 type HardDeleteAction = 'funcionarios_sem_acesso' | 'turmas_arquivadas' | 'logs_90_dias'
 
-async function getAuthenticatedSuperadmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll() {},
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: funcionario } = await supabaseAdmin
-    .from('funcionarios')
-    .select('id, nome, email, is_superadmin')
-    .eq('auth_user_id', user.id)
-    .single()
-
-  if (!funcionario?.is_superadmin) return null
-  return funcionario
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const admin = await getAuthenticatedSuperadmin()
-    if (!admin) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+    const auth = await requireSuperAdminApi(req)
+    if (auth.response) {
+      return auth.response
     }
+    const admin = auth.funcionario
 
     const body = await req.json()
     const action: HardDeleteAction = body.action
@@ -123,9 +97,9 @@ export async function POST(req: NextRequest) {
 
     // Audit log
     await supabaseAdmin.from('audit_logs').insert({
-      user_id: admin.id ?? null,
-      user_name: admin.nome ?? 'Superadmin',
-      user_email: admin.email ?? '',
+      user_id: admin?.id ?? null,
+      user_name: admin?.nome ?? 'Superadmin',
+      user_email: admin?.email ?? '',
       action: 'PURGE',
       entity: action,
       entity_id: null,
