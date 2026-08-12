@@ -62,16 +62,16 @@ export function SecaoAssinaturas() {
     <div className="space-y-6">
       {/* 12. Autorização de Imagem e Voz */}
       <div>
-        <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
           12. Autorização de Imagem e Voz (Para Comprovante)
         </div>
         <div className="w-64">
-          <Label className="text-xs text-gray-300">Autoriza o uso de imagem e voz do aluno?</Label>
+          <Label className="text-xs text-muted-foreground font-medium">Autoriza o uso de imagem e voz do aluno?</Label>
           <Select value={autorizaImagemVoz} onValueChange={(val) => setAutorizaImagemVoz(val || 'Não')}>
-            <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+            <SelectTrigger className="mt-1 w-full">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#181818] border-[#2a2a2a] text-white">
+            <SelectContent>
               <SelectItem value="Sim">Sim, autorizo</SelectItem>
               <SelectItem value="Não">Não, não autorizo</SelectItem>
             </SelectContent>
@@ -81,10 +81,10 @@ export function SecaoAssinaturas() {
 
       {/* 13. Assinaturas Digitais */}
       <div ref={signatureSectionRef as any}>
-        <div className="text-[#3ea6ff] font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-[#2a2a2a]">
+        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
           13. Captura de Assinaturas Digitais
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#121212] p-4 rounded-xl border border-[#2a2a2a]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-card p-4 rounded-xl border border-border shadow-xs">
           {/* Assinatura do Responsável */}
           <div className="space-y-3">
             <SignaturePad
@@ -98,7 +98,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('resp')}
-                className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-9 rounded-xl flex items-center justify-center gap-1.5"
+                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular
@@ -120,7 +120,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('func')}
-                className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-9 rounded-xl flex items-center justify-center gap-1.5"
+                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular
@@ -132,3 +132,4 @@ export function SecaoAssinaturas() {
     </div>
   )
 }
+

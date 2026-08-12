@@ -62,7 +62,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             type="button"
             variant="ghost"
             onClick={handleClose}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             Cancelar
           </Button>
@@ -70,7 +70,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             type="submit"
             form="aluno-form"
             disabled={loading}
-            className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
           >
             {loading ? 'Salvando...' : (
               <span className="flex items-center gap-2">
@@ -87,22 +87,22 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
         
         {/* Banner de Bloqueio por Assinatura */}
         {isDocumentoBloqueado && (
-          <div className="bg-[#1e1b4b]/80 border border-[#3730a3] p-4 rounded-xl space-y-3 print:hidden">
+          <div className="bg-indigo-50 dark:bg-[#1e1b4b]/80 border border-indigo-200 dark:border-[#3730a3] p-4 rounded-xl space-y-3 print:hidden">
             <div className="flex items-start gap-3">
-              <Lock className="w-5 h-5 text-[#818cf8] shrink-0 mt-0.5" />
+              <Lock className="w-5 h-5 text-indigo-600 dark:text-[#818cf8] shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white uppercase tracking-tight">Matrícula Assinada e Bloqueada</h4>
-                <p className="text-xs text-zinc-300 leading-normal">
+                <h4 className="text-sm font-bold text-indigo-950 dark:text-white uppercase tracking-tight">Matrícula Assinada e Bloqueada</h4>
+                <p className="text-xs text-indigo-800 dark:text-zinc-300 leading-normal">
                   Este documento possui assinatura eletrônica registrada. Para garantir a integridade das assinaturas e do PDF assinado oficial, modificações só são permitidas com liberação do Diretor.
                 </p>
               </div>
             </div>
 
             {!isEdicaoLiberada && (
-              <div className="pt-2 border-t border-[#3730a3]/50 flex flex-col gap-2">
+              <div className="pt-2 border-t border-indigo-200 dark:border-[#3730a3]/50 flex flex-col gap-2">
                 {solicitacaoPendente ? (
-                  <div className="text-[11px] text-zinc-400 bg-black/30 p-2.5 rounded-lg border border-[#2a2a2a] flex items-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 text-[#3ea6ff] animate-spin shrink-0" />
+                  <div className="text-[11px] text-indigo-900 dark:text-zinc-400 bg-white/60 dark:bg-black/30 p-2.5 rounded-lg border border-indigo-200 dark:border-[#2a2a2a] flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
                     <span>Solicitação de liberação pendente de aprovação do Diretor. Justificativa: <em>"{justificativaPendente}"</em></span>
                   </div>
                 ) : (
@@ -111,19 +111,19 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                       <Button
                         type="button"
                         onClick={() => setSolicitandoLibere(true)}
-                        className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#09090b] font-bold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer w-fit"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer w-fit"
                       >
                         <Unlock className="w-3.5 h-3.5" />
                         Solicitar Liberação para Edição
                       </Button>
                     ) : (
-                      <div className="space-y-2 bg-black/30 p-3 rounded-lg border border-[#3730a3]/30">
-                        <Label className="text-[10px] text-zinc-400 font-bold uppercase">Justificativa para Alteração</Label>
+                      <div className="space-y-2 bg-white/60 dark:bg-black/30 p-3 rounded-lg border border-indigo-200 dark:border-[#3730a3]/30">
+                        <Label className="text-[10px] text-indigo-900 dark:text-zinc-400 font-bold uppercase">Justificativa para Alteração</Label>
                         <textarea
                           value={justificativaSolicitacao}
                           onChange={(e) => setJustificativaSolicitacao(e.target.value)}
                           placeholder="Descreva detalhadamente o motivo pelo qual precisa alterar a ficha do aluno..."
-                          className="w-full bg-[#18181b] border border-[#27272a] rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-[#3ea6ff] focus:outline-none min-h-[60px]"
+                          className="w-full bg-background border border-input rounded-lg p-2 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none min-h-[60px]"
                         />
                         <div className="flex gap-2 justify-end">
                           <Button
@@ -133,7 +133,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                               setSolicitandoLibere(false)
                               setJustificativaSolicitacao('')
                             }}
-                            className="h-8 text-xs px-3 hover:bg-zinc-800 text-zinc-400"
+                            className="h-8 text-xs px-3 hover:bg-muted text-muted-foreground"
                           >
                             Cancelar
                           </Button>
@@ -141,7 +141,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                             type="button"
                             onClick={handleEnviarSolicitacaoEdicao}
                             disabled={loading || !justificativaSolicitacao.trim()}
-                            className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-black font-bold h-8 text-xs px-3 rounded-lg flex items-center gap-1"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 text-xs px-3 rounded-lg flex items-center gap-1"
                           >
                             <Send className="w-3 h-3" />
                             Enviar
@@ -158,7 +158,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
 
         {/* Ficha Bloqueada overlay explicativo */}
         {isFichaBloqueada && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 p-3.5 rounded-xl text-yellow-400 text-xs flex items-center gap-2 print:hidden">
+          <div className="bg-amber-500/10 border border-amber-500/20 p-3.5 rounded-xl text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2 print:hidden">
             <Lock className="w-4 h-4 shrink-0" />
             <span>Ficha temporariamente bloqueada para escrita. Solicite liberação acima para editar os campos.</span>
           </div>
@@ -176,16 +176,16 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
 
           {/* QRCode de Assinatura Mobile */}
           {celularSigningCode && (
-            <div className="border border-[#2a2a2a] bg-[#121212] p-4 rounded-xl max-w-sm mx-auto flex flex-col items-center text-center space-y-4 shadow-lg print:hidden">
-              <div className="flex items-center gap-2 text-xs text-sky-400 font-bold">
+            <div className="border border-border bg-card text-card-foreground p-4 rounded-xl max-w-sm mx-auto flex flex-col items-center text-center space-y-4 shadow-lg print:hidden">
+              <div className="flex items-center gap-2 text-xs text-primary font-bold">
                 <Smartphone className="w-4 h-4" />
                 <span>Assinatura via Celular Ativa</span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-normal">
+              <p className="text-[11px] text-muted-foreground leading-normal">
                 Aponte a câmera do celular para o QRCode ou acesse no navegador móvel. Digite o código abaixo para autenticar a assinatura.
               </p>
 
-              <div className="p-2 bg-white rounded-lg border border-zinc-200">
+              <div className="p-2 bg-white rounded-lg border border-border">
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
                     `${window.location.origin}/assinar?code=${celularSigningCode}`
@@ -196,13 +196,13 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Código de Assinatura</span>
-                <div className="text-2xl font-mono font-black text-white bg-[#18181b] py-2 rounded-xl tracking-widest border border-[#27272a]">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Código de Assinatura</span>
+                <div className="text-2xl font-mono font-black text-foreground bg-muted py-2 rounded-xl tracking-widest border border-border">
                   {celularSigningCode}
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#3ea6ff]">
+              <div className="flex items-center justify-center gap-1.5 text-xs text-primary">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="font-semibold">Aguardando desenho...</span>
               </div>
@@ -211,7 +211,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                 type="button"
                 variant="ghost"
                 onClick={cancelarAssinaturaCelular}
-                className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-9 rounded-xl text-xs font-bold transition-all"
+                className="w-full text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 h-9 rounded-xl text-xs font-bold transition-all"
               >
                 Cancelar Operação
               </Button>
