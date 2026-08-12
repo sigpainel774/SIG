@@ -39,7 +39,7 @@ export function SecaoMatricula() {
     <div className="space-y-6">
       {/* 2. Turma Vinculada */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           2. Turma Vinculada
         </div>
         <div>
@@ -77,7 +77,7 @@ export function SecaoMatricula() {
 
       {/* 5. Informações da Matrícula & Etapa */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           5. Ano / Etapa de Escolarização & Matrícula
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -153,7 +153,7 @@ export function SecaoMatricula() {
 
       {/* 8. Recursos SAEB (INEP) */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           8. Recursos para Uso em Sala de Aula e Avaliação INEP (SAEB)
         </div>
         <div className="space-y-3">

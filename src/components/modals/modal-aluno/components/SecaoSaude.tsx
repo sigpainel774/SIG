@@ -62,7 +62,7 @@ export function SecaoSaude() {
     <div className="space-y-6">
       {/* 6. Transporte Escolar */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           6. Transporte Escolar
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center bg-card p-3 rounded-xl border border-border shadow-xs">
@@ -133,7 +133,7 @@ export function SecaoSaude() {
 
       {/* 9. Ficha de Saúde / Anamnese */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           9. Ficha de Saúde / Anamnese
         </div>
         <div className="space-y-3">
@@ -306,7 +306,7 @@ export function SecaoSaude() {
 
       {/* 10. Necessidade Educativa Especial (NEE) */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           10. Necessidade Educativa Especial (NEE)
         </div>
         <div className="space-y-3">
@@ -346,7 +346,7 @@ export function SecaoSaude() {
 
       {/* 11. Deficiências */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           11. Deficiência Física, Auditiva ou Visual
         </div>
         <div className="space-y-3">

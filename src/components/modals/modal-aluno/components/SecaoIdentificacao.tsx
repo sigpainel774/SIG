@@ -38,15 +38,15 @@ export function SecaoIdentificacao() {
     <div className="space-y-6">
       {/* 1. Identificação Básica */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           1. Identificação Básica
         </div>
 
         {/* Foto 3x4 Upload */}
-        <div className="flex items-center gap-4 p-3 mb-4 rounded-xl bg-card border border-border shadow-xs">
+        <div className="photo-upload-card flex items-center gap-4 p-3 mb-4 rounded-xl bg-card border border-border shadow-xs">
           <div 
             onClick={() => document.getElementById('modalFotoAlunoInput')?.click()}
-            className="w-20 h-20 rounded-full bg-muted border-2 border-primary flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            className="photo-upload-circle w-20 h-20 rounded-full bg-muted border-2 border-primary flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
           >
             {fotoUrl ? (
               <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
@@ -112,7 +112,10 @@ export function SecaoIdentificacao() {
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground font-medium">CPF do Aluno</Label>
                 {cpf.trim().length > 0 && (
-                  <span className={`text-[10px] font-semibold ${isCpfValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <span 
+                    data-status={isCpfValid ? 'valid' : 'invalid'}
+                    className={`text-[10px] font-semibold ${isCpfValid ? 'cpf-valid text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+                  >
                     {isCpfValid ? '✓ CPF Válido' : '✕ CPF Inválido'}
                   </span>
                 )}
@@ -186,7 +189,7 @@ export function SecaoIdentificacao() {
 
       {/* 3. Documentos */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           3. Documentos
         </div>
         <div className="space-y-3">
@@ -264,7 +267,7 @@ export function SecaoIdentificacao() {
 
       {/* 4. Filiação e Contato */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           4. Filiação e Contato
         </div>
         <div className="space-y-3">
