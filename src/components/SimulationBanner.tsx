@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
 import { createClient } from '@/lib/supabaseClient'
 import { UserCheck, XCircle, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function SimulationBanner() {
+  const router = useRouter()
   const supabase = createClient()
   const {
     isSimulating,
@@ -34,6 +36,7 @@ export function SimulationBanner() {
   const handleEncerrar = () => {
     encerrarSimulacao()
     toast.success('Simulação encerrada. Privilégios ROOT restaurados!')
+    router.push('/admin')
   }
 
   return (
