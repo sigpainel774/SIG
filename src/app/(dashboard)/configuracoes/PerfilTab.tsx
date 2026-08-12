@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Lock, ChevronDown, Save, Info, Loader2 } from 'lucide-react'
+import { User, Lock, ChevronDown, Save, Info, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -64,7 +64,8 @@ function ProfileField({
 }
 
 export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProps) {
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordSection, setShowPasswordSection] = useState(false)
+  const [showPasswordText, setShowPasswordText] = useState(false)
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [updating, setUpdating] = useState(false)
@@ -97,7 +98,8 @@ export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProp
       toast.success('Senha atualizada com sucesso!')
       setNovaSenha('')
       setConfirmarSenha('')
-      setShowPassword(false)
+      setShowPasswordSection(false)
+      setShowPasswordText(false)
     } catch (err) {
       console.error(err)
       toast.error('Erro inesperado ao atualizar a senha.')
@@ -142,10 +144,10 @@ export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProp
       <Card className="border-borderCustom bg-card p-6">
         <button
           type="button"
-          onClick={() => setShowPassword((v) => !v)}
+          onClick={() => setShowPasswordSection((v) => !v)}
           className={cn(
             'flex w-full items-center justify-between gap-3 text-left text-lg font-semibold text-foregroundCustom cursor-pointer',
-            showPassword ? 'border-b border-borderCustom pb-4' : ''
+            showPasswordSection ? 'border-b border-borderCustom pb-4' : ''
           )}
         >
           <span className="flex items-center gap-2">
@@ -153,34 +155,56 @@ export function PerfilTab({ nome, email, cargo, status, mounted }: PerfilTabProp
             Alterar Senha de Acesso
           </span>
           <ChevronDown
-            className={cn('h-5 w-5 text-muted-foreground transition-transform', showPassword ? 'rotate-180' : '')}
+            className={cn('h-5 w-5 text-muted-foreground transition-transform', showPasswordSection ? 'rotate-180' : '')}
           />
         </button>
 
-        {showPassword && (
+        {showPasswordSection && (
           <div className="mt-5 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm text-muted-foreground">Nova Senha</label>
-                <Input
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  value={novaSenha}
-                  onChange={(e) => setNovaSenha(e.target.value)}
-                  disabled={updating}
-                  className="bg-input"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPasswordText ? "text" : "password"}
+                    placeholder="Mínimo 6 caracteres"
+                    value={novaSenha}
+                    onChange={(e) => setNovaSenha(e.target.value)}
+                    disabled={updating}
+                    className="bg-input pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordText(!showPasswordText)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                    tabIndex={-1}
+                    title={showPasswordText ? 'Ocultar senha' : 'Exibir senha'}
+                  >
+                    {showPasswordText ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="mb-2 block text-sm text-muted-foreground">Confirmar Nova Senha</label>
-                <Input
-                  type="password"
-                  placeholder="Digite a nova senha novamente"
-                  value={confirmarSenha}
-                  onChange={(e) => setConfirmarSenha(e.target.value)}
-                  disabled={updating}
-                  className="bg-input"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPasswordText ? "text" : "password"}
+                    placeholder="Digite a nova senha novamente"
+                    value={confirmarSenha}
+                    onChange={(e) => setConfirmarSenha(e.target.value)}
+                    disabled={updating}
+                    className="bg-input pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordText(!showPasswordText)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                    tabIndex={-1}
+                    title={showPasswordText ? 'Ocultar senha' : 'Exibir senha'}
+                  >
+                    {showPasswordText ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex justify-end">

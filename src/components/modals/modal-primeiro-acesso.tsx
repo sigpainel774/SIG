@@ -5,7 +5,7 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { KeyRound, ShieldAlert, Check } from 'lucide-react'
+import { KeyRound, ShieldAlert, Check, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ModalPrimeiroAcessoProps {
@@ -18,6 +18,7 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
   const [loading, setLoading] = useState(false)
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
@@ -51,12 +52,12 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
       description="Sua conta utilizou uma senha provisória enviada pela administração. Por motivos de segurança, cadastre sua senha definitiva para continuar."
       maxWidth="sm:max-w-md"
       footer={
-        <div className="flex justify-end w-full pt-4 border-t border-borderCustom">
+        <div className="flex justify-end w-full pt-4 border-t border-border">
           <Button
             type="submit"
             form="form-primeiro-acesso"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 cursor-pointer shadow"
           >
             <Check className="w-4 h-4" />
             {loading ? 'Salvando Senha...' : 'Salvar Nova Senha'}
@@ -65,35 +66,56 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
       }
     >
       <form id="form-primeiro-acesso" onSubmit={handleSubmit} className="space-y-4 py-2">
-          <p className="text-sm text-muted-foreground">
-            Sua conta utilizou uma senha provisória enviada pela administração. Por motivos de segurança, cadastre sua senha definitiva para continuar.
-          </p>
+        <p className="text-sm text-muted-foreground">
+          Sua conta utilizou uma senha provisória enviada pela administração. Por motivos de segurança, cadastre sua senha definitiva para continuar.
+        </p>
 
-          <div>
-            <Label>Nova Senha Definitiva</Label>
+        <div>
+          <Label className="text-xs font-medium text-muted-foreground">Nova Senha Definitiva</Label>
+          <div className="relative mt-1">
             <Input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={novaSenha}
               onChange={(e) => setNovaSenha(e.target.value)}
               placeholder="Mínimo 6 caracteres"
-              className="bg-[#181818] border-borderCustom text-white mt-1"
+              className="bg-background pr-10"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+              tabIndex={-1}
+              title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
+        </div>
 
-          <div>
-            <Label>Confirme a Nova Senha</Label>
+        <div>
+          <Label className="text-xs font-medium text-muted-foreground">Confirme a Nova Senha</Label>
+          <div className="relative mt-1">
             <Input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
               placeholder="Digite novamente a senha"
-              className="bg-[#181818] border-borderCustom text-white mt-1"
+              className="bg-background pr-10"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+              tabIndex={-1}
+              title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
-
-        </form>
+        </div>
+      </form>
     </StandardDialog>
   )
 }
