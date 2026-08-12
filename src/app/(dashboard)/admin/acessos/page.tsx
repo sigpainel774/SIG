@@ -39,6 +39,7 @@ import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
 const MapaAuditoria = dynamicImport(() => import('@/components/map/MapaAuditoria'), { ssr: false })
+const MapaCalorAcessos = dynamicImport(() => import('@/components/map/MapaCalorAcessos'), { ssr: false })
 
 export interface AcessoItem {
   id: string
@@ -152,7 +153,12 @@ export default function AdminAcessosPage() {
   const [filtroFuncionarioTrilha, setFiltroFuncionarioTrilha] = useState<string>('ALL')
   const [filtroPeriodoDiario, setFiltroPeriodoDiario] = useState<string>('30')
 
+  // Mapa de Calor Geo
+  const [pontosGeo, setPontosGeo] = useState<any[]>([])
+  const [loadingGeo, setLoadingGeo] = useState(false)
+
   const isMounted = useRef(true)
+
 
   useEffect(() => {
     isMounted.current = true
@@ -265,6 +271,73 @@ export default function AdminAcessosPage() {
     }
   }, [supabase, filtroPeriodoDiario, filtroFuncionarioTrilha])
 
+  // Carregar dados de geolocalização dos IPs
+  const loadPontosGeo = useCallback(async () => {
+    setLoadingGeo(true)
+    try {
+      const ips = Array.from(
+        new Set([
+          ...sessoesAtivas.map((s) => s.ip).filter((ip): ip is string => Boolean(ip)),
+          ...loginsDiarios.map((d) => d.ip_address).filter((ip): ip is string => Boolean(ip)),
+        ])
+      )
+
+      if (ips.length === 0) {
+        if (isMounted.current) setPontosGeo([])
+        return
+      }
+
+      const res = await fetch('/api/admin/acessos/geo-pontos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ips }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Falha ao obter geolocalização')
+      }
+
+      const data = await res.json()
+      const geoList: any[] = data.pontos || []
+
+      const mapResult = geoList.map((pt) => {
+        const matchingSessoes = sessoesAtivas.filter((s) => s.ip === pt.ip)
+        const usuarios = matchingSessoes.map((s) => ({
+          nome: s.funcionario_nome,
+          cargo: s.funcionario_cargo,
+          escola: s.escola_nome,
+        }))
+
+        const suspeito =
+          pt.region !== 'Bahia' &&
+          pt.region !== 'BA' &&
+          pt.region !== 'Local' &&
+          pt.city !== 'Sapeaçu'
+
+        return {
+          ip: pt.ip,
+          latitude: pt.latitude,
+          longitude: pt.longitude,
+          city: pt.city,
+          region: pt.region,
+          country: pt.country,
+          provider: pt.provider,
+          usuarios,
+          count: matchingSessoes.length || 1,
+          suspeito,
+        }
+      })
+
+      if (isMounted.current) {
+        setPontosGeo(mapResult)
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar pontos geo:', err)
+    } finally {
+      if (isMounted.current) setLoadingGeo(false)
+    }
+  }, [sessoesAtivas, loginsDiarios])
+
   useEffect(() => {
     loadAcessos()
   }, [loadAcessos])
@@ -274,6 +347,13 @@ export default function AdminAcessosPage() {
       loadDadosAvancados()
     }
   }, [activeTab, loadDadosAvancados])
+
+  useEffect(() => {
+    if (activeTab === 'avancado' && subTab === 'mapa') {
+      loadPontosGeo()
+    }
+  }, [activeTab, subTab, loadPontosGeo])
+
 
   // Inscrever no Supabase Realtime WebSocket para atualizar sessões ativas instantaneamente
   useEffect(() => {
@@ -1143,23 +1223,99 @@ export default function AdminAcessosPage() {
           {/* SUB-ABA 5: GEOLOCALIZAÇÃO APROXIMADA */}
           {subTab === 'mapa' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-rose-400" />
-                Mapa de Geolocalização Aproximada por IP de Acesso
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-rose-400" />
+                  Mapa de Geolocalização de Acessos por IP
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-surface-2 border border-borderCustom text-foreground flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-sky-400" />
+                    {pontosGeo.length} IP(s) Mapeado(s)
+                  </span>
+                  {pontosGeo.some((p) => p.suspeito) && (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                      IP Fora da Bahia Detectado
+                    </span>
+                  )}
+                </div>
+              </div>
 
-              <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm">
-                <MapaAuditoria
-                  pontoLat={-12.723}
-                  pontoLng={-39.206}
-                  batidaLat={-12.724}
-                  batidaLng={-39.205}
-                  nomePonto="Secretaria Municipal de Educação de Sapeaçu"
-                  nomeVigia="Superadmin ROOT (Acessos Ativos)"
-                />
+              <div className="grid grid-cols-12 gap-4">
+                {/* Lado Esquerdo: Mapa Interativo */}
+                <div className="col-span-12 lg:col-span-8 bg-card border border-borderCustom rounded-2xl p-4 shadow-sm">
+                  {loadingGeo ? (
+                    <div className="w-full h-[480px] rounded-2xl bg-[#141a27] border border-[#232d42] flex flex-col items-center justify-center p-6 text-center text-slate-400 animate-pulse">
+                      <Loader2 className="w-8 h-8 animate-spin mb-2 text-rose-400" />
+                      <span className="text-sm font-semibold">Carregando mapa e geolocalização dos IPs...</span>
+                    </div>
+                  ) : (
+                    <MapaCalorAcessos pontos={pontosGeo} />
+                  )}
+                </div>
+
+                {/* Lado Direito: Painel Estatístico & Alertas */}
+                <div className="col-span-12 lg:col-span-4 space-y-4">
+                  <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-purple-400" />
+                      Distribuição Geográfica de IPs
+                    </h4>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center bg-surface-2 border border-borderCustom p-3 rounded-xl">
+                        <span className="text-xs text-muted-foreground font-medium">Acessos Locais (Sapeaçu)</span>
+                        <span className="text-sm font-black text-emerald-500">
+                          {pontosGeo.filter((p) => p.city === 'Sapeaçu').length}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center bg-surface-2 border border-borderCustom p-3 rounded-xl">
+                        <span className="text-xs text-muted-foreground font-medium">Outros Municípios (BA)</span>
+                        <span className="text-sm font-black text-amber-500">
+                          {pontosGeo.filter((p) => p.region === 'Bahia' && p.city !== 'Sapeaçu').length}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center bg-surface-2 border border-borderCustom p-3 rounded-xl">
+                        <span className="text-xs text-muted-foreground font-medium">Fora da Bahia / Suspeitos</span>
+                        <span className="text-sm font-black text-rose-500">
+                          {pontosGeo.filter((p) => p.suspeito).length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      IPs em Destaque
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {pontosGeo.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic">Nenhum IP mapeado no momento.</p>
+                      ) : (
+                        pontosGeo.slice(0, 5).map((pt, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-surface-2 border border-borderCustom p-2.5 rounded-xl text-xs">
+                            <div>
+                              <div className="font-mono font-bold text-foreground">{pt.ip}</div>
+                              <div className="text-[10px] text-muted-foreground">{pt.city}, {pt.region}</div>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              pt.suspeito ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            }`}>
+                              {pt.count} sessão(ões)
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
+
         </div>
       )}
 
