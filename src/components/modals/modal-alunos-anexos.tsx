@@ -344,13 +344,13 @@ export function ModalAlunosAnexos({
     return (
       <div
         key={anexo.id}
-        className="flex items-center justify-between p-3 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
+        className="flex items-center justify-between p-3 bg-card text-card-foreground border border-border hover:border-borderCustom/80 rounded-xl transition-all shadow-xs"
       >
         <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
           <Icone className={`w-5 h-5 ${iconeCor} mt-0.5 shrink-0`} />
           <div className="min-w-0">
-            <p className="text-xs font-bold text-white truncate">{anexo.nome}</p>
-            <p className="text-[9px] text-zinc-500 mt-0.5">
+            <p className="text-xs font-bold text-foreground truncate">{anexo.nome}</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">
               Enviado em {new Date(anexo.created_at).toLocaleDateString('pt-BR')}
             </p>
           </div>
@@ -361,7 +361,7 @@ export function ModalAlunosAnexos({
             href={anexo.arquivo_url}
             target="_blank"
             rel="noreferrer"
-            className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
             title="Visualizar documento"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -430,16 +430,16 @@ export function ModalAlunosAnexos({
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
                   
-                  <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#141416] border border-[#26262a] shadow-xl z-20 py-1.5 overflow-hidden">
+                  <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-popover text-popover-foreground border border-border shadow-xl z-20 py-1.5 overflow-hidden">
                     <button
                       onClick={() => {
                         setTipoSelecionado('Laudos')
                         setUploadFormOpen(true)
                         setDropdownOpen(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-popover-foreground hover:bg-accent flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
                     >
-                      <FileText className="w-3.5 h-3.5 text-rose-400" />
+                      <FileText className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
                       <span>+ Novo Laudo</span>
                     </button>
                     <button
@@ -448,9 +448,9 @@ export function ModalAlunosAnexos({
                         setUploadFormOpen(true)
                         setDropdownOpen(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-popover-foreground hover:bg-accent flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
                     >
-                      <User className="w-3.5 h-3.5 text-indigo-400" />
+                      <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                       <span>+ Novo Documento Pessoal</span>
                     </button>
                     <button
@@ -459,9 +459,9 @@ export function ModalAlunosAnexos({
                         setUploadFormOpen(true)
                         setDropdownOpen(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/50 flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
+                      className="w-full text-left px-4 py-2 text-xs font-semibold text-popover-foreground hover:bg-accent flex items-center gap-2 cursor-pointer transition-colors border-none bg-transparent"
                     >
-                      <Folder className="w-3.5 h-3.5 text-amber-400" />
+                      <Folder className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                       <span>+ Outros Anexos</span>
                     </button>
                   </div>
@@ -472,13 +472,13 @@ export function ModalAlunosAnexos({
 
           {/* Form de upload inline dinâmico */}
           {uploadFormOpen && tipoSelecionado && (
-            <div className="bg-black/30 border border-[#26262a] p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="flex items-center justify-between border-b border-[#26262a]/50 pb-2">
-                <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  {tipoSelecionado === 'Laudos' && <FileText className="w-3.5 h-3.5 text-rose-400" />}
-                  {tipoSelecionado === 'Documentos Pessoais' && <User className="w-3.5 h-3.5 text-indigo-400" />}
-                  {tipoSelecionado === 'Outros' && <Folder className="w-3.5 h-3.5 text-amber-400" />}
-                  Novo Upload: <span className="text-[#3ea6ff]">{tipoSelecionado}</span>
+            <div className="bg-muted/40 border border-border p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  {tipoSelecionado === 'Laudos' && <FileText className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />}
+                  {tipoSelecionado === 'Documentos Pessoais' && <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
+                  {tipoSelecionado === 'Outros' && <Folder className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+                  Novo Upload: <span className="text-primary">{tipoSelecionado}</span>
                 </h4>
                 <button
                   onClick={() => {
@@ -487,7 +487,7 @@ export function ModalAlunosAnexos({
                     setNovoNome('')
                     setNovoArquivo(null)
                   }}
-                  className="text-zinc-500 hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -504,7 +504,7 @@ export function ModalAlunosAnexos({
                   }
                   value={novoNome}
                   onChange={(e) => setNovoNome(e.target.value)}
-                  className="bg-black/50 border-[#26262a] text-white placeholder-zinc-500 rounded-xl h-10 text-sm focus:border-[#3ea6ff]/40"
+                  className="bg-background border-input text-foreground placeholder:text-muted-foreground rounded-xl h-10 text-sm focus:border-primary/40"
                   disabled={uploading}
                 />
                 <div className="flex gap-2">
@@ -517,7 +517,7 @@ export function ModalAlunosAnexos({
                   />
                   <label
                     htmlFor="novo-anexo-file"
-                    className="flex-1 flex items-center justify-center gap-1.5 h-10 px-3 border border-dashed border-[#26262a] hover:border-[#3ea6ff]/40 rounded-xl text-xs font-medium text-zinc-400 hover:text-white cursor-pointer transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 h-10 px-3 border border-dashed border-border hover:border-primary/40 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
                   >
                     <Upload className="w-4 h-4 shrink-0" />
                     <span className="truncate max-w-[130px]">
@@ -527,7 +527,7 @@ export function ModalAlunosAnexos({
                   <Button
                     onClick={handleUpload}
                     disabled={uploading || !novoNome || !novoArquivo}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer border-none shadow"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer border-none shadow"
                   >
                     {uploading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -543,16 +543,16 @@ export function ModalAlunosAnexos({
       )}
 
       {/* Navegação de Abas */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1 bg-black/40 border border-[#26262a] rounded-xl my-4">
+      <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/50 border border-border rounded-xl my-4">
         <button
           onClick={() => setActiveTab('laudos')}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
             activeTab === 'laudos' 
               ? 'bg-primary text-primary-foreground shadow' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
-          <FileText className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+          <FileText className="w-3.5 h-3.5 shrink-0 text-rose-500 dark:text-rose-400" />
           <span>Laudos ({anexosLaudos.length})</span>
         </button>
         <button
@@ -560,10 +560,10 @@ export function ModalAlunosAnexos({
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
             activeTab === 'pessoais' 
               ? 'bg-primary text-primary-foreground shadow' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
-          <User className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+          <User className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <span>Docs Pessoais ({anexosPessoais.length})</span>
         </button>
         <button
@@ -571,10 +571,10 @@ export function ModalAlunosAnexos({
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
             activeTab === 'outros' 
               ? 'bg-primary text-primary-foreground shadow' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
-          <Folder className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+          <Folder className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <span>Outros ({anexosOutros.length})</span>
         </button>
         {anexosPadrao.length > 0 && (
@@ -583,10 +583,10 @@ export function ModalAlunosAnexos({
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
               activeTab === 'checklist' 
                 ? 'bg-primary text-primary-foreground shadow' 
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>Checklist Unidade</span>
           </button>
         )}
@@ -595,8 +595,8 @@ export function ModalAlunosAnexos({
       {/* Conteúdo das Abas */}
       <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 py-1">
         {loading && (
-          <div className="flex items-center justify-center py-12 text-zinc-400 gap-2">
-            <Loader2 className="w-5 h-5 animate-spin text-[#3ea6ff]" />
+          <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
             <span>Carregando anexos...</span>
           </div>
         )}
@@ -608,8 +608,8 @@ export function ModalAlunosAnexos({
               <div className="space-y-2">
                 {anexosLaudos.map((anexo) => renderCardAnexo(anexo))}
                 {anexosLaudos.length === 0 && (
-                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
-                    <p className="text-zinc-500 text-xs">Nenhum laudo anexado a este aluno.</p>
+                  <div className="text-center py-10 border border-dashed border-border rounded-2xl bg-muted/20">
+                    <p className="text-muted-foreground text-xs">Nenhum laudo anexado a este aluno.</p>
                   </div>
                 )}
               </div>
@@ -620,8 +620,8 @@ export function ModalAlunosAnexos({
               <div className="space-y-2">
                 {anexosPessoais.map((anexo) => renderCardAnexo(anexo))}
                 {anexosPessoais.length === 0 && (
-                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
-                    <p className="text-zinc-500 text-xs">Nenhum documento pessoal anexado.</p>
+                  <div className="text-center py-10 border border-dashed border-border rounded-2xl bg-muted/20">
+                    <p className="text-muted-foreground text-xs">Nenhum documento pessoal anexado.</p>
                   </div>
                 )}
               </div>
@@ -632,8 +632,8 @@ export function ModalAlunosAnexos({
               <div className="space-y-2">
                 {anexosOutros.map((anexo) => renderCardAnexo(anexo))}
                 {anexosOutros.length === 0 && (
-                  <div className="text-center py-10 border border-dashed border-[#26262a] rounded-2xl bg-black/10">
-                    <p className="text-zinc-500 text-xs">Nenhum anexo adicional disponível.</p>
+                  <div className="text-center py-10 border border-dashed border-border rounded-2xl bg-muted/20">
+                    <p className="text-muted-foreground text-xs">Nenhum anexo adicional disponível.</p>
                   </div>
                 )}
               </div>
@@ -650,7 +650,7 @@ export function ModalAlunosAnexos({
                   return (
                     <div
                       key={`padrao-${i}`}
-                      className="flex items-center justify-between p-3.5 bg-black/40 border border-[#26262a] hover:border-[#26262a]/80 rounded-xl transition-all"
+                      className="flex items-center justify-between p-3.5 bg-card text-card-foreground border border-border hover:border-borderCustom/80 rounded-xl transition-all shadow-xs"
                     >
                       <div className="min-w-0 flex-1 pr-4 flex items-start gap-3">
                         <div className="mt-0.5 shrink-0">
@@ -658,6 +658,7 @@ export function ModalAlunosAnexos({
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-amber-500" />
+
                           )}
                         </div>
                         <div className="min-w-0">
