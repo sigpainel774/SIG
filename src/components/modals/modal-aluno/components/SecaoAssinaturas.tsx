@@ -59,10 +59,10 @@ export function SecaoAssinaturas() {
   }, [alunoEditar?.id, funcionario?.assinatura_url, signatureSectionRef])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 12. Autorização de Imagem e Voz */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           12. Autorização de Imagem e Voz (Para Comprovante)
         </div>
         <div className="w-64">
@@ -80,11 +80,11 @@ export function SecaoAssinaturas() {
       </div>
 
       {/* 13. Assinaturas Digitais */}
-      <div ref={signatureSectionRef as any}>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div ref={signatureSectionRef as any} className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           13. Captura de Assinaturas Digitais
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-card p-4 rounded-xl border border-border shadow-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#F8FAFC] p-4 rounded-xl border border-[#D1D5DB]">
           {/* Assinatura do Responsável */}
           <div className="space-y-3">
             <SignaturePad
@@ -98,7 +98,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('resp')}
-                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
+                className="w-full text-xs text-[#0067C0] border border-[#0067C0]/20 hover:bg-[#0067C0]/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular
@@ -120,7 +120,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('func')}
-                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
+                className="w-full text-xs text-[#0067C0] border border-[#0067C0]/20 hover:bg-[#0067C0]/10 h-9 rounded-xl flex items-center justify-center gap-1.5 font-medium"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular

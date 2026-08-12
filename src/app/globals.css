@@ -84,6 +84,23 @@
 }
 
 :root {
+  --student-light-bg: #F3F4F6;
+  --student-light-surface: #FFFFFF;
+  --student-light-section: #FFFFFF;
+  --student-light-field: #E8F1FB;
+  --student-light-field-hover: #DEEBF8;
+  --student-light-field-focus: #F1F7FD;
+  --student-light-readonly: #E5E7EB;
+  --student-light-border: #D1D5DB;
+  --student-light-field-border: #9DB7D3;
+  --student-light-field-hover-border: #6F9BC2;
+  --student-light-focus: #0067C0;
+  --student-light-text: #1F2937;
+  --student-light-label: #374151;
+  --student-light-title: #0067C0;
+  --student-light-muted: #6B7280;
+  --student-light-success: #107C41;
+
   --background: #f3f4f7;
   --foreground: #1a1a1a;
   --card: #ffffff;
@@ -464,54 +481,99 @@
 
 /* ─── Modal de Edição da Ficha do Aluno (.student-edit-modal) ─── */
 .student-edit-modal {
-  background-color: var(--student-modal-bg, #111827) !important;
-  color: var(--student-modal-text, #f8fafc) !important;
-  border: 1px solid #263448 !important;
+  background: var(--student-light-bg, #F3F4F6) !important;
+  color: var(--student-light-text, #1F2937) !important;
+  border: 1px solid var(--student-light-border, #D1D5DB) !important;
   border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(31, 41, 55, 0.14) !important;
+  overflow: hidden !important;
 }
 
+.student-edit-modal__content {
+  background: var(--student-light-bg, #F3F4F6) !important;
+}
+
+.student-edit-modal [data-slot="dialog-title"],
+.student-edit-modal .dialog-title-student {
+  color: var(--student-light-title, #0067C0) !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+}
+
+.student-edit-modal [data-slot="dialog-footer"] {
+  background: #E5E7EB !important;
+  border-top: 1px solid #D1D5DB !important;
+}
+
+.student-edit-modal__section,
+.student-edit-modal__photo-card,
+.student-edit-modal .student-section-card {
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(31, 41, 55, 0.06) !important;
+}
+
+.student-edit-modal__section,
+.student-edit-modal .student-section-card {
+  padding: 20px !important;
+  margin-top: 16px !important;
+}
+
+.student-edit-modal__photo-card,
+.student-edit-modal .photo-upload-card {
+  min-height: 112px !important;
+  padding: 16px !important;
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+.student-edit-modal__section-title,
 .student-edit-modal .section-title {
-  color: var(--student-modal-focus, #4da3ff) !important;
+  color: #0067C0 !important;
   font-size: 16px !important;
   font-weight: 700 !important;
   letter-spacing: 0.01em !important;
-}
-
-.student-edit-modal .section-divider {
-  border-color: #263448 !important;
+  line-height: 1.3 !important;
+  margin: 0 0 12px 0 !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid #D1D5DB !important;
 }
 
 .student-edit-modal label {
-  color: var(--student-modal-label, #9fc4ee) !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
+  display: block !important;
+  color: #374151 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
   line-height: 1.3 !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 7px !important;
 }
 
-.student-edit-modal input:not([readonly]):not(:disabled),
+.student-edit-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]),
 .student-edit-modal select:not(:disabled),
 .student-edit-modal textarea:not(:disabled),
 .student-edit-modal [data-slot="select-trigger"]:not([data-disabled]):not(:disabled) {
-  min-height: 44px !important;
-  background-color: var(--student-modal-field, #34445a) !important;
-  color: var(--student-modal-text, #f8fafc) !important;
-  border: 1px solid var(--student-modal-border, #5a6e88) !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  background: #E8F1FB !important;
+  color: #1F2937 !important;
+  border: 1px solid #9DB7D3 !important;
   border-radius: 8px !important;
-  padding: 10px 14px !important;
+  padding: 9px 12px !important;
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease !important;
 }
 
-.student-edit-modal input:not([readonly]):not(:disabled):hover,
+.student-edit-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):hover,
 .student-edit-modal select:not(:disabled):hover,
 .student-edit-modal textarea:not(:disabled):hover,
 .student-edit-modal [data-slot="select-trigger"]:not([data-disabled]):not(:disabled):hover {
-  background-color: var(--student-modal-field-hover, #3a4c63) !important;
-  border-color: #7085a0 !important;
+  background: #DEEBF8 !important;
+  border-color: #6F9BC2 !important;
 }
 
-.student-edit-modal input:not([readonly]):not(:disabled):focus,
-.student-edit-modal input:not([readonly]):not(:disabled):focus-visible,
+.student-edit-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):focus,
+.student-edit-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):focus-visible,
 .student-edit-modal select:not(:disabled):focus,
 .student-edit-modal select:not(:disabled):focus-visible,
 .student-edit-modal textarea:not(:disabled):focus,
@@ -520,9 +582,9 @@
 .student-edit-modal [data-slot="select-trigger"]:not([data-disabled]):not(:disabled):focus-visible,
 .student-edit-modal [data-slot="select-trigger"][data-state="open"] {
   outline: none !important;
-  background-color: var(--student-modal-field-hover, #3a4c63) !important;
-  border-color: var(--student-modal-focus, #4da3ff) !important;
-  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.18) !important;
+  background: #F1F7FD !important;
+  border-color: #0067C0 !important;
+  box-shadow: 0 0 0 3px rgba(0, 103, 192, 0.18) !important;
 }
 
 .student-edit-modal input[readonly],
@@ -531,48 +593,54 @@
 .student-edit-modal textarea:disabled,
 .student-edit-modal [data-slot="select-trigger"][data-disabled],
 .student-edit-modal [data-slot="select-trigger"]:disabled {
-  background-color: var(--student-modal-field-readonly, #2c394c) !important;
-  color: var(--student-modal-muted, #a9b8cc) !important;
-  border-color: #465970 !important;
-  cursor: not-allowed !important;
+  background: #E5E7EB !important;
+  color: #6B7280 !important;
+  border: 1px solid #C7CDD4 !important;
   opacity: 1 !important;
+  cursor: not-allowed !important;
 }
 
 .student-edit-modal input::placeholder,
 .student-edit-modal textarea::placeholder {
-  color: var(--student-modal-placeholder, #c0cada) !important;
-  opacity: 0.82 !important;
+  color: #667085 !important;
+  opacity: 1 !important;
 }
 
 .student-edit-modal .cpf-valid,
 .student-edit-modal [data-status="valid"] {
-  color: var(--student-modal-success, #20c997) !important;
+  color: #107C41 !important;
   font-weight: 600 !important;
 }
 
-.student-edit-modal .photo-upload-card,
-.student-edit-modal .bg-card {
-  background: var(--student-modal-surface, #1b2433) !important;
-  border: 1px solid var(--student-modal-border-subtle, #33445a) !important;
-  border-radius: 10px !important;
-}
-
 .student-edit-modal .photo-upload-circle {
-  border: 2px solid var(--student-modal-focus, #4da3ff) !important;
-  background: #172235 !important;
+  background: #F8FAFC !important;
+  border: 2px solid #0067C0 !important;
+  color: #0067C0 !important;
 }
 
-.student-edit-modal .field-group {
-  gap: 8px;
+.student-edit-modal .photo-upload-circle:hover {
+  background: #E8F1FB !important;
+}
+
+.student-edit-modal input[type="checkbox"],
+.student-edit-modal input[type="radio"] {
+  width: auto !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  accent-color: #0067C0 !important;
 }
 
 .student-edit-modal .form-row {
-  column-gap: 16px;
-  row-gap: 16px;
+  column-gap: 16px !important;
+  row-gap: 16px !important;
+}
+
+.student-edit-modal .field-group {
+  gap: 8px !important;
 }
 
 .student-edit-modal .form-section {
-  margin-top: 24px;
+  margin-top: 16px !important;
 }
 
 

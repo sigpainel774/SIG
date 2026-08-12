@@ -97,6 +97,7 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 78 | `20260812013000_fix_comunicacao_notifications_rls.sql` | 2026-08-12 | Correção das RLS de comunicação e chancelas: adiciona política INSERT em `notifications` e `assinatura` para usuários autenticados e função `pode_publicar_comunicado` para publicação no mural em `comunicados`. | `public.notifications`, `public.comunicados`, `public.assinatura` | `SECURITY DEFINER` + Authenticated Insert |
 | 79 | `20260813000000_add_is_conta_eja_to_funcionarios.sql` | 2026-08-13 | Adiciona a coluna `is_conta_eja` em `funcionarios`, cria a função `is_conta_eja_by_uid()` e atualiza as RLS de `escolas`, `alunos` e `turmas` para permitir acesso das Contas Especiais EJA. | `public.funcionarios`, `public.escolas`, `public.alunos`, `public.turmas` | `SECURITY DEFINER` + EJA RLS |
 | 80 | `20260812210000_fix_daily_login_history_rpc.sql` | 2026-08-12 | Atualiza a RPC `get_daily_login_history_admin` para consultar `user_navigation_trail` (em vez de `access_logs`), unificando logins diários, funcionários, sessões, tempo de tela e geolocalização. | `user_navigation_trail`, `funcionarios`, `auth.users`, `ip_geolocation_cache` | `SECURITY DEFINER` |
+| 81 | `20260812220000_update_navigation_trail_rpc_filters.sql` | 2026-08-12 | Atualiza a RPC `get_user_navigation_trail_admin` com suporte a filtro por data (início/fim), busca por nome de usuário/tela e limite expandido. | `user_navigation_trail`, `funcionarios` | `SECURITY DEFINER` |
 
 
 

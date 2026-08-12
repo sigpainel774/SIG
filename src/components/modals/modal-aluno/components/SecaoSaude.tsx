@@ -59,22 +59,22 @@ export function SecaoSaude() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 6. Transporte Escolar */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           6. Transporte Escolar
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center bg-card p-3 rounded-xl border border-border shadow-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center bg-[#F8FAFC] p-3 rounded-xl border border-[#D1D5DB]">
           <div className="flex items-center gap-3">
             <input 
               type="checkbox" 
               id="chkTransporte" 
               checked={transporte} 
               onChange={(e) => setTransporte(e.target.checked)}
-              className="w-4 h-4 accent-primary rounded border-input"
+              className="w-4 h-4 accent-[#0067C0] rounded border-input"
             />
-            <label htmlFor="chkTransporte" className="text-sm font-semibold text-foreground cursor-pointer">
+            <label htmlFor="chkTransporte" className="text-sm font-semibold text-[#1F2937] cursor-pointer">
               Utiliza Transporte Público?
             </label>
           </div>
@@ -132,8 +132,8 @@ export function SecaoSaude() {
       </div>
 
       {/* 9. Ficha de Saúde / Anamnese */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           9. Ficha de Saúde / Anamnese
         </div>
         <div className="space-y-3">
@@ -305,8 +305,8 @@ export function SecaoSaude() {
       </div>
 
       {/* 10. Necessidade Educativa Especial (NEE) */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           10. Necessidade Educativa Especial (NEE)
         </div>
         <div className="space-y-3">
@@ -324,17 +324,17 @@ export function SecaoSaude() {
           </div>
 
           {nee !== 'Não' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-card rounded-xl border border-border shadow-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
               {OPCOES_NEE.map((opcao) => (
                 <label 
                   key={opcao}
-                  className="flex items-center gap-2 p-2 bg-muted/50 border border-border rounded-lg text-xs cursor-pointer hover:border-primary/50 transition-colors text-foreground"
+                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
                 >
                   <input 
                     type="checkbox" 
                     checked={neeSelecionadas.includes(opcao)}
                     onChange={() => toggleArrayItem(neeSelecionadas, opcao, setNeeSelecionadas)}
-                    className="accent-primary"
+                    className="accent-[#0067C0]"
                   />
                   <span>{opcao}</span>
                 </label>
@@ -345,8 +345,8 @@ export function SecaoSaude() {
       </div>
 
       {/* 11. Deficiências */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           11. Deficiência Física, Auditiva ou Visual
         </div>
         <div className="space-y-3">
@@ -364,17 +364,17 @@ export function SecaoSaude() {
           </div>
 
           {deficiencia !== 'Não' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-card rounded-xl border border-border shadow-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
               {OPCOES_DEFICIENCIA.map((opcao) => (
                 <label 
                   key={opcao}
-                  className="flex items-center gap-2 p-2 bg-muted/50 border border-border rounded-lg text-xs cursor-pointer hover:border-primary/50 transition-colors text-foreground"
+                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
                 >
                   <input 
                     type="checkbox" 
                     checked={deficienciasSelecionadas.includes(opcao)}
                     onChange={() => toggleArrayItem(deficienciasSelecionadas, opcao, setDeficienciasSelecionadas)}
-                    className="accent-primary"
+                    className="accent-[#0067C0]"
                   />
                   <span>{opcao}</span>
                 </label>

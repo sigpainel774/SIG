@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamicImport from 'next/dynamic'
 import { createClient } from '@/lib/supabaseClient'
 import {
@@ -26,7 +26,8 @@ import {
   Wifi,
   LogOut,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  Calendar
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -151,6 +152,9 @@ export default function AdminAcessosPage() {
 
   // Filtros Avançados
   const [filtroFuncionarioTrilha, setFiltroFuncionarioTrilha] = useState<string>('ALL')
+  const [searchTrilhaNome, setSearchTrilhaNome] = useState<string>('')
+  const [filtroDataInicioTrilha, setFiltroDataInicioTrilha] = useState<string>('')
+  const [filtroDataFimTrilha, setFiltroDataFimTrilha] = useState<string>('')
   const [filtroPeriodoDiario, setFiltroPeriodoDiario] = useState<string>('30')
 
   // Mapa de Calor Geo
@@ -242,7 +246,9 @@ export default function AdminAcessosPage() {
       // 3. Carregar Trilha de Navegação
       const { data: trilhaData, error: trilhaError } = await (supabase as any).rpc('get_user_navigation_trail_admin', {
         p_funcionario_id: filtroFuncionarioTrilha === 'ALL' ? null : filtroFuncionarioTrilha,
-        p_limit: 150,
+        p_limit: 300,
+        p_start_date: filtroDataInicioTrilha || null,
+        p_end_date: filtroDataFimTrilha || null,
       })
 
       if (trilhaError) {
@@ -269,7 +275,51 @@ export default function AdminAcessosPage() {
     } finally {
       if (isMounted.current) setLoadingAvancado(false)
     }
-  }, [supabase, filtroPeriodoDiario, filtroFuncionarioTrilha])
+  }, [supabase, filtroPeriodoDiario, filtroFuncionarioTrilha, filtroDataInicioTrilha, filtroDataFimTrilha])
+
+  // Helper para obter a data local no formato YYYY-MM-DD (Evita bug silencioso de fuso UTC)
+  const getLocalDateString = useCallback((isoString: string) => {
+    if (!isoString) return ''
+    const d = new Date(isoString)
+    if (isNaN(d.getTime())) return ''
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }, [])
+
+  // Memo da Trilha de Navegação Filtrada
+  const trilhaFiltrada = useMemo(() => {
+    return trilhaNavegacao.filter((item) => {
+      // 1. Busca por Nome de Usuário / Tela / Caminho (Reatividade Instantânea sem RPC Loop)
+      if (searchTrilhaNome.trim() !== '') {
+        const query = searchTrilhaNome.toLowerCase().trim()
+        const matchNome = item.funcionario_nome?.toLowerCase().includes(query)
+        const matchPath = item.pathname?.toLowerCase().includes(query)
+        const matchTitle = item.page_title?.toLowerCase().includes(query)
+        if (!matchNome && !matchPath && !matchTitle) return false
+      }
+
+      // 2. Filtro por Usuário Específico
+      if (filtroFuncionarioTrilha !== 'ALL' && item.funcionario_id !== filtroFuncionarioTrilha) {
+        return false
+      }
+
+      // 3. Filtro por Data Inicial (Horário Local)
+      if (filtroDataInicioTrilha) {
+        const dataItem = getLocalDateString(item.opened_at)
+        if (dataItem < filtroDataInicioTrilha) return false
+      }
+
+      // 4. Filtro por Data Final (Horário Local)
+      if (filtroDataFimTrilha) {
+        const dataItem = getLocalDateString(item.opened_at)
+        if (dataItem > filtroDataFimTrilha) return false
+      }
+
+      return true
+    })
+  }, [trilhaNavegacao, searchTrilhaNome, filtroFuncionarioTrilha, filtroDataInicioTrilha, filtroDataFimTrilha, getLocalDateString])
 
   // Carregar dados de geolocalização dos IPs
   const loadPontosGeo = useCallback(async () => {
@@ -1091,37 +1141,117 @@ export default function AdminAcessosPage() {
           {/* SUB-ABA 3: TRILHA DE NAVEGAÇÃO */}
           {subTab === 'trilha' && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-purple-400" />
-                  Trilha Detalhada de Telas (O que abriu e fechou)
-                </h3>
+              <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-purple-400" />
+                    <span>Trilha Detalhada de Telas (O que abriu e fechou)</span>
+                    <Badge variant="outline" className="ml-1 bg-purple-950/40 border-purple-500/30 text-purple-300 font-mono text-[11px]">
+                      {trilhaFiltrada.length} {trilhaFiltrada.length === 1 ? 'registro' : 'registros'}
+                    </Badge>
+                  </h3>
 
-                <div className="w-full sm:w-72">
-                  <select
-                    value={filtroFuncionarioTrilha}
-                    onChange={(e) => setFiltroFuncionarioTrilha(e.target.value)}
-                    className="w-full bg-input-bg border border-borderCustom text-foreground h-10 rounded-xl px-3 text-xs font-medium focus:outline-none focus:border-primary cursor-pointer shadow-sm"
-                  >
-                    <option value="ALL">Todos os usuários</option>
-                    {acessos.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.funcionario}
-                      </option>
-                    ))}
-                  </select>
+                  {(searchTrilhaNome || filtroDataInicioTrilha || filtroDataFimTrilha || filtroFuncionarioTrilha !== 'ALL') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchTrilhaNome('')
+                        setFiltroDataInicioTrilha('')
+                        setFiltroDataFimTrilha('')
+                        setFiltroFuncionarioTrilha('ALL')
+                      }}
+                      className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 self-start sm:self-auto"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Limpar Filtros
+                    </Button>
+                  )}
+                </div>
+
+                {/* Controles de Filtros: Busca por Nome + Usuário + Período de Data */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                  {/* Campo de Busca por Nome / Tela */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar por nome do usuário..."
+                      value={searchTrilhaNome}
+                      onChange={(e) => setSearchTrilhaNome(e.target.value)}
+                      className="pl-9 pr-8 h-9 text-xs bg-input-bg border-borderCustom rounded-xl focus:border-purple-500"
+                    />
+                    {searchTrilhaNome && (
+                      <button
+                        onClick={() => setSearchTrilhaNome('')}
+                        className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Seleção de Usuário */}
+                  <div>
+                    <select
+                      value={filtroFuncionarioTrilha}
+                      onChange={(e) => setFiltroFuncionarioTrilha(e.target.value)}
+                      className="w-full bg-input-bg border border-borderCustom text-foreground h-9 rounded-xl px-3 text-xs font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-sm"
+                    >
+                      <option value="ALL">Todos os usuários</option>
+                      {acessos.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.funcionario}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filtro de Data Inicial */}
+                  <div className="flex items-center gap-1.5 bg-input-bg border border-borderCustom rounded-xl px-2.5 h-9">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-[11px] text-muted-foreground shrink-0 font-medium">De:</span>
+                    <input
+                      type="date"
+                      value={filtroDataInicioTrilha}
+                      onChange={(e) => setFiltroDataInicioTrilha(e.target.value)}
+                      className="bg-transparent text-foreground text-xs font-medium focus:outline-none w-full cursor-pointer"
+                    />
+                    {filtroDataInicioTrilha && (
+                      <button onClick={() => setFiltroDataInicioTrilha('')} className="text-muted-foreground hover:text-foreground shrink-0">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filtro de Data Final */}
+                  <div className="flex items-center gap-1.5 bg-input-bg border border-borderCustom rounded-xl px-2.5 h-9">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-[11px] text-muted-foreground shrink-0 font-medium">Até:</span>
+                    <input
+                      type="date"
+                      value={filtroDataFimTrilha}
+                      onChange={(e) => setFiltroDataFimTrilha(e.target.value)}
+                      className="bg-transparent text-foreground text-xs font-medium focus:outline-none w-full cursor-pointer"
+                    />
+                    {filtroDataFimTrilha && (
+                      <button onClick={() => setFiltroDataFimTrilha('')} className="text-muted-foreground hover:text-foreground shrink-0">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Linha do Tempo (Timeline) */}
               <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-4">
-                {trilhaNavegacao.length === 0 ? (
+                {trilhaFiltrada.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground text-xs">
-                    Nenhuma trilha de navegação registrada recentemente.
+                    Nenhuma trilha de navegação encontrada com os filtros aplicados.
                   </div>
                 ) : (
                   <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-borderCustom">
-                    {trilhaNavegacao.map((item) => (
+                    {trilhaFiltrada.map((item) => (
                       <div key={item.id} className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-surface-2 border border-borderCustom p-3.5 rounded-xl hover:bg-muted/40 transition-all">
                         <span className="absolute -left-6 top-4 w-3.5 h-3.5 rounded-full bg-purple-500 border-2 border-card" />
                         

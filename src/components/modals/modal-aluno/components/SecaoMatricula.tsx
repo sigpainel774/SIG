@@ -36,10 +36,10 @@ export function SecaoMatricula() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 2. Turma Vinculada */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           2. Turma Vinculada
         </div>
         <div>
@@ -76,8 +76,8 @@ export function SecaoMatricula() {
       </div>
 
       {/* 5. Informações da Matrícula & Etapa */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           5. Ano / Etapa de Escolarização & Matrícula
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -152,8 +152,8 @@ export function SecaoMatricula() {
       </div>
 
       {/* 8. Recursos SAEB (INEP) */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           8. Recursos para Uso em Sala de Aula e Avaliação INEP (SAEB)
         </div>
         <div className="space-y-3">
@@ -171,17 +171,17 @@ export function SecaoMatricula() {
           </div>
 
           {recursosEspeciais === 'Sim' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-card rounded-xl border border-border shadow-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
               {OPCOES_RECURSOS.map((opcao) => (
                 <label 
                   key={opcao}
-                  className="flex items-center gap-2 p-2 bg-muted/50 border border-border rounded-lg text-xs cursor-pointer hover:border-primary/50 transition-colors text-foreground"
+                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
                 >
                   <input 
                     type="checkbox" 
                     checked={recursosSelecionados.includes(opcao)}
                     onChange={() => toggleArrayItem(recursosSelecionados, opcao, setRecursosSelecionados)}
-                    className="accent-primary"
+                    className="accent-[#0067C0]"
                   />
                   <span>{opcao}</span>
                 </label>
