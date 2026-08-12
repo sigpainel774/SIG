@@ -27,7 +27,7 @@ export function SecaoEndereco() {
 
   return (
     <div>
-      <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+      <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
         7. Endereço Residencial Detalhado
       </div>
       <div className="space-y-3">

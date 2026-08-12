@@ -62,7 +62,7 @@ export function SecaoAssinaturas() {
     <div className="space-y-6">
       {/* 12. Autorização de Imagem e Voz */}
       <div>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           12. Autorização de Imagem e Voz (Para Comprovante)
         </div>
         <div className="w-64">
@@ -81,7 +81,7 @@ export function SecaoAssinaturas() {
 
       {/* 13. Assinaturas Digitais */}
       <div ref={signatureSectionRef as any}>
-        <div className="text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b border-border">
+        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
           13. Captura de Assinaturas Digitais
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-card p-4 rounded-xl border border-border shadow-xs">

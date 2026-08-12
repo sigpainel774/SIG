@@ -55,7 +55,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
       onOpenChange={(val) => { if (!val) handleClose(); else handleOpenChange(true); }}
       title={alunoEditar ? 'Editar Ficha do Aluno' : 'Cadastro Completo de Aluno'}
       maxWidth="sm:max-w-[1200px]"
-      className="w-[95vw]"
+      className="w-[95vw] student-edit-modal"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
           <Button
