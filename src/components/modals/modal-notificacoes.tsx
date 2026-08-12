@@ -158,11 +158,11 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
       maxWidth="sm:max-w-[380px]"
       className="sm:absolute sm:top-[60px] sm:right-[20px] sm:translate-x-0 sm:translate-y-0 sm:left-auto"
       footer={
-        <div className="w-full border-t border-[#3f3f46] bg-[#121214] pt-2">
+        <div className="w-full border-t border-borderCustom bg-surface-2 pt-2">
           <Button 
             variant="ghost" 
             onClick={irParaHistorico}
-            className="w-full border border-dashed border-[#3ea6ff] text-[#3ea6ff] hover:bg-[#3ea6ff]/10 hover:text-[#3ea6ff] rounded-md h-auto py-2 text-xs font-semibold gap-2"
+            className="w-full border border-dashed border-[#0067c0] dark:border-[#3ea6ff] text-[#0067c0] dark:text-[#3ea6ff] hover:bg-[#0067c0]/10 hover:text-[#0067c0] rounded-xl h-auto py-2 text-xs font-semibold gap-2 cursor-pointer"
           >
             <History className="w-3.5 h-3.5" /> Ver Histórico Completo
           </Button>
@@ -182,18 +182,18 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
               ? 'Push Bloqueado no Navegador'
               : 'Ativar Notificações Push neste aparelho'
           }
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
             isSubscribed
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
               : permissionState === 'denied'
-              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 opacity-70 cursor-not-allowed'
-              : 'bg-[#185FA5]/20 dark:bg-[#3ea6ff]/20 text-[#185FA5] dark:text-[#3ea6ff] border-[#185FA5]/30 dark:border-[#3ea6ff]/30 hover:bg-[#185FA5]/30 dark:hover:bg-[#3ea6ff]/30'
+              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 opacity-70 cursor-not-allowed'
+              : 'bg-[#0067c0]/10 text-[#0067c0] dark:bg-[#3ea6ff]/20 dark:text-[#3ea6ff] border-[#0067c0]/30 dark:border-[#3ea6ff]/30 hover:bg-[#0067c0]/20 dark:hover:bg-[#3ea6ff]/30'
           }`}
         >
           {pushLoading ? (
             <Loader2 className="w-3 h-3 animate-spin" />
           ) : isSubscribed ? (
-            <BellRing className="w-3 h-3 text-emerald-400" />
+            <BellRing className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
           ) : (
             <Bell className="w-3 h-3" />
           )}
@@ -202,13 +202,13 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#2f2f33]">
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-borderCustom">
           {notificacoes.some((n) => !n.read) ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={markAllAsRead}
-              className="text-[#3ea6ff] hover:text-[#3ea6ff]/80 hover:bg-[#3ea6ff]/10 h-7 px-2 cursor-pointer gap-1.5 text-xs font-medium"
+              className="text-[#0067c0] dark:text-[#3ea6ff] hover:text-[#0067c0]/80 hover:bg-[#0067c0]/10 h-7 px-2 cursor-pointer gap-1.5 text-xs font-semibold"
               title="Marcar todas como lidas"
             >
               <CheckCheck className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
               variant="ghost"
               size="sm"
               onClick={() => setConfigOpen(true)}
-              className="text-zinc-400 hover:text-white h-7 px-2 cursor-pointer gap-1.5 text-xs"
+              className="text-muted-foreground hover:text-foreground h-7 px-2 cursor-pointer gap-1.5 text-xs font-semibold"
               title="Configurações de Notificações"
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -231,11 +231,11 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
         </div>
         
         {/* Filtros */}
-        <div className="px-4 py-3 border-b border-[#3f3f46] bg-[#121214] flex gap-2">
+        <div className="px-4 py-3 border-b border-borderCustom bg-surface-2 flex gap-2 rounded-xl">
           <select 
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
-            className="flex-1 bg-[#27272a] border border-[#3f3f46] text-white rounded-md p-1.5 text-xs outline-none"
+            className="flex-1 bg-input border border-borderCustom text-foreground rounded-lg p-1.5 text-xs outline-none font-medium"
           >
             <option value="todas">Todas</option>
             <option value="nao_lidas">Não Lidas</option>
@@ -250,7 +250,11 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
           {notificacoes.map((notif) => (
             <div 
               key={notif.id} 
-              className={`p-3 rounded-lg border flex gap-3 cursor-pointer transition-colors group ${notif.read ? 'bg-transparent border-transparent hover:bg-[#27272a]' : 'bg-[#27272a]/50 border-[#3ea6ff]/30 hover:bg-[#27272a]'}`}
+              className={`p-3 rounded-xl border flex gap-3 cursor-pointer transition-all duration-200 group ${
+                notif.read 
+                  ? 'bg-card border-borderCustom/60 hover:bg-surface-2' 
+                  : 'bg-sky-50/90 border-sky-300 hover:bg-sky-100/90 dark:bg-sky-950/30 dark:border-sky-500/30 dark:hover:bg-sky-900/40'
+              }`}
               onClick={async (e) => {
                 if (!notif.read) {
                   await markAsRead(notif, e)
@@ -262,39 +266,39 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
               }}
             >
               <div className="pt-1">
-                {/* Badge: só mostrar se não lida E (sem processado_por OU o usuário é secretário) */}
-                {!notif.read && !notif.processado_por && <Circle className="w-2 h-2 fill-[#3ea6ff] text-[#3ea6ff]" />}
-                {!notif.read && notif.processado_por && <Circle className="w-2 h-2 fill-zinc-500 text-zinc-500" />}
+                {/* Badge */}
+                {!notif.read && !notif.processado_por && <Circle className="w-2.5 h-2.5 fill-[#0067c0] text-[#0067c0] dark:fill-[#3ea6ff] dark:text-[#3ea6ff]" />}
+                {!notif.read && notif.processado_por && <Circle className="w-2.5 h-2.5 fill-muted-foreground text-muted-foreground" />}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <p className="text-sm font-medium text-white mb-1">{notif.title}</p>
+                  <p className="text-sm font-bold text-foreground mb-1 truncate">{notif.title}</p>
                   {!notif.read && (
                     <button 
                       onClick={(e) => markAsRead(notif, e)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-[#aaa] hover:text-white"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-0.5 rounded"
                       title="Marcar como lida"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-[#aaa]">{notif.message}</p>
-                {/* Mostrar quem processou (para outras secretárias que ainda não leram) */}
+                <p className="text-xs text-muted-foreground leading-relaxed">{notif.message}</p>
+                {/* Mostrar quem processou */}
                 {notif.processado_por && notif.processado_por_nome && (
                   <div className="flex items-center gap-1 mt-1.5">
-                    <UserCheck className="w-3 h-3 text-emerald-400" />
-                    <span className="text-[10px] text-emerald-400">
+                    <UserCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                       Processada por {notif.processado_por_nome}
                     </span>
                   </div>
                 )}
-                <p className="text-xs text-[#aaa] mt-1">{new Date(notif.created_at).toLocaleString('pt-BR')}</p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1 font-medium">{new Date(notif.created_at).toLocaleString('pt-BR')}</p>
               </div>
             </div>
           ))}
           {notificacoes.length === 0 && (
-            <div className="text-center py-6 text-sm text-[#aaa]">Nenhuma notificação encontrada.</div>
+            <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma notificação encontrada.</div>
           )}
         </div>
 

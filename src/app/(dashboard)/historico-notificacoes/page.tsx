@@ -281,6 +281,17 @@ export default function HistoricoNotificacoesPage() {
         <div className="flex gap-2">
           {notificacoes.some((n) => !n.read) && (
             <Button 
+          <Input 
+            type="text" 
+            placeholder="Buscar no título ou mensagem..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="bg-input border-borderCustom text-foreground"
+          />
+        </div>
+        <div className="flex gap-2">
+          {notificacoes.some((n) => !n.read) && (
+            <Button 
               variant="outline" 
               onClick={markAllAsRead}
               className="h-10 border-[#3ea6ff]/40 bg-[#3ea6ff]/10 text-[#3ea6ff] hover:bg-[#3ea6ff]/20 cursor-pointer"
@@ -304,7 +315,11 @@ export default function HistoricoNotificacoesPage() {
         {!loading && notificacoes.map((notif) => (
           <div 
             key={notif.id} 
-            className={`p-4 rounded-xl border flex gap-4 cursor-pointer transition-colors group ${notif.read ? 'bg-card border-borderCustom hover:bg-muted/70' : 'bg-blue-50 border-highlight/30 hover:bg-blue-100/70 dark:bg-[#1f1f23] dark:hover:bg-[#25252a]'}`}
+            className={`p-4.5 rounded-2xl border flex gap-4 cursor-pointer transition-all duration-200 group shadow-sm ${
+              notif.read 
+                ? 'bg-card border-borderCustom hover:bg-surface-2' 
+                : 'bg-sky-50/90 border-sky-300 hover:bg-sky-100/90 dark:bg-sky-950/25 dark:border-sky-500/30 dark:hover:bg-sky-900/40'
+            }`}
             onClick={async (e) => {
               if (!notif.read) {
                 await markAsRead(notif.id, e)
@@ -314,24 +329,24 @@ export default function HistoricoNotificacoesPage() {
               }
             }}
           >
-            <div className="pt-1 shrink-0">
+            <div className="pt-0.5 shrink-0">
               {notif.read ? (
-                <Bell className="w-5 h-5 text-muted-foreground" />
+                <Bell className="w-5 h-5 text-muted-foreground/70" />
               ) : (
-                <Circle className="w-4 h-4 fill-[#3ea6ff] text-[#3ea6ff] mt-0.5" />
+                <Circle className="w-4 h-4 fill-sky-600 text-sky-600 dark:fill-[#3ea6ff] dark:text-[#3ea6ff] mt-0.5" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start mb-1 gap-2">
-                <h4 className="text-foreground font-medium truncate">{notif.title}</h4>
+              <div className="flex justify-between items-start mb-1.5 gap-2">
+                <h4 className="text-foreground font-bold text-sm sm:text-base truncate">{notif.title}</h4>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
                     {new Date(notif.created_at).toLocaleString('pt-BR')}
                   </span>
                   {!notif.read && (
                     <button 
                       onClick={(e) => markAsRead(notif.id, e)}
-                      className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors"
+                      className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors"
                       title="Marcar como lida"
                     >
                       <Check className="w-4 h-4" />
@@ -339,19 +354,12 @@ export default function HistoricoNotificacoesPage() {
                   )}
                 </div>
               </div>
-              <p className="text-[#ccc] text-sm leading-relaxed">{notif.message}</p>
+              <p className="text-foreground/90 text-sm leading-relaxed font-normal">{notif.message}</p>
             </div>
           </div>
         ))}
         {!loading && notificacoes.length === 0 && (
           <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma notificação encontrada com os filtros selecionados.</div>
-        )}
-      </div>
-
-      {/* Botão flutuante para voltar */}
-      <button 
-        onClick={() => router.push('/home')}
-        className="fixed bottom-6 right-6 w-[50px] h-[50px] rounded-full bg-highlight text-black flex items-center justify-center border-none shadow-[0_4px_12px_rgba(0,0,0,0.4)] cursor-pointer z-[9999] hover:bg-highlight/90 transition-transform hover:scale-105"
         title="Voltar ao início"
       >
         <ArrowLeft className="w-6 h-6" />

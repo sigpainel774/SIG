@@ -645,17 +645,17 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       description="Comunicação interna em tempo real entre servidores e unidades da rede municipal"
       maxWidth="sm:max-w-4xl"
     >
-      <div className="flex flex-col h-[580px] max-h-[82vh] text-white">
+      <div className="flex flex-col h-[580px] max-h-[82vh] text-foreground">
         {/* Navigation Header Tabs */}
-        <div className="flex items-center justify-between border-b border-[#27272a] pb-3 gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 bg-[#18181b] p-1 rounded-xl border border-[#27272a]">
+        <div className="flex items-center justify-between border-b border-borderCustom pb-3 gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 bg-surface-2 p-1 rounded-xl border border-borderCustom">
             <button
               type="button"
               onClick={() => setActiveTab('chat')}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'chat'
-                  ? 'bg-sky-600 text-white shadow-md'
-                  : 'text-[#aaa] hover:text-white hover:bg-[#27272a]'
+                  ? 'bg-[#0067c0] dark:bg-sky-600 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
               }`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -672,8 +672,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               onClick={() => setActiveTab('compose')}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'compose'
-                  ? 'bg-sky-600 text-white shadow-md'
-                  : 'text-[#aaa] hover:text-white hover:bg-[#27272a]'
+                  ? 'bg-[#0067c0] dark:bg-sky-600 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
               }`}
             >
               <PenSquare className="w-4 h-4" />
@@ -685,8 +685,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               onClick={() => setActiveTab('inbox')}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'inbox'
-                  ? 'bg-sky-600 text-white shadow-md'
-                  : 'text-[#aaa] hover:text-white hover:bg-[#27272a]'
+                  ? 'bg-[#0067c0] dark:bg-sky-600 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
               }`}
             >
               <Inbox className="w-4 h-4" />
@@ -698,8 +698,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               onClick={() => setActiveTab('sent')}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'sent'
-                  ? 'bg-sky-600 text-white shadow-md'
-                  : 'text-[#aaa] hover:text-white hover:bg-[#27272a]'
+                  ? 'bg-[#0067c0] dark:bg-sky-600 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
               }`}
             >
               <Send className="w-4 h-4" />
@@ -707,46 +707,46 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
             </button>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-[#888]">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-[#0067c0] dark:text-sky-400" />
             <span>Tempo Real Ativo</span>
           </div>
         </div>
 
         {/* ── TAB 1: CHAT ESTILO WHATSAPP ── */}
         {activeTab === 'chat' && (
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 border border-[#27272a] rounded-2xl overflow-hidden mt-3 bg-[#0f0f11]">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 border border-borderCustom rounded-2xl overflow-hidden mt-3 bg-surface-2">
             {/* Esquerda: Lista de Conversas / Contatos */}
-            <div className="md:col-span-1 border-r border-[#27272a] flex flex-col bg-[#141416] overflow-hidden">
+            <div className="md:col-span-1 border-r border-borderCustom flex flex-col bg-surface-1 overflow-hidden">
               {/* Search Bar */}
-              <div className="p-3 border-b border-[#27272a]">
+              <div className="p-3 border-b border-borderCustom">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#888]" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Buscar conversa ou contato..."
                     value={contactSearchQuery}
                     onChange={(e) => setContactSearchQuery(e.target.value)}
-                    className="pl-8 h-8 text-xs bg-[#1a1a1e] border-[#27272a] text-white rounded-xl placeholder:text-[#666]"
+                    className="pl-8 h-8 text-xs bg-input border-borderCustom text-foreground rounded-xl placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
 
               {/* Lista de Contatos com Conversas */}
-              <div className="flex-1 overflow-y-auto divide-y divide-[#202024]">
+              <div className="flex-1 overflow-y-auto divide-y divide-borderCustom">
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-10 text-xs text-[#888] gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-sky-400" />
+                  <div className="flex items-center justify-center py-10 text-xs text-muted-foreground gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#0067c0] dark:text-sky-400" />
                     <span>Carregando conversas...</span>
                   </div>
                 ) : filteredConversations.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-[#888] space-y-2">
-                    <MessageSquare className="w-8 h-8 mx-auto opacity-30 text-sky-400" />
+                  <div className="p-6 text-center text-xs text-muted-foreground space-y-2">
+                    <MessageSquare className="w-8 h-8 mx-auto opacity-40 text-[#0067c0] dark:text-sky-400" />
                     <p>Nenhuma conversa iniciada ainda.</p>
                     <Button
                       size="sm"
                       onClick={() => setActiveTab('compose')}
-                      className="bg-sky-600/20 text-sky-400 border border-sky-500/30 hover:bg-sky-600/30 text-xs h-7 mt-1"
+                      className="bg-[#0067c0]/10 text-[#0067c0] dark:bg-sky-600/20 dark:text-sky-400 border border-[#0067c0]/30 dark:border-sky-500/30 hover:bg-[#0067c0]/20 text-xs h-7 mt-1 font-semibold cursor-pointer"
                     >
                       <PenSquare className="w-3 h-3 mr-1" /> Iniciar Conversa
                     </Button>
@@ -760,8 +760,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       <div
                         key={conv.contactId}
                         onClick={() => setActiveContactId(conv.contactId)}
-                        className={`p-3 flex items-center gap-3 cursor-pointer transition-colors relative ${
-                          isSelected ? 'bg-sky-500/15 border-l-4 border-l-sky-500' : 'hover:bg-[#1a1a1e]'
+                        className={`p-3 flex items-center gap-3 cursor-pointer transition-all duration-150 relative ${
+                          isSelected ? 'bg-sky-50 dark:bg-sky-950/30 border-l-4 border-l-[#0067c0] dark:border-l-sky-500' : 'hover:bg-surface-2'
                         }`}
                       >
                         {/* Avatar */}
