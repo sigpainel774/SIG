@@ -2,7 +2,7 @@ import { ReactNode } from 'react'
 
 export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { RootAdminHeader } from '@/components/RootAdminHeader'
@@ -15,6 +15,9 @@ import { AccessTracker } from '@/components/AccessTracker'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const headersList = await headers()
+  const cookieStore = await cookies()
+  const isSimulating = cookieStore.get('sig_simulating')?.value === '1'
+
   let userId = headersList.get('x-user-id')
   let userEmail = headersList.get('x-user-email')
 
@@ -49,8 +52,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     isSuperAdmin = funcionario.is_superadmin || false
   }
 
-  // Layout exclusivo para Super Admin (Root)
-  if (isSuperAdmin) {
+  // Layout exclusivo para Super Admin (Root) - apenas se não estiver simulando
+  if (isSuperAdmin && !isSimulating) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foregroundCustom">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
