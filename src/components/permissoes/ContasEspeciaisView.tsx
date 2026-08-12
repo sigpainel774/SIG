@@ -20,6 +20,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
     loading,
     isEditActive,
     handleToggleContaEspecial,
+    handleToggleContaEja,
     handleUpdateCargo,
     handleAdicionarCargo,
     setModalSenhaOpen,
@@ -78,6 +79,17 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
 
     setProcessandoId(funcId)
     await handleToggleContaEspecial(funcId, !currentStatus, nome)
+    setProcessandoId(null)
+  }
+
+  const handleToggleEja = async (funcId: string, currentStatus: boolean, nome: string) => {
+    if (!isEditActive) {
+      setModalSenhaOpen(true)
+      return
+    }
+
+    setProcessandoId(funcId)
+    await handleToggleContaEja(funcId, !currentStatus, nome)
     setProcessandoId(null)
   }
 
@@ -322,11 +334,16 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                        <h4 className="text-base font-bold text-white flex items-center gap-2 wrap flex-wrap">
                           {item.nome}
                           {item.is_superadmin && (
                             <Badge variant="outline" className="border-red-500/40 text-red-400 bg-red-500/10 text-[10px] uppercase font-bold py-0">
                               ROOT
+                            </Badge>
+                          )}
+                          {item.is_conta_eja && (
+                            <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px] uppercase font-bold py-0">
+                              ESPECIAL EJA
                             </Badge>
                           )}
                         </h4>
@@ -453,8 +470,19 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                     )}
                   </div>
 
-                  {/* Botão de Alternância */}
-                  <div className="pt-2 border-t border-borderCustom/50 flex items-center justify-end">
+                  {/* Botão de Alternância e Checkbox Conta Especial EJA */}
+                  <div className="pt-2 border-t border-borderCustom/50 flex flex-wrap items-center justify-between gap-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-300 hover:text-white select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!item.is_conta_eja}
+                        disabled={isBusy}
+                        onChange={(e) => handleToggleEja(item.id, !!item.is_conta_eja, item.nome)}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                      />
+                      <span className="text-amber-400 font-medium">Conta especial EJA</span>
+                    </label>
+
                     <Button
                       type="button"
                       size="sm"

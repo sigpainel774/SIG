@@ -237,7 +237,7 @@ export function usePermissoes() {
       // 2. Todos os funcionários (para o autocomplete e gestão de contas especiais)
       let funcsQuery = supabase
         .from('funcionarios')
-        .select('id, nome, email, cargo, is_superadmin, is_conta_especial, auth_user_id, acessos_usuarios(nivel, ativo)')
+        .select('id, nome, email, cargo, is_superadmin, is_conta_especial, is_conta_eja, auth_user_id, acessos_usuarios(nivel, ativo)')
         .eq('status', 'ativo')
 
       if (restringirNivel && schoolIdToUse) {
@@ -555,6 +555,40 @@ export function usePermissoes() {
     }
   }
 
+  // ─── Alternar Status de Conta Especial EJA ──────────────────────────────
+  const handleToggleContaEja = async (funcionarioId: string, novoValor: boolean, nomeFuncionario: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ is_conta_eja: novoValor })
+        .eq('id', funcionarioId)
+
+      if (error) throw error
+
+      toast.success(
+        novoValor
+          ? `Conta "${nomeFuncionario}" marcada como Conta Especial EJA!`
+          : `Conta "${nomeFuncionario}" desmarcada como Conta Especial EJA!`
+      )
+
+      // Atualizar lista local de funcionários
+      setFuncionariosAll((prev) =>
+        prev.map((f) => (f.id === funcionarioId ? { ...f, is_conta_eja: novoValor } : f))
+      )
+
+      // Invalidação de cache de perfil se existir auth_user_id
+      const func = funcionariosAll.find((f) => f.id === funcionarioId)
+      if (func?.auth_user_id) {
+        const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+        await invalidarCachePerfil(func.auth_user_id)
+      }
+    } catch (err: any) {
+      console.error('Erro ao alternar conta especial EJA:', err)
+      toast.error('Erro ao atualizar status de conta especial EJA: ' + (err.message || 'Erro desconhecido'))
+    }
+  }
+
   // ─── Alterar Cargo de Funcionário / Conta Especial ───────────────────────────
   const handleUpdateCargo = async (funcionarioId: string, novoCargo: string, nomeFuncionario: string) => {
     if (!funcionarioId || funcionarioId.trim() === '') {
@@ -685,6 +719,7 @@ export function usePermissoes() {
     limparFiltros,
     handleClickEditCard,
     handleToggleContaEspecial,
+    handleToggleContaEja,
     handleUpdateCargo,
     handleAdicionarCargo,
     fetchDadosContasEspeciais: () => fetchRegistros(escolas),

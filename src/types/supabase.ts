@@ -2139,6 +2139,7 @@ export type Database = {
           graduacoes: Json | null
           id: string
           is_conta_especial: boolean
+          is_conta_eja?: boolean | null
           is_profissional_aee?: boolean | null
           is_superadmin: boolean | null
 
@@ -2232,6 +2233,7 @@ export type Database = {
           graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean
+          is_conta_eja?: boolean | null
           is_profissional_aee?: boolean | null
           is_superadmin?: boolean | null
 
@@ -2325,6 +2327,7 @@ export type Database = {
           graduacoes?: Json | null
           id?: string
           is_conta_especial?: boolean
+          is_conta_eja?: boolean | null
           is_profissional_aee?: boolean | null
           is_superadmin?: boolean | null
 
@@ -4447,6 +4450,7 @@ export type Database = {
           email: string | null
           id: string | null
           is_conta_especial: boolean | null
+          is_conta_eja: boolean | null
           is_superadmin: boolean | null
           nome: string | null
           primeiro_acesso: boolean | null
@@ -4460,6 +4464,7 @@ export type Database = {
           email?: string | null
           id?: string | null
           is_conta_especial?: boolean | null
+          is_conta_eja?: boolean | null
           is_superadmin?: boolean | null
           nome?: string | null
           primeiro_acesso?: boolean | null
@@ -4473,6 +4478,7 @@ export type Database = {
           email?: string | null
           id?: string | null
           is_conta_especial?: boolean | null
+          is_conta_eja?: boolean | null
           is_superadmin?: boolean | null
           nome?: string | null
           primeiro_acesso?: boolean | null

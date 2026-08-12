@@ -52,7 +52,10 @@ export function useAlunos() {
     acessos,
     isAdminGlobalOrRoot,
     isCoordenador: checkCoordenador,
+    isContaEja,
   } = useAuthStore()
+
+  const ejaMode = isContaEja()
 
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,11 +99,11 @@ export function useAlunos() {
 
       let query = supabase
         .from('alunos')
-        .select('*, escolas(nome)', { count: 'exact' })
+        .select('*, escolas(nome), turmas(nome)', { count: 'exact' })
         .is('deleted_at', null)
 
       if (targetEscolaId) {
-        if (isAdmin || isDiretor || isSecretario) {
+        if (isAdmin || isDiretor || isSecretario || ejaMode) {
           query = query.eq('escola_id', targetEscolaId)
         } else {
           // Professor ou Coordenador: só vê alunos das suas turmas
@@ -154,16 +157,32 @@ export function useAlunos() {
 
       if (isMounted.current) {
         if (data) {
+          const isAlunoEja = (a: any) => {
+            const tNome = String(a.turmas?.nome ?? '').toUpperCase()
+            const sNome = String(a.serie ?? '').toUpperCase()
+            const modMat = String(a.dados_matricula?.modalidade ?? a.dados_matricula?.etapa ?? '').toUpperCase()
+            return tNome.includes('EJA') || sNome.includes('EJA') || modMat.includes('EJA')
+          }
+
           const mapped = (data as any[]).map((aluno: any) => ({
             ...aluno,
             escola_nome:
               aluno.escolas?.nome ?? aluno.dados_matricula?.escolaNome ?? 'Sem Escola',
           }))
-          setAlunos(mapped)
+
+          // Isolamento Bidirecional Estrito:
+          // Se ejaMode = true: Apenas alunos EJA
+          // Se ejaMode = false: Apenas alunos Regulares (sem EJA)
+          const filtrados = ejaMode
+            ? mapped.filter(isAlunoEja)
+            : mapped.filter((a) => !isAlunoEja(a))
+
+          setAlunos(filtrados)
+          setTotalCount(filtrados.length)
         } else {
           setAlunos([])
+          setTotalCount(0)
         }
-        setTotalCount(count ?? 0)
       }
     } catch (err: any) {
       console.error('Erro ao carregar alunos:', err)

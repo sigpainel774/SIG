@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Building2,
@@ -90,8 +91,15 @@ interface SecretariaItem {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
-  const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot, isContaEja } = useAuthStore()
+
+  useEffect(() => {
+    if (isContaEja()) {
+      router.replace('/eja')
+    }
+  }, [isContaEja, router])
 
   const isMounted = useRef(true)
   useEffect(() => {

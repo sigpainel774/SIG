@@ -121,7 +121,8 @@ const REPORT_CARDS = [
 export default function RelatoriosPage() {
   const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, loadEscolas, selectedSecretaria } = useSchoolStore()
-  const { acessos, isAdminGlobalOrRoot } = useAuthStore()
+  const { acessos, isAdminGlobalOrRoot, isContaEja } = useAuthStore()
+  const ejaMode = isContaEja()
 
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
   const isEMAEE = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
@@ -465,10 +466,14 @@ export default function RelatoriosPage() {
           }
 
           if (active) {
-            setMapDataAlunos(mapped)
-            preloadFotos(mapped.map(a => a.foto_url).filter(Boolean))
+            const filtrados = ejaMode
+              ? mapped.filter(a => a.modalidade === 'EJA')
+              : mapped.filter(a => a.modalidade !== 'EJA')
+
+            setMapDataAlunos(filtrados)
+            preloadFotos(filtrados.map(a => a.foto_url).filter(Boolean))
             try {
-              sessionStorage.setItem(cacheKey, JSON.stringify(mapped))
+              sessionStorage.setItem(cacheKey, JSON.stringify(filtrados))
             } catch (e) {}
           }
         } catch (err) {
