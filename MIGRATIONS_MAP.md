@@ -95,6 +95,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 76 | `20260812003000_abac_rls_production.sql` | 2026-08-12 | Remoção da policy `dev_all_authenticated` de 43 tabelas e implantação do RLS de produção em camadas ABAC. | Todas as tabelas `public` | RLS ABAC + Security Definer |
 | 77 | `20260812010000_fix_sec_tables_rls.sql` | 2026-08-12 | Aplicação de políticas RLS de leitura e escrita para usuários autenticados nas 45 tabelas operacionais/secundárias (anexos, ocorrências, transferências, atestados, EMAEE, etc.), com restrição de auditoria em `trash_bin` e `access_logs`. | 45 tabelas operacionais do schema `public` | RLS Authenticated / Superadmin |
 | 78 | `20260812013000_fix_comunicacao_notifications_rls.sql` | 2026-08-12 | Correção das RLS de comunicação e chancelas: adiciona política INSERT em `notifications` e `assinatura` para usuários autenticados e função `pode_publicar_comunicado` para publicação no mural em `comunicados`. | `public.notifications`, `public.comunicados`, `public.assinatura` | `SECURITY DEFINER` + Authenticated Insert |
+| 79 | `20260813000000_add_is_conta_eja_to_funcionarios.sql` | 2026-08-13 | Adiciona a coluna `is_conta_eja` em `funcionarios`, cria a função `is_conta_eja_by_uid()` e atualiza as RLS de `escolas`, `alunos` e `turmas` para permitir acesso das Contas Especiais EJA. | `public.funcionarios`, `public.escolas`, `public.alunos`, `public.turmas` | `SECURITY DEFINER` + EJA RLS |
+
 
 
 

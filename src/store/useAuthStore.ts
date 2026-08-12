@@ -40,6 +40,8 @@ interface AuthState {
   isCoordenador: () => boolean;
   isRhRede: () => boolean;
   isRhRedeExclusivo: () => boolean;
+  isContaEja: () => boolean;
+  canAccessEja: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -186,6 +188,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const temRhRede = acessos.some(a => a.pode_rh_rede === true && a.ativo);
     const temOutroAcessoAmplo = acessos.some(a => a.nivel === 1 && !a.pode_rh_rede && a.ativo);
     return temRhRede && !temOutroAcessoAmplo;
+  },
+
+  isContaEja: () => {
+    const funcionario = get().getFuncionarioAtivo();
+    return Boolean((funcionario as any)?.is_conta_eja === true);
+  },
+
+  canAccessEja: () => {
+    const funcionario = get().getFuncionarioAtivo();
+    if ((funcionario as any)?.is_conta_eja === true) return true;
+    if (funcionario?.is_superadmin) return true;
+    return false;
   },
 }));
 

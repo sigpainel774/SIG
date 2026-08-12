@@ -45,7 +45,8 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo } = useAuthStore()
+  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo, isContaEja } = useAuthStore()
+  const isEjaMode = isContaEja()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const isRhRedeOnly = isRhRedeExclusivo()
   const { isMobileOpen, closeMobile } = useSidebarStore()
@@ -134,7 +135,24 @@ export function Sidebar() {
   type MenuItem = { href: string; label: string; icon: React.ElementType }
   type MenuGroup = { label: string | null; items: MenuItem[] }
 
-  const menuGroups: MenuGroup[] = isRhRedeOnly
+  const menuGroups: MenuGroup[] = isEjaMode
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/eja', label: 'Portal EJA', icon: Home },
+          ]
+        },
+        {
+          label: 'GESTÃO EJA',
+          items: [
+            { href: '/alunos', label: 'Alunos', icon: GraduationCap },
+            { href: '/turmas', label: 'Turmas', icon: BookOpen },
+            { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
+          ]
+        }
+      ]
+    : isRhRedeOnly
     ? [
         {
           label: null,
@@ -273,6 +291,7 @@ export function Sidebar() {
   ]
 
   const getIsActive = (href: string): boolean => {
+    if (href === '/eja') return pathname === '/eja'
     if (href === '/home') return pathname === '/home' || pathname === '/'
     if (href === '/configuracoes') return pathname.startsWith('/configuracoes') || pathname.startsWith('/perfil') || pathname.startsWith('/permissoes')
     if (href === '/relatorios') return pathname === '/relatorios' || (pathname.startsWith('/relatorios/') && !pathname.startsWith('/relatorios/atividades'))

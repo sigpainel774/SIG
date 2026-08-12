@@ -15,6 +15,7 @@ export interface Funcionario {
   foto_updated_at?: string | null
   is_superadmin?: boolean | null
   is_conta_especial?: boolean | null
+  is_conta_eja?: boolean | null
   endereco?: string | null
   latitude?: number | null
   longitude?: number | null

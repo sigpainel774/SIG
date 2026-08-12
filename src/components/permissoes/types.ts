@@ -12,6 +12,7 @@ export interface FuncionarioSimples {
   cargo?: string | null
   is_superadmin?: boolean | null
   is_conta_especial?: boolean | null
+  is_conta_eja?: boolean | null
   auth_user_id?: string | null
   acessos_usuarios?: any[]
 }
@@ -29,5 +30,6 @@ export interface RegistroPermissao {
   cargo?: string | null
   is_superadmin?: boolean | null
   is_conta_especial?: boolean | null
+  is_conta_eja?: boolean | null
 }
 

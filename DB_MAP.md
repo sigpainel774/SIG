@@ -69,7 +69,9 @@ Cadastro principal de servidores e servidores municipais.
 *   `registro_profissional`: `text` (Número de registro profissional / conselho regional, ex: CRP, CRM, Nullable)
 *   `is_profissional_aee`: `boolean` (Default: false, Indica se o servidor é um Profissional AEE para exibição no EMAEE, NOT NULL)
 *   `permitir_mensagens_globais`: `boolean` (Default: false, Permissão especial para disparar comunicados para toda a rede, NOT NULL)
+*   `is_conta_eja`: `boolean` (Default: false, Indica se a conta é uma Conta Especial EJA com acesso global exclusivo a alunos e turmas EJA, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
 ### 3. `public.vinculos_funcionarios`

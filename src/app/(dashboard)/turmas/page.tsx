@@ -34,12 +34,13 @@ export default function TurmasPage() {
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
 
   const supabase = createClient() as any
-  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot, isProfessor: checkProfessor, isCoordenador: checkCoordenador } = useAuthStore()
+  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot, isProfessor: checkProfessor, isCoordenador: checkCoordenador, isContaEja } = useAuthStore()
   const { isEditMode: globalEditMode } = useEditModeStore()
 
+  const ejaMode = isContaEja()
   const isProfessor = checkProfessor()
   const isCoordenador = checkCoordenador()
-  const isEditMode = globalEditMode && !isProfessor && !isCoordenador
+  const isEditMode = (globalEditMode || ejaMode) && !isProfessor && !isCoordenador
 
   const fetchTurmas = async () => {
     if (!escolaAtivaId) {
@@ -60,7 +61,7 @@ export default function TurmasPage() {
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
-    if (!isAdmin && !isDiretor && !isSecretario) {
+    if (!isAdmin && !isDiretor && !isSecretario && !ejaMode) {
       // Coordenador, Professor ou outros níveis: filtra por vínculos diretos na tabela vinculos_turmas
       const { data: vTurmas } = await supabase
         .from('vinculos_turmas')
@@ -81,12 +82,19 @@ export default function TurmasPage() {
     const { data } = await query
 
     if (data) {
+      const isTurmaEja = (t: any) => String(t.nome ?? '').toUpperCase().includes('EJA')
+
       const formatadas = data.map((t: any) => ({
         ...t,
         alunos_count: t.alunos?.length || 0,
         professores_count: t.vinculos_turmas?.filter((v: any) => v.tipo === 'professor').length || 0
       }))
-      setTurmas(formatadas)
+
+      const filtradas = ejaMode
+        ? formatadas.filter(isTurmaEja)
+        : formatadas.filter((t: any) => !isTurmaEja(t))
+
+      setTurmas(filtradas)
     }
     setLoading(false)
   }
