@@ -299,7 +299,7 @@ export function ModalDetalhesFrequenciaHoje({
             </Card>
 
             <Card className="bg-surface-1 border-borderCustom p-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-mutedmerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -424,7 +424,7 @@ export function ModalDetalhesFrequenciaHoje({
                           className={cn(
                             'px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider',
                             turma.statusTurma === 'completa'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              ? 'bg-mutedmerald-500/10 text-emerald-400 border-emerald-500/20'
                               : turma.statusTurma === 'parcial'
                               ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                               : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
@@ -449,7 +449,7 @@ export function ModalDetalhesFrequenciaHoje({
 
                     {/* Detalhamento das Matérias */}
                     {isExpanded && (
-                      <div className="border-t border-borderCustom bg-[#0a0a0c] p-3">
+                      <div className="border-t border-borderCustom bg-background p-3">
                         {turma.materias.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic py-2 text-center">
                             Nenhuma disciplina cadastrada nesta turma.
@@ -482,7 +482,7 @@ export function ModalDetalhesFrequenciaHoje({
                                     </td>
                                     <td className="py-2 px-3 text-center">
                                       {mat.status === 'lancada' ? (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-mutedmerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                                           <CheckCircle2 className="w-3 h-3" /> Lançada
                                         </span>
                                       ) : (

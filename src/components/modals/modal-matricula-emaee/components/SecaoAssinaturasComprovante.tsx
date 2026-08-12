@@ -31,8 +31,8 @@ export function SecaoAssinaturasComprovante() {
   const nomeAlunoExibicao = nomeCompleto || alunoSelecionado?.nome || 'Aguardando seleção do aluno'
 
   return (
-    <section className="overflow-hidden border border-[#26262a] rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-[#26262a] bg-white/[0.012]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
           05
         </span>
@@ -44,7 +44,7 @@ export function SecaoAssinaturasComprovante() {
 
       <div className="p-4 md:p-5 space-y-6">
         {/* Painel de Assinaturas Digitais Integradas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#0b0e14]/50 p-4 rounded-xl border border-[#26262a]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#0b0e14]/50 p-4 rounded-xl border border-border">
           {/* Assinatura do Servidor / Responsável pela Matrícula (Puxada do Perfil) */}
           <div className="space-y-3">
             <SignaturePad
@@ -125,7 +125,7 @@ export function SecaoAssinaturasComprovante() {
               <Input
                 readOnly
                 value={nomeUnidadeSelecionada}
-                className="bg-[#121621] border-[#26262a] text-foreground text-xs rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-xs rounded-xl"
               />
             </div>
 
@@ -134,7 +134,7 @@ export function SecaoAssinaturasComprovante() {
               <Input
                 readOnly
                 value={nomeAlunoExibicao}
-                className="bg-[#121621] border-[#26262a] text-foreground text-xs rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-xs rounded-xl"
               />
             </div>
 
@@ -143,7 +143,7 @@ export function SecaoAssinaturasComprovante() {
               <Input
                 readOnly
                 value={turnoAtendimento}
-                className="bg-[#121621] border-[#26262a] text-foreground text-xs rounded-xl text-center"
+                className="bg-[#121621] border-border text-foreground text-xs rounded-xl text-center"
               />
             </div>
 
@@ -152,7 +152,7 @@ export function SecaoAssinaturasComprovante() {
               <Input
                 readOnly
                 value={dataMatricula}
-                className="bg-[#121621] border-[#26262a] text-foreground text-xs rounded-xl text-center"
+                className="bg-[#121621] border-border text-foreground text-xs rounded-xl text-center"
               />
             </div>
 
@@ -175,7 +175,7 @@ export function SecaoAssinaturasComprovante() {
         </div>
 
         {/* Nota LGPD */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 border border-[#26262a] rounded-xl bg-[#121621]/60">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 border border-border rounded-xl bg-[#121621]/60">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>Dados pessoais e clínicos: aplicar permissões RLS e tratamento compatível com a LGPD.</span>
         </div>

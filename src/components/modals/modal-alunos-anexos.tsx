@@ -678,7 +678,7 @@ export function ModalAlunosAnexos({
                               href={anexoCorrespondente.arquivo_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                              className="p-1.5 rounded-lg bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                               title="Visualizar documento"
                             >
                               <Eye className="w-3.5 h-3.5" />

@@ -158,12 +158,11 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
       title={dispositivoToEdit ? 'Editar Dispositivo' : 'Cadastrar Dispositivo'}
       maxWidth="sm:max-w-md"
       footer={
-        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
           >
             Cancelar
           </Button>
@@ -181,23 +180,23 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
     >
       <form id="form-dispositivo" onSubmit={handleSubmit} className="space-y-4 py-2">
           <div>
-            <Label className="text-xs text-[#aaa]">Nome do Dispositivo *</Label>
+            <Label className="text-xs text-muted-foreground">Nome do Dispositivo *</Label>
             <Input
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Ex: Totem Portaria Entrada"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs text-[#aaa]">Tipo</Label>
+              <Label className="text-xs text-muted-foreground">Tipo</Label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+                className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
               >
                 <option value="SMARTPHONE">SMARTPHONE</option>
                 <option value="TABLET">TABLET</option>
@@ -205,18 +204,18 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
               </select>
             </div>
             <div>
-              <Label className="text-xs text-[#aaa]">Identificador (IMEI/MAC)</Label>
+              <Label className="text-xs text-muted-foreground">Identificador (IMEI/MAC)</Label>
               <Input
                 value={identificador}
                 onChange={(e) => setIdentificador(e.target.value)}
                 placeholder="Opcional"
-                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+                className="bg-background border-border text-foreground mt-1"
               />
             </div>
           </div>
 
           <div>
-            <Label className="text-xs text-[#aaa]">Alocação</Label>
+            <Label className="text-xs text-muted-foreground">Alocação</Label>
             <div className="flex gap-4 mt-2 mb-3">
               <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
                 <input 
@@ -254,7 +253,7 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
               <select
                 value={escolaId}
                 onChange={(e) => setEscolaId(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none"
+                className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none"
                 required
               >
                 <option value="" disabled>Selecione uma Escola</option>
@@ -268,7 +267,7 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
               <select
                 value={funcionarioId}
                 onChange={(e) => setFuncionarioId(e.target.value)}
-                className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none"
+                className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none"
                 required
               >
                 <option value="" disabled>Selecione um Funcionário</option>
@@ -280,11 +279,11 @@ export function ModalDispositivo({ open, onOpenChange, dispositivoToEdit, onSucc
           </div>
 
           <div>
-            <Label className="text-xs text-[#aaa]">Status</Label>
+            <Label className="text-xs text-muted-foreground">Status</Label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+              className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
             >
               <option value="ATIVO">ATIVO</option>
               <option value="MANUTENÇÃO">EM MANUTENÇÃO</option>

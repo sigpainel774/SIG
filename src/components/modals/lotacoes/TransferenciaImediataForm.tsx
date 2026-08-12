@@ -36,7 +36,7 @@ export function TransferenciaImediataForm({
   }
 
   return (
-    <div className="bg-[#1a1a1e] border border-[#26262a] rounded-xl p-4 space-y-3">
+    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
       <h4 className="flex items-center gap-2 text-sm font-bold text-rose-400">
         <ArrowRightLeft className="w-4 h-4" />
         Transferência Imediata
@@ -47,14 +47,14 @@ export function TransferenciaImediataForm({
           value={origemId}
           onValueChange={(v) => setOrigemId(v ?? '')}
         >
-          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
             <SelectValue placeholder="Selecione a lotação original...">
               {origemId
                 ? (lotacoes.find((l) => l.id === origemId)?.escolaNome || (lotacoes.length === 0 ? 'Carregando...' : origemId))
                 : undefined}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-popover border-border text-popover-foreground">
             {lotacoes.map((lot) => (
               <SelectItem key={lot.id} value={lot.id}>
                 {lot.escolaNome ?? lot.escola_id}
@@ -69,14 +69,14 @@ export function TransferenciaImediataForm({
           value={destinoEscolaId}
           onValueChange={(v) => setDestinoEscolaId(v ?? '')}
         >
-          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
             <SelectValue placeholder="Selecione uma escola...">
               {destinoEscolaId
                 ? (escolas.find((e) => e.id === destinoEscolaId)?.nome || (escolas.length === 0 ? 'Carregando...' : destinoEscolaId))
                 : undefined}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-popover border-border text-popover-foreground">
             {escolas.map((e) => (
               <SelectItem key={e.id} value={e.id}>
                 {e.nome}

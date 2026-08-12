@@ -53,7 +53,7 @@ export function NovaLotacaoForm({
   }
 
   return (
-    <div className="bg-[#1a1a1e] border border-[#26262a] rounded-xl p-4 space-y-3">
+    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
       <h4 className="flex items-center gap-2 text-sm font-bold text-[#3ea6ff]">
         <Plus className="w-4 h-4" />
         Nova Lotação
@@ -71,14 +71,14 @@ export function NovaLotacaoForm({
             }
           }}
         >
-          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
             <SelectValue placeholder="Selecione uma escola...">
               {novaEscola
                 ? (escolas.find((e) => e.id === novaEscola)?.nome || (escolas.length === 0 ? 'Carregando...' : novaEscola))
                 : undefined}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-popover border-border text-popover-foreground">
             {escolas.map((e) => (
               <SelectItem key={e.id} value={e.id}>
                 {e.nome}
@@ -94,14 +94,14 @@ export function NovaLotacaoForm({
             value={novoCargo}
             onValueChange={(v) => setNovoCargo(v ?? '')}
           >
-            <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+            <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
               <SelectValue placeholder="Selecione um cargo...">
                 {novoCargo
                   ? (cargos.find((c) => c.nome === novoCargo)?.nome || (cargos.length === 0 ? 'Carregando...' : novoCargo))
                   : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+            <SelectContent className="bg-popover border-border text-popover-foreground">
               {cargos.map((c) => (
                 <SelectItem key={c.id} value={c.nome}>
                   {c.nome}
@@ -119,7 +119,7 @@ export function NovaLotacaoForm({
             value={novaCarga}
             onChange={(e) => setNovaCarga(e.target.value)}
             placeholder="Ex: 20"
-            className="w-full bg-[#121216] border border-[#2e2e33] text-white text-sm h-9 rounded-md px-2.5 outline-none focus:border-[#3ea6ff]"
+            className="w-full bg-background border border-border text-foreground text-sm h-9 rounded-md px-2.5 outline-none focus:border-[#3ea6ff]"
           />
         </div>
       </div>
@@ -130,12 +130,12 @@ export function NovaLotacaoForm({
           value={novaModalidade}
           onValueChange={(v) => setNovaModalidade(v ?? 'Regular')}
         >
-          <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9 font-medium">
+          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9 font-medium">
             <SelectValue placeholder="Selecione a modalidade...">
               {novaModalidade === 'EJA' ? 'EJA (Educação de Jovens e Adultos)' : 'Regular (Ensino Regular)'}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+          <SelectContent className="bg-popover border-border text-popover-foreground">
             <SelectItem value="Regular">Regular (Ensino Regular)</SelectItem>
             {!isEmaeeLot && (
               <SelectItem value="EJA">EJA (Educação de Jovens e Adultos)</SelectItem>

@@ -75,7 +75,7 @@ export function ModalJustificativaArquivamento({
       description={`Você está arquivando a ficha de ${aluno?.nome ?? 'aluno'}. O aluno sairá do painel da escola, mas seus dados serão preservados no painel geral de arquivados.`}
       maxWidth="sm:max-w-[480px]"
       footer={
-        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#26262a]">
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-border">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -111,7 +111,7 @@ export function ModalJustificativaArquivamento({
             value={justificativa}
             onChange={(e) => setJustificativa(e.target.value)}
             placeholder="Digite o motivo detalhado (ex: transferência de escola, evasão escolar, conclusão de curso...)"
-            className="w-full h-24 px-3 py-2 text-sm bg-black/40 border border-[#26262a] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#3ea6ff]/40 resize-none"
+            className="w-full h-24 px-3 py-2 text-sm bg-black/40 border border-border rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#3ea6ff]/40 resize-none"
             disabled={loading}
           />
         </div>

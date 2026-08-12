@@ -190,7 +190,6 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
           type="button"
           variant="outline"
           onClick={() => onOpenChange(false)}
-          className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] h-9"
         >
           Fechar
         </Button>
@@ -199,27 +198,27 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
       <div className="space-y-6">
         {/* Formulário de Adição (Visível apenas em Modo de Edição) */}
         {isEditMode ? (
-          <form onSubmit={handleAddAdicional} className="bg-[#18181a] border border-[#27272a] rounded-xl p-4 space-y-4">
+          <form onSubmit={handleAddAdicional} className="bg-background border border-border rounded-xl p-4 space-y-4">
             <h4 className="text-sm font-bold text-slate-300">Novo Adicional</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#aaa]">Descrição *</Label>
+                <Label className="text-xs text-muted-foreground">Descrição *</Label>
                 <Input
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Ex: Hora Extra 50%, Adicional de Função"
-                  className="bg-[#121214] border-[#27272a] text-white mt-1 h-9"
+                  className="bg-background border-border text-foreground mt-1 h-9"
                   required
                 />
               </div>
 
               <div>
-                <Label className="text-xs text-[#aaa]">Valor (R$) *</Label>
+                <Label className="text-xs text-muted-foreground">Valor (R$) *</Label>
                 <Input
                   value={valor}
                   onChange={(e) => handleValorChange(e.target.value)}
                   placeholder="Ex: 350.00"
-                  className="bg-[#121214] border-[#27272a] text-white mt-1 h-9"
+                  className="bg-background border-border text-foreground mt-1 h-9"
                   required
                 />
               </div>
@@ -227,11 +226,11 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="text-xs text-[#aaa]">Recorrência</Label>
+                <Label className="text-xs text-muted-foreground">Recorrência</Label>
                 <select
                   value={tipo}
                   onChange={(e: any) => setTipo(e.target.value)}
-                  className="w-full h-9 px-3 rounded-md bg-[#121214] border border-[#27272a] text-white text-sm outline-none mt-1"
+                  className="w-full h-9 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
                 >
                   <option value="fixo">Recorrente (Fixo todo mês)</option>
                   <option value="pontual">Pontual (Mês/Ano específico)</option>
@@ -241,11 +240,11 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
               {tipo === 'pontual' && (
                 <>
                   <div>
-                    <Label className="text-xs text-[#aaa]">Mês de Referência</Label>
+                    <Label className="text-xs text-muted-foreground">Mês de Referência</Label>
                     <select
                       value={mesReferencia}
                       onChange={(e) => setMesReferencia(e.target.value)}
-                      className="w-full h-9 px-3 rounded-md bg-[#121214] border border-[#27272a] text-white text-sm outline-none mt-1"
+                      className="w-full h-9 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
                     >
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                         <option key={m} value={m}>
@@ -256,11 +255,11 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
                   </div>
 
                   <div>
-                    <Label className="text-xs text-[#aaa]">Ano de Referência</Label>
+                    <Label className="text-xs text-muted-foreground">Ano de Referência</Label>
                     <select
                       value={anoReferencia}
                       onChange={(e) => setAnoReferencia(e.target.value)}
-                      className="w-full h-9 px-3 rounded-md bg-[#121214] border border-[#27272a] text-white text-sm outline-none mt-1"
+                      className="w-full h-9 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
                     >
                       {[-1, 0, 1].map((offset) => {
                         const year = new Date().getFullYear() + offset
@@ -288,7 +287,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
             </div>
           </form>
         ) : (
-          <div className="bg-[#18181a]/50 border border-dashed border-[#27272a] rounded-xl p-3 text-center text-[#aaa] text-xs">
+          <div className="bg-background/50 border border-dashed border-border rounded-xl p-3 text-center text-muted-foreground text-xs">
             Ative o Modo de Edição para lançar novos adicionais ou alterar registros.
           </div>
         )}
@@ -301,14 +300,14 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
               <Loader2 className="w-6 h-6 text-yellow-500 animate-spin" />
             </div>
           ) : adicionais.length === 0 ? (
-            <div className="text-center py-8 border border-dashed border-[#27272a] rounded-xl text-muted-foreground">
+            <div className="text-center py-8 border border-dashed border-border rounded-xl text-muted-foreground">
               Nenhum adicional cadastrado para este funcionário.
             </div>
           ) : (
-            <div className="border border-[#27272a] rounded-xl overflow-hidden bg-[#18181a]">
+            <div className="border border-border rounded-xl overflow-hidden bg-background">
               <Table>
-                <TableHeader className="bg-[#121214]">
-                  <TableRow className="border-[#27272a] hover:bg-[#121214]">
+                <TableHeader className="bg-background">
+                  <TableRow className="border-border hover:bg-background">
                     <TableHead className="text-white text-xs font-bold">Descrição</TableHead>
                     <TableHead className="text-white text-xs font-bold">Tipo</TableHead>
                     <TableHead className="text-white text-xs font-bold">Competência</TableHead>
@@ -319,7 +318,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
                 </TableHeader>
                 <TableBody>
                   {adicionais.map((ad) => (
-                    <TableRow key={ad.id} className="border-[#27272a] hover:bg-[#1e1e21]">
+                    <TableRow key={ad.id} className="border-border hover:bg-muted">
                       <TableCell className="font-medium text-slate-200 text-xs">{ad.descricao}</TableCell>
                       <TableCell className="text-xs text-slate-400 capitalize">{ad.tipo}</TableCell>
                       <TableCell className="text-xs text-slate-400">
@@ -334,7 +333,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             ad.ativo
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-mutedmerald-500/10 text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           }`}
                         >

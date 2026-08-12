@@ -150,21 +150,21 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
     >
       <form onSubmit={handleSubmit} className="space-y-4 mt-2">
         <div>
-          <Label className="text-xs text-[#aaa]">Nome da Secretaria *</Label>
+          <Label className="text-xs text-muted-foreground">Nome da Secretaria *</Label>
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Secretaria Municipal de Educação"
-            className="bg-[#18181a] border-[#27272a] text-white mt-1"
+            className="bg-background border-border text-foreground mt-1"
             required
           />
         </div>
 
         <div>
-          <Label className="text-xs text-[#aaa] mb-2 block">Logo da Secretaria (Opcional)</Label>
+          <Label className="text-xs text-muted-foreground mb-2 block">Logo da Secretaria (Opcional)</Label>
           
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl border border-[#27272a] bg-white flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-16 h-16 rounded-xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
               ) : (
@@ -182,7 +182,7 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
               />
               <label
                 htmlFor="logo-upload"
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-[#27272a] bg-[#18181a] hover:bg-[#202024] text-xs font-semibold text-white cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background hover:bg-[#202024] text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 <Upload className="w-3.5 h-3.5" />
                 {logoFile ? 'Trocar Arquivo' : 'Selecionar Logo'}
@@ -209,12 +209,11 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-[#27272a] mt-4">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
           >
             Cancelar
           </Button>

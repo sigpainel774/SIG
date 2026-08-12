@@ -62,7 +62,7 @@ export function DocumentosTab() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Documentação Básica</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-border pb-1">Documentação Básica</h3>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <div className="flex items-center justify-between">
@@ -111,7 +111,7 @@ export function DocumentosTab() {
         </div>
       </div>
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1 pt-2">Endereço Residencial</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-border pb-1 pt-2">Endereço Residencial</h3>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="md:col-span-3">
           <Label>Avenida / Rua / Travessa</Label>
@@ -232,7 +232,7 @@ export function DocumentosTab() {
       </div>
 
       <div className="pt-2 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-border pb-1.5">
           <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Coordenadas de GPS Residencial</h3>
           <button
             type="button"

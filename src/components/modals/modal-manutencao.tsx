@@ -120,10 +120,10 @@ export function ModalManutencao({
             Veículo da Frota *
           </Label>
           <Select value={veiculoId} onValueChange={(v: string | null) => setVeiculoId(v ?? '')}>
-            <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-sm h-10">
+            <SelectTrigger className="bg-background border-border text-foreground text-sm h-10">
               <SelectValue placeholder="Selecione o veículo" />
             </SelectTrigger>
-            <SelectContent className="bg-[#17171a] border-[#27272a] text-white">
+            <SelectContent className="bg-popover border-border text-popover-foreground">
               {veiculos.map((v) => (
                 <SelectItem key={v.id} value={v.id} className="text-white">
                   {v.modelo} — Placa: {v.placa}
@@ -137,10 +137,10 @@ export function ModalManutencao({
           <div className="space-y-2">
             <Label className="text-xs font-bold text-zinc-300">Tipo *</Label>
             <Select value={tipo} onValueChange={(v: any) => setTipo(v ?? 'PREVENTIVA')}>
-              <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-xs h-9">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs h-9">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#17171a] border-[#27272a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="PREVENTIVA">Preventiva</SelectItem>
                 <SelectItem value="CORRETIVA">Corretiva</SelectItem>
               </SelectContent>
@@ -153,7 +153,7 @@ export function ModalManutencao({
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -165,7 +165,7 @@ export function ModalManutencao({
               value={odometroKm}
               onChange={(e) => setOdometroKm(e.target.value)}
               placeholder="Ex: 125000"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -177,7 +177,7 @@ export function ModalManutencao({
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Ex: Troca de óleo do motor, filtro de ar e revisão das pastilhas de freio dianteiras."
-            className="bg-[#17171a] border-[#27272a] text-white text-xs min-h-[70px]"
+            className="bg-background border-border text-foreground text-xs min-h-[70px]"
             required
           />
         </div>
@@ -191,7 +191,7 @@ export function ModalManutencao({
               value={valorTotal}
               onChange={(e) => setValorTotal(e.target.value)}
               placeholder="Ex: 650.00"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
 
@@ -202,7 +202,7 @@ export function ModalManutencao({
               value={oficinaFornecedor}
               onChange={(e) => setOficinaFornecedor(e.target.value)}
               placeholder="Ex: Auto Mecânica Sapeaçu"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
 
@@ -213,18 +213,18 @@ export function ModalManutencao({
               value={proximaRevisaoKm}
               onChange={(e) => setProximaRevisaoKm(e.target.value)}
               placeholder="Ex: 135000"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-[#26262a]">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>

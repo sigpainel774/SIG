@@ -60,7 +60,7 @@ export function ModalHistoricoAluno({
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
-                temHistorico ? 'bg-emerald-500' : 'bg-zinc-600'
+                temHistorico ? 'bg-mutedmerald-500' : 'bg-zinc-600'
               }`}
             />
             <span>
@@ -73,7 +73,7 @@ export function ModalHistoricoAluno({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-zinc-400 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               Fechar
             </Button>
@@ -82,7 +82,7 @@ export function ModalHistoricoAluno({
                 type="button"
                 onClick={handleSalvar}
                 disabled={salvando}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition-all flex items-center gap-2"
+                className="bg-mutedmerald-600 hover:bg-mutedmerald-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition-all flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 {salvando ? 'Salvando...' : 'Salvar Histórico'}
@@ -120,10 +120,10 @@ export function ModalHistoricoAluno({
               onChange={(e) => setHistoricoText(e.target.value)}
               placeholder="Digite aqui as informações completas do histórico do aluno, transferências anteriores, observações pedagógicas ou de saúde..."
               rows={8}
-              className="w-full bg-[#141416] border border-[#26262a] rounded-xl p-3.5 text-sm text-foreground focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[160px] leading-relaxed"
+              className="w-full bg-background border border-border rounded-xl p-3.5 text-sm text-foreground focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[160px] leading-relaxed"
             />
           ) : (
-            <div className="w-full bg-[#141416] border border-[#26262a] rounded-xl p-4 text-sm text-zinc-300 min-h-[140px] whitespace-pre-wrap leading-relaxed">
+            <div className="w-full bg-background border border-border rounded-xl p-4 text-sm text-muted-foreground min-h-[140px] whitespace-pre-wrap leading-relaxed">
               {historicoText.trim() ? (
                 historicoText
               ) : (

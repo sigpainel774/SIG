@@ -40,7 +40,7 @@ export function SolicitarTransferenciaForm({
   const escolasDisponiveis = escolas.filter((e) => e.id !== escolaAtivaId)
 
   return (
-    <div className="bg-[#1a1a1e] border border-[#26262a] rounded-xl p-4 space-y-3">
+    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
       <h4 className="flex items-center gap-2 text-sm font-bold text-sky-400">
         <ArrowRightLeft className="w-4 h-4" />
         Solicitar Transferência de Lotação
@@ -51,7 +51,7 @@ export function SolicitarTransferenciaForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-[11px] text-zinc-400 font-medium block">Origem:</label>
-          <div className="bg-[#121216] border border-[#2e2e33] px-3 py-2 rounded-lg text-sm text-[#3ea6ff] font-semibold">
+          <div className="bg-background border border-border px-3 py-2 rounded-lg text-sm text-[#3ea6ff] font-semibold">
             {lotacaoNaMinhaEscola.escolaNome ?? 'Minha Escola'}
           </div>
         </div>
@@ -61,14 +61,14 @@ export function SolicitarTransferenciaForm({
             value={destinoEscolaId}
             onValueChange={(v) => setDestinoEscolaId(v ?? '')}
           >
-            <SelectTrigger className="bg-[#121216] border-[#2e2e33] text-white text-sm h-9">
+            <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
               <SelectValue placeholder="Selecione a escola destino...">
                 {destinoEscolaId
                   ? (escolasDisponiveis.find((e) => e.id === destinoEscolaId)?.nome || (escolasDisponiveis.length === 0 ? 'Carregando...' : destinoEscolaId))
                   : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white">
+            <SelectContent className="bg-popover border-border text-popover-foreground">
               {escolasDisponiveis.map((e) => (
                 <SelectItem key={e.id} value={e.id}>
                   {e.nome}
@@ -84,7 +84,7 @@ export function SolicitarTransferenciaForm({
           value={motivoSolicitacao}
           onChange={(e) => setMotivoSolicitacao(e.target.value)}
           placeholder="Descreva a portaria de remoção ou a justificativa para a mudança de lotação..."
-          className="w-full min-h-[80px] p-3 rounded-lg bg-[#121216] border border-[#2e2e33] text-white text-sm outline-none focus:border-sky-500 resize-none"
+          className="w-full min-h-[80px] p-3 rounded-lg bg-background border border-border text-foreground text-sm outline-none focus:border-sky-500 resize-none"
         />
       </div>
       <Button

@@ -546,25 +546,25 @@ export function ModalImportarExcel({
     >
       <div className="space-y-5 text-sm select-none">
         {/* ── Painel 1: Seleção de Destino (Escola & Turma) ── */}
-        <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
-          <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+        <div className="bg-muted/40 dark:bg-background border border-border p-4 rounded-2xl space-y-3">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs uppercase tracking-wider">
             <Building2 className="w-4 h-4" /> 1. Destino da Importação (Escola e Turma Padrão)
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Seletor de Escola */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                Escola de Destino <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Escola de Destino <span className="text-rose-500">*</span>
               </label>
               <select
                 value={selectedEscolaId}
                 onChange={(e) => setSelectedEscolaId(e.target.value)}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                className="w-full bg-background border border-borderCustom rounded-xl px-3 py-2 text-foreground text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
               >
-                <option value="">-- Selecione uma Escola --</option>
+                <option value="" className="bg-background text-foreground">-- Selecione uma Escola --</option>
                 {escolas.map((esc) => (
-                  <option key={esc.id} value={esc.id}>
+                  <option key={esc.id} value={esc.id} className="bg-background text-foreground">
                     {esc.nome} {esc.inep ? `(INEP: ${esc.inep})` : ''}
                   </option>
                 ))}
@@ -573,17 +573,17 @@ export function ModalImportarExcel({
 
             {/* Seletor de Turma */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Turma Geral de Destino (Opcional para Enturmação)
               </label>
               <select
                 value={selectedTurmaId}
                 onChange={(e) => setSelectedTurmaId(e.target.value)}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                className="w-full bg-background border border-borderCustom rounded-xl px-3 py-2 text-foreground text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
               >
-                <option value="">-- Sem Turma (Apenas Cadastro Geral com Série) --</option>
+                <option value="" className="bg-background text-foreground">-- Sem Turma (Apenas Cadastro Geral com Série) --</option>
                 {turmas.map((t) => (
-                  <option key={t.id} value={t.id}>
+                  <option key={t.id} value={t.id} className="bg-background text-foreground">
                     {t.nome} - {t.turno || 'Geral'} ({t.ano_letivo})
                   </option>
                 ))}
@@ -593,19 +593,19 @@ export function ModalImportarExcel({
         </div>
 
         {/* ── Painel 2: Upload da Planilha Excel ── */}
-        <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
+        <div className="bg-muted/40 dark:bg-background border border-border p-4 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
               <Upload className="w-4 h-4" /> 2. Upload do Arquivo Excel (.xlsx / .xls)
             </div>
             {totalGlobalStudents > 0 && (
-              <Badge variant="outline" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
+              <Badge variant="outline" className="bg-mutedmerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-xs">
                 {savedGlobalStudents} de {totalGlobalStudents} aluno(s) cadastrados
               </Badge>
             )}
           </div>
 
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#3f3f46] hover:border-emerald-500 bg-[#09090b] hover:bg-[#121214] rounded-2xl p-5 cursor-pointer transition-all duration-200 group text-center">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-emerald-500 bg-background hover:bg-muted/60 rounded-2xl p-5 cursor-pointer transition-all duration-200 group text-center">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -615,21 +615,21 @@ export function ModalImportarExcel({
             />
             {parsing ? (
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-                <span className="text-xs font-semibold text-gray-300">
+                <Loader2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                <span className="text-xs font-semibold text-foreground">
                   Lendo pastas e colunas a partir da linha B8...
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <div className="bg-emerald-500/10 p-3 rounded-full group-hover:scale-110 transition-transform">
-                  <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
+                <div className="bg-mutedmerald-500/10 p-3 rounded-full group-hover:scale-110 transition-transform">
+                  <FileSpreadsheet className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">
+                  <p className="font-bold text-foreground text-sm">
                     Clique para selecionar a planilha de alunos (.xlsx / .xls)
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     O sistema lerá as colunas B8 (Nome), C8 (Data Nasc), D8 (INEP), E8 (CPF), F8 (Cor), G8 (CID), H8 (NIS), I8 (SUS), J8 (Telefone), K8 (Pais), L8 (Endereço).
                   </p>
                 </div>
@@ -642,17 +642,17 @@ export function ModalImportarExcel({
         {sheets.length > 0 && activeSheet && (
           <div className="space-y-4">
             {/* Seletor de Pastas/Abas */}
-            <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
+            <div className="bg-muted/40 dark:bg-background border border-border p-4 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5 uppercase tracking-wider">
-                  <FolderTree className="w-4 h-4 text-amber-400" /> Pastas / Abas da Planilha ({sheets.length}):
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                  <FolderTree className="w-4 h-4 text-amber-500 dark:text-amber-400" /> Pastas / Abas da Planilha ({sheets.length}):
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleSaveAllSheets}
                   disabled={isSavingAll}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white border-none h-7 text-xs font-bold"
+                  className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white border-none h-7 text-xs font-bold"
                 >
                   {isSavingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
                   Importar TODAS as Pastas
@@ -673,7 +673,7 @@ export function ModalImportarExcel({
                       className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
                         isSelected
                           ? 'bg-purple-600 text-white border-purple-400 shadow-md scale-105'
-                          : 'bg-[#09090b] text-gray-300 border-[#3f3f46] hover:bg-[#202024]'
+                          : 'bg-background text-foreground border-border hover:bg-muted'
                       }`}
                     >
                       <Layers className="w-3.5 h-3.5" />
@@ -682,8 +682,8 @@ export function ModalImportarExcel({
                         variant="outline"
                         className={`text-[10px] px-1.5 py-0 ${
                           savedInSheet === totalInSheet && totalInSheet > 0
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : 'bg-black/30 text-gray-300 border-white/10'
+                            ? 'bg-mutedmerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                            : 'bg-muted text-muted-foreground border-border'
                         }`}
                       >
                         {savedInSheet}/{totalInSheet}
@@ -694,12 +694,12 @@ export function ModalImportarExcel({
               </div>
 
               {/* ── Selects de Ano e Turno da Pasta Ativa ── */}
-              <div className="bg-[#09090b] border border-[#3f3f46] p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 mt-3">
+              <div className="bg-background border border-border p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 mt-3">
                 <div className="flex flex-wrap items-center gap-4">
                   {/* Select do Ano / Série */}
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-purple-400" />
-                    <label className="text-xs font-bold text-purple-300 whitespace-nowrap">
+                    <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <label className="text-xs font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
                       Ano da Pasta ({activeSheet.sheetName}):
                     </label>
                     <select
@@ -712,29 +712,29 @@ export function ModalImportarExcel({
                           return next
                         })
                       }}
-                      className="bg-[#18181b] border border-[#52525b] text-white text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:outline-none font-bold"
+                      className="bg-card border border-borderCustom text-foreground text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:outline-none font-bold"
                     >
-                      <option value="1º Ano">1º Ano</option>
-                      <option value="2º Ano">2º Ano</option>
-                      <option value="3º Ano">3º Ano</option>
-                      <option value="4º Ano">4º Ano</option>
-                      <option value="5º Ano">5º Ano</option>
-                      <option value="6º Ano">6º Ano</option>
-                      <option value="7º Ano">7º Ano</option>
-                      <option value="8º Ano">8º Ano</option>
-                      <option value="9º Ano">9º Ano</option>
-                      <option value="Educação Infantil">Educação Infantil</option>
-                      <option value="Ensino Médio 1º Ano">Ensino Médio 1º Ano</option>
-                      <option value="Ensino Médio 2º Ano">Ensino Médio 2º Ano</option>
-                      <option value="Ensino Médio 3º Ano">Ensino Médio 3º Ano</option>
-                      <option value="EJA">EJA</option>
+                      <option value="1º Ano" className="bg-background text-foreground">1º Ano</option>
+                      <option value="2º Ano" className="bg-background text-foreground">2º Ano</option>
+                      <option value="3º Ano" className="bg-background text-foreground">3º Ano</option>
+                      <option value="4º Ano" className="bg-background text-foreground">4º Ano</option>
+                      <option value="5º Ano" className="bg-background text-foreground">5º Ano</option>
+                      <option value="6º Ano" className="bg-background text-foreground">6º Ano</option>
+                      <option value="7º Ano" className="bg-background text-foreground">7º Ano</option>
+                      <option value="8º Ano" className="bg-background text-foreground">8º Ano</option>
+                      <option value="9º Ano" className="bg-background text-foreground">9º Ano</option>
+                      <option value="Educação Infantil" className="bg-background text-foreground">Educação Infantil</option>
+                      <option value="Ensino Médio 1º Ano" className="bg-background text-foreground">Ensino Médio 1º Ano</option>
+                      <option value="Ensino Médio 2º Ano" className="bg-background text-foreground">Ensino Médio 2º Ano</option>
+                      <option value="Ensino Médio 3º Ano" className="bg-background text-foreground">Ensino Médio 3º Ano</option>
+                      <option value="EJA" className="bg-background text-foreground">EJA</option>
                     </select>
                   </div>
 
                   {/* Select do Turno */}
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-sky-400" />
-                    <label className="text-xs font-bold text-sky-300 whitespace-nowrap">
+                    <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <label className="text-xs font-bold text-sky-700 dark:text-sky-300 whitespace-nowrap">
                       Turno da Pasta:
                     </label>
                     <select
@@ -747,17 +747,17 @@ export function ModalImportarExcel({
                           return next
                         })
                       }}
-                      className="bg-[#18181b] border border-[#52525b] text-white text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-sky-500 focus:outline-none font-bold"
+                      className="bg-card border border-borderCustom text-foreground text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-sky-500 focus:outline-none font-bold"
                     >
-                      <option value="Matutino">Matutino (Manhã)</option>
-                      <option value="Vespertino">Vespertino (Tarde)</option>
-                      <option value="Noturno">Noturno (Noite)</option>
-                      <option value="Integral">Integral</option>
+                      <option value="Matutino" className="bg-background text-foreground">Matutino (Manhã)</option>
+                      <option value="Vespertino" className="bg-background text-foreground">Vespertino (Tarde)</option>
+                      <option value="Noturno" className="bg-background text-foreground">Noturno (Noite)</option>
+                      <option value="Integral" className="bg-background text-foreground">Integral</option>
                     </select>
                   </div>
                 </div>
 
-                <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/20 text-[11px] px-2.5 py-1">
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 text-[11px] px-2.5 py-1">
                   Ano: {activeSheet.anoSerie} | Turno: {activeSheet.turno}
                 </Badge>
               </div>
@@ -765,25 +765,25 @@ export function ModalImportarExcel({
 
             {/* Ficha Individual Atual (1 por 1) */}
             {currentStudent ? (
-              <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-2xl space-y-4 shadow-lg">
+              <div className="bg-card border border-border p-5 rounded-2xl space-y-4 shadow-sm">
                 {/* Header da Ficha */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/30 text-xs py-1">
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 text-xs py-1">
                       Pasta: {activeSheet.sheetName} ({activeSheet.anoSerie} - {activeSheet.turno})
                     </Badge>
-                    <span className="text-xs font-semibold text-gray-400">
+                    <span className="text-xs font-semibold text-muted-foreground">
                       Aluno {currentIndex + 1} de {activeSheet.students.length} (Linha Excel: #{currentStudent.rowIndex})
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {currentStudent.isSaved ? (
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 gap-1 text-xs">
+                      <Badge className="bg-mutedmerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 gap-1 text-xs">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Cadastrado
                       </Badge>
                     ) : (
-                      <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 gap-1 text-xs">
+                      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1 text-xs">
                         <AlertTriangle className="w-3.5 h-3.5" /> Pendente
                       </Badge>
                     )}
@@ -792,7 +792,7 @@ export function ModalImportarExcel({
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDiscardStudent(activeSheetIndex, currentIndex)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 text-xs"
+                      className="text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-500/10 h-8 text-xs"
                       title="Descartar esta ficha"
                     >
                       <Trash2 className="w-4 h-4 mr-1" /> Descartar
@@ -801,92 +801,92 @@ export function ModalImportarExcel({
                 </div>
 
                 {/* Exibição dos Dados do Aluno em Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-[#09090b] p-4 rounded-xl border border-[#27272a]">
-                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pb-1 border-b border-[#1f1f23] flex justify-between items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 dark:bg-background p-4 rounded-xl border border-border">
+                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pb-1 border-b border-border flex justify-between items-center">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Nome do Aluno (Coluna B)</span>
-                      <span className="text-base font-bold text-white tracking-wide">{currentStudent.nome}</span>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground block">Nome do Aluno (Coluna B)</span>
+                      <span className="text-base font-bold text-foreground tracking-wide">{currentStudent.nome}</span>
                     </div>
-                    <Badge variant="outline" className="bg-sky-500/10 text-sky-300 border-sky-500/30 text-xs">
+                    <Badge variant="outline" className="bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30 text-xs">
                       {activeSheet.anoSerie} • {activeSheet.turno}
                     </Badge>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Data de Nascimento (Coluna C)</span>
-                    <span className="text-xs text-gray-200 font-medium">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Data de Nascimento (Coluna C)</span>
+                    <span className="text-xs text-foreground font-medium">
                       {currentStudent.data_nascimento
                         ? new Date(currentStudent.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR')
-                        : <span className="text-gray-500 italic">Não informado</span>}
+                        : <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">ID Censo / INEP (Coluna D)</span>
-                    <span className="text-xs text-purple-300 font-mono font-semibold">
-                      {currentStudent.inep || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">ID Censo / INEP (Coluna D)</span>
+                    <span className="text-xs text-purple-600 dark:text-purple-300 font-mono font-semibold">
+                      {currentStudent.inep || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">CPF (Coluna E)</span>
-                    <span className="text-xs text-emerald-300 font-mono font-semibold">
-                      {currentStudent.cpf || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">CPF (Coluna E)</span>
+                    <span className="text-xs text-emerald-600 dark:text-emerald-300 font-mono font-semibold">
+                      {currentStudent.cpf || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Cor / Raça (Coluna F)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.cor_raca || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Cor / Raça (Coluna F)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.cor_raca || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">CID / Laudo (Coluna G)</span>
-                    <span className="text-xs text-amber-300 font-medium">
-                      {currentStudent.cid || <span className="text-gray-500 italic">Sem laudo</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">CID / Laudo (Coluna G)</span>
+                    <span className="text-xs text-amber-600 dark:text-amber-300 font-medium">
+                      {currentStudent.cid || <span className="text-muted-foreground italic">Sem laudo</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">NIS (Coluna H)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.nis || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">NIS (Coluna H)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.nis || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Cartão SUS (Coluna I)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.cartao_sus || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Cartão SUS (Coluna I)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.cartao_sus || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Telefone (Coluna J)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.telefone || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Telefone (Coluna J)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.telefone || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Nomes dos Pais (Coluna K)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.nome_pais || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Nomes dos Pais (Coluna K)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.nome_pais || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
 
                   <div className="col-span-1 sm:col-span-2 md:col-span-3">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Endereço Completo (Coluna L)</span>
-                    <span className="text-xs text-gray-200">
-                      {currentStudent.endereco || <span className="text-gray-500 italic">Não informado</span>}
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Endereço Completo (Coluna L)</span>
+                    <span className="text-xs text-foreground">
+                      {currentStudent.endereco || <span className="text-muted-foreground italic">Não informado</span>}
                     </span>
                   </div>
                 </div>
 
                 {currentStudent.errorMessage && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>{currentStudent.errorMessage}</span>
                   </div>
@@ -900,7 +900,7 @@ export function ModalImportarExcel({
                       variant="outline"
                       disabled={currentIndex === 0}
                       onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                      className="bg-[#09090b] border-[#3f3f46] text-gray-300 hover:text-white h-9"
+                      className="bg-background border-border text-foreground hover:bg-muted h-9"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
                     </Button>
@@ -909,7 +909,7 @@ export function ModalImportarExcel({
                       variant="outline"
                       disabled={currentIndex >= activeSheet.students.length - 1}
                       onClick={() => setCurrentIndex((prev) => Math.min(activeSheet.students.length - 1, prev + 1))}
-                      className="bg-[#09090b] border-[#3f3f46] text-gray-300 hover:text-white h-9"
+                      className="bg-background border-border text-foreground hover:bg-muted h-9"
                     >
                       Próximo <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
@@ -921,7 +921,7 @@ export function ModalImportarExcel({
                       variant="outline"
                       onClick={handleSaveCurrentSheet}
                       disabled={isSavingAll}
-                      className="bg-[#09090b] border-[#3f3f46] text-purple-300 hover:text-white hover:bg-purple-500/10 h-9 font-semibold"
+                      className="bg-background border-border text-purple-600 dark:text-purple-300 hover:bg-purple-500/10 h-9 font-semibold"
                     >
                       Importar Todos Desta Pasta ({activeSheet.sheetName})
                     </Button>
@@ -932,7 +932,7 @@ export function ModalImportarExcel({
                       disabled={currentStudent.isSaved || currentStudent.isSaving}
                       className={`h-9 font-bold ${
                         currentStudent.isSaved
-                          ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 cursor-default'
+                          ? 'bg-mutedmerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 cursor-default'
                           : 'bg-purple-600 hover:bg-purple-700 text-white'
                       }`}
                     >
@@ -942,7 +942,7 @@ export function ModalImportarExcel({
                         </>
                       ) : currentStudent.isSaved ? (
                         <>
-                          <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-400" /> Já Cadastrado
+                          <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-500 dark:text-emerald-400" /> Já Cadastrado
                         </>
                       ) : (
                         <>
@@ -954,7 +954,7 @@ export function ModalImportarExcel({
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center bg-[#18181b] border border-[#27272a] rounded-2xl text-gray-400">
+              <div className="p-8 text-center bg-muted/30 dark:bg-background border border-border rounded-2xl text-muted-foreground">
                 Todos os alunos desta pasta foram processados ou descartados.
               </div>
             )}

@@ -40,7 +40,7 @@ export function SaudeTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+      <div className="bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border space-y-3">
         <h3 className="text-xs font-bold text-highlight uppercase tracking-wider">Informações Médicas Gerais</h3>
         <div className="max-w-xs">
           <Label className="text-xs">Tipo Sanguíneo e Fator Rh</Label>
@@ -62,7 +62,7 @@ export function SaudeTab() {
         </div>
       </div>
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Acessibilidade & Deficiências</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-border pb-1">Acessibilidade & Deficiências</h3>
       
       <div className="flex items-center gap-3">
         <input
@@ -81,7 +81,7 @@ export function SaudeTab() {
       </div>
 
       {possuiDeficiencia && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs text-zinc-700 dark:text-zinc-300">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border/80 text-xs text-zinc-700 dark:text-muted-foreground">
           {/* Deficiências */}
           <div className="space-y-2">
             <p className="font-bold text-highlight text-[10px] uppercase">Grupo Deficiências:</p>
@@ -131,11 +131,11 @@ export function SaudeTab() {
         </div>
       )}
 
-      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-1">Doenças Crônicas ou Recentes</h3>
+      <h3 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-border pb-1">Doenças Crônicas ou Recentes</h3>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-zinc-700 dark:text-zinc-300">
         {doencasDisponiveis.map((d) => (
-          <div key={d.key} className="flex items-center gap-2 p-2 rounded bg-zinc-100 dark:bg-[#18181a] border border-zinc-200 dark:border-zinc-800">
+          <div key={d.key} className="flex items-center gap-2 p-2 rounded bg-zinc-100 dark:bg-background border border-zinc-200 dark:border-border">
             <input
               type="checkbox"
               id={`doenca_${d.key}`}

@@ -66,7 +66,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
       description={`Histórico recente de autenticação e acessos da conta ${userEmail ?? ''}.`}
       maxWidth="sm:max-w-2xl"
       footer={
-        <div className="flex justify-end w-full pt-2 border-t border-[#27272a]">
+        <div className="flex justify-end w-full pt-2 border-t border-border">
           <Button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -79,9 +79,9 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
     >
 
         <div className="space-y-4 py-2">
-          <div className="rounded-xl border border-[#27272a] bg-[#18181b] overflow-hidden max-h-[350px] overflow-y-auto">
+          <div className="rounded-xl border border-border bg-background overflow-hidden max-h-[350px] overflow-y-auto">
             <Table>
-              <TableHeader className="bg-[#121214] border-b border-[#27272a] sticky top-0">
+              <TableHeader className="bg-background border-b border-border sticky top-0">
                 <TableRow className="border-none hover:bg-transparent">
                   <TableHead className="text-zinc-400 font-semibold text-xs">Data / Hora</TableHead>
                   <TableHead className="text-zinc-400 font-semibold text-xs">Evento</TableHead>
@@ -113,7 +113,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
                           variant="outline" 
                           className={`text-[10px] font-extrabold uppercase ${
                             log.evento === 'LOGIN' 
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-mutedmerald-500/10 text-emerald-400 border-emerald-500/30'
                               : log.evento === 'LOGIN_FAILED'
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'

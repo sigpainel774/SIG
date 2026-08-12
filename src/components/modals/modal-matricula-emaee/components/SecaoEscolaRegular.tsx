@@ -17,8 +17,8 @@ export function SecaoEscolaRegular() {
   } = useMatriculaEmaeeContext()
 
   return (
-    <section className="overflow-hidden border border-[#26262a] rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-[#26262a] bg-white/[0.012]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
           03
         </span>
@@ -35,7 +35,7 @@ export function SecaoEscolaRegular() {
             Escola municipal de origem
           </Label>
           <select
-            className="w-full min-h-[42px] px-3 py-2 border border-[#26262a] rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff] focus:ring-1 focus:ring-[#3ea6ff]/20 transition-all"
+            className="w-full min-h-[42px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff] focus:ring-1 focus:ring-[#3ea6ff]/20 transition-all"
             value={escolaRegularId}
             onChange={(e) => setEscolaRegularId(e.target.value)}
           >
@@ -55,7 +55,7 @@ export function SecaoEscolaRegular() {
             placeholder="Ex.: 5º ano"
             value={anoEscolarizacao}
             onChange={(e) => setAnoEscolarizacao(e.target.value)}
-            className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
           />
         </div>
 
@@ -65,7 +65,7 @@ export function SecaoEscolaRegular() {
           <select
             value={turnoRegular}
             onChange={(e) => setTurnoRegular(e.target.value)}
-            className="w-full min-h-[40px] px-3 py-2 border border-[#26262a] rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff]"
+            className="w-full min-h-[40px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff]"
           >
             <option value="">Selecione o turno</option>
             <option value="Matutino">Matutino</option>
@@ -81,7 +81,7 @@ export function SecaoEscolaRegular() {
             placeholder="Ex.: A"
             value={turmaRegular}
             onChange={(e) => setTurmaRegular(e.target.value)}
-            className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
           />
         </div>
 
@@ -92,7 +92,7 @@ export function SecaoEscolaRegular() {
             placeholder="Nome do professor regente"
             value={professorRegular}
             onChange={(e) => setProfessorRegular(e.target.value)}
-            className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
           />
         </div>
 
@@ -103,7 +103,7 @@ export function SecaoEscolaRegular() {
             placeholder="Nome do gestor escolar"
             value={gestorRegular}
             onChange={(e) => setGestorRegular(e.target.value)}
-            className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
           />
         </div>
       </div>

@@ -33,7 +33,7 @@ const STATUS_CONFIG: Record<StatusAtividade, { label: string; class: string }> =
   },
   impressa: {
     label: 'Impressa',
-    class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    class: 'bg-mutedmerald-500/20 text-emerald-400 border-emerald-500/30',
   },
   entregue_professor: {
     label: 'Entregue ao Professor',
@@ -305,9 +305,9 @@ export function ModalGerenciarFilaImpressao({
     >
       <div className="space-y-4">
         {/* Barra Superior de Filtros e Recarregar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#141416] p-3 rounded-xl border border-[#26262a]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-background p-3 rounded-xl border border-border">
           {/* Busca */}
-          <div className="flex items-center gap-2 bg-[#1c1c1e] border border-[#26262a] px-3 py-1.5 rounded-lg flex-1">
+          <div className="flex items-center gap-2 bg-[#1c1c1e] border border-border px-3 py-1.5 rounded-lg flex-1">
             <Search className="w-4 h-4 text-zinc-400 shrink-0" />
             <Input
               placeholder="Buscar por título, professor, matéria ou escola..."
@@ -322,7 +322,7 @@ export function ModalGerenciarFilaImpressao({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[#1c1c1e] border border-[#26262a] text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
+              className="bg-[#1c1c1e] border border-border text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
             >
               <option value="todas">Todos os Status Pendentes</option>
               <option value="recebida">Recebida</option>
@@ -335,7 +335,7 @@ export function ModalGerenciarFilaImpressao({
               size="sm"
               onClick={loadAtividadesPendente}
               disabled={loading}
-              className="border-[#26262a] bg-[#1c1c1e] text-zinc-300 hover:text-white hover:bg-[#26262a]"
+              className="border-border bg-[#1c1c1e] text-muted-foreground hover:text-foreground hover:bg-[#26262a]"
               title="Recarregar Fila"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -365,7 +365,7 @@ export function ModalGerenciarFilaImpressao({
         </div>
 
         {/* Tabela de Atividades */}
-        <div className="rounded-xl border border-[#26262a] overflow-hidden bg-[#121214]">
+        <div className="rounded-xl border border-border overflow-hidden bg-background">
           <StandardTable
             data={atividadesFiltradas}
             columns={columns}

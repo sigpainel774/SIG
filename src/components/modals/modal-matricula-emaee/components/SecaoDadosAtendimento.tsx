@@ -14,8 +14,8 @@ export function SecaoDadosAtendimento() {
   } = useMatriculaEmaeeContext()
 
   return (
-    <section className="overflow-hidden border border-[#26262a] rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-[#26262a] bg-white/[0.012]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
           01
         </span>
@@ -32,7 +32,7 @@ export function SecaoDadosAtendimento() {
             Unidade escolar de atendimento <span className="text-rose-500">*</span>
           </Label>
           <select
-            className="w-full min-h-[42px] px-3 py-2 border border-[#26262a] rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff] focus:ring-1 focus:ring-[#3ea6ff]/20 transition-all"
+            className="w-full min-h-[42px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff] focus:ring-1 focus:ring-[#3ea6ff]/20 transition-all"
             value={escolaAtendimentoId}
             onChange={(e) => setEscolaAtendimentoId(e.target.value)}
             required
@@ -48,7 +48,7 @@ export function SecaoDadosAtendimento() {
 
         {/* Localização */}
         <div className="col-span-12 md:col-span-3">
-          <fieldset className="p-3 border border-[#26262a] rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+          <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
             <legend className="px-1 text-xs font-bold text-slate-200">
               Localização <span className="text-rose-500">*</span>
             </legend>
@@ -56,7 +56,7 @@ export function SecaoDadosAtendimento() {
               <label className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 localizacaoAtendimento === 'Urbana'
                   ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                  : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                  : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
               }`}>
                 <input
                   type="radio"
@@ -72,7 +72,7 @@ export function SecaoDadosAtendimento() {
               <label className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 localizacaoAtendimento === 'Rural'
                   ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                  : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                  : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
               }`}>
                 <input
                   type="radio"
@@ -95,7 +95,7 @@ export function SecaoDadosAtendimento() {
           </Label>
           <Input
             type="date"
-            className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
             value={dataMatricula}
             onChange={(e) => setDataMatricula(e.target.value)}
             required

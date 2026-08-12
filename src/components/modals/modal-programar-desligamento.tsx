@@ -117,12 +117,11 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
       title="Programar Desligamento"
       maxWidth="sm:max-w-[500px]"
       footer={
-        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] h-10"
           >
             Cancelar
           </Button>
@@ -147,42 +146,42 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
           </div>
         ) : (
           <form id="form-programar-desligamento" onSubmit={handleSubmit} className="space-y-4 py-2">
-            <div className="bg-[#18181a] border border-[#27272a] rounded-xl p-4 space-y-2">
+            <div className="bg-background border border-border rounded-xl p-4 space-y-2">
               <div>
-                <span className="text-xs text-[#aaa] block">Funcionário</span>
+                <span className="text-xs text-muted-foreground block">Funcionário</span>
                 <span className="font-bold text-sm text-slate-200">{funcionarioNome ?? 'Não informado'}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#27272a]/50">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
                 <div>
-                  <span className="text-xs text-[#aaa] block">Cargo do Vínculo</span>
+                  <span className="text-xs text-muted-foreground block">Cargo do Vínculo</span>
                   <span className="text-xs text-slate-300 font-semibold">{cargoName || 'Nenhum'}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-[#aaa] block">Vínculo ID</span>
+                  <span className="text-xs text-muted-foreground block">Vínculo ID</span>
                   <span className="text-[10px] text-slate-400 font-mono truncate block">{vinculoId ?? 'Inexistente'}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <Label className="text-xs text-[#aaa]">Data do Desligamento *</Label>
+              <Label className="text-xs text-muted-foreground">Data do Desligamento *</Label>
               <Input
                 type="date"
                 value={dataDesligamento}
                 onChange={(e) => setDataDesligamento(e.target.value)}
-                className="bg-[#18181a] border-[#27272a] text-white mt-1 h-10 cursor-pointer"
+                className="bg-background border-border text-foreground mt-1 h-10 cursor-pointer"
                 required
                 disabled={!isEditMode || !vinculoId}
               />
             </div>
 
             <div>
-              <Label className="text-xs text-[#aaa]">Motivo do Desligamento</Label>
+              <Label className="text-xs text-muted-foreground">Motivo do Desligamento</Label>
               <Textarea
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Ex: Término de contrato temporário, aposentadoria, exoneração a pedido..."
-                className="bg-[#18181a] border-[#27272a] text-white mt-1 min-h-[80px]"
+                className="bg-background border-border text-foreground mt-1 min-h-[80px]"
                 disabled={!isEditMode || !vinculoId}
               />
             </div>

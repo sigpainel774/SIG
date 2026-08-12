@@ -266,14 +266,14 @@ export function ModalAlocarAlunoTransporte({
               Filtrar por Escola
             </Label>
             <Select value={escolaSelecionadaId} onValueChange={(v: string | null) => setEscolaSelecionadaId(v ?? 'ALL')}>
-              <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-xs h-10">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs h-10">
                 <SelectValue placeholder={loadingEscolas ? 'Carregando escolas...' : 'Todas as Escolas'}>
                   {escolaSelecionadaId === 'ALL'
                     ? 'Todas as Escolas'
                     : escolasLista.find((e) => e.id === escolaSelecionadaId)?.nome || (loadingEscolas ? 'Carregando...' : escolaSelecionadaId)}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-[#17171a] border-[#27272a] text-white max-h-56 overflow-y-auto">
+              <SelectContent className="bg-popover border-border text-popover-foreground max-h-56 overflow-y-auto">
                 <SelectItem value="ALL" className="text-zinc-300 font-medium">
                   Todas as Escolas (Rede Municipal)
                 </SelectItem>
@@ -293,10 +293,10 @@ export function ModalAlocarAlunoTransporte({
               Rota de Transporte *
             </Label>
             <Select value={rotaId} onValueChange={(v: string | null) => setRotaId(v ?? '')}>
-              <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-xs h-10">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs h-10">
                 <SelectValue placeholder="Selecione a rota" />
               </SelectTrigger>
-              <SelectContent className="bg-[#17171a] border-[#27272a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 {rotas.map((r) => (
                   <SelectItem key={r.id} value={r.id} className="text-white">
                     {r.nome} ({r.turno})
@@ -319,7 +319,7 @@ export function ModalAlocarAlunoTransporte({
               value={buscaAluno}
               onChange={(e) => setBuscaAluno(e.target.value)}
               placeholder="Digite o nome do aluno..."
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-10"
+              className="bg-background border-border text-foreground text-xs h-10"
             />
           </div>
 
@@ -329,14 +329,14 @@ export function ModalAlocarAlunoTransporte({
               value={alunoSelecionadoId}
               onValueChange={(v: string | null) => setAlunoSelecionadoId(v ?? '')}
             >
-              <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-xs h-10">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs h-10">
                 <SelectValue placeholder={loadingAlunos ? 'Buscando alunos...' : 'Selecione um aluno'}>
                   {alunoSelecionadoId
                     ? alunosLista.find((a) => a.id === alunoSelecionadoId)?.nome || alunoSelecionadoId
                     : undefined}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-[#17171a] border-[#27272a] text-white max-h-56 overflow-y-auto">
+              <SelectContent className="bg-popover border-border text-popover-foreground max-h-56 overflow-y-auto">
                 {alunosLista.length === 0 ? (
                   <div className="p-3 text-xs text-zinc-400 text-center">Nenhum aluno encontrado</div>
                 ) : (
@@ -362,12 +362,12 @@ export function ModalAlocarAlunoTransporte({
             value={pontoEmbarqueText}
             onChange={(e) => setPontoEmbarqueText(e.target.value)}
             placeholder="Ex: Ponto do Bar de Zé / Entroncamento da BR-101"
-            className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+            className="bg-background border-border text-foreground text-xs h-9"
           />
         </div>
 
         {/* Seção do Mini-Mapa com Coordenadas da Ficha do Aluno e Mãozinha Arrastável */}
-        <div className="space-y-2 pt-2 border-t border-[#26262a]">
+        <div className="space-y-2 pt-2 border-t border-border">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" />
@@ -397,13 +397,13 @@ export function ModalAlocarAlunoTransporte({
         </div>
 
         {/* Botões de Ação */}
-        <div className="flex justify-end gap-2 pt-4 border-t border-[#26262a]">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>

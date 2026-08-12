@@ -65,7 +65,7 @@ export function FuncionarioLotacaoList({
     `px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center flex items-center justify-center min-h-[38px] sm:min-h-0 ${
       tab === t
         ? 'bg-[#3ea6ff] text-[#0f0f0f]'
-        : 'bg-[#1e1e22] text-zinc-400 hover:text-white hover:bg-[#252528]'
+        : 'bg-background text-muted-foreground hover:text-foreground hover:bg-muted'
     }`
 
   useEffect(() => {
@@ -75,26 +75,26 @@ export function FuncionarioLotacaoList({
   }, [funcsFiltrados])
 
   return (
-    <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-[#26262a] flex flex-col overflow-hidden">
+    <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-border flex flex-col overflow-hidden">
       {/* Filtros */}
-      <div className="p-3.5 sm:p-4 space-y-3 border-b border-[#26262a] shrink-0">
+      <div className="p-3.5 sm:p-4 space-y-3 border-b border-border shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Buscar por nome, CPF ou cargo..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 bg-[#1a1a1e] border-[#2e2e33] text-white placeholder:text-zinc-500 h-10 sm:h-9 text-sm"
+            className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground h-10 sm:h-9 text-sm"
           />
         </div>
         <Select
           value={filtroCargo}
           onValueChange={(v) => setFiltroCargo(v ?? 'todos')}
         >
-          <SelectTrigger className="bg-[#1a1a1e] border-[#2e2e33] text-white h-10 sm:h-9 text-sm">
+          <SelectTrigger className="bg-background border-border text-foreground h-10 sm:h-9 text-sm">
             <SelectValue placeholder="Cargo (Todos)" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1e] border-[#2e2e33] text-white max-h-[250px]">
+          <SelectContent className="bg-popover border-border text-popover-foreground max-h-[250px]">
             <SelectItem value="todos">Cargo (Todos)</SelectItem>
             {cargos.map((c) => (
               <SelectItem key={c.id} value={c.nome}>
@@ -131,10 +131,10 @@ export function FuncionarioLotacaoList({
               <button
                 key={f.id}
                 onClick={() => setSelecionado(f)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-[#1e1e22] cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-border cursor-pointer ${
                   isSelected
                     ? 'bg-[#1a2940] border-l-2 border-l-[#3ea6ff]'
-                    : 'hover:bg-[#1a1a1e]'
+                    : 'hover:bg-background'
                 }`}
               >
                 <div
@@ -154,7 +154,7 @@ export function FuncionarioLotacaoList({
                 </div>
                 <div
                   className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    hasLotacao ? 'bg-emerald-400' : 'bg-amber-400'
+                    hasLotacao ? 'bg-mutedmerald-400' : 'bg-amber-400'
                   }`}
                   title={hasLotacao ? 'Lotado' : 'Sem lotação'}
                 />
