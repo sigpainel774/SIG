@@ -26,8 +26,8 @@ export function SecaoEndereco() {
   } = useAlunoForm()
 
   return (
-    <div>
-      <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+    <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+      <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
         7. Endereço Residencial Detalhado
       </div>
       <div className="space-y-3">

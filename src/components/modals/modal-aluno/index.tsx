@@ -70,7 +70,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             type="submit"
             form="aluno-form"
             disabled={loading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
+            className="bg-[#0067C0] hover:bg-[#005299] text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50 shadow-xs"
           >
             {loading ? 'Salvando...' : (
               <span className="flex items-center gap-2">
@@ -83,7 +83,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
       }
     >
       {/* Formulário com id correspondente ao botão do footer */}
-      <form id="aluno-form" onSubmit={handleSubmit} className="space-y-6">
+      <form id="aluno-form" onSubmit={handleSubmit} className="space-y-4 student-edit-modal__content">
         
         {/* Banner de Bloqueio por Assinatura */}
         {isDocumentoBloqueado && (

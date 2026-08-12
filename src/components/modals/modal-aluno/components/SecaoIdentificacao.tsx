@@ -35,36 +35,36 @@ export function SecaoIdentificacao() {
   } = useAlunoForm()
 
   return (
-    <div className="space-y-6">
-      {/* 1. Identificação Básica */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
-          1. Identificação Básica
+    <div className="space-y-4">
+      {/* Foto 3x4 Upload */}
+      <div className="student-edit-modal__photo-card photo-upload-card flex items-center gap-4 p-4 rounded-xl bg-white border border-[#D1D5DB]">
+        <div 
+          onClick={() => document.getElementById('modalFotoAlunoInput')?.click()}
+          className="photo-upload-circle w-20 h-20 rounded-full bg-[#F8FAFC] border-2 border-[#0067C0] text-[#0067C0] flex items-center justify-center overflow-hidden cursor-pointer hover:bg-[#E8F1FB] transition-colors"
+        >
+          {fotoUrl ? (
+            <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
+          ) : (
+            <Camera className="w-8 h-8 text-[#0067C0]" />
+          )}
         </div>
+        <div>
+          <Label className="text-sm font-semibold text-[#1F2937]">Foto 3x4 do Aluno</Label>
+          <p className="text-xs text-[#6B7280] mt-0.5">Clique no círculo para selecionar a imagem.</p>
+          <input 
+            id="modalFotoAlunoInput" 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleFotoUpload} 
+          />
+        </div>
+      </div>
 
-        {/* Foto 3x4 Upload */}
-        <div className="photo-upload-card flex items-center gap-4 p-3 mb-4 rounded-xl bg-card border border-border shadow-xs">
-          <div 
-            onClick={() => document.getElementById('modalFotoAlunoInput')?.click()}
-            className="photo-upload-circle w-20 h-20 rounded-full bg-muted border-2 border-primary flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            {fotoUrl ? (
-              <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
-            ) : (
-              <Camera className="w-8 h-8 text-muted-foreground" />
-            )}
-          </div>
-          <div>
-            <Label className="text-sm font-semibold text-foreground">Foto 3x4 do Aluno</Label>
-            <p className="text-xs text-muted-foreground mt-0.5">Clique no círculo para selecionar a imagem.</p>
-            <input 
-              id="modalFotoAlunoInput" 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={handleFotoUpload} 
-            />
-          </div>
+      {/* 1. Identificação Básica */}
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
+          1. Identificação Básica
         </div>
 
         <div className="space-y-3">
@@ -188,8 +188,8 @@ export function SecaoIdentificacao() {
       </div>
 
       {/* 3. Documentos */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           3. Documentos
         </div>
         <div className="space-y-3">
@@ -266,8 +266,8 @@ export function SecaoIdentificacao() {
       </div>
 
       {/* 4. Filiação e Contato */}
-      <div>
-        <div className="section-title text-primary font-bold text-xs uppercase tracking-wider pb-1 mb-3 border-b section-divider border-border">
+      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
+        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
           4. Filiação e Contato
         </div>
         <div className="space-y-3">
