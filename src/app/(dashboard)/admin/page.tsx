@@ -41,7 +41,10 @@ import {
   ShieldAlert,
   Play,
   StopCircle,
+  Search,
+  X,
 } from 'lucide-react'
+
 import { cn } from '@/lib/utils'
 
 /* ─────────────────────────── types ─────────────────────────── */
@@ -297,7 +300,30 @@ export default function AdminHubPage() {
   // Estados do Simulador de Permissões
   const [funcionariosOptions, setFuncionariosOptions] = useState<FuncionarioOption[]>([])
   const [selectedFuncId, setSelectedFuncId] = useState<string>('')
+  const [searchFuncionarioTerm, setSearchFuncionarioTerm] = useState<string>('')
   const [loadingFuncionariosList, setLoadingFuncionariosList] = useState(false)
+
+  // Filtrar opções de funcionários com base no campo de busca
+  const funcionariosFiltrados = funcionariosOptions.filter((f) => {
+    if (!searchFuncionarioTerm.trim()) return true
+    const term = searchFuncionarioTerm.toLowerCase()
+    return (
+      f.nome.toLowerCase().includes(term) ||
+      (f.cargo && f.cargo.toLowerCase().includes(term)) ||
+      (f.email && f.email.toLowerCase().includes(term))
+    )
+  })
+
+  // Garantir que um item válido permaneça selecionado ao filtrar
+  useEffect(() => {
+    if (funcionariosFiltrados.length > 0) {
+      const exists = funcionariosFiltrados.some((f) => f.id === selectedFuncId)
+      if (!exists) {
+        setSelectedFuncId(funcionariosFiltrados[0].id)
+      }
+    }
+  }, [searchFuncionarioTerm, funcionariosFiltrados, selectedFuncId])
+
 
   // All groups expanded by default
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
@@ -652,6 +678,28 @@ export default function AdminHubPage() {
                 </div>
               ) : (
                 <div className="pt-2 border-t border-purple-500/20 space-y-2">
+                  {/* Campo de Busca por Contas */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Buscar conta por nome, cargo ou e-mail..."
+                      value={searchFuncionarioTerm}
+                      onChange={(e) => setSearchFuncionarioTerm(e.target.value)}
+                      className="w-full bg-background border border-borderCustom text-foreground text-xs rounded-lg pl-8 pr-7 py-1.5 focus:ring-purple-500 focus:border-purple-500 font-medium placeholder:text-muted-foreground/70"
+                    />
+                    {searchFuncionarioTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchFuncionarioTerm('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                        title="Limpar busca"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
                   <select
                     value={selectedFuncId}
                     onChange={(e) => setSelectedFuncId(e.target.value)}
@@ -660,12 +708,12 @@ export default function AdminHubPage() {
                   >
                     {loadingFuncionariosList ? (
                       <option value="">Carregando funcionários...</option>
-                    ) : funcionariosOptions.length === 0 ? (
+                    ) : funcionariosFiltrados.length === 0 ? (
                       <option value="">Nenhum funcionário encontrado</option>
                     ) : (
-                      funcionariosOptions.map((f) => (
+                      funcionariosFiltrados.map((f) => (
                         <option key={f.id} value={f.id}>
-                          {f.nome} ({f.cargo || 'Sem cargo'})
+                          {f.nome} ({f.cargo || 'Sem cargo'}) — {f.email}
                         </option>
                       ))
                     )}
@@ -674,7 +722,7 @@ export default function AdminHubPage() {
                   <button
                     type="button"
                     onClick={handleStartSimulation}
-                    disabled={!selectedFuncId || isLoadingSimulation}
+                    disabled={!selectedFuncId || isLoadingSimulation || funcionariosFiltrados.length === 0}
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
                   >
                     {isLoadingSimulation ? (
@@ -686,6 +734,7 @@ export default function AdminHubPage() {
                   </button>
                 </div>
               )}
+
             </div>
           </div>
         )}
