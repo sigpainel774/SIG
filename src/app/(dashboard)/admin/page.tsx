@@ -467,6 +467,7 @@ export default function AdminHubPage() {
       toast.success(
         `Modo simulação ativado! Navegando com a experiência de "${targetFunc?.nome ?? 'Servidor'}".`
       )
+      router.push('/home')
     } else {
       toast.error('Falha ao carregar dados do usuário para simulação.')
     }
@@ -476,6 +477,7 @@ export default function AdminHubPage() {
   const handleStopSimulation = () => {
     encerrarSimulacao()
     toast.success('Simulação encerrada. Privilégios ROOT restaurados!')
+    router.push('/admin')
   }
 
   const toggleGroup = (id: string) => {
