@@ -555,17 +555,19 @@ export default function AdminHubPage() {
       </div>
 
       {/* ── Seção Controles Globais ── */}
-      <div className="bg-gradient-to-r from-amber-50 via-card to-orange-50/70 dark:from-[#18181b] dark:via-[#141416] dark:to-[#18181b] border border-amber-500/25 dark:border-amber-500/30 rounded-2xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden">
-        <div className="flex items-center gap-3 mb-4 border-b border-border/60 pb-3">
-          <SlidersHorizontal className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+      <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-sm relative overflow-hidden">
+        <div className="flex items-center gap-3 mb-4 border-b border-borderCustom pb-3">
+          <div className="p-2 rounded-xl bg-[#0067c0]/10 text-[#0067c0] dark:bg-amber-500/15 dark:text-amber-400">
+            <SlidersHorizontal className="w-5 h-5" />
+          </div>
           <div>
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               Controles Globais do Sistema
-              <span className="bg-amber-500/10 text-amber-700 border border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md">
+              <span className="bg-[#0067c0]/10 text-[#0067c0] border border-[#0067c0]/25 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md">
                 Parâmetros ROOT
               </span>
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground font-normal">
               Gerencie visibilidade no sistema de comunicações, travas globais de permissões e simulador de perfis da rede municipal.
             </p>
           </div>
@@ -805,7 +807,7 @@ export default function AdminHubPage() {
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => e.key === 'Enter' && router.push(item.path)}
-                          className="bg-surface-2 hover:bg-muted border border-borderCustom hover:border-highlight/30 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm min-h-[110px]"
+                          className="bg-card hover:bg-surface-2 border border-borderCustom hover:border-[#0067c0]/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm hover:shadow-md min-h-[110px]"
                         >
                           <div className="mb-2.5 flex items-center justify-center">
                             <ItemIcon

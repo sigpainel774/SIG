@@ -475,49 +475,49 @@ export default function AdminAcessosPage() {
     const cleanNivel = nivel.toUpperCase()
     if (cleanNivel.includes('SECRETARIA')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-950/70 border border-purple-500/50 text-purple-300 shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-950/70 dark:border-purple-500/50 dark:text-purple-300 shadow-xs">
           SECRETARIA
         </span>
       )
     }
     if (cleanNivel.includes('DIRETOR')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-950/70 border border-amber-500/50 text-amber-400 shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/70 dark:border-amber-500/50 dark:text-amber-400 shadow-xs">
           DIRETOR
         </span>
       )
     }
     if (cleanNivel.includes('PROFESSOR')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-950/70 border border-emerald-500/50 text-emerald-400 shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/70 dark:border-emerald-500/50 dark:text-emerald-400 shadow-xs">
           PROFESSOR
         </span>
       )
     }
     if (cleanNivel.includes('N6') || cleanNivel.includes('VIGIA') || cleanNivel.includes('OPERACIONAL')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-950/70 border border-blue-500/50 text-blue-400 shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/70 dark:border-blue-500/50 dark:text-blue-400 shadow-xs">
           N6
         </span>
       )
     }
     if (cleanNivel.includes('COORDENADOR')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-950/70 border border-sky-500/50 text-sky-400 shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-950/70 dark:border-sky-500/50 dark:text-sky-400 shadow-xs">
           COORDENADOR
         </span>
       )
     }
     if (cleanNivel.includes('ROOT') || cleanNivel.includes('ADMIN')) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#7c3aed]/20 border border-[#7c3aed]/50 text-[#a78bfa] shadow-sm">
+        <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-violet-100 text-violet-800 border border-violet-200 dark:bg-[#7c3aed]/20 dark:border-[#7c3aed]/50 dark:text-[#a78bfa] shadow-xs">
           ROOT
         </span>
       )
     }
 
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-muted border border-border text-muted-foreground">
+      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-surface-3 border border-borderCustom text-muted-foreground">
         {cleanNivel}
       </span>
     )
