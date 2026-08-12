@@ -53,7 +53,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
               type="button"
               variant="outline"
               onClick={handlePrint}
-              className="border-[#26262a] text-foreground hover:bg-[#1f2430] gap-2 rounded-xl text-xs font-semibold"
+              className="border-border text-foreground hover:bg-[#1f2430] gap-2 rounded-xl text-xs font-semibold"
             >
               <Printer className="w-4 h-4 text-[#3ea6ff]" />
               Imprimir Ficha
@@ -90,12 +90,12 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     >
       <div className="space-y-5 pb-4">
         {/* Cabeçalho da Página no Modal */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#26262a]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
           <div>
             <p className="text-[11px] font-extrabold text-[#3ea6ff] uppercase tracking-wider">EMAEE • Ano letivo 2026</p>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Ficha de matrícula para AEE</h1>
           </div>
-          <span className="self-start sm:self-auto px-3 py-1 border border-emerald-500/30 rounded-full text-emerald-400 bg-emerald-500/10 text-xs font-bold">
+          <span className="self-start sm:self-auto px-3 py-1 border border-emerald-500/30 rounded-full text-emerald-400 bg-mutedmerald-500/10 text-xs font-bold">
             Nova Matrícula
           </span>
         </div>
@@ -112,7 +112,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
                 className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-bold text-left transition-all ${
                   isActive
                     ? 'border-[#3ea6ff]/40 bg-[#3ea6ff]/15 text-foreground shadow-sm'
-                    : 'border-[#26262a] bg-[#121621]/80 text-muted-foreground hover:border-[#3ea6ff]/20 hover:text-foreground'
+                    : 'border-border bg-[#121621]/80 text-muted-foreground hover:border-[#3ea6ff]/20 hover:text-foreground'
                 }`}
               >
                 <span className={`grid place-items-center w-6 h-6 rounded-lg text-xs font-extrabold flex-shrink-0 ${

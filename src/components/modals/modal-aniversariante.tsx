@@ -36,7 +36,7 @@ export function ModalAniversariante({
         </div>
 
         <h3 className="mt-2 mb-1 text-white text-lg font-bold">{nome}</h3>
-        <p className="m-0 mb-2 text-[#aaa] text-sm">{orgao}</p>
+        <p className="m-0 mb-2 text-muted-foreground text-sm">{orgao}</p>
         <p className="m-0 text-highlight font-bold text-[15px]">{dia}</p>
       </div>
     </StandardDialog>

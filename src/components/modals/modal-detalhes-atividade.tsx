@@ -30,7 +30,7 @@ const STATUS_CONFIG: Record<StatusAtividade, { label: string; class: string }> =
   },
   impressa: {
     label: 'Impressa',
-    class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    class: 'bg-mutedmerald-500/20 text-emerald-400 border-emerald-500/30',
   },
   entregue_professor: {
     label: 'Entregue ao Professor',
@@ -164,7 +164,7 @@ export function ModalDetalhesAtividade({
       description={`Ano letivo: ${atividade.ano_letivo ?? '—'}`}
       maxWidth="sm:max-w-[640px]"
     >
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#26262a]">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-border">
           <span className="text-xs text-zinc-400">Status da Atividade:</span>
           <Badge
             variant="outline"
@@ -201,7 +201,7 @@ export function ModalDetalhesAtividade({
             </div>
 
             {atividade.observacoes && (
-              <div className="mt-4 rounded-lg border border-[#26262a] bg-[#1c1c1e] p-4">
+              <div className="mt-4 rounded-lg border border-border bg-[#1c1c1e] p-4">
                 <p className="text-xs text-zinc-500 mb-1 font-medium uppercase tracking-wide">
                   Observações
                 </p>
@@ -213,7 +213,7 @@ export function ModalDetalhesAtividade({
 
             {/* Arquivo */}
             {atividade.arquivo_url && (
-              <div className="mt-2 rounded-lg border border-[#26262a] bg-[#1c1c1e] p-4 flex items-center justify-between gap-4">
+              <div className="mt-2 rounded-lg border border-border bg-[#1c1c1e] p-4 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs text-zinc-500 mb-0.5 font-medium uppercase tracking-wide">
                     Arquivo Anexado
@@ -231,7 +231,7 @@ export function ModalDetalhesAtividade({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-[#26262a] bg-transparent text-zinc-300 hover:text-white hover:bg-[#26262a] gap-2"
+                      className="border-border bg-transparent text-muted-foreground hover:text-foreground hover:bg-[#26262a] gap-2"
                     >
                       <Download className="w-4 h-4" />
                       Visualizar Arquivo
@@ -262,7 +262,7 @@ export function ModalDetalhesAtividade({
                   {historico.map((h) => (
                     <div
                       key={h.id}
-                      className="rounded-lg border border-[#26262a] bg-[#1c1c1e] px-4 py-3 flex items-center justify-between gap-4"
+                      className="rounded-lg border border-border bg-[#1c1c1e] px-4 py-3 flex items-center justify-between gap-4"
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge

@@ -131,7 +131,7 @@ export function ModalCargosSecretaria({
             <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
           </div>
         ) : cargos.length === 0 ? (
-          <div className="py-8 text-center text-zinc-400 bg-black/20 rounded-xl border border-zinc-800">
+          <div className="py-8 text-center text-zinc-400 bg-black/20 rounded-xl border border-border">
             <Briefcase className="w-8 h-8 text-amber-500 mx-auto mb-2 opacity-50" />
             <p>Nenhum cargo cadastrado para esta secretaria.</p>
           </div>
@@ -140,7 +140,7 @@ export function ModalCargosSecretaria({
             {cargos.map(cargo => (
               <div 
                 key={cargo.id} 
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-[#121214] border-zinc-800 hover:border-zinc-700 gap-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-background border-border hover:border-border gap-3"
               >
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">

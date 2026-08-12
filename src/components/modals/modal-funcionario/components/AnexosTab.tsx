@@ -36,17 +36,17 @@ export function AnexosTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-        <h4 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800 pb-2 mb-4">
+      <div className="bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border">
+        <h4 className="text-xs font-bold text-highlight uppercase tracking-wider border-b border-zinc-200 dark:border-border pb-2 mb-4">
           Documentos Comprovatórios Obrigatórios (PDF, JPG ou PNG)
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           {documentos.map((doc) => (
-            <div key={doc.key} className="flex flex-col gap-1 p-3 rounded bg-zinc-50 dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800">
+            <div key={doc.key} className="flex flex-col gap-1 p-3 rounded bg-zinc-50 dark:bg-[#121212] border border-zinc-200 dark:border-border">
               <span className="font-semibold text-zinc-700 dark:text-zinc-300">{doc.label}</span>
               <div className="flex items-center gap-2 mt-1">
-                <label className="flex-1 flex items-center justify-between px-3 py-1.5 rounded bg-zinc-200 dark:bg-[#1a1a1c] border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-300 dark:hover:bg-[#252528] transition-colors cursor-pointer text-zinc-600 dark:text-zinc-400 font-medium">
+                <label className="flex-1 flex items-center justify-between px-3 py-1.5 rounded bg-zinc-200 dark:bg-[#1a1a1c] border border-zinc-300 dark:border-border hover:bg-zinc-300 dark:hover:bg-muted transition-colors cursor-pointer text-zinc-600 dark:text-zinc-400 font-medium">
                   <span className="flex items-center gap-1.5">
                     <Paperclip className="w-3.5 h-3.5" />
                     {doc.url ? 'Substituir Arquivo' : 'Escolher Arquivo'}
@@ -63,14 +63,14 @@ export function AnexosTab() {
                     href={doc.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-1.5 rounded bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 font-bold hover:bg-emerald-900/60 flex items-center gap-1"
+                    className="px-3 py-1.5 rounded bg-mutedmerald-950/60 border border-emerald-700/50 text-emerald-400 font-bold hover:bg-mutedmerald-900/60 flex items-center gap-1"
                     title="Visualizar documento cadastrado"
                   >
                     <Eye className="w-3.5 h-3.5" /> Ver
                   </a>
                 )}
                 {doc.url && (
-                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-mutedmerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </span>
                 )}
@@ -102,7 +102,7 @@ export function AnexosTab() {
           />
         </div>
         <div className="flex items-end">
-          <p className="text-[10px] text-zinc-650 dark:text-zinc-500 leading-normal mb-1 bg-zinc-100 dark:bg-[#18181a] p-2 rounded border border-zinc-200 dark:border-zinc-800">
+          <p className="text-[10px] text-zinc-650 dark:text-zinc-500 leading-normal mb-1 bg-zinc-100 dark:bg-background p-2 rounded border border-zinc-200 dark:border-border">
             * Nota: A data de preenchimento e a assinatura do funcionário são impressas para validação em papel. O preenchimento da data é automatico no envio.
           </p>
         </div>

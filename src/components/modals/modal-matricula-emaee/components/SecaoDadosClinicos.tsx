@@ -15,8 +15,8 @@ export function SecaoDadosClinicos() {
   } = useMatriculaEmaeeContext()
 
   return (
-    <section className="overflow-hidden border border-[#26262a] rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-[#26262a] bg-white/[0.012]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
           04
         </span>
@@ -28,7 +28,7 @@ export function SecaoDadosClinicos() {
 
       <div className="p-4 md:p-5 space-y-4">
         {/* Tipo de Deficiência */}
-        <fieldset className="p-3.5 border border-[#26262a] rounded-xl bg-[#0b0e14]/40">
+        <fieldset className="p-3.5 border border-border rounded-xl bg-[#0b0e14]/40">
           <legend className="px-1 text-xs font-bold text-slate-200">Tipo de deficiência</legend>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mt-2">
             {[
@@ -48,7 +48,7 @@ export function SecaoDadosClinicos() {
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
                     isChecked
                       ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                      : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                      : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
                   }`}
                 >
                   <input
@@ -65,13 +65,13 @@ export function SecaoDadosClinicos() {
         </fieldset>
 
         {/* Transtornos */}
-        <fieldset className="p-3.5 border border-[#26262a] rounded-xl bg-[#0b0e14]/40">
+        <fieldset className="p-3.5 border border-border rounded-xl bg-[#0b0e14]/40">
           <legend className="px-1 text-xs font-bold text-slate-200">Transtornos</legend>
           <div className="flex flex-wrap gap-2.5 mt-2">
             <label className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
               deficiencias.transtorno_tea
                 ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
             }`}>
               <input
                 type="checkbox"
@@ -91,7 +91,7 @@ export function SecaoDadosClinicos() {
               placeholder="Especifique, se houver"
               value={outrosTranstornos}
               onChange={(e) => setOutrosTranstornos(e.target.value)}
-              className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+              className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
             />
           </div>
 
@@ -101,7 +101,7 @@ export function SecaoDadosClinicos() {
               placeholder="Ex.: F84.0"
               value={cidCodigo}
               onChange={(e) => setCidCodigo(e.target.value)}
-              className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+              className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
             />
           </div>
 
@@ -114,7 +114,7 @@ export function SecaoDadosClinicos() {
               rows={3}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl resize-y min-h-[90px]"
+              className="bg-[#121621] border-border text-foreground text-sm rounded-xl resize-y min-h-[90px]"
             />
           </div>
         </div>

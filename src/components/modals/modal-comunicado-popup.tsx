@@ -178,7 +178,7 @@ export function ModalComunicadoPopup() {
       />
 
       {/* Caixa Central do Modal */}
-      <div className="relative w-[94vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl bg-[#141416] border border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.25)] p-5 sm:p-7 z-10 overflow-hidden text-foregroundCustom">
+      <div className="relative w-[94vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl bg-background border border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.25)] p-5 sm:p-7 z-10 overflow-hidden text-foregroundCustom">
         
         {/* Glow ornamental no topo */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-36 bg-amber-500/15 blur-3xl pointer-events-none rounded-full" />

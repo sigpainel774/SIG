@@ -42,8 +42,8 @@ export function SecaoDadosAluno() {
   } = useMatriculaEmaeeContext()
 
   return (
-    <section className="overflow-hidden border border-[#26262a] rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-[#26262a] bg-white/[0.012]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
           02
         </span>
@@ -66,7 +66,7 @@ export function SecaoDadosAluno() {
               placeholder="Digite o nome, CPF ou identificação do Censo para buscar..."
               value={searchTerm}
               onChange={(e) => handleSearchAluno(e.target.value)}
-              className="pl-10 pr-10 bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+              className="pl-10 pr-10 bg-[#121621] border-border text-foreground text-sm rounded-xl"
             />
             {searchLoading && (
               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-[#3ea6ff]" />
@@ -78,7 +78,7 @@ export function SecaoDadosAluno() {
 
           {/* Dropdown de Alunos Encontrados */}
           {alunosEncontrados.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-[#121621] border border-[#26262a] rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-[#26262a]">
+            <div className="absolute z-20 left-0 right-0 mt-1 bg-[#121621] border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-[#26262a]">
               {alunosEncontrados.map((a) => (
                 <button
                   key={a.id}
@@ -114,7 +114,7 @@ export function SecaoDadosAluno() {
         )}
 
         {/* Upload / Captura de Foto 3x4 do Aluno */}
-        <div className="flex items-center gap-4 p-3.5 rounded-xl bg-[#121621] border border-[#26262a]">
+        <div className="flex items-center gap-4 p-3.5 rounded-xl bg-[#121621] border border-border">
           <div 
             onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
             className="w-20 h-20 rounded-full bg-[#0b0e14] border-2 border-[#3ea6ff] flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
@@ -161,7 +161,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomeCompleto}
                 onChange={(e) => setNomeCompleto(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
                 required
               />
             </div>
@@ -171,7 +171,7 @@ export function SecaoDadosAluno() {
                 type="date"
                 value={dataNascimento}
                 onChange={(e) => setDataNascimento(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -181,7 +181,7 @@ export function SecaoDadosAluno() {
                 placeholder="000.000.000-00"
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -189,7 +189,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={identificacaoCenso}
                 onChange={(e) => setIdentificacaoCenso(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -197,7 +197,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={rg}
                 onChange={(e) => setRg(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -206,7 +206,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nis}
                 onChange={(e) => setNis(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-6">
@@ -214,20 +214,20 @@ export function SecaoDadosAluno() {
               <Input
                 value={certidaoNascimento}
                 onChange={(e) => setCertidaoNascimento(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
             {/* Cor / Raça */}
             <div className="col-span-12 md:col-span-8">
-              <fieldset className="p-3 border border-[#26262a] rounded-xl bg-[#0b0e14]/40">
+              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40">
                 <legend className="px-1 text-xs font-bold text-slate-200">Cor / raça</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Branco', 'Pardo', 'Preto', 'Amarelo', 'Indígena'].map((item) => (
                     <label key={item} className={`flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${
                       corRaca === item
                         ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                        : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                        : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
                     }`}>
                       <input
                         type="radio"
@@ -246,14 +246,14 @@ export function SecaoDadosAluno() {
 
             {/* Sexo */}
             <div className="col-span-12 md:col-span-4">
-              <fieldset className="p-3 border border-[#26262a] rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
                 <legend className="px-1 text-xs font-bold text-slate-200">Sexo</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Feminino', 'Masculino'].map((s) => (
                     <label key={s} className={`flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
                       sexo === s
                         ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                        : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                        : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
                     }`}>
                       <input
                         type="radio"
@@ -275,7 +275,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={cidadeNascimento}
                 onChange={(e) => setCidadeNascimento(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-5">
@@ -283,7 +283,7 @@ export function SecaoDadosAluno() {
               <select
                 value={estadoNascimento}
                 onChange={(e) => setEstadoNascimento(e.target.value)}
-                className="w-full min-h-[40px] px-3 py-2 border border-[#26262a] rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff]"
+                className="w-full min-h-[40px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff]"
               >
                 <option value="">Selecione a UF</option>
                 {['BA', 'AL', 'AM', 'AP', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'].map(uf => (
@@ -307,7 +307,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomeMae}
                 onChange={(e) => setNomeMae(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -315,7 +315,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={profissaoMae}
                 onChange={(e) => setProfissaoMae(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -324,7 +324,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomePai}
                 onChange={(e) => setNomePai(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -332,7 +332,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={profissaoPai}
                 onChange={(e) => setProfissaoPai(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -341,18 +341,18 @@ export function SecaoDadosAluno() {
               <Input
                 value={endereco}
                 onChange={(e) => setEndereco(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <fieldset className="p-2.5 border border-[#26262a] rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+              <fieldset className="p-2.5 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
                 <legend className="px-1 text-xs font-bold text-slate-200">Zona residencial</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Rural', 'Urbana'].map((z) => (
                     <label key={z} className={`flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
                       zonaResidencial === z
                         ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                        : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                        : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
                     }`}>
                       <input
                         type="radio"
@@ -374,7 +374,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={contatoEmergencia}
                 onChange={(e) => setContatoEmergencia(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -383,12 +383,12 @@ export function SecaoDadosAluno() {
                 placeholder="(75) 00000-0000"
                 value={telefoneEmergencia}
                 onChange={(e) => setTelefoneEmergencia(e.target.value)}
-                className="bg-[#121621] border-[#26262a] text-foreground text-sm rounded-xl"
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
             <div className="col-span-12">
-              <fieldset className="p-3 border border-[#26262a] rounded-xl bg-[#0b0e14]/40">
+              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40">
                 <legend className="px-1 text-xs font-bold text-slate-200">
                   Turno da matrícula para atendimento <span className="text-rose-500">*</span>
                 </legend>
@@ -397,7 +397,7 @@ export function SecaoDadosAluno() {
                     <label key={t} className={`flex items-center gap-2 cursor-pointer px-4 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                       turnoAtendimento === t
                         ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                        : 'border-[#26262a] bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                        : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
                     }`}>
                       <input
                         type="radio"

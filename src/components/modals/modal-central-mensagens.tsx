@@ -791,7 +791,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <h4 className="text-xs font-bold text-white truncate">{conv.contactName}</h4>
-                            <span className="text-[10px] text-[#777] shrink-0 ml-1">
+                            <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
                               {new Date(conv.lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
@@ -802,11 +802,11 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                                 {conv.lastMessage.lida ? (
                                   <CheckCheck className="w-3 h-3 text-emerald-400" />
                                 ) : (
-                                  <Check className="w-3 h-3 text-[#777]" />
+                                  <Check className="w-3 h-3 text-muted-foreground" />
                                 )}
                               </span>
                             )}
-                            <p className="text-[11px] text-[#aaa] truncate leading-tight">
+                            <p className="text-[11px] text-muted-foreground truncate leading-tight">
                               {conv.lastMessage.conteudo}
                             </p>
                           </div>
@@ -819,11 +819,11 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
             </div>
 
             {/* Direita: Janela de Chat Ativo (WhatsApp Style) */}
-            <div className="md:col-span-2 flex flex-col h-full bg-[#0a0a0c] relative overflow-hidden">
+            <div className="md:col-span-2 flex flex-col h-full bg-background relative overflow-hidden">
               {activeConversation ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-3 bg-[#141416] border-b border-[#27272a] flex items-center justify-between shrink-0">
+                  <div className="p-3 bg-background border-b border-border flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                       {activeConversation.contactFotoUrl ? (
                         <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm border border-[#333]">
@@ -842,7 +842,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       <div>
                         <h3 className="text-xs font-bold text-white leading-tight">{activeConversation.contactName}</h3>
                         <p className="text-[10px] text-sky-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-mutedmerald-400 animate-ping inline-block" />
                           <span>{activeConversation.contactCargo || 'Servidor Municipal'}</span>
                         </p>
                       </div>
@@ -863,7 +863,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                             className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-md relative text-xs leading-relaxed ${
                               isMe
                                 ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-tr-none'
-                                : 'bg-[#1a1a1e] border border-[#2c2c32] text-slate-100 rounded-tl-none'
+                                : 'bg-background border border-[#2c2c32] text-slate-100 rounded-tl-none'
                             }`}
                           >
                             {msg.assunto && msg.assunto !== 'Chat Direto' && (
@@ -886,7 +886,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                               </a>
                             )}
 
-                            <div className={`flex items-center justify-end gap-1 text-[9px] mt-1 ${isMe ? 'text-sky-100/70' : 'text-[#777]'}`}>
+                            <div className={`flex items-center justify-end gap-1 text-[9px] mt-1 ${isMe ? 'text-sky-100/70' : 'text-muted-foreground'}`}>
                               <span>
                                 {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                               </span>
@@ -913,7 +913,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
 
                   {/* Attachment Preview (if selected) */}
                   {chatAnexoNome && (
-                    <div className="px-4 py-1.5 bg-[#141416] border-t border-[#27272a] flex items-center justify-between text-xs text-sky-400">
+                    <div className="px-4 py-1.5 bg-background border-t border-border flex items-center justify-between text-xs text-sky-400">
                       <div className="flex items-center gap-1.5 truncate">
                         <Paperclip className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate font-medium">{chatAnexoNome}</span>
@@ -928,8 +928,8 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                   )}
 
                   {/* Chat Quick Input (Rodapé de Envio Imediato) */}
-                  <form onSubmit={handleSendChatQuick} className="p-3 bg-[#141416] border-t border-[#27272a] flex items-center gap-2 shrink-0">
-                    <label className="p-2 rounded-xl bg-[#1f1f23] hover:bg-[#27272a] text-[#aaa] hover:text-white cursor-pointer transition-colors shrink-0">
+                  <form onSubmit={handleSendChatQuick} className="p-3 bg-background border-t border-border flex items-center gap-2 shrink-0">
+                    <label className="p-2 rounded-xl bg-[#1f1f23] hover:bg-muted text-muted-foreground hover:text-white cursor-pointer transition-colors shrink-0">
                       <Paperclip className="w-4 h-4" />
                       <input
                         type="file"
@@ -944,7 +944,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       placeholder="Digite uma mensagem..."
                       value={chatInputText}
                       onChange={(e) => setChatInputText(e.target.value)}
-                      className="flex-1 h-10 bg-[#1a1a1e] border-[#27272a] text-white text-xs rounded-xl focus-visible:ring-sky-500 placeholder:text-[#666]"
+                      className="flex-1 h-10 bg-background border-border text-foreground text-xs rounded-xl focus-visible:ring-sky-500 placeholder:text-[#666]"
                     />
 
                     <Button
@@ -964,10 +964,10 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                   </form>
                 </>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-[#888] space-y-3">
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-3">
                   <MessageSquare className="w-12 h-12 text-sky-500/30" />
                   <h3 className="text-sm font-bold text-white">Nenhuma Conversa Selecionada</h3>
-                  <p className="text-xs max-w-xs text-[#777]">
+                  <p className="text-xs max-w-xs text-muted-foreground">
                     Selecione um contato na barra lateral ou inicie uma nova mensagem para conversar.
                   </p>
                   <Button
@@ -995,20 +995,20 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
               </label>
 
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-[#777]" />
+                <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Digite o nome ou cargo para buscar destinatário..."
                   value={composeSearchQuery}
                   onChange={(e) => setComposeSearchQuery(e.target.value)}
-                  className="pl-9 h-10 bg-[#18181a] border-[#27272a] text-white text-xs rounded-xl focus-visible:ring-sky-500"
+                  className="pl-9 h-10 bg-background border-border text-foreground text-xs rounded-xl focus-visible:ring-sky-500"
                 />
               </div>
 
               {/* Lista filtrada de contatos */}
-              <div className="max-h-40 overflow-y-auto bg-[#141416] border border-[#27272a] rounded-xl divide-y divide-[#202024] shadow-inner">
+              <div className="max-h-40 overflow-y-auto bg-background border border-border rounded-xl divide-y divide-[#202024] shadow-inner">
                 {filteredDestinatarios.length === 0 ? (
-                  <div className="p-3 text-center text-xs text-[#777]">Nenhum servidor encontrado.</div>
+                  <div className="p-3 text-center text-xs text-muted-foreground">Nenhum servidor encontrado.</div>
                 ) : (
                   filteredDestinatarios.map((dest) => {
                     const isSelected = formDestinatarioId === dest.id
@@ -1020,7 +1020,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                           setComposeSearchQuery(dest.nome)
                         }}
                         className={`p-2.5 flex items-center justify-between cursor-pointer text-xs transition-colors ${
-                          isSelected ? 'bg-sky-500/20 text-white font-bold' : 'hover:bg-[#1a1a1e] text-[#ccc]'
+                          isSelected ? 'bg-sky-500/20 text-white font-bold' : 'hover:bg-background text-[#ccc]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
@@ -1040,7 +1040,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                           )}
                           <div>
                             <div className="font-semibold text-white">{dest.nome}</div>
-                            {dest.cargo && <div className="text-[10px] text-[#777]">{dest.cargo}</div>}
+                            {dest.cargo && <div className="text-[10px] text-muted-foreground">{dest.cargo}</div>}
                           </div>
                         </div>
 
@@ -1060,7 +1060,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                 placeholder="Ex: Alinhamento de diário pedagógico / Comunicado"
                 value={formAssunto}
                 onChange={(e) => setFormAssunto(e.target.value)}
-                className="h-10 bg-[#18181a] border-[#27272a] text-white text-xs rounded-xl"
+                className="h-10 bg-background border-border text-foreground text-xs rounded-xl"
               />
             </div>
 
@@ -1074,22 +1074,22 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                 placeholder="Escreva o conteúdo da mensagem..."
                 value={formConteudo}
                 onChange={(e) => setFormConteudo(e.target.value)}
-                className="w-full bg-[#18181a] border border-[#27272a] rounded-xl p-3 text-xs text-white outline-none focus:border-sky-500 resize-none leading-relaxed"
+                className="w-full bg-background border border-border rounded-xl p-3 text-xs text-foreground outline-none focus:border-sky-500 resize-none leading-relaxed"
               />
             </div>
 
             {/* Anexo */}
-            <div className="flex items-center justify-between gap-3 p-3 bg-[#141416] rounded-xl border border-[#27272a]">
+            <div className="flex items-center justify-between gap-3 p-3 bg-background rounded-xl border border-border">
               <div className="flex items-center gap-2 min-w-0">
-                <Paperclip className="w-4 h-4 text-[#888] shrink-0" />
+                <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
                 {formAnexoNome ? (
                   <span className="text-xs font-medium text-sky-400 truncate">{formAnexoNome}</span>
                 ) : (
-                  <span className="text-xs text-[#777]">Anexar documento (PDF ou imagem até 10MB)</span>
+                  <span className="text-xs text-muted-foreground">Anexar documento (PDF ou imagem até 10MB)</span>
                 )}
               </div>
 
-              <label className="px-3 py-1.5 rounded-lg bg-[#1f1f23] hover:bg-[#27272a] text-white text-xs font-semibold cursor-pointer shrink-0 transition-colors">
+              <label className="px-3 py-1.5 rounded-lg bg-[#1f1f23] hover:bg-muted text-white text-xs font-semibold cursor-pointer shrink-0 transition-colors">
                 {isUploading ? (
                   <span className="flex items-center gap-1.5">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...
@@ -1104,12 +1104,12 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
             </div>
 
             {/* Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#27272a]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setActiveTab('chat')}
-                className="text-xs h-9 text-[#aaa] hover:text-white"
+                className="text-xs h-9 text-muted-foreground hover:text-white"
               >
                 Cancelar
               </Button>
@@ -1135,10 +1135,10 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         {activeTab === 'inbox' && (
           <div className="flex-1 overflow-y-auto space-y-2 pt-3">
             {allMessages.filter(m => m.destinatario_id === funcionario?.id).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-[#777] gap-2">
+              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-2">
                 <Mail className="w-10 h-10 opacity-30 text-sky-400" />
                 <p className="text-sm font-semibold text-white">Nenhuma mensagem recebida</p>
-                <p className="text-xs max-w-xs text-[#777]">Sua caixa de entrada está limpa.</p>
+                <p className="text-xs max-w-xs text-muted-foreground">Sua caixa de entrada está limpa.</p>
               </div>
             ) : (
               allMessages
@@ -1152,7 +1152,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       setActiveTab('chat')
                     }}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
-                      !msg.lida ? 'bg-sky-500/10 border-sky-500/30' : 'bg-[#141416] border-[#27272a] hover:bg-[#1a1a1e]'
+                      !msg.lida ? 'bg-sky-500/10 border-sky-500/30' : 'bg-background border-border hover:bg-background'
                     }`}
                   >
                     <div className="w-9 h-9 rounded-full bg-sky-600/30 text-sky-400 flex items-center justify-center font-bold text-xs shrink-0">
@@ -1161,12 +1161,12 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <h4 className="text-xs font-bold text-white truncate">{msg.remetente?.nome || 'Servidor'}</h4>
-                        <span className="text-[10px] text-[#777]">
+                        <span className="text-[10px] text-muted-foreground">
                           {new Date(msg.created_at).toLocaleDateString('pt-BR')} {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-sky-400 truncate">{msg.assunto}</p>
-                      <p className="text-xs text-[#aaa] line-clamp-1 mt-0.5">{msg.conteudo}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{msg.conteudo}</p>
                     </div>
                   </div>
                 ))
@@ -1178,7 +1178,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
         {activeTab === 'sent' && (
           <div className="flex-1 overflow-y-auto space-y-2 pt-3">
             {allMessages.filter(m => m.remetente_id === funcionario?.id).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-[#777] gap-2">
+              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-2">
                 <Send className="w-10 h-10 opacity-30 text-sky-400" />
                 <p className="text-sm font-semibold text-white">Nenhuma mensagem enviada</p>
               </div>
@@ -1193,7 +1193,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       setActiveContactId(msg.destinatario_id)
                       setActiveTab('chat')
                     }}
-                    className="p-3.5 rounded-xl border border-[#27272a] bg-[#141416] hover:bg-[#1a1a1e] transition-all cursor-pointer flex items-start gap-3"
+                    className="p-3.5 rounded-xl border border-border bg-background hover:bg-background transition-all cursor-pointer flex items-start gap-3"
                   >
                     <div className="w-9 h-9 rounded-full bg-purple-600/30 text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
                       {(msg.destinatario?.nome || 'D').charAt(0)}
@@ -1201,11 +1201,11 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <h4 className="text-xs font-bold text-white truncate">Para: {msg.destinatario?.nome || 'Servidor'}</h4>
-                        <span className="text-[10px] text-[#777]">
+                        <span className="text-[10px] text-muted-foreground">
                           {new Date(msg.created_at).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
-                      <p className="text-xs text-[#aaa] line-clamp-1 mt-0.5">{msg.conteudo}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{msg.conteudo}</p>
                     </div>
                   </div>
                 ))

@@ -251,7 +251,7 @@ export function ModalTransferirFuncionario({
           <Button 
             variant="ghost" 
             onClick={() => onOpenChange(false)}
-            className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+            className="text-muted-foreground hover:bg-muted hover:text-white"
           >
             Cancelar
           </Button>
@@ -265,7 +265,7 @@ export function ModalTransferirFuncionario({
         </div>
       }
     >
-      <p className="text-[#aaa] text-xs mb-4">
+      <p className="text-muted-foreground text-xs mb-4">
         Transfira ou solicite a movimentação de um funcionário ativo desta unidade escolar para outra escola da rede ou para fora do município.
       </p>
 

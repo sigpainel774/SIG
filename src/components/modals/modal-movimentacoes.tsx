@@ -267,7 +267,7 @@ export function ModalMovimentacoes({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
           {/* Card Resumo do Funcionário */}
           {funcionario && (
-            <div className="p-4 rounded-2xl bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-zinc-700/50 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs shadow-sm">
+            <div className="p-4 rounded-2xl bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs shadow-sm">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg shrink-0">
                   <Building2 className="w-3.5 h-3.5" />
@@ -343,7 +343,7 @@ export function ModalMovimentacoes({
 
                   {/* Ícone circular */}
                   <div className="relative z-10 flex-shrink-0">
-                    <div className="w-12 h-12 rounded-2xl bg-sidebar-accent dark:bg-zinc-800/80 border border-sidebar-border dark:border-zinc-700/60 flex items-center justify-center shadow-sm">
+                    <div className="w-12 h-12 rounded-2xl bg-sidebar-accent dark:bg-zinc-800/80 border border-sidebar-border dark:border-border/60 flex items-center justify-center shadow-sm">
                       {getIconForType(mov)}
                     </div>
                   </div>
@@ -359,7 +359,7 @@ export function ModalMovimentacoes({
                           <span
                             className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
                               mov.status === 'APROVADO'
-                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                ? 'bg-mutedmerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                                 : mov.status === 'RECUSADO'
                                 ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
                                 : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
@@ -379,7 +379,7 @@ export function ModalMovimentacoes({
                     </div>
 
                     {(mov.orgao_origem || mov.orgao_destino) && (
-                      <div className="flex flex-wrap items-center gap-2 text-xs bg-sidebar-accent dark:bg-zinc-800/40 p-2.5 rounded-xl border border-sidebar-border/60 dark:border-zinc-700/50">
+                      <div className="flex flex-wrap items-center gap-2 text-xs bg-sidebar-accent dark:bg-zinc-800/40 p-2.5 rounded-xl border border-sidebar-border/60 dark:border-border/50">
                         {mov.orgao_origem && (
                           <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-300 font-medium">
                             <span className="font-bold text-muted-foreground uppercase text-[10px]">De:</span> {mov.orgao_origem}
@@ -427,7 +427,7 @@ export function ModalMovimentacoes({
                             className={`p-3 rounded-xl border flex items-start gap-2.5 ${
                               mov.status === 'RECUSADO'
                                 ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
-                                : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                                : 'bg-mutedmerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                             }`}
                           >
                             <MessageSquare className="w-4 h-4 shrink-0 mt-0.5" />

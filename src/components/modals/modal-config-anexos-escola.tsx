@@ -89,12 +89,11 @@ export function ModalConfigAnexosEscola({
       description={`Defina a lista de documentos padrão exigidos para os alunos de ${escola?.nome ?? 'unidade escolar'}.`}
       maxWidth="sm:max-w-[480px]"
       footer={
-        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a] cursor-pointer"
           >
             Cancelar
           </Button>
@@ -122,7 +121,7 @@ export function ModalConfigAnexosEscola({
                 value={novoAnexo}
                 onChange={(e) => setNovoAnexo(e.target.value)}
                 placeholder="Ex: RG, CPF, Ficha de Vacina..."
-                className="bg-[#18181a] border-[#27272a] text-white text-sm"
+                className="bg-background border-border text-foreground text-sm"
               />
             </div>
             <Button 
@@ -136,8 +135,8 @@ export function ModalConfigAnexosEscola({
 
           {/* Lista de Documentos Cadastrados */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-[#aaa] uppercase tracking-wider">Documentos Configurados</Label>
-            <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 border border-[#27272a] rounded-xl p-3 bg-black/20">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Documentos Configurados</Label>
+            <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 border border-border rounded-xl p-3 bg-black/20">
               {anexos.length === 0 ? (
                 <div className="text-center py-6 text-zinc-500 text-xs">
                   Nenhum documento padrão configurado. Os alunos desta escola só poderão anexar arquivos personalizados livres.
@@ -146,7 +145,7 @@ export function ModalConfigAnexosEscola({
                 anexos.map((anexo, i) => (
                   <div 
                     key={i} 
-                    className="flex items-center justify-between p-2.5 bg-[#18181a] border border-[#27272a] rounded-lg text-sm"
+                    className="flex items-center justify-between p-2.5 bg-background border border-border rounded-lg text-sm"
                   >
                     <div className="flex items-center gap-2 text-zinc-300">
                       <FileText className="w-4 h-4 text-purple-400/80" />

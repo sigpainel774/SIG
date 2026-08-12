@@ -203,7 +203,7 @@ export function ModalTransferirAluno({
             <Button 
               variant="ghost" 
               onClick={() => handleOpenChange(false)}
-              className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+              className="text-muted-foreground hover:bg-muted hover:text-white"
             >
               Cancelar
             </Button>
@@ -219,7 +219,7 @@ export function ModalTransferirAluno({
       >
         <div className="space-y-5">
           {/* Seletor de Tipo de Movimentação */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-[#121212] rounded-xl border border-[#27272a]">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-[#121212] rounded-xl border border-border">
             <button
               type="button"
               onClick={() => setTipoMovimentacao('TRANSFERENCIA_REGULAR')}
@@ -250,7 +250,7 @@ export function ModalTransferirAluno({
             </button>
           </div>
 
-          <p className="text-[#aaa] text-xs leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             {tipoMovimentacao === 'ENCAMINHAMENTO_EMMAE' ? (
               <span>
                 Você está solicitando o acompanhamento especializado para <strong className="text-white">{alunoNome}</strong> no <strong className="text-amber-400">EMMAE</strong>. A pasta do aluno e o requerimento serão enviados para a fila de acolhimento Nível 2.
@@ -271,7 +271,7 @@ export function ModalTransferirAluno({
                   <SelectTrigger className="w-full bg-[#121212] border-[#3f3f46] text-white">
                     <SelectValue placeholder="Selecione a escola de destino..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#18181b] border-[#3f3f46] text-white">
+                  <SelectContent className="bg-background border-[#3f3f46] text-foreground">
                     {escolas
                       .filter((e: any) => e.id !== escolaOrigemEfetiva && e.tipo !== 'EMMAE')
                       .map((e: any) => (

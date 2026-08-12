@@ -265,12 +265,11 @@ export function ModalEscola({
       }
       maxWidth="sm:max-w-md"
       footer={
-        <div className="flex justify-end gap-2 w-full pt-4 border-t border-[#27272a]">
+        <div className="flex justify-end gap-2 w-full pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-[#1a1a1a] border-[#27272a] text-white hover:bg-[#27272a]"
           >
             Cancelar
           </Button>
@@ -289,11 +288,11 @@ export function ModalEscola({
       <form id="form-escola" onSubmit={handleSubmit} className="space-y-4 py-2">
         {/* Seleção de Secretaria Mantenedora */}
         <div>
-          <Label className="text-xs text-[#aaa]">Secretaria Mantenedora *</Label>
+          <Label className="text-xs text-muted-foreground">Secretaria Mantenedora *</Label>
           <select
             value={secretariaId}
             onChange={(e) => setSecretariaId(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1 focus:border-[#0090ff]"
+            className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1 focus:border-[#0090ff]"
           >
             {secretarias.map((sec) => (
               <option key={sec.id} value={sec.id}>
@@ -305,35 +304,35 @@ export function ModalEscola({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="md:col-span-3">
-            <Label className="text-xs text-[#aaa]">
+            <Label className="text-xs text-muted-foreground">
               {isEducacao ? 'Nome Completo da Escola *' : 'Nome da Unidade Administrativa *'}
             </Label>
             <Input
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder={isEducacao ? 'Ex: Escola Municipal Eraldo Tinoco' : 'Ex: Departamento de Recursos Humanos'}
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
               required
             />
           </div>
           <div>
-            <Label className="text-xs text-[#aaa]">Código SIG</Label>
+            <Label className="text-xs text-muted-foreground">Código SIG</Label>
             <Input
               value={escolaToEdit?.codigo !== undefined && escolaToEdit?.codigo !== null ? String(escolaToEdit.codigo).padStart(2, '0') : 'Auto'}
-              className="bg-[#1e1e20] border-[#27272a] text-[#888] mt-1 font-mono text-center font-bold cursor-not-allowed"
+              className="bg-background border-border text-muted-foreground mt-1 font-mono text-center font-bold cursor-not-allowed"
               disabled
             />
           </div>
         </div>
 
         <div>
-          <Label className="text-xs text-[#aaa]">
+          <Label className="text-xs text-muted-foreground">
             {isEducacao ? 'Diretor Responsável (Assinatura Oficial)' : 'Gestor / Responsável pela Unidade'}
           </Label>
           <select
             value={diretorId}
             onChange={(e) => setDiretorId(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1 focus:border-[#0090ff]"
+            className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1 focus:border-[#0090ff]"
           >
             <option value="">-- Nenhum Gestor Selecionado --</option>
             {diretoresFiltrados.map((d) => (
@@ -347,21 +346,21 @@ export function ModalEscola({
         <div className="grid grid-cols-2 gap-3">
           {isEducacao && (
             <div>
-              <Label className="text-xs text-[#aaa]">Código INEP</Label>
+              <Label className="text-xs text-muted-foreground">Código INEP</Label>
               <Input
                 value={inep}
                 onChange={(e) => setInep(e.target.value)}
                 placeholder="Ex: 29182001"
-                className="bg-[#18181a] border-[#27272a] text-white mt-1"
+                className="bg-background border-border text-foreground mt-1"
               />
             </div>
           )}
           <div className={isEducacao ? '' : 'col-span-2'}>
-            <Label className="text-xs text-[#aaa]">Tipo de Unidade</Label>
+            <Label className="text-xs text-muted-foreground">Tipo de Unidade</Label>
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+              className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
             >
               <option value="MUNICIPAL">MUNICIPAL</option>
               <option value="ESTADUAL">ESTADUAL</option>
@@ -372,11 +371,11 @@ export function ModalEscola({
 
         <div className="grid grid-cols-1 gap-3">
           <div>
-            <Label className="text-xs text-[#aaa]">Localização da Unidade</Label>
+            <Label className="text-xs text-muted-foreground">Localização da Unidade</Label>
             <select
               value={localizacao}
               onChange={(e) => setLocalizacao(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#18181a] border border-[#27272a] text-white text-sm outline-none mt-1"
+              className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none mt-1"
             >
               <option value="URBANA">URBANA</option>
               <option value="RURAL">RURAL</option>
@@ -386,30 +385,30 @@ export function ModalEscola({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-[#aaa]">Latitude</Label>
+            <Label className="text-xs text-muted-foreground">Latitude</Label>
             <Input
               type="text"
               value={latitude}
               onChange={(e) => setLatitude(e.target.value)}
               placeholder="Ex: -12.729993"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
             />
           </div>
           <div>
-            <Label className="text-xs text-[#aaa]">Longitude</Label>
+            <Label className="text-xs text-muted-foreground">Longitude</Label>
             <Input
               type="text"
               value={longitude}
               onChange={(e) => setLongitude(e.target.value)}
               placeholder="Ex: -39.185819"
-              className="bg-[#18181a] border-[#27272a] text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
             />
           </div>
         </div>
 
         {/* Campo Logo da Unidade */}
         <div className="space-y-2">
-          <Label className="text-xs text-[#aaa]">
+          <Label className="text-xs text-muted-foreground">
             {isEducacao ? 'Logo da Escola' : 'Logo da Unidade'}
           </Label>
           <FileUpload

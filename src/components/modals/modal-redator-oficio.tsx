@@ -156,17 +156,17 @@ export function ModalRedatorOficio({
 
   return createPortal(
     <div className="fixed inset-0 z-[110] bg-black/85 flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:hidden">
-      <div className="bg-[#141416] border border-[#26262a] rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-background border border-border rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Cabeçalho do Modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#26262a] bg-[#1a1a1e]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="h-10 w-10 rounded-xl bg-mutedmerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 Redator de Ofício Oficial
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="text-[10px] bg-mutedmerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
                   Secretaria de Saúde
                 </span>
               </h3>
@@ -178,16 +178,16 @@ export function ModalRedatorOficio({
           <button
             onClick={onClose}
             type="button"
-            className="text-zinc-400 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors"
+            className="text-muted-foreground hover:text-foreground p-2 rounded-xl hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Corpo do Modal: Formulário + Editor */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-[#121214]">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-background">
           {/* Header do Ofício: Campos Estruturados */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-[#1a1a1e] border border-[#26262a] rounded-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-background border border-border rounded-xl">
             <div className="space-y-1">
               <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">
                 Número do Ofício
@@ -196,7 +196,7 @@ export function ModalRedatorOficio({
                 value={numeroOficio}
                 onChange={(e) => setNumeroOficio(e.target.value)}
                 placeholder="Ex: 012 / 2026"
-                className="h-9 bg-[#121214] border-[#26262a] text-white text-xs font-semibold rounded-lg"
+                className="h-9 bg-background border-border text-foreground text-xs font-semibold rounded-lg"
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
@@ -207,7 +207,7 @@ export function ModalRedatorOficio({
                 value={destinatario}
                 onChange={(e) => setDestinatario(e.target.value)}
                 placeholder="Ex: Ao(À) Sr(a). Dr. João Silva - Diretor do Hospital"
-                className="h-9 bg-[#121214] border-[#26262a] text-white text-xs rounded-lg"
+                className="h-9 bg-background border-border text-foreground text-xs rounded-lg"
               />
             </div>
             <div className="space-y-1 sm:col-span-3">
@@ -218,42 +218,42 @@ export function ModalRedatorOficio({
                 value={assunto}
                 onChange={(e) => setAssunto(e.target.value)}
                 placeholder="Ex: Assunto: Solicitação de medicamentos e insumos..."
-                className="h-9 bg-[#121214] border-[#26262a] text-white text-xs rounded-lg"
+                className="h-9 bg-background border-border text-foreground text-xs rounded-lg"
               />
             </div>
           </div>
 
           {/* Barra de Ferramentas de Formatação (Toolbar) */}
-          <div className="bg-[#1a1a1e] border border-[#26262a] p-2 rounded-xl flex flex-wrap items-center gap-2 sticky top-0 z-10 shadow-md">
+          <div className="bg-background border border-border p-2 rounded-xl flex flex-wrap items-center gap-2 sticky top-0 z-10 shadow-md">
             {/* Seletor de Fonte */}
-            <div className="flex items-center gap-1 bg-[#121214] border border-[#26262a] rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1 bg-background border border-border rounded-lg px-2 py-1">
               <Type className="w-3.5 h-3.5 text-zinc-400" />
               <select
                 value={fontFamily}
                 onChange={(e) => handleAplicarFonte(e.target.value)}
                 className="bg-transparent text-xs text-zinc-200 outline-none cursor-pointer"
               >
-                <option value="Arial, sans-serif" className="bg-[#1a1a1e]">Arial</option>
-                <option value="'Times New Roman', serif" className="bg-[#1a1a1e]">Times New Roman</option>
-                <option value="Calibri, sans-serif" className="bg-[#1a1a1e]">Calibri</option>
-                <option value="Georgia, serif" className="bg-[#1a1a1e]">Georgia</option>
-                <option value="'Courier New', monospace" className="bg-[#1a1a1e]">Courier New</option>
+                <option value="Arial, sans-serif" className="bg-background">Arial</option>
+                <option value="'Times New Roman', serif" className="bg-background">Times New Roman</option>
+                <option value="Calibri, sans-serif" className="bg-background">Calibri</option>
+                <option value="Georgia, serif" className="bg-background">Georgia</option>
+                <option value="'Courier New', monospace" className="bg-background">Courier New</option>
               </select>
             </div>
 
             {/* Seletor de Tamanho da Fonte */}
-            <div className="flex items-center gap-1 bg-[#121214] border border-[#26262a] rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1 bg-background border border-border rounded-lg px-2 py-1">
               <span className="text-[11px] text-zinc-400 font-bold">Tam:</span>
               <select
                 value={fontSize}
                 onChange={(e) => handleAplicarTamanho(e.target.value)}
                 className="bg-transparent text-xs text-zinc-200 outline-none cursor-pointer"
               >
-                <option value="12px" className="bg-[#1a1a1e]">12px (Pequena)</option>
-                <option value="14px" className="bg-[#1a1a1e]">14px (Padrão)</option>
-                <option value="16px" className="bg-[#1a1a1e]">16px (Média)</option>
-                <option value="18px" className="bg-[#1a1a1e]">18px (Grande)</option>
-                <option value="20px" className="bg-[#1a1a1e]">20px (Título)</option>
+                <option value="12px" className="bg-background">12px (Pequena)</option>
+                <option value="14px" className="bg-background">14px (Padrão)</option>
+                <option value="16px" className="bg-background">16px (Média)</option>
+                <option value="18px" className="bg-background">18px (Grande)</option>
+                <option value="20px" className="bg-background">20px (Título)</option>
               </select>
             </div>
 
@@ -264,7 +264,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('bold')}
               title="Negrito (Ctrl+B)"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <Bold className="w-4 h-4" />
             </button>
@@ -272,7 +272,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('italic')}
               title="Itálico (Ctrl+I)"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <Italic className="w-4 h-4" />
             </button>
@@ -280,7 +280,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('underline')}
               title="Sublinhado (Ctrl+U)"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <Underline className="w-4 h-4" />
             </button>
@@ -292,7 +292,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('justifyLeft')}
               title="Alinhar à Esquerda"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <AlignLeft className="w-4 h-4" />
             </button>
@@ -300,7 +300,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('justifyCenter')}
               title="Centralizar"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <AlignCenter className="w-4 h-4" />
             </button>
@@ -308,7 +308,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('justifyRight')}
               title="Alinhar à Direita"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <AlignRight className="w-4 h-4" />
             </button>
@@ -316,7 +316,7 @@ export function ModalRedatorOficio({
               type="button"
               onClick={() => execCmd('justifyFull')}
               title="Justificar"
-              className="p-1.5 rounded-lg bg-[#121214] hover:bg-[#26262a] text-zinc-300 hover:text-white transition-colors border border-[#26262a]"
+              className="p-1.5 rounded-lg bg-background hover:bg-[#26262a] text-muted-foreground hover:text-foreground transition-colors border border-border"
             >
               <AlignJustify className="w-4 h-4" />
             </button>
@@ -373,7 +373,7 @@ export function ModalRedatorOficio({
           </div>
 
           {/* Dados do Redator */}
-          <div className="p-3 bg-[#1a1a1e] border border-[#26262a] rounded-xl flex items-center justify-between text-xs text-zinc-400">
+          <div className="p-3 bg-background border border-border rounded-xl flex items-center justify-between text-xs text-muted-foreground">
             <div>
               <span className="font-semibold text-zinc-300">Redigido por: </span>
               <span>{funcionarioNome || 'Servidor da Saúde'}</span>
@@ -388,12 +388,12 @@ export function ModalRedatorOficio({
         </div>
 
         {/* Rodapé e Botões do Modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#26262a] bg-[#1a1a1e]">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-background">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl text-xs"
+            className="text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-xl text-xs"
           >
             Cancelar
           </Button>
@@ -401,7 +401,7 @@ export function ModalRedatorOficio({
           <Button
             type="button"
             onClick={handleAvancar}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 rounded-xl text-xs px-5 h-10 shadow-lg cursor-pointer"
+            className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold gap-2 rounded-xl text-xs px-5 h-10 shadow-lg cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Gerar & Imprimir Ofício</span>

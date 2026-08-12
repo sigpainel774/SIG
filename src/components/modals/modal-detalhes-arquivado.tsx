@@ -59,7 +59,7 @@ export function ModalDetalhesArquivado({
       description="Visualização completa do snapshot do registro e histórico de auditoria."
       maxWidth="sm:max-w-[600px]"
       footer={
-        <div className="flex justify-end w-full pt-3 border-t border-[#26262a]">
+        <div className="flex justify-end w-full pt-3 border-t border-border">
           <Button
             onClick={() => onOpenChange(false)}
             className="bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-xl text-xs font-semibold px-4 cursor-pointer"
@@ -77,9 +77,9 @@ export function ModalDetalhesArquivado({
               <FileText className="w-4 h-4 text-[#3ea6ff]" />
               <span>Snapshot dos Dados Originais</span>
             </h4>
-            <div className="bg-black/40 border border-[#26262a] rounded-xl p-3.5 space-y-2.5 text-xs">
+            <div className="bg-black/40 border border-border rounded-xl p-3.5 space-y-2.5 text-xs">
               {detalhes.map((d, index) => (
-                <div key={index} className="grid grid-cols-3 border-b border-[#26262a]/50 pb-2 last:border-b-0 last:pb-0">
+                <div key={index} className="grid grid-cols-3 border-b border-border/50 pb-2 last:border-b-0 last:pb-0">
                   <span className="text-zinc-400 font-medium">{d.label}</span>
                   <span className="col-span-2 text-white font-semibold truncate">
                     {d.isLink ? (
@@ -114,7 +114,7 @@ export function ModalDetalhesArquivado({
             </h4>
             <div className="space-y-2 text-xs">
               {/* Arquivado */}
-              <div className="flex items-start gap-2.5 bg-black/20 border border-[#26262a] p-3 rounded-xl">
+              <div className="flex items-start gap-2.5 bg-black/20 border border-border p-3 rounded-xl">
                 <CheckCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-white">Registro Arquivado</p>
@@ -132,7 +132,7 @@ export function ModalDetalhesArquivado({
 
               {/* Revertido */}
               {arquivado.status === 'REVERTIDO' && (
-                <div className="flex items-start gap-2.5 bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl animate-in fade-in duration-250">
+                <div className="flex items-start gap-2.5 bg-mutedmerald-500/5 border border-emerald-500/20 p-3 rounded-xl animate-in fade-in duration-250">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-emerald-400">Arquivamento Revertido (Restaurado)</p>

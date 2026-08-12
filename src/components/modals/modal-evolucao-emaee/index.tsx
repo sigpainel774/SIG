@@ -204,7 +204,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
                 <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+                <SelectContent className="bg-background border-border text-foreground">
                   <SelectItem value="Psicologia">Psicologia</SelectItem>
                   <SelectItem value="Psicopedagogia">Psicopedagogia</SelectItem>
                   <SelectItem value="Fonoaudiologia">Fonoaudiologia</SelectItem>
@@ -234,7 +234,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
                   <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#18181b] border-[#27272a] text-white">
+                  <SelectContent className="bg-background border-border text-foreground">
                     <SelectItem value="Presencial">Presencial</SelectItem>
                     <SelectItem value="Online">Online / Remoto</SelectItem>
                     <SelectItem value="Visita Domiciliar">Visita Domiciliar</SelectItem>

@@ -174,7 +174,7 @@ export function ModalSecretariasConta({
           <Loader2 className="w-6 h-6 animate-spin text-[#0090ff]" />
         </div>
       ) : isSuperAdmin ? (
-        <div className="py-6 text-center text-sm text-zinc-400 bg-black/20 rounded-xl border border-zinc-800">
+        <div className="py-6 text-center text-sm text-zinc-400 bg-black/20 rounded-xl border border-border">
           <Building2 className="w-8 h-8 text-amber-500 mx-auto mb-2 opacity-50" />
           <p>O usuário <strong>{funcionarioNome}</strong> é um administrador <strong>ROOT</strong>.</p>
           <p className="mt-1">Ele já possui acesso irrestrito a todas as secretarias.</p>
@@ -205,7 +205,7 @@ export function ModalSecretariasConta({
               return (
                 <div 
                   key={sec.id} 
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isChecked ? 'bg-[#0090ff]/10 border-[#0090ff]/30' : 'bg-black/20 border-zinc-800 hover:border-zinc-700'}`}
+                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isChecked ? 'bg-[#0090ff]/10 border-[#0090ff]/30' : 'bg-black/20 border-border hover:border-border'}`}
                   onClick={() => handleToggle(sec.id)}
                 >
                   <span className={`text-sm ${isChecked ? 'text-white font-semibold' : 'text-zinc-300'}`}>

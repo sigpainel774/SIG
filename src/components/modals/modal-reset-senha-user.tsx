@@ -188,7 +188,7 @@ export function ModalResetSenhaUser({
                 setNovaSenha(e.target.value)
                 if (confirmStep) setConfirmStep(false)
               }}
-              className="bg-[#18181b] border-[#3f3f46] text-white h-11 pr-10 focus:ring-amber-500 focus:border-amber-500 font-mono"
+              className="bg-background border-[#3f3f46] text-foreground h-11 pr-10 focus:ring-amber-500 focus:border-amber-500 font-mono"
               required
             />
             <button
@@ -214,7 +214,7 @@ export function ModalResetSenhaUser({
               setConfirmarSenha(e.target.value)
               if (confirmStep) setConfirmStep(false)
             }}
-            className="bg-[#18181b] border-[#3f3f46] text-white h-11 focus:ring-amber-500 focus:border-amber-500 font-mono"
+            className="bg-background border-[#3f3f46] text-foreground h-11 focus:ring-amber-500 focus:border-amber-500 font-mono"
             required
           />
         </div>
@@ -226,13 +226,13 @@ export function ModalResetSenhaUser({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-[#27272a]">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={() => handleClose(false)}
             disabled={loading}
-            className="bg-[#18181b] border-[#3f3f46] text-white hover:bg-[#27272a]"
+            className="bg-background border-[#3f3f46] text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>
@@ -242,7 +242,7 @@ export function ModalResetSenhaUser({
             disabled={loading || !novaSenha || !confirmarSenha}
             className={`${
               confirmStep
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold'
+                ? 'bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold'
                 : 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
             } gap-2`}
           >

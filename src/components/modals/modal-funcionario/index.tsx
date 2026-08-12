@@ -61,7 +61,7 @@ function ModalFuncionarioContent() {
     `px-3 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
       activeTab === tab
         ? 'border-highlight text-highlight'
-        : 'border-transparent text-zinc-400 hover:text-white'
+        : 'border-transparent text-muted-foreground hover:text-foreground'
     }`
 
   // Cache buster persistente por ciclo de abertura para evitar refetching agressivo a cada render
@@ -87,7 +87,7 @@ function ModalFuncionarioContent() {
     <form id="funcionario-form" onSubmit={handleSubmit} className="space-y-6 py-2">
       
       {/* Foto e Escola Vinculada */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-[#18181a] p-4 rounded-xl border border-borderCustom">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-background p-4 rounded-xl border border-borderCustom">
         {/* Foto 3x4 */}
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
@@ -122,7 +122,7 @@ function ModalFuncionarioContent() {
         </div>
 
         {/* Dados da Escola (Auto-preenchidos ou Selecionáveis) */}
-        <div className="md:col-span-2 space-y-1.5 text-xs border-l border-zinc-800 pl-6 flex items-center justify-between">
+        <div className="md:col-span-2 space-y-1.5 text-xs border-l border-border pl-6 flex items-center justify-between">
           <div className="space-y-1 w-full">
             <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade Vinculada</p>
             {!isEditing ? (

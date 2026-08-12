@@ -37,7 +37,7 @@ export function EmpregoTab() {
     <div className="space-y-5">
       {/* Botão '+' / Banner de Gestão de Lotações */}
       {isEditing && (
-        <div className="bg-zinc-100 dark:bg-[#18181a] border border-zinc-200 dark:border-borderCustom rounded-xl p-4 space-y-2">
+        <div className="bg-zinc-100 dark:bg-background border border-zinc-200 dark:border-borderCustom rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-[#3ea6ff] uppercase tracking-wider">
               <MapPin className="w-4 h-4" />
@@ -183,7 +183,7 @@ export function EmpregoTab() {
 
       {/* Seção Condicional de Licença Médica quando Status for Afastado */}
       {status === 'afastado' && (
-        <div className="bg-amber-50/20 dark:bg-[#141416] border border-amber-500/40 rounded-xl p-5 space-y-4 shadow-lg animate-in fade-in duration-200">
+        <div className="bg-amber-50/20 dark:bg-background border border-amber-500/40 rounded-xl p-5 space-y-4 shadow-lg animate-in fade-in duration-200">
           <div className="flex items-center gap-2 text-sm font-bold text-amber-400 uppercase tracking-wider border-b border-amber-500/20 pb-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             Dados da Licença Médica & Afastamento

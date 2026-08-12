@@ -356,25 +356,25 @@ export function ModalImportarFichasDocx({
     >
       <div className="space-y-5 text-sm select-none">
         {/* ── Painel 1: Seleção de Destino (Escola & Turma) ── */}
-        <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
-          <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+        <div className="bg-muted/40 dark:bg-background border border-border p-4 rounded-2xl space-y-3">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs uppercase tracking-wider">
             <Building2 className="w-4 h-4" /> 1. Destino da Importação (Escola e Turma)
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Seletor de Escola */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                Escola de Destino <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Escola de Destino <span className="text-rose-500">*</span>
               </label>
               <select
                 value={selectedEscolaId}
                 onChange={(e) => setSelectedEscolaId(e.target.value)}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                className="w-full bg-background border border-borderCustom rounded-xl px-3 py-2 text-foreground text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
               >
-                <option value="">-- Selecione uma Escola --</option>
+                <option value="" className="bg-background text-foreground">-- Selecione uma Escola --</option>
                 {escolas.map((esc) => (
-                  <option key={esc.id} value={esc.id}>
+                  <option key={esc.id} value={esc.id} className="bg-background text-foreground">
                     {esc.nome} {esc.inep ? `(INEP: ${esc.inep})` : ''}
                   </option>
                 ))}
@@ -383,17 +383,17 @@ export function ModalImportarFichasDocx({
 
             {/* Seletor de Turma */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Turma de Destino (Enturmação)
               </label>
               <select
                 value={selectedTurmaId}
                 onChange={(e) => setSelectedTurmaId(e.target.value)}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                className="w-full bg-background border border-borderCustom rounded-xl px-3 py-2 text-foreground text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
               >
-                <option value="">-- Sem Turma (Apenas Cadastro Geral) --</option>
+                <option value="" className="bg-background text-foreground">-- Sem Turma (Apenas Cadastro Geral) --</option>
                 {turmas.map((t) => (
-                  <option key={t.id} value={t.id}>
+                  <option key={t.id} value={t.id} className="bg-background text-foreground">
                     {t.nome} - {t.turno || 'Geral'} ({t.ano_letivo})
                   </option>
                 ))}
@@ -403,19 +403,19 @@ export function ModalImportarFichasDocx({
         </div>
 
         {/* ── Painel 2: Upload de Arquivos DOCX ── */}
-        <div className="bg-[#18181b] border border-[#27272a] p-4 rounded-2xl space-y-3">
+        <div className="bg-muted/40 dark:bg-background border border-border p-4 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sky-400 font-bold text-xs uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-xs uppercase tracking-wider">
               <Upload className="w-4 h-4" /> 2. Upload dos Arquivos Word (.docx)
             </div>
             {totalStudents > 0 && (
-              <Badge variant="outline" className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+              <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 text-xs">
                 {savedCount} de {totalStudents} ficha(s) salvas
               </Badge>
             )}
           </div>
 
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#3f3f46] hover:border-purple-500 bg-[#09090b] hover:bg-[#121214] rounded-2xl p-6 cursor-pointer transition-all duration-200 group text-center">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-purple-500 bg-background hover:bg-muted/60 rounded-2xl p-6 cursor-pointer transition-all duration-200 group text-center">
             <input
               type="file"
               accept=".docx"
@@ -426,21 +426,21 @@ export function ModalImportarFichasDocx({
             />
             {parsing ? (
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                <span className="text-xs font-semibold text-gray-300">
+                <Loader2 className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-spin" />
+                <span className="text-xs font-semibold text-foreground">
                   Extraindo quadros dos documentos Word...
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <div className="bg-purple-500/10 p-3 rounded-full group-hover:scale-110 transition-transform">
-                  <FileSpreadsheet className="w-8 h-8 text-purple-400" />
+                  <FileSpreadsheet className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">
+                  <p className="font-bold text-foreground text-sm">
                     Clique aqui ou arraste os arquivos .docx das fichas
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     O sistema lerá os quadros A1 a A8 (Nome, Data Nasc, Contato, RG, CPF, NIS, SUS, Endereço).
                   </p>
                 </div>
@@ -451,14 +451,14 @@ export function ModalImportarFichasDocx({
 
         {/* ── Painel 3: Revisão Ficha a Ficha (1 por 1) ── */}
         {totalStudents > 0 && currentStudent && (
-          <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-2xl space-y-4 shadow-lg">
+          <div className="bg-card border border-border p-5 rounded-2xl space-y-4 shadow-sm">
             {/* Header da Ficha Atual */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
               <div className="flex items-center gap-3">
                 <Badge className="bg-purple-600 text-white font-extrabold px-2.5 py-1 text-xs">
                   Ficha {currentIndex + 1} de {totalStudents}
                 </Badge>
-                <span className="text-xs text-gray-400 truncate max-w-[200px]" title={currentStudent.fileName}>
+                <span className="text-xs text-muted-foreground truncate max-w-[200px]" title={currentStudent.fileName}>
                   {currentStudent.fileName}
                 </span>
               </div>
@@ -466,12 +466,12 @@ export function ModalImportarFichasDocx({
               {/* Status de Confiança & Gravação */}
               <div className="flex items-center gap-2">
                 {currentStudent.isSaved ? (
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
+                  <Badge className="bg-mutedmerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Salvo no Banco
                   </Badge>
                 ) : (
-                  <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Confiança: {currentStudent.confidenceScore}%
+                  <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/40 text-xs font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" /> Confiança: {currentStudent.confidenceScore}%
                   </Badge>
                 )}
 
@@ -482,7 +482,7 @@ export function ModalImportarFichasDocx({
                     size="sm"
                     disabled={currentIndex === 0}
                     onClick={() => setCurrentIndex((prev) => prev - 1)}
-                    className="h-8 w-8 p-0 bg-[#09090b] border-[#3f3f46] text-white hover:bg-[#27272a]"
+                    className="h-8 w-8 p-0 bg-background border-border text-foreground hover:bg-muted"
                     title="Ficha Anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -492,7 +492,7 @@ export function ModalImportarFichasDocx({
                     size="sm"
                     disabled={currentIndex === totalStudents - 1}
                     onClick={() => setCurrentIndex((prev) => prev + 1)}
-                    className="h-8 w-8 p-0 bg-[#09090b] border-[#3f3f46] text-white hover:bg-[#27272a]"
+                    className="h-8 w-8 p-0 bg-background border-border text-foreground hover:bg-muted"
                     title="Próxima Ficha"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -505,21 +505,21 @@ export function ModalImportarFichasDocx({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {/* A1: Nome */}
               <div className="sm:col-span-2 md:col-span-2">
-                <label className="block text-[11px] font-bold text-purple-300 uppercase tracking-wide mb-1">
-                  A1 - Nome do Aluno <span className="text-rose-400">*</span>
+                <label className="block text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-1">
+                  A1 - Nome do Aluno <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   value={currentStudent.nome}
                   onChange={(e) => handleFieldChange('nome', e.target.value)}
                   disabled={currentStudent.isSaved}
                   placeholder="Nome Completo do Aluno"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs font-semibold"
+                  className="bg-background border-borderCustom text-foreground text-xs font-semibold"
                 />
               </div>
 
               {/* A2: Data de Nascimento */}
               <div>
-                <label className="block text-[11px] font-bold text-purple-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-1">
                   A2 - Data de Nascimento
                 </label>
                 <Input
@@ -527,13 +527,13 @@ export function ModalImportarFichasDocx({
                   value={currentStudent.data_nascimento || ''}
                   onChange={(e) => handleFieldChange('data_nascimento', e.target.value || null)}
                   disabled={currentStudent.isSaved}
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A3: Contato */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A3 - Contato / Telefone
                 </label>
                 <Input
@@ -541,13 +541,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('telefone', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="(00) 00000-0000"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A4: RG */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A4 - RG
                 </label>
                 <Input
@@ -555,13 +555,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('rg', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="Número do RG"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A5: CPF */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A5 - CPF
                 </label>
                 <Input
@@ -569,13 +569,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('cpf', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="000.000.000-00"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A6: NIS */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A6 - NIS
                 </label>
                 <Input
@@ -583,13 +583,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('nis', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="Número NIS"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A7: Cartão SUS */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A7 - Cartão do SUS
                 </label>
                 <Input
@@ -597,13 +597,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('cartao_sus', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="Cartão SUS"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* Filiação Mãe */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   Nome da Mãe
                 </label>
                 <Input
@@ -611,13 +611,13 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('nome_mae', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="Nome da Genitora"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
 
               {/* A8: Endereço por extenso */}
               <div className="sm:col-span-2 md:col-span-3">
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
                   A8 - Endereço por Extenso
                 </label>
                 <Input
@@ -625,18 +625,18 @@ export function ModalImportarFichasDocx({
                   onChange={(e) => handleFieldChange('endereco', e.target.value || null)}
                   disabled={currentStudent.isSaved}
                   placeholder="Rua, Número, Bairro, Cidade, CEP"
-                  className="bg-[#09090b] border-[#3f3f46] text-white text-xs"
+                  className="bg-background border-borderCustom text-foreground text-xs"
                 />
               </div>
             </div>
 
             {/* Ações da Ficha Atual */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#27272a]">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDiscardCurrent(currentIndex)}
-                className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs"
+                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-500/10 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Descartar Ficha
               </Button>
@@ -645,7 +645,7 @@ export function ModalImportarFichasDocx({
                 <Button
                   onClick={() => handleSaveIndividual(currentIndex)}
                   disabled={currentStudent.isSaved || currentStudent.isSaving}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                  className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold text-xs"
                 >
                   {currentStudent.isSaving ? (
                     <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -662,8 +662,8 @@ export function ModalImportarFichasDocx({
         )}
 
         {/* ── Rodapé Global: Ação em Lote & Fechamento ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#27272a]">
-          <span className="text-xs text-gray-400">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
+          <span className="text-xs text-muted-foreground">
             {totalStudents > 0
               ? `${savedCount} de ${totalStudents} aluno(s) gravado(s) no sistema.`
               : 'Nenhum arquivo carregado.'}
@@ -673,7 +673,7 @@ export function ModalImportarFichasDocx({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="bg-[#121214] border-[#3f3f46] text-gray-300 hover:bg-[#202024] text-xs"
+              className="bg-background border-border text-foreground hover:bg-muted text-xs"
             >
               Fechar
             </Button>

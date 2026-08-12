@@ -127,7 +127,7 @@ export function ModalConfigSecretario({
               value={secretarioNome}
               onChange={(e) => setSecretarioNome(e.target.value)}
               placeholder="Ex: MARCUS ALANO CORREIA OLIVEIRA"
-              className="bg-[#17171a] border-[#27272a] text-white focus:border-purple-500 uppercase font-semibold text-sm h-10"
+              className="bg-background border-border text-foreground focus:border-purple-500 uppercase font-semibold text-sm h-10"
               required
             />
             <p className="text-[11px] text-zinc-500">
@@ -145,7 +145,7 @@ export function ModalConfigSecretario({
               value={cargoSecretario}
               onChange={(e) => setCargoSecretario(e.target.value)}
               placeholder="Secretário(a) de Educação"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
 
@@ -159,17 +159,17 @@ export function ModalConfigSecretario({
               value={nomeRede}
               onChange={(e) => setNomeRede(e.target.value)}
               placeholder="Secretaria Municipal de Educação de Sapeaçu"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-[#26262a]">
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={saving}
-              className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               Cancelar
             </Button>

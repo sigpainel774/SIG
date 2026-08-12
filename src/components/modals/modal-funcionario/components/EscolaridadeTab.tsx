@@ -141,8 +141,8 @@ export function EscolaridadeTab() {
 
       {/* Graduações / Cursos Superiores */}
       {isSuperior && (
-        <div className="bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-          <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+        <div className="bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-200 dark:border-border/80 pb-3">
             <div className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-highlight" />
               <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
@@ -154,7 +154,7 @@ export function EscolaridadeTab() {
               variant="outline"
               size="sm"
               onClick={addGraduacao}
-              className="text-xs h-7 border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
+              className="text-xs h-7 border-zinc-300 dark:border-border bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-muted text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> Adicionar Graduação
             </Button>
@@ -168,7 +168,7 @@ export function EscolaridadeTab() {
                 variant="outline"
                 size="sm"
                 onClick={addGraduacao}
-                className="text-xs border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-medium"
+                className="text-xs border-zinc-300 dark:border-border bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-muted text-zinc-950 dark:text-white font-medium"
               >
                 + Adicionar Primeira Graduação
               </Button>
@@ -178,9 +178,9 @@ export function EscolaridadeTab() {
               {graduacoes.map((item, idx) => (
                 <div
                   key={idx}
-                  className="bg-zinc-50 dark:bg-[#121212] p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-3 relative"
+                  className="bg-zinc-50 dark:bg-[#121212] p-3.5 rounded-lg border border-zinc-200 dark:border-border space-y-3 relative"
                 >
-                  <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800/60 pb-2">
+                  <div className="flex justify-between items-center border-b border-zinc-200 dark:border-border/60 pb-2">
                     <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                       Graduação #{idx + 1}
                     </span>
@@ -297,7 +297,7 @@ export function EscolaridadeTab() {
       </div>
 
       {/* Pós-Graduações */}
-      <div className="space-y-3 bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="space-y-3 bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border">
         <div className="flex justify-between items-center">
           <h4 className="text-xs font-bold text-highlight uppercase tracking-wider">
             Pós-Graduações (Até 6)
@@ -307,7 +307,7 @@ export function EscolaridadeTab() {
             variant="outline"
             size="sm"
             onClick={addPos}
-            className="text-xs h-7 border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
+            className="text-xs h-7 border-zinc-300 dark:border-border bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-muted text-zinc-950 dark:text-white font-semibold gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> Adicionar Pós
           </Button>
@@ -320,7 +320,7 @@ export function EscolaridadeTab() {
             {posGraduacoes.map((item, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-zinc-50 dark:bg-[#121212] p-2.5 rounded border border-zinc-200 dark:border-zinc-800 relative"
+                className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-zinc-50 dark:bg-[#121212] p-2.5 rounded border border-zinc-200 dark:border-border relative"
               >
                 <div>
                   <Label className="text-[10px] text-zinc-550 dark:text-zinc-500">Tipo</Label>
@@ -387,7 +387,7 @@ export function EscolaridadeTab() {
       {/* Outros cursos */}
       <div className="space-y-3">
         <Label className="font-bold text-xs text-highlight">Outros Cursos Específicos / Formação Continuada (mín. 80h)</Label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs bg-zinc-100 dark:bg-[#18181a] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs bg-zinc-100 dark:bg-background p-4 rounded-xl border border-zinc-200 dark:border-border/80">
           {cursosDisponiveis.map((curso) => (
             <div key={curso} className="flex items-center gap-2">
               <input

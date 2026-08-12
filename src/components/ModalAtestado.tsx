@@ -196,7 +196,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+            className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold gap-2"
             disabled={loading}
           >
             {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}

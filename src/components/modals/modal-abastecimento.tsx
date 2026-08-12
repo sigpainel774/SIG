@@ -120,10 +120,10 @@ export function ModalAbastecimento({
             Veículo da Frota *
           </Label>
           <Select value={veiculoId} onValueChange={(v: string | null) => setVeiculoId(v ?? '')}>
-            <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-sm h-10">
+            <SelectTrigger className="bg-background border-border text-foreground text-sm h-10">
               <SelectValue placeholder="Selecione o veículo" />
             </SelectTrigger>
-            <SelectContent className="bg-[#17171a] border-[#27272a] text-white">
+            <SelectContent className="bg-popover border-border text-popover-foreground">
               {veiculos.map((v) => (
                 <SelectItem key={v.id} value={v.id} className="text-white">
                   {v.modelo} — Placa: {v.placa}
@@ -140,7 +140,7 @@ export function ModalAbastecimento({
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -152,7 +152,7 @@ export function ModalAbastecimento({
               value={odometroKm}
               onChange={(e) => setOdometroKm(e.target.value)}
               placeholder="Ex: 124500"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -167,7 +167,7 @@ export function ModalAbastecimento({
               value={litros}
               onChange={(e) => setLitros(e.target.value)}
               placeholder="Ex: 85.5"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -180,7 +180,7 @@ export function ModalAbastecimento({
               value={valorTotal}
               onChange={(e) => setValorTotal(e.target.value)}
               placeholder="Ex: 480.00"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
               required
             />
           </div>
@@ -190,10 +190,10 @@ export function ModalAbastecimento({
           <div className="space-y-2">
             <Label className="text-xs font-bold text-zinc-300">Tipo de Combustível</Label>
             <Select value={tipoCombustivel} onValueChange={(v: string | null) => setTipoCombustivel(v ?? 'DIESEL')}>
-              <SelectTrigger className="bg-[#17171a] border-[#27272a] text-white text-xs h-9">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs h-9">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#17171a] border-[#27272a] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="DIESEL">Diesel S10</SelectItem>
                 <SelectItem value="GASOLINA">Gasolina</SelectItem>
                 <SelectItem value="ETANOL">Etanol</SelectItem>
@@ -208,18 +208,18 @@ export function ModalAbastecimento({
               value={postoNota}
               onChange={(e) => setPostoNota(e.target.value)}
               placeholder="Ex: Posto Central - NF #1042"
-              className="bg-[#17171a] border-[#27272a] text-white text-xs h-9"
+              className="bg-background border-border text-foreground text-xs h-9"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-[#26262a]">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={saving}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>
