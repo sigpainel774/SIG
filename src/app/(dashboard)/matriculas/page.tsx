@@ -79,10 +79,12 @@ export default function MatriculasPage() {
             </span>
           </div>
         ) : !isEditMode ? (
-          <div className="mt-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs text-center max-w-sm flex flex-col items-center gap-1.5 font-medium">
-            <AlertTriangle className="w-5 h-5 text-amber-500 animate-pulse shrink-0" />
-            <span>
-              Atenção: O **Modo de Edição** está desativado no painel. Ative-o no botão do topo da página para assinar digitalmente e salvar a ficha.
+          <div className="mt-6 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs text-center max-w-sm flex flex-col items-center gap-2 font-medium shadow-xs">
+            <div className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
+              <AlertTriangle className="w-5 h-5 animate-pulse" />
+            </div>
+            <span className="leading-relaxed">
+              Atenção: O <strong className="font-bold text-amber-950 dark:text-amber-100">Modo de Edição</strong> está desativado no painel. Ative-o no botão do topo da página para assinar digitalmente e salvar a ficha.
             </span>
           </div>
         ) : null}
