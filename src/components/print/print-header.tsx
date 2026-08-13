@@ -69,7 +69,7 @@ export function PrintHeader({
   const nomeExibicaoEscola = escolaNome ?? (isSaudeHeader ? "Secretaria Municipal de Saúde" : "Secretaria Municipal de Educação")
 
   const resolvedLogoPrefeituraClass = logoPrefeituraClassName ?? logoClassName ?? "doc-header-logo-prefeitura"
-  const resolvedLogoSecretariaClass = logoSecretariaClassName ?? logoClassName ?? "doc-header-logo-secretaria"
+  const resolvedLogoSecretariaClass = logoSecretariaClassName ?? "doc-header-logo-secretaria"
 
   return (
     <div className={cn("flex items-center justify-between pb-3 border-b-2 border-black mb-4 shrink-0 w-full", className)}>

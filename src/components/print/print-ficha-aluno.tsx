@@ -177,7 +177,6 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
           {/* Cabeçalho Oficial */}
           <PrintHeader
             className="pb-3 border-b-2 border-black mb-2"
-            logoClassName="doc-header-logo-prefeitura"
             centerContent={
               <>
                 <h1 className="text-base font-extrabold tracking-wider text-gray-800 uppercase">FICHA DE MATRÍCULA</h1>
