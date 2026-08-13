@@ -141,9 +141,15 @@ export function useAlunos() {
       // ES-4: Sanitização de caracteres especiais antes de passar ao PostgREST
       const termLimpo = searchTerm.trim().replace(/[%_\(\)]/g, '')
       if (termLimpo) {
-        query = query.or(
-          `nome.ilike.%${termLimpo}%,numero_matricula.ilike.%${termLimpo}%,cpf.ilike.%${termLimpo}%,inep.ilike.%${termLimpo}%`
-        )
+        const tokens = termLimpo.split(/\s+/).filter(Boolean)
+        if (tokens.length === 1) {
+          query = query.or(
+            `nome.ilike.%${termLimpo}%,numero_matricula.ilike.%${termLimpo}%,cpf.ilike.%${termLimpo}%,inep.ilike.%${termLimpo}%`
+          )
+        } else {
+          const conditions = tokens.map((tk) => `nome.ilike.%${tk}%`).join(',')
+          query = query.or(conditions)
+        }
       }
 
       const from = (page - 1) * pageSize
