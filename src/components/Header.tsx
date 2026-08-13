@@ -30,14 +30,17 @@ const ModalComunicadoPopup = dynamic(
   { ssr: false }
 )
 
+import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
+
 export function Header() {
   const { isEditMode, setEditMode } = useEditModeStore()
+  const { isSimulating } = usePermissionSimulationStore()
   const { funcionario, acessos } = useAuthStore()
   const { toggleMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
 
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
-  const isSelecaoSecretaria = isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)
+  const isSelecaoSecretaria = isSimulating ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria))
   const [modalSenhaOpen, setModalSenhaOpen] = useState(false)
   const [modalNotifOpen, setModalNotifOpen] = useState(false)
   const [modalMensagensOpen, setModalMensagensOpen] = useState(false)
