@@ -522,17 +522,15 @@ export default function DocumentosPage() {
                       <span className="text-[10px] text-muted-foreground block font-semibold uppercase">
                         Nome ou Matrícula {buscaAluno.trim().length >= 3 ? '(Buscando 3+ letras)' : ''}
                       </span>
-                      {isAdminGlobalOrRoot() && (
-                        <label className="flex items-center gap-1.5 text-[10px] text-primary cursor-pointer font-medium hover:underline">
-                          <input
-                            type="checkbox"
-                            checked={buscarNaRedeToda}
-                            onChange={(e) => setBuscarNaRedeToda(e.target.checked)}
-                            className="rounded border-border text-primary focus:ring-primary h-3 w-3"
-                          />
-                          Buscar na rede toda
-                        </label>
-                      )}
+                      <label className="flex items-center gap-1.5 text-[10px] text-primary cursor-pointer font-medium hover:underline">
+                        <input
+                          type="checkbox"
+                          checked={buscarNaRedeToda}
+                          onChange={(e) => setBuscarNaRedeToda(e.target.checked)}
+                          className="rounded border-border text-primary focus:ring-primary h-3 w-3"
+                        />
+                        Buscar na rede toda
+                      </label>
                     </div>
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -616,7 +614,7 @@ export default function DocumentosPage() {
                         ) : (
                           <div className="p-4 text-center text-xs text-muted-foreground space-y-2">
                             <p>Nenhum aluno encontrado para "{buscaAluno}".</p>
-                            {!buscarNaRedeToda && isAdminGlobalOrRoot() && (
+                            {!buscarNaRedeToda && (
                               <button
                                 type="button"
                                 onClick={() => {
