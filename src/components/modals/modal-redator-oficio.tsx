@@ -34,6 +34,9 @@ interface ModalRedatorOficioProps {
   funcionarioNome?: string
   funcionarioCargo?: string
   escolaLogoUrl?: string | null
+  escolaNome?: string
+  secretariaNome?: string
+  isSaude?: boolean
 }
 
 export function ModalRedatorOficio({
@@ -43,6 +46,9 @@ export function ModalRedatorOficio({
   funcionarioNome,
   funcionarioCargo,
   escolaLogoUrl,
+  escolaNome,
+  secretariaNome,
+  isSaude,
 }: ModalRedatorOficioProps) {
   const [mounted, setMounted] = useState(false)
   const anoAtual = new Date().getFullYear()
@@ -51,9 +57,13 @@ export function ModalRedatorOficio({
   const [destinatario, setDestinatario] = useState('Ao(À) Senhor(a): ')
   const [assunto, setAssunto] = useState('Assunto: ')
 
+  const origemTexto = isSaude
+    ? 'Secretaria Municipal de Saúde'
+    : (escolaNome ? `unidade escolar (${escolaNome})` : (secretariaNome || 'Secretaria Municipal de Educação'))
+
   // Conteúdo inicial padrão formatado em parágrafos
   const [conteudoHtml, setConteudoHtml] = useState<string>(
-    `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria Municipal de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
+    `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta ${origemTexto}, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
   )
 
   const [fontFamily, setFontFamily] = useState<string>('Arial, sans-serif')
@@ -169,7 +179,7 @@ export function ModalRedatorOficio({
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 Redator de Ofício
                 <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                  Secretaria / Órgão
+                  {escolaNome || secretariaNome || (isSaude ? 'Secretaria de Saúde' : 'Secretaria de Educação')}
                 </span>
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -387,7 +397,7 @@ export function ModalRedatorOficio({
           <div className="p-3 bg-card border border-border rounded-xl flex items-center justify-between text-xs text-muted-foreground">
             <div>
               <span className="font-semibold text-foreground">Redigido por: </span>
-              <span className="text-foreground">{funcionarioNome || 'Servidor da Saúde'}</span>
+              <span className="text-foreground">{funcionarioNome || (isSaude ? 'Servidor da Saúde' : 'Servidor da Educação')}</span>
             </div>
             {funcionarioCargo && (
               <div>

@@ -426,8 +426,11 @@ export default function DocumentosPage() {
             setAlunoImprimirDocumentoEscolar({ id: 'oficio', nome: 'Ofício' })
           }}
           funcionarioNome={funcionario?.nome}
-          funcionarioCargo={funcionario?.cargo || 'Secretaria / Órgão Municipal'}
+          funcionarioCargo={funcionario?.cargo || (isSaude ? 'Secretaria Municipal de Saúde' : (selectedEscola?.nome ? `Unidade Escolar — ${selectedEscola.nome}` : 'Secretaria Municipal de Educação'))}
           escolaLogoUrl={selectedEscola?.logo_url || null}
+          escolaNome={selectedEscola?.nome}
+          secretariaNome={selectedSecretaria?.nome}
+          isSaude={isSaude}
         />
       )}
 

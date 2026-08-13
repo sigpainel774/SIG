@@ -53,7 +53,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
 
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
-  const isSaudeContext = /sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE' || docType === 'oficio'
+  const isSaudeContext = /sa[uú]de/i.test(secNome) || selectedEscola?.tipo === 'SAUDE' || selectedEscola?.tipo === 'UNIDADE_SAUDE'
   const nomeSecretariaOficial = isSaudeContext ? "SECRETARIA MUNICIPAL DE SAÚDE" : (secNome.toUpperCase() || "SECRETARIA MUNICIPAL DE EDUCAÇÃO")
 
   const dm = aluno.dados_matricula || {}
@@ -83,7 +83,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
       const supabase = createClient()
       
       // 1. Unidade Escolar e Assinatura do Diretor
-      const targetEscolaId = aluno?.escola_id || dm.escolaId
+      const targetEscolaId = aluno?.escola_id || dm.escolaId || selectedEscola?.id
       if (targetEscolaId) {
         const { data: esc } = await supabase
           .from('escolas')
@@ -118,7 +118,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     }
 
     fetchDados()
-  }, [aluno?.escola_id, aluno?.turma_id, dm.escolaId, dm.turmaIdAluno])
+  }, [aluno?.escola_id, aluno?.turma_id, dm.escolaId, dm.turmaIdAluno, selectedEscola?.id])
 
   // Carregar assinatura existente se houver (Modo Histórico)
   useEffect(() => {
@@ -198,7 +198,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
       const numOficio = activeDados?.numeroOficio || `_____ / ${anoLetivo}`
       const dest = activeDados?.destinatario || 'Ao(À) Senhor(a): ________________________________________'
       const ass = activeDados?.assunto || 'Assunto: ________________________________________________'
-      const htmlBody = activeDados?.conteudoHtml || `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta Secretaria / Unidade de Saúde, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
+      const htmlBody = activeDados?.conteudoHtml || `<p>Cumprimentando-o(a) cordialmente, vimos por meio deste encaminhar a comunicação oficial desta ${isSaudeContext ? 'Secretaria / Unidade de Saúde' : (escolaNome ? `unidade escolar (${escolaNome})` : 'Secretaria Municipal de Educação')}, colocando-nos à inteira disposição para maiores esclarecimentos que se fizerem necessários.</p><p>Sem mais para o momento, renovamos nossos protestos de elevada estima e distinta consideração.</p>`
 
       return (
         <div className="space-y-3 min-h-[180px]">
@@ -341,7 +341,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   const triggerPrintWithTitle = () => {
     const originalTitle = document.title
     const activeDados = dadosOficio || localDadosOficio
-    let customTitle = `Ofício ${activeDados?.numeroOficio ? activeDados.numeroOficio.replace(/\//g, '-').trim() : `001-${anoLetivo}`} - Secretaria de Saúde`
+    let customTitle = `Ofício ${activeDados?.numeroOficio ? activeDados.numeroOficio.replace(/\//g, '-').trim() : `001-${anoLetivo}`} - ${escolaNome || nomeSecretariaOficial}`
     if (docType !== 'oficio') {
       const nomeAluno = aluno?.nome ? aluno.nome.trim() : 'Estudante'
       if (docType === 'atestado-matricula') customTitle = `Atestado de Matrícula - ${nomeAluno}`
@@ -589,7 +589,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
                 {funcionario?.nome || 'Responsável p/ Redação'}
               </span>
               <span className="text-gray-600 text-[9.5px] mt-0.5 font-semibold">
-                {funcionario?.cargo || 'Secretaria Municipal de Saúde'}
+                {funcionario?.cargo || (isSaudeContext ? 'Secretaria Municipal de Saúde' : 'Secretaria Municipal de Educação')}
               </span>
             </div>
           ) : (
