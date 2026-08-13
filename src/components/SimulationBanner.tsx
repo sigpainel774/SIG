@@ -36,7 +36,7 @@ export function SimulationBanner() {
   const handleEncerrar = () => {
     encerrarSimulacao()
     toast.success('Simulação encerrada. Privilégios ROOT restaurados!')
-    router.push('/admin')
+    window.location.href = '/admin'
   }
 
   return (

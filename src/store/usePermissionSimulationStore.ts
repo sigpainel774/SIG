@@ -96,9 +96,23 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       // Synchronize auth store reactively so all UI components re-render immediately under simulated user
       useAuthStore.getState().syncSimulation(funcionario, acessosData || [], vinculosFormatados)
 
-      // Sincronizar escola no seletor global se houver escola vinculada
+      // Sincronizar escola no seletor global se houver escola vinculada ou de acesso
+      let targetEscolaId: string | null = null
       if (vinculosFormatados.length > 0 && vinculosFormatados[0].escola_id) {
-        useSchoolStore.getState().selectEscolaById(vinculosFormatados[0].escola_id)
+        targetEscolaId = vinculosFormatados[0].escola_id
+      } else if (acessosData && acessosData.length > 0) {
+        const escolaAcesso = acessosData.find((a: any) => a.escola_id)?.escola_id
+        if (escolaAcesso) targetEscolaId = escolaAcesso
+      }
+
+      if (targetEscolaId) {
+        await useSchoolStore.getState().selectEscolaById(targetEscolaId)
+      } else {
+        await useSchoolStore.getState().loadEscolas()
+        const firstEscola = useSchoolStore.getState().escolas[0]
+        if (firstEscola?.id) {
+          await useSchoolStore.getState().selectEscolaById(firstEscola.id)
+        }
       }
 
       // Revalidar caches SWR para forçar re-render dos componentes sob o perfil simulado

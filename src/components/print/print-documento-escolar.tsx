@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { PrintHeader } from '@/components/print/print-header'
-import { Printer, X, Loader2, Award, FileText } from 'lucide-react'
+import { Printer, X, Loader2, Award, FileText, AlertCircle, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -471,42 +471,57 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
         }
       `}</style>
 
-      {/* Botões de Ações Flutuantes */}
-      <div className="fixed top-4 right-4 z-[101] flex gap-3 print-hidden items-center">
-        {!tokenVerificacao && (
-          <span className="text-amber-400 text-xs font-semibold mr-2 bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-900/30">
-            ⚠️ O QR Code de validade digital e a assinatura eletrônica serão gerados ao clicar em imprimir.
-          </span>
+      {/* Barra de Ações Flutuante (Centralizada e Elegante) */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[101] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 bg-[#18181b]/95 backdrop-blur-md border border-[#27272a] p-2.5 px-4 rounded-2xl shadow-2xl max-w-4xl w-[calc(100%-2rem)] print-hidden transition-all">
+        {/* Indicador de Status / Aviso de Assinatura */}
+        {!tokenVerificacao ? (
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="leading-tight">
+              O QR Code de validade digital e a assinatura eletrônica serão gerados ao clicar em imprimir.
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="leading-tight">
+              Documento autenticado e registrado com validade digital.
+            </span>
+          </div>
         )}
-        <button
-          onClick={handlePrint}
-          disabled={!imagesLoaded || registrandoAssinatura}
-          className="px-4 py-2.5 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 text-xs transition-all cursor-pointer disabled:opacity-50"
-        >
-          {registrandoAssinatura ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Gerando Autenticidade...</span>
-            </>
-          ) : imagesLoaded ? (
-            <>
-              <Printer className="w-4 h-4" />
-              <span>{tokenVerificacao ? 'Imprimir Documento' : 'Gerar QR Code & Imprimir'}</span>
-            </>
-          ) : (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Carregando Assinaturas...</span>
-            </>
-          )}
-        </button>
-        <button
-          onClick={onClose}
-          className="px-4 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-lg text-xs font-semibold border border-[#3f3f46] transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <X className="w-4 h-4" />
-          <span>Fechar</span>
-        </button>
+
+        {/* Botões de Ação */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <button
+            onClick={handlePrint}
+            disabled={!imagesLoaded || registrandoAssinatura}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-semibold rounded-xl shadow-lg shadow-emerald-950/40 flex items-center gap-2 text-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {registrandoAssinatura ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Gerando Autenticidade...</span>
+              </>
+            ) : imagesLoaded ? (
+              <>
+                <Printer className="w-4 h-4" />
+                <span>{tokenVerificacao ? 'Imprimir Documento' : 'Gerar QR Code & Imprimir'}</span>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Carregando Assinaturas...</span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-300 rounded-xl text-xs font-medium border border-zinc-700/60 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+            <span>Fechar</span>
+          </button>
+        </div>
       </div>
 
       {/* Folha A4 */}

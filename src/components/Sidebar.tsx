@@ -41,10 +41,13 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
+
 export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const { isSimulating } = usePermissionSimulationStore()
   const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo, isContaEja } = useAuthStore()
   const isEjaMode = isContaEja()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
@@ -53,8 +56,8 @@ export function Sidebar() {
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
   const isNivel1OrSuperior = funcionario?.is_superadmin || Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
-  const temEscolaSelecionada = Boolean(selectedEscola)
-  const isSelecaoSecretaria = isRhRedeOnly ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria))
+  const temEscolaSelecionada = Boolean(selectedEscola) || isSimulating
+  const isSelecaoSecretaria = isSimulating ? false : (isRhRedeOnly ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)))
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 
