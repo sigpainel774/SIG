@@ -174,7 +174,7 @@ export function ModalSecretariasConta({
           <Loader2 className="w-6 h-6 animate-spin text-[#0090ff]" />
         </div>
       ) : isSuperAdmin ? (
-        <div className="py-6 text-center text-sm text-zinc-400 bg-black/20 rounded-xl border border-border">
+        <div className="py-6 text-center text-sm text-muted-foreground bg-muted/30 rounded-xl border border-border">
           <Building2 className="w-8 h-8 text-amber-500 mx-auto mb-2 opacity-50" />
           <p>O usuário <strong>{funcionarioNome}</strong> é um administrador <strong>ROOT</strong>.</p>
           <p className="mt-1">Ele já possui acesso irrestrito a todas as secretarias.</p>
@@ -182,7 +182,7 @@ export function ModalSecretariasConta({
       ) : (
         <div className="space-y-4">
           {!acessoUsuarioId && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-800 dark:text-amber-300">
               ⚠️ Este usuário não possui um registro de Nível 1 ativo. Ao salvar as secretarias, o Nível 1 será atribuído automaticamente a ele.
             </div>
           )}
@@ -194,7 +194,7 @@ export function ModalSecretariasConta({
               onChange={() => setTodos(true)}
               className="w-4 h-4 accent-[#0090ff]"
             />
-            <label htmlFor="todas" className="text-sm text-white font-medium cursor-pointer">
+            <label htmlFor="todas" className="text-sm text-foreground font-medium cursor-pointer">
               Todas as Secretarias (Acesso Global)
             </label>
           </div>
@@ -205,10 +205,10 @@ export function ModalSecretariasConta({
               return (
                 <div 
                   key={sec.id} 
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isChecked ? 'bg-[#0090ff]/10 border-[#0090ff]/30' : 'bg-black/20 border-border hover:border-border'}`}
+                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isChecked ? 'bg-[#0090ff]/10 border-[#0090ff]/30' : 'bg-muted/40 border-border hover:border-border'}`}
                   onClick={() => handleToggle(sec.id)}
                 >
-                  <span className={`text-sm ${isChecked ? 'text-white font-semibold' : 'text-zinc-300'}`}>
+                  <span className={`text-sm ${isChecked ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
                     {sec.nome}
                   </span>
                   {isChecked && <Check className="w-4 h-4 text-[#0090ff]" />}

@@ -136,23 +136,23 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* ── Banner Informativo ────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 dark:from-amber-500/10 dark:via-amber-500/5 dark:to-transparent border border-amber-500/40 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">
                 Gestão de Contas Especiais e Cargos Root
               </h2>
-              <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-xs font-semibold">
+              <Badge variant="outline" className="border-amber-500/40 text-amber-800 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/10 text-xs font-semibold">
                 {totalEspeciais} {totalEspeciais === 1 ? 'Conta Especial' : 'Contas Especiais'}
               </Badge>
             </div>
-            <p className="text-xs text-zinc-300 mt-1 leading-relaxed max-w-3xl">
-              Contas marcadas como <strong>Especiais</strong> (como Prefeito, Secretários ou contas de teste) 
-              são <strong>omitidas das listas escolares padrão</strong>. Aqui você também pode atribuir e cadastrar cargos estratégicos da rede.
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed max-w-3xl">
+              Contas marcadas como <strong className="text-zinc-900 dark:text-white font-bold">Especiais</strong> (como Prefeito, Secretários ou contas de teste) 
+              são <strong className="text-zinc-900 dark:text-white font-bold">omitidas das listas escolares padrão</strong>. Aqui você também pode atribuir e cadastrar cargos estratégicos da rede.
             </p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
             variant="outline"
             size="sm"
             onClick={() => setMostrarNovoCargoForm(!mostrarNovoCargoForm)}
-            className="bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/40 text-amber-300 text-xs gap-1.5 rounded-xl cursor-pointer"
+            className="bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/40 text-amber-900 dark:text-amber-300 font-semibold text-xs gap-1.5 rounded-xl cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>+ Novo Cargo</span>
@@ -174,7 +174,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
             size="sm"
             onClick={fetchDadosContasEspeciais}
             disabled={loading}
-            className="bg-card hover:bg-hoverCustom border-borderCustom text-zinc-300 text-xs gap-2 rounded-xl cursor-pointer"
+            className="bg-card hover:bg-muted border-border text-zinc-700 dark:text-zinc-300 text-xs gap-2 rounded-xl cursor-pointer"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
             <span>Atualizar</span>
@@ -186,9 +186,9 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
       {mostrarNovoCargoForm && (
         <form
           onSubmit={handleCadastrarNovoCargoSubmit}
-          className="bg-[#18181b] border border-amber-500/40 rounded-2xl p-4 shadow-xl space-y-3 animate-in slide-in-from-top-2 duration-200"
+          className="bg-card border border-amber-500/40 rounded-2xl p-4 shadow-lg space-y-3 animate-in slide-in-from-top-2 duration-200"
         >
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
             <Briefcase className="w-4 h-4" />
             <span>Cadastrar Novo Cargo no Catálogo do Sistema</span>
           </div>
@@ -199,7 +199,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
               placeholder="Ex: Prefeito(a) Municipal, Chefe de Gabinete..."
               value={novoCargoNome}
               onChange={(e) => setNovoCargoNome(e.target.value)}
-              className="flex-1 bg-input border-borderCustom text-white text-sm rounded-xl focus:border-amber-500"
+              className="flex-1 bg-input border-border text-foreground text-sm rounded-xl focus:border-amber-500"
               autoFocus
             />
 
@@ -221,7 +221,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setMostrarNovoCargoForm(false)}
-                className="bg-transparent border-zinc-700 text-zinc-400 hover:text-white text-xs rounded-xl h-10 px-3 cursor-pointer"
+                className="bg-transparent border-border text-muted-foreground hover:text-foreground text-xs rounded-xl h-10 px-3 cursor-pointer"
               >
                 Cancelar
               </Button>
@@ -231,30 +231,30 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
       )}
 
       {/* ── Painel de Filtros e Busca ───────────────────────────────────────── */}
-      <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-md space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Busca por texto */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar conta por nome, e-mail ou cargo..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="pl-10 bg-input border-borderCustom text-foregroundCustom text-sm rounded-xl focus:border-[#0090ff] focus:ring-0"
+              className="pl-10 bg-input border-border text-foreground text-sm rounded-xl focus:border-[#0090ff] focus:ring-0"
             />
           </div>
 
           {/* Filtro por status */}
-          <div className="inline-flex items-center bg-slate-200/80 dark:bg-[#141416] p-1 rounded-xl border border-slate-300/70 dark:border-[#26262a] shrink-0 self-start sm:self-auto">
+          <div className="inline-flex items-center bg-muted/80 p-1 rounded-xl border border-border shrink-0 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setFiltroStatus('todas')}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                 filtroStatus === 'todas'
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-background text-foreground border border-border shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               Todas ({funcionariosAll.length})
@@ -265,8 +265,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                 filtroStatus === 'especiais'
-                  ? "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400"
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/40 shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
               )}
             >
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" />
@@ -278,8 +278,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                 filtroStatus === 'normais'
-                  ? "bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-[#3ea6ff] border border-blue-200 dark:border-blue-500/40 shadow-sm font-semibold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-blue-500/15 text-blue-700 dark:text-[#3ea6ff] border border-blue-500/40 shadow-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               Normais ({funcionariosAll.length - totalEspeciais})
@@ -289,16 +289,16 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
 
         {/* ── Lista / Grid de Contas ────────────────────────────────────────── */}
         {loading ? (
-          <div className="p-12 text-center text-zinc-400 text-sm animate-pulse space-y-2">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-400" />
+          <div className="p-12 text-center text-muted-foreground text-sm animate-pulse space-y-2">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-500" />
             <p>Carregando catálogo de contas do sistema...</p>
           </div>
         ) : contasFiltradas.length === 0 ? (
-          <div className="p-12 text-center text-zinc-400 text-sm flex flex-col items-center justify-center space-y-3 bg-surface-1 rounded-xl border border-dashed border-borderCustom">
-            <AlertCircle className="w-8 h-8 text-amber-400" />
+          <div className="p-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center space-y-3 bg-muted/30 rounded-xl border border-dashed border-border">
+            <AlertCircle className="w-8 h-8 text-amber-500" />
             <div>
-              <p className="font-semibold text-white">Nenhuma conta encontrada</p>
-              <p className="text-xs text-zinc-400 mt-1">Tente ajustar a busca ou os filtros de status acima.</p>
+              <p className="font-semibold text-foreground">Nenhuma conta encontrada</p>
+              <p className="text-xs text-muted-foreground mt-1">Tente ajustar a busca ou os filtros de status acima.</p>
             </div>
           </div>
         ) : (
@@ -319,8 +319,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                   className={cn(
                     "p-4 rounded-xl border transition-all flex flex-col justify-between gap-4 relative overflow-hidden",
                     isEspecial
-                      ? "bg-amber-950/20 border-amber-500/40 shadow-md shadow-amber-950/30"
-                      : "bg-surface-1 border-borderCustom hover:border-zinc-700"
+                      ? "bg-amber-500/10 dark:bg-amber-950/20 border-amber-500/40 shadow-sm"
+                      : "bg-card border-border hover:border-zinc-400 dark:hover:border-zinc-700"
                   )}
                 >
                   {isEspecial && (
@@ -334,20 +334,20 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-base font-bold text-white flex items-center gap-2 wrap flex-wrap">
+                        <h4 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2 wrap flex-wrap">
                           {item.nome}
                           {item.is_superadmin && (
-                            <Badge variant="outline" className="border-red-500/40 text-red-400 bg-red-500/10 text-[10px] uppercase font-bold py-0">
+                            <Badge variant="outline" className="border-red-500/40 text-red-600 dark:text-red-400 bg-red-500/10 text-[10px] uppercase font-bold py-0">
                               ROOT
                             </Badge>
                           )}
                           {item.is_conta_eja && (
-                            <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px] uppercase font-bold py-0">
+                            <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 text-[10px] uppercase font-bold py-0">
                               ESPECIAL EJA
                             </Badge>
                           )}
                         </h4>
-                        <p className="text-xs text-zinc-400 font-mono mt-0.5 truncate max-w-[280px]">
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate max-w-[280px]">
                           {item.email ?? 'Sem e-mail cadastrado'}
                         </p>
                       </div>
@@ -356,8 +356,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                     {/* Exibição e Edição de Cargo */}
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="text-zinc-400 font-semibold flex items-center gap-1">
-                          <Briefcase className="w-3 h-3 text-amber-400" />
+                        <span className="text-muted-foreground font-semibold flex items-center gap-1">
+                          <Briefcase className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                           Cargo da Conta:
                         </span>
                         {!isEditingCargo && (
@@ -367,7 +367,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                               setEditandoCargoId(item.id)
                               setCargoSelecionadoIdMap((prev) => ({ ...prev, [item.id]: cargoAtual }))
                             }}
-                            className="text-[11px] text-amber-400 hover:underline font-semibold cursor-pointer"
+                            className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
                           >
                             Alterar Cargo
                           </button>
@@ -375,14 +375,14 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                       </div>
 
                       {isEditingCargo ? (
-                        <div className="space-y-2 bg-[#121214] p-3 rounded-xl border border-amber-500/30 animate-in fade-in duration-150">
+                        <div className="space-y-2 bg-muted/60 p-3 rounded-xl border border-amber-500/30 animate-in fade-in duration-150">
                           <select
                             value={selValue}
                             onChange={(e) => {
                               const v = e.target.value
                               setCargoSelecionadoIdMap((prev) => ({ ...prev, [item.id]: v }))
                             }}
-                            className="w-full bg-[#1c1c21] border border-borderCustom text-white text-xs rounded-lg p-2 focus:border-amber-500 cursor-pointer"
+                            className="w-full bg-card border border-border text-foreground text-xs rounded-lg p-2 focus:border-amber-500 cursor-pointer"
                           >
                             <optgroup label="Cargos Especiais & Cadastrados">
                               {cargosLista.map((cg) => (
@@ -405,7 +405,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                                 const v = e.target.value
                                 setCargoCustomInputMap((prev) => ({ ...prev, [item.id]: v }))
                               }}
-                              className="bg-input border-borderCustom text-white text-xs rounded-lg h-9"
+                              className="bg-input border-border text-foreground text-xs rounded-lg h-9"
                               autoFocus
                             />
                           )}
@@ -416,7 +416,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                               variant="outline"
                               size="sm"
                               onClick={() => setEditandoCargoId(null)}
-                              className="h-7 text-[11px] bg-transparent border-zinc-700 text-zinc-400 hover:text-white rounded-lg px-2 cursor-pointer"
+                              className="h-7 text-[11px] bg-transparent border-border text-muted-foreground hover:text-foreground rounded-lg px-2 cursor-pointer"
                             >
                               Cancelar
                             </Button>
@@ -438,7 +438,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="bg-amber-500/10 text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-bold tracking-wide">
+                          <span className="bg-amber-500/15 text-amber-900 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-bold tracking-wide">
                             {cargoAtual}
                           </span>
                           
@@ -458,29 +458,29 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                     </div>
 
                     {isEspecial ? (
-                      <div className="flex items-center gap-1.5 text-[11px] text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20 mt-2 font-medium">
-                        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20 mt-2 font-medium">
+                        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
                         <span>Oculto da listagem de funcionários e relatórios.</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-zinc-800/80 mt-2">
-                        <UserCheck className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-lg border border-border mt-2">
+                        <UserCheck className="w-3.5 h-3.5 shrink-0 text-blue-500 dark:text-blue-400" />
                         <span>Conta normal (Visível em listagens e relatórios).</span>
                       </div>
                     )}
                   </div>
 
                   {/* Botão de Alternância e Checkbox Conta Especial EJA */}
-                  <div className="pt-2 border-t border-borderCustom/50 flex flex-wrap items-center justify-between gap-2">
-                    <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-300 hover:text-white select-none">
+                  <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white select-none">
                       <input
                         type="checkbox"
                         checked={!!item.is_conta_eja}
                         disabled={isBusy}
                         onChange={(e) => handleToggleEja(item.id, !!item.is_conta_eja, item.nome)}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                        className="w-4 h-4 rounded border-border bg-input text-amber-500 focus:ring-amber-500 cursor-pointer"
                       />
-                      <span className="text-amber-400 font-medium">Conta especial EJA</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">Conta especial EJA</span>
                     </label>
 
                     <Button
@@ -491,8 +491,8 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                       className={cn(
                         "text-xs font-semibold rounded-xl gap-2 cursor-pointer transition-all",
                         isEspecial
-                          ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700"
-                          : "bg-amber-600/90 hover:bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                          ? "bg-muted hover:bg-muted/80 text-foreground border border-border"
+                          : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-600/20"
                       )}
                     >
                       {isBusy ? (
@@ -502,7 +502,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                         </>
                       ) : isEspecial ? (
                         <>
-                          <XCircle className="w-3.5 h-3.5 text-zinc-400" />
+                          <XCircle className="w-3.5 h-3.5 text-muted-foreground" />
                           <span>Remover Especial</span>
                         </>
                       ) : (

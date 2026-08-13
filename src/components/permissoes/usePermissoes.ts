@@ -197,11 +197,11 @@ export function usePermissoes() {
   }
 
   // ─── Fetch inicial e sincronização ──────────────────────────────────────────
-  useEffect(() => {
-    const fetchAll = async () => {
-      const supabase = createClient()
-      setLoading(true)
+  const fetchAll = async () => {
+    const supabase = createClient()
+    setLoading(true)
 
+    try {
       // 1. Escolas ativas (sem soft-delete)
       let escolasQuery = supabase
         .from('escolas')
@@ -256,16 +256,14 @@ export function usePermissoes() {
         }
       }
 
-      const { data: funcsData } = await funcsQuery.order('nome')
+      const { data: funcsData, error: funcsErr } = await funcsQuery.order('nome')
+      if (funcsErr) {
+        console.error('Erro ao buscar funcionariosAll:', funcsErr)
+        toast.error('Erro ao buscar funcionários: ' + funcsErr.message)
+      }
 
       if (funcsData) {
         const filtered = funcsData.filter((f: any) => {
-          if (schoolIdToUse) {
-            if (f.is_superadmin) return false
-            if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
-            const acessosList = f.acessos_usuarios ?? []
-            if (acessosList.some((a: any) => a.nivel === 1 && a.ativo)) return false
-          }
           if (restringirNivel) {
             if (f.is_superadmin) return false
             if (f.nome?.toLowerCase() === 'root' || f.email?.toLowerCase().startsWith('root@')) return false
@@ -279,10 +277,15 @@ export function usePermissoes() {
 
       // 3. Registros de permissão
       await fetchRegistros(escolasLista)
-
+    } catch (err: any) {
+      console.error('Erro geral em fetchAll:', err)
+      toast.error('Erro ao carregar dados do sistema.')
+    } finally {
       setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restringirNivel, schoolIdToUse, isGlobalAdmin, selectedSecretaria?.id])
@@ -722,7 +725,7 @@ export function usePermissoes() {
     handleToggleContaEja,
     handleUpdateCargo,
     handleAdicionarCargo,
-    fetchDadosContasEspeciais: () => fetchRegistros(escolas),
+    fetchDadosContasEspeciais: fetchAll,
     // edit mode store
     setEditMode,
   }

@@ -182,13 +182,13 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
               />
               <label
                 htmlFor="logo-upload"
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background hover:bg-[#202024] text-xs font-semibold text-foreground cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 <Upload className="w-3.5 h-3.5" />
                 {logoFile ? 'Trocar Arquivo' : 'Selecionar Logo'}
               </label>
               {logoFile && (
-                <p className="text-[10px] text-slate-400 mt-1.5 truncate max-w-[200px]">
+                <p className="text-[10px] text-muted-foreground mt-1.5 truncate max-w-[200px]">
                   {logoFile.name}
                 </p>
               )}
@@ -202,9 +202,9 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
             id="secAtivo"
             checked={ativo}
             onChange={(e) => setAtivo(e.target.checked)}
-            className="w-4 h-4 accent-sky-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
+            className="w-4 h-4 accent-sky-500 rounded border-border bg-input cursor-pointer"
           />
-          <label htmlFor="secAtivo" className="text-sm text-slate-300 font-medium cursor-pointer">
+          <label htmlFor="secAtivo" className="text-sm text-foreground font-medium cursor-pointer">
             Secretaria Ativa
           </label>
         </div>
