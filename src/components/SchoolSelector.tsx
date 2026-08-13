@@ -14,14 +14,16 @@ export function SchoolSelector() {
 
   const vinculosAtivos = useMemo(() => vinculos?.filter((v) => v.ativo) || [], [vinculos])
 
+  const escolasOficiais = useMemo(() => escolas.filter((e) => !e.is_teste), [escolas])
+
   const escolasPermitidas = useMemo(() => {
-    if (isAdmin) return escolas
+    if (isAdmin) return escolasOficiais
     if (vinculosAtivos.length > 0) {
-      const permitidas = escolas.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
-      return permitidas.length > 0 ? permitidas : escolas
+      const permitidas = escolasOficiais.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
+      return permitidas.length > 0 ? permitidas : escolasOficiais
     }
-    return escolas
-  }, [isAdmin, escolas, vinculosAtivos])
+    return escolasOficiais
+  }, [isAdmin, escolasOficiais, vinculosAtivos])
 
   // Agrupa as escolas por Secretaria mantenedora
   const escolasAgrupadas = useMemo(() => {

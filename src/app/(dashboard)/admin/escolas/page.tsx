@@ -52,7 +52,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, created_at, secretarias:secretaria_id(id, nome)')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, created_at, secretarias:secretaria_id(id, nome)')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
@@ -125,7 +125,16 @@ export default function AdminEscolasPage() {
     },
     {
       header: 'Nome da Escola',
-      accessor: (escola) => <span className="font-medium text-white">{escola.nome}</span>
+      accessor: (escola) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-white">{escola.nome}</span>
+          {escola.is_teste && (
+            <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold px-1.5 py-0.5">
+              TESTE
+            </Badge>
+          )}
+        </div>
+      )
     },
     {
       header: 'INEP',

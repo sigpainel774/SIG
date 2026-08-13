@@ -43,6 +43,7 @@ import {
   StopCircle,
   Search,
   X,
+  FlaskConical,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -297,6 +298,11 @@ export default function AdminHubPage() {
   const [updatingMensagens, setUpdatingMensagens] = useState(false)
   const [updatingEdicao, setUpdatingEdicao] = useState(false)
 
+  // Estados do Ambiente de Simulação Isolado (Escolas de Teste)
+  const [testEscolas, setTestEscolas] = useState<any[]>([])
+  const [testUsers, setTestUsers] = useState<any[]>([])
+  const [loadingTestEnv, setLoadingTestEnv] = useState<boolean>(false)
+
   // Estados do Simulador de Permissões
   const [funcionariosOptions, setFuncionariosOptions] = useState<FuncionarioOption[]>([])
   const [selectedFuncId, setSelectedFuncId] = useState<string>('')
@@ -374,11 +380,43 @@ export default function AdminHubPage() {
             setSelectedFuncId(funcs[0].id)
           }
         }
+
+        // 4. Carrega escolas de teste isoladas e contas vinculadas
+        setLoadingTestEnv(true)
+        const { data: tEscolas } = await supabase
+          .from('escolas')
+          .select('id, nome, codigo, is_teste')
+          .eq('is_teste', true)
+          .is('deleted_at', null)
+          .order('nome', { ascending: true })
+
+        if (tEscolas) {
+          setTestEscolas(tEscolas)
+          const tIds = tEscolas.map((e: any) => e.id)
+          if (tIds.length > 0) {
+            const { data: tVinculos } = await supabase
+              .from('vinculos_funcionarios')
+              .select('funcionario_id, escola_id, funcionario:funcionario_id(id, nome, cargo, email)')
+              .in('escola_id', tIds)
+              .eq('ativo', true)
+
+            if (tVinculos) {
+              const formattedTUsers = tVinculos
+                .map((v: any) => ({
+                  ...(v.funcionario || {}),
+                  escola_id: v.escola_id,
+                }))
+                .filter((u: any) => u && u.id)
+              setTestUsers(formattedTUsers)
+            }
+          }
+        }
       } catch (err) {
         console.error('Erro ao carregar controles globais:', err)
       } finally {
         setLoadingControles(false)
         setLoadingFuncionariosList(false)
+        setLoadingTestEnv(false)
       }
     }
 
@@ -740,6 +778,96 @@ export default function AdminHubPage() {
               )}
 
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Seção Ambiente de Simulação Isolado (Escolas de Teste) ── */}
+      <div className="bg-card border border-amber-500/30 dark:border-amber-500/40 rounded-2xl p-5 shadow-sm relative overflow-hidden bg-amber-500/5 dark:bg-amber-950/20">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-amber-500/20 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-500/15 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400">
+              <FlaskConical className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                Ambiente de Simulação Isolado (Escolas de Teste)
+                <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md">
+                  ISOLADO DA REDE
+                </span>
+              </h2>
+              <p className="text-xs text-muted-foreground font-normal">
+                As unidades "Teste 1" e "Teste 2" estão isoladas das listas e relatórios oficiais. Simule contas nestas unidades para realizar lançamentos e testes com segurança.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {loadingTestEnv ? (
+          <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+            Carregando ambiente de teste...
+          </div>
+        ) : testEscolas.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic py-2">Nenhuma escola de teste encontrada.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {testEscolas.map((escola) => {
+              const usersOfEscola = testUsers.filter((u) => u.escola_id === escola.id)
+              return (
+                <div key={escola.id} className="bg-background border border-borderCustom p-4 rounded-xl space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
+                      <span className="font-bold text-sm text-foreground">{escola.nome}</span>
+                      <span className="text-[10px] font-extrabold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">
+                        CÓD: {escola.codigo || '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Contas de Teste Vinculadas ({usersOfEscola.length})
+                    </span>
+
+                    {usersOfEscola.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic py-1">Sem contas de teste diretamente vinculadas a esta unidade.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {usersOfEscola.map((u) => (
+                          <div key={u.id} className="flex items-center justify-between bg-card border border-border p-2.5 rounded-lg gap-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate">{u.nome}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">{u.cargo || 'Servidor'} — {u.email}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const success = await iniciarSimulacao(u.id, supabase)
+                                if (success) {
+                                  toast.success(`Modo simulação ativado para "${u.nome}" na escola ${escola.nome}!`)
+                                  window.location.href = '/home'
+                                } else {
+                                  toast.error('Falha ao iniciar simulação para esta conta.')
+                                }
+                              }}
+                              disabled={isLoadingSimulation}
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 shrink-0 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                              title={`Simular conta de ${u.nome}`}
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>Simular</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

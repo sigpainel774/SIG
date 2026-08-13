@@ -20,6 +20,7 @@ export interface Escola {
   tipo?: string | null
   inep?: string | null
   localizacao?: string | null
+  is_teste?: boolean
   created_at?: string | null
   deleted_at?: string | null
   secretarias?: {
@@ -99,7 +100,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, is_teste, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .eq('id', id)
               .is('deleted_at', null)
               .maybeSingle()
@@ -134,7 +135,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data, error } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, is_teste, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .is('deleted_at', null)
               .eq('ativo', true)
               .order('nome', { ascending: true })
