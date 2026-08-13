@@ -33,6 +33,7 @@ interface ModalRedatorOficioProps {
   onConfirm: (dados: DadosOficio) => void
   funcionarioNome?: string
   funcionarioCargo?: string
+  escolaLogoUrl?: string | null
 }
 
 export function ModalRedatorOficio({
@@ -41,6 +42,7 @@ export function ModalRedatorOficio({
   onConfirm,
   funcionarioNome,
   funcionarioCargo,
+  escolaLogoUrl,
 }: ModalRedatorOficioProps) {
   const [mounted, setMounted] = useState(false)
   const anoAtual = new Date().getFullYear()
@@ -165,9 +167,9 @@ export function ModalRedatorOficio({
             </div>
             <div>
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                Redator de Ofício Oficial
+                Redator de Ofício
                 <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                  Secretaria de Saúde
+                  Secretaria / Órgão
                 </span>
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -337,7 +339,16 @@ export function ModalRedatorOficio({
               <span>Altura aproximada: {alturaConteudoPx}px</span>
             </div>
 
-            <div className="relative bg-white text-gray-900 rounded-sm p-8 sm:p-12 shadow-xl border border-gray-300 min-h-[500px]">
+            <div className="relative bg-white text-gray-900 rounded-sm p-8 sm:p-12 shadow-xl border border-gray-300 min-h-[500px] overflow-hidden">
+              {/* Marca d'água de fundo (Ghost Logo da Escola) */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden" aria-hidden="true">
+                <img
+                  src={escolaLogoUrl || 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/logo-prefeitura.png'}
+                  alt=""
+                  className="w-[360px] max-h-[360px] object-contain opacity-[0.07]"
+                />
+              </div>
+
               {/* Estilos para parágrafos no editor A4 */}
               <style>{`
                 .oficio-editor-canvas p {
@@ -358,7 +369,7 @@ export function ModalRedatorOficio({
                 onInput={handleInput}
                 onKeyUp={handleInput}
                 style={{ fontFamily, fontSize }}
-                className="oficio-editor-canvas outline-none min-h-[350px] text-gray-900"
+                className="oficio-editor-canvas outline-none min-h-[350px] text-gray-900 relative z-10"
               />
 
               {/* Divisor Visual de 2ª Página (Linha demarcatória A4) */}

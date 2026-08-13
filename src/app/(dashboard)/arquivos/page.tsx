@@ -231,7 +231,7 @@ function ArquivosContent() {
       {/* Visualização e Reimpressão de Ofício */}
       {oficioImprimir && (
         <PrintDocumentoEscolar
-          aluno={{ id: 'oficio', nome: 'Ofício Oficial' }}
+          aluno={{ id: 'oficio', nome: 'Ofício' }}
           docType="oficio"
           dadosOficio={oficioImprimir.dados_documento ?? undefined}
           tokenExistente={oficioImprimir.token_verificacao}
@@ -250,7 +250,7 @@ function ArquivosContent() {
               setSelectedArq(null)
             }
           }}
-          title={selectedOficio ? "Detalhes do Ofício Oficial Assinado" : `Visualizar Ficha Histórica — ${selectedArq?.tipo}`}
+          title={selectedOficio ? "Detalhes do Ofício Assinado" : `Visualizar Ficha Histórica — ${selectedArq?.tipo}`}
           description={selectedOficio ? "Registro criptográfico e metadados de autenticidade jurídica do documento emitido." : "Snapshot dos dados gravados no momento em que o registro foi transferido ou arquivado."}
           maxWidth="sm:max-w-[600px]"
           footer={
@@ -353,7 +353,7 @@ function ArquivosContent() {
               <div className="space-y-2.5 bg-muted/60 border border-borderCustom rounded-xl p-4 text-xs">
                 <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
                   <span className="text-muted-foreground">Tipo de Documento:</span>
-                  <span className="col-span-2 font-bold text-foreground uppercase">Ofício Oficial</span>
+                  <span className="col-span-2 font-bold text-foreground uppercase">Ofício</span>
                 </div>
                 <div className="grid grid-cols-3 border-b border-borderCustom pb-2">
                   <span className="text-muted-foreground">Chave de Verificação:</span>
@@ -550,7 +550,7 @@ function ArquivosContent() {
                       <TableCell>
                         <div className="font-bold text-foreground flex items-center gap-2">
                           <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>{of.dados_documento?.numeroOficio ? `Ofício Nº ${of.dados_documento.numeroOficio}` : 'Ofício Oficial'}</span>
+                          <span>{of.dados_documento?.numeroOficio ? `Ofício Nº ${of.dados_documento.numeroOficio}` : 'Ofício'}</span>
                         </div>
                         {of.dados_documento?.destinatario && (
                           <div className="text-xs text-foreground/80 font-medium truncate max-w-[260px] mt-0.5" title={of.dados_documento.destinatario}>

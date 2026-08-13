@@ -128,7 +128,7 @@ export default async function VerificarPage({ params }: PageProps) {
                       : assinatura.tipo_documento === 'atestado-transferencia'
                       ? 'Atestado de Transferência'
                       : assinatura.tipo_documento === 'oficio'
-                      ? 'Ofício Oficial'
+                      ? 'Ofício'
                       : assinatura.tipo_documento || 'Documento Oficial'}
                   </span>
                 </div>
