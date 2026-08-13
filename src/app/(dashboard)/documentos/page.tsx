@@ -151,28 +151,27 @@ export default function DocumentosPage() {
     loadTurmas()
   }, [escolaAtivaId])
 
-  // Buscar alunos da escola ativa sob demanda (Autocomplete com debounce e limit)
-  useEffect(() => {
-    if (!escolaAtivaId) {
+  const [buscarNaRedeToda, setBuscarNaRedeToda] = useState(false)
+
+  // Função centralizada para carregar/buscar alunos do Supabase
+  const buscarAlunosServidor = useCallback(async (termo: string, naRedeToda: boolean = false) => {
+    if (!escolaAtivaId && !naRedeToda && !isAdminGlobalOrRoot()) {
       setAlunos([])
       setLoadingAlunos(false)
       return
     }
 
-    const termoLimpo = buscaAluno.trim()
+    setLoadingAlunos(true)
+    const supabase = createClient()
+    const isAdmin = isAdminGlobalOrRoot()
 
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      setLoadingAlunos(true)
-      const supabase = createClient()
-      const isAdmin = isAdminGlobalOrRoot()
+    let query = supabase
+      .from('alunos')
+      .select('id, nome, numero_matricula, cpf, inep, data_nascimento, nome_mae, escola_id, turma_id, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, escolas(nome), turmas(nome)')
+      .is('deleted_at', null)
 
-      let query = supabase
-        .from('alunos')
-        .select('id, nome, numero_matricula, cpf, inep, data_nascimento, nome_mae, escola_id, turma_id, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, escolas(nome), turmas(nome)')
-        .is('deleted_at', null)
-
-      // Verificação de cargos e lotação
+    // Aplicação de restrições de escola e cargo
+    if (!naRedeToda && escolaAtivaId) {
       if (!isAdmin) {
         const isDiretor = (acessos || []).some(a => a.nivel === 2 && a.escola_id === escolaAtivaId && a.ativo) ||
           (vinculos || []).some(
@@ -186,7 +185,7 @@ export default function DocumentosPage() {
         if (isDiretor || isSecretario) {
           query = query.eq('escola_id', escolaAtivaId)
         } else {
-          // Professor ou Coordenador: só vê alunos das suas turmas
+          // Professor ou Coordenador: vê alunos das suas turmas
           const { data: vTurmas } = await supabase
             .from('vinculos_turmas')
             .select('turma_id')
@@ -197,47 +196,66 @@ export default function DocumentosPage() {
           if (ids.length > 0) {
             query = query.eq('escola_id', escolaAtivaId).in('turma_id', ids) as typeof query
           } else {
-            if (!cancelled) {
-              setAlunos([])
-              setLoadingAlunos(false)
-            }
+            setAlunos([])
+            setLoadingAlunos(false)
             return
           }
         }
       } else {
         query = query.eq('escola_id', escolaAtivaId)
       }
+    }
 
-      // Filtro de turma
-      if (turmaFiltroId !== 'all') {
-        query = query.eq('turma_id', turmaFiltroId)
-      }
+    // Filtro por turma (se selecionada)
+    if (turmaFiltroId !== 'all') {
+      query = query.eq('turma_id', turmaFiltroId)
+    }
 
-      // Filtro de termo digitado (ES-4: Sanitização)
-      if (termoLimpo.length >= 1) {
-        const termSanitizado = termoLimpo.replace(/[%_\(\)]/g, '')
+    const termoLimpo = termo.trim()
+
+    // A partir de 3 letras (ou 1 se houver menos), filtrar por nome, matrícula, cpf ou inep
+    if (termoLimpo.length >= 1) {
+      const termSanitizado = termoLimpo.replace(/[%_\(\)]/g, '')
+      // Suporte a múltiplos termos separados por espaço (ex: "akira lucca")
+      const tokens = termSanitizado.split(/\s+/).filter(Boolean)
+      
+      if (tokens.length === 1) {
         query = query.or(`nome.ilike.%${termSanitizado}%,numero_matricula.ilike.%${termSanitizado}%,cpf.ilike.%${termSanitizado}%,inep.ilike.%${termSanitizado}%`)
+      } else {
+        // Multi-word: cada token deve dar match no nome ou nos outros campos
+        const conditions = tokens.map(tk => `nome.ilike.%${tk}%`).join(',')
+        query = query.or(conditions)
       }
+    }
 
-      const { data, error } = await query.order('nome', { ascending: true }).limit(15)
+    // Aumentar o limite para 50 quando houver termo de busca com 3+ letras para trazer todos os alunos correspondentes
+    const limitMax = termoLimpo.length >= 3 ? 50 : 20
+    const { data, error } = await query.order('nome', { ascending: true }).limit(limitMax)
 
+    if (error) {
+      console.error('Erro ao buscar alunos:', error)
+      toast.error('Erro ao realizar busca de alunos.')
+      setAlunos([])
+    } else if (data) {
+      setAlunos(data)
+    }
+    setLoadingAlunos(false)
+  }, [escolaAtivaId, turmaFiltroId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot])
+
+  // Buscar alunos da escola ativa sob demanda com debounce
+  useEffect(() => {
+    let cancelled = false
+    const timer = setTimeout(() => {
       if (!cancelled) {
-        if (error) {
-          console.error('Erro ao buscar alunos:', error)
-          toast.error('Erro ao realizar busca de alunos.')
-          setAlunos([])
-        } else if (data) {
-          setAlunos(data)
-        }
-        setLoadingAlunos(false)
+        buscarAlunosServidor(buscaAluno, buscarNaRedeToda)
       }
-    }, 300) // 300ms debounce
+    }, 200) // 200ms debounce otimizado
 
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [buscaAluno, turmaFiltroId, escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot])
+  }, [buscaAluno, buscarNaRedeToda, buscarAlunosServidor])
 
   const sugestoesAlunos = alunos
 
@@ -500,17 +518,44 @@ export default function DocumentosPage() {
 
                   {/* Campo de Busca por Aluno */}
                   <div ref={autocompleteRef} className="relative space-y-1.5">
-                    <span className="text-[10px] text-muted-foreground block font-semibold uppercase">Nome ou Matrícula</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground block font-semibold uppercase">
+                        Nome ou Matrícula {buscaAluno.trim().length >= 3 ? '(Buscando 3+ letras)' : ''}
+                      </span>
+                      {isAdminGlobalOrRoot() && (
+                        <label className="flex items-center gap-1.5 text-[10px] text-primary cursor-pointer font-medium hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={buscarNaRedeToda}
+                            onChange={(e) => setBuscarNaRedeToda(e.target.checked)}
+                            className="rounded border-border text-primary focus:ring-primary h-3 w-3"
+                          />
+                          Buscar na rede toda
+                        </label>
+                      )}
+                    </div>
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"
-                        placeholder="Nome ou matrícula..."
+                        placeholder="Digite ao menos 3 letras (ex: aki)..."
                         value={buscaAluno}
                         onChange={(e) => {
                           setBuscaAluno(e.target.value)
                           setShowSugestoes(true)
                           if (alunoSelecionado) setAlunoSelecionado(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            setShowSugestoes(true)
+                            buscarAlunosServidor(buscaAluno, buscarNaRedeToda)
+                            if (sugestoesAlunos.length > 0) {
+                              setAlunoSelecionado(sugestoesAlunos[0])
+                              setBuscaAluno(sugestoesAlunos[0].nome)
+                              setShowSugestoes(false)
+                            }
+                          }
                         }}
                         onFocus={() => setShowSugestoes(true)}
                         onClick={() => setShowSugestoes(true)}
@@ -551,19 +596,39 @@ export default function DocumentosPage() {
                               className="w-full px-4 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground text-foreground transition-colors border-b border-border last:border-none cursor-pointer flex flex-col gap-0.5"
                             >
                               <span className="font-bold text-foreground uppercase">{aluno.nome}</span>
-                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
-                                <span>Matrícula: {aluno.id}</span>
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono flex-wrap">
+                                <span>Matrícula: {aluno.numero_matricula || aluno.id.slice(0, 8)}</span>
                                 {aluno.turmas?.nome && (
                                   <>
                                     <span>•</span>
                                     <span className="text-primary font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
                                   </>
                                 )}
+                                {aluno.escolas?.nome && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-muted-foreground font-sans truncate max-w-[180px]">Escola: {aluno.escolas.nome}</span>
+                                  </>
+                                )}
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-xs text-muted-foreground">Nenhum aluno encontrado.</div>
+                          <div className="p-4 text-center text-xs text-muted-foreground space-y-2">
+                            <p>Nenhum aluno encontrado para "{buscaAluno}".</p>
+                            {!buscarNaRedeToda && isAdminGlobalOrRoot() && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBuscarNaRedeToda(true)
+                                  buscarAlunosServidor(buscaAluno, true)
+                                }}
+                                className="text-xs text-primary font-semibold hover:underline cursor-pointer"
+                              >
+                                🔍 Buscar em todas as escolas da rede
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
