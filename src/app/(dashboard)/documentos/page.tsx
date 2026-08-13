@@ -469,15 +469,15 @@ export default function DocumentosPage() {
           {/* Coluna Esquerda: Busca do Aluno (Removido na Saúde) */}
           {!isSaude && (
             <div className="md:col-span-1 space-y-4">
-              <Card className="p-5 border-borderCustom bg-card space-y-4 overflow-visible">
+              <Card className="p-5 border-border bg-card space-y-4 overflow-visible">
                 <div className="space-y-4">
-                  <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     1. Buscar Aluno(a)
                   </label>
 
                   {/* Filtro por Turma */}
                   <div className="space-y-1.5">
-                    <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Filtrar por Turma</span>
+                    <span className="text-[10px] text-muted-foreground block font-semibold uppercase">Filtrar por Turma</span>
                     <select
                       value={turmaFiltroId}
                       onChange={(e) => {
@@ -487,11 +487,11 @@ export default function DocumentosPage() {
                           setBuscaAluno('')
                         }
                       }}
-                      className="w-full h-10 px-3 bg-input border border-borderCustom text-zinc-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#185FA5]/50 hover:bg-[#1a1a1c] transition-all cursor-pointer"
+                      className="w-full h-10 px-3 bg-input border border-border text-foreground rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 dark:hover:bg-[#1a1a1c] transition-all cursor-pointer"
                     >
-                      <option value="all">Todas as Turmas</option>
+                      <option value="all" className="bg-card text-foreground dark:bg-[#121214] dark:text-zinc-200">Todas as Turmas</option>
                       {turmas.map((t) => (
-                        <option key={t.id} value={t.id} className="bg-[#121214]">
+                        <option key={t.id} value={t.id} className="bg-card text-foreground dark:bg-[#121214] dark:text-zinc-200">
                           {t.nome} {t.turno ? `(${t.turno})` : ''}
                         </option>
                       ))}
@@ -500,9 +500,9 @@ export default function DocumentosPage() {
 
                   {/* Campo de Busca por Aluno */}
                   <div ref={autocompleteRef} className="relative space-y-1.5">
-                    <span className="text-[10px] text-zinc-400 block font-semibold uppercase">Nome ou Matrícula</span>
+                    <span className="text-[10px] text-muted-foreground block font-semibold uppercase">Nome ou Matrícula</span>
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"
                         placeholder="Nome ou matrícula..."
@@ -514,7 +514,7 @@ export default function DocumentosPage() {
                         }}
                         onFocus={() => setShowSugestoes(true)}
                         onClick={() => setShowSugestoes(true)}
-                        className="pl-9 pr-8 h-10 bg-input border-borderCustom text-white rounded-xl text-xs"
+                        className="pl-9 pr-8 h-10 bg-input border border-border text-foreground rounded-xl text-xs placeholder:text-muted-foreground"
                       />
                       {buscaAluno && (
                         <button
@@ -524,7 +524,7 @@ export default function DocumentosPage() {
                             setAlunoSelecionado(null)
                             setShowSugestoes(false)
                           }}
-                          className="absolute right-3 top-3 text-zinc-500 hover:text-white transition-colors"
+                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -533,9 +533,9 @@ export default function DocumentosPage() {
 
                     {/* Sugestões do Autocomplete */}
                     {showSugestoes && (
-                      <div className="absolute z-50 w-full mt-1.5 bg-[#121214] border border-borderCustom rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                      <div className="absolute z-50 w-full mt-1.5 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
                         {loadingAlunos ? (
-                          <div className="p-4 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
+                          <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
                           </div>
                         ) : sugestoesAlunos.length > 0 ? (
@@ -548,22 +548,22 @@ export default function DocumentosPage() {
                                 setBuscaAluno(aluno.nome)
                                 setShowSugestoes(false)
                               }}
-                              className="w-full px-4 py-2.5 text-left text-xs hover:bg-[#185FA5]/10 hover:text-[#3ea6ff] text-zinc-300 transition-colors border-b border-borderCustom last:border-none cursor-pointer flex flex-col gap-0.5"
+                              className="w-full px-4 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground text-foreground transition-colors border-b border-border last:border-none cursor-pointer flex flex-col gap-0.5"
                             >
-                              <span className="font-bold text-white uppercase">{aluno.nome}</span>
-                              <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                              <span className="font-bold text-foreground uppercase">{aluno.nome}</span>
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
                                 <span>Matrícula: {aluno.id}</span>
                                 {aluno.turmas?.nome && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-[#3ea6ff] font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
+                                    <span className="text-primary font-sans font-semibold">Turma: {aluno.turmas.nome}</span>
                                   </>
                                 )}
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-xs text-zinc-500">Nenhum aluno encontrado.</div>
+                          <div className="p-4 text-center text-xs text-muted-foreground">Nenhum aluno encontrado.</div>
                         )}
                       </div>
                     )}
@@ -642,7 +642,7 @@ export default function DocumentosPage() {
               </div>
 
               {/* Botão de Emissão */}
-              <div className="flex justify-end pt-2 border-t border-borderCustom items-center gap-2">
+              <div className="flex justify-end pt-2 border-t border-border items-center gap-2">
                 {tokenDocumentoExistente && (
                   <Button
                     onClick={() => {
@@ -652,7 +652,7 @@ export default function DocumentosPage() {
                     type="button"
                     variant="outline"
                     title="Visualizar documento arquivado (Histórico)"
-                    className="border-[#0090ff] text-[#0090ff] hover:bg-[#0090ff]/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                    className="border-primary text-primary hover:bg-primary/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center transition-all cursor-pointer"
                   >
                     <span className="text-xs">Histórico</span>
                   </Button>
