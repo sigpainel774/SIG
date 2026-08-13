@@ -153,9 +153,16 @@ export default function DocumentosPage() {
 
   const [buscarNaRedeToda, setBuscarNaRedeToda] = useState(false)
 
+  // Permissão especial para busca na rede toda: Nível 1 (Secretaria de Educação/Superadmin) e Nível 2 (Diretores)
+  const podeBuscarNaRedeToda = isAdminGlobalOrRoot() || 
+    (acessos || []).some(a => (a.nivel === 1 || a.nivel === 2) && a.ativo) ||
+    (vinculos || []).some(v => v.cargo?.toUpperCase() === 'DIRETOR' || v.cargo?.toUpperCase().includes('DIRETOR'))
+
   // Função centralizada para carregar/buscar alunos do Supabase
   const buscarAlunosServidor = useCallback(async (termo: string, naRedeToda: boolean = false) => {
-    if (!escolaAtivaId && !naRedeToda && !isAdminGlobalOrRoot()) {
+    const permitirNaRede = naRedeToda && podeBuscarNaRedeToda
+
+    if (!escolaAtivaId && !permitirNaRede && !isAdminGlobalOrRoot()) {
       setAlunos([])
       setLoadingAlunos(false)
       return
@@ -171,7 +178,7 @@ export default function DocumentosPage() {
       .is('deleted_at', null)
 
     // Aplicação de restrições de escola e cargo
-    if (!naRedeToda && escolaAtivaId) {
+    if (!permitirNaRede && escolaAtivaId) {
       if (!isAdmin) {
         const isDiretor = (acessos || []).some(a => a.nivel === 2 && a.escola_id === escolaAtivaId && a.ativo) ||
           (vinculos || []).some(
@@ -522,15 +529,17 @@ export default function DocumentosPage() {
                       <span className="text-[10px] text-muted-foreground block font-semibold uppercase">
                         Nome ou Matrícula {buscaAluno.trim().length >= 3 ? '(Buscando 3+ letras)' : ''}
                       </span>
-                      <label className="flex items-center gap-1.5 text-[10px] text-primary cursor-pointer font-medium hover:underline">
-                        <input
-                          type="checkbox"
-                          checked={buscarNaRedeToda}
-                          onChange={(e) => setBuscarNaRedeToda(e.target.checked)}
-                          className="rounded border-border text-primary focus:ring-primary h-3 w-3"
-                        />
-                        Buscar na rede toda
-                      </label>
+                      {podeBuscarNaRedeToda && (
+                        <label className="flex items-center gap-1.5 text-[10px] text-primary cursor-pointer font-medium hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={buscarNaRedeToda}
+                            onChange={(e) => setBuscarNaRedeToda(e.target.checked)}
+                            className="rounded border-border text-primary focus:ring-primary h-3 w-3"
+                          />
+                          Buscar na rede toda
+                        </label>
+                      )}
                     </div>
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -614,7 +623,7 @@ export default function DocumentosPage() {
                         ) : (
                           <div className="p-4 text-center text-xs text-muted-foreground space-y-2">
                             <p>Nenhum aluno encontrado para "{buscaAluno}".</p>
-                            {!buscarNaRedeToda && (
+                            {!buscarNaRedeToda && podeBuscarNaRedeToda && (
                               <button
                                 type="button"
                                 onClick={() => {
