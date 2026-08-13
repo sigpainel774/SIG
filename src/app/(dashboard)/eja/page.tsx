@@ -116,63 +116,63 @@ export default function PortalEjaPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* ── Banner de Entrada EJA ────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-transparent border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-transparent border border-amber-500/30 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-inner">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-inner">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-white tracking-tight">
+              <h1 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
                 Portal de Gestão EJA (Educação de Jovens e Adultos)
               </h1>
-              <Badge variant="outline" className="border-amber-500/50 text-amber-400 bg-amber-500/10 font-bold px-2.5 py-0.5">
+              <Badge variant="outline" className="border-amber-500/50 text-amber-800 dark:text-amber-400 bg-amber-500/10 font-bold px-2.5 py-0.5">
                 Acesso Global EJA
               </Badge>
             </div>
-            <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
-              Órgão pré-selecionado: <strong className="text-white">{secretariaEducacaoNome}</strong>. 
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 max-w-2xl leading-relaxed">
+              Órgão pré-selecionado: <strong className="text-zinc-900 dark:text-white font-bold">{secretariaEducacaoNome}</strong>. 
               Selecione abaixo a unidade escolar para gerenciar exclusivamente as turmas e alunos da modalidade EJA.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end md:self-auto shrink-0 bg-surface-1 border border-borderCustom px-3 py-2 rounded-xl text-xs text-zinc-400">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="flex items-center gap-2 self-end md:self-auto shrink-0 bg-card border border-border px-3 py-2 rounded-xl text-xs text-muted-foreground">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>Isolamento Estrito Ativo</span>
         </div>
       </div>
 
       {/* ── Painel de Busca e Filtros ──────────────────────────────────────── */}
-      <div className="bg-card border border-borderCustom rounded-2xl p-5 shadow-md space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-md space-y-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar unidade por nome, código ou INEP..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="pl-10 bg-input border-borderCustom text-foregroundCustom text-sm rounded-xl focus:border-amber-500"
+              className="pl-10 bg-input border-border text-foreground text-sm rounded-xl focus:border-amber-500"
             />
           </div>
-          <div className="text-xs text-zinc-400 font-semibold shrink-0">
+          <div className="text-xs text-muted-foreground font-semibold shrink-0">
             Exibindo {escolasFiltradas.length} de {escolas.length} escolas
           </div>
         </div>
 
         {/* ── Grid de Escolas ──────────────────────────────────────────────── */}
         {loading ? (
-          <div className="p-12 text-center text-zinc-400 text-sm animate-pulse space-y-2">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-400" />
+          <div className="p-12 text-center text-muted-foreground text-sm animate-pulse space-y-2">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-500" />
             <p>Carregando unidades escolares da Secretaria de Educação...</p>
           </div>
         ) : escolasFiltradas.length === 0 ? (
-          <div className="p-12 text-center text-zinc-400 text-sm flex flex-col items-center justify-center space-y-3 bg-surface-1 rounded-xl border border-dashed border-borderCustom">
-            <AlertCircle className="w-8 h-8 text-amber-400" />
+          <div className="p-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center space-y-3 bg-muted/30 rounded-xl border border-dashed border-border">
+            <AlertCircle className="w-8 h-8 text-amber-500" />
             <div>
-              <p className="font-semibold text-white">Nenhuma escola encontrada</p>
-              <p className="text-xs text-zinc-400 mt-1">Ajuste o termo de busca para visualizar mais opções.</p>
+              <p className="font-semibold text-foreground">Nenhuma escola encontrada</p>
+              <p className="text-xs text-muted-foreground mt-1">Ajuste o termo de busca para visualizar mais opções.</p>
             </div>
           </div>
         ) : (
@@ -181,29 +181,29 @@ export default function PortalEjaPage() {
               <div
                 key={escola.id}
                 onClick={() => handleSelecionarEscola(escola)}
-                className="group p-5 rounded-2xl bg-surface-1 border border-borderCustom hover:border-amber-500/50 hover:bg-amber-950/10 transition-all cursor-pointer flex flex-col justify-between gap-4 shadow-sm hover:shadow-md hover:shadow-amber-950/20"
+                className="group p-5 rounded-2xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 dark:hover:bg-amber-950/10 transition-all cursor-pointer flex flex-col justify-between gap-4 shadow-sm hover:shadow-md"
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
                       <Building2 className="w-5 h-5" />
                     </div>
-                    <Badge variant="outline" className="border-borderCustom text-zinc-400 text-[10px]">
+                    <Badge variant="outline" className="border-border text-muted-foreground text-[10px]">
                       Cód: {escola.codigo}
                     </Badge>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
                       {escola.nome}
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       INEP: {escola.inep || 'Não informado'}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-borderCustom/60 flex items-center justify-between text-xs text-amber-400 font-semibold group-hover:translate-x-0.5 transition-transform">
+                <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 font-semibold group-hover:translate-x-0.5 transition-transform">
                   <span>Acessar Ambiente EJA</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
