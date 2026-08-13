@@ -419,6 +419,13 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     }
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+  const logoPrefeitura = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
+  const logoEducacao = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
+  const logoSaude = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727067249_icone_saude_clean.png`
+  const logoSecretaria = isSaudeContext ? logoSaude : logoEducacao
+  const watermarkLogo = escolaLogoUrl || logoSecretaria || logoPrefeitura
+
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
       <style>{`
@@ -503,10 +510,22 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
 
       {/* Folha A4 */}
       <div
-        className="bg-white text-black w-full max-w-[800px] min-h-[1000px] p-6 sm:p-8 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none flex flex-col justify-between my-auto border border-gray-300 print:border-none print:m-0"
+        className="bg-white text-black w-full max-w-[800px] min-h-[1000px] p-6 sm:p-8 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none flex flex-col justify-between my-auto border border-gray-300 print:border-none print:m-0 relative overflow-hidden"
         style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
       >
-        <div>
+        {/* Marca d'água de fundo (Ghost Logo da Escola) */}
+        {docType === 'oficio' && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden" aria-hidden="true">
+            <img
+              src={getCacheBustedUrl(watermarkLogo)}
+              alt=""
+              className="w-[440px] max-h-[440px] object-contain opacity-[0.07] print:opacity-[0.07]"
+              style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+            />
+          </div>
+        )}
+
+        <div className="relative z-10">
           {/* Cabeçalho Oficial da Prefeitura/SME */}
           <PrintHeader
             className="pb-2 border-b border-black mb-2"
@@ -554,7 +573,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
         </div>
 
         {/* Rodapé e Área de Assinatura */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 relative z-10">
           {docType === 'oficio' ? (
             <div className="flex flex-col items-center justify-end min-h-[65px] mx-auto text-center mt-2">
               {funcionario?.assinatura_url ? (

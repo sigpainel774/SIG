@@ -384,7 +384,7 @@ export default function DocumentosPage() {
 
   const documentOptions = isSaude
     ? [
-        { id: 'oficio', label: 'Ofício Oficial', icon: FileText, desc: 'Clique para redigir e emitir um ofício oficial formatado.' },
+        { id: 'oficio', label: 'Ofício', icon: FileText, desc: 'Clique para redigir e emitir um ofício formatado.' },
       ]
     : [
         { id: 'atestado-matricula', label: 'Atestado de Matrícula', icon: Award, desc: 'Atesta vínculo ativo do aluno no ano letivo corrente.' },
@@ -394,7 +394,7 @@ export default function DocumentosPage() {
         { id: 'comprovante-matricula', label: 'Comprovante de Matrícula', icon: FileSpreadsheet, desc: 'Recibo oficial detalhado da matrícula.' },
         { id: 'ficha-aluno', label: 'Ficha Completa do Aluno', icon: FileText, desc: 'Ficha cadastral completa com todos os dados do aluno.' },
         { id: 'boletim', label: 'Boletim Escolar', icon: FileText, desc: 'Boletim oficial de notas e frequência por unidades.' },
-        { id: 'oficio', label: 'Ofício Oficial', icon: FileText, desc: 'Clique para redigir e emitir um ofício oficial formatado.' },
+        { id: 'oficio', label: 'Ofício', icon: FileText, desc: 'Clique para redigir e emitir um ofício formatado.' },
       ]
 
   return (
@@ -415,7 +415,7 @@ export default function DocumentosPage() {
         />
       )}
 
-      {/* Modal Redator de Ofício da Saúde */}
+      {/* Modal Redator de Ofício */}
       {isRedatorOficioOpen && (
         <ModalRedatorOficio
           isOpen={isRedatorOficioOpen}
@@ -423,10 +423,11 @@ export default function DocumentosPage() {
           onConfirm={(dados) => {
             setDadosOficio(dados)
             setIsRedatorOficioOpen(false)
-            setAlunoImprimirDocumentoEscolar({ id: 'oficio', nome: 'Ofício Oficial' })
+            setAlunoImprimirDocumentoEscolar({ id: 'oficio', nome: 'Ofício' })
           }}
           funcionarioNome={funcionario?.nome}
-          funcionarioCargo={funcionario?.cargo || 'Secretaria Municipal de Saúde'}
+          funcionarioCargo={funcionario?.cargo || 'Secretaria / Órgão Municipal'}
+          escolaLogoUrl={selectedEscola?.logo_url || null}
         />
       )}
 
