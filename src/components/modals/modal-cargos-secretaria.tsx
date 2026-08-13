@@ -131,7 +131,7 @@ export function ModalCargosSecretaria({
             <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
           </div>
         ) : cargos.length === 0 ? (
-          <div className="py-8 text-center text-zinc-400 bg-black/20 rounded-xl border border-border">
+          <div className="py-8 text-center text-muted-foreground bg-muted/30 rounded-xl border border-border">
             <Briefcase className="w-8 h-8 text-amber-500 mx-auto mb-2 opacity-50" />
             <p>Nenhum cargo cadastrado para esta secretaria.</p>
           </div>
@@ -140,19 +140,19 @@ export function ModalCargosSecretaria({
             {cargos.map(cargo => (
               <div 
                 key={cargo.id} 
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-background border-border hover:border-border gap-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card border-border hover:border-zinc-400 dark:hover:border-zinc-700 gap-3"
               >
                 <div>
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                     {cargo.nome}
-                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px] uppercase font-bold tracking-wider border border-purple-500/30">
+                    <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[10px] uppercase font-bold tracking-wider border border-purple-500/30">
                       Nível {cargo.nivel}
                     </span>
                   </h4>
                   {cargo.descricao && (
-                    <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{cargo.descricao}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{cargo.descricao}</p>
                   )}
-                  <p className="text-[11px] text-emerald-400 mt-1 font-medium">
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
                     {cargo.salario_base ? `Salário Base: R$ ${Number(cargo.salario_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Salário não definido'}
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export function ModalCargosSecretaria({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => handleEditarCargo(cargo)}
-                    className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2"
+                    className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -170,7 +170,7 @@ export function ModalCargosSecretaria({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => handleExcluirCargo(cargo)}
-                    className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 px-2"
+                    className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 h-8 px-2"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

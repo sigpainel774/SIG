@@ -117,8 +117,8 @@ export function ModalConfigSecretario({
       ) : (
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="secretario_nome" className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-              <UserCheck className="w-4 h-4 text-purple-400" />
+            <Label htmlFor="secretario_nome" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               Nome do(a) Secretário(a) de Educação *
             </Label>
             <Input
@@ -130,13 +130,13 @@ export function ModalConfigSecretario({
               className="bg-background border-border text-foreground focus:border-purple-500 uppercase font-semibold text-sm h-10"
               required
             />
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-muted-foreground">
               Este nome aparecerá nos boletins escolares e documentos chancelados pela Secretaria.
             </p>
           </div>
 
           <div className="space-y-2 pt-1">
-            <Label htmlFor="cargo_secretario" className="text-xs font-bold text-zinc-300">
+            <Label htmlFor="cargo_secretario" className="text-xs font-bold text-foreground">
               Título do Cargo
             </Label>
             <Input
@@ -150,7 +150,7 @@ export function ModalConfigSecretario({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="nome_rede" className="text-xs font-bold text-zinc-300">
+            <Label htmlFor="nome_rede" className="text-xs font-bold text-foreground">
               Nome da Secretaria / Órgão Municipal
             </Label>
             <Input

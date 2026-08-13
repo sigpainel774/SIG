@@ -5,7 +5,7 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Briefcase, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 
@@ -154,7 +154,7 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
           <select
             value={secretariaId}
             onChange={(e) => setSecretariaId(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-input border border-borderCustom text-foreground text-sm outline-none mt-1 focus:border-highlight focus:ring-2 focus:ring-highlight/20"
+            className="w-full h-10 px-3 rounded-md bg-input border border-border text-foreground text-sm outline-none mt-1 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
             required
           >
             <option value="">Selecione uma secretaria...</option>
@@ -170,7 +170,7 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Coordenador Pedagógico"
-            className="bg-input border-borderCustom text-foreground mt-1"
+            className="bg-input border-border text-foreground mt-1"
             required
           />
         </div>
@@ -181,7 +181,7 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
             <select
               value={nivel}
               onChange={(e) => setNivel(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-input border border-borderCustom text-foreground text-sm outline-none mt-1 focus:border-highlight focus:ring-2 focus:ring-highlight/20"
+              className="w-full h-10 px-3 rounded-md bg-input border border-border text-foreground text-sm outline-none mt-1 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
             >
               <option value="1">Nível 1 (Direção Geral)</option>
               <option value="2">Nível 2 (Gestão / Coordenação)</option>
@@ -196,7 +196,7 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
               value={salarioBase}
               onChange={(e) => setSalarioBase(e.target.value)}
               placeholder="Ex: 3500.00"
-              className="bg-input border-borderCustom text-foreground mt-1"
+              className="bg-input border-border text-foreground mt-1"
             />
           </div>
         </div>
@@ -207,7 +207,7 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Descrição sucinta das atribuições do cargo"
-            className="bg-input border-borderCustom text-foreground mt-1"
+            className="bg-input border-border text-foreground mt-1"
           />
         </div>
 
@@ -217,19 +217,19 @@ export function ModalCargo({ open, onOpenChange, cargoToEdit, onSuccess }: Modal
             id="cargoAtivo"
             checked={ativo}
             onChange={(e) => setAtivo(e.target.checked)}
-            className="w-4 h-4 accent-amber-500 rounded border-borderCustom bg-input cursor-pointer"
+            className="w-4 h-4 accent-amber-500 rounded border-border bg-input cursor-pointer"
           />
           <label htmlFor="cargoAtivo" className="text-sm text-foreground font-medium cursor-pointer">
             Cargo Ativo para Lotação
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-borderCustom mt-4">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="bg-card border-borderCustom text-foreground hover:bg-muted"
+            className="bg-card border-border text-foreground hover:bg-muted"
           >
             Cancelar
           </Button>
