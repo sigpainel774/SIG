@@ -136,27 +136,27 @@ export function ModalConfigAnexosEscola({
           {/* Lista de Documentos Cadastrados */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Documentos Configurados</Label>
-            <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 border border-border rounded-xl p-3 bg-black/20">
+            <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 border border-border rounded-xl p-3 bg-muted/30">
               {anexos.length === 0 ? (
-                <div className="text-center py-6 text-zinc-500 text-xs">
+                <div className="text-center py-6 text-muted-foreground text-xs">
                   Nenhum documento padrão configurado. Os alunos desta escola só poderão anexar arquivos personalizados livres.
                 </div>
               ) : (
                 anexos.map((anexo, i) => (
                   <div 
                     key={i} 
-                    className="flex items-center justify-between p-2.5 bg-background border border-border rounded-lg text-sm"
+                    className="flex items-center justify-between p-2.5 bg-card border border-border rounded-lg text-sm"
                   >
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <FileText className="w-4 h-4 text-purple-400/80" />
-                      <span className="font-medium text-white">{anexo}</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="font-medium text-foreground">{anexo}</span>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveAnexo(i)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-7 w-7 rounded-md cursor-pointer"
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 h-7 w-7 rounded-md cursor-pointer"
                       title="Remover documento"
                     >
                       <Trash2 className="w-4.5 h-4.5" />

@@ -245,10 +245,12 @@ export default function AlunosPage() {
 
         {/* Alerta de Modo de Edição Desativado */}
         {!isEditMode && (
-          <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs flex items-center gap-2.5 font-medium">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>
-              O <strong>Modo de Edição</strong> está desativado no painel. Ative o alternador de edição no topo da página para habilitar os botões de <strong>Editar</strong>, <strong>Novo Aluno</strong> e <strong>Arquivar</strong>.
+          <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs flex items-center gap-3 font-medium shadow-xs backdrop-blur-xs">
+            <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <span className="leading-relaxed">
+              O <strong className="font-bold text-amber-950 dark:text-amber-100">Modo de Edição</strong> está desativado no painel. Ative o alternador de edição no topo da página para habilitar os botões de <strong className="font-bold text-amber-950 dark:text-amber-100">Editar</strong>, <strong className="font-bold text-amber-950 dark:text-amber-100">Novo Aluno</strong> e <strong className="font-bold text-amber-950 dark:text-amber-100">Arquivar</strong>.
             </span>
           </div>
         )}

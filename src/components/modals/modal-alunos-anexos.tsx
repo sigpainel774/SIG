@@ -658,12 +658,11 @@ export function ModalAlunosAnexos({
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-amber-500" />
-
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{padrao}</p>
-                          <p className="text-[9px] text-zinc-500 mt-0.5">
+                          <p className="text-xs font-bold text-foreground truncate">{padrao}</p>
+                          <p className="text-[9px] text-muted-foreground mt-0.5">
                             {anexoCorrespondente
                               ? `Enviado em ${new Date(anexoCorrespondente.created_at).toLocaleDateString('pt-BR')}`
                               : 'Pendente'}
@@ -678,7 +677,7 @@ export function ModalAlunosAnexos({
                               href={anexoCorrespondente.arquivo_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1.5 rounded-lg bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
                               title="Visualizar documento"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -699,7 +698,7 @@ export function ModalAlunosAnexos({
                                 />
                                 <label
                                   htmlFor={`update-padrao-${anexoCorrespondente.id}`}
-                                  className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-[#7c3aed] border border-[#7c3aed]/20 cursor-pointer transition-colors"
+                                  className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 cursor-pointer transition-colors"
                                   title="Substituir arquivo"
                                 >
                                   <Upload className="w-3.5 h-3.5" />
@@ -709,7 +708,7 @@ export function ModalAlunosAnexos({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleArquivarAnexo(anexoCorrespondente)}
-                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 hover:text-rose-400 text-rose-500 border border-rose-500/20 h-7 w-7 cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:text-rose-500 border border-rose-500/20 h-7 w-7 cursor-pointer"
                                   title="Arquivar documento"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -734,7 +733,7 @@ export function ModalAlunosAnexos({
                               />
                               <label
                                 htmlFor={`upload-padrao-input-${i}`}
-                                className="flex items-center gap-1 h-7 px-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 text-indigo-400 hover:text-indigo-300 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors"
+                                className="flex items-center gap-1 h-7 px-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors"
                               >
                                 {uploadingPadraoName === padrao ? (
                                   <Loader2 className="w-3 h-3 animate-spin" />
