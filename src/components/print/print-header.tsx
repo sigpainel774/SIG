@@ -55,7 +55,7 @@ export function PrintHeader({
 }: PrintHeaderProps) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
   const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-  const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
+  const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/logo-secretaria-educacao-2026.png`
   const defaultSaudeLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785815672933_saude_oficial.png`
 
   const isSaudeHeader = /sa[uú]de/i.test(secretaria)
