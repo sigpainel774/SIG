@@ -1895,6 +1895,7 @@ export type Database = {
           endereco: string | null
           id: string
           inep: string | null
+          is_teste: boolean
           latitude: number | null
           localizacao: string | null
           logo_url: string | null
@@ -1917,6 +1918,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          is_teste?: boolean
           latitude?: number | null
           localizacao?: string | null
           logo_url?: string | null
@@ -1939,6 +1941,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inep?: string | null
+          is_teste?: boolean
           latitude?: number | null
           localizacao?: string | null
           logo_url?: string | null

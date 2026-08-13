@@ -99,6 +99,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 80 | `20260812210000_fix_daily_login_history_rpc.sql` | 2026-08-12 | Atualiza a RPC `get_daily_login_history_admin` para consultar `user_navigation_trail` (em vez de `access_logs`), unificando logins diários, funcionários, sessões, tempo de tela e geolocalização. | `user_navigation_trail`, `funcionarios`, `auth.users`, `ip_geolocation_cache` | `SECURITY DEFINER` |
 | 81 | `20260812220000_update_navigation_trail_rpc_filters.sql` | 2026-08-12 | Atualiza a RPC `get_user_navigation_trail_admin` com suporte a filtro por data (início/fim), busca por nome de usuário/tela e limite expandido. | `user_navigation_trail`, `funcionarios` | `SECURITY DEFINER` |
 | 82 | `20260813200000_add_eja_rls_notas_frequencias.sql` | 2026-08-13 | Políticas RLS complementares para Contas Especiais EJA em notas, frequencias, materias e recuperacoes_finais. | `public.notas`, `public.frequencias`, `public.materias`, `public.recuperacoes_finais` | RLS EJA Complementar |
+| 83 | `20260813210000_add_is_teste_to_escolas.sql` | 2026-08-13 | Adiciona a coluna `is_teste` em `public.escolas` e marca as unidades 'Teste 1' e 'Teste 2' com `is_teste = true` para isolamento do ambiente de simulação. | `public.escolas` | Mantém RLS |
+
 
 
 
