@@ -87,7 +87,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
       if (targetEscolaId) {
         const { data: esc } = await supabase
           .from('escolas')
-          .select('*, funcionarios!diretor_id(nome)')
+          .select('*, funcionarios!diretor_id(nome, assinatura_url)')
           .eq('id', targetEscolaId)
           .maybeSingle()
         
@@ -95,9 +95,10 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
           setEscolaNome(esc.nome)
           setEscolaLogoUrl(esc.logo_url || null)
           setEscolaInep(esc.inep || '')
-          setDiretorAssinaturaUrl(esc.assinatura_diretor_url || null)
+          const directorPersonalSig = (esc.funcionarios as any)?.assinatura_url || null
+          setDiretorAssinaturaUrl(directorPersonalSig || esc.assinatura_diretor_url || null)
           if (esc.funcionarios) {
-            setDiretorNome(esc.funcionarios.nome)
+            setDiretorNome((esc.funcionarios as any).nome)
           }
         }
       }
