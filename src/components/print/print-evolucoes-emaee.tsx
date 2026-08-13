@@ -120,7 +120,6 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
           {/* Header */}
           <PrintHeader
             className="pb-3 border-b-2 border-black mb-4"
-            logoClassName="doc-header-logo-prefeitura"
             escolaLogoUrl={resolvedLogo}
             escolaNome="EMAEE - Espaço Municipal de Atendimento Educacional Especializado"
             centerContent={
