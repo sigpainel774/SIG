@@ -84,8 +84,13 @@ export function SchoolSelector() {
         <div className="flex items-center gap-2 min-w-0 truncate">
           {selectedEscola ? (
             <>
-              <div className={`w-3 h-3 rounded-full shrink-0 ${selectedEscola.color || 'bg-blue-500'}`} />
+              <div className={`w-3 h-3 rounded-full shrink-0 ${selectedEscola.color || (selectedEscola.is_teste ? 'bg-amber-500' : 'bg-blue-500')}`} />
               <span className="font-semibold text-white max-w-[180px] sm:max-w-[240px] truncate">{selectedEscola.nome}</span>
+              {selectedEscola.is_teste && (
+                <span className="text-[10px] font-extrabold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 uppercase shrink-0">
+                  Teste
+                </span>
+              )}
             </>
           ) : selectedSecretaria ? (
             <>
