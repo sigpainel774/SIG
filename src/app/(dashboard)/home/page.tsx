@@ -209,7 +209,7 @@ export default function HomePage() {
   // Escolas filtradas pela secretaria selecionada (para o passo 2 do fluxo nível 1)
   const escolasDaSecretaria = useMemo(() => {
     if (!selectedSecretaria) return []
-    return escolas.filter(e => e.secretaria_id === selectedSecretaria.id)
+    return escolas.filter(e => !e.is_teste && e.secretaria_id === selectedSecretaria.id)
   }, [escolas, selectedSecretaria])
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
@@ -682,7 +682,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-8 justify-items-center pt-6">
-              {(isAdmin ? escolas : escolas.filter(e => vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => {
+              {(isAdmin ? escolas.filter(e => !e.is_teste) : escolas.filter(e => !e.is_teste && vinculosAtivos.some(v => v.escola_id === e.id))).map((escola) => {
                 const stats = schoolStats[escola.id]
                 const iconProps = getSchoolIconProps(escola)
                 return (

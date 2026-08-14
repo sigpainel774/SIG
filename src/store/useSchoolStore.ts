@@ -138,6 +138,7 @@ export const useSchoolStore = create<SchoolState>()(
               .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, is_teste, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .is('deleted_at', null)
               .eq('ativo', true)
+              .or('is_teste.is.null,is_teste.eq.false')
               .order('nome', { ascending: true })
               
             if (error) {
@@ -145,10 +146,12 @@ export const useSchoolStore = create<SchoolState>()(
             }
               
             if (data) {
-              const mappedEscolas: Escola[] = (data || []).map((e: any) => ({
-                ...e,
-                secretariaNome: e.secretarias?.nome || 'Secretaria Municipal de Educação'
-              }))
+              const mappedEscolas: Escola[] = (data || [])
+                .filter((e: any) => !e.is_teste)
+                .map((e: any) => ({
+                  ...e,
+                  secretariaNome: e.secretarias?.nome || 'Secretaria Municipal de Educação'
+                }))
 
               set({ escolas: mappedEscolas, isLoaded: true })
               
