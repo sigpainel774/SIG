@@ -125,16 +125,16 @@ export default function AdminEscolasPage() {
   const columns: TableColumn<any>[] = [
     {
       header: 'Código',
-      className: 'text-purple-400 font-mono font-bold w-24',
+      className: 'text-purple-600 dark:text-purple-400 font-mono font-bold w-24',
       accessor: (escola) => escola.codigo !== undefined && escola.codigo !== null ? String(escola.codigo).padStart(2, '0') : '-'
     },
     {
       header: 'Nome da Escola',
       accessor: (escola) => (
         <div className="flex items-center gap-2">
-          <span className="font-medium text-white">{escola.nome}</span>
+          <span className="font-semibold text-foreground">{escola.nome}</span>
           {escola.is_teste && (
-            <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold px-1.5 py-0.5">
+            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40 font-semibold px-1.5 py-0.5">
               TESTE
             </Badge>
           )}
@@ -143,12 +143,12 @@ export default function AdminEscolasPage() {
     },
     {
       header: 'INEP',
-      accessor: (escola) => <span className="text-[#aaa]">{escola.inep ?? '-'}</span>
+      accessor: (escola) => <span className="text-muted-foreground font-mono text-xs">{escola.inep ?? '-'}</span>
     },
     {
       header: 'Tipo',
       accessor: (escola) => (
-        <Badge variant="outline" className="text-xs bg-gray-500/20 text-gray-300 border-gray-500/30">
+        <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border dark:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700/50">
           {escola.tipo ?? 'MUNICIPAL'}
         </Badge>
       )
@@ -156,7 +156,11 @@ export default function AdminEscolasPage() {
     {
       header: 'Status',
       accessor: (escola) => (
-        <Badge variant="outline" className={`text-xs ${escola.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+        <Badge variant="outline" className={`text-xs ${
+          escola.ativo !== false 
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30' 
+            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+        }`}>
           {escola.ativo !== false ? 'ATIVO' : 'INATIVO'}
         </Badge>
       )
@@ -174,7 +178,7 @@ export default function AdminEscolasPage() {
               setEscolaParaPais(escola)
               setContasPaisOpen(true)
             }}
-            className={escola.portal_pais_ativo ? "text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-500/10"}
+            className={escola.portal_pais_ativo ? "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}
             title={escola.portal_pais_ativo ? "Portal dos Pais HABILITADO (Gerenciar)" : "Habilitar Portal dos Pais"}
           >
             <Users className="w-4 h-4" />
@@ -186,7 +190,7 @@ export default function AdminEscolasPage() {
               setEscolaParaAnexos(escola)
               setConfigAnexosOpen(true)
             }}
-            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10"
             title="Configurar Anexos Padrão"
           >
             <Paperclip className="w-4 h-4" />
@@ -195,7 +199,7 @@ export default function AdminEscolasPage() {
             variant="ghost" 
             size="sm" 
             onClick={() => handleEditarEscola(escola)}
-            className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+            className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-500/10"
             title="Editar"
           >
             <Edit className="w-4 h-4" />
@@ -204,7 +208,7 @@ export default function AdminEscolasPage() {
             variant="ghost" 
             size="sm" 
             onClick={() => handleExcluirEscola(escola)}
-            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"
             title="Excluir (Lixeira)"
           >
             <Trash2 className="w-4 h-4" />
@@ -217,10 +221,10 @@ export default function AdminEscolasPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#3f3f46]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-purple-500" /> Escolas da Rede
+            <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" /> Escolas da Rede
           </h2>
           <p className="text-muted-foreground text-sm mt-1">Cadastro, edição e gerenciamento de todas as unidades escolares da Secretaria de Educação.</p>
         </div>
@@ -229,10 +233,10 @@ export default function AdminEscolasPage() {
           <Button 
             variant="outline"
             onClick={() => setFilaImpressaoOpen(true)}
-            className="bg-surface-2 border-borderCustom text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-hoverCustom font-semibold text-xs rounded-xl h-9"
+            className="bg-card border-border text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
             title="Gerenciar e Excluir Atividades na Fila de Impressão"
           >
-            <Printer className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> Fila de Impressão
+            <Printer className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-amber-400" /> Fila de Impressão
           </Button>
 
           {/* Botões Reutilizáveis de Importação */}
@@ -241,16 +245,16 @@ export default function AdminEscolasPage() {
           <Button 
             variant="outline"
             onClick={() => setConfigSecretarioOpen(true)}
-            className="bg-surface-2 border-borderCustom text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-hoverCustom font-semibold text-xs rounded-xl h-9"
+            className="bg-card border-border text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
             title="Configurar Titular da Secretaria de Educação"
           >
-            <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Secretário de Educação
+            <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" /> Secretário de Educação
           </Button>
           <Button 
             variant="outline"
             onClick={loadEscolas}
             disabled={loading}
-            className="bg-surface-2 border-borderCustom text-foreground hover:bg-hoverCustom h-9"
+            className="bg-card border-border text-foreground hover:bg-muted h-9"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -261,7 +265,7 @@ export default function AdminEscolasPage() {
       </div>
 
       {/* Busca */}
-      <div className="flex items-center gap-3 bg-input-bg border border-borderCustom p-3 rounded-xl max-w-md">
+      <div className="flex items-center gap-3 bg-card border border-border p-3 rounded-xl max-w-md shadow-xs">
         <Search className="w-4 h-4 text-muted-foreground" />
         <Input 
           placeholder="Buscar escola por nome ou INEP..." 
@@ -279,7 +283,7 @@ export default function AdminEscolasPage() {
         loading={loading}
         loadingMessage="Carregando escolas da rede..."
         emptyMessage="Nenhuma escola encontrada."
-        className="border-borderCustom"
+        className="border-border"
       />
 
       {/* Modal de Criar / Editar */}

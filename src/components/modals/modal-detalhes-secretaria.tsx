@@ -153,7 +153,7 @@ export function ModalDetalhesSecretaria({
               <div>
                 <h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
                   {secretaria.nome}
-                  <Badge variant="outline" className="bg-mutedmerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 text-[10px]">
                     Ativa
                   </Badge>
                 </h3>
@@ -279,8 +279,8 @@ export function ModalDetalhesSecretaria({
                         variant="outline"
                         className={`text-[10px] ${
                           u.ativo !== false
-                            ? 'bg-mutedmerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30'
                         }`}
                       >
                         {u.ativo !== false ? 'ATIVA' : 'INATIVA'}
