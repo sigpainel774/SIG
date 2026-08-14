@@ -3,7 +3,7 @@
 Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
 Atualizado automaticamente com o status real do repositório.
 
-**Última atualização:** 2026-07-28
+**Última atualização:** 2026-08-14
 
 ---
 
@@ -20,10 +20,10 @@ Atualizado automaticamente com o status real do repositório.
 | Integração Resend + Primeiro Acesso | ✅ Implementado | Sessão 2026-07-21 — Tela `/primeiro-acesso`, integração no `proxy.ts`, `PerfilTab.tsx` e `login/page.tsx` |
 | Verificação QR Code / Crachá de Funcionário | ✅ Implementado | Sessão 2026-07-20 — Rota pública `/verificar/funcionario/[id]` com validação instantânea |
 | Ajuste de Mapas e Geolocalização | ✅ Implementado | Sessão 2026-07-22 — Tiles Leaflet atualizados com fallbacks resilientes (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`) |
-| Portal do Aluno / Responsáveis | ⏳ Pendente | Plano aprovado e salvo — aguardando início do desenvolvimento |
-| Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
+| Contas Especiais & Portal EJA | ✅ Implementado | Sessão 2026-07-29 — Flag `is_conta_eja`, portal dedicado em `/eja`, isolamento de modalidades em relatórios, turmas e redirecionamento |
+| Portal do Aluno / Responsáveis | ✅ Implementado | Sessão 2026-08-14 — Schema SQL, RLS blindado, toggle no Super Painel, menu dinâmico na Sidebar da Secretaria, gestão em `/responsaveis`, login próprio, troca de senha e dashboard em `/portal-aluno` |
 | Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
-| Contas Especiais Nível 3 (Matrículas EJA & Movimentação de Pastas) | ⏳ Pendente | Proposto em 2026-07-29 — Perfil restrito para matrículas e transferência de pastas de alunos exclusivamente entre escolas da modalidade EJA |
+| Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -630,11 +630,32 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 > **Objetivo:** Criar um mini assistente integrado ao painel administrativo capaz de responder perguntas em linguagem natural sobre o histórico de alterações no sistema (ex: "quem desativou o vínculo da secretária?", "quando a turma X foi alterada?").
 > **Tabelas de banco envolvidas:** `public.audit_logs`
 
+### 💡 Possibilidades de Arquitetura (Gratuitas, Leves e Restritas ao SIG)
+
+Para manter a aplicação rápida e com custo zero de infraestrutura sem hospedar modelos pesados de dezenas de gigabytes, mapeamos 3 opções viáveis:
+
+1. **Opção A: Google Gemini API (Plano Gratuito) + Vercel AI SDK (Recomendada)**
+   - **Stack:** `@ai-sdk/google` + Modelo `gemini-1.5-flash` ou `gemini-2.0-flash`.
+   - **Vantagens:** Nível gratuito generoso (15 requisições/minuto), processamento rápido, integração nativa com Route Handlers do Next.js 16 (`src/app/api/admin/audit-chat/route.ts`).
+   - **Restrição ao SIG:** O endpoint injeta um System Prompt restrito com o schema do banco + consulta dinâmica (RAG) dos registros em `public.audit_logs`.
+
+2. **Opção B: Groq API (Modelos Open-Source Gratuitos & Ultra Rápidos)**
+   - **Stack:** `@ai-sdk/openai` apontando para a API da [Groq](https://groq.com) executando `Llama-3-8B-Instruct` ou `Gemma-2-9B`.
+   - **Vantagens:** Gratuito, latência de inferência extremamente baixa (< 0.5s) e sem peso no bundle do cliente.
+
+3. **Opção C: Modelos 100% Locais no Navegador (WebLLM / Transformers.js)**
+   - **Stack:** `@mlc-ai/web-llm` ou `@xenova/transformers` executando modelos ultra-leves (ex: `SmolLM-135M` ou `Phi-3 Mini` de ~100MB a 500MB via WebGPU).
+   - **Vantagens:** Custo zero absoluto, privacidade total (nenhum dado de auditoria sai do navegador do admin).
+   - **Desvantagem:** Depende da GPU local do cliente e exige download inicial de cache do modelo.
+
+---
+
 ### Checklist de Execução
+- [ ] Escolher e configurar uma das abordagens acima (Recomendada: Opção A - Gemini Flash via Vercel AI SDK).
 - [ ] Modelar a API de busca/filtragem de dados estruturados na tabela `public.audit_logs`.
-- [ ] Criar endpoint seguro `/api/admin/audit-chat` para receber a pergunta do administrador, filtrar os logs relevantes do período/entidade e alimentar o LLM com o contexto necessário.
+- [ ] Criar endpoint seguro `/api/admin/audit-chat` com injeção de contexto/schema restrito ao SIG.
 - [ ] Desenvolver a interface visual do mini assistente de chat no painel administrativo (`src/app/(dashboard)/admin/page.tsx`).
-- [ ] Garantir conformidade com as regras de permissões (apenas usuários de nível elevado como Superadmin ou Direção devem ter acesso a esses dados sensíveis de auditoria).
+- [ ] Garantir conformidade com as regras de permissões (apenas usuários de nível elevado como Superadmin ou Direção com RLS estrito).
 
 ---
 
@@ -655,25 +676,11 @@ CREATE POLICY "diretor_manage_audit_log" ON public.responsavel_audit_log
 
 ---
 
-## 📌 Contas Especiais Nível 3 - Modalidade EJA Exclusiva & Movimentação de Pastas
+## 📌 Contas Especiais & Portal EJA (Modalidade EJA Exclusiva)
 
-> **Status:** ⏳ Pendente — Proposto em 2026-07-29  
-> **Planejado em:** 2026-07-29  
-> **Objetivo:** Criar um perfil de conta especial Nível 3 (Coord. / Secretário) que possui acesso restrito e focado exclusivamente na realização de novas matrículas e na movimentação/transferência de pastas de alunos entre escolas que ofertam a modalidade EJA, sem visibilidade de outras seções administrativas ou do ensino regular.
-> **Tabelas de banco envolvidas:** `public.acessos_usuarios`, `public.funcionarios`, `public.alunos`, `public.alunos_anexos`, `public.transferencias_alunos`, `public.escolas`, `public.turmas`
-
-### Checklist de Execução
-- [ ] **Configuração ABAC / Nível de Acesso (`acessos_usuarios` e `funcionarios`)**:
-  - Atribuir Nível 3 com flags booleanas restritas (`pode_matriculas = true`, `pode_alunos = false`, `pode_funcionarios = false`, `pode_atestados = false`, `pode_ocorrencias = false`, etc.).
-  - Cadastrar a restrição de modalidade `modalidade_permissao = 'EJA'` ou flag de escopo no perfil do funcionário.
-- [ ] **Filtro de Navegação no Menu Lateral (`Sidebar.tsx`)**:
-  - Condicionar a exibição dos grupos de menu no `Sidebar.tsx` para exibir unicamente as rotas `/home`, `/matriculas` (ou `/transferencias`) e `/configuracoes` quando detectado a conta especial EJA.
-- [ ] **Guarda de Proteção de Rotas (`proxy.ts`)**:
-  - Adicionar verificação em `proxy.ts` redirecionando o usuário para `/matriculas` caso tente acessar diretamente URLs do ensino regular ou administrativas.
-- [ ] **Restrição no Formulário de Matrículas (`ModalAluno` / `/matriculas`)**:
-  - Limitar o carregamento de turmas e séries no formulário de matrícula apenas para turmas com `modalidade = 'EJA'` ativas na unidade escolar.
-- [ ] **Módulo de Transferência entre Escolas EJA (`ModalTransferirAluno.tsx`)**:
-  - Permitir a solicitação e aprovação de transferências de alunos entre unidades, restringindo a lista de escolas de destino no combo apenas para unidades que ofertem turmas EJA.
-  - Garantir a migração em cadeia de toda a pasta digital e documentos anexos do estudante (`public.alunos_anexos`) ao aprovar a transferência.
+> **Status:** ✅ Implementado  
+> **Concluído em:** 2026-07-29  
+> **Arquivos criados/modificados:** `src/app/(dashboard)/eja/page.tsx` · `src/store/useAuthStore.ts` · `src/app/(dashboard)/home/page.tsx` · `src/app/(dashboard)/relatorios/page.tsx` · `src/app/(dashboard)/funcionarios/page.tsx`  
+> **Objetivo:** Perfil de conta especial e portal dedicado para gestão restrita e focada nas turmas e alunos de Educação de Jovens e Adultos (EJA).
 
 

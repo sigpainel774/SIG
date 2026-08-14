@@ -19,11 +19,9 @@ Cadastro de escolas e unidades do município.
 *   `tipo`: `text` (Default: 'MUNICIPAL', Nullable)
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `diretor_id`: `uuid` (Foreign Key -> `public.funcionarios.id`, Nullable)
-*   `localizacao`: `text` (Nullable)
-*   `assinatura_diretor_url`: `text` (Nullable)
-*   `anexos_padrao`: `text[]` / `ARRAY` (Default: '{}'::text[], Nullable)
 *   `codigo`: `integer` (NOT NULL)
 *   `secretaria_id`: `uuid` (Foreign Key -> `public.secretarias.id`, Nullable)
+*   `portal_pais_ativo`: `boolean` (Default: false, Indica se o Portal dos Pais está ativado nesta unidade escolar, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -639,6 +637,36 @@ Parâmetros e dados gerais da Secretaria de Educação e da rede municipal.
 *   `nome_rede`: `text` (Nome do órgão da rede, Default: 'Secretaria Municipal de Educação de Sapeaçu', Nullable)
 *   `bloquear_edicao_funcionarios_rede`: `boolean` (Default: false, Bloqueio global de alteração de cadastros de servidores pela rede, NOT NULL)
 *   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
+### 53. `public.responsaveis`
+Cadastro de pais e responsáveis legais por estudantes com acesso ao Portal do Aluno.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `auth_user_id`: `uuid` (Refere-se ao ID em `auth.users`, Nullable)
+*   `cpf`: `text` (CPF único do responsável, NOT NULL)
+*   `nome`: `text` (Nome completo, NOT NULL)
+*   `email`: `text` (E-mail para login, NOT NULL)
+*   `telefone`: `text` (Nullable)
+*   `ativo`: `boolean` (Default: true, NOT NULL)
+*   `must_change_password`: `boolean` (Default: true, NOT NULL)
+*   `criado_por`: `uuid` (FK -> `auth.users.id`, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
+### 54. `public.responsaveis_alunos`
+Vínculo de parentesco/responsabilidade entre responsáveis e estudantes.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `responsavel_id`: `uuid` (FK -> `public.responsaveis.id`, NOT NULL)
+*   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
+*   `parentesco`: `text` (Default: 'Responsável', NOT NULL)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
+### 55. `public.responsavel_audit_log`
+Log de auditoria para ações executadas sobre as contas de responsáveis (criação, reset de senha, vínculos).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `responsavel_id`: `uuid` (FK -> `public.responsaveis.id`, Nullable)
+*   `acao`: `text` (NOT NULL)
+*   `executado_por`: `uuid` (FK -> `auth.users.id`, Nullable)
+*   `detalhes`: `jsonb` (Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
 ### 53. `public.abastecimentos_veiculos`
 Registro de consumo de combustível, abastecimentos e hodômetro da frota escolar.

@@ -222,6 +222,9 @@ export function Sidebar() {
             { href: '/documentos', label: 'Documentos', icon: FileText },
             { href: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
             { href: '/arquivos', label: 'Arquivo', icon: Archive },
+            ...(selectedEscola?.portal_pais_ativo ? [
+              { href: '/responsaveis', label: 'Portal dos Pais', icon: Users }
+            ] : []),
           ]
         },
         {

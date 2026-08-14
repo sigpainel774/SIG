@@ -100,6 +100,9 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 81 | `20260812220000_update_navigation_trail_rpc_filters.sql` | 2026-08-12 | Atualiza a RPC `get_user_navigation_trail_admin` com suporte a filtro por data (início/fim), busca por nome de usuário/tela e limite expandido. | `user_navigation_trail`, `funcionarios` | `SECURITY DEFINER` |
 | 82 | `20260813200000_add_eja_rls_notas_frequencias.sql` | 2026-08-13 | Políticas RLS complementares para Contas Especiais EJA em notas, frequencias, materias e recuperacoes_finais. | `public.notas`, `public.frequencias`, `public.materias`, `public.recuperacoes_finais` | RLS EJA Complementar |
 | 83 | `20260813210000_add_is_teste_to_escolas.sql` | 2026-08-13 | Adiciona a coluna `is_teste` em `public.escolas` e marca as unidades 'Teste 1' e 'Teste 2' com `is_teste = true` para isolamento do ambiente de simulação. | `public.escolas` | Mantém RLS |
+| 84 | `20260814200000_create_portal_pais_schema.sql` | 2026-08-14 | Criação do schema do Portal dos Pais (`responsaveis`, `responsaveis_alunos`, `responsavel_audit_log`), flag `portal_pais_ativo` em `escolas` e RLS blindado (Staff Nível 1/2/3 + Pais restrito). | `public.escolas`, `public.responsaveis`, `public.responsaveis_alunos`, `public.responsavel_audit_log`, `public.notas`, `public.frequencias`, `public.ocorrencias` | `SECURITY DEFINER` + RLS Portal dos Pais |
+| 85 | `20260814210000_secure_portal_pais_rls_and_blindagem.sql` | 2026-08-14 | Blindagem RLS contra vazamento de informações para contas de Pais/Responsáveis em 22 tabelas sensíveis (EMAEE, atestados, financeiro, RH, anexos, transportes) e liberação estrita de leitura de dependentes em `alunos` e `turmas`. | 22 tabelas operacionais do schema `public` + `alunos` e `turmas` | `SECURITY DEFINER` + Blindagem RLS |
+
 
 
 

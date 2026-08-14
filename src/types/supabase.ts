@@ -1903,6 +1903,7 @@ export type Database = {
           modulos_ativos: string[] | null
           nome: string
           plano: string | null
+          portal_pais_ativo: boolean | null
           secretaria_id: string | null
           telefone: string | null
           tipo: string | null
@@ -1926,6 +1927,7 @@ export type Database = {
           modulos_ativos?: string[] | null
           nome: string
           plano?: string | null
+          portal_pais_ativo?: boolean | null
           secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null
@@ -1949,6 +1951,7 @@ export type Database = {
           modulos_ativos?: string[] | null
           nome?: string
           plano?: string | null
+          portal_pais_ativo?: boolean | null
           secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null
@@ -3693,6 +3696,119 @@ export type Database = {
             referencedRelation: "funcionarios_ativos"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      responsaveis: {
+        Row: {
+          id: string
+          auth_user_id: string | null
+          cpf: string
+          nome: string
+          email: string
+          telefone: string | null
+          ativo: boolean
+          must_change_password: boolean
+          criado_por: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          auth_user_id?: string | null
+          cpf: string
+          nome: string
+          email: string
+          telefone?: string | null
+          ativo?: boolean
+          must_change_password?: boolean
+          criado_por?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          auth_user_id?: string | null
+          cpf?: string
+          nome?: string
+          email?: string
+          telefone?: string | null
+          ativo?: boolean
+          must_change_password?: boolean
+          criado_por?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      responsaveis_alunos: {
+        Row: {
+          id: string
+          responsavel_id: string
+          aluno_id: string
+          parentesco: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          responsavel_id: string
+          aluno_id: string
+          parentesco?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          responsavel_id?: string
+          aluno_id?: string
+          parentesco?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsaveis_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      responsavel_audit_log: {
+        Row: {
+          id: string
+          responsavel_id: string | null
+          acao: string
+          executado_por: string | null
+          detalhes: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          responsavel_id?: string | null
+          acao: string
+          executado_por?: string | null
+          detalhes?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          responsavel_id?: string | null
+          acao?: string
+          executado_por?: string | null
+          detalhes?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsavel_audit_log_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          }
         ]
       }
       system_config: {
