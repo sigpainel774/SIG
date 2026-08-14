@@ -27,12 +27,39 @@ export function ModalConfigAnexosEscola({
   const [novoAnexo, setNovoAnexo] = useState('')
 
   useEffect(() => {
-    if (escola) {
-      setAnexos(escola.anexos_padrao ?? [])
-    } else {
-      setAnexos([])
+    let isMounted = true
+
+    const carregarAnexosEscola = async () => {
+      if (escola?.anexos_padrao !== undefined) {
+        setAnexos(escola.anexos_padrao ?? [])
+      }
+
+      if (open && escola?.id) {
+        try {
+          const supabase = createClient()
+          const { data, error } = await supabase
+            .from('escolas')
+            .select('anexos_padrao')
+            .eq('id', escola.id)
+            .single()
+
+          if (!error && data && isMounted) {
+            setAnexos(data.anexos_padrao ?? [])
+          }
+        } catch (err) {
+          console.error('Erro ao sincronizar anexos padrão da escola:', err)
+        }
+      } else if (!open) {
+        setAnexos([])
+        setNovoAnexo('')
+      }
     }
-    setNovoAnexo('')
+
+    carregarAnexosEscola()
+
+    return () => {
+      isMounted = false
+    }
   }, [escola, open])
 
   const handleAddAnexo = (e: React.FormEvent) => {

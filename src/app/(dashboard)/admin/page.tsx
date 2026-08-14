@@ -44,6 +44,7 @@ import {
   Search,
   X,
   FlaskConical,
+  LogIn,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -286,6 +287,7 @@ export default function AdminHubPage() {
     isLoadingSimulation,
     simulatedFuncionario,
     iniciarSimulacao,
+    entrarComoSuperadmin,
     encerrarSimulacao,
   } = usePermissionSimulationStore()
 
@@ -508,6 +510,19 @@ export default function AdminHubPage() {
       window.location.href = '/home'
     } else {
       toast.error('Falha ao carregar dados do usuário para simulação.')
+    }
+  }
+
+  // Handler para entrar na escola de teste diretamente como Superadmin
+  const handleEntrarEscolaComoSuper = async (escola: any) => {
+    const success = await entrarComoSuperadmin(escola.id, supabase)
+    if (success) {
+      toast.success(
+        `Acesso Superadmin ativado na "${escola.nome}"! Modo de edição e poderes de Nível 1 liberados.`
+      )
+      window.location.href = '/home'
+    } else {
+      toast.error('Falha ao acessar unidade de teste como Superadmin.')
     }
   }
 
@@ -824,6 +839,17 @@ export default function AdminHubPage() {
                         CÓD: {escola.codigo || '-'}
                       </span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleEntrarEscolaComoSuper(escola)}
+                      disabled={isLoadingSimulation}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-95 border border-emerald-500/50"
+                      title={`Entrar na ${escola.nome} com sua conta Superadmin / Nível 1`}
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Entrar</span>
+                    </button>
                   </div>
 
                   <div className="space-y-2">
