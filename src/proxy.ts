@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
 
   // 2. Definição da categoria de limitação com base no caminho
   let routeType: 'login' | 'verify' | 'general' = 'general'
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/portal-aluno/login') || pathname.startsWith('/api/auth')) {
     routeType = 'login'
   } else if (pathname.startsWith('/verificar') || pathname.startsWith('/assinar')) {
     routeType = 'verify'
@@ -86,10 +86,22 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set('x-user-email', user.email || '')
   }
 
-  // Se não estiver logado e tentando acessar rota protegida, envia pro login
-  if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/assinar') && !pathname.startsWith('/verificar') && pathname.startsWith('/')) {
+  // Rotas públicas permitidas sem login
+  const isPublicRoute = 
+    pathname.startsWith('/login') || 
+    pathname.startsWith('/portal-aluno/login') ||
+    pathname.startsWith('/assinar') || 
+    pathname.startsWith('/verificar') || 
+    pathname.startsWith('/api/')
+
+  // Se não estiver logado e tentando acessar rota protegida, redireciona adequadamente
+  if (!user && !isPublicRoute && pathname.startsWith('/')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    if (pathname.startsWith('/portal-aluno')) {
+      url.pathname = '/portal-aluno/login'
+    } else {
+      url.pathname = '/login'
+    }
     return applySecurityHeaders(NextResponse.redirect(url))
   }
 
@@ -105,24 +117,54 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user) {
-    if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
-      // Zero queries: lê is_superadmin diretamente do JWT (app_metadata populado pelo trigger Postgres)
-      const isSuperAdmin = user.app_metadata?.is_superadmin === true
+    const isResponsavel = user.user_metadata?.tipo_conta === 'responsavel'
+    const mustChangePassword = user.user_metadata?.must_change_password === true
 
-      // Verifica se há simulação de perfil ativa (cookie gravado pelo client ao iniciar simulação)
-      const isSimulating = request.cookies.get('sig_simulating')?.value === '1'
-
-      // Se for superadmin MAS não estiver simulando, a navegação fica no painel root /admin
-      if (isSuperAdmin && !isSimulating && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
+    // ─── BLOQUEIO DE RESPONSÁVEIS (ES-4 e ES-8) ─────────────────────────
+    if (isResponsavel) {
+      // Se for primeiro acesso, obriga ir para /portal-aluno/trocar-senha
+      if (mustChangePassword && !pathname.startsWith('/portal-aluno/trocar-senha') && !pathname.startsWith('/api')) {
         const url = request.nextUrl.clone()
-        url.pathname = '/admin'
+        url.pathname = '/portal-aluno/trocar-senha'
         return applySecurityHeaders(NextResponse.redirect(url))
-      } 
-      // Se NÃO for superadmin e estiver na raiz ou no login, joga pro home
-      else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
+      }
+
+      // Impede o responsável de acessar o painel staff (/home, /alunos, /admin, etc.)
+      if (!pathname.startsWith('/portal-aluno') && !pathname.startsWith('/api')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/portal-aluno/dashboard'
+        return applySecurityHeaders(NextResponse.redirect(url))
+      }
+
+      // Se estiver na tela de login do portal mas já autenticado, manda pro dashboard
+      if (pathname === '/portal-aluno/login' || pathname === '/portal-aluno') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/portal-aluno/dashboard'
+        return applySecurityHeaders(NextResponse.redirect(url))
+      }
+    } else {
+      // ─── BLOQUEIO DE STAFF ──────────────────────────────────────────────
+      // Servidores não acessam a área de pais
+      if (pathname.startsWith('/portal-aluno/dashboard') || pathname === '/portal-aluno/trocar-senha') {
         const url = request.nextUrl.clone()
         url.pathname = '/home'
         return applySecurityHeaders(NextResponse.redirect(url))
+      }
+
+      // Roteamento padrão de servidores (Superadmin vs Staff)
+      if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
+        const isSuperAdmin = user.app_metadata?.is_superadmin === true
+        const isSimulating = request.cookies.get('sig_simulating')?.value === '1'
+
+        if (isSuperAdmin && !isSimulating && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/admin'
+          return applySecurityHeaders(NextResponse.redirect(url))
+        } else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/home'
+          return applySecurityHeaders(NextResponse.redirect(url))
+        }
       }
     }
   }

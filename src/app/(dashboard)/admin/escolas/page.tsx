@@ -15,10 +15,12 @@ const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').the
 const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
 const ModalConfigSecretario = dynamic(() => import('@/components/modals/modal-config-secretario').then(m => m.ModalConfigSecretario), { ssr: false })
 const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
+const ModalContasPaisEscola = dynamic(() => import('@/components/modals/modal-contas-pais-escola').then(m => m.ModalContasPaisEscola), { ssr: false })
 
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
+import { Users } from 'lucide-react'
 
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { executeWithToast } from '@/lib/action-handler'
@@ -39,6 +41,9 @@ export default function AdminEscolasPage() {
 
   const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
   const [filaImpressaoOpen, setFilaImpressaoOpen] = useState(false)
+
+  const [escolaParaPais, setEscolaParaPais] = useState<any | null>(null)
+  const [contasPaisOpen, setContasPaisOpen] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -158,10 +163,22 @@ export default function AdminEscolasPage() {
     },
     {
       header: 'Ações',
-      headClassName: 'text-right w-36',
+      headClassName: 'text-right w-44',
       className: 'text-right',
       accessor: (escola) => (
         <div className="flex justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              setEscolaParaPais(escola)
+              setContasPaisOpen(true)
+            }}
+            className={escola.portal_pais_ativo ? "text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-500/10"}
+            title={escola.portal_pais_ativo ? "Portal dos Pais HABILITADO (Gerenciar)" : "Habilitar Portal dos Pais"}
+          >
+            <Users className="w-4 h-4" />
+          </Button>
           <Button 
             variant="ghost" 
             size="sm" 
@@ -298,6 +315,23 @@ export default function AdminEscolasPage() {
         <ModalGerenciarFilaImpressao
           open={filaImpressaoOpen}
           onOpenChange={setFilaImpressaoOpen}
+        />
+      )}
+
+      {/* Modal de Contas dos Pais (Ativação por Escola) */}
+      {contasPaisOpen && escolaParaPais && (
+        <ModalContasPaisEscola
+          escola={escolaParaPais}
+          open={contasPaisOpen}
+          onClose={() => {
+            setContasPaisOpen(false)
+            setEscolaParaPais(null)
+          }}
+          onTogglePortal={(novoEstado) => {
+            setEscolas(prev => prev.map(e => 
+              e.id === escolaParaPais.id ? { ...e, portal_pais_ativo: novoEstado } : e
+            ))
+          }}
         />
       )}
     </div>
