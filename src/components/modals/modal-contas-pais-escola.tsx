@@ -80,11 +80,11 @@ export function ModalContasPaisEscola({
     >
       <div className="space-y-6 pt-2">
         {/* Card Principal com Toggle */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 space-y-4">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-400" />
+                <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <h4 className="font-semibold text-foreground text-base">
                   Acesso ao Portal dos Pais
                 </h4>
@@ -102,8 +102,8 @@ export function ModalContasPaisEscola({
                 aria-checked={ativo}
                 onClick={handleToggle}
                 disabled={loading}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#18181b] ${
-                  ativo ? 'bg-indigo-600' : 'bg-zinc-700'
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background ${
+                  ativo ? 'bg-indigo-600' : 'bg-muted-foreground/30'
                 } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span
@@ -115,12 +115,12 @@ export function ModalContasPaisEscola({
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#27272a]/60 flex items-center justify-between text-xs">
+          <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Status do Recurso:</span>
             <span className={`font-semibold px-2 py-0.5 rounded-full ${
               ativo 
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                : 'bg-muted text-muted-foreground border border-border dark:bg-zinc-500/10 dark:text-zinc-400 dark:border-zinc-500/20'
             }`}>
               {ativo ? 'HABILITADO' : 'DESABILITADO'}
             </span>
@@ -129,20 +129,20 @@ export function ModalContasPaisEscola({
 
         {/* Informações explicativas */}
         {ativo ? (
-          <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-xl p-4 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs text-indigo-200/90 leading-relaxed">
-              <p className="font-semibold text-indigo-300">Como gerenciar os pais desta escola:</p>
+          <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl p-4 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs text-indigo-900 dark:text-indigo-200/90 leading-relaxed">
+              <p className="font-semibold text-indigo-950 dark:text-indigo-300">Como gerenciar os pais desta escola:</p>
               <p>
                 Ao selecionar esta escola no cabeçalho, acesse o menu <strong>SECRETARIA &gt; Portal dos Pais</strong> na barra lateral para cadastrar novos responsáveis, definir senhas provisórias e vincular dependentes.
               </p>
             </div>
           </div>
         ) : (
-          <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs text-amber-200/90 leading-relaxed">
-              <p className="font-semibold text-amber-300">Preservação Integral de Dados:</p>
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
+              <p className="font-semibold text-amber-950 dark:text-amber-300">Preservação Integral de Dados:</p>
               <p>
                 Se desativado, nenhum cadastro ou histórico é perdido. Caso os pais tentem acessar, verão apenas uma mensagem amigável informando que o portal está indisponível para esta escola no momento.
               </p>
