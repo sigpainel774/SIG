@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { getAvatarUrl } from '@/lib/photoHelper';
-import { Loader2, Printer, Pencil, UserX, Briefcase, Building2, Calendar, GraduationCap, History } from 'lucide-react'
+import { Loader2, Printer, Pencil, UserX, Briefcase, Building2, Calendar, GraduationCap, History, Network } from 'lucide-react'
 import { CachedImage } from '@/components/ui/cached-image'
 
 export interface Funcionario {
@@ -348,7 +348,7 @@ export function FuncionariosList({
                       >
                         {/* Topo do card: Avatar + Nome + Badges + Ações */}
                         <div className="flex items-start justify-between gap-3 pb-4 border-b border-sidebar-border/60 dark:border-border/50">
-                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="flex items-start gap-3 min-w-[130px] flex-1">
                             {/* Avatar circular */}
                             <div
                               className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
@@ -395,23 +395,23 @@ export function FuncionariosList({
                                   />
                                   {isAtivo
                                     ? 'Ativo'
-                                    : func.status.charAt(0).toUpperCase() +
-                                      func.status.slice(1)}
+                                    : (func.status ?? 'Inativo').charAt(0).toUpperCase() +
+                                      (func.status ?? 'Inativo').slice(1)}
                                 </span>
                               </div>
                             </div>
                           </div>
 
                           {/* Botões de Ação */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* M — Gestão de Lotações */}
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-w-[140px] sm:max-w-none">
+                            {/* Gestão de Lotações */}
                             {isEditMode && (
                               <button
                                 onClick={() => handleAbrirLotacoes(func)}
                                 title="Gestão de Lotações"
-                                className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
+                                className="w-8.5 h-8.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center justify-center transition-all cursor-pointer"
                               >
-                                M
+                                <Network className="w-4 h-4" />
                               </button>
                             )}
                             {/* Histórico de Movimentações */}
@@ -419,7 +419,7 @@ export function FuncionariosList({
                               <button
                                 onClick={() => handleAbrirMovimentacoes(func)}
                                 title="Histórico de Movimentações"
-                                className="w-9 h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                className="w-8.5 h-8.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
                               >
                                 <History className="w-4 h-4" />
                               </button>
@@ -428,7 +428,7 @@ export function FuncionariosList({
                             <button
                               onClick={() => handleImprimir(func.id)}
                               title="Imprimir ficha"
-                              className="w-9 h-9 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none flex items-center justify-center transition-all cursor-pointer"
+                              className="w-8.5 h-8.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none flex items-center justify-center transition-all cursor-pointer"
                             >
                               <Printer className="w-4 h-4" />
                             </button>
@@ -437,7 +437,7 @@ export function FuncionariosList({
                               <button
                                 onClick={() => handleEditar(func)}
                                 title="Editar funcionário"
-                                className="w-9 h-9 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
+                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
@@ -447,7 +447,7 @@ export function FuncionariosList({
                               <button
                                 onClick={() => handleDesligar(func)}
                                 title="Desligar funcionário"
-                                className="w-9 h-9 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
+                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                               >
                                 <UserX className="w-4 h-4" />
                               </button>

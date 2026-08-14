@@ -52,6 +52,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         .select('id, nome')
         .is('deleted_at', null)
         .eq('ativo', true)
+        .or('is_teste.is.null,is_teste.eq.false')
         .order('nome', { ascending: true })
       if (error) throw error
       return data || []

@@ -124,7 +124,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           .select('id, nome, email, cpf, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
-        supabase.from('escolas').select('id, nome, tipo').is('deleted_at', null).order('nome'),
+        supabase.from('escolas').select('id, nome, tipo').is('deleted_at', null).or('is_teste.is.null,is_teste.eq.false').order('nome'),
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
