@@ -35,6 +35,7 @@ interface FuncionariosListProps {
   handleImprimir: (funcId: string) => Promise<void>
   handleEditar: (func: Funcionario) => void
   handleDesligar: (func: Funcionario) => Promise<void>
+  onResetFiltros?: () => void
 }
 
 /* ── Estilos Visuais por Cargo / Profissão ─────────────────── */
@@ -273,7 +274,8 @@ export function FuncionariosList({
   handleAbrirMovimentacoes,
   handleImprimir,
   handleEditar,
-  handleDesligar
+  handleDesligar,
+  onResetFiltros
 }: FuncionariosListProps) {
   /* ── Agrupamento de Funcionários por Cargo ───────────────────── */
   const groupedFuncs = useMemo(() => {
@@ -311,8 +313,16 @@ export function FuncionariosList({
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : funcsFiltrados.length === 0 ? (
-        <div className="bg-surface-1 border border-dashed border-border rounded-2xl p-12 text-center text-muted-foreground text-sm">
-          Nenhum funcionário encontrado com os filtros aplicados.
+        <div className="bg-surface-1 border border-dashed border-border rounded-2xl p-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center gap-3">
+          <p>Nenhum funcionário encontrado com os filtros aplicados.</p>
+          {onResetFiltros && (
+            <button
+              onClick={onResetFiltros}
+              className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-xs font-semibold transition-all cursor-pointer"
+            >
+              Limpar Filtros
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-8">
@@ -344,119 +354,65 @@ export function FuncionariosList({
                     return (
                       <div
                         key={func.id}
-                        className={`bg-sidebar dark:bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg relative`}
+                        className={`bg-sidebar dark:bg-card border ${style.border} ${style.borderLeft} rounded-2xl p-5 flex flex-col gap-4 transition-all shadow-md hover:shadow-lg relative overflow-hidden`}
                       >
-                        {/* Topo do card: Avatar + Nome + Badges + Ações */}
-                        <div className="flex items-start justify-between gap-3 pb-4 border-b border-sidebar-border/60 dark:border-border/50">
-                          <div className="flex items-start gap-3 min-w-[130px] flex-1">
-                            {/* Avatar circular */}
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
-                            >
-                              <CachedImage
-                                src={getAvatarUrl(func)}
-                                alt={func.nome}
-                                className="w-full h-full"
-                                fallback={getInitials(func.nome)}
-                                updatedAt={func.foto_updated_at}
-                              />
-                            </div>
-
-                            {/* Nome + badges */}
-                            <div className="min-w-0 flex-1">
-                              <h3
-                                className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug break-words"
-                                title={func.nome}
-                              >
-                                {func.nome}
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                {/* Badge Cargo com Cor Específica */}
-                                {func.cargo && (
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide truncate max-w-[130px] ${style.badgeBg} ${style.badgeText} ${style.badgeBorder}`}
-                                    title={func.cargo}
-                                  >
-                                    {func.cargo}
-                                  </span>
-                                )}
-                                {/* Badge Status */}
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${
-                                    isAtivo
-                                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                      : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400'
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      isAtivo ? 'bg-emerald-500' : 'bg-zinc-500'
-                                    }`}
-                                  />
-                                  {isAtivo
-                                    ? 'Ativo'
-                                    : (func.status ?? 'Inativo').charAt(0).toUpperCase() +
-                                      (func.status ?? 'Inativo').slice(1)}
-                                </span>
-                              </div>
-                            </div>
+                        {/* Topo do card: Avatar + Nome + Badges (100% largura útil) */}
+                        <div className="flex items-start gap-3.5 pb-4 border-b border-sidebar-border/60 dark:border-border/50">
+                          {/* Avatar circular */}
+                          <div
+                            className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${palette.bg} ${palette.text}`}
+                          >
+                            <CachedImage
+                              src={getAvatarUrl(func)}
+                              alt={func.nome}
+                              className="w-full h-full"
+                              fallback={getInitials(func.nome)}
+                              updatedAt={func.foto_updated_at}
+                            />
                           </div>
 
-                          {/* Botões de Ação */}
-                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-w-[140px] sm:max-w-none">
-                            {/* Gestão de Lotações */}
-                            {isEditMode && (
-                              <button
-                                onClick={() => handleAbrirLotacoes(func)}
-                                title="Gestão de Lotações"
-                                className="w-8.5 h-8.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center justify-center transition-all cursor-pointer"
-                              >
-                                <Network className="w-4 h-4" />
-                              </button>
-                            )}
-                            {/* Histórico de Movimentações */}
-                            {handleAbrirMovimentacoes && (
-                              <button
-                                onClick={() => handleAbrirMovimentacoes(func)}
-                                title="Histórico de Movimentações"
-                                className="w-8.5 h-8.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                              >
-                                <History className="w-4 h-4" />
-                              </button>
-                            )}
-                            {/* Imprimir ficha */}
-                            <button
-                              onClick={() => handleImprimir(func.id)}
-                              title="Imprimir ficha"
-                              className="w-8.5 h-8.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none flex items-center justify-center transition-all cursor-pointer"
+                          {/* Nome + badges */}
+                          <div className="min-w-0 flex-1">
+                            <h3
+                              className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug break-words"
+                              title={func.nome}
                             >
-                              <Printer className="w-4 h-4" />
-                            </button>
-                            {/* Editar */}
-                            {isEditMode && (
-                              <button
-                                onClick={() => handleEditar(func)}
-                                title="Editar funcionário"
-                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
+                              {func.nome}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              {/* Badge Cargo com Cor Específica */}
+                              {func.cargo && (
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide truncate max-w-[150px] ${style.badgeBg} ${style.badgeText} ${style.badgeBorder}`}
+                                  title={func.cargo}
+                                >
+                                  {func.cargo}
+                                </span>
+                              )}
+                              {/* Badge Status */}
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${
+                                  isAtivo
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400'
+                                }`}
                               >
-                                <Pencil className="w-4 h-4" />
-                              </button>
-                            )}
-                            {/* Desligar */}
-                            {isEditMode && (
-                              <button
-                                onClick={() => handleDesligar(func)}
-                                title="Desligar funcionário"
-                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
-                              >
-                                <UserX className="w-4 h-4" />
-                              </button>
-                            )}
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isAtivo ? 'bg-emerald-500' : 'bg-zinc-500'
+                                  }`}
+                                />
+                                {isAtivo
+                                  ? 'Ativo'
+                                  : (func.status ?? 'Inativo').charAt(0).toUpperCase() +
+                                    (func.status ?? 'Inativo').slice(1)}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         {/* Informações Adicionais em Grid */}
-                        <div className="grid grid-cols-2 gap-2.5 mt-1">
+                        <div className="grid grid-cols-2 gap-2.5 flex-1">
                           {/* Órgão (2 colunas) */}
                           <div className="col-span-2 bg-sidebar-accent dark:bg-zinc-800/40 border border-sidebar-border/60 dark:border-zinc-700/50 p-2.5 sm:p-3 rounded-xl flex items-start gap-2.5 min-w-0">
                             <span className="p-1.5 bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg shrink-0">
@@ -506,24 +462,79 @@ export function FuncionariosList({
                           </div>
                         </div>
 
-                        {/* Indicador de Modalidade de Ensino (Rodapé) */}
-                        <div className="flex justify-end pt-1">
-                          {(() => {
-                            const isEja =
-                              (func.modalidade_ensino || '').trim().toUpperCase() ===
-                              'EJA'
-                            return (
-                              <span
-                                className={`text-xs font-medium px-2 py-0.5 rounded ${
-                                  isEja
-                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
-                                    : 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300'
-                                }`}
+                        {/* Rodapé Integrado: Modalidade + Barra de Ações Rápidas */}
+                        <div className="flex items-center justify-between gap-2 pt-3 border-t border-sidebar-border/60 dark:border-border/50 mt-auto">
+                          {/* Tag de Modalidade de Ensino */}
+                          <div>
+                            {(() => {
+                              const isEja =
+                                (func.modalidade_ensino || '').trim().toUpperCase() ===
+                                'EJA'
+                              return (
+                                <span
+                                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border inline-flex items-center ${
+                                    isEja
+                                      ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300 border-orange-500/20'
+                                      : 'bg-sky-500/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300 border-sky-500/20'
+                                  }`}
+                                >
+                                  {isEja ? 'EJA' : 'Regular'}
+                                </span>
+                              )
+                            })()}
+                          </div>
+
+                          {/* Botões de Ação Rápidas no Rodapé */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Gestão de Lotações */}
+                            {isEditMode && (
+                              <button
+                                onClick={() => handleAbrirLotacoes(func)}
+                                title="Gestão de Lotações"
+                                className="w-8.5 h-8.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center justify-center transition-all cursor-pointer"
                               >
-                                {isEja ? 'EJA' : 'Regular'}
-                              </span>
-                            )
-                          })()}
+                                <Network className="w-4 h-4" />
+                              </button>
+                            )}
+                            {/* Histórico de Movimentações */}
+                            {handleAbrirMovimentacoes && (
+                              <button
+                                onClick={() => handleAbrirMovimentacoes(func)}
+                                title="Histórico de Movimentações"
+                                className="w-8.5 h-8.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                              >
+                                <History className="w-4 h-4" />
+                              </button>
+                            )}
+                            {/* Imprimir ficha */}
+                            <button
+                              onClick={() => handleImprimir(func.id)}
+                              title="Imprimir ficha"
+                              className="w-8.5 h-8.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none flex items-center justify-center transition-all cursor-pointer"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            {/* Editar */}
+                            {isEditMode && (
+                              <button
+                                onClick={() => handleEditar(func)}
+                                title="Editar funcionário"
+                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                            )}
+                            {/* Desligar */}
+                            {isEditMode && (
+                              <button
+                                onClick={() => handleDesligar(func)}
+                                title="Desligar funcionário"
+                                className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
+                              >
+                                <UserX className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
