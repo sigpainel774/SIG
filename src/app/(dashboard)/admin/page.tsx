@@ -304,6 +304,8 @@ export default function AdminHubPage() {
   const [testEscolas, setTestEscolas] = useState<any[]>([])
   const [testUsers, setTestUsers] = useState<any[]>([])
   const [loadingTestEnv, setLoadingTestEnv] = useState<boolean>(false)
+  const [selectedTestUserPerSchool, setSelectedTestUserPerSchool] = useState<Record<string, string>>({})
+  const [searchTestUserPerSchool, setSearchTestUserPerSchool] = useState<Record<string, string>>({})
 
   // Estados do Simulador de Permissões
   const [funcionariosOptions, setFuncionariosOptions] = useState<FuncionarioOption[]>([])
@@ -829,8 +831,23 @@ export default function AdminHubPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {testEscolas.map((escola) => {
               const usersOfEscola = testUsers.filter((u) => u.escola_id === escola.id)
+              const searchTerm = (searchTestUserPerSchool[escola.id] || '').toLowerCase().trim()
+              const filteredUsers = usersOfEscola.filter((u) => {
+                if (!searchTerm) return true
+                return (
+                  u.nome?.toLowerCase().includes(searchTerm) ||
+                  u.cargo?.toLowerCase().includes(searchTerm) ||
+                  u.email?.toLowerCase().includes(searchTerm)
+                )
+              })
+              const selectedTestUserId =
+                selectedTestUserPerSchool[escola.id] &&
+                filteredUsers.some((u) => u.id === selectedTestUserPerSchool[escola.id])
+                  ? selectedTestUserPerSchool[escola.id]
+                  : filteredUsers[0]?.id || ''
+
               return (
-                <div key={escola.id} className="bg-background border border-borderCustom p-4 rounded-xl space-y-3 shadow-sm">
+                <div key={escola.id} className="bg-background border border-borderCustom p-4 rounded-xl space-y-3 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
@@ -852,42 +869,109 @@ export default function AdminHubPage() {
                     </button>
                   </div>
 
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Contas de Teste Vinculadas ({usersOfEscola.length})
-                    </span>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                        Simular Contas da Unidade
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-borderCustom">
+                        {usersOfEscola.length} {usersOfEscola.length === 1 ? 'conta' : 'contas'}
+                      </span>
+                    </div>
 
                     {usersOfEscola.length === 0 ? (
                       <p className="text-xs text-muted-foreground italic py-1">Sem contas de teste diretamente vinculadas a esta unidade.</p>
                     ) : (
                       <div className="space-y-2">
-                        {usersOfEscola.map((u) => (
-                          <div key={u.id} className="flex items-center justify-between bg-card border border-border p-2.5 rounded-lg gap-2">
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-foreground truncate">{u.nome}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">{u.cargo || 'Servidor'} — {u.email}</p>
-                            </div>
-
+                        {/* Campo de Busca por Contas da Unidade de Teste */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="Buscar conta por nome, cargo ou e-mail..."
+                            value={searchTestUserPerSchool[escola.id] || ''}
+                            onChange={(e) =>
+                              setSearchTestUserPerSchool((prev) => ({
+                                ...prev,
+                                [escola.id]: e.target.value,
+                              }))
+                            }
+                            className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg pl-8 pr-7 py-1.5 focus:ring-amber-500 focus:border-amber-500 font-medium placeholder:text-muted-foreground/70"
+                          />
+                          {searchTestUserPerSchool[escola.id] && (
                             <button
                               type="button"
-                              onClick={async () => {
-                                const success = await iniciarSimulacao(u.id, supabase)
-                                if (success) {
-                                  toast.success(`Modo simulação ativado para "${u.nome}" na escola ${escola.nome}!`)
-                                  window.location.href = '/home'
-                                } else {
-                                  toast.error('Falha ao iniciar simulação para esta conta.')
-                                }
-                              }}
-                              disabled={isLoadingSimulation}
-                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 shrink-0 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                              title={`Simular conta de ${u.nome}`}
+                              onClick={() =>
+                                setSearchTestUserPerSchool((prev) => ({
+                                  ...prev,
+                                  [escola.id]: '',
+                                }))
+                              }
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                              title="Limpar busca"
                             >
-                              <Play className="w-3 h-3 fill-current" />
-                              <span>Simular</span>
+                              <X className="w-3 h-3" />
                             </button>
-                          </div>
-                        ))}
+                          )}
+                        </div>
+
+                        {/* Select com Contas Filtradas */}
+                        <select
+                          value={selectedTestUserId}
+                          onChange={(e) =>
+                            setSelectedTestUserPerSchool((prev) => ({
+                              ...prev,
+                              [escola.id]: e.target.value,
+                            }))
+                          }
+                          disabled={isLoadingSimulation}
+                          className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg p-2 focus:ring-amber-500 focus:border-amber-500 font-medium truncate"
+                        >
+                          {filteredUsers.length === 0 ? (
+                            <option value="">Nenhuma conta encontrada com o termo</option>
+                          ) : (
+                            filteredUsers.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.nome} ({u.cargo || 'Servidor'}) — {u.email}
+                              </option>
+                            ))
+                          )}
+                        </select>
+
+                        {/* Botão de Simular */}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!selectedTestUserId) {
+                              toast.error('Selecione uma conta para simular.')
+                              return
+                            }
+                            const target = usersOfEscola.find((u) => u.id === selectedTestUserId)
+                            const success = await iniciarSimulacao(selectedTestUserId, supabase)
+                            if (success) {
+                              toast.success(
+                                `Modo simulação ativado para "${target?.nome ?? 'Servidor'}" na escola ${escola.nome}!`
+                              )
+                              window.location.href = '/home'
+                            } else {
+                              toast.error('Falha ao iniciar simulação para esta conta.')
+                            }
+                          }}
+                          disabled={isLoadingSimulation || filteredUsers.length === 0 || !selectedTestUserId}
+                          className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                          title={
+                            selectedTestUserId
+                              ? `Simular conta selecionada na ${escola.nome}`
+                              : 'Selecione uma conta para simular'
+                          }
+                        >
+                          {isLoadingSimulation ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                          )}
+                          <span>{isLoadingSimulation ? 'Iniciando...' : 'Simular Conta Selecionada'}</span>
+                        </button>
                       </div>
                     )}
                   </div>
