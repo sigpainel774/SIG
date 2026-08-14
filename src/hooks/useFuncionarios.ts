@@ -60,6 +60,14 @@ export function useFuncionarios() {
     }
   }, [supabase])
 
+  /* ── Resetar Filtros ────────────────────────────────────────── */
+  const resetFiltros = useCallback(() => {
+    setBusca('')
+    setFiltroCargo('todos')
+    setFiltroStatus('todos')
+    setFiltroModalidade(isSaude || isEmaee ? 'todos' : 'regular')
+  }, [isSaude, isEmaee])
+
   /* ── Carregar funcionários ───────────────────────────────── */
   const carregarFuncionarios = useCallback(async () => {
     setCarregando(true)
@@ -338,6 +346,7 @@ export function useFuncionarios() {
     setFiltroModalidade,
     carregarFuncionarios,
     handleDesligar,
+    resetFiltros,
     isSaude,
     isEmaee
   }

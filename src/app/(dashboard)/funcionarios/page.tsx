@@ -86,6 +86,7 @@ export default function FuncionariosPage() {
     setFiltroModalidade,
     carregarFuncionarios,
     handleDesligar,
+    resetFiltros,
     isSaude,
     isEmaee
   } = useFuncionarios()
@@ -321,6 +322,7 @@ export default function FuncionariosPage() {
             handleImprimir={handleAbrirImprimirFicha}
             handleEditar={handleEditar as any}
             handleDesligar={handleDesligar as any}
+            onResetFiltros={resetFiltros}
           />
         </>
       )}
