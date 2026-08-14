@@ -1,7 +1,23 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Printer, GraduationCap, AlertTriangle, CalendarCheck, Users } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import {
+  Printer,
+  GraduationCap,
+  AlertTriangle,
+  CalendarCheck,
+  Users,
+  Search,
+  Filter,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  XCircle,
+  BookOpen
+} from 'lucide-react'
 import { NotaRecord } from '@/hooks/useRelatorioNotas'
 import { PrintHeader } from '@/components/print/print-header'
 import { Escola } from '@/store/useSchoolStore'
@@ -18,6 +34,16 @@ interface SchoolDetailedReportProps {
   onFilterChange: (filters: { turmaId?: string; materiaId?: string; periodo?: string }) => void
 }
 
+type SortOption =
+  | 'nome_asc'
+  | 'nome_desc'
+  | 'assiduidade_desc'
+  | 'assiduidade_asc'
+  | 'desempenho_desc'
+  | 'desempenho_asc'
+
+const PAGE_SIZE = 20
+
 export function SchoolDetailedReport({
   school,
   alunos,
@@ -29,15 +55,41 @@ export function SchoolDetailedReport({
   periodo,
   onFilterChange
 }: SchoolDetailedReportProps) {
+  // Filtros de seleção
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedAlunoId, setSelectedAlunoId] = useState('todos')
   const [selectedTurma, setSelectedTurma] = useState('todos')
+  const [selectedTurno, setSelectedTurno] = useState('todos')
   const [selectedMateria, setSelectedMateria] = useState('todos')
   const [selectedUnidade, setSelectedUnidade] = useState('todos')
+  const [sortBy, setSortBy] = useState<SortOption>('nome_asc')
+  
+  // Controle de paginação e expansão de linhas
+  const [currentPage, setCurrentPage] = useState(1)
+  const [expandedAlunos, setExpandedAlunos] = useState<Record<string, boolean>>({})
 
+  // Sincronizar com o pai para refetch caso necessário
   useEffect(() => {
     onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria, periodo })
   }, [selectedTurma, selectedMateria, periodo, onFilterChange])
 
-  // Lógica de cálculo de assiduidade de cada aluno
+  // Resetar página sempre que qualquer filtro mudar
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedAlunoId, selectedTurma, selectedTurno, selectedMateria, selectedUnidade, sortBy])
+
+  // Lista de turnos disponíveis a partir das turmas
+  const turnosDisponiveis = useMemo(() => {
+    const set = new Set<string>()
+    turmas.forEach((t) => {
+      if (t.turno && t.turno.trim() !== '') {
+        set.add(t.turno.trim())
+      }
+    })
+    return Array.from(set).sort()
+  }, [turmas])
+
+  // Lógica de cálculo de assiduidade de um aluno
   const calcularAssiduidadeAluno = (alunoId: string) => {
     const freqsAluno = frequencias.filter((f) => f.aluno_id === alunoId)
     if (freqsAluno.length === 0) return null
@@ -45,165 +97,239 @@ export function SchoolDetailedReport({
     return parseFloat(((presencas / freqsAluno.length) * 100).toFixed(1))
   }
 
-  // Lógica de cálculo de médias por aluno
-  const processarNotasAlunos = () => {
+  // Processamento consolidado de todos os alunos da escola
+  const alunosProcessados = useMemo(() => {
     return alunos.map((aluno) => {
-      // Filtrar notas deste aluno especificamente
       const notasAluno = notas.filter((n) => n.aluno_id === aluno.id)
+      const turmaAluno = turmas.find((t) => t.id === aluno.turma_id)
+      const turmaNome = turmaAluno?.nome || 'Sem Turma'
+      const turmaTurno = turmaAluno?.turno || 'Não informado'
+      const freqAluno = calcularAssiduidadeAluno(aluno.id)
 
-      // Chave: materia_id, Valor: { tri1, tri2, tri3 }
-      const notasPorMateria: Record<string, { t1: number | null; t2: number | null; t3: number | null }> = {}
-
-      notasAluno.forEach((n) => {
-        if (!notasPorMateria[n.materia_id]) {
-          notasPorMateria[n.materia_id] = { t1: null, t2: null, t3: null }
+      // Matérias que pertencem a este aluno (da mesma turma ou gerais da escola)
+      const materiasDoAluno = materias.filter((m) => {
+        if (m.turma_id) {
+          return m.turma_id === aluno.turma_id
         }
-        if (n.unidade === 1) {
-          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
-          notasPorMateria[n.materia_id].t1 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
-        }
-        if (n.unidade === 2) {
-          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
-          notasPorMateria[n.materia_id].t2 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
-        }
-        if (n.unidade === 3) {
-          const validas = [n.nota1, n.nota2, n.nota3, n.nota4].filter((val): val is number => val !== null && !isNaN(Number(val)))
-          notasPorMateria[n.materia_id].t3 = validas.length > 0 ? (validas.reduce((a, b) => a + b, 0) / validas.length) : null
-        }
+        return true
       })
 
-      // Calcular médias por matéria do aluno
-      const mediasMaterias = Object.keys(notasPorMateria).map((matId) => {
-        const n = notasPorMateria[matId]
-        const vals = [n.t1, n.t2, n.t3].filter((v): v is number => v !== null)
-        const total = vals.reduce((a, b) => a + b, 0)
-        const mediaFinal = vals.length > 0 ? (total / vals.length) : null
+      // Calcular médias e notas por matéria do aluno
+      const detalhesMaterias = materiasDoAluno.map((mat) => {
+        const notasMat = notasAluno.filter((n) => n.materia_id === mat.id)
+        
+        const unidadesData = [1, 2, 3].map((unidade) => {
+          const n = notasMat.find((item) => item.unidade === unidade)
+          const nota1 = n?.nota1 ?? null
+          const nota2 = n?.nota2 ?? null
+          const nota3 = n?.nota3 ?? null
+          const nota4 = n?.nota4 ?? null
+          const validas = [nota1, nota2, nota3, nota4].filter((v): v is number => v !== null && !isNaN(Number(v)))
+
+          let mediaTrimestre: number | null = null
+          if (validas.length > 0) {
+            const val1 = nota1 ?? 0
+            const val2 = nota2 ?? 0
+            const val3 = nota3 ?? 0
+            const val4 = nota4 ?? 0
+            const divisor = (nota4 !== null) ? 4 : 3
+            mediaTrimestre = parseFloat(((val1 + val2 + val3 + (nota4 !== null ? val4 : 0)) / divisor).toFixed(1))
+          }
+
+          return {
+            unidade,
+            nota1,
+            nota2,
+            nota3,
+            nota4,
+            mediaTrimestre
+          }
+        })
+
+        const mediasTrimestraisValidas = unidadesData
+          .map((u) => u.mediaTrimestre)
+          .filter((m): m is number => m !== null)
+
+        const mediaMateria = mediasTrimestraisValidas.length > 0
+          ? parseFloat((mediasTrimestraisValidas.reduce((a, b) => a + b, 0) / mediasTrimestraisValidas.length).toFixed(1))
+          : null
 
         return {
-          materiaId: matId,
-          t1: n.t1,
-          t2: n.t2,
-          t3: n.t3,
-          total: vals.length > 0 ? total : null,
-          mediaFinal
+          materiaId: mat.id,
+          materiaNome: mat.nome,
+          unidades: unidadesData,
+          mediaMateria
         }
       })
 
-      // Média final global de todas as disciplinas do aluno
-      const mediasFinaisValidas = mediasMaterias
-        .map((m) => m.mediaFinal)
+      // Média final global do aluno (aritmética de todas as matérias com notas)
+      const mediasMateriasValidas = detalhesMaterias
+        .map((d) => d.mediaMateria)
         .filter((mf): mf is number => mf !== null)
-      
-      const mediaGeralAluno = mediasFinaisValidas.length > 0
-        ? (mediasFinaisValidas.reduce((a, b) => a + b, 0) / mediasFinaisValidas.length)
+
+      const mediaGeralAluno = mediasMateriasValidas.length > 0
+        ? parseFloat((mediasMateriasValidas.reduce((a, b) => a + b, 0) / mediasMateriasValidas.length).toFixed(1))
         : null
 
       return {
         id: aluno.id,
-        nome: aluno.nome,
+        nome: aluno.nome ?? 'Sem Nome',
         turmaId: aluno.turma_id,
-        mediasMaterias,
+        turmaNome,
+        turno: turmaTurno,
+        detalhesMaterias,
         mediaGeralAluno,
-        frequenciaPct: calcularAssiduidadeAluno(aluno.id)
+        frequenciaPct: freqAluno
       }
     })
-  }
+  }, [alunos, notas, turmas, materias, frequencias])
 
-  const alunosProcessados = processarNotasAlunos()
+  // KPIs Globais da Escola (Calculados sobre o total de alunos da unidade)
+  const alunosEmRiscoNotas = useMemo(() => {
+    return alunosProcessados.filter((a) => a.mediaGeralAluno !== null && a.mediaGeralAluno < 5.0)
+  }, [alunosProcessados])
 
-  // Alunos abaixo de 5.0 (Risco de Notas)
-  const alunosEmRiscoNotas = alunosProcessados.filter(
-    (a) => a.mediaGeralAluno !== null && a.mediaGeralAluno < 5.0
-  )
+  const alunosEmRiscoEvasao = useMemo(() => {
+    return alunosProcessados.filter((a) => a.frequenciaPct !== null && a.frequenciaPct < 75.0)
+  }, [alunosProcessados])
 
-  // Alunos abaixo de 75.0% (Risco de Evasão)
-  const alunosEmRiscoEvasao = alunosProcessados.filter(
-    (a) => a.frequenciaPct !== null && a.frequenciaPct < 75.0
-  )
-
-  // Calcular assiduidade média geral da escola
   const totalFreqsEscola = frequencias.length
   const totalPresencasEscola = frequencias.filter((f) => f.presenca).length
   const assiduidadeEscola = totalFreqsEscola > 0
     ? parseFloat(((totalPresencasEscola / totalFreqsEscola) * 100).toFixed(1))
     : null
 
+  // Filtragem dos Alunos para exibição
+  const alunosFiltrados = useMemo(() => {
+    return alunosProcessados
+      .filter((aluno) => {
+        // Filtro de Aluno Individual (Select)
+        if (selectedAlunoId !== 'todos' && aluno.id !== selectedAlunoId) {
+          return false
+        }
+        // Filtro de Busca Textual (Nome)
+        if (searchTerm.trim() !== '') {
+          const term = searchTerm.toLowerCase()
+          if (!aluno.nome.toLowerCase().includes(term)) {
+            return false
+          }
+        }
+        // Filtro de Turma
+        if (selectedTurma !== 'todos' && aluno.turmaId !== selectedTurma) {
+          return false
+        }
+        // Filtro de Turno
+        if (selectedTurno !== 'todos') {
+          if (aluno.turno.toLowerCase() !== selectedTurno.toLowerCase()) {
+            return false
+          }
+        }
+        // Filtro de Disciplina
+        if (selectedMateria !== 'todos') {
+          const temMateria = aluno.detalhesMaterias.some((m) => m.materiaId === selectedMateria)
+          if (!temMateria) return false
+        }
+        return true
+      })
+      .sort((a, b) => {
+        if (sortBy === 'nome_asc') {
+          return a.nome.localeCompare(b.nome, 'pt-BR')
+        }
+        if (sortBy === 'nome_desc') {
+          return b.nome.localeCompare(a.nome, 'pt-BR')
+        }
+        if (sortBy === 'assiduidade_desc') {
+          const freqA = a.frequenciaPct ?? -1
+          const freqB = b.frequenciaPct ?? -1
+          return freqB - freqA
+        }
+        if (sortBy === 'assiduidade_asc') {
+          const freqA = a.frequenciaPct ?? 999
+          const freqB = b.frequenciaPct ?? 999
+          return freqA - freqB
+        }
+        if (sortBy === 'desempenho_desc') {
+          const medA = a.mediaGeralAluno ?? -1
+          const medB = b.mediaGeralAluno ?? -1
+          return medB - medA
+        }
+        if (sortBy === 'desempenho_asc') {
+          const medA = a.mediaGeralAluno ?? 999
+          const medB = b.mediaGeralAluno ?? 999
+          return medA - medB
+        }
+        return 0
+      })
+  }, [alunosProcessados, selectedAlunoId, searchTerm, selectedTurma, selectedTurno, selectedMateria, sortBy])
+
+  // Paginação (20 alunos por página)
+  const totalPages = Math.max(1, Math.ceil(alunosFiltrados.length / PAGE_SIZE))
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+  const endIndex = startIndex + PAGE_SIZE
+  const alunosPaginados = alunosFiltrados.slice(startIndex, endIndex)
+
+  const toggleExpandAluno = (alunoId: string) => {
+    setExpandedAlunos((prev) => ({
+      ...prev,
+      [alunoId]: !prev[alunoId]
+    }))
+  }
+
   const handlePrintReport = () => {
     window.print()
   }
 
-  // Processamento das linhas analíticas detalhadas
-  const rowsAnaliticas = alunos
-    .filter((aluno) => selectedTurma === 'todos' || aluno.turma_id === selectedTurma)
-    .flatMap((aluno) => {
-      const notasAluno = notas.filter((n) => n.aluno_id === aluno.id)
-      const turmaNome = turmas.find((t) => t.id === aluno.turma_id)?.nome || 'Sem Turma'
-      const freqAluno = calcularAssiduidadeAluno(aluno.id)
-
-      const materiasExibir = materias.filter(
-        (m) => selectedMateria === 'todos' || m.id === selectedMateria
-      )
-
-      return materiasExibir.flatMap((materia) => {
-        const unidades = [1, 2, 3].filter(
-          (u) => selectedUnidade === 'todos' || u === Number(selectedUnidade)
-        )
-
-        return unidades.map((unidade) => {
-          const n = notasAluno.find(
-            (note) => note.materia_id === materia.id && note.unidade === unidade
-          )
-
-          const nota1 = n?.nota1 ?? null
-          const nota2 = n?.nota2 ?? null
-          const nota3 = n?.nota3 ?? null
-          const nota4 = n?.nota4 ?? null
-
-          const validas = [nota1, nota2, nota3, nota4].filter(
-            (v): v is number => v !== null && !isNaN(v)
-          )
-
-          let media: number | null = null
-          if (validas.length > 0) {
-            const val1 = nota1 ?? 0
-            const val2 = nota2 ?? 0
-            const val3 = nota3 ?? 0
-            const val4 = nota4 ?? 0
-            
-            const divisor = (nota4 !== null) ? 4 : 3
-            const soma = val1 + val2 + val3 + (nota4 !== null ? val4 : 0)
-            media = parseFloat((soma / divisor).toFixed(1))
-          }
-
-          return {
-            key: `${aluno.id}_${materia.id}_${unidade}`,
-            alunoNome: aluno.nome,
-            turmaNome,
-            materiaNome: materia.nome,
-            unidade,
-            nota1,
-            nota2,
-            nota3,
-            nota4,
-            media,
-            frequencia: freqAluno
-          }
-        })
-      })
-    })
-
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Filtros Internos do Relatório */}
-      <div className="bg-card border border-border rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between no-print">
-        <div className="flex flex-wrap gap-4 items-center">
+      {/* Barra de Filtros Avançados */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-4 no-print shadow-sm">
+        <div className="flex flex-wrap gap-3 items-center justify-between">
+          {/* Busca Textual de Aluno */}
+          <div className="relative flex-1 min-w-[240px] max-w-md">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar aluno por nome..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-surface-1 border border-border rounded-xl pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary font-medium"
+            />
+          </div>
+
+          <button
+            onClick={handlePrintReport}
+            className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+          >
+            <Printer className="w-4 h-4" /> Imprimir Relatório Escolar (A4)
+          </button>
+        </div>
+
+        {/* Linha de Seletores e Ordenação */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 pt-2 border-t border-border/60">
+          {/* Seletor Individual de Aluno */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Aluno Específico</label>
+            <select
+              value={selectedAlunoId}
+              onChange={(e) => setSelectedAlunoId(e.target.value)}
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
+            >
+              <option value="todos">Todos os alunos ({alunos.length})</option>
+              {alunos.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Seletor de Turma */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold text-muted-foreground">Turma</label>
             <select
               value={selectedTurma}
               onChange={(e) => setSelectedTurma(e.target.value)}
-              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[140px]"
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
             >
               <option value="todos">Todas as turmas</option>
               {turmas.map((t) => (
@@ -214,15 +340,32 @@ export function SchoolDetailedReport({
             </select>
           </div>
 
+          {/* Seletor de Turno */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Turno</label>
+            <select
+              value={selectedTurno}
+              onChange={(e) => setSelectedTurno(e.target.value)}
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
+            >
+              <option value="todos">Todos os turnos</option>
+              {turnosDisponiveis.map((turno) => (
+                <option key={turno} value={turno}>
+                  {turno}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Seletor de Disciplina */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-muted-foreground">Disciplina / Matéria</label>
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Disciplina</label>
             <select
               value={selectedMateria}
               onChange={(e) => setSelectedMateria(e.target.value)}
-              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[160px]"
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
             >
-              <option value="todos">Todas as matérias</option>
+              <option value="todos">Todas as disciplinas</option>
               {materias.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nome}
@@ -231,13 +374,13 @@ export function SchoolDetailedReport({
             </select>
           </div>
 
-          {/* Seletor de Unidade */}
+          {/* Seletor de Trimestre */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-muted-foreground">Unidade / Trimestre</label>
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Trimestre</label>
             <select
               value={selectedUnidade}
               onChange={(e) => setSelectedUnidade(e.target.value)}
-              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[150px]"
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
             >
               <option value="todos">Todos os trimestres</option>
               <option value="1">1º Trimestre</option>
@@ -246,29 +389,23 @@ export function SchoolDetailedReport({
             </select>
           </div>
 
-          {/* Seletor de Período (Frequência) */}
+          {/* Ordenação */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-muted-foreground">Período de Frequência</label>
+            <label className="text-[10px] uppercase font-bold text-muted-foreground">Ordenar Por</label>
             <select
-              value={periodo}
-              onChange={(e) => onFilterChange({ periodo: e.target.value })}
-              className="bg-surface-1 border border-border rounded-xl px-3 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary min-w-[150px]"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary w-full truncate"
             >
-              <option value="7d">Últimos 7 dias</option>
-              <option value="30d">Últimos 30 dias</option>
-              <option value="trimestre">Trimestre (90 dias)</option>
-              <option value="ano">Ano Letivo</option>
-              <option value="todos">Todo o Período</option>
+              <option value="nome_asc">Nome (A - Z)</option>
+              <option value="nome_desc">Nome (Z - A)</option>
+              <option value="assiduidade_desc">Maior Assiduidade (%)</option>
+              <option value="assiduidade_asc">Menor Assiduidade (%)</option>
+              <option value="desempenho_desc">Maior Desempenho (Média)</option>
+              <option value="desempenho_asc">Menor Desempenho (Média)</option>
             </select>
           </div>
         </div>
-
-        <button
-          onClick={handlePrintReport}
-          className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer transition-colors"
-        >
-          <Printer className="w-4 h-4" /> Imprimir Boletins da Unidade (A4)
-        </button>
       </div>
 
       {/* Cabeçalho de Impressão (Fidelidade Visual A4) */}
@@ -281,92 +418,100 @@ export function SchoolDetailedReport({
         />
       </div>
 
-      {/* Indicadores Locais da Escola */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 no-print">
+      {/* Indicadores Principais (KPIs) com Cores de Alto Contraste */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         {/* KPI 1: Alunos */}
-        <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-primary/10 rounded-lg">
+        <div className="bg-card border border-border p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-primary/10 rounded-xl">
             <Users className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Total de Estudantes</p>
-            <p className="text-lg font-bold text-foreground">{alunos.length}</p>
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Total de Estudantes</p>
+            <p className="text-xl font-black text-foreground">{alunos.length}</p>
           </div>
         </div>
 
         {/* KPI 2: Assiduidade */}
-        <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-500/10 rounded-lg">
-            <CalendarCheck className="w-5 h-5 text-emerald-400" />
+        <div className="bg-card border border-border p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+            <CalendarCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Assiduidade Geral</p>
-            <p className={`text-lg font-bold ${assiduidadeEscola !== null && assiduidadeEscola < 75.0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Assiduidade Geral</p>
+            <p className={`text-xl font-black ${assiduidadeEscola !== null && assiduidadeEscola < 75.0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {assiduidadeEscola !== null ? `${assiduidadeEscola}%` : 'S/R'}
             </p>
           </div>
         </div>
 
         {/* KPI 3: Alerta Notas */}
-        <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-rose-500/10 rounded-lg">
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
+        <div className="bg-card border border-border p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-rose-500/10 rounded-xl">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Abaixo da Média (&lt; 5.0)</p>
-            <p className="text-lg font-bold text-rose-400">{alunosEmRiscoNotas.length}</p>
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Abaixo da Média (&lt; 5.0)</p>
+            <p className="text-xl font-black text-rose-600 dark:text-rose-400">{alunosEmRiscoNotas.length}</p>
           </div>
         </div>
 
         {/* KPI 4: Risco Evasão */}
-        <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-rose-500/10 rounded-lg">
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
+        <div className="bg-card border border-border p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-rose-500/10 rounded-xl">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground font-semibold">Risco de Evasão (&lt; 75%)</p>
-            <p className="text-lg font-bold text-rose-400">{alunosEmRiscoEvasao.length}</p>
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Risco de Evasão (&lt; 75%)</p>
+            <p className="text-xl font-black text-rose-600 dark:text-rose-400">{alunosEmRiscoEvasao.length}</p>
           </div>
         </div>
       </div>
 
-      {/* Alerta de Notas Baixas */}
+      {/* Alerta de Notas Baixas (Alto Contraste WCAG Acessível) */}
       {alunosEmRiscoNotas.length > 0 && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-300 no-print">
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-400 flex-shrink-0" />
+        <div className="bg-rose-50 border border-rose-200 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200 rounded-xl p-3.5 flex items-start gap-2.5 text-xs shadow-sm no-print">
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
           <div>
-            <strong>Atenção Gestão Escolar (Notas):</strong> Existem {alunosEmRiscoNotas.length} alunos com média final consolidada abaixo de 5.0 (Risco de recuperação pedagógica). É recomendada a verificação das notas e aplicação de reforço.
+            <strong className="text-rose-950 dark:text-rose-100 font-bold">Atenção Gestão Escolar (Notas):</strong> Existem {alunosEmRiscoNotas.length} alunos com média final consolidada abaixo de 5.0 (Risco de recuperação pedagógica). É recomendada a verificação das notas e aplicação de reforço.
           </div>
         </div>
       )}
 
-      {/* Alerta de Baixa Frequência / Evasão */}
+      {/* Alerta de Baixa Frequência / Evasão (Alto Contraste WCAG Acessível) */}
       {alunosEmRiscoEvasao.length > 0 && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-300 no-print">
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-400 flex-shrink-0" />
+        <div className="bg-rose-50 border border-rose-200 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200 rounded-xl p-3.5 flex items-start gap-2.5 text-xs shadow-sm no-print">
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
           <div>
-            <strong>Atenção Gestão Escolar (Evasão):</strong> Existem {alunosEmRiscoEvasao.length} alunos com taxa de frequência abaixo de 75% (Limite mínimo exigido por lei). Risco crítico de evasão escolar!
+            <strong className="text-rose-950 dark:text-rose-100 font-bold">Atenção Gestão Escolar (Evasão):</strong> Existem {alunosEmRiscoEvasao.length} alunos com taxa de frequência abaixo de 75% (Limite mínimo exigido por lei). Risco crítico de evasão escolar!
           </div>
         </div>
       )}
 
-      {/* Tabela de Notas Detalhada */}
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-            Grade Analítica de Notas & Frequência por Estudante
-          </h3>
-          <span className="text-[10px] bg-surface-1 border border-border text-muted-foreground px-2 py-0.5 rounded-lg font-semibold no-print">
-            {selectedTurma === 'todos' ? 'Todas as turmas' : turmas.find(t => t.id === selectedTurma)?.nome} | Média: 5.0 | Freq. Mínima: 75%
-          </span>
+      {/* Grade de Alunos com Paginação de 20 Itens */}
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+              Grade Consolidada de Desempenho & Assiduidade
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              Exibindo <strong>{alunosFiltrados.length}</strong> estudante(s) filtrado(s) — Limite de 20 por página
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 no-print">
+            <span className="text-[10px] bg-surface-1 border border-border text-muted-foreground px-2.5 py-1 rounded-lg font-semibold">
+              {selectedTurma === 'todos' ? 'Todas as turmas' : turmas.find((t) => t.id === selectedTurma)?.nome} | Média Mínima: 5.0 | Freq. Mínima: 75%
+            </span>
+          </div>
         </div>
 
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-muted-foreground animate-pulse">
+          <div className="py-16 flex flex-col items-center justify-center text-muted-foreground animate-pulse">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-            <span className="text-xs">Carregando diário de notas e assiduidade...</span>
+            <span className="text-xs font-semibold">Carregando diário de notas e assiduidade...</span>
           </div>
-        ) : rowsAnaliticas.length === 0 ? (
+        ) : alunosFiltrados.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-border rounded-xl text-muted-foreground text-xs italic">
             Nenhum estudante encontrado com os filtros aplicados nesta unidade escolar.
           </div>
@@ -377,54 +522,250 @@ export function SchoolDetailedReport({
                 <tr className="border-b border-border">
                   <th className="p-3">Estudante</th>
                   <th className="p-3">Turma</th>
-                  <th className="p-3">Disciplina</th>
-                  <th className="p-3">Trimestre</th>
-                  <th className="p-3 text-center">Frequência</th>
-                  <th className="p-3 text-center w-14">Nota 1</th>
-                  <th className="p-3 text-center w-14">Nota 2</th>
-                  <th className="p-3 text-center w-14">Nota 3</th>
-                  <th className="p-3 text-center w-14">Nota 4</th>
-                  <th className="p-3 text-right w-24">Média Unidade</th>
+                  <th className="p-3">Turno</th>
+                  <th className="p-3 text-center">Assiduidade</th>
+                  <th className="p-3 text-center">Média Geral</th>
+                  <th className="p-3 text-center">Situação</th>
+                  <th className="p-3 text-right no-print">Detalhamento</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {rowsAnaliticas.map((row) => {
+                {alunosPaginados.map((aluno) => {
+                  const isExpanded = !!expandedAlunos[aluno.id]
+                  const isRiscoNota = aluno.mediaGeralAluno !== null && aluno.mediaGeralAluno < 5.0
+                  const isRiscoFreq = aluno.frequenciaPct !== null && aluno.frequenciaPct < 75.0
+
+                  // Filtrar matérias do aluno de acordo com o filtro selecionado
+                  const materiasExibicao = aluno.detalhesMaterias.filter((m) => {
+                    if (selectedMateria !== 'todos' && m.materiaId !== selectedMateria) {
+                      return false
+                    }
+                    return true
+                  })
+
                   return (
-                    <tr key={row.key} className="hover:bg-hoverCustom transition-colors">
-                      <td className="p-3 font-bold text-foreground uppercase">{row.alunoNome}</td>
-                      <td className="p-3 font-semibold text-muted-foreground">{row.turmaNome}</td>
-                      <td className="p-3 font-semibold text-muted-foreground">{row.materiaNome}</td>
-                      <td className="p-3 font-semibold text-muted-foreground">{row.unidade}º Trim</td>
-                      <td className="p-3 text-center">
-                        {row.frequencia !== null ? (
-                          <span className={`px-2 py-0.5 rounded font-bold border ${
-                            row.frequencia < 75.0
-                              ? 'text-rose-500 bg-rose-500/10 border-rose-500/20'
-                              : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                          }`}>
-                            {row.frequencia}%
-                            {row.frequencia < 75.0 && ' (Evasão)'}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">S/R</span>
-                        )}
-                      </td>
-                      <td className="p-3 font-mono text-center">{row.nota1 !== null ? row.nota1.toFixed(1) : '-'}</td>
-                      <td className="p-3 font-mono text-center">{row.nota2 !== null ? row.nota2.toFixed(1) : '-'}</td>
-                      <td className="p-3 font-mono text-center">{row.nota3 !== null ? row.nota3.toFixed(1) : '-'}</td>
-                      <td className="p-3 font-mono text-center">{row.nota4 !== null ? row.nota4.toFixed(1) : '-'}</td>
-                      <td className="p-3 font-mono text-right font-black">
-                        {row.media !== null ? (
-                          <span className={row.media < 5.0 ? 'text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20' : 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20'}>
-                            {row.media.toFixed(1)}
-                          </span>
-                        ) : '-'}
-                      </td>
-                    </tr>
+                    <React.Fragment key={aluno.id}>
+                      <tr className="hover:bg-hoverCustom transition-colors group">
+                        <td className="p-3 font-bold text-foreground uppercase tracking-wide">
+                          {aluno.nome}
+                        </td>
+                        <td className="p-3 font-semibold text-muted-foreground">
+                          {aluno.turmaNome}
+                        </td>
+                        <td className="p-3 font-semibold text-muted-foreground">
+                          {aluno.turno}
+                        </td>
+                        <td className="p-3 text-center">
+                          {aluno.frequenciaPct !== null ? (
+                            <span
+                              className={`px-2 py-0.5 rounded font-bold border text-[11px] ${
+                                isRiscoFreq
+                                  ? 'text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/40 dark:border-rose-800/60'
+                                  : 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/60'
+                              }`}
+                            >
+                              {aluno.frequenciaPct}%
+                              {isRiscoFreq && ' (Risco)'}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px]">S/R</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center font-mono font-black">
+                          {aluno.mediaGeralAluno !== null ? (
+                            <span
+                              className={`px-2.5 py-0.5 rounded border text-[11px] ${
+                                isRiscoNota
+                                  ? 'text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/40 dark:border-rose-800/60'
+                                  : 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/60'
+                              }`}
+                            >
+                              {aluno.mediaGeralAluno.toFixed(1)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px] font-normal">Sem notas</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {isRiscoNota || isRiscoFreq ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-800/60">
+                              <AlertTriangle className="w-3 h-3" /> Atenção
+                            </span>
+                          ) : aluno.mediaGeralAluno !== null ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60">
+                              <CheckCircle2 className="w-3 h-3" /> Regular
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">Pendente</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right no-print">
+                          <button
+                            onClick={() => toggleExpandAluno(aluno.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-surface-1 border border-border hover:border-primary/50 text-foreground transition-colors cursor-pointer"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronUp className="w-3.5 h-3.5" /> Ocultar Notas
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3.5 h-3.5" /> Ver Notas ({aluno.detalhesMaterias.length})
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Linha Expandida: Detalhamento por Disciplina & Trimestre */}
+                      {isExpanded && (
+                        <tr className="bg-surface-1/40 border-b border-border">
+                          <td colSpan={7} className="p-4">
+                            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                              <div className="flex items-center justify-between border-b border-border pb-2">
+                                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase">
+                                  <BookOpen className="w-3.5 h-3.5 text-primary" />
+                                  Detalhamento Disciplinar — {aluno.nome}
+                                </h4>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {materiasExibicao.length} disciplina(s) avaliada(s)
+                                </span>
+                              </div>
+
+                              {materiasExibicao.length === 0 ? (
+                                <p className="text-xs text-muted-foreground italic py-2">
+                                  Nenhuma disciplina cadastrada ou vinculada a este aluno.
+                                </p>
+                              ) : (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-xs text-left border-collapse">
+                                    <thead className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold bg-surface-1">
+                                      <tr className="border-b border-border">
+                                        <th className="p-2">Disciplina</th>
+                                        <th className="p-2 text-center">1º Trimestre</th>
+                                        <th className="p-2 text-center">2º Trimestre</th>
+                                        <th className="p-2 text-center">3º Trimestre</th>
+                                        <th className="p-2 text-right">Média da Matéria</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border/60">
+                                      {materiasExibicao.map((mat) => {
+                                        const t1 = mat.unidades.find((u) => u.unidade === 1)?.mediaTrimestre ?? null
+                                        const t2 = mat.unidades.find((u) => u.unidade === 2)?.mediaTrimestre ?? null
+                                        const t3 = mat.unidades.find((u) => u.unidade === 3)?.mediaTrimestre ?? null
+                                        const isMateriaRisco = mat.mediaMateria !== null && mat.mediaMateria < 5.0
+
+                                        return (
+                                          <tr key={mat.materiaId} className="hover:bg-surface-1/50">
+                                            <td className="p-2 font-bold text-foreground">
+                                              {mat.materiaNome}
+                                            </td>
+                                            <td className="p-2 text-center font-mono font-semibold">
+                                              {t1 !== null ? (
+                                                <span className={t1 < 5.0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}>
+                                                  {t1.toFixed(1)}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+                                            <td className="p-2 text-center font-mono font-semibold">
+                                              {t2 !== null ? (
+                                                <span className={t2 < 5.0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}>
+                                                  {t2.toFixed(1)}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+                                            <td className="p-2 text-center font-mono font-semibold">
+                                              {t3 !== null ? (
+                                                <span className={t3 < 5.0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}>
+                                                  {t3.toFixed(1)}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+                                            <td className="p-2 text-right font-mono font-black">
+                                              {mat.mediaMateria !== null ? (
+                                                <span
+                                                  className={`px-2 py-0.5 rounded text-[11px] border ${
+                                                    isMateriaRisco
+                                                      ? 'text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/40 dark:border-rose-800/60'
+                                                      : 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/60'
+                                                  }`}
+                                                >
+                                                  {mat.mediaMateria.toFixed(1)}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+                                          </tr>
+                                        )
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   )
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Rodapé de Paginação (20 Alunos por Página) */}
+        {!loading && alunosFiltrados.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border no-print">
+            <div className="text-xs text-muted-foreground">
+              Mostrando <strong>{startIndex + 1}</strong> a <strong>{Math.min(endIndex, alunosFiltrados.length)}</strong> de <strong>{alunosFiltrados.length}</strong> estudantes
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-border bg-surface-1 hover:bg-hoverCustom disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-foreground transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  // Limitar exibição visual de botões de páginas para não estourar em telas pequenas
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+                          currentPage === pageNum
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-surface-1 text-foreground border-border hover:bg-hoverCustom'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  }
+                  if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="text-muted-foreground text-xs px-0.5">...</span>
+                  }
+                  return null
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-border bg-surface-1 hover:bg-hoverCustom disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-foreground transition-colors cursor-pointer"
+              >
+                Próximo <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
