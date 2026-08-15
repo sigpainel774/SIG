@@ -236,8 +236,13 @@ export async function POST(request: NextRequest) {
     }))
 
     // 9. Registrar na Central de Atividades da Escola (public.audit_logs)
-    const operadorNome = funcionario?.nome || user.email || 'Secretário(a) Escolar'
-    const operadorCargo = funcionario?.cargo || (isSuperAdmin ? 'Superadministrador' : 'Secretário(a) Escolar')
+    const nivelOperador = acessos[0]?.nivel
+    const cargoFallback = isSuperAdmin 
+      ? 'Superadministrador' 
+      : (nivelOperador === 2 ? 'Diretor(a) Escolar' : (nivelOperador === 1 ? 'Secretaria de Educação' : 'Secretário(a) Escolar'))
+    
+    const operadorNome = funcionario?.nome || user.email || 'Operador Escolar'
+    const operadorCargo = funcionario?.cargo || cargoFallback
     const operadorEmail = funcionario?.email || user.email || ''
     const operadorId = funcionario?.id ?? user.id ?? null
 

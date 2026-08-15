@@ -558,7 +558,7 @@ export default function AdminHubPage() {
     router.refresh()
   }
 
-  const userEmail = funcionario?.email ?? 'adm@super.com'
+  const userEmail = funcionario?.email ?? 'seu@email.com'
 
   return (
     <div className="space-y-6 select-none -mt-3">
