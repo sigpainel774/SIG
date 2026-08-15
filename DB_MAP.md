@@ -820,7 +820,7 @@ Canal de comunicação e recados pedagógicos diretos entre professores e pais/r
 *   `escola_id`: `uuid` (FK -> `public.escolas.id`, NOT NULL)
 *   `turma_id`: `uuid` (FK -> `public.turmas.id`, Nullable)
 *   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
-*   `professor_id`: `uuid` (FK -> `public.funcionarios.id`, NOT NULL)
+*   `professor_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `responsavel_id`: `uuid` (FK -> `public.responsaveis.id`, Nullable)
 *   `remetente_tipo`: `text` ('professor' ou 'responsavel', NOT NULL, Default: 'professor')
 *   `autor_nome`: `text` (Nome legível do autor, Nullable)
@@ -830,6 +830,22 @@ Canal de comunicação e recados pedagógicos diretos entre professores e pais/r
 *   `lida_responsavel_em`: `timestamp with time zone` (Nullable)
 *   `lida_professor`: `boolean` (Default: false, NOT NULL)
 *   `lida_professor_em`: `timestamp with time zone` (Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `deleted_at`: `timestamp with time zone` (Nullable)
+
+### 65. `public.solicitacoes_responsaveis`
+Solicitações de documentos (Declaração Bolsa Família, histórico, etc.) enviadas pelos responsáveis dos alunos à escola.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `escola_id`: `uuid` (FK -> `public.escolas.id`, NOT NULL)
+*   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
+*   `responsavel_id`: `uuid` (FK -> `public.responsaveis.id`, NOT NULL)
+*   `tipo`: `text` ('declaracao_bolsa_familia', 'declaracao_matricula', 'historico_escolar', 'outro', NOT NULL)
+*   `titulo`: `text` (NOT NULL)
+*   `observacoes`: `text` (Nullable)
+*   `status`: `text` ('pendente', 'em_analise', 'concluido', 'recusado', Default: 'pendente', NOT NULL)
+*   `resposta_escola`: `text` (Nullable)
+*   `concluido_em`: `timestamp with time zone` (Nullable)
+*   `concluido_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 

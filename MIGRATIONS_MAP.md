@@ -104,6 +104,7 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 85 | `20260814210000_secure_portal_pais_rls_and_blindagem.sql` | 2026-08-14 | Blindagem RLS contra vazamento de informações para contas de Pais/Responsáveis em 22 tabelas sensíveis (EMAEE, atestados, financeiro, RH, anexos, transportes) e liberação estrita de leitura de dependentes em `alunos` e `turmas`. | 22 tabelas operacionais do schema `public` + `alunos` e `turmas` | `SECURITY DEFINER` + Blindagem RLS |
 | 86 | `20260815000000_portal_comunicacoes_pais.sql` | 2026-08-15 | Adiciona a coluna `portal_comunicacoes_ativo` em `escolas` e cria a tabela `mensagens_responsaveis` para troca de mensagens/recados pedagógicos entre professores e responsáveis com RLS e índices de performance. | `public.escolas`, `public.mensagens_responsaveis` | Canal de Comunicação Pais & Professores |
 | 87 | `20260815010000_fix_pais_update_proprio_rls.sql` | 2026-08-15 | Adiciona política RLS de UPDATE na tabela `responsaveis` para o próprio responsável (`pais_update_proprio`), permitindo atualizar `must_change_password` e dados cadastrais no 1º acesso. | `public.responsaveis` | `pais_update_proprio` (RLS UPDATE) |
+| 88 | `20260815020000_solicitacoes_responsaveis.sql` | 2026-08-15 | Cria a tabela `solicitacoes_responsaveis` para pedidos de documentos escolares (Declaração Bolsa Família, etc.) e acompanhamento de status pelos pais. | `public.solicitacoes_responsaveis` | `dev_all_authenticated` / RLS |
 
 
 
