@@ -478,7 +478,7 @@ export function ModalCadastroResponsavel({
               <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 text-xs text-indigo-700 dark:text-indigo-300 max-w-md mx-auto text-left flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-indigo-600 dark:text-indigo-400" />
                 <span>
-                  Nenhuma nova senha foi necessária, pois o responsável mantém sua senha pessoal pré-existente.
+                  Nenhuma nova senha foi necessária, pois o responsável manteve sua senha pessoal pré-existente.
                 </span>
               </div>
 
@@ -876,7 +876,7 @@ export function ModalCadastroResponsavel({
               {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
               {salvando 
                 ? (responsavelExistente ? 'Salvando Vínculo...' : 'Salvando Acesso...') 
-                : (responsavelExistente ? 'Vincular Aluno(s) à Escola' : 'Salvar e Gerar Acesso')
+                : (responsavelExistente ? 'Vincular aluno à Responsável' : 'Salvar e Gerar Acesso')
               }
             </Button>
           </div>
