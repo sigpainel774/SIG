@@ -72,7 +72,7 @@ export default function DetalhesAlunoPortalPage() {
         }
 
         // 2. Validar e carregar dados do aluno
-        const { data: alunoData, error: alunoErr } = await supabase
+        const { data: alunoDataRaw, error: alunoErr } = await (supabase as any)
           .from('alunos')
           .select(`
             id,
@@ -85,6 +85,8 @@ export default function DetalhesAlunoPortalPage() {
           `)
           .eq('id', alunoId)
           .single()
+
+        const alunoData = alunoDataRaw as any
 
         if (alunoErr || !alunoData) {
           toast.error('Aluno não localizado ou sem permissão de acesso.')
@@ -143,8 +145,8 @@ export default function DetalhesAlunoPortalPage() {
         setOcorrencias(ocoData || [])
 
         // 6. Carregar Mensagens (se canal de comunicação estiver ativo na escola)
-        if (alunoData.escola?.portal_comunicacoes_ativo) {
-          const { data: msgData } = await supabase
+        if (alunoData?.escola?.portal_comunicacoes_ativo) {
+          const { data: msgData } = await (supabase as any)
             .from('mensagens_responsaveis')
             .select(`
               id,
@@ -168,7 +170,7 @@ export default function DetalhesAlunoPortalPage() {
             .is('deleted_at', null)
             .order('created_at', { ascending: true })
 
-          setMensagens(msgData || [])
+          setMensagens((msgData as any[]) || [])
         }
       } catch (err: any) {
         console.error('Erro ao carregar detalhes do aluno:', err)
@@ -190,21 +192,25 @@ export default function DetalhesAlunoPortalPage() {
       if (naoLidas.length > 0) {
         markedAsReadRef.current = true
         const ids = naoLidas.map((m) => m.id)
-        supabase
-          .from('mensagens_responsaveis')
-          .update({
-            lida_responsavel: true,
-            lida_responsavel_em: new Date().toISOString()
-          } as any)
-          .in('id', ids)
-          .then(() => {
+        ;(async () => {
+          try {
+            await (supabase as any)
+              .from('mensagens_responsaveis')
+              .update({
+                lida_responsavel: true,
+                lida_responsavel_em: new Date().toISOString()
+              })
+              .in('id', ids)
+
             setMensagens((prev) =>
               prev.map((m) =>
                 ids.includes(m.id) ? { ...m, lida_responsavel: true } : m
               )
             )
-          })
-          .catch((err) => console.error('Erro ao marcar mensagens como lidas:', err))
+          } catch (err) {
+            console.error('Erro ao marcar mensagens como lidas:', err)
+          }
+        })()
       }
     }
   }, [activeTab, mensagens, supabase])
@@ -261,7 +267,7 @@ export default function DetalhesAlunoPortalPage() {
         lida_professor: false
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('mensagens_responsaveis')
         .insert(novaMsg as any)
         .select(`
