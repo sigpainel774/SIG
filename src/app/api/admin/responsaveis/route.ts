@@ -1,12 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { createServerClient } from '@supabase/ssr'
+import { parseUserAgent } from '@/lib/parseUserAgent'
 
 // POST /api/admin/responsaveis
 // Cria ou vincula um responsável e gera acesso no Supabase Auth com senha provisória
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validar autenticação do operador (Staff Nível 1, 2 ou 3 ou Superadmin)
+    // 1. Capturar metadados da sessão ativa do operador
+    const clientIp = 
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      request.headers.get('cf-connecting-ip') ||
+      '127.0.0.1'
+    const userAgentRaw = request.headers.get('user-agent') || ''
+    const parsedUa = parseUserAgent(userAgentRaw)
+
+    // 2. Validar autenticação do operador (Staff Nível 1, 2 ou 3 ou Superadmin)
     let response = NextResponse.next()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const { data: funcionario } = await supabaseAdmin
       .from('funcionarios')
-      .select('id, nome, is_superadmin, acessos_usuarios(nivel, ativo)')
+      .select('id, nome, email, cargo, is_superadmin, acessos_usuarios(nivel, ativo, escola_id)')
       .eq('auth_user_id', user.id)
       .maybeSingle()
 
@@ -44,19 +54,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado: permissão insuficiente para gerenciar responsáveis' }, { status: 403 })
     }
 
-    // 2. Extrair e validar dados do body
+    // 3. Extrair e validar dados do body
     const body = await request.json()
     const { cpf, nome, email, telefone, senha_provisoria, aluno_ids, parentesco, escola_id } = body
 
-    if (!cpf || !nome || !email || !senha_provisoria || !aluno_ids || aluno_ids.length === 0) {
-      return NextResponse.json({ error: 'Campos obrigatórios ausentes (CPF, Nome, E-mail, Senha e Alunos)' }, { status: 400 })
+    if (!cpf || !nome || !email || !aluno_ids || aluno_ids.length === 0) {
+      return NextResponse.json({ error: 'Campos obrigatórios ausentes (CPF, Nome, E-mail e Alunos)' }, { status: 400 })
     }
 
     // Limpeza de máscara no CPF
     const cpfLimpo = cpf.replace(/\D/g, '')
     const emailLimpo = email.trim().toLowerCase()
 
-    // 3. Verificar se o responsável já existe pelo CPF
+    // Resolução segura de escola alvo para isolamento e auditoria (ES-1 / ES-3)
+    const targetEscolaId = escola_id || acessos[0]?.escola_id || null
+
+    // 4. Verificar se o responsável já existe pelo CPF
     const { data: responsavelExistente } = await supabaseAdmin
       .from('responsaveis')
       .select('*')
@@ -66,54 +79,67 @@ export async function POST(request: NextRequest) {
     let responsavelId: string
     let authUserId: string | null = null
     let criadoAgora = false
+    let senhaRedefinida = false
 
     if (responsavelExistente) {
       responsavelId = responsavelExistente.id
       authUserId = responsavelExistente.auth_user_id
 
-      // Atualizar dados cadastrais caso tenham mudado
+      // Atualizar dados cadastrais
+      const updateData: any = {
+        nome: nome.trim(),
+        email: emailLimpo,
+        telefone: telefone?.trim() || null,
+        ativo: true
+      }
+
+      if (senha_provisoria && senha_provisoria.trim().length > 0) {
+        updateData.must_change_password = true
+        senhaRedefinida = true
+      }
+
       await supabaseAdmin
         .from('responsaveis')
-        .update({
-          nome: nome.trim(),
-          email: emailLimpo,
-          telefone: telefone?.trim() || null,
-          must_change_password: true,
-          ativo: true
-        })
+        .update(updateData)
         .eq('id', responsavelId)
 
-      // Se já tinha auth_user_id, resetar a senha para a nova senha provisória
-      if (authUserId) {
-        await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-          password: senha_provisoria,
-          user_metadata: {
-            tipo_conta: 'responsavel',
-            must_change_password: true,
-            nome: nome.trim()
-          }
-        })
-      } else {
-        // Se não tinha auth_user_id vinculado, criar no Auth
-        const { data: authData, error: authCreateErr } = await supabaseAdmin.auth.admin.createUser({
-          email: emailLimpo,
-          password: senha_provisoria,
-          email_confirm: true,
-          user_metadata: {
-            tipo_conta: 'responsavel',
-            must_change_password: true,
-            nome: nome.trim()
-          }
-        })
-        if (authCreateErr) throw authCreateErr
-        authUserId = authData.user.id
-        await supabaseAdmin
-          .from('responsaveis')
-          .update({ auth_user_id: authUserId })
-          .eq('id', responsavelId)
+      // Se informou nova senha provisória, atualizar no Supabase Auth
+      if (senha_provisoria && senha_provisoria.trim().length > 0) {
+        if (authUserId) {
+          await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+            password: senha_provisoria,
+            user_metadata: {
+              tipo_conta: 'responsavel',
+              must_change_password: true,
+              nome: nome.trim()
+            }
+          })
+        } else {
+          const { data: authData, error: authCreateErr } = await supabaseAdmin.auth.admin.createUser({
+            email: emailLimpo,
+            password: senha_provisoria,
+            email_confirm: true,
+            user_metadata: {
+              tipo_conta: 'responsavel',
+              must_change_password: true,
+              nome: nome.trim()
+            }
+          })
+          if (authCreateErr) throw authCreateErr
+          authUserId = authData.user.id
+          await supabaseAdmin
+            .from('responsaveis')
+            .update({ auth_user_id: authUserId })
+            .eq('id', responsavelId)
+        }
       }
     } else {
-      // 4. Criar novo usuário no Supabase Auth com metadata tipo_conta: 'responsavel'
+      // Criação de novo responsável exige senha provisória
+      if (!senha_provisoria || senha_provisoria.trim().length === 0) {
+        return NextResponse.json({ error: 'A senha provisória é obrigatória para novos cadastros' }, { status: 400 })
+      }
+
+      // 5. Criar novo usuário no Supabase Auth com metadata tipo_conta: 'responsavel'
       const { data: authData, error: authCreateErr } = await supabaseAdmin.auth.admin.createUser({
         email: emailLimpo,
         password: senha_provisoria,
@@ -126,7 +152,6 @@ export async function POST(request: NextRequest) {
       })
 
       if (authCreateErr) {
-        // Se o email já existe no Auth mas não no responsaveis
         if (authCreateErr.message?.toLowerCase().includes('already registered')) {
           return NextResponse.json({ error: 'Este e-mail já está cadastrado no sistema para outro usuário.' }, { status: 409 })
         }
@@ -135,8 +160,9 @@ export async function POST(request: NextRequest) {
 
       authUserId = authData.user.id
       criadoAgora = true
+      senhaRedefinida = true
 
-      // 5. Inserir em public.responsaveis com rollback automático se falhar
+      // 6. Inserir em public.responsaveis com rollback automático se falhar
       try {
         const { data: novoResp, error: insertErr } = await supabaseAdmin
           .from('responsaveis')
@@ -156,7 +182,6 @@ export async function POST(request: NextRequest) {
         if (insertErr) throw insertErr
         responsavelId = novoResp.id
       } catch (dbErr: any) {
-        // Rollback: Deleta o usuário recém-criado em auth.users para não deixar conta órfã (ES-7)
         if (authUserId) {
           await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {})
         }
@@ -164,7 +189,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 6. Inserir vínculos com os alunos selecionados (ON CONFLICT DO NOTHING)
+    // 7. Sincronizar vínculos com os alunos selecionados
+    if (targetEscolaId) {
+      // Buscar alunos da escola atual que o responsável possuía vínculo para desvincular os desmarcados
+      const { data: alunosEscola } = await supabaseAdmin
+        .from('alunos')
+        .select('id')
+        .eq('escola_id', targetEscolaId)
+        .is('deleted_at', null)
+
+      const idsAlunosEscola = (alunosEscola || []).map(a => a.id)
+      const idsParaDesvincular = idsAlunosEscola.filter(id => !aluno_ids.includes(id))
+
+      if (idsParaDesvincular.length > 0) {
+        await supabaseAdmin
+          .from('responsaveis_alunos')
+          .delete()
+          .eq('responsavel_id', responsavelId)
+          .in('aluno_id', idsParaDesvincular)
+      }
+    }
+
     const vinculosParaInserir = aluno_ids.map((alunoId: string) => ({
       responsavel_id: responsavelId,
       aluno_id: alunoId,
@@ -177,7 +222,65 @@ export async function POST(request: NextRequest) {
         .upsert(v, { onConflict: 'responsavel_id,aluno_id' })
     }
 
-    // 7. Gravar log de auditoria
+    // 8. Buscar nomes e turmas dos alunos para enriquecer os logs de auditoria
+    const { data: alunosData } = await supabaseAdmin
+      .from('alunos')
+      .select('id, nome, numero_matricula, turma_id, turmas:turma_id(nome)')
+      .in('id', aluno_ids)
+
+    const alunosDetalhes = (alunosData || []).map(a => ({
+      id: a.id,
+      nome: a.nome,
+      matricula: a.numero_matricula || null,
+      turma: (a.turmas as any)?.nome || 'Sem Turma'
+    }))
+
+    // 9. Registrar na Central de Atividades da Escola (public.audit_logs)
+    const operadorNome = funcionario?.nome || user.email || 'Secretário(a) Escolar'
+    const operadorCargo = funcionario?.cargo || (isSuperAdmin ? 'Superadministrador' : 'Secretário(a) Escolar')
+    const operadorEmail = funcionario?.email || user.email || ''
+    const operadorId = funcionario?.id ?? user.id ?? null
+
+    const sessaoOperador = {
+      ip: clientIp,
+      navegador: parsedUa.browser,
+      sistema_operacional: parsedUa.os,
+      dispositivo: parsedUa.deviceType,
+      user_agent: userAgentRaw,
+      data_hora: new Date().toISOString()
+    }
+
+    await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        tenant_id: targetEscolaId,
+        user_id: operadorId,
+        user_name: operadorNome,
+        user_email: operadorEmail,
+        user_cargo: operadorCargo,
+        action: criadoAgora ? 'CREATE' : 'UPDATE',
+        entity: 'responsaveis',
+        entity_id: responsavelId,
+        ip_address: clientIp,
+        old_data: responsavelExistente ? {
+          nome: responsavelExistente.nome,
+          email: responsavelExistente.email,
+          telefone: responsavelExistente.telefone
+        } : null,
+        new_data: {
+          responsavel_id: responsavelId,
+          responsavel_nome: nome.trim(),
+          responsavel_cpf: cpfLimpo,
+          responsavel_email: emailLimpo,
+          responsavel_telefone: telefone?.trim() || null,
+          parentesco: parentesco || 'Responsável',
+          senha_provisoria_gerada: senhaRedefinida,
+          alunos_vinculados: alunosDetalhes,
+          sessao_operador: sessaoOperador
+        }
+      })
+
+    // 10. Gravar log especializado de responsáveis (public.responsavel_audit_log)
     await supabaseAdmin
       .from('responsavel_audit_log')
       .insert({
@@ -185,17 +288,23 @@ export async function POST(request: NextRequest) {
         acao: criadoAgora ? 'criacao_responsavel' : 'atualizacao_responsavel',
         executado_por: user.id,
         detalhes: {
-          operador_nome: funcionario?.nome,
-          alunos_vinculados: aluno_ids,
-          escola_id: escola_id || null,
-          timestamp: new Date().toISOString()
+          operador_id: operadorId,
+          operador_nome: operadorNome,
+          operador_cargo: operadorCargo,
+          operador_email: operadorEmail,
+          alunos_vinculados: alunosDetalhes,
+          escola_id: targetEscolaId,
+          senha_provisoria_gerada: senhaRedefinida,
+          sessao_operador: sessaoOperador
         }
       })
 
     return NextResponse.json({
       success: true,
       responsavel_id: responsavelId,
-      mensagem: 'Responsável e acessos configurados com sucesso!'
+      mensagem: criadoAgora 
+        ? 'Responsável e acesso criados com sucesso!' 
+        : 'Cadastro do responsável atualizado com sucesso!'
     })
   } catch (error: any) {
     console.error('Erro na rota /api/admin/responsaveis:', error)
