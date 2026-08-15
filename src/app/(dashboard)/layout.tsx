@@ -50,6 +50,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     acessos = perfil.acessos
     vinculos = perfil.vinculos
     isSuperAdmin = funcionario.is_superadmin || false
+  } else {
+    redirect('/login')
   }
 
   // Layout exclusivo para Super Admin (Root) - apenas se não estiver simulando
