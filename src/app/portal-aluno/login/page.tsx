@@ -5,21 +5,13 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import {
-  GraduationCap,
   Mail,
   Lock,
   Loader2,
-  ArrowRight,
   ShieldCheck,
   Eye,
   EyeOff,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-
-const AZUL = '#0B4FB3'
-const LARANJA = '#F47C12'
 
 export default function PortalAlunoLoginPage() {
   const router = useRouter()
@@ -85,168 +77,201 @@ export default function PortalAlunoLoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden"
-      style={{ backgroundColor: '#F6F9FC', fontFamily: 'var(--font-source-sans), sans-serif' }}
+      className="min-h-screen flex flex-col justify-between bg-[#0052cc]"
+      style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
     >
-      {/* Luz de fundo decorativa */}
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[480px] rounded-full blur-3xl pointer-events-none"
-        style={{ backgroundColor: 'rgba(220,235,250,0.6)' }}
-      />
-
-      <div className="w-full max-w-md space-y-6 relative z-10">
-        {/* Identificação institucional */}
-        <div className="text-center space-y-3">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-lg"
-            style={{ backgroundColor: '#DDEBFA' }}
-          >
-            <GraduationCap className="w-8 h-8" style={{ color: AZUL }} aria-hidden="true" />
+      {/* ─── SEÇÃO SUPERIOR (Branca com curva orgânica) ─── */}
+      <div className="w-full bg-white relative">
+        <div className="max-w-md mx-auto px-6 pt-10 sm:pt-14 pb-8 sm:pb-10 flex flex-col items-center text-center">
+          
+          {/* Brasão Institucional */}
+          <div className="mb-2">
+            <img
+              src="/img/brasaoSapeaçu.png"
+              alt="Brasão de Sapeaçu"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto drop-shadow-sm"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement
+                if (!target.src.includes('brasao-login')) {
+                  target.src = '/img/brasao-login.jpg'
+                }
+              }}
+            />
           </div>
-          <div>
-            <p
-              className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1"
-              style={{ color: LARANJA }}
-            >
-              Prefeitura de Sapeaçu
+
+          {/* Tipografia Oficial da Prefeitura */}
+          <div className="space-y-0 text-center select-none">
+            <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-[#0052cc]">
+              PREFEITURA DE
             </p>
-            <h1
-              className="text-2xl font-extrabold tracking-tight"
-              style={{ color: '#102D50', fontFamily: 'var(--font-manrope), sans-serif' }}
-            >
-              Portal dos Pais
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#f97316] uppercase leading-none my-0.5">
+              SAPEAÇU
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Acompanhe o boletim, frequência e comunicados da escola
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#0052cc]">
+                IGUALDADE E JUSTIÇA
+              </span>
+              <span className="text-xs font-black text-[#f97316]">5</span>
+            </div>
+          </div>
+
+          {/* Título e Subtítulo do Portal */}
+          <div className="mt-7 sm:mt-8 space-y-1.5 w-full">
+            <h2 className="text-2xl sm:text-[26px] font-extrabold text-[#0a2540] tracking-tight">
+              Portal dos Pais &amp; Responsáveis
+            </h2>
+            <p className="text-sm sm:text-base text-slate-500 font-normal">
+              Acompanhe a vida escolar dos seus filhos
             </p>
           </div>
-        </div>
 
-        {/* Card do formulário */}
-        <div
-          className="bg-white rounded-2xl p-6 sm:p-8 space-y-6 shadow-[0_12px_30px_rgba(18,45,76,0.08)]"
-          style={{ border: `1px solid #DCE7F2` }}
-        >
-          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          {/* Formulário de Login */}
+          <form onSubmit={handleLogin} className="w-full mt-7 sm:mt-8 space-y-3.5 sm:space-y-4" noValidate>
             {/* Campo E-mail */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="email"
-                className="text-xs font-semibold"
-                style={{ color: '#102D50' }}
-              >
-                E-mail cadastrado
-              </Label>
-              <div className="relative">
-                <Mail
-                  className="w-4 h-4 absolute left-3 top-3 text-slate-400"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="exemplo@email.com"
-                  required
-                  autoComplete="email"
-                  disabled={loading}
-                  className="pl-9 bg-white text-sm"
-                  style={{ borderColor: '#DCE7F2' }}
-                />
-              </div>
+            <div className="relative">
+              <Mail
+                className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0052cc] pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-mail cadastrado"
+                required
+                autoComplete="email"
+                disabled={loading}
+                className="w-full h-12 sm:h-13 pl-11 pr-4 bg-white border border-slate-300 rounded-xl text-sm sm:text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052cc]/30 focus:border-[#0052cc] transition-all disabled:opacity-60"
+              />
             </div>
 
             {/* Campo Senha */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="password"
-                className="text-xs font-semibold"
-                style={{ color: '#102D50' }}
+            <div className="relative">
+              <Lock
+                className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0052cc] pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Senha de acesso"
+                required
+                autoComplete="current-password"
+                disabled={loading}
+                className="w-full h-12 sm:h-13 pl-11 pr-11 bg-white border border-slate-300 rounded-xl text-sm sm:text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052cc]/30 focus:border-[#0052cc] transition-all disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors p-1"
               >
-                Senha de acesso
-              </Label>
-              <div className="relative">
-                <Lock
-                  className="w-4 h-4 absolute left-3 top-3 text-slate-400"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                  disabled={loading}
-                  className="pl-9 pr-10 bg-white text-sm"
-                  style={{ borderColor: '#DCE7F2' }}
-                />
-                {/* ES-18: Botão de mostrar/ocultar senha */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="w-4 h-4" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
 
-            <Button
+            {/* Botão Entrar no Portal */}
+            <button
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="w-full font-extrabold h-11 gap-2 mt-1 text-white transition-all duration-150"
-              style={{
-                backgroundColor: AZUL,
-                boxShadow: '0 8px 18px rgba(11,79,179,0.22)',
-              }}
+              className="w-full h-12 sm:h-13 bg-[#0052cc] hover:bg-[#0047b3] active:bg-[#003d9e] text-white font-bold text-base sm:text-lg rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed mt-1"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                  Conectando...
+                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  <span>Conectando...</span>
                 </>
               ) : (
-                <>
-                  Entrar no Portal
-                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                </>
+                <span>Entrar no Portal</span>
               )}
-            </Button>
+            </button>
           </form>
 
-          <div
-            className="pt-4 border-t text-center space-y-2"
-            style={{ borderColor: '#E3ECF4' }}
-          >
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-              <ShieldCheck
-                className="w-3.5 h-3.5"
-                style={{ color: AZUL }}
-                aria-hidden="true"
-              />
-              <span>Acesso restrito a pais e responsáveis cadastrados</span>
+          {/* Badge de Segurança */}
+          <div className="flex items-center justify-center gap-3 mt-6 sm:mt-7 select-none">
+            <div className="w-10 h-10 rounded-full bg-[#e3eefc] flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-[#0052cc]" aria-hidden="true" />
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Primeiro acesso ou esqueceu a senha? Solicite as credenciais
-              presencialmente na secretaria da escola do seu filho.
-            </p>
+            <div className="text-left text-xs sm:text-[13px] text-slate-600 leading-tight font-medium">
+              <p>Acesso seguro e exclusivo para</p>
+              <p>responsáveis cadastrados</p>
+            </div>
           </div>
+
         </div>
 
-        {/* Rodapé institucional */}
-        <p className="text-center text-xs text-slate-400">
-          Secretaria Municipal de Educação de Sapeaçu
-        </p>
+        {/* Curva decorativa orgânica na parte inferior da área branca com acento laranja */}
+        <div className="relative w-full overflow-hidden leading-none">
+          <svg
+            viewBox="0 0 1000 90"
+            preserveAspectRatio="none"
+            className="relative block w-full h-10 sm:h-14"
+            aria-hidden="true"
+          >
+            {/* Traço laranja de destaque sob a curva esquerda */}
+            <path
+              d="M 0,22 C 60,42 160,72 320,80 C 420,84 480,72 560,50"
+              fill="none"
+              stroke="#f97316"
+              strokeWidth="4.5"
+              strokeLinecap="round"
+            />
+            {/* Curva branca principal */}
+            <path
+              d="M 0,0 L 1000,0 L 1000,10 C 850,55 600,90 320,76 C 160,68 60,38 0,18 Z"
+              fill="#ffffff"
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* ─── SEÇÃO INFERIOR (Fundo Azul Real com Card da Secretaria) ─── */}
+      <div className="w-full flex-1 flex flex-col justify-center items-center px-6 py-6 sm:py-8 max-w-md mx-auto">
+        {/* Card Branco da Secretaria Municipal de Educação */}
+        <div className="w-full max-w-[320px] bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-center shadow-xl select-none">
+          <p className="text-[12px] sm:text-[13px] font-black text-[#0052cc] tracking-wider uppercase leading-snug">
+            SECRETARIA
+          </p>
+          <p className="text-[12px] sm:text-[13px] font-black text-[#0052cc] tracking-wider uppercase leading-snug">
+            MUNICIPAL DE
+          </p>
+          <h3 className="text-3xl sm:text-[34px] font-black text-[#f97316] tracking-tight uppercase leading-none mt-1">
+            EDUCAÇÃO
+          </h3>
+        </div>
+
+        {/* Linha separadora laranja fina */}
+        <div className="w-full max-w-[280px] h-[1.5px] bg-[#f97316]/90 mt-5 sm:mt-6" />
+
+        {/* Slogan com Ícone de Educação */}
+        <div className="flex items-center justify-center gap-2.5 mt-3.5 text-white text-sm sm:text-[15px] font-medium select-none">
+          {/* Ícone de pessoa com livro aberto */}
+          <svg
+            className="w-5 h-5 sm:w-6 sm:h-6 text-[#f97316] shrink-0"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            {/* Cabeça */}
+            <circle cx="12" cy="5.5" r="3.2" />
+            {/* Asas/Páginas do Livro */}
+            <path d="M3.5 13.2C3.5 12.5 4.1 12 4.8 12H11V19.2C11 19.6 10.6 20 10.2 20H4.8C4.1 20 3.5 19.4 3.5 18.7V13.2Z" />
+            <path d="M20.5 13.2C20.5 12.5 19.9 12 19.2 12H13V19.2C13 19.6 13.4 20 13.8 20H19.2C19.9 20 20.5 19.4 20.5 18.7V13.2Z" />
+          </svg>
+          <p>
+            Mais <span className="text-[#f97316] font-bold">presença</span> na jornada escolar
+          </p>
+        </div>
       </div>
     </div>
   )
 }
+
