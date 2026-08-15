@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CircleHelp,
   ClipboardList,
+  FileCheck2,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -36,8 +37,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: '/portal-aluno/dashboard', label: 'Visão geral', icon: LayoutDashboard },
-  { href: '/portal-aluno/ocorrencias', label: 'Ocorrências', icon: ClipboardList },
-  { href: '/portal-aluno/comunicacoes', label: 'Comunicações', icon: MessageSquareText },
+  { href: '/portal-aluno/mensagens', label: 'Mensagens', icon: MessageSquareText },
+  { href: '/portal-aluno/solicitacoes', label: 'Solicitações', icon: FileCheck2 },
 ]
 
 interface PortalPaisLayoutProps {
@@ -190,16 +191,28 @@ export default function PortalPaisLayout({
           <p className="px-3 pb-3 text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">
             Precisa de ajuda?
           </p>
-          <button
-            className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-bold text-[#58718D] transition hover:bg-[#FFF6EE] hover:text-[#D96507]"
+          <Link
+            href="/portal-aluno/ajuda"
             onClick={() => setMobileOpen(false)}
+            className={`group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-bold transition-all duration-150 ${
+              isActive('/portal-aluno/ajuda')
+                ? 'text-white'
+                : 'text-[#58718D] hover:bg-[#FFF6EE] hover:text-[#D96507]'
+            }`}
+            style={
+              isActive('/portal-aluno/ajuda')
+                ? { backgroundColor: LARANJA, boxShadow: '0 8px 18px rgba(244,124,18,0.22)' }
+                : {}
+            }
           >
             <CircleHelp
-              className="size-[18px] text-slate-400 group-hover:text-[#F47C12]"
+              className={`size-[18px] ${
+                isActive('/portal-aluno/ajuda') ? 'text-white' : 'text-slate-400 group-hover:text-[#F47C12]'
+              }`}
               aria-hidden="true"
             />
             Central de ajuda
-          </button>
+          </Link>
         </nav>
 
         {/* Banner de destaque */}
