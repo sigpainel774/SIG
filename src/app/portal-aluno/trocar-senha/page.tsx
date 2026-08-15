@@ -44,10 +44,14 @@ export default function TrocarSenhaResponsavelPage() {
 
       // 2. Atualizar flag must_change_password na tabela public.responsaveis
       if (data.user) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('responsaveis')
           .update({ must_change_password: false })
           .eq('auth_user_id', data.user.id)
+
+        if (updateError) {
+          console.error('Aviso ao sincronizar tabela responsaveis:', updateError)
+        }
       }
 
       toast.success('Senha alterada com sucesso! Redirecionando para o Portal...')
@@ -61,30 +65,30 @@ export default function TrocarSenhaResponsavelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f11] flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-4 relative overflow-hidden">
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
+          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
             <KeyRound className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             Definir Nova Senha
           </h1>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-muted-foreground">
             Por motivos de segurança, você precisa criar uma senha pessoal definitiva no seu primeiro acesso
           </p>
         </div>
 
-        <div className="bg-[#141416] border border-[#27272a] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="bg-card border border-border text-card-foreground rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
           <form onSubmit={handleTrocarSenha} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="novaSenha" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="novaSenha" className="text-xs font-medium text-foreground">
                 Nova Senha Pessoal <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                 <Input
                   id="novaSenha"
                   type="password"
@@ -93,17 +97,17 @@ export default function TrocarSenhaResponsavelPage() {
                   placeholder="Mínimo de 6 caracteres"
                   required
                   minLength={6}
-                  className="pl-9 bg-[#18181b] border-[#27272a] text-sm text-foreground focus:border-amber-500"
+                  className="pl-9 bg-background border-border text-sm text-foreground focus:border-amber-500"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirmarSenha" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="confirmarSenha" className="text-xs font-medium text-foreground">
                 Confirmar Nova Senha <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                 <Input
                   id="confirmarSenha"
                   type="password"
@@ -112,7 +116,7 @@ export default function TrocarSenhaResponsavelPage() {
                   placeholder="Repita a nova senha"
                   required
                   minLength={6}
-                  className="pl-9 bg-[#18181b] border-[#27272a] text-sm text-foreground focus:border-amber-500"
+                  className="pl-9 bg-background border-border text-sm text-foreground focus:border-amber-500"
                 />
               </div>
             </div>
@@ -136,8 +140,8 @@ export default function TrocarSenhaResponsavelPage() {
             </Button>
           </form>
 
-          <div className="p-3 bg-amber-950/20 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-200/90 leading-relaxed">
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed">
+            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <span>Guarde bem sua nova senha. Ela será necessária para os próximos acessos pelo celular ou computador.</span>
           </div>
         </div>

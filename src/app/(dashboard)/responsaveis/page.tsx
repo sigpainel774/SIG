@@ -62,8 +62,8 @@ export default function GestaoResponsaveisPage() {
   if (selectedEscola && !selectedEscola.portal_pais_ativo) {
     return (
       <div className="space-y-6">
-        <div className="p-8 text-center bg-[#141416] border border-[#27272a] rounded-2xl max-w-xl mx-auto my-12 space-y-4">
-          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full flex items-center justify-center mx-auto">
+        <div className="p-8 text-center bg-card border border-border text-card-foreground rounded-2xl max-w-xl mx-auto my-12 space-y-4 shadow-xs">
+          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto">
             <ShieldAlert className="w-7 h-7" />
           </div>
           <div className="space-y-1">
@@ -72,7 +72,7 @@ export default function GestaoResponsaveisPage() {
               O acesso ao Portal dos Pais está atualmente desabilitado para a escola <strong>{selectedEscola.nome}</strong>.
             </p>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Para gerenciar e criar contas de responsáveis para esta unidade, ative o recurso no Super Painel em <strong>Escolas &gt; Gerenciar Portal</strong>.
           </p>
         </div>
@@ -114,8 +114,8 @@ export default function GestaoResponsaveisPage() {
     {
       header: 'E-mail de Login',
       accessor: (r) => (
-        <div className="flex items-center gap-1.5 text-xs text-zinc-300">
-          <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+        <div className="flex items-center gap-1.5 text-xs text-foreground">
+          <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <span className="font-mono">{r.email}</span>
         </div>
       )
@@ -125,16 +125,16 @@ export default function GestaoResponsaveisPage() {
       accessor: (r) => (
         <div className="flex flex-wrap gap-1.5">
           {(r.alunos || []).length === 0 ? (
-            <span className="text-xs text-zinc-500 italic">Nenhum vinculado</span>
+            <span className="text-xs text-muted-foreground italic">Nenhum vinculado</span>
           ) : (
             r.alunos.map((a: any) => (
               <Badge
                 key={a.id}
                 variant="outline"
-                className="text-xs bg-indigo-500/10 text-indigo-300 border-indigo-500/30 flex items-center gap-1"
+                className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/30 flex items-center gap-1"
               >
-                <GraduationCap className="w-3 h-3 text-indigo-400" />
-                {a.nome} <span className="text-[10px] text-zinc-400">({a.turma_nome})</span>
+                <GraduationCap className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                {a.nome} <span className="text-[10px] text-muted-foreground">({a.turma_nome})</span>
               </Badge>
             ))
           )}
@@ -146,11 +146,11 @@ export default function GestaoResponsaveisPage() {
       accessor: (r) => (
         <div className="flex items-center gap-2">
           {r.must_change_password ? (
-            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30 flex items-center gap-1">
+            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 flex items-center gap-1">
               <Clock className="w-3 h-3" /> 1º Acesso Pendente
             </Badge>
           ) : (
-            <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
+            <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> Ativo
             </Badge>
           )}
@@ -170,7 +170,7 @@ export default function GestaoResponsaveisPage() {
               setResponsavelEmEdicao(r)
               setModalCadastroOpen(true)
             }}
-            className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+            className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-500/10"
             title="Editar dados e redefinir senha provisória"
           >
             <Edit className="w-4 h-4" />
@@ -183,10 +183,10 @@ export default function GestaoResponsaveisPage() {
   return (
     <div className="space-y-6">
       {/* Header da Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#27272a]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-indigo-400" />
+            <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             Portal dos Pais — Gestão de Responsáveis
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -200,7 +200,7 @@ export default function GestaoResponsaveisPage() {
             size="sm"
             onClick={carregarResponsaveis}
             disabled={loading}
-            className="border-[#3f3f46] text-muted-foreground hover:text-foreground"
+            className="border-border text-foreground hover:bg-muted"
           >
             <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -220,32 +220,32 @@ export default function GestaoResponsaveisPage() {
 
       {/* Cards de Métricas Rápidas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#141416] border border-[#27272a] rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-card border border-border text-card-foreground rounded-xl p-4 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider block">Responsáveis Cadastrados</span>
             <span className="text-2xl font-bold text-foreground mt-1 block">{totalPais}</span>
           </div>
-          <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center">
             <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-[#141416] border border-[#27272a] rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-card border border-border text-card-foreground rounded-xl p-4 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider block">Alunos Vinculados</span>
-            <span className="text-2xl font-bold text-indigo-400 mt-1 block">{totalAlunosVinculados}</span>
+            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1 block">{totalAlunosVinculados}</span>
           </div>
-          <div className="w-10 h-10 bg-sky-500/10 text-sky-400 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg flex items-center justify-center">
             <GraduationCap className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-[#141416] border border-[#27272a] rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-card border border-border text-card-foreground rounded-xl p-4 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider block">Aguardando 1º Acesso</span>
-            <span className="text-2xl font-bold text-amber-400 mt-1 block">{pendentesTroca}</span>
+            <span className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1 block">{pendentesTroca}</span>
           </div>
-          <div className="w-10 h-10 bg-amber-500/10 text-amber-400 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg flex items-center justify-center">
             <Clock className="w-5 h-5" />
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function GestaoResponsaveisPage() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome do responsável, CPF, e-mail ou nome do aluno..."
-            className="pl-9 bg-[#141416] border-[#27272a]"
+            className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
           />
         </div>
       </div>
@@ -272,7 +272,7 @@ export default function GestaoResponsaveisPage() {
         loading={loading}
         loadingMessage="Carregando responsáveis da escola..."
         emptyMessage="Nenhum responsável cadastrado nesta unidade escolar. Clique em 'Novo Responsável' para criar o primeiro acesso."
-        className="border-[#27272a]"
+        className="border-border"
       />
 
       {/* Modal de Cadastro / Edição */}
