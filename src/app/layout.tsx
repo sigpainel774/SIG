@@ -8,7 +8,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import NextTopLoader from 'nextjs-toploader'
 import { PwaUpdateModal } from '@/components/PwaUpdateModal'
-import { PWAIconUpdateNotice } from '@/components/pwa/PWAIconUpdateNotice'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -35,16 +34,16 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
-  manifest: '/manifest.json?v=12',
+  manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.svg?v=12', type: 'image/svg+xml' },
-      { url: '/icon-192.png?v=12', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=12', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon-192.png?v=12', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=12', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
   },
   appleWebApp: {
@@ -66,9 +65,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SIG Sapeaçu" />
-        <link rel="apple-touch-icon" href="/icon-192.png?v=12" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png?v=12" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png?v=12" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png" />
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider
@@ -90,7 +89,6 @@ export default function RootLayout({
           />
           {children}
           <PwaUpdateModal />
-          <PWAIconUpdateNotice />
           <Toaster theme="dark" />
           <SpeedInsights />
           <Analytics />
