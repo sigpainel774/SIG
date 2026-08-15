@@ -68,7 +68,7 @@ export function TabComunicacoesTurma({
     async function carregarMensagens() {
       setLoadingMensagens(true)
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('mensagens_responsaveis')
           .select(`
             id,
@@ -95,7 +95,7 @@ export function TabComunicacoesTurma({
         if (error) throw error
 
         if (isMounted.current) {
-          setMensagens(data || [])
+          setMensagens((data as any[]) || [])
 
           // Marcar como lida pelo professor caso haja mensagens do responsável não lidas
           const naoLidas = (data || []).filter(
@@ -103,12 +103,12 @@ export function TabComunicacoesTurma({
           )
           if (naoLidas.length > 0) {
             const ids = naoLidas.map((m: any) => m.id)
-            await supabase
+            await (supabase as any)
               .from('mensagens_responsaveis')
               .update({
                 lida_professor: true,
                 lida_professor_em: new Date().toISOString()
-              } as any)
+              })
               .in('id', ids)
           }
         }
@@ -154,7 +154,7 @@ export function TabComunicacoesTurma({
         lida_professor_em: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('mensagens_responsaveis')
         .insert(novaMensagem as any)
         .select(`
