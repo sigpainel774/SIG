@@ -42,6 +42,13 @@ export function SchoolSelector() {
 
   // Sincroniza a store de escola com a store de autenticação no carregamento
   useEffect(() => {
+    if (selectedEscola?.is_teste) {
+      if (escolaAtivaId !== selectedEscola.id) {
+        setEscolaAtivaId(selectedEscola.id)
+      }
+      return
+    }
+
     if (escolasPermitidas.length > 0) {
       if (escolaAtivaId) {
         const escola = escolasPermitidas.find(e => e.id === escolaAtivaId)
