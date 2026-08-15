@@ -1,36 +1,60 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
-import { 
-  GraduationCap, 
-  ArrowLeft, 
-  BookOpen, 
-  CalendarCheck, 
-  AlertTriangle, 
-  Loader2, 
-  CheckCircle2, 
-  Clock, 
+import {
+  GraduationCap,
+  ArrowLeft,
+  BookOpen,
+  CalendarCheck,
+  AlertTriangle,
+  Loader2,
+  CheckCircle2,
+  Clock,
   School,
   MessageSquare,
   Send,
   CheckCheck,
-  UserCheck
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import PortalPaisLayout from '@/components/portal-pais/PortalPaisLayout'
 
+// ─── Tokens visuais ────────────────────────────────────────────────────────
+const AZUL = '#0B4FB3'
+const BORDA = '#E5EDF5'
+
+// Timestamp de sessão para cache-busting (ES-22)
+const sessionTs = Date.now()
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+/** ES-02: Cálculo seguro de média — filtra null, undefined e NaN */
+function calcularMedia(n1: unknown, n2: unknown, n3: unknown): string {
+  const valores = [n1, n2, n3]
+    .map((v) => (v != null ? Number(v) : null))
+    .filter((v): v is number => v !== null && !isNaN(v))
+  if (valores.length === 0) return '–'
+  return (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(1)
+}
+
+/** Formata data do banco (YYYY-MM-DD) para pt-BR sem offset de timezone */
+function formatarData(dataStr: string) {
+  return new Date(dataStr + 'T00:00:00').toLocaleDateString('pt-BR')
+}
+
+// ─── Página ───────────────────────────────────────────────────────────────
 export default function DetalhesAlunoPortalPage() {
   const params = useParams()
   const router = useRouter()
-  const supabase = createClient()
+  // ES-07: createClient estável com useMemo
+  const supabase = useMemo(() => createClient(), [])
   const alunoId = params?.alunoId as string
 
-  const [activeTab, setActiveTab] = useState<'notas' | 'frequencia' | 'ocorrencias' | 'comunicacoes'>('notas')
+  type TabKey = 'notas' | 'frequencia' | 'ocorrencias' | 'comunicacoes'
+  const [activeTab, setActiveTab] = useState<TabKey>('notas')
   const [loading, setLoading] = useState(true)
   const [aluno, setAluno] = useState<any | null>(null)
   const [responsavel, setResponsavel] = useState<any | null>(null)
@@ -39,22 +63,35 @@ export default function DetalhesAlunoPortalPage() {
   const [notas, setNotas] = useState<any[]>([])
   const [frequencias, setFrequencias] = useState<any[]>([])
   const [ocorrencias, setOcorrencias] = useState<any[]>([])
+  const [mensagens, setMensagens] = useState<any[]>([])
   const [marcandoCienteId, setMarcandoCienteId] = useState<string | null>(null)
 
-  // Dados da aba de Comunicações
-  const [mensagens, setMensagens] = useState<any[]>([])
+  // Comunicações
   const [enviandoMensagem, setEnviandoMensagem] = useState(false)
   const [novaMensagemTitulo, setNovaMensagemTitulo] = useState('')
   const [novaMensagemConteudo, setNovaMensagemConteudo] = useState('')
+
+  // Cache-busting de foto (ES-22) — state aqui para respeitar regras de hooks
+  const [imgError, setImgError] = useState(false)
+
+  // ES-03: ref de controle de leitura de mensagens (resetado a cada mudança de alunoId)
   const markedAsReadRef = useRef(false)
 
   useEffect(() => {
     if (!alunoId) return
 
+    // ES-03: resetar ref ao mudar de filho
+    markedAsReadRef.current = false
+
+    // ES-06: flag de montagem para evitar setState em componente desmontado
+    let active = true
+
     async function carregarAluno() {
-      setLoading(true)
+      if (active) setLoading(true)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
         if (!user) {
           router.push('/portal-aluno/login')
           return
@@ -63,16 +100,15 @@ export default function DetalhesAlunoPortalPage() {
         // 1. Buscar responsável logado
         const { data: respData } = await supabase
           .from('responsaveis')
-          .select('id, nome, email, cpf, telefone')
+          .select('id, nome, email, telefone')
           .eq('auth_user_id', user.id)
           .maybeSingle()
 
-        if (respData) {
-          setResponsavel(respData)
-        }
+        if (respData && active) setResponsavel(respData)
 
-        // 2. Validar e carregar dados do aluno
-        const { data: alunoDataRaw, error: alunoErr } = await (supabase as any)
+        // 2. Buscar dados do aluno
+        // ES-01: incluir escola_id (coluna bruta) junto ao relacionamento
+        const { data: alunoDataRaw, error: alunoErr } = await supabase
           .from('alunos')
           .select(`
             id,
@@ -80,71 +116,49 @@ export default function DetalhesAlunoPortalPage() {
             numero_matricula,
             foto_url,
             serie,
+            escola_id,
             turma:turma_id (id, nome, turno),
             escola:escola_id (id, nome, portal_pais_ativo, portal_comunicacoes_ativo)
           `)
           .eq('id', alunoId)
           .single()
 
-        const alunoData = alunoDataRaw as any
-
-        if (alunoErr || !alunoData) {
+        if (alunoErr || !alunoDataRaw) {
           toast.error('Aluno não localizado ou sem permissão de acesso.')
           router.push('/portal-aluno/dashboard')
           return
         }
 
-        setAluno(alunoData)
+        const alunoData = alunoDataRaw as any
+        if (active) setAluno(alunoData)
 
-        // 3. Carregar Notas
-        const { data: notasData } = await supabase
-          .from('notas')
-          .select(`
-            id,
-            unidade,
-            nota1,
-            nota2,
-            nota3,
-            materia:materia_id (id, nome)
-          `)
-          .eq('aluno_id', alunoId)
-          .order('unidade')
+        // ES-09: carregar notas, frequências, ocorrências em paralelo
+        const [notasRes, freqRes, ocoRes] = await Promise.all([
+          supabase
+            .from('notas')
+            .select('id, unidade, nota1, nota2, nota3, materia:materia_id (id, nome)')
+            .eq('aluno_id', alunoId)
+            .order('unidade'),
+          supabase
+            .from('frequencias')
+            .select('id, data, presenca, materia:materia_id (nome)')
+            .eq('aluno_id', alunoId)
+            .order('data', { ascending: false })
+            .limit(60),
+          supabase
+            .from('ocorrencias')
+            .select('id, data, tipo, gravidade, descricao, status_pais, created_at')
+            .eq('aluno_id', alunoId)
+            .order('data', { ascending: false }),
+        ])
 
-        setNotas(notasData || [])
+        if (active) {
+          setNotas(notasRes.data ?? [])
+          setFrequencias(freqRes.data ?? [])
+          setOcorrencias(ocoRes.data ?? [])
+        }
 
-        // 4. Carregar Frequências
-        const { data: freqData } = await supabase
-          .from('frequencias')
-          .select(`
-            id,
-            data,
-            presenca,
-            materia:materia_id (nome)
-          `)
-          .eq('aluno_id', alunoId)
-          .order('data', { ascending: false })
-          .limit(60)
-
-        setFrequencias(freqData || [])
-
-        // 5. Carregar Ocorrências
-        const { data: ocoData } = await supabase
-          .from('ocorrencias')
-          .select(`
-            id,
-            data,
-            tipo,
-            gravidade,
-            descricao,
-            status_pais,
-            created_at
-          `)
-          .eq('aluno_id', alunoId)
-          .order('data', { ascending: false })
-
-        setOcorrencias(ocoData || [])
-
-        // 6. Carregar Mensagens (se canal de comunicação estiver ativo na escola)
+        // Comunicações (condicional na feature flag da escola)
         if (alunoData?.escola?.portal_comunicacoes_ativo) {
           const { data: msgData } = await (supabase as any)
             .from('mensagens_responsaveis')
@@ -170,52 +184,58 @@ export default function DetalhesAlunoPortalPage() {
             .is('deleted_at', null)
             .order('created_at', { ascending: true })
 
-          setMensagens((msgData as any[]) || [])
+          if (active) setMensagens((msgData as any[]) ?? [])
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erro ao carregar detalhes do aluno:', err)
-        toast.error('Erro ao carregar dados do aluno.')
+        if (active) toast.error('Erro ao carregar dados do aluno.')
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
 
     carregarAluno()
-  }, [alunoId, router, supabase])
 
-  // Marcar mensagens do professor como lidas quando os pais abrirem a aba de Comunicações
-  useEffect(() => {
-    if (activeTab === 'comunicacoes' && !markedAsReadRef.current && mensagens.length > 0) {
-      const naoLidas = mensagens.filter(
-        (m) => m.remetente_tipo === 'professor' && !m.lida_responsavel
-      )
-      if (naoLidas.length > 0) {
-        markedAsReadRef.current = true
-        const ids = naoLidas.map((m) => m.id)
-        ;(async () => {
-          try {
-            await (supabase as any)
-              .from('mensagens_responsaveis')
-              .update({
-                lida_responsavel: true,
-                lida_responsavel_em: new Date().toISOString()
-              })
-              .in('id', ids)
-
-            setMensagens((prev) =>
-              prev.map((m) =>
-                ids.includes(m.id) ? { ...m, lida_responsavel: true } : m
-              )
-            )
-          } catch (err) {
-            console.error('Erro ao marcar mensagens como lidas:', err)
-          }
-        })()
-      }
+    // ES-06: cleanup
+    return () => {
+      active = false
     }
+    // ES-08: dependência correta — apenas alunoId
+  }, [alunoId, supabase, router])
+
+  // ES-03: marcar mensagens como lidas ao abrir aba — com deps corretas
+  useEffect(() => {
+    if (activeTab !== 'comunicacoes' || markedAsReadRef.current || mensagens.length === 0) return
+
+    const naoLidas = mensagens.filter(
+      (m) => m.remetente_tipo === 'professor' && !m.lida_responsavel
+    )
+    if (naoLidas.length === 0) return
+
+    markedAsReadRef.current = true
+    const ids = naoLidas.map((m) => m.id)
+
+    ;(async () => {
+      try {
+        await (supabase as any)
+          .from('mensagens_responsaveis')
+          .update({
+            lida_responsavel: true,
+            lida_responsavel_em: new Date().toISOString(),
+          })
+          .in('id', ids)
+
+        setMensagens((prev) =>
+          prev.map((m) => (ids.includes(m.id) ? { ...m, lida_responsavel: true } : m))
+        )
+      } catch (err: unknown) {
+        // ES-07-catch: não silenciar totalmente
+        console.error('Erro ao marcar mensagens como lidas:', err)
+        toast.warning('Não foi possível marcar as mensagens como lidas.')
+      }
+    })()
   }, [activeTab, mensagens, supabase])
 
-  // Ação de registrar ciência em ocorrência
   const handleMarcarCiente = async (ocorrenciaId: string) => {
     setMarcandoCienteId(ocorrenciaId)
     try {
@@ -228,9 +248,9 @@ export default function DetalhesAlunoPortalPage() {
 
       setOcorrencias((prev) =>
         prev.map((o) => (o.id === ocorrenciaId ? { ...o, status_pais: 'Cientes' } : o))
-      );
-      toast.success('Ciência registrada com sucesso para a equipe pedagógica!')
-    } catch (err: any) {
+      )
+      toast.success('Ciência registrada com sucesso!')
+    } catch (err: unknown) {
       console.error('Erro ao marcar ciência:', err)
       toast.error('Erro ao registrar ciência. Tente novamente.')
     } finally {
@@ -238,25 +258,29 @@ export default function DetalhesAlunoPortalPage() {
     }
   }
 
-  // Ação de envio de mensagem pelos pais aos professores
   const handleEnviarMensagemResponsavel = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!novaMensagemConteudo.trim()) {
       toast.error('Digite sua mensagem para os professores.')
       return
     }
-    if (!aluno?.id || !aluno?.escola_id) {
-      toast.error('Dados do estudante não disponíveis.')
+
+    // ES-01: usar escola_id (coluna bruta) com fallback para aluno.escola?.id
+    const escolaId = aluno?.escola_id ?? aluno?.escola?.id ?? null
+
+    if (!aluno?.id || !escolaId) {
+      toast.error('Dados do estudante não disponíveis. Recarregue a página.')
       return
     }
 
     setEnviandoMensagem(true)
     try {
       const novaMsg = {
-        escola_id: aluno.escola_id,
+        escola_id: escolaId,
         turma_id: aluno.turma?.id ?? null,
         aluno_id: aluno.id,
-        professor_id: aluno.turma?.professor_id ?? null,
+        // ES-05: professor_id não existe na tabela turmas — deixar null
+        professor_id: null,
         responsavel_id: responsavel?.id ?? null,
         remetente_tipo: 'responsavel',
         autor_nome: responsavel?.nome ?? 'Responsável',
@@ -264,29 +288,17 @@ export default function DetalhesAlunoPortalPage() {
         conteudo: novaMensagemConteudo.trim(),
         lida_responsavel: true,
         lida_responsavel_em: new Date().toISOString(),
-        lida_professor: false
+        lida_professor: false,
       }
 
       const { data, error } = await (supabase as any)
         .from('mensagens_responsaveis')
         .insert(novaMsg as any)
         .select(`
-          id,
-          escola_id,
-          turma_id,
-          aluno_id,
-          professor_id,
-          responsavel_id,
-          remetente_tipo,
-          autor_nome,
-          titulo,
-          conteudo,
-          lida_responsavel,
-          lida_responsavel_em,
-          lida_professor,
-          lida_professor_em,
-          created_at,
-          professor:professor_id (id, nome, cargo)
+          id, escola_id, turma_id, aluno_id, professor_id, responsavel_id,
+          remetente_tipo, autor_nome, titulo, conteudo,
+          lida_responsavel, lida_responsavel_em, lida_professor, lida_professor_em,
+          created_at, professor:professor_id (id, nome, cargo)
         `)
         .single()
 
@@ -295,8 +307,8 @@ export default function DetalhesAlunoPortalPage() {
       setMensagens((prev) => [...prev, data])
       setNovaMensagemConteudo('')
       setNovaMensagemTitulo('')
-      toast.success('Mensagem enviada com sucesso para a equipe pedagógica!')
-    } catch (err: any) {
+      toast.success('Mensagem enviada com sucesso!')
+    } catch (err: unknown) {
       console.error('Erro ao enviar mensagem do responsável:', err)
       toast.error('Erro ao enviar mensagem. Tente novamente.')
     } finally {
@@ -304,12 +316,22 @@ export default function DetalhesAlunoPortalPage() {
     }
   }
 
+  // Logout
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push('/portal-aluno/login')
+    } catch (err: unknown) {
+      console.error('Erro ao sair:', err)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F6F9FC' }}>
         <div className="text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto" />
-          <p className="text-sm text-muted-foreground">Carregando boletim e histórico...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: AZUL }} />
+          <p className="text-sm text-slate-500">Carregando boletim e histórico...</p>
         </div>
       </div>
     )
@@ -320,415 +342,540 @@ export default function DetalhesAlunoPortalPage() {
     (m) => m.remetente_tipo === 'professor' && !m.lida_responsavel
   )
 
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-8 py-3.5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/portal-aluno/dashboard">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-2 text-xs">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar aos Filhos
-            </Button>
-          </Link>
-          <span className="text-xs text-muted-foreground font-mono">Boletim Escolar Oficial</span>
-        </div>
-      </header>
+  // Foto com cache-busting (state declarado no topo do componente)
+  const fotoUrl = aluno?.foto_url && !imgError
+    ? `${aluno.foto_url.split('?')[0]}?t=${sessionTs}`
+    : null
 
-      <main className="max-w-5xl mx-auto w-full p-4 sm:p-8 flex-1 space-y-6">
-        {/* Banner do Aluno */}
-        <div className="bg-card border border-border text-card-foreground rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+  const tabs: { key: TabKey; label: string; icon: React.ElementType; badge?: React.ReactNode }[] = [
+    { key: 'notas', label: 'Boletim & Notas', icon: BookOpen },
+    { key: 'frequencia', label: 'Frequência', icon: CalendarCheck },
+    {
+      key: 'ocorrencias',
+      label: 'Ocorrências',
+      icon: AlertTriangle,
+      badge: ocorrencias.some((o) => o.status_pais !== 'Cientes') ? (
+        <span className="size-2 rounded-full bg-amber-500 animate-pulse" aria-label="Ocorrência pendente" />
+      ) : null,
+    },
+    ...(portalComunicacoesAtivo
+      ? [
+          {
+            key: 'comunicacoes' as TabKey,
+            label: 'Comunicações',
+            icon: MessageSquare,
+            badge: temMensagensNaoLidas ? (
+              <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: AZUL }} aria-label="Mensagens não lidas" />
+            ) : null,
+          },
+        ]
+      : []),
+  ]
+
+  return (
+    <PortalPaisLayout
+      nomeResponsavel={responsavel?.nome ?? 'Responsável'}
+      onLogout={handleLogout}
+      headerSubtitle={`Boletim de ${aluno?.nome?.split(' ')[0] ?? 'Aluno'}`}
+    >
+      {/* Voltar */}
+      <Link href="/portal-aluno/dashboard">
+        <button className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-[#0B4FB3]">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Voltar à visão geral
+        </button>
+      </Link>
+
+      {/* ── Banner do aluno ── */}
+      <div
+        className="rounded-2xl border bg-white p-5 shadow-[0_10px_26px_rgba(18,45,76,0.06)] sm:p-6"
+        style={{ borderColor: BORDA }}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-muted rounded-2xl overflow-hidden border border-border flex items-center justify-center shrink-0">
-              {aluno?.foto_url ? (
-                <img src={aluno.foto_url} alt={aluno.nome} className="w-full h-full object-cover" />
+            <div
+              className="size-16 shrink-0 rounded-2xl overflow-hidden border grid place-items-center"
+              style={{ borderColor: BORDA, backgroundColor: '#E8F1FA' }}
+            >
+              {fotoUrl ? (
+                <img
+                  src={fotoUrl}
+                  alt={aluno?.nome}
+                  className="size-full object-cover"
+                  onError={() => setImgError(true)}
+                />
               ) : (
-                <GraduationCap className="w-8 h-8 text-muted-foreground" />
+                <GraduationCap className="size-8 text-slate-400" aria-hidden="true" />
               )}
             </div>
-
             <div className="space-y-1">
-              <h1 className="text-xl font-bold text-foreground">{aluno?.nome}</h1>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <h1
+                className="text-xl font-extrabold"
+                style={{ color: '#102D50', fontFamily: 'var(--font-manrope), sans-serif' }}
+              >
+                {aluno?.nome}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
-                  <School className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  {aluno?.escola?.nome}
+                  <School className="size-3.5 shrink-0" style={{ color: AZUL }} aria-hidden="true" />
+                  {aluno?.escola?.nome ?? '—'}
                 </span>
-                <span>•</span>
-                <span>Turma: <strong className="text-foreground">{aluno?.turma?.nome || 'Sem Turma'}</strong></span>
+                <span className="text-slate-300">•</span>
+                <span>
+                  Turma:{' '}
+                  <strong className="text-[#102D50]">{aluno?.turma?.nome ?? 'Sem Turma'}</strong>
+                </span>
                 {aluno?.numero_matricula && (
                   <>
-                    <span>•</span>
-                    <span className="font-mono text-muted-foreground">Matrícula: {aluno.numero_matricula}</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="font-mono text-slate-400">
+                      Matr. {aluno.numero_matricula}
+                    </span>
                   </>
                 )}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Abas de Navegação */}
-        <div className="flex border-b border-border gap-2 overflow-x-auto">
+      {/* ── Abas de navegação ── */}
+      <div
+        className="mt-5 flex gap-1 overflow-x-auto border-b pb-0"
+        style={{ borderColor: '#E5EDF5' }}
+        role="tablist"
+        aria-label="Seções do boletim"
+      >
+        {tabs.map(({ key, label, icon: Icon, badge }) => (
           <button
-            onClick={() => setActiveTab('notas')}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 ${
-              activeTab === 'notas'
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+            key={key}
+            role="tab"
+            aria-selected={activeTab === key}
+            aria-controls={`tab-panel-${key}`}
+            onClick={() => setActiveTab(key)}
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-4 pb-3 text-sm font-bold transition-colors ${
+              activeTab === key
+                ? 'border-[#0B4FB3] text-[#0B4FB3]'
+                : 'border-transparent text-slate-500 hover:text-[#102D50]'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            Boletim & Notas
+            <Icon className="size-4" aria-hidden="true" />
+            {label}
+            {badge}
           </button>
-          <button
-            onClick={() => setActiveTab('frequencia')}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 ${
-              activeTab === 'frequencia'
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <CalendarCheck className="w-4 h-4" />
-            Frequência Diária
-          </button>
-          <button
-            onClick={() => setActiveTab('ocorrencias')}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 ${
-              activeTab === 'ocorrencias'
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <AlertTriangle className="w-4 h-4" />
-            Ocorrências
-            {ocorrencias.some((o) => o.status_pais !== 'Cientes') && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            )}
-          </button>
-          {portalComunicacoesAtivo && (
-            <button
-              onClick={() => setActiveTab('comunicacoes')}
-              className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 relative ${
-                activeTab === 'comunicacoes'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+        ))}
+      </div>
+
+      {/* ── Conteúdo das abas ── */}
+
+      {/* NOTAS */}
+      {activeTab === 'notas' && (
+        <div
+          id="tab-panel-notas"
+          role="tabpanel"
+          aria-label="Boletim e Notas"
+          className="mt-5 space-y-4"
+        >
+          {notas.length === 0 ? (
+            <div
+              className="rounded-2xl border bg-white p-8 text-center text-sm text-slate-400 shadow-sm"
+              style={{ borderColor: BORDA }}
             >
-              <MessageSquare className="w-4 h-4" />
-              Comunicações
-              {temMensagensNaoLidas && (
-                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              )}
-            </button>
+              Nenhuma nota lançada para este período letivo até o momento.
+            </div>
+          ) : (
+            <div
+              className="rounded-2xl border bg-white overflow-hidden shadow-sm"
+              style={{ borderColor: BORDA }}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead
+                    className="border-b text-xs font-bold uppercase tracking-wider text-slate-500"
+                    style={{ backgroundColor: '#F1F6FC', borderColor: BORDA }}
+                  >
+                    <tr>
+                      <th className="py-3 px-4">Disciplina</th>
+                      <th className="py-3 px-4 text-center">Unidade</th>
+                      <th className="py-3 px-4 text-center">Atividades</th>
+                      <th className="py-3 px-4 text-center">Avaliação</th>
+                      <th className="py-3 px-4 text-center">Qualitativa</th>
+                      <th className="py-3 px-4 text-center font-extrabold" style={{ color: AZUL }}>
+                        Média
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: '#F0F5FA' }}>
+                    {notas.map((n) => {
+                      // ES-02: usar helper seguro de média
+                      const media = calcularMedia(n.nota1, n.nota2, n.nota3)
+                      const mediaNum = parseFloat(media)
+                      const mediaColor =
+                        isNaN(mediaNum) || media === '–'
+                          ? '#102D50'
+                          : mediaNum >= 7
+                          ? '#1D7A3C'
+                          : mediaNum >= 5
+                          ? '#D96507'
+                          : '#CC2B2B'
+
+                      return (
+                        <tr key={n.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="py-3.5 px-4 font-semibold text-[#102D50]">
+                            {n.materia?.nome ?? 'Disciplina'}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                backgroundColor: '#EDF4FD',
+                                color: '#2A6AB5',
+                                border: '1px solid #C8DCF5',
+                              }}
+                            >
+                              {n.unidade}º Trim.
+                            </Badge>
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono text-[#102D50]">
+                            {n.nota1 ?? '–'}
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono text-[#102D50]">
+                            {n.nota2 ?? '–'}
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono text-[#102D50]">
+                            {n.nota3 ?? '–'}
+                          </td>
+                          <td
+                            className="py-3.5 px-4 text-center font-mono font-extrabold text-base"
+                            style={{ color: mediaColor }}
+                          >
+                            {media}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Conteúdo das Abas */}
-        {activeTab === 'notas' && (
-          <div className="space-y-4">
-            {notas.length === 0 ? (
-              <div className="bg-card border border-border text-card-foreground rounded-2xl p-8 text-center text-muted-foreground text-sm shadow-sm">
-                Nenhuma nota lançada para este período letivo até o momento.
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-muted border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
-                      <tr>
-                        <th className="py-3 px-4">Disciplina / Matéria</th>
-                        <th className="py-3 px-4 text-center">Unidade / Trimestre</th>
-                        <th className="py-3 px-4 text-center">Atividades</th>
-                        <th className="py-3 px-4 text-center">Avaliação</th>
-                        <th className="py-3 px-4 text-center">Qualitativa</th>
-                        <th className="py-3 px-4 text-center font-bold">Média</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {notas.map((n) => {
-                        const n1 = n.nota1 !== null ? Number(n.nota1) : null
-                        const n2 = n.nota2 !== null ? Number(n.nota2) : null
-                        const n3 = n.nota3 !== null ? Number(n.nota3) : null
-                        const notasValidas = [n1, n2, n3].filter((x): x is number => x !== null)
-                        const media = notasValidas.length > 0 ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(1) : '-'
-
-                        return (
-                          <tr key={n.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="py-3.5 px-4 font-semibold text-foreground">
-                              {n.materia?.nome || 'Disciplina'}
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
-                                {n.unidade}º Trimestre
-                              </Badge>
-                            </td>
-                            <td className="py-3.5 px-4 text-center font-mono text-foreground">
-                              {n.nota1 ?? '-'}
-                            </td>
-                            <td className="py-3.5 px-4 text-center font-mono text-foreground">
-                              {n.nota2 ?? '-'}
-                            </td>
-                            <td className="py-3.5 px-4 text-center font-mono text-foreground">
-                              {n.nota3 ?? '-'}
-                            </td>
-                            <td className="py-3.5 px-4 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                              {media}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'frequencia' && (
-          <div className="space-y-4">
-            {frequencias.length === 0 ? (
-              <div className="bg-card border border-border text-card-foreground rounded-2xl p-8 text-center text-muted-foreground text-sm shadow-sm">
-                Nenhum registro de frequência lançado para este aluno.
-              </div>
-            ) : (
-              <div className="bg-card border border-border text-card-foreground rounded-2xl p-5 space-y-3 shadow-sm">
-                <h3 className="text-sm font-semibold text-foreground">Histórico Recente de Presença</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {frequencias.map((f) => {
-                    const dataFormatada = new Date(f.data + 'T00:00:00').toLocaleDateString('pt-BR')
-                    return (
-                      <div
-                        key={f.id}
-                        className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                          f.presenca 
-                            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300' 
-                            : 'bg-rose-500/5 border-rose-500/20 text-rose-700 dark:text-rose-300'
-                        }`}
-                      >
-                        <div className="space-y-0.5">
-                          <span className="font-semibold block text-foreground">{dataFormatada}</span>
-                          <span className="text-[11px] text-muted-foreground">{f.materia?.nome || 'Aula Regular'}</span>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={f.presenca ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'}
-                        >
-                          {f.presenca ? 'PRESENTE' : 'FALTA'}
-                        </Badge>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'ocorrencias' && (
-          <div className="space-y-4">
-            {ocorrencias.length === 0 ? (
-              <div className="bg-card border border-border text-card-foreground rounded-2xl p-8 text-center text-muted-foreground text-sm shadow-sm">
-                Nenhuma ocorrência disciplinar registrada.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {ocorrencias.map((oco) => {
-                  const dataFormatada = new Date(oco.data + 'T00:00:00').toLocaleDateString('pt-BR')
-                  const isCiente = oco.status_pais === 'Cientes'
-
-                  return (
-                    <div
-                      key={oco.id}
-                      className="bg-card border border-border text-card-foreground rounded-2xl p-5 space-y-3 shadow-sm"
+      {/* FREQUÊNCIA */}
+      {activeTab === 'frequencia' && (
+        <div
+          id="tab-panel-frequencia"
+          role="tabpanel"
+          aria-label="Frequência Diária"
+          className="mt-5 space-y-4"
+        >
+          {frequencias.length === 0 ? (
+            <div
+              className="rounded-2xl border bg-white p-8 text-center text-sm text-slate-400 shadow-sm"
+              style={{ borderColor: BORDA }}
+            >
+              Nenhum registro de frequência lançado para este aluno.
+            </div>
+          ) : (
+            <div
+              className="rounded-2xl border bg-white p-5 shadow-sm space-y-3"
+              style={{ borderColor: BORDA }}
+            >
+              <h3 className="text-sm font-extrabold" style={{ color: '#102D50' }}>
+                Histórico Recente de Presença
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {frequencias.map((f) => (
+                  <div
+                    key={f.id}
+                    className={`rounded-xl border p-3 flex items-center justify-between text-xs ${
+                      f.presenca
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-rose-50 border-rose-200'
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <span className="font-bold block text-[#102D50]">
+                        {formatarData(f.data)}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {f.materia?.nome ?? 'Aula Regular'}
+                      </span>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        f.presenca
+                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                          : 'bg-rose-100 text-rose-700 border-rose-300'
+                      }
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
-                          <span className="font-bold text-foreground text-sm">{oco.tipo}</span>
-                          {oco.gravidade && (
-                            <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">
-                              {oco.gravidade}
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground font-mono">Data: {dataFormatada}</span>
-                      </div>
+                      {f.presenca ? 'PRESENTE' : 'FALTA'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-                      <p className="text-xs text-foreground leading-relaxed bg-muted/50 p-3.5 rounded-xl border border-border">
-                        {oco.descricao}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          {isCiente ? (
-                            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Ciência Registrada
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                              <Clock className="w-4 h-4" />
-                              Aguardando confirmação de leitura
-                            </span>
-                          )}
-                        </div>
-
-                        {!isCiente && (
-                          <Button
-                            size="sm"
-                            disabled={marcandoCienteId === oco.id}
-                            onClick={() => handleMarcarCiente(oco.id)}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs h-8 gap-1.5"
+      {/* OCORRÊNCIAS */}
+      {activeTab === 'ocorrencias' && (
+        <div
+          id="tab-panel-ocorrencias"
+          role="tabpanel"
+          aria-label="Ocorrências"
+          className="mt-5 space-y-4"
+        >
+          {ocorrencias.length === 0 ? (
+            <div
+              className="rounded-2xl border bg-white p-8 text-center text-sm text-slate-400 shadow-sm"
+              style={{ borderColor: BORDA }}
+            >
+              Nenhuma ocorrência disciplinar registrada.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {ocorrencias.map((oco) => {
+                const isCiente = oco.status_pais === 'Cientes'
+                return (
+                  <div
+                    key={oco.id}
+                    className="rounded-2xl border-l-4 border border-amber-300 bg-white p-5 shadow-sm space-y-3"
+                    style={{ borderLeftColor: '#F59E0B', borderColor: BORDA, borderLeftWidth: 4 }}
+                  >
+                    <div
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3"
+                      style={{ borderColor: '#F0F5FA' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="size-4 text-amber-500 shrink-0" aria-hidden="true" />
+                        <span className="font-extrabold text-[#102D50] text-sm">{oco.tipo}</span>
+                        {oco.gravidade && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px]"
+                            style={{ backgroundColor: '#FFF7ED', color: '#9A3412', borderColor: '#FED7AA' }}
                           >
-                            {marcandoCienteId === oco.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            )}
-                            Marcar como Ciente
-                          </Button>
+                            {oco.gravidade}
+                          </Badge>
                         )}
                       </div>
+                      <span className="text-xs font-mono text-slate-400">
+                        {formatarData(oco.data)}
+                      </span>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Nova Aba de Comunicações (Visível apenas se portal_comunicacoes_ativo === true) */}
-        {activeTab === 'comunicacoes' && portalComunicacoesAtivo && (
-          <div className="bg-card border border-border text-card-foreground rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="space-y-0.5">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  Canal Direto com Professores
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Troca de recados, comunicados e esclarecimentos pedagógicos sobre o aluno
+                    <p
+                      className="text-xs text-[#102D50] leading-relaxed p-3.5 rounded-xl"
+                      style={{ backgroundColor: '#F8FAFC', border: `1px solid ${BORDA}` }}
+                    >
+                      {oco.descricao}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        {isCiente ? (
+                          <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                            <CheckCircle2 className="size-4" aria-hidden="true" />
+                            Ciência Registrada
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-amber-600">
+                            <Clock className="size-4" aria-hidden="true" />
+                            Aguardando confirmação de leitura
+                          </span>
+                        )}
+                      </div>
+                      {!isCiente && (
+                        <button
+                          disabled={marcandoCienteId === oco.id}
+                          onClick={() => handleMarcarCiente(oco.id)}
+                          className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-extrabold text-white transition hover:opacity-90 disabled:opacity-60"
+                          style={{ backgroundColor: AZUL }}
+                        >
+                          {marcandoCienteId === oco.id ? (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                          ) : (
+                            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                          )}
+                          Marcar como Ciente
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* COMUNICAÇÕES */}
+      {activeTab === 'comunicacoes' && portalComunicacoesAtivo && (
+        <div
+          id="tab-panel-comunicacoes"
+          role="tabpanel"
+          aria-label="Comunicações"
+          className="mt-5 rounded-2xl border bg-white p-5 shadow-sm space-y-5 sm:p-6"
+          style={{ borderColor: BORDA }}
+        >
+          <div
+            className="flex items-center justify-between border-b pb-3"
+            style={{ borderColor: '#EDF2F7' }}
+          >
+            <div className="space-y-0.5">
+              <h3 className="text-base font-extrabold flex items-center gap-2" style={{ color: '#102D50' }}>
+                <MessageSquare className="size-5" style={{ color: AZUL }} aria-hidden="true" />
+                Canal Direto com Professores
+              </h3>
+              <p className="text-xs text-slate-500">
+                Troca de recados, comunicados e esclarecimentos pedagógicos sobre o aluno
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className="text-xs"
+              style={{ backgroundColor: '#EDF4FD', color: '#2A6AB5', borderColor: '#C8DCF5' }}
+            >
+              {mensagens.length} {mensagens.length === 1 ? 'mensagem' : 'mensagens'}
+            </Badge>
+          </div>
+
+          {/* Histórico de mensagens */}
+          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+            {mensagens.length === 0 ? (
+              <div
+                className="rounded-xl border p-8 text-center text-xs text-slate-400 space-y-2"
+                style={{ backgroundColor: '#F8FAFC', borderColor: BORDA }}
+              >
+                <MessageSquare className="size-8 text-slate-300 mx-auto" aria-hidden="true" />
+                <p>Nenhum recado trocado com os professores ainda.</p>
+                <p className="text-slate-400">
+                  Utilize o formulário abaixo caso deseje enviar uma mensagem.
                 </p>
               </div>
-              <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/30 text-xs">
-                {mensagens.length} {mensagens.length === 1 ? 'mensagem' : 'mensagens'}
-              </Badge>
-            </div>
+            ) : (
+              mensagens.map((msg) => {
+                const isDoProfessor = msg.remetente_tipo === 'professor'
+                const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
 
-            {/* Histórico de Mensagens */}
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-              {mensagens.length === 0 ? (
-                <div className="bg-muted/40 border border-border rounded-xl p-8 text-center text-muted-foreground text-xs space-y-2">
-                  <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto" />
-                  <p>Nenhum recado trocado com os professores ainda.</p>
-                  <p className="text-muted-foreground">
-                    Utilize o formulário abaixo caso deseje enviar uma mensagem para a coordenação ou corpo docente.
-                  </p>
-                </div>
-              ) : (
-                mensagens.map((msg) => {
-                  const isDoProfessor = msg.remetente_tipo === 'professor'
-                  const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })
-
-                  return (
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${isDoProfessor ? 'items-start' : 'items-end'}`}
+                  >
                     <div
-                      key={msg.id}
-                      className={`flex flex-col ${isDoProfessor ? 'items-start' : 'items-end'}`}
+                      className={`max-w-[90%] sm:max-w-[80%] rounded-2xl p-4 space-y-2 shadow-sm text-xs ${
+                        isDoProfessor
+                          // ES-16: usar rounded-tl-none em vez de rounded-tl-xs
+                          ? 'rounded-tl-none text-[#102D50]'
+                          : 'rounded-tr-none text-white'
+                      }`}
+                      style={
+                        isDoProfessor
+                          ? { backgroundColor: '#F1F6FC', border: `1px solid ${BORDA}` }
+                          : { backgroundColor: AZUL }
+                      }
                     >
                       <div
-                        className={`max-w-[90%] sm:max-w-[80%] rounded-2xl p-4 space-y-2 shadow-sm text-xs ${
-                          isDoProfessor
-                            ? 'bg-muted border border-border text-foreground rounded-tl-xs'
-                            : 'bg-indigo-600 text-white rounded-tr-xs'
-                        }`}
+                        className="flex items-center justify-between gap-3 text-[11px] opacity-80 border-b pb-1.5"
+                        style={{ borderColor: isDoProfessor ? BORDA : 'rgba(255,255,255,0.2)' }}
                       >
-                        <div className="flex items-center justify-between gap-3 text-[11px] opacity-80 border-b border-border/40 pb-1.5">
-                          <span className="font-semibold">
-                            {isDoProfessor
-                              ? `Professor(a): ${msg.autor_nome || 'Corpo Docente'}`
-                              : `Você (${msg.autor_nome || 'Responsável'})`}
+                        <span className="font-extrabold">
+                          {isDoProfessor
+                            ? `Professor(a): ${msg.autor_nome ?? 'Corpo Docente'}`
+                            : `Você (${msg.autor_nome ?? 'Responsável'})`}
+                        </span>
+                        <span className="font-mono">{dataFormatada}</span>
+                      </div>
+
+                      {msg.titulo && msg.titulo !== 'Recado Pedagógico' && (
+                        <h5 className="font-extrabold text-sm pt-0.5">{msg.titulo}</h5>
+                      )}
+
+                      <p className="whitespace-pre-wrap leading-relaxed">{msg.conteudo}</p>
+
+                      <div className="flex items-center justify-end gap-1 text-[10px] pt-1 opacity-80">
+                        {isDoProfessor ? (
+                          <span className="flex items-center gap-1 text-emerald-600">
+                            <CheckCheck className="size-3.5" aria-hidden="true" />
+                            Mensagem da Escola
                           </span>
-                          <span className="font-mono">{dataFormatada}</span>
-                        </div>
-
-                        {msg.titulo && msg.titulo !== 'Recado Pedagógico' && (
-                          <h5 className="font-bold text-sm pt-0.5">{msg.titulo}</h5>
+                        ) : msg.lida_professor ? (
+                          <span className="flex items-center gap-1 text-emerald-200">
+                            <CheckCheck className="size-3.5" aria-hidden="true" />
+                            Lido pela escola
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 opacity-70">
+                            <Clock className="size-3.5" aria-hidden="true" />
+                            Enviado à escola
+                          </span>
                         )}
-
-                        <p className="whitespace-pre-wrap leading-relaxed">{msg.conteudo}</p>
-
-                        <div className="flex items-center justify-end gap-1 text-[10px] pt-1 opacity-80">
-                          {isDoProfessor ? (
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                              <CheckCheck className="w-3.5 h-3.5" />
-                              Mensagem da Escola
-                            </span>
-                          ) : (
-                            msg.lida_professor ? (
-                              <span className="flex items-center gap-1 text-emerald-200">
-                                <CheckCheck className="w-3.5 h-3.5" />
-                                Lido pela escola
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                Enviado à escola
-                              </span>
-                            )
-                          )}
-                        </div>
                       </div>
                     </div>
-                  )
-                })
-              )}
-            </div>
-
-            {/* Formulário de Envio do Responsável */}
-            <form onSubmit={handleEnviarMensagemResponsavel} className="pt-3 border-t border-border space-y-3">
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-foreground">Enviar Mensagem ao Corpo Docente:</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                <Input
-                  value={novaMensagemTitulo}
-                  onChange={(e) => setNovaMensagemTitulo(e.target.value)}
-                  placeholder="Assunto (ex: Dúvida de tarefa, Falta justificada)"
-                  className="sm:col-span-1 bg-background border-border text-xs text-foreground"
-                />
-                <Input
-                  value={novaMensagemConteudo}
-                  onChange={(e) => setNovaMensagemConteudo(e.target.value)}
-                  placeholder="Digite sua mensagem aqui..."
-                  className="sm:col-span-3 bg-background border-border text-xs text-foreground"
-                  required
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={enviandoMensagem || !novaMensagemConteudo.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs h-9 gap-1.5 shadow-md shadow-indigo-600/20"
-                >
-                  {enviandoMensagem ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5" />
-                  )}
-                  Enviar Mensagem para a Escola
-                </Button>
-              </div>
-            </form>
+                  </div>
+                )
+              })
+            )}
           </div>
-        )}
-      </main>
-    </div>
+
+          {/* Formulário de envio */}
+          <form
+            onSubmit={handleEnviarMensagemResponsavel}
+            className="pt-3 border-t space-y-3"
+            style={{ borderColor: '#EDF2F7' }}
+          >
+            <span className="text-xs font-extrabold" style={{ color: '#102D50' }}>
+              Enviar Mensagem ao Corpo Docente:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <Input
+                value={novaMensagemTitulo}
+                onChange={(e) => setNovaMensagemTitulo(e.target.value)}
+                placeholder="Assunto (opcional)"
+                aria-label="Assunto da mensagem"
+                className="sm:col-span-1 bg-white border text-xs"
+                style={{ borderColor: BORDA }}
+              />
+              <Input
+                value={novaMensagemConteudo}
+                onChange={(e) => setNovaMensagemConteudo(e.target.value)}
+                placeholder="Digite sua mensagem aqui..."
+                aria-label="Conteúdo da mensagem"
+                className="sm:col-span-3 bg-white border text-xs"
+                style={{ borderColor: BORDA }}
+                required
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={enviandoMensagem || !novaMensagemConteudo.trim()}
+                className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold text-white transition hover:opacity-90 disabled:opacity-60 shadow-md"
+                style={{ backgroundColor: AZUL, boxShadow: '0 8px 18px rgba(11,79,179,0.22)' }}
+              >
+                {enviandoMensagem ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send className="size-3.5" aria-hidden="true" />
+                )}
+                Enviar para a Escola
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </PortalPaisLayout>
   )
 }
