@@ -182,7 +182,8 @@ export default function GestaoResponsaveisPage() {
     }
   }, [selectedEscola?.id])
 
-  if (selectedEscola && !selectedEscola.portal_pais_ativo) {
+  // Guarda de segurança: Se a escola ativa estiver sem o portal dos pais ativado
+  if (!selectedEscola?.portal_pais_ativo) {
     return (
       <div className="space-y-6">
         <div className="p-8 text-center bg-card border border-border text-card-foreground rounded-2xl max-w-xl mx-auto my-12 space-y-4 shadow-xs">
@@ -192,11 +193,11 @@ export default function GestaoResponsaveisPage() {
           <div className="space-y-1">
             <h3 className="text-xl font-bold text-foreground">Portal dos Pais Desativado nesta Escola</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O acesso ao Portal dos Pais está atualmente desabilitado para a escola <strong>{selectedEscola.nome}</strong>.
+              O acesso e a gestão do Portal dos Pais estão atualmente desabilitados para a escola <strong>{selectedEscola?.nome || 'selecionada'}</strong>.
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Para gerenciar e criar contas de responsáveis para esta unidade, ative o recurso no Super Painel em <strong>Escolas &gt; Gerenciar Portal</strong>.
+            Para gerenciar responsáveis, responder mensagens e atender solicitações desta unidade, ative o recurso no Painel Administrativo em <strong>Escolas &gt; Gerenciar Portal</strong>.
           </p>
         </div>
       </div>
