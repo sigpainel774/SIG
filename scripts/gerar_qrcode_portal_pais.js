@@ -5,12 +5,13 @@ const path = require('path');
 
 async function gerarQRCode() {
   const url = 'https://sig-six-kappa.vercel.app/portal-aluno';
-  const logoPath = path.join(__dirname, '..', 'public', 'img', 'brasaoSapeaçu.png');
-  const logoPrefeitura = fs.existsSync(logoPath) 
-    ? logoPath 
-    : path.join(__dirname, '..', 'public', 'img', 'logo-prefeitura.png');
+  const logoPrefeitura = path.join(__dirname, '..', 'public', 'img', 'logo-prefeitura.png');
 
-  console.log('Usando logo:', logoPrefeitura);
+  if (!fs.existsSync(logoPrefeitura)) {
+    throw new Error(`Logo oficial da prefeitura não encontrada em: ${logoPrefeitura}`);
+  }
+
+  console.log('Usando logo oficial da prefeitura (header dos documentos):', logoPrefeitura);
 
   // 1. Gerar buffer do QR Code em PNG com resolução 1024x1024 e Error Correction Level 'H' (30% de tolerância)
   const qrBuffer = await QRCode.toBuffer(url, {
@@ -45,13 +46,12 @@ async function gerarQRCode() {
     .png()
     .toBuffer();
 
-  // Compor a logo sobre o círculo branco
+  // Compor a logo centralizada sobre o círculo branco
   const centerBadgeBuffer = await sharp(backgroundCircleSvg)
     .composite([
       {
         input: resizedLogoBuffer,
-        top: circlePadding,
-        left: circlePadding,
+        gravity: 'center',
       },
     ])
     .png()
