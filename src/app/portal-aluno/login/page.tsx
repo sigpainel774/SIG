@@ -122,6 +122,7 @@ export default function PortalAlunoLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
                 placeholder="E-mail cadastrado"
                 required
                 autoComplete="email"

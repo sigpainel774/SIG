@@ -308,13 +308,8 @@ export default function PortalPaisLayout({
           </div>
         </header>
 
-        {/* Área de conteúdo com animação de entrada */}
-        <main
-          className="relative overflow-hidden px-4 py-6 sm:px-7 sm:py-8"
-          style={{
-            animation: 'portalRiseIn 380ms cubic-bezier(0.23,1,0.32,1) both',
-          }}
-        >
+        {/* Área de conteúdo com animação de entrada otimizada */}
+        <main className="relative overflow-hidden px-4 py-6 sm:px-7 sm:py-8 animate-portal-rise">
           {/* Luz de fundo decorativa */}
           <div
             className="pointer-events-none absolute -right-24 -top-20 size-[380px] rounded-full blur-3xl"
@@ -323,17 +318,6 @@ export default function PortalPaisLayout({
           {children}
         </main>
       </div>
-
-      {/* Keyframes da animação de entrada — injetados inline para isolamento */}
-      <style>{`
-        @keyframes portalRiseIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="portalRiseIn"] { animation: none !important; }
-        }
-      `}</style>
     </div>
   )
 }

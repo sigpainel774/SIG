@@ -178,6 +178,23 @@ export default function SolicitacoesPaisPage() {
     carregarDados()
   }, [supabase, router])
 
+const TITULOS_MAP: Record<string, string> = {
+  declaracao_bolsa_familia: 'Declaração para Bolsa Família',
+  declaracao_matricula: 'Declaração de Matrícula e Frequência',
+  historico_escolar: 'Solicitação de Histórico Escolar',
+  outro: 'Outra Solicitação à Secretaria',
+}
+
+  const resetForm = () => {
+    setObservacoes('')
+    setTipoDocumento('declaracao_bolsa_familia')
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) resetForm()
+    setModalOpen(open)
+  }
+
   const abrirModalSolicitacao = (tipo: string = 'declaracao_bolsa_familia') => {
     setTipoDocumento(tipo)
     setObservacoes('')
@@ -207,15 +224,7 @@ export default function SolicitacoesPaisPage() {
     }
 
     setEnviando(true)
-
-    const titulosMap: Record<string, string> = {
-      declaracao_bolsa_familia: 'Declaração para Bolsa Família',
-      declaracao_matricula: 'Declaração de Matrícula e Frequência',
-      historico_escolar: 'Solicitação de Histórico Escolar',
-      outro: 'Outra Solicitação à Secretaria',
-    }
-
-    const novoTitulo = titulosMap[tipoDocumento] ?? 'Declaração Escolar'
+    const novoTitulo = TITULOS_MAP[tipoDocumento] ?? 'Declaração Escolar'
 
     try {
       const payload = {
@@ -251,6 +260,7 @@ export default function SolicitacoesPaisPage() {
       if (error) throw error
 
       setSolicitacoes((prev) => [data, ...prev])
+      resetForm()
       setModalOpen(false)
       toast.success('Solicitação enviada com sucesso para a secretaria da escola!')
     } catch (err: unknown) {
@@ -262,8 +272,13 @@ export default function SolicitacoesPaisPage() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/portal-aluno/login')
+    try {
+      await supabase.auth.signOut()
+    } catch (err: unknown) {
+      console.error('Erro ao encerrar sessão:', err)
+    } finally {
+      router.push('/portal-aluno/login')
+    }
   }
 
   const getStatusBadge = (status: Solicitacao['status']) => {
@@ -467,7 +482,7 @@ export default function SolicitacoesPaisPage() {
       </div>
 
       {/* Modal de Nova Solicitação */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold text-[#102D50] flex items-center gap-2">

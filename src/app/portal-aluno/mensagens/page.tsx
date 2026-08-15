@@ -150,7 +150,12 @@ export default function MensagensPaisPage() {
     carregarDadosIniciais()
   }, [supabase, router])
 
-  // Carregar mensagens do aluno selecionado
+  // Auto-scroll para o final da conversa sempre que a lista de mensagens mudar (ES-03)
+  useEffect(() => {
+    scrollToBottom()
+  }, [mensagens.length])
+
+  // Carregar mensagens do aluno selecionado e escutar em tempo real (ES-02)
   useEffect(() => {
     if (!selectedAlunoId) {
       setMensagens([])
@@ -208,12 +213,49 @@ export default function MensagensPaisPage() {
       } finally {
         if (isMounted.current) {
           setLoadingMensagens(false)
-          setTimeout(scrollToBottom, 150)
         }
       }
     }
 
     carregarMensagensAluno()
+
+    // Inscrição Realtime para novas mensagens da escola (ES-02)
+    const channelName = `realtime-mensagens-aluno-${selectedAlunoId}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'mensagens_responsaveis',
+          filter: `aluno_id=eq.${selectedAlunoId}`,
+        },
+        async (payload) => {
+          if (!isMounted.current) return
+          const novaMsg = payload.new as MensagemItem
+          setMensagens((prev) => {
+            if (prev.some((m) => m.id === novaMsg.id)) return prev
+            return [...prev, novaMsg]
+          })
+
+          // Se a nova mensagem for da escola, marcar como lida
+          if (novaMsg.remetente_tipo === 'professor') {
+            await supabase
+              .from('mensagens_responsaveis')
+              .update({
+                lida_responsavel: true,
+                lida_responsavel_em: new Date().toISOString(),
+              })
+              .eq('id', novaMsg.id)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [selectedAlunoId, supabase])
 
   const alunoAtivo = useMemo(
@@ -260,11 +302,13 @@ export default function MensagensPaisPage() {
 
       if (error) throw error
 
-      setMensagens((prev) => [...prev, data as MensagemItem])
+      setMensagens((prev) => {
+        if (prev.some((m) => m.id === (data as MensagemItem).id)) return prev
+        return [...prev, data as MensagemItem]
+      })
       setConteudo('')
       setTitulo('')
       toast.success('Mensagem enviada com sucesso para a escola!')
-      setTimeout(scrollToBottom, 150)
     } catch (err: unknown) {
       console.error('Erro ao enviar mensagem:', err)
       toast.error('Erro ao enviar mensagem. Tente novamente.')
@@ -274,8 +318,13 @@ export default function MensagensPaisPage() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/portal-aluno/login')
+    try {
+      await supabase.auth.signOut()
+    } catch (err: unknown) {
+      console.error('Erro ao encerrar sessão:', err)
+    } finally {
+      router.push('/portal-aluno/login')
+    }
   }
 
   return (
