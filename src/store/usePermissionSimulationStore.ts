@@ -32,7 +32,7 @@ interface PermissionSimulationState {
 }
 
 const SESSION_KEY = 'sig_simulated_funcionario_id'
-const SUPERADMIN_ESビCOLA_KEY = 'sig_superadmin_escola_id'
+const SUPERADMIN_ESCOLA_KEY = 'sig_superadmin_escola_id'
 
 export const usePermissionSimulationStore = create<PermissionSimulationState>((set, get) => ({
   isSimulating: false,
@@ -86,7 +86,7 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       // Persistir no sessionStorage para aguentar F5
       if (typeof window !== 'undefined') {
         try {
-          sessionStorage.removeItem(SUPERADMIN_ESビCOLA_KEY)
+          sessionStorage.removeItem(SUPERADMIN_ESCOLA_KEY)
           sessionStorage.setItem(SESSION_KEY, funcionarioId)
           // Cookie lido pelo proxy.ts (server-side) para liberar /home durante simulação
           document.cookie = 'sig_simulating=1; path=/; SameSite=Lax'
@@ -162,7 +162,7 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.removeItem(SESSION_KEY)
-          sessionStorage.setItem(SUPERADMIN_ESビCOLA_KEY, escolaId)
+          sessionStorage.setItem(SUPERADMIN_ESCOLA_KEY, escolaId)
           document.cookie = 'sig_simulating=1; path=/; SameSite=Lax'
         } catch (e) {}
       }
@@ -204,7 +204,7 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.removeItem(SESSION_KEY)
-        sessionStorage.removeItem(SUPERADMIN_ESビCOLA_KEY)
+        sessionStorage.removeItem(SUPERADMIN_ESCOLA_KEY)
         // Remove cookie de sinalização para o proxy.ts
         document.cookie = 'sig_simulating=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
       } catch (e) {}
@@ -222,6 +222,7 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
 
     // Restore real auth state reactively
     useAuthStore.getState().desativarSimulacao()
+    useSchoolStore.getState().setSelectedEscola(null)
 
     // Revalidar caches SWR para restaurar visão original
     if (typeof window !== 'undefined') {
@@ -234,7 +235,7 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
   restaurarSimulacaoSeExistir: async (supabase: any) => {
     if (typeof window === 'undefined' || get().isSimulating) return
     try {
-      const superEscolaId = sessionStorage.getItem(SUPERADMIN_ESビCOLA_KEY)
+      const superEscolaId = sessionStorage.getItem(SUPERADMIN_ESCOLA_KEY)
       if (superEscolaId) {
         await get().entrarComoSuperadmin(superEscolaId, supabase)
         return

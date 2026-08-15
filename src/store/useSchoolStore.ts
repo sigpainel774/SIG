@@ -159,11 +159,15 @@ export const useSchoolStore = create<SchoolState>()(
               
               const currentSelected = get().selectedEscola
               if (currentSelected) {
-                const stillExists = mappedEscolas.find(e => e.id === currentSelected.id)
-                if (!stillExists) {
-                  set({ selectedEscola: null })
+                if (currentSelected.is_teste) {
+                  // Preserva a escola de teste ativa em modo de simulação / ambiente de teste
                 } else {
-                  set({ selectedEscola: stillExists })
+                  const stillExists = mappedEscolas.find(e => e.id === currentSelected.id)
+                  if (!stillExists) {
+                    set({ selectedEscola: null })
+                  } else {
+                    set({ selectedEscola: stillExists })
+                  }
                 }
               }
             }

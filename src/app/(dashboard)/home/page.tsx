@@ -388,6 +388,7 @@ export default function HomePage() {
   // Auto-seleção de escola para usuários não administradores (Diretores, etc.)
   useEffect(() => {
     if (isMultiLotadoDocente) return
+    if (selectedEscola?.is_teste) return
 
     if (!isAdmin && escolas.length > 0) {
       const acessoEscolar = acessos.find(a => a.nivel && a.nivel >= 2 && a.nivel <= 6 && a.ativo)
