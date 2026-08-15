@@ -33,6 +33,7 @@
 | **Portal do Aluno / Responsáveis** | ⏳ Pendente | — | Sistema de acesso para pais/responsáveis acompanharem notas, frequências e comunicados. Estrutura e SQL planejados em `PLANOS_FUTUROS.md`. |
 | **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
 | **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
+| **Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys)** | ⏳ Pendente | — | Login biométrico rápido (Face ID / Impressão Digital) via WebAuthn/FIDO2 para dispositivos móveis e PWA. Detalhes em `PLANOS_FUTUROS.md`. |
 
 ---
 
@@ -49,6 +50,11 @@
 
 ### 3. Assistente de IA para Logs de Auditoria (Prioridade Média)
 - **Escopo:** Painel de chat interativo em `/admin/root` alimentado por consultas em `audit_logs` para diagnósticos rápidos pelo Superadmin.
+- **Status:** Planejado.
+
+### 4. Acesso Rápido por Biometria Mobile (Prioridade Média)
+- **Escopo:** Autenticação instantânea por Face ID ou Impressão Digital no celular através do padrão WebAuthn/Passkeys, reduzindo o tempo de login para ~1s.
+- **Estrutura:** Tabela `biometria_dispositivos`, biblioteca `@simplewebauthn`, rotas de challenge e botão dinâmico em `/login`.
 - **Status:** Planejado.
 
 ---

@@ -24,6 +24,7 @@ Atualizado automaticamente com o status real do repositório.
 | Portal do Aluno / Responsáveis | ✅ Implementado | Sessão 2026-08-14 — Schema SQL, RLS blindado, toggle no Super Painel, menu dinâmico na Sidebar da Secretaria, gestão em `/responsaveis`, login próprio, troca de senha e dashboard em `/portal-aluno` |
 | Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
 | Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
+| Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys) | ⏳ Pendente | Proposto em 2026-08-15 — Autenticação biométrica rápida (Face ID / Digital) via WebAuthn/FIDO2 no celular |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -682,5 +683,54 @@ Para manter a aplicação rápida e com custo zero de infraestrutura sem hospeda
 > **Concluído em:** 2026-07-29  
 > **Arquivos criados/modificados:** `src/app/(dashboard)/eja/page.tsx` · `src/store/useAuthStore.ts` · `src/app/(dashboard)/home/page.tsx` · `src/app/(dashboard)/relatorios/page.tsx` · `src/app/(dashboard)/funcionarios/page.tsx`  
 > **Objetivo:** Perfil de conta especial e portal dedicado para gestão restrita e focada nas turmas e alunos de Educação de Jovens e Adultos (EJA).
+
+---
+
+## 📌 Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys)
+
+> **Status:** ⏳ Pendente — Proposto em 2026-08-15  
+> **Planejado em:** 2026-08-15  
+> **Objetivo:** Permitir que servidores, professores, gestores e responsáveis realizem login instantâneo no celular via Face ID ou Impressão Digital através do padrão W3C WebAuthn / FIDO2 / Passkeys, reduzindo o tempo de login de ~15 segundos para ~1 segundo.  
+> **Tabelas de banco envolvidas / propostas:** `public.biometria_dispositivos` (nova)
+
+### 💡 Arquitetura Técnica & Segurança
+
+1. **Padrão WebAuthn / Passkeys (W3C)**:
+   - Utilização de `@simplewebauthn/browser` (front-end) e `@simplewebauthn/server` (back-end).
+   - O dado biométrico (digital/rosto) **nunca sai do dispositivo** do usuário e nunca trafega pela rede (conformidade estrita com LGPD).
+   - O chip de segurança do aparelho (Secure Enclave no iOS / Titan/TrustZone no Android) assina desafios criptográficos (*challenges*) temporários enviados pelo servidor.
+
+2. **Modelagem SQL Proposta (`public.biometria_dispositivos`)**:
+   - `id`: `uuid` (PK)
+   - `funcionario_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+   - `auth_user_id`: `uuid` (FK -> `auth.users.id`, NOT NULL)
+   - `credential_id`: `text` (Identificador único da credencial FIDO2)
+   - `public_key`: `text` (Chave pública para validação de assinaturas)
+   - `counter`: `bigint` (Contador de uso para proteção contra replay attacks)
+   - `dispositivo_nome`: `text` (Ex: "iPhone 14 - Safari", "Galaxy S23 - Chrome")
+   - `transports`: `text[]` (Ex: `['internal', 'hybrid']`)
+   - `ultimo_uso`: `timestamptz` (Registro do último login biométrico)
+   - `created_at`: `timestamptz` (Default `now()`)
+
+3. **Políticas de RLS**:
+   - Cada usuário autenticado pode listar e excluir apenas seus próprios dispositivos biométricos (`auth_user_id = auth.uid()`).
+
+4. **Experiência do Usuário (UX)**:
+   - **Primeiro Login:** Usuário entra normalmente com e-mail e senha. O sistema detecta suporte a `window.PublicKeyCredential` e exibe: *"Deseja ativar o acesso rápido por biometria neste celular?"*.
+   - **Próximos Acessos:** A tela de login exibe um botão de destaque *"Entrar com Biometria"* com o ícone de digital/Face ID. O toque aciona o leitor biométrico do aparelho e autentica imediatamente.
+   - **Gerenciamento:** Na aba de Perfil (`/perfil`), o usuário pode ver todos os aparelhos cadastrados e revogar o acesso de qualquer dispositivo.
+   - **Fallback:** Login tradicional por e-mail e senha sempre disponível como alternativa.
+
+### Checklist de Execução
+- [ ] Instalar pacotes `@simplewebauthn/browser` e `@simplewebauthn/server`.
+- [ ] Criar migration Supabase com tabela `public.biometria_dispositivos` e políticas RLS restritas.
+- [ ] Criar rotas de API para geração e validação de desafios:
+  - `src/app/api/auth/biometria/registro-options/route.ts`
+  - `src/app/api/auth/biometria/registro-verify/route.ts`
+  - `src/app/api/auth/biometria/login-options/route.ts`
+  - `src/app/api/auth/biometria/login-verify/route.ts`
+- [ ] Integrar botão e fluxo biométrico na tela de login (`src/app/(auth)/login/page.tsx`).
+- [ ] Criar aba / card "Dispositivos & Biometria" em `PerfilTab.tsx` para cadastro e revogação.
+- [ ] Validar compilação com `npx tsc --noEmit`.
 
 
