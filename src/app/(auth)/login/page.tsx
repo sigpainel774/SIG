@@ -69,16 +69,28 @@ export default function LoginPage() {
       // 3. Após autenticação bem-sucedida, validar o status do funcionário no banco (com permissão RLS do usuário autenticado)
       const { data: funcCheck, error: funcCheckError } = await supabase
         .from('funcionarios')
-        .select('status, primeiro_acesso')
+        .select('id, status, primeiro_acesso, is_superadmin, auth_user_id')
         .eq('email', data.user.email || cleanEmail)
         .maybeSingle()
 
-      // Tratamento de Erro Silencioso de UX: Evita que o usuário órfão vá para '/' e sofra flickering de redirecionamento
+      // Tratamento de Erro Silencioso de UX: Evita que o usuário órfão sofra flickering
       if (!funcCheck) {
         await supabase.auth.signOut()
         setLoading(false)
         toast.error('Acesso negado. Seu e-mail não pertence a nenhum funcionário cadastrado.')
         return
+      }
+
+      // Reconciliação imediata de auth_user_id caso ainda não esteja vinculado
+      if (!funcCheck.auth_user_id && data.user.id) {
+        try {
+          await supabase
+            .from('funcionarios')
+            .update({ auth_user_id: data.user.id })
+            .eq('id', funcCheck.id)
+        } catch (reconcileErr) {
+          console.warn('Aviso na reconciliação de auth_user_id:', reconcileErr)
+        }
       }
 
       const status = funcCheck?.status?.toLowerCase()
@@ -106,17 +118,18 @@ export default function LoginPage() {
 
       if (funcCheck?.primeiro_acesso) {
         toast.success('Primeiro acesso! Por favor, altere sua senha.')
-        router.refresh()
-        router.push('/primeiro-acesso')
-        setLoading(false)
+        window.location.href = '/primeiro-acesso'
         return
       }
 
       toast.success('Login bem-sucedido!')
 
-      // Atualizar o estado da rota e navegar sem recarregar toda a janela
-      router.refresh()
-      router.push('/')
+      // Destino inteligente e determinístico
+      const isSuperAdmin = funcCheck?.is_superadmin === true
+      const targetPath = isSuperAdmin ? '/admin' : '/home'
+
+      // Redirecionamento completo para hidratação limpa de sessão e cookies
+      window.location.href = targetPath
     } catch (err) {
       console.error(err)
       toast.error('Erro ao realizar login.')
