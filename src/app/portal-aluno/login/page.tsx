@@ -84,42 +84,26 @@ export default function PortalAlunoLoginPage() {
       <div className="w-full bg-white relative">
         <div className="max-w-md mx-auto px-6 pt-10 sm:pt-14 pb-8 sm:pb-10 flex flex-col items-center text-center">
           
-          {/* Brasão Institucional */}
-          <div className="mb-2">
+          {/* Logo Oficial da Prefeitura de Sapeaçu */}
+          <div className="mb-2 flex items-center justify-center">
             <img
-              src="/img/brasaoSapeaçu.png"
-              alt="Brasão de Sapeaçu"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto drop-shadow-sm"
+              src="/img/logo-prefeitura.png"
+              alt="Prefeitura Municipal de Sapeaçu"
+              className="w-auto h-24 sm:h-28 max-w-[260px] object-contain mx-auto select-none"
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement
-                if (!target.src.includes('brasao-login')) {
-                  target.src = '/img/brasao-login.jpg'
+                if (!target.src.includes('supabase.co')) {
+                  target.src = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/logo-prefeitura.png'
                 }
               }}
             />
           </div>
 
-          {/* Tipografia Oficial da Prefeitura */}
-          <div className="space-y-0 text-center select-none">
-            <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-[#0052cc]">
-              PREFEITURA DE
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#f97316] uppercase leading-none my-0.5">
-              SAPEAÇU
-            </h1>
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#0052cc]">
-                IGUALDADE E JUSTIÇA
-              </span>
-              <span className="text-xs font-black text-[#f97316]">5</span>
-            </div>
-          </div>
-
           {/* Título e Subtítulo do Portal */}
-          <div className="mt-7 sm:mt-8 space-y-1.5 w-full">
-            <h2 className="text-2xl sm:text-[26px] font-extrabold text-[#0a2540] tracking-tight">
+          <div className="mt-5 sm:mt-6 space-y-1.5 w-full">
+            <h1 className="text-2xl sm:text-[26px] font-extrabold text-[#0a2540] tracking-tight">
               Portal dos Pais &amp; Responsáveis
-            </h2>
+            </h1>
             <p className="text-sm sm:text-base text-slate-500 font-normal">
               Acompanhe a vida escolar dos seus filhos
             </p>
@@ -235,17 +219,19 @@ export default function PortalAlunoLoginPage() {
 
       {/* ─── SEÇÃO INFERIOR (Fundo Azul Real com Card da Secretaria) ─── */}
       <div className="w-full flex-1 flex flex-col justify-center items-center px-6 py-6 sm:py-8 max-w-md mx-auto">
-        {/* Card Branco da Secretaria Municipal de Educação */}
-        <div className="w-full max-w-[320px] bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-center shadow-xl select-none">
-          <p className="text-[12px] sm:text-[13px] font-black text-[#0052cc] tracking-wider uppercase leading-snug">
-            SECRETARIA
-          </p>
-          <p className="text-[12px] sm:text-[13px] font-black text-[#0052cc] tracking-wider uppercase leading-snug">
-            MUNICIPAL DE
-          </p>
-          <h3 className="text-3xl sm:text-[34px] font-black text-[#f97316] tracking-tight uppercase leading-none mt-1">
-            EDUCAÇÃO
-          </h3>
+        {/* Card Branco com Logo da Secretaria Municipal de Educação */}
+        <div className="w-full max-w-[320px] bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-center shadow-xl select-none flex items-center justify-center">
+          <img
+            src="/img/logo-secretaria.png"
+            alt="Secretaria Municipal de Educação"
+            className="w-full h-auto max-h-16 sm:max-h-20 object-contain mx-auto"
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement
+              if (!target.src.includes('supabase.co')) {
+                target.src = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/alunos-anexos/logos/logo-secretaria-educacao-2026.png'
+              }
+            }}
+          />
         </div>
 
         {/* Linha separadora laranja fina */}
