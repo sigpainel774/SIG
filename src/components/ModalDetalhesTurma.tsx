@@ -1,13 +1,15 @@
 'use client'
 
-import { BookOpen, Users, CalendarDays, FileSpreadsheet } from 'lucide-react'
+import { BookOpen, Users, CalendarDays, FileSpreadsheet, MessageSquare } from 'lucide-react'
 import { ModalDetalhesAluno } from './ModalDetalhesAluno'
 import { TabMateriasTurma } from './turmas/TabMateriasTurma'
 import { TabAlunosTurma } from './turmas/TabAlunosTurma'
 import { TabFrequenciasTurma } from './turmas/TabFrequenciasTurma'
 import { TabNotasTurma } from './turmas/TabNotasTurma'
+import { TabComunicacoesTurma } from './turmas/TabComunicacoesTurma'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { useTurmaDetalhes } from '@/hooks/useTurmaDetalhes'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 interface ModalDetalhesTurmaProps {
   open: boolean
@@ -26,6 +28,9 @@ export function ModalDetalhesTurma({
   initialAgendaAulaId,
   initialData
 }: ModalDetalhesTurmaProps) {
+  const selectedEscola = useSchoolStore((state) => state.selectedEscola)
+  const portalComunicacoesAtivo = Boolean(selectedEscola?.portal_comunicacoes_ativo)
+
   const {
     activeTab,
     setActiveTab,
@@ -95,11 +100,11 @@ export function ModalDetalhesTurma({
         onOpenChange={onOpenChange}
         title={turma.nome}
         description={`${turma.turno} • Ano letivo ${turma.ano_letivo}`}
-        maxWidth="sm:max-w-[700px]"
+        maxWidth={portalComunicacoesAtivo ? "sm:max-w-[780px]" : "sm:max-w-[700px]"}
       >
         {/* Abas Nativas do SIG */}
         <div>
-          <div className="bg-muted/80 border border-border p-1 rounded-xl w-full grid grid-cols-4 h-11 text-muted-foreground">
+          <div className={`bg-muted/80 border border-border p-1 rounded-xl w-full grid ${portalComunicacoesAtivo ? 'grid-cols-5' : 'grid-cols-4'} h-11 text-muted-foreground`}>
             <button
               onClick={() => setActiveTab('materias')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
@@ -136,6 +141,17 @@ export function ModalDetalhesTurma({
               <FileSpreadsheet className="w-4 h-4" />
               Notas
             </button>
+            {portalComunicacoesAtivo && (
+              <button
+                onClick={() => setActiveTab('comunicacoes')}
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'comunicacoes' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold text-indigo-500' : 'hover:text-foreground hover:bg-background/60 text-indigo-400/80'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4 text-indigo-500" />
+                Comunicações
+              </button>
+            )}
           </div>
 
           <div className="mt-4">
@@ -213,6 +229,14 @@ export function ModalDetalhesTurma({
                 handleSalvarNotas={handleSalvarNotas}
                 handleNotaChange={handleNotaChange}
                 handleRecuperacaoChange={handleRecuperacaoChange}
+              />
+            )}
+
+            {activeTab === 'comunicacoes' && portalComunicacoesAtivo && (
+              <TabComunicacoesTurma
+                turma={turma}
+                alunos={alunos}
+                loading={loading}
               />
             )}
           </div>

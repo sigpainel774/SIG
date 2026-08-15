@@ -29,7 +29,8 @@ import {
   Heart,
   Clock,
   UserPlus,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -214,6 +215,9 @@ export function Sidebar() {
             { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
             { href: '/avaliacoes', label: 'Avaliações', icon: ClipboardList },
             { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+            ...(selectedEscola?.portal_comunicacoes_ativo ? [
+              { href: '/turmas', label: 'Comunicações com Pais', icon: MessageSquare }
+            ] : []),
           ]
         },
         {
