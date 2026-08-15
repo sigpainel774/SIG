@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
+import { PortalPaisInstallButton } from '@/components/portal-pais/PortalPaisInstallButton'
 
 export default function PortalAlunoLoginPage() {
   const router = useRouter()
@@ -220,6 +221,9 @@ export default function PortalAlunoLoginPage() {
 
       {/* ─── SEÇÃO INFERIOR (Fundo Azul Real com Card da Secretaria) ─── */}
       <div className="w-full flex-1 flex flex-col justify-center items-center px-6 py-6 sm:py-8 max-w-md mx-auto">
+        {/* Botão de Instalação Rápida PWA na Tela Inicial */}
+        <PortalPaisInstallButton />
+
         {/* Card Branco com Logo da Secretaria Municipal de Educação */}
         <div className="w-full max-w-[320px] bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-center shadow-xl select-none flex items-center justify-center">
           <img
