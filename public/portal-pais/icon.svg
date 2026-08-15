@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title>Portal dos Pais e Responsáveis</title>
+  <desc>Livro aberto envolvendo um coração, símbolo de educação e cuidado familiar.</desc>
+  <defs>
+    <linearGradient id="background" x1="72" y1="36" x2="436" y2="476" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B4FB3"/><stop offset="1" stop-color="#06377F"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="109" y1="164" x2="401" y2="382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E1EDFA"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#002A6A" flood-opacity=".3"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#background)"/>
+  <circle cx="414" cy="76" r="106" fill="#fff" opacity=".06"/><circle cx="80" cy="438" r="132" fill="#F47C12" opacity=".07"/>
+  <g filter="url(#softShadow)">
+    <path d="M256 202C214 157 153 136 91 153v174c62-17 117-1 165 42V202Z" fill="url(#paper)"/>
+    <path d="M256 202c42-45 103-66 165-49v174c-62-17-117-1-165 42V202Z" fill="url(#paper)"/>
+    <path d="M256 202v167" fill="none" stroke="#0B4FB3" stroke-width="8" stroke-linecap="round"/>
+    <path d="M111 210c27-5 53-2 79 9M111 248c25-4 50-2 74 7M111 286c23-3 46-1 69 6" fill="none" stroke="#76A5D7" stroke-width="9" stroke-linecap="round"/>
+    <path d="M401 210c-27-5-53-2-79 9M401 248c-25-4-50-2-74 7M401 286c-23-3-46-1-69 6" fill="none" stroke="#76A5D7" stroke-width="9" stroke-linecap="round"/>
+    <path d="M256 168c-26-38-88-19-88 29 0 55 88 101 88 101s88-46 88-101c0-48-62-67-88-29Z" fill="#F47C12"/>
+    <path d="M256 192c-17-25-52-12-52 16 0 30 52 58 52 58s52-28 52-58c0-28-35-41-52-16Z" fill="#fff"/>
+  </g>
+  <path d="M207 401h98" fill="none" stroke="#FFB466" stroke-width="10" stroke-linecap="round"/>
+</svg>

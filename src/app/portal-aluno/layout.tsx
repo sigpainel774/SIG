@@ -26,9 +26,28 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Portal dos Pais | Secretaria Municipal de Educação de Sapeaçu',
   description: 'Acompanhe o boletim, frequência e comunicados escolares dos seus filhos no Portal Oficial da Prefeitura de Sapeaçu.',
+  applicationName: 'Portal dos Pais',
   robots: {
     index: false,
     follow: false,
+  },
+  manifest: '/manifest-portal-pais.json?v=1',
+  icons: {
+    icon: [
+      { url: '/portal-pais/icon.svg?v=1', type: 'image/svg+xml' },
+      { url: '/portal-pais/icon-192.png?v=1', sizes: '192x192', type: 'image/png' },
+      { url: '/portal-pais/icon-512.png?v=1', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/portal-pais/apple-touch-icon.png?v=1', sizes: '180x180', type: 'image/png' },
+      { url: '/portal-pais/icon-192.png?v=1', sizes: '192x192', type: 'image/png' },
+      { url: '/portal-pais/icon-512.png?v=1', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Portal dos Pais',
   },
 }
 
