@@ -56,3 +56,9 @@ PERMISSOES_ARQUITETURA.md
 
 # Supabase
 supabase/.temp/
+
+# QR Codes gerados (Portal dos Pais)
+/public/img/qrcode-portal-pais.png
+qrcode-portal-dos-pais.png
+qrcode-portal-pais.png
+
