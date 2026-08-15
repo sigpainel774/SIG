@@ -37,32 +37,25 @@ export default function RelatorioNotas({ selectedEscola }: RelatorioNotasProps) 
     refetch
   } = useRelatorioNotas(selectedEscola?.id ?? null)
 
-  // Recarregar os dados do relatório sempre que escola ou filtros mudarem
+  // Recarregar os dados do relatório quando a escola ou o período de frequência mudarem
   useEffect(() => {
-    refetch(filters)
-  }, [selectedEscola, filters.periodo, filters.turmaId, filters.materiaId, refetch])
+    refetch({ periodo: filters.periodo })
+  }, [selectedEscola?.id, filters.periodo, refetch])
 
   // Callback acionado quando filtros mudam nos componentes filhos
   const handleFilterChange = useCallback((newFilters: { turmaId?: string; materiaId?: string; periodo?: string }) => {
-    setFilters((prev) => {
-      const hasChanged = 
-        prev.turmaId !== newFilters.turmaId ||
-        prev.materiaId !== newFilters.materiaId ||
-        prev.periodo !== newFilters.periodo;
-        
-      if (!hasChanged) return prev;
-
-      return {
-        ...prev,
-        ...newFilters
-      };
-    })
+    if (newFilters.periodo) {
+      setFilters((prev) => {
+        if (prev.periodo === newFilters.periodo) return prev
+        return { ...prev, periodo: newFilters.periodo! }
+      })
+    }
   }, [])
 
   if (error) {
     return (
-      <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-6 text-center text-rose-300">
-        <h3 className="text-base font-bold mb-2">Erro de Carregamento</h3>
+      <div className="bg-rose-50 border border-rose-200 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200 rounded-2xl p-6 text-center shadow-sm">
+        <h3 className="text-base font-bold mb-2 text-rose-950 dark:text-rose-100">Erro de Carregamento</h3>
         <p className="text-xs">{error}</p>
       </div>
     )
