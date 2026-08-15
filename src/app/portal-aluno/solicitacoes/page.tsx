@@ -141,8 +141,7 @@ export default function SolicitacoesPaisPage() {
       }
 
       // Buscar solicitações existentes
-      const { data: solData, error: solError } = await supabase
-        .from('solicitacoes_responsaveis')
+      const { data: solData, error: solError } = await (supabase.from as any)('solicitacoes_responsaveis')
         .select(`
           id,
           escola_id,
@@ -165,7 +164,7 @@ export default function SolicitacoesPaisPage() {
       if (solError) throw solError
 
       if (!isMounted.current) return
-      setSolicitacoes(solData || [])
+      setSolicitacoes((solData as Solicitacao[]) || [])
     } catch (err: unknown) {
       console.error('Erro ao carregar solicitações do responsável:', err)
       toast.error('Não foi possível carregar o histórico de solicitações.')
@@ -237,8 +236,7 @@ const TITULOS_MAP: Record<string, string> = {
         status: 'pendente',
       }
 
-      const { data, error } = await supabase
-        .from('solicitacoes_responsaveis')
+      const { data, error } = await (supabase.from as any)('solicitacoes_responsaveis')
         .insert(payload)
         .select(`
           id,

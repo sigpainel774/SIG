@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  AlertTriangle,
   Settings2,
   Sparkles,
   UserRound,
@@ -37,7 +38,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: '/portal-aluno/dashboard', label: 'Visão geral', icon: LayoutDashboard },
-  { href: '/portal-aluno/mensagens', label: 'Mensagens', icon: MessageSquareText },
+  { href: '/portal-aluno/comunicacoes', label: 'Comunicações', icon: MessageSquareText },
+  { href: '/portal-aluno/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
   { href: '/portal-aluno/solicitacoes', label: 'Solicitações', icon: FileCheck2 },
 ]
 

@@ -86,6 +86,13 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set('x-user-email', user.email || '')
   }
 
+  // 0. Redirecionamento de compatibilidade /portal-pais -> /portal-aluno
+  if (pathname.startsWith('/portal-pais')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace('/portal-pais', '/portal-aluno')
+    return applySecurityHeaders(NextResponse.redirect(url))
+  }
+
   // Rotas públicas permitidas sem login
   const isPublicRoute = 
     pathname.startsWith('/login') || 
@@ -145,7 +152,7 @@ export async function proxy(request: NextRequest) {
     } else {
       // ─── BLOQUEIO DE STAFF ──────────────────────────────────────────────
       // Servidores não acessam a área de pais
-      if (pathname.startsWith('/portal-aluno/dashboard') || pathname === '/portal-aluno/trocar-senha') {
+      if (pathname.startsWith('/portal-aluno') && !pathname.startsWith('/portal-aluno/login')) {
         const url = request.nextUrl.clone()
         url.pathname = '/home'
         return applySecurityHeaders(NextResponse.redirect(url))

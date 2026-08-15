@@ -165,8 +165,7 @@ export default function MensagensPaisPage() {
     async function carregarMensagensAluno() {
       setLoadingMensagens(true)
       try {
-        const { data, error } = await supabase
-          .from('mensagens_responsaveis')
+        const { data, error } = await (supabase.from as any)('mensagens_responsaveis')
           .select(`
             id,
             escola_id,
@@ -199,8 +198,7 @@ export default function MensagensPaisPage() {
         )
         if (naoLidas.length > 0) {
           const ids = naoLidas.map((m: any) => m.id)
-          await supabase
-            .from('mensagens_responsaveis')
+          await (supabase.from as any)('mensagens_responsaveis')
             .update({
               lida_responsavel: true,
               lida_responsavel_em: new Date().toISOString(),
@@ -241,8 +239,7 @@ export default function MensagensPaisPage() {
 
           // Se a nova mensagem for da escola, marcar como lida
           if (novaMsg.remetente_tipo === 'professor') {
-            await supabase
-              .from('mensagens_responsaveis')
+            await (supabase.from as any)('mensagens_responsaveis')
               .update({
                 lida_responsavel: true,
                 lida_responsavel_em: new Date().toISOString(),
@@ -294,8 +291,7 @@ export default function MensagensPaisPage() {
         lida_professor: false,
       }
 
-      const { data, error } = await supabase
-        .from('mensagens_responsaveis')
+      const { data, error } = await (supabase.from as any)('mensagens_responsaveis')
         .insert(payload)
         .select()
         .single()

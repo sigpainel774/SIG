@@ -13,9 +13,13 @@ import {
   MessageSquareText,
   CalendarDays,
   FileText,
+  FileCheck2,
+  AlertTriangle,
   ChevronRight,
+  Plus,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import PortalPaisLayout from '@/components/portal-pais/PortalPaisLayout'
@@ -143,37 +147,41 @@ function MetricCard({
   value,
   detail,
   accent,
+  href,
 }: {
   icon: React.ElementType
   label: string
   value: string
   detail: string
   accent: string
+  href?: string
 }) {
-  return (
+  const content = (
     <div
-      className="rounded-2xl border border-l-4 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(18,45,76,0.10)]"
+      className="rounded-2xl border border-l-4 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(18,45,76,0.10)] cursor-pointer h-full flex flex-col justify-between"
       style={{
         borderColor: '#E5EDF5',
         borderLeftColor: accent,
         boxShadow: '0 12px 30px rgba(18,45,76,0.05)',
       }}
     >
-      <div className="flex items-start justify-between">
-        <div
-          className="grid size-10 place-items-center rounded-xl text-white"
-          style={{ backgroundColor: accent }}
-        >
-          <Icon className="size-[18px]" aria-hidden="true" />
+      <div>
+        <div className="flex items-start justify-between">
+          <div
+            className="grid size-10 place-items-center rounded-xl text-white"
+            style={{ backgroundColor: accent }}
+          >
+            <Icon className="size-[18px]" aria-hidden="true" />
+          </div>
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-bold text-[#50709A]" style={{ backgroundColor: '#F1F6FC' }}>
+            Acessar
+          </span>
         </div>
-        <span className="rounded-full px-2.5 py-1 text-[11px] font-bold text-[#50709A]" style={{ backgroundColor: '#F1F6FC' }}>
-          Este mês
-        </span>
+        <p className="mt-4 text-[13px] font-semibold text-slate-500">{label}</p>
       </div>
-      <p className="mt-4 text-[13px] font-semibold text-slate-500">{label}</p>
       <div className="mt-1 flex items-baseline gap-2">
         <span
-          className="text-[28px] font-extrabold tracking-[-0.04em]"
+          className="text-[26px] font-extrabold tracking-[-0.04em]"
           style={{ color: '#102D50', fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           {value}
@@ -182,6 +190,11 @@ function MetricCard({
       </div>
     </div>
   )
+
+  if (href) {
+    return <Link href={href} className="block h-full">{content}</Link>
+  }
+  return content
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────
@@ -193,6 +206,9 @@ export default function PortalAlunoDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [responsavel, setResponsavel] = useState<Responsavel | null>(null)
   const [filhos, setFilhos] = useState<Filho[]>([])
+  const [totalOcorrenciasPendentes, setTotalOcorrenciasPendentes] = useState<number>(0)
+  const [totalSolicitacoes, setTotalSolicitacoes] = useState<number>(0)
+  const [totalMensagens, setTotalMensagens] = useState<number>(0)
 
   useEffect(() => {
     // ES-06: flag de montagem para evitar setState em componente desmontado
@@ -258,6 +274,35 @@ export default function PortalAlunoDashboardPage() {
           }))
 
         if (active) setFilhos(listaFilhos)
+
+        const alunoIds = listaFilhos.map((f) => f.id)
+
+        // 3. Buscar métricas adicionais (ocorrências, solicitações, comunicações)
+        if (alunoIds.length > 0) {
+          const [ocoRes, solRes, msgRes] = await Promise.all([
+            supabase
+              .from('ocorrencias')
+              .select('id, status_pais', { count: 'exact' })
+              .in('aluno_id', alunoIds),
+            (supabase as any)
+              .from('solicitacoes_responsaveis')
+              .select('id', { count: 'exact' })
+              .eq('responsavel_id', respData.id)
+              .is('deleted_at', null),
+            (supabase as any)
+              .from('mensagens_responsaveis')
+              .select('id', { count: 'exact' })
+              .in('aluno_id', alunoIds)
+              .is('deleted_at', null),
+          ])
+
+          if (active) {
+            const pendentes = (ocoRes.data ?? []).filter((o: any) => o.status_pais !== 'Cientes').length
+            setTotalOcorrenciasPendentes(pendentes)
+            setTotalSolicitacoes(solRes.count ?? solRes.data?.length ?? 0)
+            setTotalMensagens(msgRes.count ?? msgRes.data?.length ?? 0)
+          }
+        }
       } catch (err: unknown) {
         console.error('Erro ao carregar dashboard do portal:', err)
         if (active) {
@@ -352,20 +397,29 @@ export default function PortalAlunoDashboardPage() {
             Seu acompanhamento escolar, mais claro e próximo.
           </h2>
           <p className="mt-3 max-w-[420px] text-[13px] leading-relaxed text-blue-100">
-            Consulte frequência, boletins e comunicações da escola em um só lugar.
+            Consulte frequência, boletins, ocorrências e faça solicitações de documentos em um só lugar.
           </p>
-          <button
-            onClick={() => document.getElementById('filhos-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold text-white transition hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: '#F47C12', boxShadow: '0 8px 18px rgba(244,124,18,0.28)' }}
-          >
-            Ver acompanhamento
-            <ChevronRight className="size-4" aria-hidden="true" />
-          </button>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => document.getElementById('filhos-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold text-white transition hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: '#F47C12', boxShadow: '0 8px 18px rgba(244,124,18,0.28)' }}
+            >
+              Ver estudantes
+              <ChevronRight className="size-4" aria-hidden="true" />
+            </button>
+            <Link
+              href="/portal-aluno/solicitacoes"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold text-white bg-white/15 hover:bg-white/25 transition"
+            >
+              <FileCheck2 className="size-4 text-[#FFB466]" />
+              Pedir Declaração Bolsa Família
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ── Métricas ── */}
+      {/* ── Métricas com navegação direta ── */}
       <div className="relative mt-8 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.17em]" style={{ color: '#F47C12' }}>
@@ -385,30 +439,58 @@ export default function PortalAlunoDashboardPage() {
           icon={GraduationCap}
           label="Filhos matriculados"
           value={String(totalFilhos)}
-          detail="ativos"
+          detail="ativos na rede"
           accent="#0B4FB3"
-        />
-        <MetricCard
-          icon={CalendarDays}
-          label="Frequência média"
-          value="—"
-          detail="consulte o boletim"
-          accent="#F47C12"
-        />
-        <MetricCard
-          icon={FileText}
-          label="Com portal ativo"
-          value={String(filhosComPortal)}
-          detail={filhosComPortal === 1 ? 'escola' : 'escolas'}
-          accent="#2C7CBE"
+          href="#filhos-section"
         />
         <MetricCard
           icon={MessageSquareText}
           label="Comunicações"
-          value="—"
-          detail="acesse o boletim"
-          accent="#17375D"
+          value={totalMensagens > 0 ? String(totalMensagens) : 'Canal'}
+          detail={totalMensagens > 0 ? 'mensagens enviadas' : 'falar com a escola'}
+          accent="#083B8A"
+          href="/portal-aluno/comunicacoes"
         />
+        <MetricCard
+          icon={AlertTriangle}
+          label="Ocorrências"
+          value={totalOcorrenciasPendentes > 0 ? `${totalOcorrenciasPendentes} pend.` : 'Em dia'}
+          detail={totalOcorrenciasPendentes > 0 ? 'requer sua ciência' : 'histórico disciplinar'}
+          accent={totalOcorrenciasPendentes > 0 ? '#F47C12' : '#2C7CBE'}
+          href="/portal-aluno/ocorrencias"
+        />
+        <MetricCard
+          icon={FileCheck2}
+          label="Solicitações Escolares"
+          value={totalSolicitacoes > 0 ? String(totalSolicitacoes) : 'Pedir'}
+          detail={totalSolicitacoes > 0 ? 'solicitações ativas' : 'Bolsa Família / Declarações'}
+          accent="#102D50"
+          href="/portal-aluno/solicitacoes"
+        />
+      </div>
+
+      {/* ── Banner de Ações Rápidas ── */}
+      <div className="mt-6 rounded-2xl bg-white border border-[#DCE7F2] p-5 shadow-xs">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-extrabold text-[#102D50] flex items-center gap-2">
+              <FileCheck2 className="w-4 h-4 text-[#0B4FB3]" />
+              Precisa de Declaração para Bolsa Família ou Documentos?
+            </h3>
+            <p className="text-xs text-slate-500">
+              Solicite atestados de matrícula e comprovantes para o CRAS sem precisar ir à escola antecipadamente.
+            </p>
+          </div>
+          <Link href="/portal-aluno/solicitacoes">
+            <Button
+              className="font-bold text-white rounded-xl text-xs h-9 px-4 gap-2 cursor-pointer"
+              style={{ backgroundColor: '#0B4FB3' }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Fazer Solicitação Online
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* ── Listagem de filhos ── */}
