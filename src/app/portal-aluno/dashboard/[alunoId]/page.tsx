@@ -16,9 +16,13 @@ import {
   MessageSquare,
   Send,
   CheckCheck,
+  FileCheck2,
+  FileText,
+  Plus,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import PortalPaisLayout from '@/components/portal-pais/PortalPaisLayout'
@@ -53,7 +57,7 @@ export default function DetalhesAlunoPortalPage() {
   const supabase = useMemo(() => createClient(), [])
   const alunoId = params?.alunoId as string
 
-  type TabKey = 'notas' | 'frequencia' | 'ocorrencias' | 'comunicacoes'
+  type TabKey = 'notas' | 'frequencia' | 'ocorrencias' | 'comunicacoes' | 'solicitacoes'
   const [activeTab, setActiveTab] = useState<TabKey>('notas')
   const [loading, setLoading] = useState(true)
   const [aluno, setAluno] = useState<any | null>(null)
@@ -64,6 +68,7 @@ export default function DetalhesAlunoPortalPage() {
   const [frequencias, setFrequencias] = useState<any[]>([])
   const [ocorrencias, setOcorrencias] = useState<any[]>([])
   const [mensagens, setMensagens] = useState<any[]>([])
+  const [solicitacoes, setSolicitacoes] = useState<any[]>([])
   const [marcandoCienteId, setMarcandoCienteId] = useState<string | null>(null)
 
   // Comunicações
@@ -132,8 +137,8 @@ export default function DetalhesAlunoPortalPage() {
         const alunoData = alunoDataRaw as any
         if (active) setAluno(alunoData)
 
-        // ES-09: carregar notas, frequências, ocorrências em paralelo
-        const [notasRes, freqRes, ocoRes] = await Promise.all([
+        // ES-09: carregar notas, frequências, ocorrências e solicitações em paralelo
+        const [notasRes, freqRes, ocoRes, solRes] = await Promise.all([
           supabase
             .from('notas')
             .select('id, unidade, nota1, nota2, nota3, materia:materia_id (id, nome)')
@@ -150,12 +155,19 @@ export default function DetalhesAlunoPortalPage() {
             .select('id, data, tipo, gravidade, descricao, status_pais, created_at')
             .eq('aluno_id', alunoId)
             .order('data', { ascending: false }),
+          (supabase as any)
+            .from('solicitacoes_responsaveis')
+            .select('id, tipo, titulo, observacoes, status, resposta_escola, concluido_em, created_at')
+            .eq('aluno_id', alunoId)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false }),
         ])
 
         if (active) {
           setNotas(notasRes.data ?? [])
           setFrequencias(freqRes.data ?? [])
           setOcorrencias(ocoRes.data ?? [])
+          setSolicitacoes(solRes.data ?? [])
         }
 
         // Comunicações (condicional na feature flag da escola)
@@ -380,8 +392,16 @@ export default function DetalhesAlunoPortalPage() {
             },
           ]
         : []),
+      {
+        key: 'solicitacoes',
+        label: 'Solicitações',
+        icon: FileCheck2,
+        badge: solicitacoes.filter((s) => s.status === 'pendente' || s.status === 'em_analise').length > 0 ? (
+          <span className="size-2 rounded-full bg-blue-600" aria-label="Solicitação ativa" />
+        ) : null,
+      },
     ],
-    [portalComunicacoesAtivo, temMensagensNaoLidas, temOcorrenciaPendente]
+    [portalComunicacoesAtivo, temMensagensNaoLidas, temOcorrenciaPendente, solicitacoes]
   )
 
   return (
@@ -886,6 +906,129 @@ export default function DetalhesAlunoPortalPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* SOLICITAÇÕES DO ALUNO */}
+      {activeTab === 'solicitacoes' && (
+        <div
+          id="tab-panel-solicitacoes"
+          role="tabpanel"
+          aria-label="Solicitações Escolares"
+          className="mt-5 space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border" style={{ borderColor: BORDA }}>
+            <div>
+              <h3 className="text-sm font-extrabold text-[#102D50]">
+                Declarações e Documentos deste Aluno
+              </h3>
+              <p className="text-xs text-slate-500">
+                Peça declarações de matrícula, Bolsa Família e históricos para a secretaria escolar.
+              </p>
+            </div>
+            <Link href="/portal-aluno/solicitacoes">
+              <Button
+                className="font-bold text-white rounded-xl text-xs h-9 px-4 gap-1.5 cursor-pointer shadow-xs"
+                style={{ backgroundColor: AZUL }}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Nova Solicitação
+              </Button>
+            </Link>
+          </div>
+
+          {solicitacoes.length === 0 ? (
+            <div
+              className="rounded-2xl border bg-white p-8 text-center space-y-3 shadow-sm"
+              style={{ borderColor: BORDA }}
+            >
+              <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                <FileText className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-bold text-[#102D50]">
+                Nenhuma solicitação enviada para este aluno ainda.
+              </p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Quando você pedir uma declaração de Bolsa Família ou matrícula, poderá acompanhar o andamento por aqui.
+              </p>
+              <Link href="/portal-aluno/solicitacoes" className="inline-block mt-2">
+                <Button
+                  className="font-bold text-white rounded-xl text-xs h-9 px-4 gap-1.5"
+                  style={{ backgroundColor: AZUL }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Fazer Primeiro Pedido
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {solicitacoes.map((sol) => (
+                <div
+                  key={sol.id}
+                  className="rounded-2xl border bg-white p-4 sm:p-5 shadow-xs space-y-3"
+                  style={{ borderColor: BORDA }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B4FB3] flex items-center justify-center shrink-0">
+                        <FileCheck2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-[#102D50]">{sol.titulo}</h4>
+                        <p className="text-[11px] text-slate-400">
+                          Pedido em: {new Date(sol.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="self-start sm:self-center">
+                      {sol.status === 'pendente' && (
+                        <Badge className="bg-amber-500/10 text-amber-700 border-amber-300 font-bold text-xs gap-1">
+                          <Clock className="w-3 h-3" />
+                          Aguardando Secretaria
+                        </Badge>
+                      )}
+                      {sol.status === 'em_analise' && (
+                        <Badge className="bg-sky-500/10 text-sky-700 border-sky-300 font-bold text-xs gap-1">
+                          <Clock className="w-3 h-3" />
+                          Em Confecção
+                        </Badge>
+                      )}
+                      {sol.status === 'concluido' && (
+                        <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 font-bold text-xs gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Pronto para Retirada
+                        </Badge>
+                      )}
+                      {sol.status === 'recusado' && (
+                        <Badge className="bg-rose-500/10 text-rose-700 border-rose-300 font-bold text-xs">
+                          Recusada
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {sol.observacoes && (
+                    <div className="bg-slate-50 rounded-xl p-2.5 text-xs text-slate-600 border border-slate-100">
+                      <span className="font-bold text-slate-700">Observações enviadas: </span>
+                      {sol.observacoes}
+                    </div>
+                  )}
+
+                  {sol.resposta_escola && (
+                    <div className="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-900 border border-emerald-200 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-emerald-950">Resposta da Secretaria Escolar:</p>
+                        <p className="mt-0.5">{sol.resposta_escola}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </PortalPaisLayout>

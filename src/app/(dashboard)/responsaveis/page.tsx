@@ -101,8 +101,7 @@ export default function GestaoResponsaveisPage() {
     if (!selectedEscola?.id) return
     setLoadingSolicitacoes(true)
     try {
-      const { data, error } = await supabase
-        .from('solicitacoes_responsaveis')
+      const { data, error } = await (supabase.from as any)('solicitacoes_responsaveis')
         .select(`
           id,
           escola_id,
@@ -139,8 +138,7 @@ export default function GestaoResponsaveisPage() {
     if (!selectedEscola?.id) return
     setLoadingMensagens(true)
     try {
-      const { data, error } = await supabase
-        .from('mensagens_responsaveis')
+      const { data, error } = await (supabase.from as any)('mensagens_responsaveis')
         .select(`
           id,
           escola_id,
@@ -224,8 +222,7 @@ export default function GestaoResponsaveisPage() {
         concluido_por: funcionario?.id ?? null,
       }
 
-      const { error } = await supabase
-        .from('solicitacoes_responsaveis')
+      const { error } = await (supabase.from as any)('solicitacoes_responsaveis')
         .update(payload)
         .eq('id', solicitacaoEmAtendimento.id)
 
@@ -250,8 +247,7 @@ export default function GestaoResponsaveisPage() {
     setModalConversaOpen(true)
 
     try {
-      const { data, error } = await supabase
-        .from('mensagens_responsaveis')
+      const { data, error } = await (supabase.from as any)('mensagens_responsaveis')
         .select('*')
         .eq('aluno_id', msg.aluno_id)
         .is('deleted_at', null)
@@ -261,8 +257,7 @@ export default function GestaoResponsaveisPage() {
       setHistoricoConversa(data || [])
 
       if (!msg.lida_professor) {
-        await supabase
-          .from('mensagens_responsaveis')
+        await (supabase.from as any)('mensagens_responsaveis')
           .update({
             lida_professor: true,
             lida_professor_em: new Date().toISOString()
@@ -297,8 +292,7 @@ export default function GestaoResponsaveisPage() {
         lida_professor_em: new Date().toISOString(),
       }
 
-      const { data, error } = await supabase
-        .from('mensagens_responsaveis')
+      const { data, error } = await (supabase.from as any)('mensagens_responsaveis')
         .insert(payload)
         .select()
         .single()
