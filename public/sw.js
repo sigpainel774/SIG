@@ -13,11 +13,11 @@ const PHOTOS_CACHE_NAME = 'sig-photos-v12';
 
 // Assets estáticos essenciais do PWA (ícones, manifest e offline shell)
 const STATIC_ASSETS = [
-  '/manifest.json?v=12',
+  '/manifest.json',
   '/manifest-portal-pais.json?v=1',
-  '/icon-192.png?v=12',
-  '/icon-512.png?v=12',
-  '/icon.svg?v=12',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon.svg',
   '/portal-pais/icon-192.png?v=1',
   '/portal-pais/icon-512.png?v=1',
   '/portal-pais/apple-touch-icon.png?v=1',
