@@ -130,62 +130,40 @@ export function useRelatorioNotas(escolaId: string | null) {
     try {
       if (escolaId) {
         // --- VISÃO DA ESCOLA (DIRETOR) ---
-        // 1. Buscar alunos da escola (e aplicar filtro de turma se houver)
-        let queryAlunos = supabase
+        // 1. Buscar alunos da escola
+        const { data: AlunosData, error: errAlunos } = await supabase
           .from('alunos')
           .select('id, nome, turma_id')
           .eq('escola_id', escolaId)
           .is('deleted_at', null)
 
-        if (filters.turmaId && filters.turmaId !== 'todos') {
-          queryAlunos = queryAlunos.eq('turma_id', filters.turmaId)
-        }
-
-        const { data: AlunosData, error: errAlunos } = await queryAlunos
         if (errAlunos) throw errAlunos
-        
         if (currentFetchId !== fetchIdRef.current) return
-        
         setAlunos(AlunosData || [])
 
-        // 2. Buscar Notas
-        let queryNotas = supabase
+        // 2. Buscar Notas (Sem join alunos!inner(nome) para evitar descartes por inconsistência de chave)
+        const { data: NotasData, error: errNotas } = await supabase
           .from('notas')
-          .select('id, aluno_id, materia_id, turma_id, escola_id, unidade, nota1, nota2, nota3, nota4, alunos!inner(nome)')
+          .select('id, aluno_id, materia_id, turma_id, escola_id, unidade, nota1, nota2, nota3, nota4')
           .eq('escola_id', escolaId)
-        
-        if (filters.turmaId && filters.turmaId !== 'todos') {
-          queryNotas = queryNotas.eq('turma_id', filters.turmaId)
-        }
-        if (filters.materiaId && filters.materiaId !== 'todos') {
-          queryNotas = queryNotas.eq('materia_id', filters.materiaId)
-        }
 
-        const { data: NotasData, error: errNotas } = await queryNotas
         if (errNotas) throw errNotas
-        
         if (currentFetchId !== fetchIdRef.current) return
-        
         setNotas((NotasData as unknown as NotaRecord[]) || [])
 
-        // 3. Buscar Frequências (Lightweight)
+        // 3. Buscar Frequências (Filtrado apenas pelo período de datas)
         let queryFreqs = supabase
           .from('frequencias')
           .select('id, aluno_id, turma_id, escola_id, materia_id, data, presenca')
           .eq('escola_id', escolaId)
 
-        if (filters.turmaId && filters.turmaId !== 'todos') {
-          queryFreqs = queryFreqs.eq('turma_id', filters.turmaId)
-        }
         if (startDate) {
           queryFreqs = queryFreqs.gte('data', startDate)
         }
 
         const { data: FreqsData, error: errFreqs } = await queryFreqs
         if (errFreqs) throw errFreqs
-        
         if (currentFetchId !== fetchIdRef.current) return
-        
         setFrequencias((FreqsData as FrequenciaRecord[]) || [])
 
       } else {

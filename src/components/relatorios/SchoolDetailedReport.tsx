@@ -3,22 +3,18 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import {
   Printer,
-  GraduationCap,
   AlertTriangle,
   CalendarCheck,
   Users,
   Search,
-  Filter,
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
-  XCircle,
   BookOpen
 } from 'lucide-react'
-import { NotaRecord } from '@/hooks/useRelatorioNotas'
+import { NotaRecord, FrequenciaRecord } from '@/hooks/useRelatorioNotas'
 import { PrintHeader } from '@/components/print/print-header'
 import { Escola } from '@/store/useSchoolStore'
 
@@ -28,7 +24,7 @@ interface SchoolDetailedReportProps {
   notas: NotaRecord[]
   turmas: any[]
   materias: any[]
-  frequencias: any[]
+  frequencias: FrequenciaRecord[]
   loading: boolean
   periodo: string
   onFilterChange: (filters: { turmaId?: string; materiaId?: string; periodo?: string }) => void
@@ -68,17 +64,12 @@ export function SchoolDetailedReport({
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedAlunos, setExpandedAlunos] = useState<Record<string, boolean>>({})
 
-  // Sincronizar com o pai para refetch caso necessário
-  useEffect(() => {
-    onFilterChange({ turmaId: selectedTurma, materiaId: selectedMateria, periodo })
-  }, [selectedTurma, selectedMateria, periodo, onFilterChange])
-
   // Resetar página sempre que qualquer filtro mudar
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, selectedAlunoId, selectedTurma, selectedTurno, selectedMateria, selectedUnidade, sortBy])
 
-  // Lista de turnos disponíveis a partir das turmas
+  // Lista de turnos disponíveis a partir das turmas da escola
   const turnosDisponiveis = useMemo(() => {
     const set = new Set<string>()
     turmas.forEach((t) => {
@@ -89,22 +80,48 @@ export function SchoolDetailedReport({
     return Array.from(set).sort()
   }, [turmas])
 
-  // Lógica de cálculo de assiduidade de um aluno
-  const calcularAssiduidadeAluno = (alunoId: string) => {
-    const freqsAluno = frequencias.filter((f) => f.aluno_id === alunoId)
-    if (freqsAluno.length === 0) return null
-    const presencas = freqsAluno.filter((f) => f.presenca).length
-    return parseFloat(((presencas / freqsAluno.length) * 100).toFixed(1))
-  }
+  // Otimização Algorítmica: Mapas de acesso O(1) indexados por aluno_id
+  const freqsByAluno = useMemo(() => {
+    const map = new Map<string, FrequenciaRecord[]>()
+    frequencias.forEach((f) => {
+      const list = map.get(f.aluno_id) || []
+      list.push(f)
+      map.set(f.aluno_id, list)
+    })
+    return map
+  }, [frequencias])
 
-  // Processamento consolidado de todos os alunos da escola
+  const notasByAluno = useMemo(() => {
+    const map = new Map<string, NotaRecord[]>()
+    notas.forEach((n) => {
+      const list = map.get(n.aluno_id) || []
+      list.push(n)
+      map.set(n.aluno_id, list)
+    })
+    return map
+  }, [notas])
+
+  const turmasMap = useMemo(() => {
+    const map = new Map<string, any>()
+    turmas.forEach((t) => map.set(t.id, t))
+    return map
+  }, [turmas])
+
+  // Processamento consolidado de todos os alunos da escola (tempo linear O(N))
   const alunosProcessados = useMemo(() => {
     return alunos.map((aluno) => {
-      const notasAluno = notas.filter((n) => n.aluno_id === aluno.id)
-      const turmaAluno = turmas.find((t) => t.id === aluno.turma_id)
-      const turmaNome = turmaAluno?.nome || 'Sem Turma'
-      const turmaTurno = turmaAluno?.turno || 'Não informado'
-      const freqAluno = calcularAssiduidadeAluno(aluno.id)
+      const notasAluno = notasByAluno.get(aluno.id) ?? []
+      const freqsAluno = freqsByAluno.get(aluno.id) ?? []
+      const turmaAluno = turmasMap.get(aluno.turma_id)
+      const turmaNome = turmaAluno?.nome ?? 'Sem Turma'
+      const turmaTurno = turmaAluno?.turno ?? 'Não informado'
+
+      // Assiduidade do aluno
+      let freqAluno: number | null = null
+      if (freqsAluno.length > 0) {
+        const presencas = freqsAluno.filter((f) => f.presenca).length
+        freqAluno = parseFloat(((presencas / freqsAluno.length) * 100).toFixed(1))
+      }
 
       // Matérias que pertencem a este aluno (da mesma turma ou gerais da escola)
       const materiasDoAluno = materias.filter((m) => {
@@ -126,14 +143,11 @@ export function SchoolDetailedReport({
           const nota4 = n?.nota4 ?? null
           const validas = [nota1, nota2, nota3, nota4].filter((v): v is number => v !== null && !isNaN(Number(v)))
 
+          // Correção ES-1: Média aritmética sobre as avaliações que foram realmente lançadas
           let mediaTrimestre: number | null = null
           if (validas.length > 0) {
-            const val1 = nota1 ?? 0
-            const val2 = nota2 ?? 0
-            const val3 = nota3 ?? 0
-            const val4 = nota4 ?? 0
-            const divisor = (nota4 !== null) ? 4 : 3
-            mediaTrimestre = parseFloat(((val1 + val2 + val3 + (nota4 !== null ? val4 : 0)) / divisor).toFixed(1))
+            const soma = validas.reduce((a, b) => a + b, 0)
+            mediaTrimestre = parseFloat((soma / validas.length).toFixed(1))
           }
 
           return {
@@ -162,7 +176,7 @@ export function SchoolDetailedReport({
         }
       })
 
-      // Média final global do aluno (aritmética de todas as matérias com notas)
+      // Média final global do aluno (aritmética de todas as matérias com notas lançadas)
       const mediasMateriasValidas = detalhesMaterias
         .map((d) => d.mediaMateria)
         .filter((mf): mf is number => mf !== null)
@@ -182,7 +196,7 @@ export function SchoolDetailedReport({
         frequenciaPct: freqAluno
       }
     })
-  }, [alunos, notas, turmas, materias, frequencias])
+  }, [alunos, notasByAluno, freqsByAluno, turmasMap, materias])
 
   // KPIs Globais da Escola (Calculados sobre o total de alunos da unidade)
   const alunosEmRiscoNotas = useMemo(() => {
@@ -296,12 +310,30 @@ export function SchoolDetailedReport({
             />
           </div>
 
-          <button
-            onClick={handlePrintReport}
-            className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
-          >
-            <Printer className="w-4 h-4" /> Imprimir Relatório Escolar (A4)
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Seletor de Período de Frequência */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground whitespace-nowrap">Período:</label>
+              <select
+                value={periodo}
+                onChange={(e) => onFilterChange({ periodo: e.target.value })}
+                className="bg-surface-1 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground font-semibold focus:outline-none focus:border-primary"
+              >
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="trimestre">Trimestre (90 dias)</option>
+                <option value="ano">Ano Letivo</option>
+                <option value="todos">Todo o Período</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handlePrintReport}
+              className="bg-[#185FA5] hover:bg-[#185FA5]/90 text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer transition-colors shadow-sm whitespace-nowrap"
+            >
+              <Printer className="w-4 h-4" /> Imprimir Relatório (A4)
+            </button>
+          </div>
         </div>
 
         {/* Linha de Seletores e Ordenação */}
@@ -731,7 +763,6 @@ export function SchoolDetailedReport({
 
               <div className="flex items-center gap-1 px-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
-                  // Limitar exibição visual de botões de páginas para não estourar em telas pequenas
                   if (
                     pageNum === 1 ||
                     pageNum === totalPages ||
