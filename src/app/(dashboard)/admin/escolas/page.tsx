@@ -57,7 +57,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, created_at, secretarias:secretaria_id(id, nome)')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, portal_comunicacoes_ativo, created_at, secretarias:secretaria_id(id, nome)')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
@@ -333,7 +333,16 @@ export default function AdminEscolasPage() {
           }}
           onTogglePortal={(novoEstado) => {
             setEscolas(prev => prev.map(e => 
-              e.id === escolaParaPais.id ? { ...e, portal_pais_ativo: novoEstado } : e
+              e.id === escolaParaPais.id ? { 
+                ...e, 
+                portal_pais_ativo: novoEstado, 
+                ...((!novoEstado) ? { portal_comunicacoes_ativo: false } : {}) 
+              } : e
+            ))
+          }}
+          onToggleComunicacoes={(novoEstado) => {
+            setEscolas(prev => prev.map(e => 
+              e.id === escolaParaPais.id ? { ...e, portal_comunicacoes_ativo: novoEstado } : e
             ))
           }}
         />

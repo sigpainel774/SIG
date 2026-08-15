@@ -22,6 +22,7 @@ Cadastro de escolas e unidades do município.
 *   `codigo`: `integer` (NOT NULL)
 *   `secretaria_id`: `uuid` (Foreign Key -> `public.secretarias.id`, Nullable)
 *   `portal_pais_ativo`: `boolean` (Default: false, Indica se o Portal dos Pais está ativado nesta unidade escolar, Nullable)
+*   `portal_comunicacoes_ativo`: `boolean` (Default: false, Indica se o Canal de Comunicação Professores <-> Pais está ativado, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -812,6 +813,25 @@ Auditoria e histórico de execução de backups da base de dados Supabase.
 *   `tamanho_estimado_mb`: `numeric` (Nullable)
 *   `observacoes`: `text` (Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
+### 64. `public.mensagens_responsaveis`
+Canal de comunicação e recados pedagógicos diretos entre professores e pais/responsáveis de alunos.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `escola_id`: `uuid` (FK -> `public.escolas.id`, NOT NULL)
+*   `turma_id`: `uuid` (FK -> `public.turmas.id`, Nullable)
+*   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
+*   `professor_id`: `uuid` (FK -> `public.funcionarios.id`, NOT NULL)
+*   `responsavel_id`: `uuid` (FK -> `public.responsaveis.id`, Nullable)
+*   `remetente_tipo`: `text` ('professor' ou 'responsavel', NOT NULL, Default: 'professor')
+*   `autor_nome`: `text` (Nome legível do autor, Nullable)
+*   `titulo`: `text` (Assunto/Título da mensagem, Nullable)
+*   `conteudo`: `text` (Texto da mensagem, NOT NULL)
+*   `lida_responsavel`: `boolean` (Default: false, NOT NULL)
+*   `lida_responsavel_em`: `timestamp with time zone` (Nullable)
+*   `lida_professor`: `boolean` (Default: false, NOT NULL)
+*   `lida_professor_em`: `timestamp with time zone` (Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `deleted_at`: `timestamp with time zone` (Nullable)
 
 ---
 
