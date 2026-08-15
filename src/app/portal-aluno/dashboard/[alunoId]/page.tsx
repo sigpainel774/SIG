@@ -338,8 +338,15 @@ export default function DetalhesAlunoPortalPage() {
   }
 
   const portalComunicacoesAtivo = aluno?.escola?.portal_comunicacoes_ativo === true
-  const temMensagensNaoLidas = mensagens.some(
-    (m) => m.remetente_tipo === 'professor' && !m.lida_responsavel
+  
+  const temMensagensNaoLidas = useMemo(
+    () => mensagens.some((m) => m.remetente_tipo === 'professor' && !m.lida_responsavel),
+    [mensagens]
+  )
+
+  const temOcorrenciaPendente = useMemo(
+    () => ocorrencias.some((o) => o.status_pais !== 'Cientes'),
+    [ocorrencias]
   )
 
   // Foto com cache-busting (state declarado no topo do componente)
@@ -347,30 +354,35 @@ export default function DetalhesAlunoPortalPage() {
     ? `${aluno.foto_url.split('?')[0]}?t=${sessionTs}`
     : null
 
-  const tabs: { key: TabKey; label: string; icon: React.ElementType; badge?: React.ReactNode }[] = [
-    { key: 'notas', label: 'Boletim & Notas', icon: BookOpen },
-    { key: 'frequencia', label: 'Frequência', icon: CalendarCheck },
-    {
-      key: 'ocorrencias',
-      label: 'Ocorrências',
-      icon: AlertTriangle,
-      badge: ocorrencias.some((o) => o.status_pais !== 'Cientes') ? (
-        <span className="size-2 rounded-full bg-amber-500 animate-pulse" aria-label="Ocorrência pendente" />
-      ) : null,
-    },
-    ...(portalComunicacoesAtivo
-      ? [
-          {
-            key: 'comunicacoes' as TabKey,
-            label: 'Comunicações',
-            icon: MessageSquare,
-            badge: temMensagensNaoLidas ? (
-              <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: AZUL }} aria-label="Mensagens não lidas" />
-            ) : null,
-          },
-        ]
-      : []),
-  ]
+  const tabs = useMemo<
+    { key: TabKey; label: string; icon: React.ElementType; badge?: React.ReactNode }[]
+  >(
+    () => [
+      { key: 'notas', label: 'Boletim & Notas', icon: BookOpen },
+      { key: 'frequencia', label: 'Frequência', icon: CalendarCheck },
+      {
+        key: 'ocorrencias',
+        label: 'Ocorrências',
+        icon: AlertTriangle,
+        badge: temOcorrenciaPendente ? (
+          <span className="size-2 rounded-full bg-amber-500 animate-pulse" aria-label="Ocorrência pendente" />
+        ) : null,
+      },
+      ...(portalComunicacoesAtivo
+        ? [
+            {
+              key: 'comunicacoes' as TabKey,
+              label: 'Comunicações',
+              icon: MessageSquare,
+              badge: temMensagensNaoLidas ? (
+                <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: AZUL }} aria-label="Mensagens não lidas" />
+              ) : null,
+            },
+          ]
+        : []),
+    ],
+    [portalComunicacoesAtivo, temMensagensNaoLidas, temOcorrenciaPendente]
+  )
 
   return (
     <PortalPaisLayout

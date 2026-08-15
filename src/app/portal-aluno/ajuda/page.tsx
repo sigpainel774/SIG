@@ -107,8 +107,13 @@ export default function AjudaPaisPage() {
   }, [supabase, router])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/portal-aluno/login')
+    try {
+      await supabase.auth.signOut()
+    } catch (err: unknown) {
+      console.error('Erro ao encerrar sessão:', err)
+    } finally {
+      router.push('/portal-aluno/login')
+    }
   }
 
   const toggleFaq = (index: number) => {
