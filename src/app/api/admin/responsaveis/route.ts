@@ -363,13 +363,72 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const checkCpf = searchParams.get('check_cpf') || searchParams.get('cpf')
     const escolaId = searchParams.get('escola_id')
 
-    if (!escolaId) {
-      return NextResponse.json({ error: 'Parâmetro escola_id obrigatório' }, { status: 400 })
+    // Sub-fluxo 1: Verificação de existência de CPF na rede municipal
+    if (checkCpf) {
+      const cpfLimpo = checkCpf.replace(/\D/g, '')
+      if (cpfLimpo.length !== 11) {
+        return NextResponse.json({ error: 'CPF inválido: deve conter 11 dígitos' }, { status: 400 })
+      }
+
+      const { data: resp, error: respErr } = await supabaseAdmin
+        .from('responsaveis')
+        .select('id, auth_user_id, cpf, nome, email, telefone, ativo, must_change_password, created_at')
+        .eq('cpf', cpfLimpo)
+        .maybeSingle()
+
+      if (respErr) throw respErr
+
+      if (!resp) {
+        return NextResponse.json({ responsavel: null })
+      }
+
+      // Buscar todos os dependentes já vinculados a este responsável na rede inteira
+      const { data: vinculosRede, error: vincRedeErr } = await supabaseAdmin
+        .from('responsaveis_alunos')
+        .select(`
+          id,
+          parentesco,
+          aluno_id,
+          aluno:aluno_id (
+            id, 
+            nome, 
+            numero_matricula, 
+            escola_id, 
+            turma_id,
+            escolas:escola_id (id, nome),
+            turmas:turma_id (id, nome)
+          )
+        `)
+        .eq('responsavel_id', resp.id)
+
+      if (vincRedeErr) throw vincRedeErr
+
+      const dependentesRede = (vinculosRede || []).map((item: any) => ({
+        id: item.aluno?.id || item.aluno_id,
+        nome: item.aluno?.nome || 'Aluno',
+        numero_matricula: item.aluno?.numero_matricula || null,
+        escola_id: item.aluno?.escola_id,
+        escola_nome: item.aluno?.escolas?.nome || 'Outra Escola da Rede',
+        turma_nome: item.aluno?.turmas?.nome || 'Sem Turma',
+        parentesco: item.parentesco || 'Responsável'
+      }))
+
+      return NextResponse.json({
+        responsavel: {
+          ...resp,
+          dependentes_rede: dependentesRede
+        }
+      })
     }
 
-    // Busca os alunos matriculados nessa escola
+    if (!escolaId) {
+      return NextResponse.json({ error: 'Parâmetro escola_id ou check_cpf obrigatório' }, { status: 400 })
+    }
+
+    // Sub-fluxo 2: Busca os alunos matriculados nessa escola
     const { data: alunosEscola, error: alunosErr } = await supabaseAdmin
       .from('alunos')
       .select('id')
