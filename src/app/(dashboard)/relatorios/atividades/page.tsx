@@ -37,6 +37,7 @@ interface AuditLogItem {
   user_name: string | null
   user_email: string | null
   user_cargo: string | null
+  ip_address?: string | null
   old_data: any
   new_data: any
 }
@@ -180,6 +181,7 @@ export default function CentralAtividadesPage() {
     // Entidades exclusivas do módulo escolar/pedagógico (Educação)
     const eduEntities = [
       'alunos',
+      'responsaveis',
       'turmas',
       'materias',
       'notas',
@@ -324,6 +326,7 @@ export default function CentralAtividadesPage() {
       accessor: (log) => {
         let label = log.entity
         if (log.entity.startsWith('alunos')) label = '🎓 Alunos'
+        else if (log.entity.startsWith('responsaveis')) label = '👨‍👩‍👧 Portal dos Pais'
         else if (log.entity.startsWith('funcionarios')) label = '👤 Servidores'
         else if (log.entity.startsWith('atestados')) label = '🩺 Atestados'
         else if (log.entity.startsWith('comunicados')) label = '📢 Mural'
@@ -339,6 +342,42 @@ export default function CentralAtividadesPage() {
     {
       header: 'Detalhes do Registro',
       accessor: (log) => {
+        if (log.entity.startsWith('responsaveis')) {
+          const nomeResp = log.new_data?.responsavel_nome ?? log.new_data?.nome ?? log.entity_id ?? 'Responsável'
+          const alunos = log.new_data?.alunos_vinculados || []
+          const sessao = log.new_data?.sessao_operador
+          const ipExibicao = log.ip_address || sessao?.ip
+
+          return (
+            <div className="flex flex-col text-xs max-w-[340px] space-y-1">
+              <span className="font-semibold text-foreground truncate">
+                {nomeResp} {log.new_data?.parentesco ? `(${log.new_data.parentesco})` : ''}
+              </span>
+              
+              {alunos.length > 0 && (
+                <span className="text-[11px] text-indigo-400 truncate">
+                  Alunos: {alunos.map((a: any) => `${a.nome || a} ${a.turma ? `[${a.turma}]` : ''}`).join(', ')}
+                </span>
+              )}
+
+              {(sessao || ipExibicao) && (
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground pt-0.5">
+                  {sessao?.navegador && (
+                    <span className="bg-surface-1 border border-border px-1.5 py-0.5 rounded text-[10px]">
+                      {sessao.navegador} ({sessao.sistema_operacional || 'Desktop'})
+                    </span>
+                  )}
+                  {ipExibicao && (
+                    <span className="bg-surface-1 border border-border font-mono px-1.5 py-0.5 rounded text-[10px]">
+                      IP: {ipExibicao}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        }
+
         const nomeAlvo = log.new_data?.nome ?? log.old_data?.nome ?? log.entity_id
         return (
           <div className="flex flex-col text-xs max-w-[280px]">
@@ -454,6 +493,7 @@ export default function CentralAtividadesPage() {
               ) : (
                 <>
                   <option value="alunos">Alunos</option>
+                  <option value="responsaveis">Portal dos Pais / Responsáveis</option>
                   <option value="funcionarios">Funcionários</option>
                   <option value="turmas">Turmas & Matérias</option>
                   <option value="ocorrencias">Ocorrências Disciplinares</option>
