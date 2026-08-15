@@ -258,7 +258,7 @@ export function ModalContasPaisEscola({
         )}
 
         <div className="flex justify-end pt-2">
-          <Button variant="outline" onClick={onClose} className="border-[#3f3f46]">
+          <Button variant="outline" onClick={onClose} className="border-border">
             Fechar
           </Button>
         </div>

@@ -246,7 +246,7 @@ export function ModalCadastroResponsavel({
     >
       {credenciaisCriadas ? (
         <div className="space-y-6 py-4 text-center">
-          <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
@@ -257,18 +257,18 @@ export function ModalCadastroResponsavel({
             </p>
           </div>
 
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 text-left space-y-3 font-mono text-sm max-w-md mx-auto">
+          <div className="bg-muted/50 border border-border rounded-xl p-5 text-left space-y-3 font-mono text-sm max-w-md mx-auto">
             <div>
-              <span className="text-zinc-500 text-xs block">E-MAIL DE ACESSO:</span>
+              <span className="text-muted-foreground text-xs block">E-MAIL DE ACESSO:</span>
               <span className="text-foreground font-semibold">{credenciaisCriadas.email}</span>
             </div>
             <div>
-              <span className="text-zinc-500 text-xs block">SENHA PROVISÓRIA:</span>
-              <span className="text-amber-400 font-bold text-base">{credenciaisCriadas.senha}</span>
+              <span className="text-muted-foreground text-xs block">SENHA PROVISÓRIA:</span>
+              <span className="text-amber-600 dark:text-amber-400 font-bold text-base">{credenciaisCriadas.senha}</span>
             </div>
             <div>
-              <span className="text-zinc-500 text-xs block">LINK DE LOGIN:</span>
-              <span className="text-indigo-400 text-xs break-all">{typeof window !== 'undefined' ? `${window.location.origin}/portal-aluno/login` : '/portal-aluno/login'}</span>
+              <span className="text-muted-foreground text-xs block">LINK DE LOGIN:</span>
+              <span className="text-indigo-600 dark:text-indigo-400 text-xs break-all">{typeof window !== 'undefined' ? `${window.location.origin}/portal-aluno/login` : '/portal-aluno/login'}</span>
             </div>
           </div>
 
@@ -281,7 +281,7 @@ export function ModalCadastroResponsavel({
               {copiado ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copiado ? 'Copiado!' : 'Copiar Credenciais'}
             </Button>
-            <Button variant="outline" onClick={onClose} className="border-[#3f3f46]">
+            <Button variant="outline" onClick={onClose} className="border-border">
               Concluir e Fechar
             </Button>
           </div>
@@ -291,7 +291,7 @@ export function ModalCadastroResponsavel({
           {/* Dados Pessoais */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="cpf" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="cpf" className="text-xs font-medium text-foreground">
                 CPF do Responsável <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -302,12 +302,12 @@ export function ModalCadastroResponsavel({
                 placeholder="000.000.000-00"
                 maxLength={14}
                 required
-                className="bg-[#18181b] border-[#27272a]"
+                className="bg-background border-border text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="nome" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="nome" className="text-xs font-medium text-foreground">
                 Nome Completo <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -316,12 +316,12 @@ export function ModalCadastroResponsavel({
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Ex: Maria dos Santos Silva"
                 required
-                className="bg-[#18181b] border-[#27272a]"
+                className="bg-background border-border text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="email" className="text-xs font-medium text-foreground">
                 E-mail (Login no Portal) <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -331,12 +331,12 @@ export function ModalCadastroResponsavel({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nome@email.com"
                 required
-                className="bg-[#18181b] border-[#27272a]"
+                className="bg-background border-border text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="telefone" className="text-xs font-medium text-zinc-300">
+              <Label htmlFor="telefone" className="text-xs font-medium text-foreground">
                 Telefone / WhatsApp
               </Label>
               <Input
@@ -344,16 +344,16 @@ export function ModalCadastroResponsavel({
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
                 placeholder="(00) 00000-0000"
-                className="bg-[#18181b] border-[#27272a]"
+                className="bg-background border-border text-foreground"
               />
             </div>
           </div>
 
           {/* Senha Provisória */}
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 space-y-3">
+          <div className="bg-muted/40 border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="senha" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Key className="w-4 h-4 text-amber-400" />
+                <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 Senha Provisória de Acesso <span className="text-rose-500">*</span>
               </Label>
               <Button
@@ -361,7 +361,7 @@ export function ModalCadastroResponsavel({
                 variant="ghost"
                 size="sm"
                 onClick={gerarSenhaAleatoria}
-                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 h-7 text-xs gap-1.5"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-500/10 h-7 text-xs gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Gerar Senha Aleatória
@@ -373,7 +373,7 @@ export function ModalCadastroResponsavel({
               onChange={(e) => setSenhaProvisoria(e.target.value)}
               placeholder="Digite uma senha ou use o gerador"
               required={!responsavelEmEdicao}
-              className="bg-[#141416] border-[#3f3f46] font-mono text-amber-400 font-semibold"
+              className="bg-background border-border font-mono text-amber-600 dark:text-amber-400 font-semibold"
             />
             <p className="text-[11px] text-muted-foreground">
               Esta senha é temporária. O responsável será forçado a criar sua senha pessoal no primeiro login.
@@ -384,10 +384,10 @@ export function ModalCadastroResponsavel({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <GraduationCap className="w-4 h-4 text-indigo-400" />
+                <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 Filho(s) / Aluno(s) Vinculados nesta Escola <span className="text-rose-500">*</span>
               </Label>
-              <Badge variant="outline" className="text-[11px] bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+              <Badge variant="outline" className="text-[11px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30">
                 {alunosSelecionados.length} selecionado(s)
               </Badge>
             </div>
@@ -398,11 +398,11 @@ export function ModalCadastroResponsavel({
                 value={buscaAluno}
                 onChange={(e) => setBuscaAluno(e.target.value)}
                 placeholder="Filtrar aluno por nome ou turma..."
-                className="pl-9 bg-[#18181b] border-[#27272a] h-9 text-xs"
+                className="pl-9 bg-background border-border h-9 text-xs text-foreground"
               />
             </div>
 
-            <div className="border border-[#27272a] rounded-xl max-h-48 overflow-y-auto p-2 bg-[#141416] divide-y divide-[#27272a]/50">
+            <div className="border border-border rounded-xl max-h-48 overflow-y-auto p-2 bg-background divide-y divide-border/60">
               {carregandoAlunos ? (
                 <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Carregando alunos da escola...
@@ -419,7 +419,7 @@ export function ModalCadastroResponsavel({
                       key={aluno.id}
                       onClick={() => toggleAluno(aluno.id)}
                       className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors text-xs ${
-                        isChecked ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/30' : 'hover:bg-[#1f1f23] text-foreground'
+                        isChecked ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-900 dark:text-indigo-200 border border-indigo-500/40' : 'hover:bg-muted text-foreground'
                       }`}
                     >
                       <div className="space-y-0.5">
@@ -438,7 +438,7 @@ export function ModalCadastroResponsavel({
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}}
-                        className="rounded border-[#3f3f46] text-indigo-600 focus:ring-0 pointer-events-none"
+                        className="rounded border-border text-indigo-600 focus:ring-0 pointer-events-none"
                       />
                     </div>
                   )
@@ -447,8 +447,8 @@ export function ModalCadastroResponsavel({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-[#27272a]">
-            <Button type="button" variant="outline" onClick={onClose} disabled={salvando} className="border-[#3f3f46]">
+          <div className="flex justify-end gap-3 pt-3 border-t border-border">
+            <Button type="button" variant="outline" onClick={onClose} disabled={salvando} className="border-border">
               Cancelar
             </Button>
             <Button
