@@ -66,10 +66,12 @@ export const useSchoolStore = create<SchoolState>()(
         
         let sec: SecretariaState | null = get().selectedSecretaria
         if (escola) {
-          sec = {
-            id: escola.secretaria_id || '',
-            nome: escola.secretariaNome || escola.secretarias?.nome || 'Secretaria Municipal de Educação'
-          }
+          sec = escola.secretaria_id
+            ? {
+                id: escola.secretaria_id,
+                nome: escola.secretariaNome ?? escola.secretarias?.nome ?? 'Secretaria Municipal de Educação'
+              }
+            : null
         }
         set({ selectedEscola: escola, selectedSecretaria: sec })
         useAuthStore.getState().setEscolaAtivaId(escola ? escola.id : null)
@@ -92,10 +94,12 @@ export const useSchoolStore = create<SchoolState>()(
 
         const found = get().escolas.find((e) => e.id === id) || null
         if (found) {
-          const sec = {
-            id: found.secretaria_id || '',
-            nome: found.secretariaNome || 'Secretaria Municipal de Educação'
-          }
+          const sec: SecretariaState | null = found.secretaria_id
+            ? {
+                id: found.secretaria_id,
+                nome: found.secretariaNome ?? found.secretarias?.nome ?? 'Secretaria Municipal de Educação'
+              }
+            : null
           set({ selectedEscola: found, selectedSecretaria: sec })
           useAuthStore.getState().setEscolaAtivaId(id)
         } else {
@@ -111,12 +115,14 @@ export const useSchoolStore = create<SchoolState>()(
             if (data) {
               const formatted: Escola = {
                 ...(data as any),
-                secretariaNome: (data as any).secretarias?.nome || 'Secretaria Municipal de Educação'
+                secretariaNome: (data as any).secretarias?.nome ?? 'Secretaria Municipal de Educação'
               }
-              const sec = {
-                id: (data as any).secretaria_id || '',
-                nome: formatted.secretariaNome || 'Secretaria Municipal de Educação'
-              }
+              const sec: SecretariaState | null = (data as any).secretaria_id
+                ? {
+                    id: (data as any).secretaria_id,
+                    nome: formatted.secretariaNome ?? 'Secretaria Municipal de Educação'
+                  }
+                : null
               set({ selectedEscola: formatted, selectedSecretaria: sec })
             }
           } catch (err) {

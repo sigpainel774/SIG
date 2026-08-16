@@ -44,7 +44,11 @@ export interface SolicitacaoLiberacao {
   solicitante?: { nome: string } | null
 }
 
-export function useAlunos() {
+export interface UseAlunosOptions {
+  onlyEja?: boolean
+}
+
+export function useAlunos(options?: UseAlunosOptions) {
   const {
     funcionario,
     escolaAtivaId,
@@ -55,7 +59,7 @@ export function useAlunos() {
     isContaEja,
   } = useAuthStore()
 
-  const ejaMode = isContaEja()
+  const ejaMode = options?.onlyEja === true || isContaEja()
 
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
@@ -184,7 +188,7 @@ export function useAlunos() {
             : mapped.filter((a) => !isAlunoEja(a))
 
           setAlunos(filtrados)
-          setTotalCount(filtrados.length)
+          setTotalCount(count ?? filtrados.length)
         } else {
           setAlunos([])
           setTotalCount(0)
@@ -198,7 +202,7 @@ export function useAlunos() {
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [page, pageSize, searchTerm, escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot, checkCoordenador])
+  }, [page, pageSize, searchTerm, escolaAtivaId, vinculos, acessos, funcionario?.id, isAdminGlobalOrRoot, checkCoordenador, ejaMode])
 
   /* ── Carregar Solicitações de Liberação ──────────────────────── */
   const carregarSolicitacoes = useCallback(async () => {
