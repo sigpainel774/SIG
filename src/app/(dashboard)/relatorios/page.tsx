@@ -8,6 +8,7 @@ import { MapaGlobal, MapaAlunos } from '@/components/map/MapWrapper'
 import { createClient } from '@/lib/supabaseClient'
 import { preloadFotos } from '@/lib/mapCache'
 import { getAvatarUrl } from '@/lib/photoHelper'
+import { toast } from 'sonner'
 
 // Importações dinâmicas para otimizar o bundle inicial
 const RelatorioNotas = dynamic(() => import('@/components/relatorios/RelatorioNotas'), {
@@ -301,6 +302,7 @@ export default function RelatoriosPage() {
           }
         } catch (err) {
           console.error("Erro ao buscar dados do mapa:", err)
+          toast.error("Não foi possível carregar os dados do mapa de servidores.")
         } finally {
           if (active) {
             setIsLoadingMap(false)
@@ -478,6 +480,7 @@ export default function RelatoriosPage() {
           }
         } catch (err) {
           console.error("Erro ao buscar alunos para mapa:", err)
+          toast.error("Não foi possível carregar as coordenadas dos alunos.")
         } finally {
           if (active) {
             setIsLoadingMapAlunos(false)

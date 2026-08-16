@@ -276,6 +276,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
       }
     } catch (error) {
       console.error('Erro ao carregar lista de destinatários:', error)
+      toast.error('Não foi possível carregar a lista de destinatários.')
     }
   }
 
@@ -842,7 +843,7 @@ export function ModalCentralMensagens({ open = false, onOpenChange, onUnreadCoun
                       <div>
                         <h3 className="text-xs font-bold text-white leading-tight">{activeConversation.contactName}</h3>
                         <p className="text-[10px] text-sky-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-mutedmerald-400 animate-ping inline-block" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
                           <span>{activeConversation.contactCargo || 'Servidor Municipal'}</span>
                         </p>
                       </div>

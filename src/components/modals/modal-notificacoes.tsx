@@ -170,7 +170,7 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
           }
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
             isSubscribed
-              ? 'bg-mutedmerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-mutedmerald-500/20'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
               : permissionState === 'denied'
               ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 opacity-70 cursor-not-allowed'
               : 'bg-[#0067c0]/10 text-[#0067c0] dark:bg-[#3ea6ff]/20 dark:text-[#3ea6ff] border-[#0067c0]/30 dark:border-[#3ea6ff]/30 hover:bg-[#0067c0]/20 dark:hover:bg-[#3ea6ff]/30'

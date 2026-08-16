@@ -165,7 +165,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const funcionario = get().getFuncionarioAtivo();
     const acessos = get().getAcessosAtivos();
     const cargo = funcionario?.cargo?.toLowerCase() || '';
-    return acessos.some(a => a.nivel === 4 || a.nivel === 5) || cargo.includes('professor');
+    return acessos.some(a => (a.nivel === 4 || a.nivel === 5) && a.ativo) || cargo.includes('professor');
   },
 
   isCoordenador: () => {
@@ -197,8 +197,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   canAccessEja: () => {
     const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
     if ((funcionario as any)?.is_conta_eja === true) return true;
     if (funcionario?.is_superadmin) return true;
+    if (acessos.some(a => (a as any).pode_eja === true && a.ativo)) return true;
     return false;
   },
 }));

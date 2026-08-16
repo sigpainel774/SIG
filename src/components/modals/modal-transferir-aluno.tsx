@@ -269,7 +269,11 @@ export function ModalTransferirAluno({
                 <Label className="text-[#ccc] text-[13px]">Escola de Destino *</Label>
                 <Select value={escolaDestino} onValueChange={(val) => val && setEscolaDestino(val)}>
                   <SelectTrigger className="w-full bg-[#121212] border-[#3f3f46] text-white">
-                    <SelectValue placeholder="Selecione a escola de destino..." />
+                    <SelectValue placeholder="Selecione a escola de destino...">
+                      {escolaDestino
+                        ? (escolas.find((e: any) => e.id === escolaDestino)?.nome || (escolas.length === 0 ? 'Carregando...' : escolaDestino))
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-background border-[#3f3f46] text-foreground">
                     {escolas

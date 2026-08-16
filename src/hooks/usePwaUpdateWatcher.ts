@@ -100,7 +100,14 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
           if (!newRow) return
 
           if (newRow.chave === 'pwa_version') {
-            const localVer = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
+            let localVer: string | null = null
+            if (typeof window !== 'undefined') {
+              try {
+                localVer = localStorage.getItem(LOCAL_STORAGE_KEY)
+              } catch (e) {
+                console.warn('[usePwaUpdateWatcher] Falha ao ler localStorage:', e)
+              }
+            }
             setCurrentVersion(newRow.valor)
             if (newRow.updated_at) setLastUpdatedAt(newRow.updated_at)
 
@@ -128,7 +135,11 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
 
     // 1. Salva nova versão no localStorage para não disparar novamente
     if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEY, verToSave)
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, verToSave)
+      } catch (e) {
+        console.warn('[usePwaUpdateWatcher] Falha ao gravar localStorage:', e)
+      }
     }
 
     // 2. Atualiza o registro e ativa somente um worker que esteja aguardando.

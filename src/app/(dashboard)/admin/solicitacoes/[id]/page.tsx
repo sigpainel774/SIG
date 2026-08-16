@@ -20,23 +20,35 @@ export default function AvaliarSolicitacaoPage({ params }: { params: { id: strin
   const [justificativa, setJustificativa] = useState('')
 
   useEffect(() => {
+    let active = true
     const fetchSol = async () => {
-      const { data } = await supabase
-        .from('transferencias_alunos')
-        .select(`
-          *,
-          alunos(nome, cpf),
-          origem:escola_origem_id(nome),
-          destino:escola_destino_id(nome),
-          solicitante:solicitante_id(nome)
-        `)
-        .eq('id', params.id)
-        .single()
-      
-      if (data) setSolicitacao(data)
-      setLoading(false)
+      try {
+        setLoading(true)
+        const { data, error } = await supabase
+          .from('transferencias_alunos')
+          .select(`
+            *,
+            alunos(nome, cpf),
+            origem:escola_origem_id(nome),
+            destino:escola_destino_id(nome),
+            solicitante:solicitante_id(nome)
+          `)
+          .eq('id', params.id)
+          .single()
+        
+        if (error) throw error
+        if (active && data) setSolicitacao(data)
+      } catch (err) {
+        console.error('Erro ao carregar solicitação:', err)
+        toast.error('Não foi possível carregar os dados desta solicitação.')
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     fetchSol()
+    return () => {
+      active = false
+    }
   }, [params.id, supabase])
 
   const handleResponder = async (aceitar: boolean) => {

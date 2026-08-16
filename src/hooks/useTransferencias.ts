@@ -247,10 +247,10 @@ export function useTransferencias() {
           })
         }
 
-        const solicitanteTarget = transferenciaSelecionada.solicitante?.auth_user_id || transferenciaSelecionada.solicitante_id
-        if (solicitanteTarget) {
+        const solicitanteAuthId = transferenciaSelecionada.solicitante?.auth_user_id
+        if (solicitanteAuthId) {
           await (supabase as any).rpc('criar_notificacoes', {
-            p_destinatarios: [solicitanteTarget],
+            p_destinatarios: [solicitanteAuthId],
             p_title: `Transferência de Aluno ${statusDestino}`,
             p_message: `O pedido de transferência do aluno ${transferenciaSelecionada.alunos?.nome ?? 'Aluno'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
             p_type: aceitar ? 'SUCCESS' : 'ERROR',

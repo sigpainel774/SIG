@@ -66,13 +66,17 @@ export default function HistoricoNotificacoesPage() {
       if (data) setNotificacoes(data)
     } catch (error) {
       console.error('Erro ao carregar histórico de notificações:', error)
+      toast.error('Erro ao carregar histórico de notificações.')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadNotificacoes()
+    const timer = setTimeout(() => {
+      loadNotificacoes()
+    }, 300)
+    return () => clearTimeout(timer)
   }, [funcionario?.auth_user_id, status, dataInicio, dataFim, busca])
 
   const limparFiltros = () => {

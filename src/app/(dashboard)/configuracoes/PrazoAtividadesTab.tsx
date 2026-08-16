@@ -155,7 +155,10 @@ export function PrazoAtividadesTab() {
                 min={0}
                 max={365}
                 value={prazoDias}
-                onChange={(e) => setPrazoDias(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setPrazoDias(v === '' ? ('' as any) : parseInt(v, 10))
+                }}
                 className="w-32 bg-input border-border text-foreground font-bold text-center h-10"
               />
               <span className="text-xs font-medium text-muted-foreground">

@@ -30,7 +30,7 @@ const STATUS_CONFIG: Record<StatusAtividade, { label: string; class: string }> =
   },
   impressa: {
     label: 'Impressa',
-    class: 'bg-mutedmerald-500/20 text-emerald-400 border-emerald-500/30',
+    class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   },
   entregue_professor: {
     label: 'Entregue ao Professor',

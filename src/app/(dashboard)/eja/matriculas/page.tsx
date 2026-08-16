@@ -33,15 +33,17 @@ export default function EjaMatriculasPage() {
   return (
     <div className="space-y-6 flex flex-col h-[80vh]">
       {/* Modal de Cadastro */}
-      <ModalAluno 
-        open={modalOpen} 
-        onOpenChange={setModalOpen}
-        alunoEditar={null}
-        onSuccess={() => {
-          toast.success('Aluno EJA matriculado com sucesso!')
-          setModalOpen(false)
-        }} 
-      />
+      {modalOpen && (
+        <ModalAluno 
+          open={modalOpen} 
+          onOpenChange={setModalOpen}
+          alunoEditar={null}
+          onSuccess={() => {
+            toast.success('Aluno EJA matriculado com sucesso!')
+            setModalOpen(false)
+          }} 
+        />
+      )}
 
       <div className="pb-4 border-b border-border">
         <div className="flex items-center gap-3">

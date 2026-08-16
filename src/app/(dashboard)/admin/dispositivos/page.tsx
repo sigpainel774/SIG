@@ -476,7 +476,10 @@ export default function AdminDispositivosPage() {
       {modalOpen && (
         <ModalDispositivo
           open={modalOpen}
-          onOpenChange={setModalOpen}
+          onOpenChange={(open) => {
+            setModalOpen(open)
+            if (!open) setDispositivoToEdit(null)
+          }}
           dispositivoToEdit={dispositivoToEdit}
           onSuccess={loadDispositivos}
         />

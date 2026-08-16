@@ -359,7 +359,7 @@ export function ModalMovimentacoes({
                           <span
                             className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
                               mov.status === 'APROVADO'
-                                ? 'bg-mutedmerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                                 : mov.status === 'RECUSADO'
                                 ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
                                 : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
@@ -427,7 +427,7 @@ export function ModalMovimentacoes({
                             className={`p-3 rounded-xl border flex items-start gap-2.5 ${
                               mov.status === 'RECUSADO'
                                 ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
-                                : 'bg-mutedmerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                                : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                             }`}
                           >
                             <MessageSquare className="w-4 h-4 shrink-0 mt-0.5" />

@@ -599,7 +599,10 @@ export default function AdminBancoPage() {
       {modalNovoBackupOpen && (
         <StandardDialog
           open={modalNovoBackupOpen}
-          onOpenChange={setModalNovoBackupOpen}
+          onOpenChange={(open) => {
+            if (!open) setNovoBackupData({ descricao: '', observacoes: '', tipo: 'MANUAL' })
+            setModalNovoBackupOpen(open)
+          }}
           title="Registrar Backup Manual no Histórico"
           maxWidth="sm:max-w-[480px]"
           footer={

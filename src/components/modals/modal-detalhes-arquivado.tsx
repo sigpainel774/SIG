@@ -132,7 +132,7 @@ export function ModalDetalhesArquivado({
 
               {/* Revertido */}
               {arquivado.status === 'REVERTIDO' && (
-                <div className="flex items-start gap-2.5 bg-mutedmerald-500/5 border border-emerald-500/20 p-3 rounded-xl animate-in fade-in duration-250">
+                <div className="flex items-start gap-2.5 bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl animate-in fade-in duration-250">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-emerald-400">Arquivamento Revertido (Restaurado)</p>

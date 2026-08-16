@@ -9,6 +9,7 @@ import { Phone, Calendar, ClipboardList, Plus, MessageCircle, X } from 'lucide-r
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalNovaOcorrencia } from './ModalNovaOcorrencia'
 import { CachedImage } from '@/components/ui/cached-image'
+import { toast } from 'sonner'
 
 interface ModalDetalhesAlunoProps {
   open: boolean
@@ -138,6 +139,7 @@ export function ModalDetalhesAluno({
       setOcorrencias(ocos || [])
     } catch (err) {
       console.error('Erro ao calcular estatísticas do aluno:', err)
+      toast.error('Não foi possível carregar notas e ocorrências do aluno.')
     } finally {
       setLoadingStats(false)
     }

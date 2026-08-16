@@ -95,7 +95,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
             <p className="text-[11px] font-extrabold text-[#3ea6ff] uppercase tracking-wider">EMAEE • Ano letivo 2026</p>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Ficha de matrícula para AEE</h1>
           </div>
-          <span className="self-start sm:self-auto px-3 py-1 border border-emerald-500/30 rounded-full text-emerald-400 bg-mutedmerald-500/10 text-xs font-bold">
+          <span className="self-start sm:self-auto px-3 py-1 border border-emerald-500/30 rounded-full text-emerald-400 bg-emerald-500/10 text-xs font-bold">
             Nova Matrícula
           </span>
         </div>

@@ -242,7 +242,7 @@ export function ModalResetSenhaUser({
             disabled={loading || !novaSenha || !confirmarSenha}
             className={`${
               confirmStep
-                ? 'bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold'
                 : 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
             } gap-2`}
           >

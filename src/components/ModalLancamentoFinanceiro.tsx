@@ -139,7 +139,7 @@ export function ModalLancamentoFinanceiro({ open, onOpenChange, onSuccess }: Mod
             <Button 
               type="button" 
               variant={tipo === 'Receita' ? 'default' : 'outline'}
-              className={tipo === 'Receita' ? 'bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white flex-1' : 'flex-1'}
+              className={tipo === 'Receita' ? 'bg-emerald-600 hover:bg-emerald-700 text-white flex-1' : 'flex-1'}
               onClick={() => setTipo('Receita')}
             >
               Receita

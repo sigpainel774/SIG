@@ -54,7 +54,7 @@ function avatarColor(nome: string) {
   const hash = Array.from(nome).reduce((acc, char) => acc + char.charCodeAt(0), 0)
   const colors = [
     { bg: 'bg-blue-500/10', text: 'text-blue-500' },
-    { bg: 'bg-mutedmerald-500/10', text: 'text-emerald-500' },
+    { bg: 'bg-emerald-500/10', text: 'text-emerald-500' },
     { bg: 'bg-violet-500/10', text: 'text-violet-500' },
     { bg: 'bg-amber-500/10', text: 'text-amber-500' },
     { bg: 'bg-rose-500/10', text: 'text-rose-500' },
@@ -618,7 +618,7 @@ export function ModalServidoresDiscriminados({
                                                 Concursado / Efetivo
                                               </span>
                                             ) : serv.tipoVinculoNormalizado === 'Contratado' ? (
-                                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-mutedmerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                                                 Contratado
                                               </span>
                                             ) : serv.tipoVinculoNormalizado === 'Nomeado' ? (
@@ -669,7 +669,7 @@ export function ModalServidoresDiscriminados({
                                             )}
                                           </div>
                                         </div>
-                                        <span className="text-[9px] uppercase font-extrabold text-emerald-400 bg-mutedmerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
+                                        <span className="text-[9px] uppercase font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
                                           {serv.status}
                                         </span>
                                       </div>
@@ -686,7 +686,7 @@ export function ModalServidoresDiscriminados({
                                             Concursado
                                           </span>
                                         ) : serv.tipoVinculoNormalizado === 'Contratado' ? (
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-mutedmerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                                             Contratado
                                           </span>
                                         ) : serv.tipoVinculoNormalizado === 'Nomeado' ? (
