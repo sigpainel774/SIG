@@ -232,8 +232,6 @@ function EjaAvaliacoesContent() {
           onOpenChange={setDetalhesOpen}
           atividade={atividadeSelecionada}
           onStatusChange={fetchAtividades}
-          podeImprimir={podeImprimirAtividades}
-          podeAtualizarStatus={podeAtualizarStatusAtividades}
         />
       )}
 
@@ -246,7 +244,7 @@ function EjaAvaliacoesContent() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <IconTile icon={ClipboardList} size="md" variant="purple" />
+            <IconTile icon={ClipboardList} variant="primary" className="h-10 w-10 shrink-0" />
             <h1 className="text-2xl font-bold text-foreground">Avaliações & Atividades - EJA</h1>
           </div>
           <p className="text-muted-foreground text-sm font-normal mt-2 ml-1">

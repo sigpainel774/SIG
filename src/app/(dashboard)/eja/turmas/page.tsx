@@ -135,10 +135,10 @@ export default function EjaTurmasPage() {
     <div className="space-y-6">
       {/* Modal de Criar / Editar Turma */}
       <ModalTurma
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSelectedTurma(null)
+        open={isModalOpen}
+        onOpenChange={(isOpen) => {
+          setIsModalOpen(isOpen)
+          if (!isOpen) setSelectedTurma(null)
         }}
         turma={selectedTurma}
         onSuccess={fetchTurmas}
@@ -146,22 +146,18 @@ export default function EjaTurmasPage() {
 
       {/* Modal de Detalhes da Turma */}
       <ModalDetalhesTurma
-        isOpen={isDetailsModalOpen}
-        onClose={() => {
-          setIsDetailsModalOpen(false)
-          setSelectedTurma(null)
+        open={isDetailsModalOpen}
+        onOpenChange={(isOpen) => {
+          setIsDetailsModalOpen(isOpen)
+          if (!isOpen) setSelectedTurma(null)
         }}
         turma={selectedTurma}
-        onUpdate={fetchTurmas}
       />
 
       {/* Modal de Impressão de Relação Nominal da Turma */}
       {isPrintModalOpen && selectedTurma && (
         <ModalImprimirRelacaoTurma
-          turmaId={selectedTurma.id}
-          turmaNome={selectedTurma.nome}
-          anoLetivo={selectedTurma.ano_letivo}
-          turno={selectedTurma.turno}
+          turma={selectedTurma}
           open={isPrintModalOpen}
           onOpenChange={(open) => {
             setIsPrintModalOpen(open)
@@ -179,7 +175,7 @@ export default function EjaTurmasPage() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <IconTile icon={BookOpen} size="md" variant="purple" />
+            <IconTile icon={BookOpen} variant="primary" className="h-10 w-10 shrink-0" />
             <h1 className="text-2xl font-bold text-foreground">Turmas - EJA</h1>
           </div>
           <p className="text-muted-foreground text-sm font-normal mt-2 ml-1">

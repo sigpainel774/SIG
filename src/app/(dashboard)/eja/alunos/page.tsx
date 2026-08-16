@@ -190,7 +190,7 @@ export default function EjaAlunosPage() {
               </Link>
               <IconTile
                 icon={GraduationCap}
-                variant="purple"
+                variant="primary"
                 className="h-10 w-10 shrink-0"
               />
               <h1 className="text-2xl font-bold text-foreground">
