@@ -562,22 +562,40 @@ export function usePermissoes() {
   const handleToggleContaEja = async (funcionarioId: string, novoValor: boolean, nomeFuncionario: string) => {
     try {
       const supabase = createClient()
+      const updateData: { is_conta_eja: boolean; is_conta_especial?: boolean } = {
+        is_conta_eja: novoValor
+      }
+
+      // Ao marcar como Especial EJA, automaticamente marca também como Conta Especial para sair das listagens
+      if (novoValor) {
+        updateData.is_conta_especial = true
+      }
+
       const { error } = await supabase
         .from('funcionarios')
-        .update({ is_conta_eja: novoValor })
+        .update(updateData)
         .eq('id', funcionarioId)
 
       if (error) throw error
 
       toast.success(
         novoValor
-          ? `Conta "${nomeFuncionario}" marcada como Conta Especial EJA!`
+          ? `Conta "${nomeFuncionario}" marcada como Especial EJA (e Especial)!`
           : `Conta "${nomeFuncionario}" desmarcada como Conta Especial EJA!`
       )
 
       // Atualizar lista local de funcionários
       setFuncionariosAll((prev) =>
-        prev.map((f) => (f.id === funcionarioId ? { ...f, is_conta_eja: novoValor } : f))
+        prev.map((f) => {
+          if (f.id === funcionarioId) {
+            return {
+              ...f,
+              is_conta_eja: novoValor,
+              ...(novoValor ? { is_conta_especial: true } : {})
+            }
+          }
+          return f
+        })
       )
 
       // Invalidação de cache de perfil se existir auth_user_id
