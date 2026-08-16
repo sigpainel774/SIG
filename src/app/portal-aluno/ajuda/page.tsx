@@ -233,7 +233,7 @@ export default function AjudaPaisPage() {
               Você pode enviar recados, justificar ausências ou tirar dúvidas diretamente com a equipe escolar pela aba <strong>Mensagens</strong> no menu lateral.
             </p>
 
-            <Link href="/portal-aluno/mensagens">
+            <Link href="/portal-aluno/comunicacoes">
               <Button
                 variant="outline"
                 className="w-full font-bold text-xs h-10 rounded-xl border-sky-300 text-sky-700 hover:bg-sky-50 mt-1 cursor-pointer"

@@ -585,16 +585,27 @@ export default function AdminAcessosPage() {
   const columnsPermissoes: TableColumn<AcessoItem>[] = [
     {
       header: 'FUNCIONARIO',
-      accessor: (item) => <span className="font-bold text-foreground text-sm whitespace-nowrap">{item.funcionario}</span>,
+      accessor: (item) => (
+        <span className="font-bold text-foreground text-sm block max-w-[220px] truncate" title={item.funcionario}>
+          {item.funcionario}
+        </span>
+      ),
     },
     {
       header: 'EMAIL',
-      accessor: (item) => <span className="text-muted-foreground text-sm whitespace-nowrap">{item.email}</span>,
+      accessor: (item) => (
+        <span className="text-muted-foreground text-sm font-mono block max-w-[240px] truncate" title={item.email}>
+          {item.email}
+        </span>
+      ),
     },
     {
       header: 'ESCOLA / ORGAO',
       accessor: (item) => (
-        <span className={`text-sm whitespace-nowrap ${item.escola === 'Geral' ? 'italic text-muted-foreground' : 'text-foreground'}`}>
+        <span
+          className={`text-sm block max-w-[280px] truncate ${item.escola === 'Geral' ? 'italic text-muted-foreground' : 'text-foreground'}`}
+          title={item.escola}
+        >
           {item.escola}
         </span>
       ),
@@ -766,13 +777,13 @@ export default function AdminAcessosPage() {
   const totalTelasNavegadas = trilhaNavegacao.length
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10 w-full min-w-0">
       {/* Cabeçalho Principal do Painel de Acessos */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-borderCustom">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-borderCustom w-full min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
-            <KeyRound className="w-7 h-7 text-purple-500 dark:text-purple-400" />
-            Gestão & Inteligência de Acessos
+            <KeyRound className="w-7 h-7 text-purple-500 dark:text-purple-400 shrink-0" />
+            <span className="truncate">Gestão & Inteligência de Acessos</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Superpainel administrativo de permissões, níveis hierárquicos, sessões ativas e trilha de navegação da rede municipal.
@@ -782,9 +793,9 @@ export default function AdminAcessosPage() {
         <Button
           type="button"
           onClick={() => setModalContasEspeciaisOpen(true)}
-          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs gap-2 rounded-xl h-10 px-4 cursor-pointer shadow-md self-start sm:self-auto"
+          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs gap-2 rounded-xl h-10 px-4 cursor-pointer shadow-md shrink-0 self-start sm:self-auto"
         >
-          <Sparkles className="w-4 h-4 fill-black" />
+          <Sparkles className="w-4 h-4 fill-black shrink-0" />
           <span>Gerenciar Contas Especiais</span>
         </Button>
       </div>

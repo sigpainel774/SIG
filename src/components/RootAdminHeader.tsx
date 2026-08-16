@@ -21,7 +21,7 @@ export function RootAdminHeader() {
   }
 
   return (
-    <div className="bg-surface-1 border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+    <div className="bg-surface-1 border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 z-50 w-full min-w-0">
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}

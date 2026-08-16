@@ -57,13 +57,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // Layout exclusivo para Super Admin (Root) - apenas se não estiver simulando
   if (isSuperAdmin && !isSimulating) {
     return (
-      <div className="flex flex-col min-h-screen bg-background text-foregroundCustom">
+      <div className="flex flex-col min-h-screen bg-background text-foregroundCustom w-full min-w-0 overflow-x-hidden">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
         <PerformanceTracker />
         <AccessTracker />
         <SimulationBanner />
         <RootAdminHeader />
-        <main className="flex-1 overflow-auto p-4 sm:p-8">
+        <main className="flex-1 overflow-auto p-4 sm:p-8 w-full min-w-0 max-w-full">
           {children}
         </main>
       </div>

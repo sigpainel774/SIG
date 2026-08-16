@@ -105,6 +105,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 86 | `20260815000000_portal_comunicacoes_pais.sql` | 2026-08-15 | Adiciona a coluna `portal_comunicacoes_ativo` em `escolas` e cria a tabela `mensagens_responsaveis` para troca de mensagens/recados pedagógicos entre professores e responsáveis com RLS e índices de performance. | `public.escolas`, `public.mensagens_responsaveis` | Canal de Comunicação Pais & Professores |
 | 87 | `20260815010000_fix_pais_update_proprio_rls.sql` | 2026-08-15 | Adiciona política RLS de UPDATE na tabela `responsaveis` para o próprio responsável (`pais_update_proprio`), permitindo atualizar `must_change_password` e dados cadastrais no 1º acesso. | `public.responsaveis` | `pais_update_proprio` (RLS UPDATE) |
 | 88 | `20260815020000_solicitacoes_responsaveis.sql` | 2026-08-15 | Cria a tabela `solicitacoes_responsaveis` para pedidos de documentos escolares (Declaração Bolsa Família, etc.) e acompanhamento de status pelos pais. | `public.solicitacoes_responsaveis` | `dev_all_authenticated` / RLS |
+| 89 | `20260816000000_portal_pais_recuperacoes_finais_rls.sql` | 2026-08-16 | Adiciona a política RLS `pais_read_recuperacoes_portal_ativo` na tabela `recuperacoes_finais`, permitindo aos responsáveis visualizarem as notas de recuperação de seus filhos no Portal dos Pais. | `public.recuperacoes_finais` | `pais_read_recuperacoes_portal_ativo` (RLS SELECT) |
+
 
 
 
