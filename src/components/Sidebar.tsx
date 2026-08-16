@@ -136,6 +136,11 @@ export function Sidebar() {
     setIsRefreshing(false)
   }
 
+  const isEjaEscolaAtivo = Boolean(selectedEscola?.eja_ativo)
+  const isFuncionarioModalidadeEja = (funcionario?.modalidade_ensino ?? '').toUpperCase() === 'EJA'
+  const temPermissaoEjaUsuario = Boolean(acessos?.some(a => (a as any).pode_eja === true && a.ativo))
+  const podeVerEjaEscola = isEjaEscolaAtivo && (isDiretor() || isFuncionarioModalidadeEja || temPermissaoEjaUsuario || Boolean(funcionario?.is_superadmin))
+
   type MenuItem = { href: string; label: string; icon: React.ElementType }
   type MenuGroup = { label: string | null; items: MenuItem[] }
 
@@ -220,6 +225,18 @@ export function Sidebar() {
             ] : []),
           ]
         },
+        ...(podeVerEjaEscola ? [
+          {
+            label: 'EJA',
+            items: [
+              { href: '/eja/alunos', label: 'Alunos', icon: GraduationCap },
+              { href: '/eja/turmas', label: 'Turmas', icon: BookOpen },
+              { href: '/eja/avaliacoes', label: 'Avaliações', icon: ClipboardList },
+              { href: '/eja/matriculas', label: 'Matrículas', icon: FileBadge },
+              { href: '/eja/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+            ]
+          }
+        ] : []),
         {
           label: 'SECRETARIA',
           items: [

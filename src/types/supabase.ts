@@ -122,6 +122,7 @@ export type Database = {
           pode_mural: boolean | null
           pode_ocorrencias: boolean | null
           pode_rh_rede: boolean | null
+          pode_eja: boolean | null
           pode_turmas: boolean | null
           secretarias_ids: string[] | null
         }
@@ -141,6 +142,7 @@ export type Database = {
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
           pode_rh_rede?: boolean | null
+          pode_eja?: boolean | null
           pode_turmas?: boolean | null
           secretarias_ids?: string[] | null
         }
@@ -160,6 +162,7 @@ export type Database = {
           pode_mural?: boolean | null
           pode_ocorrencias?: boolean | null
           pode_rh_rede?: boolean | null
+          pode_eja?: boolean | null
           pode_turmas?: boolean | null
           secretarias_ids?: string[] | null
         }
@@ -1904,6 +1907,8 @@ export type Database = {
           nome: string
           plano: string | null
           portal_pais_ativo: boolean | null
+          portal_comunicacoes_ativo: boolean | null
+          eja_ativo: boolean | null
           secretaria_id: string | null
           telefone: string | null
           tipo: string | null
@@ -1928,6 +1933,8 @@ export type Database = {
           nome: string
           plano?: string | null
           portal_pais_ativo?: boolean | null
+          portal_comunicacoes_ativo?: boolean | null
+          eja_ativo?: boolean | null
           secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null
@@ -1952,6 +1959,8 @@ export type Database = {
           nome?: string
           plano?: string | null
           portal_pais_ativo?: boolean | null
+          portal_comunicacoes_ativo?: boolean | null
+          eja_ativo?: boolean | null
           secretaria_id?: string | null
           telefone?: string | null
           tipo?: string | null

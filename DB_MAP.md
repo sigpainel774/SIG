@@ -23,6 +23,7 @@ Cadastro de escolas e unidades do município.
 *   `secretaria_id`: `uuid` (Foreign Key -> `public.secretarias.id`, Nullable)
 *   `portal_pais_ativo`: `boolean` (Default: false, Indica se o Portal dos Pais está ativado nesta unidade escolar, Nullable)
 *   `portal_comunicacoes_ativo`: `boolean` (Default: false, Indica se o Canal de Comunicação Professores <-> Pais está ativado, Nullable)
+*   `eja_ativo`: `boolean` (Default: false, Indica se o Módulo EJA está ativado nesta unidade escolar, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -95,7 +96,7 @@ Gestão de permissões de acesso baseadas em atributos (ABAC).
 *   `nivel`: `integer` (Nível de acesso hierárquico, NOT NULL)
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `cargos_gerenciados`: `text[]` / `ARRAY` (Filtro de cargos sob sua gestão, Nullable)
-*   `pode_mural`, `pode_turmas`, `pode_funcionarios`, `pode_matriculas`, `pode_alunos`, `pode_ocorrencias`, `pode_atestados`, `pode_rh_rede`: `boolean` (Default: false, Nullable)
+*   `pode_mural`, `pode_turmas`, `pode_funcionarios`, `pode_matriculas`, `pode_alunos`, `pode_ocorrencias`, `pode_atestados`, `pode_rh_rede`, `pode_eja`: `boolean` (Default: false, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
 ### 5. `public.alunos`
