@@ -7,8 +7,9 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 
 export function SchoolSelector() {
   const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
-  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos } = useAuthStore()
+  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos, isContaEja } = useAuthStore()
   const isAdmin = isAdminGlobalOrRoot()
+  const isEja = isContaEja()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -17,13 +18,16 @@ export function SchoolSelector() {
   const escolasOficiais = useMemo(() => escolas.filter((e) => !e.is_teste), [escolas])
 
   const escolasPermitidas = useMemo(() => {
+    if (isEja) {
+      return escolasOficiais.filter((e) => e.eja_ativo === true)
+    }
     if (isAdmin) return escolasOficiais
     if (vinculosAtivos.length > 0) {
       const permitidas = escolasOficiais.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
       return permitidas.length > 0 ? permitidas : escolasOficiais
     }
     return escolasOficiais
-  }, [isAdmin, escolasOficiais, vinculosAtivos])
+  }, [isAdmin, isEja, escolasOficiais, vinculosAtivos])
 
   // Agrupa as escolas por Secretaria mantenedora
   const escolasAgrupadas = useMemo(() => {

@@ -19,6 +19,7 @@ interface Escola {
   tipo?: string | null
   inep?: string | null
   telefone?: string | null
+  eja_ativo?: boolean | null
   secretarias?: {
     id: string
     nome: string
@@ -58,11 +59,12 @@ export default function PortalEjaPage() {
           }
         }
 
-        // 2. Buscar todas as escolas da rede (excluindo explicitamente o EMAEE)
+        // 2. Buscar todas as escolas da rede que possuem o módulo EJA ativo (excluindo explicitamente o EMAEE)
         let query = supabase
           .from('escolas')
-          .select('id, nome, codigo, tipo, inep, telefone, secretarias(id, nome)')
+          .select('id, nome, codigo, tipo, inep, telefone, eja_ativo, secretarias(id, nome)')
           .eq('ativo', true)
+          .eq('eja_ativo', true)
           .is('deleted_at', null)
           .order('nome')
 
@@ -75,9 +77,9 @@ export default function PortalEjaPage() {
         if (error) throw error
 
         if (active && escolasData) {
-          // Filtro estrito: Remove EMAEE (que não possui turmas nem escolas regulares de EJA)
+          // Filtro estrito: Remove EMAEE e garante apenas escolas com eja_ativo = true
           const filtradasSemEmaee = escolasData.filter(
-            (e) => e.tipo !== 'EMAEE' && !/emaee/i.test(e.nome)
+            (e) => e.tipo !== 'EMAEE' && !/emaee/i.test(e.nome) && e.eja_ativo === true
           )
           setEscolas(filtradasSemEmaee)
         }
