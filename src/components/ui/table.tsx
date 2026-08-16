@@ -9,7 +9,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className="relative w-full min-w-0 max-w-full overflow-x-auto"
     >
       <table
         data-slot="table"
@@ -148,7 +148,7 @@ export function StandardTable<T,>({
 }: StandardTableProps<T>) {
 
   return (
-    <div className={cn("rounded-2xl border border-border overflow-hidden bg-card text-card-foreground shadow-sm", className)}>
+    <div className={cn("rounded-2xl border border-border overflow-hidden bg-card text-card-foreground shadow-sm w-full min-w-0 max-w-full", className)}>
       <Table className={tableClassName}>
         <TableHeader>
           <TableRow className="border-b border-border bg-muted/60 text-muted-foreground hover:bg-transparent">
