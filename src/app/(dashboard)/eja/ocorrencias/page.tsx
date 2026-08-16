@@ -121,7 +121,7 @@ export default function EjaOcorrenciasPage() {
         title="Ocorrências - EJA"
         description="Monitoramento disciplinar e pedagógico dos estudantes da Educação de Jovens e Adultos."
         icon={AlertTriangle}
-        iconVariant="purple"
+        iconVariant="destructive"
         backHref="/home"
         actions={
           <div className="flex flex-wrap items-center gap-3">
@@ -169,7 +169,7 @@ export default function EjaOcorrenciasPage() {
 
       <StandardTable
         data={ocorrenciasFiltradas}
-        isLoading={loading}
+        loading={loading}
         columns={[
           {
             header: 'Data',

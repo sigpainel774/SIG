@@ -50,7 +50,7 @@ export default function EjaMatriculasPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <IconTile icon={FileBadge} size="md" variant="purple" />
+          <IconTile icon={FileBadge} variant="primary" className="h-10 w-10 shrink-0" />
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             Matrículas - EJA
           </h2>
