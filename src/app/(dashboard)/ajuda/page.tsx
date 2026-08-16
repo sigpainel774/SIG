@@ -27,7 +27,9 @@ import {
   FileText,
   Settings,
   HelpCircle,
-  QrCode
+  QrCode,
+  GraduationCap,
+  Sparkles
 } from 'lucide-react'
 import { ModalReport } from '@/components/modals/modal-report'
 import type { LucideIcon } from 'lucide-react'
@@ -523,6 +525,60 @@ const ajudaEducacao: ManualItem[] = [
         </ul>
       </div>
     )
+  },
+  {
+    id: 'd15_criacao_funcionario_eja',
+    icon: GraduationCap,
+    apenasNivel1: true,
+    categoria: 'Gestão Central',
+    titulo: 'Cadastro e Configuração de Funcionário Especial EJA (Nível 1 / Root)',
+    keywords: ['eja', 'especial eja', 'conta especial', 'funcionario especial', 'coordenador eja', 'professor eja', 'portal eja', 'is_conta_eja', 'is_conta_especial', 'permissoes', 'nivel 1', 'root'],
+    conteudo: () => (
+      <div className="space-y-4">
+        <p>Roteiro oficial para cadastro, liberação de acesso e configuração de servidores da modalidade EJA (Educação de Jovens e Adultos) na rede municipal:</p>
+
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2 text-sm">
+          <strong className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-bold">
+            <Sparkles className="w-4 h-4" /> O que é uma Conta Especial EJA?
+          </strong>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            É uma conta com privilégios automáticos de visualização e lançamento (via políticas RLS do banco de dados) em todas as turmas, alunos, notas, frequências e diários da modalidade EJA em toda a rede municipal, sem necessidade de vinculação manual a cada escola física individualmente.
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          <div className="bg-muted/60 p-3.5 border-l-4 border-blue-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 1: Cadastrar a Ficha do Servidor</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Acesse o menu <strong>Funcionários</strong> (<code className="text-foreground font-mono">/funcionarios</code>) e clique em <strong>+ Novo Funcionário</strong>. Preencha os dados cadastrais (Nome Completo, CPF, E-mail oficial e Cargo, ex: <em>Coordenador EJA</em> ou <em>Professor EJA</em>) e salve o registro.
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-indigo-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 2: Vincular o Acesso / Login</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Certifique-se de que o usuário possua conta criada no Supabase Auth (<code className="text-foreground font-mono">auth.users</code>) com o mesmo e-mail cadastrado na ficha funcional.
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-amber-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 3: Ativar o Status de Conta Especial EJA</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Acesse o menu <strong>Permissões</strong> (<code className="text-foreground font-mono">/permissoes</code>) e selecione a aba <strong>Contas Especiais</strong>. Ative o <em>Modo de Edição</em> (com a senha gerencial), localize o servidor na busca e marque a caixa de seleção <strong>Conta especial EJA</strong> (<code className="text-foreground font-mono">is_conta_eja = true</code>).
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-emerald-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 4: Opções Adicionais e Comportamento</h5>
+            <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+              <li><strong>Marcar como Especial:</strong> Opcional. Se ativado, oculta a conta das listagens de equipes de escolas regulares físicas.</li>
+              <li><strong>Redirecionamento Automático:</strong> Ao efetuar login, o servidor é direcionado diretamente para o <strong>Portal EJA</strong> (<code className="text-foreground font-mono">/eja</code>).</li>
+              <li><strong>Menu Lateral Customizado:</strong> A barra lateral se adapta automaticamente exibindo turmas, alunos, notas e relatórios restritos ao escopo EJA.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    )
   }
 ]
 
@@ -622,6 +678,60 @@ const ajudaGeral: ManualItem[] = [
         <ul className="list-disc pl-5 space-y-2">
           <li>Clique no botão <em>Reportar um Problema ou Bug no SIG</em> no rodapé para enviar o chamado diretamente à equipe de suporte.</li>
         </ul>
+      </div>
+    )
+  },
+  {
+    id: 'g7_criacao_funcionario_eja',
+    icon: GraduationCap,
+    apenasNivel1: true,
+    categoria: 'Gestão Central',
+    titulo: 'Cadastro e Configuração de Funcionário Especial EJA (Nível 1 / Root)',
+    keywords: ['eja', 'especial eja', 'conta especial', 'funcionario especial', 'coordenador eja', 'professor eja', 'portal eja', 'is_conta_eja', 'is_conta_especial', 'permissoes', 'nivel 1', 'root'],
+    conteudo: () => (
+      <div className="space-y-4">
+        <p>Roteiro oficial para cadastro, liberação de acesso e configuração de servidores da modalidade EJA (Educação de Jovens e Adultos) na rede municipal:</p>
+
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2 text-sm">
+          <strong className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-bold">
+            <Sparkles className="w-4 h-4" /> O que é uma Conta Especial EJA?
+          </strong>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            É uma conta com privilégios automáticos de visualização e lançamento (via políticas RLS do banco de dados) em todas as turmas, alunos, notas, frequências e diários da modalidade EJA em toda a rede municipal, sem necessidade de vinculação manual a cada escola física individualmente.
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          <div className="bg-muted/60 p-3.5 border-l-4 border-blue-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 1: Cadastrar a Ficha do Servidor</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Acesse o menu <strong>Funcionários</strong> (<code className="text-foreground font-mono">/funcionarios</code>) e clique em <strong>+ Novo Funcionário</strong>. Preencha os dados cadastrais (Nome Completo, CPF, E-mail oficial e Cargo, ex: <em>Coordenador EJA</em> ou <em>Professor EJA</em>) e salve o registro.
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-indigo-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 2: Vincular o Acesso / Login</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Certifique-se de que o usuário possua conta criada no Supabase Auth (<code className="text-foreground font-mono">auth.users</code>) com o mesmo e-mail cadastrado na ficha funcional.
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-amber-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 3: Ativar o Status de Conta Especial EJA</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Acesse o menu <strong>Permissões</strong> (<code className="text-foreground font-mono">/permissoes</code>) e selecione a aba <strong>Contas Especiais</strong>. Ative o <em>Modo de Edição</em> (com a senha gerencial), localize o servidor na busca e marque a caixa de seleção <strong>Conta especial EJA</strong> (<code className="text-foreground font-mono">is_conta_eja = true</code>).
+            </p>
+          </div>
+
+          <div className="bg-muted/60 p-3.5 border-l-4 border-emerald-500 rounded-xl space-y-1.5">
+            <h5 className="text-foreground font-bold text-xs uppercase tracking-wider">Passo 4: Opções Adicionais e Comportamento</h5>
+            <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+              <li><strong>Marcar como Especial:</strong> Opcional. Se ativado, oculta a conta das listagens de equipes de escolas regulares físicas.</li>
+              <li><strong>Redirecionamento Automático:</strong> Ao efetuar login, o servidor é direcionado diretamente para o <strong>Portal EJA</strong> (<code className="text-foreground font-mono">/eja</code>).</li>
+              <li><strong>Menu Lateral Customizado:</strong> A barra lateral se adapta automaticamente exibindo turmas, alunos, notas e relatórios restritos ao escopo EJA.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     )
   }

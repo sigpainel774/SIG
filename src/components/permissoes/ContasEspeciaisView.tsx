@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check, Building2 } from 'lucide-react'
+import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check, Building2, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +28,7 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   } = hook
 
   const [busca, setBusca] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<'todas' | 'especiais' | 'normais'>('todas')
+  const [filtroStatus, setFiltroStatus] = useState<'todas' | 'especiais' | 'eja' | 'normais'>('todas')
   const [processandoId, setProcessandoId] = useState<string | null>(null)
 
   // Estado para cadastro de novo cargo no sistema
@@ -57,9 +57,11 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
         (f.cargo ?? '').toLowerCase().includes(busca.toLowerCase())
 
       const isEspecial = !!f.is_conta_especial
+      const isEja = !!f.is_conta_eja
 
       let matchStatus = true
       if (filtroStatus === 'especiais') matchStatus = isEspecial
+      if (filtroStatus === 'eja') matchStatus = isEja
       if (filtroStatus === 'normais') matchStatus = !isEspecial
 
       return matchBusca && matchStatus
@@ -69,6 +71,10 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
   // Métricas do painel superior
   const totalEspeciais = useMemo(() => {
     return funcionariosAll.filter((f) => !!f.is_conta_especial).length
+  }, [funcionariosAll])
+
+  const totalEja = useMemo(() => {
+    return funcionariosAll.filter((f) => !!f.is_conta_eja).length
   }, [funcionariosAll])
 
   const handleToggle = async (funcId: string, currentStatus: boolean, nome: string) => {
@@ -271,6 +277,19 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
             >
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" />
               Especiais ({totalEspeciais})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('eja')}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                filtroStatus === 'eja'
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/40 shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
+              )}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              EJA ({totalEja})
             </button>
             <button
               type="button"
