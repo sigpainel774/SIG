@@ -9,7 +9,6 @@ import { StandardTable, TableColumn } from '@/components/ui/table'
 import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { reverterArquivado, excluirDefinitivamenteArquivado } from '@/lib/audit/archive-agent'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ModalDetalhesArquivado } from '@/components/modals/modal-detalhes-arquivado'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
@@ -74,19 +73,26 @@ export default function AdminArquivadosPage() {
     if (!confirm) return
 
     setLoading(true)
-    const res = await reverterArquivado({
-      supabaseAdmin: supabase, 
-      arquivadoId: arq.id,
-      revertidoPor: { id: funcionario.id ?? null, name: funcionario.nome ?? '', email: funcionario.email ?? '' }
-    })
+    try {
+      const response = await fetch('/api/admin/arquivados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reverter', arquivadoId: arq.id })
+      })
+      const res = await response.json()
 
-    if (res.success) {
-      toast.success('Registro revertido com sucesso!')
-      loadArquivados()
-    } else {
-      toast.error('Erro ao reverter arquivamento')
+      if (response.ok && res.success) {
+        toast.success('Registro revertido com sucesso!')
+        loadArquivados()
+      } else {
+        toast.error(res.error || 'Erro ao reverter arquivamento')
+      }
+    } catch (err) {
+      console.error('Erro ao reverter:', err)
+      toast.error('Erro de conexão ao reverter arquivamento')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handlePurge = async (arq: any) => {
@@ -95,19 +101,26 @@ export default function AdminArquivadosPage() {
     if (!confirm) return
 
     setLoading(true)
-    const res = await excluirDefinitivamenteArquivado({
-      supabaseAdmin: supabase,
-      arquivadoId: arq.id,
-      excluidoPor: { id: funcionario.id ?? null, name: funcionario.nome ?? '', email: funcionario.email ?? '' }
-    })
+    try {
+      const response = await fetch('/api/admin/arquivados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'expurgar', arquivadoId: arq.id })
+      })
+      const res = await response.json()
 
-    if (res.success) {
-      toast.success('Registro excluído definitivamente!')
-      loadArquivados()
-    } else {
-      toast.error('Erro ao expurgar registro')
+      if (response.ok && res.success) {
+        toast.success('Registro excluído definitivamente!')
+        loadArquivados()
+      } else {
+        toast.error(res.error || 'Erro ao expurgar registro')
+      }
+    } catch (err) {
+      console.error('Erro ao expurgar:', err)
+      toast.error('Erro de conexão ao expurgar registro')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const columns: TableColumn<any>[] = [

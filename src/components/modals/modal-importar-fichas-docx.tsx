@@ -352,7 +352,7 @@ export function ModalImportarFichasDocx({
       onOpenChange={onOpenChange}
       title="Importar Fichas de Alunos via DOCX"
       description="Faça o upload de documentos Word (.docx) contendo as fichas dos alunos para extração automatizada de dados e enturmação em lote."
-      maxWidth="max-w-4xl"
+      maxWidth="sm:max-w-4xl"
     >
       <div className="space-y-5 text-sm select-none">
         {/* ── Painel 1: Seleção de Destino (Escola & Turma) ── */}

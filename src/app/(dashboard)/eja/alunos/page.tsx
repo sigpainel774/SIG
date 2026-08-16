@@ -82,13 +82,10 @@ export default function EjaAlunosPage() {
     solicitacoes,
     handleResponderSolicitacao,
     salvarHistoricoAluno,
-  } = useAlunos()
+  } = useAlunos({ onlyEja: true })
 
-  /* ── Filtrar exclusivamente alunos matriculados em turmas EJA ── */
-  const alunosEja = alunosFiltrados.filter((a: any) => {
-    const turmaNome = (a.turmas?.nome || a.serie || '').toUpperCase()
-    return turmaNome.includes('EJA') || a.modalidade_ensino === 'EJA'
-  })
+  /* ── Alunos exclusivamente da modalidade EJA ── */
+  const alunosEja = alunosFiltrados
 
   /* ── Estados de modais locais ─────────────────────────────── */
   const [modalOpen, setModalOpen] = useState(false)
@@ -236,7 +233,7 @@ export default function EjaAlunosPage() {
         <AlunosFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          totalFiltrado={alunosEja.length}
+          totalFiltrado={totalCount}
         />
 
         {/* Lista de Cards */}
@@ -260,9 +257,9 @@ export default function EjaAlunosPage() {
         {totalCount > pageSize && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground">
-              Mostrando <strong className="text-foreground">{Math.min(alunosEja.length, (page - 1) * pageSize + 1)}</strong> a{' '}
-              <strong className="text-foreground">{Math.min(page * pageSize, alunosEja.length)}</strong> de{' '}
-              <strong className="text-foreground">{alunosEja.length}</strong> alunos EJA
+              Mostrando <strong className="text-foreground">{Math.min(totalCount, (page - 1) * pageSize + 1)}</strong> a{' '}
+              <strong className="text-foreground">{Math.min(page * pageSize, totalCount)}</strong> de{' '}
+              <strong className="text-foreground">{totalCount}</strong> alunos EJA
             </p>
             <div className="flex items-center gap-3">
               <Button
@@ -275,12 +272,12 @@ export default function EjaAlunosPage() {
                 Anterior
               </Button>
               <span className="text-xs text-foreground font-medium">
-                Página {page} de {Math.max(1, Math.ceil(alunosEja.length / pageSize))}
+                Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={page >= Math.ceil(alunosEja.length / pageSize) || loading}
+                disabled={page >= Math.ceil(totalCount / pageSize) || loading}
                 onClick={() => setPage((prev) => prev + 1)}
                 className="bg-surface-1 border-borderCustom text-foreground hover:bg-hoverCustom disabled:opacity-50 text-xs cursor-pointer"
               >
