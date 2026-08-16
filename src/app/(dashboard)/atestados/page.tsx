@@ -214,11 +214,13 @@ export default function AtestadosPage() {
         ]}
       />
 
-      <ModalAtestado 
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSuccess={fetchAtestados}
-      />
+      {isModalOpen && (
+        <ModalAtestado 
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onSuccess={fetchAtestados}
+        />
+      )}
     </div>
   )
 }

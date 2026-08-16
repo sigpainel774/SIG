@@ -57,7 +57,7 @@ export function ModalPrimeiroAcesso({ open = false, onOpenChange, onSuccess }: M
             type="submit"
             form="form-primeiro-acesso"
             disabled={loading}
-            className="w-full bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold gap-2 cursor-pointer shadow"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 cursor-pointer shadow"
           >
             <Check className="w-4 h-4" />
             {loading ? 'Salvando Senha...' : 'Salvar Nova Senha'}

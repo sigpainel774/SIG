@@ -60,7 +60,7 @@ export function ModalHistoricoAluno({
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
-                temHistorico ? 'bg-mutedmerald-500' : 'bg-zinc-600'
+                temHistorico ? 'bg-emerald-500' : 'bg-zinc-600'
               }`}
             />
             <span>
@@ -82,7 +82,7 @@ export function ModalHistoricoAluno({
                 type="button"
                 onClick={handleSalvar}
                 disabled={salvando}
-                className="bg-mutedmerald-600 hover:bg-mutedmerald-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition-all flex items-center gap-2"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition-all flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 {salvando ? 'Salvando...' : 'Salvar Histórico'}

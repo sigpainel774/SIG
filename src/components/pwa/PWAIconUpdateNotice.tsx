@@ -22,14 +22,22 @@ export function PWAIconUpdateNotice() {
     if (!isStandalone) return
 
     // 3. Verifica se o usuário já dispensou este aviso nesta versão
-    const dismissedVersion = localStorage.getItem('sig_ios_icon_notice_dismissed_v12')
-    if (!dismissedVersion) {
-      setShowNotice(true)
+    try {
+      const dismissedVersion = localStorage.getItem('sig_ios_icon_notice_dismissed_v12')
+      if (!dismissedVersion) {
+        setShowNotice(true)
+      }
+    } catch (e) {
+      console.warn('[PWAIconUpdateNotice] Falha ao acessar localStorage:', e)
     }
   }, [])
 
   const handleDismiss = () => {
-    localStorage.setItem('sig_ios_icon_notice_dismissed_v12', 'true')
+    try {
+      localStorage.setItem('sig_ios_icon_notice_dismissed_v12', 'true')
+    } catch (e) {
+      console.warn('[PWAIconUpdateNotice] Falha ao gravar no localStorage:', e)
+    }
     setShowNotice(false)
   }
 

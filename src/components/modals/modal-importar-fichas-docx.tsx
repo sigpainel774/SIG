@@ -466,7 +466,7 @@ export function ModalImportarFichasDocx({
               {/* Status de Confiança & Gravação */}
               <div className="flex items-center gap-2">
                 {currentStudent.isSaved ? (
-                  <Badge className="bg-mutedmerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
+                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Salvo no Banco
                   </Badge>
                 ) : (
@@ -645,7 +645,7 @@ export function ModalImportarFichasDocx({
                 <Button
                   onClick={() => handleSaveIndividual(currentIndex)}
                   disabled={currentStudent.isSaved || currentStudent.isSaving}
-                  className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold text-xs"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
                 >
                   {currentStudent.isSaving ? (
                     <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />

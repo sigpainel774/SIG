@@ -53,12 +53,7 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
       
       toast.success('Escala criada com sucesso (Status: Pendente)')
       onSuccess()
-      
-      // Reset form
-      setFuncionarioId('')
-      setData('')
-      setTurno('')
-      onOpenChange(false)
+      handleOpenChange(false)
     } catch (error: any) {
       toast.error('Erro ao criar escala: ' + error.message)
     } finally {
@@ -66,10 +61,21 @@ export function ModalEscala({ open, onOpenChange, equipe, onSuccess }: ModalEsca
     }
   }
 
+  const resetForm = () => {
+    setFuncionarioId('')
+    setData('')
+    setTurno('')
+  }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) resetForm()
+    onOpenChange(isOpen)
+  }
+
   return (
     <StandardDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title="Criar Escala de Trabalho"
       description="Cadastre uma nova escala para um membro da sua equipe."
       maxWidth="sm:max-w-[425px]"

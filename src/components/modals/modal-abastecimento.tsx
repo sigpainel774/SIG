@@ -121,7 +121,13 @@ export function ModalAbastecimento({
           </Label>
           <Select value={veiculoId} onValueChange={(v: string | null) => setVeiculoId(v ?? '')}>
             <SelectTrigger className="bg-background border-border text-foreground text-sm h-10">
-              <SelectValue placeholder="Selecione o veículo" />
+              <SelectValue placeholder="Selecione o veículo">
+                {veiculoId
+                  ? (veiculos.find((v) => v.id === veiculoId)
+                      ? `${veiculos.find((v) => v.id === veiculoId)!.modelo} — Placa: ${veiculos.find((v) => v.id === veiculoId)!.placa}`
+                      : (veiculos.length === 0 ? 'Carregando...' : veiculoId))
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border text-popover-foreground">
               {veiculos.map((v) => (

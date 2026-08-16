@@ -24,6 +24,8 @@ Cadastro de escolas e unidades do município.
 *   `portal_pais_ativo`: `boolean` (Default: false, Indica se o Portal dos Pais está ativado nesta unidade escolar, Nullable)
 *   `portal_comunicacoes_ativo`: `boolean` (Default: false, Indica se o Canal de Comunicação Professores <-> Pais está ativado, Nullable)
 *   `eja_ativo`: `boolean` (Default: false, Indica se o Módulo EJA está ativado nesta unidade escolar, Nullable)
+*   `is_teste`: `boolean` (Default: false, Indica se a escola é de teste/simulação, Nullable)
+*   `anexos_padrao`: `text[]` / `ARRAY` (Lista de nomes de documentos padrão exigidos na matrícula, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -121,6 +123,7 @@ Cadastro geral de alunos.
 *   `codigo_temp_func`: `text` (Código de acesso temporário para funcionários, Nullable)
 *   `codigo_temp_resp_criado_em`: `timestamp with time zone` (Data de expiração do código do Responsável, Nullable)
 *   `codigo_temp_func_criado_em`: `timestamp with time zone` (Data de expiração do código do funcionário, Nullable)
+*   `historico`: `text` (Histórico escolar e anotações pedagógicas gerais, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
@@ -199,6 +202,10 @@ Histórico de ocorrências e incidentes dos estudantes.
 *   `gravidade`: `text` (e.g. "Leve", "Grave", Nullable)
 *   `descricao`: `text` (NOT NULL)
 *   `status_pais`: `text` (Status de leitura dos pais, Nullable)
+*   `ciencia_responsavel`: `boolean` (Default: false, Indica se o responsável confirmou ciência no Portal dos Pais, Nullable)
+*   `ciencia_responsavel_em`: `timestamp with time zone` (Data/hora da confirmação de ciência pelo responsável, Nullable)
+*   `ciencia_responsavel_nome`: `text` (Nome do responsável que confirmou ciência, Nullable)
+*   `ciencia_responsavel_parentesco`: `text` (Grau de parentesco do responsável, Nullable)
 *   `data`: `date` (NOT NULL)
 *   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Nullable)
@@ -395,6 +402,7 @@ Controle de transferências escolares municipais.
 *   `escola_destino_id`: `uuid` (FK -> `public.escolas.id`, Nullable)
 *   `solicitante_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `motivo`: `text` (Nullable)
+*   `tipo_movimentacao`: `text` (Default: 'TRANSFERENCIA_INTERNA', e.g. 'TRANSFERENCIA_INTERNA', 'TRANSFERENCIA_EXTERNA', 'ENCAMINHAMENTO_EMAEE', Nullable)
 *   `fora_da_rede`: `boolean` (Default: false, Nullable)
 *   `arquivos_anexos`: `jsonb` (Default: '[]'::jsonb, Nullable)
 *   `ficha_snapshot`: `jsonb` (Nullable)
@@ -670,8 +678,8 @@ Log de auditoria para ações executadas sobre as contas de responsáveis (cria�
 *   `detalhes`: `jsonb` (Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
-### 53. `public.abastecimentos_veiculos`
-Registro de consumo de combustível, abastecimentos e hodômetro da frota escolar.
+### 56. `public.abastecimentos_veiculos`
+Cadastro de abastecimentos e hodômetro da frota escolar.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `veiculo_id`: `uuid` (FK -> `public.veiculos.id`, NOT NULL)
 *   `data`: `date` (NOT NULL, Default: `CURRENT_DATE`)
@@ -683,7 +691,7 @@ Registro de consumo de combustível, abastecimentos e hodômetro da frota escola
 *   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
-### 54. `public.manutencoes_veiculos`
+### 57. `public.manutencoes_veiculos`
 Histórico de revisões, oficinas e manutenções da frota.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `veiculo_id`: `uuid` (FK -> `public.veiculos.id`, NOT NULL)
@@ -698,7 +706,7 @@ Histórico de revisões, oficinas e manutenções da frota.
 *   `registrado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
-### 55. `public.secretarias`
+### 58. `public.secretarias`
 Organização estrutural dos órgãos macro (ex: Secretaria de Educação, Secretaria de Saúde).
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
 *   `nome`: `text` (NOT NULL)
@@ -708,7 +716,7 @@ Organização estrutural dos órgãos macro (ex: Secretaria de Educação, Secre
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
-### 56. `public.emaee_evolucoes`
+### 59. `public.emaee_evolucoes`
 Histórico de atendimentos e evolução clínica dos pacientes do EMAEE.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
 *   `emaee_matricula_id`: `uuid` (FK -> `public.emaee_matriculas.id`, NOT NULL)
@@ -726,14 +734,14 @@ Histórico de atendimentos e evolução clínica dos pacientes do EMAEE.
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
-### 57. `public.comunicados_lidos`
+### 60. `public.comunicados_lidos`
 Confirmação e rastreamento de leitura individual de comunicados do mural por usuário.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `comunicado_id`: `uuid` (FK -> `public.comunicados.id`, NOT NULL)
 *   `usuario_id`: `uuid` (FK -> `public.funcionarios.id`, NOT NULL)
 *   `lido_em`: `timestamp with time zone` (Default: `now()`, NOT NULL)
 
-### 58. `public.emaee_matriculas`
+### 61. `public.emaee_matriculas`
 Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
@@ -745,6 +753,9 @@ Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `ano_escolarizacao`, `turno_regular`, `turma_regular`, `professor_regular`, `gestor_regular`: `text` (Dados da escola regular, Nullable)
 *   `principal_queixa`, `cid_codigo`, `observacoes_requerimento`, `outros_transtornos`: `text` (Queixa clínica e diagnósticos CID, Nullable)
 *   `def_baixa_visao`, `def_cegueira`, `def_auditiva`, `def_fisica`, `def_intelectual`, `def_surdez`, `def_surdocegueira`, `def_multipla`, `transtorno_tea`, `transtorno_outros`: `boolean` (Mapeamento AEE Censo, Default: false)
+*   `anexos_requerimento`: `jsonb` (Documentos e laudos anexados no encaminhamento ou requerimento, Nullable)
+*   `tipo_encaminhamento`: `text` (Modalidade ou motivo do encaminhamento clínico, Nullable)
+*   `encaminhado_por`: `uuid` (FK -> `public.funcionarios.id`, Funcionário autor do encaminhamento, Nullable)
 *   `status`: `text` (Default: 'FILA_ESPERA', e.g. 'FILA_ESPERA', 'EM_INVESTIGACAO', 'ATIVO', 'ALTA', 'INATIVO')
 *   `autorizado_pelo_responsavel`: `boolean` (Default: false, Nullable)
 *   `data_autorizacao`: `timestamp with time zone` (Nullable)
@@ -752,7 +763,7 @@ Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
-### 59. `public.emaee_especialidades_vinculadas`
+### 62. `public.emaee_especialidades_vinculadas`
 Escala e agendamento de especialidades de atendimento no EMAEE.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `emaee_matricula_id`: `uuid` (FK -> `public.emaee_matriculas.id`, NOT NULL)
@@ -765,7 +776,7 @@ Escala e agendamento de especialidades de atendimento no EMAEE.
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
-### 60. `public.emaee_solicitacoes_relatorios`
+### 63. `public.emaee_solicitacoes_relatorios`
 Solicitação de pareceres e relatórios clínico-pedagógicos entre a escola regular e o EMAEE.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `emaee_matricula_id`: `uuid` (FK -> `public.emaee_matriculas.id`, NOT NULL)
@@ -780,7 +791,7 @@ Solicitação de pareceres e relatórios clínico-pedagógicos entre a escola re
 *   `respondido_em`: `timestamp with time zone` (Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
-### 61. `public.user_navigation_trail`
+### 64. `public.user_navigation_trail`
 Histórico de navegação e rastro (trail) de páginas acessadas pelos usuários.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `session_id`: `text` (Nullable)
@@ -796,14 +807,14 @@ Histórico de navegação e rastro (trail) de páginas acessadas pelos usuários
 *   `geo_location`: `jsonb` (Default: '{}'::jsonb, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
-### 62. `public.ip_geolocation_cache`
+### 65. `public.ip_geolocation_cache`
 Cache de geolocalização de IPs para auditoria de acessos.
 *   `ip_address`: `text` (Primary Key, NOT NULL)
 *   `city`, `region`, `country`, `isp`: `text` (Nullable)
 *   `latitude`, `longitude`: `numeric` (Nullable)
 *   `updated_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
-### 63. `public.backup_registros`
+### 66. `public.backup_registros`
 Auditoria e histórico de execução de backups da base de dados Supabase.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `tipo`: `text` (Default: 'MANUAL', NOT NULL)
@@ -815,7 +826,7 @@ Auditoria e histórico de execução de backups da base de dados Supabase.
 *   `observacoes`: `text` (Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
-### 64. `public.mensagens_responsaveis`
+### 67. `public.mensagens_responsaveis`
 Canal de comunicação e recados pedagógicos diretos entre professores e pais/responsáveis de alunos.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `escola_id`: `uuid` (FK -> `public.escolas.id`, NOT NULL)
@@ -834,7 +845,7 @@ Canal de comunicação e recados pedagógicos diretos entre professores e pais/r
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
-### 65. `public.solicitacoes_responsaveis`
+### 68. `public.solicitacoes_responsaveis`
 Solicitações de documentos (Declaração Bolsa Família, histórico, etc.) enviadas pelos responsáveis dos alunos à escola.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `escola_id`: `uuid` (FK -> `public.escolas.id`, NOT NULL)
@@ -857,11 +868,14 @@ Solicitações de documentos (Declaração Bolsa Família, histórico, etc.) env
 | Nome da RPC | Parâmetros | Tipo de Retorno | Descrição & Propósito |
 |-------------|------------|-----------------|------------------------|
 | `public.obter_admin_dashboard_kpis` | `p_escola_id UUID, p_data DATE, p_inicio_mes TIMESTAMPTZ` | `jsonb` | Retorna consolidação de KPIs (alunos, turmas, ocorrências, transferências pendentes, diários) com validação de acesso `auth.uid()`. |
+| `public.get_dashboard_resumo` | `p_escola_id UUID, p_funcionario_id UUID` | `jsonb` | Resumo consolidado de contadores da dashboard principal (total de alunos, turmas, funcionários ativos, comunicados, diários pendentes, ocorrências do mês) respeitando soft-delete (`deleted_at IS NULL`). |
 | `public.obter_multi_escolas_stats` | `p_funcionario_id UUID, p_escola_ids UUID[], p_data DATE` | `jsonb` | Estatísticas multi-escola de professores (turmas vinculadas, aulas do dia, chamadas pendentes). |
 | `public.get_birthdays_of_month` | `month_num INT` | `TABLE (day, name, role, foto_url, foto_avatar_path, foto_visualizacao_path)` | Aniversariantes (alunos e funcionários) do mês com fotos/avatars para exibição de perfil. |
 | `public.obter_relatorio_servidores_completo` | `p_escola_id UUID, p_cargo TEXT, p_status TEXT` | `jsonb` | Relatório completo de servidores por escola/cargo com detalhamento de vínculos e contatos. |
 | `public.obter_boletim_aluno_completo` | `p_aluno_id UUID, p_turma_id UUID` | `jsonb` | Notas, faltas e médias consolidadas por trimestre para exibição no diário/boletim do aluno. |
 | `public.solicitar_encaminhamento_emaee` | `p_aluno_id UUID, p_motivo TEXT, p_documentos TEXT[]` | `jsonb` | Encaminhamento direto de estudantes da escola para a fila de espera do EMAEE com notificações aos gestores. |
+| `public.marcar_notificacao_lida_grupo` | `p_notif_id UUID, p_funcionario_id UUID, p_funcionario_nome TEXT` | `jsonb` | Marca uma notificação individual ou todas as notificações do mesmo lote (`grupo_id`) como lidas coletivamente com auditoria do servidor que realizou a baixa. |
+| `public.marcar_todas_notificacoes_lidas_usuario` | `p_auth_user_id UUID, p_funcionario_id UUID, p_funcionario_nome TEXT` | `jsonb` | Marca todas as notificações não lidas de um usuário como lidas, sincronizando a baixa coletiva de lotes compartilhados (`grupo_id`). |
 | `public.get_all_active_sessions_admin` | `none` | `TABLE (...)` | Retorna lista de sessões ativas com rastreio de geolocalização e dwell time (Apenas Superadmin/Admin). |
 | `public.revoke_any_user_session_admin` | `target_session_id UUID` | `boolean` | Encerra remotamente a sessão ativa de qualquer usuário (Apenas Superadmin). |
 | `public.get_daily_login_history_admin` | `p_start_date DATE, p_end_date DATE` | `TABLE (...)` | Histórico de acessos diários consolidado com tempo de tela e geolocalização. |

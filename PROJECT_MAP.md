@@ -11,8 +11,8 @@ src/
 ├── app/                  # Roteamento do Next.js (App Router)
 │   ├── (auth)/           # Grupo de rotas de autenticação
 │   │   └── login/        # Rota de Login (/login)
-│   ├── (dashboard)/      # Grupo de rotas autenticadas
-│   │   ├── admin/        # Administração do sistema (Logs, dispositivos, lixeira, etc.)
+│   ├── (dashboard)/      # Grupo de rotas autenticadas do corpo docente e administrativo
+│   │   ├── admin/        # Administração do sistema (Logs, dispositivos, lixeira, backup, etc.)
 │   │   ├── ajuda/        # Ajuda e suporte do usuário
 │   │   ├── alunos/       # Gestão de Alunos (Ficha, ocorrências, anexos, notas)
 │   │   ├── arquivos/     # Arquivamento geral de registros
@@ -21,6 +21,8 @@ src/
 │   │   ├── coleta-local/ # Recursos de ponto/coleta off-line
 │   │   ├── configuracoes/# Preferências do sistema e níveis de notificações
 │   │   ├── documentos/   # Emissão de documentos oficiais e comprovantes
+│   │   ├── eja/          # Módulo EJA (Educação de Jovens e Adultos)
+│   │   ├── emaee/        # Módulo EMAEE (Atendimento Educacional Especializado e Prontuários)
 │   │   ├── financeiro/   # Lançamentos e transações financeiras (caixa/escola)
 │   │   ├── funcionarios/ # Gestão de Funcionários, vínculos e lotações
 │   │   ├── historico-notificacoes/ # Histórico de notificações recebidas pelo usuário
@@ -33,18 +35,28 @@ src/
 │   │   ├── permissoes/   # Gestão de permissões ABAC
 │   │   ├── ponto-mobile/ # Ponto biométrico/escala mobile
 │   │   ├── relatorios/   # Relatórios gerais de notas, frequências e auditoria
+│   │   ├── responsaveis/ # Gestão e cadastro de contas de pais e responsáveis
 │   │   ├── root/         # Painel de controle do Superadmin (Logs, IPs, Bugs)
 │   │   ├── transferencias/# Transferências de alunos e funcionários entre unidades
 │   │   └── turmas/       # Gestão de turmas, grade semanal e horários de aula
 │   │
+│   ├── portal-aluno/     # Portal dos Pais e Alunos (Acesso isolado: diários, recados, solicitações)
+│   │   ├── ajuda/        # Ajuda ao responsável
+│   │   ├── comunicacoes/ # Canal de recados e mensagens com professores
+│   │   ├── dashboard/    # Visão acadêmica do estudante (boletim, médias, faltas)
+│   │   ├── login/        # Login exclusivo para pais e responsáveis (/portal-aluno/login)
+│   │   ├── ocorrencias/  # Visualização e confirmação de ciência de ocorrências
+│   │   ├── solicitacoes/ # Pedido de documentos e declarações escolares
+│   │   └── trocar-senha/ # Troca obrigatória de senha no primeiro acesso
+│   │
 │   ├── api/              # Route Handlers / Endpoints da API (Server-side)
-│   │   ├── admin/        # Endpoints de admin (ações de logs, reset, etc.)
+│   │   ├── admin/        # Endpoints de admin (ações de logs, reset, hard-delete, export)
 │   │   ├── auth/         # Autenticação, sessão e rotas de segurança
 │   │   ├── get-ip/       # Utilitário de identificação de IP de acesso
 │   │   └── matricula/    # Regras e hooks de submissão de matrículas
 │   │
 │   ├── assinar/          # Rota pública de assinaturas digitais por QRCode/Mobile
-│   ├── verificar/        # Rota de verificação pública de assinaturas
+│   ├── verificar/        # Rota de verificação pública de assinaturas e crachás
 │   ├── globals.css       # Estilos globais (Tailwind CSS)
 │   ├── layout.tsx        # Layout raiz do projeto
 │   └── page.tsx          # Página raiz do projeto (redireciona para login/dashboard)
@@ -91,23 +103,34 @@ src/
 
 ## 🗄️ Tabelas Principais do Banco de Dados (Supabase - RLS Ativo)
 
-*   **`public.escolas`**: Cadastro das unidades escolares municipais.
+*   **`public.escolas`**: Cadastro das unidades escolares municipais e flags de ativação de módulos.
+*   **`public.secretarias`**: Cadastro de órgãos e secretarias municipais estruturais.
 *   **`public.funcionarios`**: Dados cadastrais dos servidores e funcionários do município.
 *   **`public.vinculos_funcionarios`**: Relação de vínculos ativos de funcionários com escolas/órgãos.
 *   **`public.acessos_usuarios`**: Perfis de usuário, e-mails de acesso e permissões (ABAC).
 *   **`public.alunos`**: Cadastro principal de estudantes matriculados.
-*   **`public.alunos_anexos`**: Documentos anexados às fichas dos alunos (Certidões, RG, etc.).
+*   **`public.alunos_anexos`**: Documentos anexados às fichas dos alunos (Certidões, RG, Laudos).
 *   **`public.turmas`**: Definição de salas e turmas criadas por ano/letra (ex: "6 - A").
 *   **`public.vinculos_turmas`**: Associação de alunos e professores às suas respectivas turmas.
 *   **`public.cargos`**: Tabela de funções e cargos disponíveis na rede de ensino.
 *   **`public.materias`**: Componentes curriculares/disciplinas vinculadas às turmas.
 *   **`public.notas`**: Lançamentos periódicos de notas por matéria/unidade de avaliação.
 *   **`public.frequencias`**: Registros de presença e faltas diárias ou por aula.
-*   **`public.ocorrencias`**: Registro de incidentes ou advertências de alunos.
+*   **`public.ocorrencias`**: Registro de incidentes ou advertências de alunos com controle de ciência dos pais.
+*   **`public.responsaveis`**: Cadastro de pais e responsáveis legais com acesso ao Portal do Aluno.
+*   **`public.responsaveis_alunos`**: Vínculo de parentesco/responsabilidade entre responsáveis e estudantes.
+*   **`public.responsavel_audit_log`**: Logs de auditoria para ações executadas sobre contas de responsáveis.
+*   **`public.mensagens_responsaveis`**: Canal de comunicação e recados diretos entre professores e responsáveis.
+*   **`public.solicitacoes_responsaveis`**: Solicitações de declarações e documentos enviadas pelos responsáveis.
+*   **`public.emaee_matriculas`**: Prontuários clínicos, triagem e acolhimento especializado do EMAEE.
+*   **`public.emaee_evolucoes`**: Histórico de atendimentos e evolução clínica dos pacientes do EMAEE.
+*   **`public.emaee_especialidades_vinculadas`**: Agendamento de especialidades de atendimento no EMAEE.
+*   **`public.emaee_solicitacoes_relatorios`**: Pareceres e solicitações pedagógicas entre escola e EMAEE.
 *   **`public.atestados`**: Histórico de atestados e licenças de funcionários.
-*   **`public.comunicados`**: Mensagens de texto publicadas no mural escolar.
+*   **`public.comunicados`**: Mensagens de texto publicadas no mural escolar por secretaria/escola.
+*   **`public.comunicados_lidos`**: Rastreamento de confirmação de leitura individual de comunicados.
 *   **`public.assinatura`**: Registro e tokens das assinaturas eletrônicas emitidas via QRCode.
-*   **`public.transferencias_alunos`**: Histórico de movimentações de estudantes entre escolas.
+*   **`public.transferencias_alunos`**: Histórico de movimentações e transferências de estudantes.
 *   **`public.transferencias_funcionarios`**: Histórico de movimentações de funcionários.
 *   **`public.audit_logs`**: Logs de auditoria de acessos e modificações de registros.
 *   **`public.trash_bin`**: Lixeira virtual para exclusões lógicas com suporte a restauração.
@@ -118,9 +141,14 @@ src/
 *   **`public.pontos_ronda`**: Pontos de geolocalização cadastrados para rondas de vigilância.
 *   **`public.blocked_ips`**: Endereços de IP bloqueados temporariamente por segurança.
 *   **`public.access_logs`**: Logs brutos de requisições e acessos HTTP.
-*   **`public.notifications`**: Notificações in-app disparadas aos usuários.
+*   **`public.user_navigation_trail`**: Rastro de navegação e páginas acessadas pelos usuários.
+*   **`public.ip_geolocation_cache`**: Cache de geolocalização de IPs para auditoria.
+*   **`public.backup_registros`**: Histórico e auditoria de backups do banco de dados.
+*   **`public.notifications`**: Notificações in-app disparadas aos usuários com suporte a `grupo_id`.
 *   **`public.dispositivos`**: Dispositivos e coletores de ponto autorizados.
 *   **`public.veiculos`**: Veículos da frota de transporte escolar.
+*   **`public.abastecimentos_veiculos`**: Registro de abastecimentos e hodômetro da frota escolar.
+*   **`public.manutencoes_veiculos`**: Histórico de manutenções e oficinas da frota escolar.
 *   **`public.rotas_transporte`**: Rotas do transporte escolar municipal.
 *   **`public.alunos_transporte`**: Relação de alunos enturmados em rotas de transporte.
 *   **`public.rotas_ronda`**: Rotas planejadas de vigilância noturna/patrulha.
@@ -142,6 +170,7 @@ src/
 *   **`public.folha_pagamento_config`**: Parâmetros de fechamento mensal da folha financeira.
 *   **`public.desligamentos_programados`**: Agendamento de desligamentos futuros de vínculos de RH.
 *   **`public.adicionais_salario`**: Lançamento de adicionais (horas extras, gratificações) na folha.
+*   **`public.configuracoes_rede`**: Parâmetros e dados gerais da Secretaria de Educação.
 
 ---
 

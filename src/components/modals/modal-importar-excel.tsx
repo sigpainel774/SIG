@@ -599,7 +599,7 @@ export function ModalImportarExcel({
               <Upload className="w-4 h-4" /> 2. Upload do Arquivo Excel (.xlsx / .xls)
             </div>
             {totalGlobalStudents > 0 && (
-              <Badge variant="outline" className="bg-mutedmerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-xs">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-xs">
                 {savedGlobalStudents} de {totalGlobalStudents} aluno(s) cadastrados
               </Badge>
             )}
@@ -622,7 +622,7 @@ export function ModalImportarExcel({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <div className="bg-mutedmerald-500/10 p-3 rounded-full group-hover:scale-110 transition-transform">
+                <div className="bg-emerald-500/10 p-3 rounded-full group-hover:scale-110 transition-transform">
                   <FileSpreadsheet className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
@@ -652,7 +652,7 @@ export function ModalImportarExcel({
                   variant="outline"
                   onClick={handleSaveAllSheets}
                   disabled={isSavingAll}
-                  className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white border-none h-7 text-xs font-bold"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white border-none h-7 text-xs font-bold"
                 >
                   {isSavingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
                   Importar TODAS as Pastas
@@ -682,7 +682,7 @@ export function ModalImportarExcel({
                         variant="outline"
                         className={`text-[10px] px-1.5 py-0 ${
                           savedInSheet === totalInSheet && totalInSheet > 0
-                            ? 'bg-mutedmerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                             : 'bg-muted text-muted-foreground border-border'
                         }`}
                       >
@@ -779,7 +779,7 @@ export function ModalImportarExcel({
 
                   <div className="flex items-center gap-2">
                     {currentStudent.isSaved ? (
-                      <Badge className="bg-mutedmerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 gap-1 text-xs">
+                      <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 gap-1 text-xs">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Cadastrado
                       </Badge>
                     ) : (
@@ -932,7 +932,7 @@ export function ModalImportarExcel({
                       disabled={currentStudent.isSaved || currentStudent.isSaving}
                       className={`h-9 font-bold ${
                         currentStudent.isSaved
-                          ? 'bg-mutedmerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 cursor-default'
+                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 cursor-default'
                           : 'bg-purple-600 hover:bg-purple-700 text-white'
                       }`}
                     >

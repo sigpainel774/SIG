@@ -173,7 +173,13 @@ export function ModalAssociarAlunoAEE({
             <Label className="text-xs text-muted-foreground">Selecione o Aluno (Prontuário EMAEE)</Label>
             <Select value={alunoSelecionadoId} onValueChange={(val) => setAlunoSelecionadoId(val || '')}>
               <SelectTrigger className="bg-background border-border text-foreground mt-1">
-                <SelectValue placeholder={loading ? "Carregando..." : "Selecione o aluno..."} />
+                <SelectValue placeholder={loading ? "Carregando..." : "Selecione o aluno..."}>
+                  {alunoSelecionadoId
+                    ? (alunosDisponiveis.find((m) => m.id === alunoSelecionadoId)
+                        ? (alunosDisponiveis.find((m) => m.id === alunoSelecionadoId)!.alunos as any)?.nome || 'Aluno Selecionado'
+                        : (loading ? 'Carregando...' : alunoSelecionadoId))
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-popover border-border text-popover-foreground max-h-60">
                 {alunosDisponiveis.map(m => {

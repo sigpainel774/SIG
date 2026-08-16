@@ -200,7 +200,7 @@ export function ModalGestaoLotacoes({
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0 ${
                         selecionado.status === 'ativo'
-                          ? 'bg-mutedmerald-900/40 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30'
                           : 'bg-muted text-zinc-400 border border-zinc-600/30'
                       }`}
                     >
@@ -308,7 +308,7 @@ export function ModalGestaoLotacoes({
                               )}
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 border-border pt-2.5 sm:pt-0 mt-1 sm:mt-0">
-                              <span className="px-2.5 py-1 rounded-full bg-mutedmerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
                                 Ativa
                               </span>
                               {isGlobalAdmin && (

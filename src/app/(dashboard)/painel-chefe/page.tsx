@@ -531,12 +531,14 @@ export default function PainelChefePage() {
         <GradeSemanalSection />
       )}
 
-      <ModalEscala 
-        open={isModalEscalaOpen} 
-        onOpenChange={setIsModalEscalaOpen} 
-        equipe={equipe} 
-        onSuccess={fetchPainelData} 
-      />
+      {isModalEscalaOpen && (
+        <ModalEscala 
+          open={isModalEscalaOpen} 
+          onOpenChange={setIsModalEscalaOpen} 
+          equipe={equipe} 
+          onSuccess={fetchPainelData} 
+        />
+      )}
     </div>
   )
 }

@@ -294,7 +294,13 @@ export function ModalAlocarAlunoTransporte({
             </Label>
             <Select value={rotaId} onValueChange={(v: string | null) => setRotaId(v ?? '')}>
               <SelectTrigger className="bg-background border-border text-foreground text-xs h-10">
-                <SelectValue placeholder="Selecione a rota" />
+                <SelectValue placeholder="Selecione a rota">
+                  {rotaId
+                    ? (rotas.find((r) => r.id === rotaId)
+                        ? `${rotas.find((r) => r.id === rotaId)!.nome} (${rotas.find((r) => r.id === rotaId)!.turno})`
+                        : (rotas.length === 0 ? 'Carregando...' : rotaId))
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-popover border-border text-popover-foreground">
                 {rotas.map((r) => (

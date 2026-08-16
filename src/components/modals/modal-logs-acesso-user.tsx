@@ -113,7 +113,7 @@ export function ModalLogsAcessoUser({ open, onOpenChange, userEmail, userName }:
                           variant="outline" 
                           className={`text-[10px] font-extrabold uppercase ${
                             log.evento === 'LOGIN' 
-                              ? 'bg-mutedmerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                               : log.evento === 'LOGIN_FAILED'
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'

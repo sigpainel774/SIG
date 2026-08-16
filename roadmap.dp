@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-08-12  
+**Última Atualização:** 2026-08-16  
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -11,6 +11,12 @@
 
 | Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
 |-------------------------|--------|----------------|-------------------|
+| **Varredura e Correção de Erros Silenciosos (ES-1 a ES-12)** | ✅ Concluído | 2026-08-16 | Correção de 20 arquivos com classes Tailwind quebradas (`mutedmerald`), proteção contra violação de FK em notificações, ajustes em `isProfessor`/`canAccessEja`, lookups em Selects Base UI, try/catch em `localStorage`, resets de modais e montagem condicional. |
+| **Correção Consolidada de Bugs & Blindagem RLS (Auditoria)** | ✅ Concluído | 2026-08-16 | Blindagem de RLS em `mensagens_responsaveis` e `solicitacoes_responsaveis`, correção de `WITH CHECK (true)` em `assinatura`, prevenção de recursão em `turmas` e soft-delete na RPC `get_dashboard_resumo`. |
+| **Unificação de Notificações em Grupo & Baixa Coletiva** | ✅ Concluído | 2026-08-16 | RPCs `marcar_notificacao_lida_grupo` e `marcar_todas_notificacoes_lidas_usuario` com `grupo_id`, trigger automático com baixa coletiva e auditoria do servidor que processou ao confirmar ciência de ocorrências. |
+| **Módulo EJA (Educação de Jovens e Adultos)** | ✅ Concluído | 2026-08-16 | Flags `eja_ativo` em `escolas`, permissão `pode_eja` em `acessos_usuarios`, suporte a Contas Especiais EJA (`is_conta_eja`), políticas RLS para notas/frequências EJA e rota dedicada `/eja`. |
+| **Portal do Aluno / Portal dos Pais (Completo)** | ✅ Concluído | 2026-08-15 | Autenticação isolada de responsáveis (`responsaveis`, `responsaveis_alunos`), visualização de notas, diários, boletins, confirmação de ciência em ocorrências, canal de recados com professores (`mensagens_responsaveis`), solicitações de documentos escolares (`solicitacoes_responsaveis`) e rota `/portal-aluno`. |
+| **Ambiente de Testes / Escolas de Simulação** | ✅ Concluído | 2026-08-13 | Coluna `is_teste` em `escolas` e isolamento das escolas 'Teste 1' e 'Teste 2' para simulações e treinamento de equipes sem poluir dados de produção. |
 | **Blindagem de Segurança (Rate Limit, Headers, DOMPurify, APIs Admin)** | ✅ Concluído | 2026-08-12 | Rate Limiting seletivo (Edge-safe), HTTP Security Headers no `proxy.ts`, sanitização de Rich Text com `isomorphic-dompurify` e guarda `requireSuperAdminApi` em `/api/admin/*`. |
 | **Módulo de Backup e Auditoria de Dados** | ✅ Concluído | 2026-08-12 | Tabela `backup_registros` e gestão documental de dumps e backups via Supabase. |
 | **Segurança RLS de Produção (Camadas ABAC)** | ✅ Concluído | 2026-08-12 | Remoção de `dev_all_authenticated` em 43 tabelas. Implantação total de RLS restrito a Superadmin, Diretores (Nível 2), Secretários (Nível 3) e Professores. |
@@ -19,7 +25,7 @@
 | **Módulo EMAEE (Atendimento Especializado) & Encaminhamentos** | ✅ Concluído | 2026-08-07 | Prontuários clínicos (`emaee_matriculas`), evoluções (`emaee_evolucoes`), solicitação de relatórios, RPC `solicitar_encaminhamento_emaee` e ficha AEE (Censo 2026). |
 | **Categorização de Anexos & Histórico de Alunos** | ✅ Concluído | 2026-08-06 | Categorização de anexos em `alunos_anexos` (`tipo`), histórico cadastral em `alunos` e persistência de documentos oficiais `jsonb` em `assinatura`. |
 | **Módulo Multi-Secretarias & RLS Salvaguardas** | ✅ Concluído | 2026-08-05 | Tabela `secretarias`, isolamento de comunicados (`comunicados_lidos`), vínculo de escolas e cargos a secretarias e blindagem de RLS contra recursão. |
-| **Mapeamento de Migrations (`MIGRATIONS_MAP.md`)** | ✅ Concluído | 2026-08-02 | Inventário centralizado das 78 migrations do Supabase com regras permanentes em `AGENTS.md` e `.agents/AGENTS.md`. |
+| **Mapeamento de Migrations (`MIGRATIONS_MAP.md`)** | ✅ Concluído | 2026-08-02 | Inventário centralizado das 93 migrations do Supabase com regras permanentes em `AGENTS.md` e `.agents/AGENTS.md`. |
 | **Relatório de Servidores & RPC Aniversariantes** | ✅ Concluído | 2026-08-02 | RPC `obter_relatorio_servidores_completo`, atualização da `get_birthdays_of_month` com foto_avatar/foto_visualizacao e bucket privado LGPD. |
 | **Refatoração de RPCs & Segurança RLS (G-3)** | ✅ Concluído | 2026-07-30 | RPCs `obter_admin_dashboard_kpis` e `obter_multi_escolas_stats` blindadas com verificação `auth.uid()` e restrições de acesso. |
 | **Filtro de Mapa Logístico, Camadas e Impressão** | ✅ Concluído | 2026-07-28 | Filtros avançados por camada de transporte/geolocalização em `MapaGlobal.tsx` e `MapaAlunos.tsx`, relatórios com `MapaImpressao.tsx` e template de impressão `print-relatorio-geolocalizacao.tsx`. |
@@ -30,7 +36,6 @@
 | **Módulo Secretário de Educação & Limpeza Boletim** | ✅ Concluído | 2026-07-23 | Tabela `configuracoes_rede`, modal `/admin/escolas`, integração de assinaturas de relatórios e remoção de dados falsos. |
 | **Integração Resend + Primeiro Acesso** | ✅ Concluído | 2026-07-21 | Rota `/primeiro-acesso` (interceptador no `proxy.ts`), troca obrigatória de senha e envio de e-mails via Resend SMTP. |
 | **Verificação QR Code / Crachá de Funcionário** | ✅ Concluído | 2026-07-20 | Rota pública `/verificar/funcionario/[id]` para leitura de QR Code e validação instantânea de vínculo de funcionário. |
-| **Portal do Aluno / Responsáveis** | ⏳ Pendente | — | Sistema de acesso para pais/responsáveis acompanharem notas, frequências e comunicados. Estrutura e SQL planejados em `PLANOS_FUTUROS.md`. |
 | **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
 | **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
 | **Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys)** | ⏳ Pendente | — | Login biométrico rápido (Face ID / Impressão Digital) via WebAuthn/FIDO2 para dispositivos móveis e PWA. Detalhes em `PLANOS_FUTUROS.md`. |
@@ -39,20 +44,15 @@
 
 ## 📋 Detalhamento dos Próximos Passos (Pendências)
 
-### 1. Portal do Aluno & Responsáveis (Prioridade Alta)
-- **Escopo:** Interface simplificada para pais e alunos acessarem diários, ocorrências, horários e notas.
-- **Estrutura:** Autenticação via Supabase Auth (e-mail cadastrado presencialmente pela secretaria), tabelas `responsaveis` e `responsaveis_alunos`.
-- **Status:** Aguardando comando de execução inicial.
-
-### 2. Módulo Roteiro e Paradas - Motoristas Nível 6 (Prioridade Média)
+### 1. Módulo Roteiro e Paradas - Motoristas Nível 6 (Prioridade Alta)
 - **Escopo:** Interface simplificada em `/ponto-mobile` ou `/transporte-mobile` para motoristas visualizarem paradas do itinerário, registrarem presenças no ônibus e avisarem imprevistos.
 - **Status:** Planejado.
 
-### 3. Assistente de IA para Logs de Auditoria (Prioridade Média)
+### 2. Assistente de IA para Logs de Auditoria (Prioridade Média)
 - **Escopo:** Painel de chat interativo em `/admin/root` alimentado por consultas em `audit_logs` para diagnósticos rápidos pelo Superadmin.
 - **Status:** Planejado.
 
-### 4. Acesso Rápido por Biometria Mobile (Prioridade Média)
+### 3. Acesso Rápido por Biometria Mobile (Prioridade Média)
 - **Escopo:** Autenticação instantânea por Face ID ou Impressão Digital no celular através do padrão WebAuthn/Passkeys, reduzindo o tempo de login para ~1s.
 - **Estrutura:** Tabela `biometria_dispositivos`, biblioteca `@simplewebauthn`, rotas de challenge e botão dinâmico em `/login`.
 - **Status:** Planejado.

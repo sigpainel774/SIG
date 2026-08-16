@@ -535,7 +535,10 @@ export function IndicadoresClient() {
                   min={1}
                   max={60}
                   value={prazoFreqDias}
-                  onChange={(e) => setPrazoFreqDias(Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setPrazoFreqDias(v === '' ? ('' as any) : Number(v))
+                  }}
                   className="bg-input border-borderCustom text-foreground w-full font-bold"
                   required
                 />

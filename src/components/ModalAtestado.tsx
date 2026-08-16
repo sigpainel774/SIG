@@ -163,14 +163,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
       
       toast.success('Atestado registrado e funcionário atualizado para Afastado com sucesso!')
       onSuccess()
-      
-      // Reset form
-      setFuncionarioId('')
-      setCid('')
-      setDias(1)
-      setDataFim('')
-      setArquivo(null)
-      onOpenChange(false)
+      handleOpenChange(false)
     } catch (error: any) {
       toast.error('Erro ao registrar atestado: ' + error.message)
     } finally {
@@ -178,10 +171,23 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
     }
   }
 
+  const resetForm = () => {
+    setFuncionarioId('')
+    setCid('')
+    setDias(1)
+    setDataFim('')
+    setArquivo(null)
+  }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) resetForm()
+    onOpenChange(isOpen)
+  }
+
   return (
     <StandardDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title="Registrar Atestado"
       description="Cadastre um novo atestado médico com o anexo do comprovante."
       maxWidth="sm:max-w-[425px]"
@@ -196,7 +202,7 @@ export function ModalAtestado({ open, onOpenChange, onSuccess }: ModalAtestadoPr
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-mutedmerald-600 hover:bg-mutedmerald-700 text-white font-bold gap-2"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
             disabled={loading}
           >
             {loading && <LoadingSpinner size="sm" variant="muted" placement="inline" />}

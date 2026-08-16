@@ -63,14 +63,14 @@ export function AnexosTab() {
                     href={doc.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-1.5 rounded bg-mutedmerald-950/60 border border-emerald-700/50 text-emerald-400 font-bold hover:bg-mutedmerald-900/60 flex items-center gap-1"
+                    className="px-3 py-1.5 rounded bg-emerald-950/60 border border-emerald-700/50 text-emerald-400 font-bold hover:bg-emerald-900/60 flex items-center gap-1"
                     title="Visualizar documento cadastrado"
                   >
                     <Eye className="w-3.5 h-3.5" /> Ver
                   </a>
                 )}
                 {doc.url && (
-                  <span className="w-5 h-5 rounded-full bg-mutedmerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </span>
                 )}

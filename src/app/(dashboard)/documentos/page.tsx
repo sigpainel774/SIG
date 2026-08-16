@@ -127,6 +127,7 @@ export default function DocumentosPage() {
 
   // Carregar turmas da escola ativa para o filtro
   useEffect(() => {
+    let active = true
     if (!escolaAtivaId) {
       setTurmas([])
       return
@@ -143,12 +144,15 @@ export default function DocumentosPage() {
 
       if (error) {
         console.error('Erro ao carregar turmas:', error)
-      } else if (data) {
+      } else if (data && active) {
         setTurmas(data)
       }
     }
 
     loadTurmas()
+    return () => {
+      active = false
+    }
   }, [escolaAtivaId])
 
   const [buscarNaRedeToda, setBuscarNaRedeToda] = useState(false)

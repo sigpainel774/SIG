@@ -333,7 +333,7 @@ export function ModalAdicionalSalario({ open, onOpenChange, funcionarioId, funci
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             ad.ativo
-                              ? 'bg-mutedmerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           }`}
                         >

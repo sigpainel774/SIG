@@ -154,7 +154,7 @@ export function FuncionarioLotacaoList({
                 </div>
                 <div
                   className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    hasLotacao ? 'bg-mutedmerald-400' : 'bg-amber-400'
+                    hasLotacao ? 'bg-emerald-400' : 'bg-amber-400'
                   }`}
                   title={hasLotacao ? 'Lotado' : 'Sem lotação'}
                 />

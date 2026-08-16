@@ -245,11 +245,13 @@ export default function FinanceiroPage() {
         />
       </div>
 
-      <ModalLancamentoFinanceiro 
-        open={isModalLancamentoOpen} 
-        onOpenChange={setIsModalLancamentoOpen} 
-        onSuccess={fetchTransacoes} 
-      />
+      {isModalLancamentoOpen && (
+        <ModalLancamentoFinanceiro 
+          open={isModalLancamentoOpen} 
+          onOpenChange={setIsModalLancamentoOpen} 
+          onSuccess={fetchTransacoes} 
+        />
+      )}
     </div>
   )
 }
