@@ -55,34 +55,20 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     }
   }, [open, filtro, funcionario?.auth_user_id])
 
-  const markAsRead = async (notif: any, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const markAsRead = async (notif: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     const supabase = createClient()
-    const podeProcessarGrupo = funcionario && acessos?.some((a: any) => (a.nivel === 2 || a.nivel === 3) && a.ativo)
     try {
-      // Marcar a própria notificação como lida
-      await supabase.from('notifications').update({ read: true }).eq('id', notif.id)
+      const { data, error } = await (supabase as any).rpc('marcar_notificacao_lida_grupo', {
+        p_notif_id: notif.id,
+        p_funcionario_id: funcionario?.id ?? null,
+        p_funcionario_nome: funcionario?.nome ?? 'Secretaria/Direção',
+      })
 
-      // Se for secretário/diretor e a notificação ainda não tiver processado_por, processar o grupo
-      if (podeProcessarGrupo && notif.grupo_id && !notif.processado_por) {
-        const { data, error } = await (supabase as any)
-          .from('notifications')
-          .update({
-            processado_por: funcionario?.id ?? null,
-            processado_por_nome: funcionario?.nome ?? 'Secretaria/Direção',
-            processado_em: new Date().toISOString(),
-          })
-          .eq('grupo_id', notif.grupo_id)
-          .is('processado_por', null)
-          .select()
+      if (error) throw error
 
-        if (error) throw error
-
-        if (!data || data.length === 0) {
-          toast.warning('Esta atividade já foi processada por outro colega.')
-        } else {
-          toast.success('Atividade marcada como processada.')
-        }
+      if (notif.grupo_id) {
+        toast.success('Notificação processada para a equipe.')
       }
 
       loadNotificacoes()
@@ -96,11 +82,11 @@ export function ModalNotificacoes({ open = false, onOpenChange }: ModalNotificac
     if (!funcionario?.auth_user_id) return
     const supabase = createClient()
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', funcionario.auth_user_id)
-        .eq('read', false)
+      const { error } = await (supabase as any).rpc('marcar_todas_notificacoes_lidas_usuario', {
+        p_auth_user_id: funcionario.auth_user_id,
+        p_funcionario_id: funcionario?.id ?? null,
+        p_funcionario_nome: funcionario?.nome ?? 'Secretaria/Direção',
+      })
 
       if (error) throw error
       toast.success('Todas as notificações foram marcadas como lidas.')

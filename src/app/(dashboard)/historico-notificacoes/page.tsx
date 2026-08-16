@@ -86,11 +86,16 @@ export default function HistoricoNotificacoesPage() {
     if (e) e.stopPropagation()
     const supabase = createClient()
     try {
-      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', notifId)
+      const { error } = await (supabase as any).rpc('marcar_notificacao_lida_grupo', {
+        p_notif_id: notifId,
+        p_funcionario_id: funcionario?.id ?? null,
+        p_funcionario_nome: funcionario?.nome ?? 'Secretaria/Direção',
+      })
       if (error) throw error
-      setNotificacoes((prev) => prev.map((n) => (n.id === notifId ? { ...n, read: true } : n)))
+      loadNotificacoes()
     } catch (error) {
       console.error('Erro ao marcar notificação como lida:', error)
+      toast.error('Erro ao atualizar notificação.')
     }
   }
 
@@ -98,11 +103,11 @@ export default function HistoricoNotificacoesPage() {
     if (!funcionario?.auth_user_id) return
     const supabase = createClient()
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', funcionario.auth_user_id)
-        .eq('read', false)
+      const { error } = await (supabase as any).rpc('marcar_todas_notificacoes_lidas_usuario', {
+        p_auth_user_id: funcionario.auth_user_id,
+        p_funcionario_id: funcionario?.id ?? null,
+        p_funcionario_nome: funcionario?.nome ?? 'Secretaria/Direção',
+      })
 
       if (error) throw error
       toast.success('Todas as notificações foram marcadas como lidas.')
