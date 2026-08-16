@@ -111,6 +111,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 92 | `20260816030000_unificar_notificacoes_grupo.sql` | 2026-08-16 | RPCs `marcar_notificacao_lida_grupo` e `marcar_todas_notificacoes_lidas_usuario` para leitura e baixa coletiva de notificações compartilhadas (`grupo_id`) com auditoria de quem processou. Atualiza trigger de ocorrências para gerar `grupo_id`. | `public.notifications`, `public.ocorrencias` | `SECURITY DEFINER` |
 | 93 | `20260816040000_fix_audit_bugs_rls_and_security.sql` | 2026-08-16 | Correção consolidada de bugs de auditoria: blindagem RLS em `mensagens_responsaveis` e `solicitacoes_responsaveis`, `WITH CHECK (true)` em `assinatura`, prevenção de recursão em `turmas`, blindagem de trigger de ocorrências e soft-delete na RPC `get_dashboard_resumo`. | `mensagens_responsaveis`, `solicitacoes_responsaveis`, `assinatura`, `turmas`, `notifications`, `ocorrencias` | RLS + `SECURITY DEFINER` |
 | 94 | `(via MCP apply_migration) add_bloqueio_granular_edicao_funcionarios` | 2026-08-16 | Adiciona `bloquear_por_secretarias uuid[]` e `bloquear_por_escolas uuid[]` em `configuracoes_rede`, expandindo o controle global de bloqueio de edição de funcionários para granularidade por secretaria e por unidade administrativa. | `public.configuracoes_rede` | Sem alteração de RLS (extensão de coluna) |
+| 95 | `(via MCP apply_migration) rpc_verificar_trava_edicao_funcionario` | 2026-08-16 | RPC `verificar_trava_edicao_funcionario(p_funcionario_alvo_id)` que valida se um servidor está bloqueado por escopo de rede, secretaria ou unidade administrativa de forma atômica e segura. | `public.configuracoes_rede`, `public.vinculos_funcionarios`, `public.escolas` | `SECURITY DEFINER` |
+
 
 
 
