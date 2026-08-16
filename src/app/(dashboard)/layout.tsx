@@ -12,6 +12,7 @@ import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
 import { AccessTracker } from '@/components/AccessTracker'
+import { SessionTimeoutWatcher } from '@/components/SessionTimeoutWatcher'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const headersList = await headers()
@@ -59,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     return (
       <div className="flex flex-col min-h-screen bg-background text-foregroundCustom w-full min-w-0 overflow-x-hidden">
         <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+        <SessionTimeoutWatcher />
         <PerformanceTracker />
         <AccessTracker />
         <SimulationBanner />
@@ -74,6 +76,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="flex min-h-screen bg-background text-foregroundCustom">
       <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+      <SessionTimeoutWatcher />
       <PerformanceTracker />
       <AccessTracker />
       {/* Sidebar Component */}

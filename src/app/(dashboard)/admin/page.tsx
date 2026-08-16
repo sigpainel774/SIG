@@ -45,7 +45,10 @@ import {
   X,
   FlaskConical,
   LogIn,
+  Clock,
 } from 'lucide-react'
+
+import { ModalSessionTimeout } from '@/components/modals/modal-session-timeout'
 
 import { cn } from '@/lib/utils'
 
@@ -309,6 +312,13 @@ export default function AdminHubPage() {
   const [searchSecretaria, setSearchSecretaria] = useState('')
   const [searchEscola, setSearchEscola] = useState('')
 
+  // Estados do Controle de Tempo de Sessões (Logoff por Horário)
+  const [isSessionTimeoutModalOpen, setIsSessionTimeoutModalOpen] = useState(false)
+  const [sessionRulesSummary, setSessionRulesSummary] = useState<{ total: number; active: number }>({
+    total: 0,
+    active: 0,
+  })
+
   // Estados do Ambiente de Simulação Isolado (Escolas de Teste)
   const [testEscolas, setTestEscolas] = useState<any[]>([])
   const [testUsers, setTestUsers] = useState<any[]>([])
@@ -451,6 +461,17 @@ export default function AdminHubPage() {
             }
           }
         }
+
+        // 5. Carrega resumo de regras de tempo de sessão
+        const { data: sRules } = await supabase
+          .from('session_timeout_rules')
+          .select('id, ativo')
+
+        if (sRules) {
+          const total = sRules.length
+          const active = sRules.filter((r) => r.ativo).length
+          setSessionRulesSummary({ total, active })
+        }
       } catch (err) {
         console.error('Erro ao carregar controles globais:', err)
       } finally {
@@ -462,6 +483,22 @@ export default function AdminHubPage() {
 
     loadControlesGlobais()
   }, [funcionario?.id, supabase])
+
+  const refreshSessionRulesSummary = async () => {
+    try {
+      const { data: sRules } = await supabase
+        .from('session_timeout_rules')
+        .select('id, ativo')
+
+      if (sRules) {
+        const total = sRules.length
+        const active = sRules.filter((r) => r.ativo).length
+        setSessionRulesSummary({ total, active })
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar resumo de regras:', err)
+    }
+  }
 
   // Handlers para os Toggles
   const handleToggleMensagens = async () => {
@@ -682,7 +719,7 @@ export default function AdminHubPage() {
             Carregando controles globais...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Toggle 1: Chat Interno */}
             <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3">
               <div className="space-y-1">
@@ -946,7 +983,51 @@ export default function AdminHubPage() {
                   </button>
                 </div>
               )}
+            </div>
 
+            {/* Controle 4: Tempo de Sessões (Logoff por Horário) */}
+            <div className="bg-card border border-amber-500/30 dark:border-amber-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 bg-amber-500/5 dark:bg-amber-950/20">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Tempo de Sessões
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 uppercase">
+                    NÍVEL 2+
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Configurar horários de logoff compulsório em postos de trabalho para evitar contas abertas em computadores da rede.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-amber-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-muted-foreground">Status da Rede:</span>
+                  <span
+                    className={cn(
+                      'text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider',
+                      sessionRulesSummary.active > 0
+                        ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400'
+                        : 'bg-zinc-500/15 text-zinc-600 border-zinc-500/30 dark:text-zinc-400'
+                    )}
+                  >
+                    {sessionRulesSummary.active > 0
+                      ? `${sessionRulesSummary.active} ativa(s)`
+                      : 'Desativado'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSessionTimeoutModalOpen(true)}
+                  className="w-full bg-[#0067c0] hover:bg-[#005aab] dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Gerenciar Regras</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1225,6 +1306,13 @@ export default function AdminHubPage() {
           )
         })}
       </div>
+
+      {/* Modal de Gerenciamento de Regras de Tempo de Sessões */}
+      <ModalSessionTimeout
+        open={isSessionTimeoutModalOpen}
+        onOpenChange={setIsSessionTimeoutModalOpen}
+        onRulesChanged={refreshSessionRulesSummary}
+      />
     </div>
   )
 }
