@@ -19,7 +19,6 @@ import {
   FileCheck2,
   FileText,
   Plus,
-  Printer,
   Sparkles,
   ChevronDown,
   ChevronUp,
@@ -560,9 +559,6 @@ export default function DetalhesAlunoPortalPage() {
     }
   }
 
-  const handlePrintBoletim = () => {
-    window.print()
-  }
 
   const handleLogout = async () => {
     try {
@@ -697,16 +693,6 @@ export default function DetalhesAlunoPortalPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center print:hidden">
-            <Button
-              onClick={handlePrintBoletim}
-              variant="outline"
-              className="text-xs font-bold gap-1.5 h-10 rounded-xl border-[#DCE7F2] text-slate-700 hover:bg-[#F2F7FC] hover:text-[#0B4FB3]"
-            >
-              <Printer className="size-4" />
-              Imprimir Boletim
-            </Button>
-          </div>
         </div>
       </div>
 

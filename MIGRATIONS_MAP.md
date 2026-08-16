@@ -107,6 +107,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 88 | `20260815020000_solicitacoes_responsaveis.sql` | 2026-08-15 | Cria a tabela `solicitacoes_responsaveis` para pedidos de documentos escolares (Declaração Bolsa Família, etc.) e acompanhamento de status pelos pais. | `public.solicitacoes_responsaveis` | `dev_all_authenticated` / RLS |
 | 89 | `20260816000000_portal_pais_recuperacoes_finais_rls.sql` | 2026-08-16 | Adiciona a política RLS `pais_read_recuperacoes_portal_ativo` na tabela `recuperacoes_finais`, permitindo aos responsáveis visualizarem as notas de recuperação de seus filhos no Portal dos Pais. | `public.recuperacoes_finais` | `pais_read_recuperacoes_portal_ativo` (RLS SELECT) |
 | 90 | `20260816010000_add_eja_ativo_and_pode_eja.sql` | 2026-08-16 | Adiciona a coluna `eja_ativo` em `escolas` (ativação do módulo EJA na unidade) e a coluna `pode_eja` em `acessos_usuarios` (liberação do módulo EJA pelo Diretor). | `public.escolas`, `public.acessos_usuarios` | Mantém RLS Existente |
+| 91 | `20260816020000_notificacao_ciencia_ocorrencia.sql` | 2026-08-16 | Trigger `trg_notificar_ciencia_ocorrencia` e função `notificar_ciencia_ocorrencia()` para notificar automaticamente a secretaria, gestores da escola e autor da ocorrência quando o responsável confirma ciência. | `public.ocorrencias`, `public.notifications` | `SECURITY DEFINER` + RLS |
+
 
 
 
