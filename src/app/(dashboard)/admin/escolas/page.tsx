@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, Printer } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, Printer, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
@@ -57,7 +57,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, portal_comunicacoes_ativo, created_at, secretarias:secretaria_id(id, nome)')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, secretarias:secretaria_id(id, nome)')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
@@ -178,10 +178,10 @@ export default function AdminEscolasPage() {
               setEscolaParaPais(escola)
               setContasPaisOpen(true)
             }}
-            className={escola.portal_pais_ativo ? "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}
-            title={escola.portal_pais_ativo ? "Portal dos Pais HABILITADO (Gerenciar)" : "Habilitar Portal dos Pais"}
+            className={(escola.portal_pais_ativo || escola.portal_comunicacoes_ativo || escola.eja_ativo) ? "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}
+            title="Módulos da Escola"
           >
-            <Users className="w-4 h-4" />
+            <LayoutGrid className="w-4 h-4" />
           </Button>
           <Button 
             variant="ghost" 
@@ -343,6 +343,11 @@ export default function AdminEscolasPage() {
           onToggleComunicacoes={(novoEstado) => {
             setEscolas(prev => prev.map(e => 
               e.id === escolaParaPais.id ? { ...e, portal_comunicacoes_ativo: novoEstado } : e
+            ))
+          }}
+          onToggleEja={(novoEstado) => {
+            setEscolas(prev => prev.map(e => 
+              e.id === escolaParaPais.id ? { ...e, eja_ativo: novoEstado } : e
             ))
           }}
         />

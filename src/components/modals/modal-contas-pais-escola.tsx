@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Users, MessageSquare, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react'
+import { Users, MessageSquare, ShieldCheck, AlertCircle, Loader2, GraduationCap } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -15,12 +15,14 @@ interface ModalContasPaisEscolaProps {
     codigo?: number | string
     portal_pais_ativo?: boolean
     portal_comunicacoes_ativo?: boolean
+    eja_ativo?: boolean
     [key: string]: any
   }
   open: boolean
   onClose: () => void
   onTogglePortal: (novoEstado: boolean) => void
   onToggleComunicacoes?: (novoEstado: boolean) => void
+  onToggleEja?: (novoEstado: boolean) => void
 }
 
 export function ModalContasPaisEscola({
@@ -28,13 +30,16 @@ export function ModalContasPaisEscola({
   open,
   onClose,
   onTogglePortal,
-  onToggleComunicacoes
+  onToggleComunicacoes,
+  onToggleEja
 }: ModalContasPaisEscolaProps) {
   const supabase = createClient()
   const [ativo, setAtivo] = useState(Boolean(escola.portal_pais_ativo))
   const [comunicacoesAtivo, setComunicacoesAtivo] = useState(Boolean(escola.portal_comunicacoes_ativo))
+  const [ejaAtivo, setEjaAtivo] = useState(Boolean(escola.eja_ativo))
   const [loading, setLoading] = useState(false)
   const [loadingCom, setLoadingCom] = useState(false)
+  const [loadingEja, setLoadingEja] = useState(false)
 
   const handleToggle = async () => {
     if (loading) return
@@ -121,13 +126,51 @@ export function ModalContasPaisEscola({
     }
   }
 
+  const handleToggleEja = async () => {
+    if (loadingEja) return
+    const novoStatus = !ejaAtivo
+    setLoadingEja(true)
+    try {
+      const { error } = await supabase
+        .from('escolas')
+        .update({ eja_ativo: novoStatus } as any)
+        .eq('id', escola.id)
+
+      if (error) throw error
+
+      setEjaAtivo(novoStatus)
+      onToggleEja?.(novoStatus)
+
+      // Sincronizar useSchoolStore se for a escola selecionada
+      const currentSelected = useSchoolStore.getState().selectedEscola
+      if (currentSelected && currentSelected.id === escola.id) {
+        useSchoolStore.getState().setSelectedEscola({
+          ...currentSelected,
+          eja_ativo: novoStatus
+        })
+      }
+      useSchoolStore.getState().loadEscolas(true)
+
+      if (novoStatus) {
+        toast.success(`Módulo EJA ATIVADO para ${escola.nome}! O menu "EJA" agora está visível para a Direção e Secretários autorizados.`)
+      } else {
+        toast.info(`Módulo EJA DESATIVADO para ${escola.nome}. Todos os dados de turmas e alunos EJA foram preservados integralmente.`)
+      }
+    } catch (err: any) {
+      console.error('Erro ao alternar status do módulo EJA:', err)
+      toast.error('Erro ao atualizar status do Módulo EJA. Tente novamente.')
+    } finally {
+      setLoadingEja(false)
+    }
+  }
+
   return (
     <StandardDialog
       open={open}
       onOpenChange={(isOpen) => !isOpen && onClose()}
-      title="Portal dos Pais & Responsáveis"
-      description={`Configuração de acesso para ${escola.nome}`}
-      maxWidth="sm:max-w-[520px]"
+      title="Módulos da Escola"
+      description={`Gerenciamento de módulos e acessos para ${escola.nome}`}
+      maxWidth="sm:max-w-[540px]"
     >
       <div className="space-y-4 pt-2">
         {/* Card 1: Switch Principal do Portal dos Pais */}
@@ -178,7 +221,7 @@ export function ModalContasPaisEscola({
           </div>
         </div>
 
-        {/* Card 2: Switch do Canal de Comunicações (Fica embaixo do botão de ativar portal dos pais) */}
+        {/* Card 2: Switch do Canal de Comunicações */}
         <div className={`bg-card border rounded-xl p-5 space-y-3 shadow-xs transition-opacity ${
           !ativo ? 'border-border opacity-50' : 'border-border'
         }`}>
@@ -191,7 +234,7 @@ export function ModalContasPaisEscola({
                 </h4>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Habilita a aba de envio e resposta de recados pedagógicos diretos entre os professores e os responsáveis pelos alunos.
+                Habilita o envio e resposta de recados pedagógicos diretos entre professores e responsáveis pelos alunos.
               </p>
             </div>
 
@@ -234,28 +277,64 @@ export function ModalContasPaisEscola({
           )}
         </div>
 
+        {/* Card 3: Switch do Módulo EJA */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h4 className="font-semibold text-foreground text-sm sm:text-base">
+                  Módulo EJA (Educação de Jovens e Adultos)
+                </h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Ativa no menu da escola a gestão dedicada de Alunos, Turmas, Avaliações, Matrículas e Ocorrências da modalidade EJA.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {loadingEja && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={ejaAtivo}
+                onClick={handleToggleEja}
+                disabled={loadingEja}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-background ${
+                  ejaAtivo ? 'bg-purple-600' : 'bg-muted-foreground/30'
+                } ${loadingEja ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    ejaAtivo ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Status do Módulo EJA:</span>
+            <span className={`font-semibold px-2 py-0.5 rounded-full ${
+              ejaAtivo 
+                ? 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20' 
+                : 'bg-muted text-muted-foreground border border-border dark:bg-zinc-500/10 dark:text-zinc-400 dark:border-zinc-500/20'
+            }`}>
+              {ejaAtivo ? 'HABILITADO' : 'DESABILITADO'}
+            </span>
+          </div>
+        </div>
+
         {/* Informações explicativas */}
-        {ativo ? (
-          <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
-            <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-indigo-900 dark:text-indigo-200/90 leading-relaxed">
-              <p className="font-semibold text-indigo-950 dark:text-indigo-300">Acesso Habilitado:</p>
-              <p>
-                Os pais desta escola podem acessar suas contas em <strong>/portal-aluno/login</strong>. {comunicacoesAtivo ? 'A aba de comunicações está liberada para professores e pais.' : 'O canal de comunicações encontra-se desativado.'}
-              </p>
-            </div>
+        <div className="bg-muted/40 border border-border rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-muted-foreground leading-relaxed">
+            <p className="font-semibold text-foreground">Preservação Integral de Dados:</p>
+            <p>
+              Ao desativar qualquer módulo, todas as turmas, matrículas, notas e cadastros permanecem salvos e intactos no banco de dados, apenas ficando ocultos para a visualização dos usuários.
+            </p>
           </div>
-        ) : (
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
-            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-amber-900 dark:text-amber-200/90 leading-relaxed">
-              <p className="font-semibold text-amber-950 dark:text-amber-300">Preservação Integral de Dados:</p>
-              <p>
-                Se desativado, nenhum cadastro ou histórico é perdido. Pais que tentarem acessar verão mensagem informando indisponibilidade temporária.
-              </p>
-            </div>
-          </div>
-        )}
+        </div>
 
         <div className="flex justify-end pt-2">
           <Button variant="outline" onClick={onClose} className="border-border">

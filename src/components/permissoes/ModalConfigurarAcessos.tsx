@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabaseClient'
 import { invalidarCachePerfil } from '@/lib/invalidarCachePerfil'
 import { toast } from 'sonner'
-import { ShieldCheck, Loader2, Sparkles, UserCheck, FileText, UserPlus, Send, RefreshCw } from 'lucide-react'
+import { ShieldCheck, Loader2, Sparkles, UserCheck, FileText, UserPlus, Send, RefreshCw, GraduationCap } from 'lucide-react'
 
 export interface ToggleItem {
   chave: string
@@ -94,6 +94,7 @@ export function ModalConfigurarAcessos({
   onSalvo,
 }: ModalConfigurarAcessosProps) {
   const [toggles, setToggles] = useState<Record<string, boolean>>({})
+  const [podeEja, setPodeEja] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
 
@@ -106,17 +107,30 @@ export function ModalConfigurarAcessos({
       setCarregando(true)
       try {
         const supabase = createClient()
-        const { data, error } = await (supabase as any)
-          .from('acessos_usuarios_permissoes')
-          .select('permissao, permitido')
-          .eq('acesso_usuario_id', acessoUsuarioId)
+        
+        // Busca permissões granulares e a flag pode_eja em paralelo
+        const [permRes, acessoRes] = await Promise.all([
+          (supabase as any)
+            .from('acessos_usuarios_permissoes')
+            .select('permissao, permitido')
+            .eq('acesso_usuario_id', acessoUsuarioId),
+          (supabase as any)
+            .from('acessos_usuarios')
+            .select('pode_eja')
+            .eq('id', acessoUsuarioId)
+            .maybeSingle(),
+        ])
 
-        if (!error && data) {
+        if (!permRes.error && permRes.data) {
           const mapa: Record<string, boolean> = {}
-          data.forEach((p: any) => {
+          permRes.data.forEach((p: any) => {
             mapa[p.permissao] = p.permitido
           })
           if (isMounted) setToggles(mapa)
+        }
+
+        if (!acessoRes.error && acessoRes.data) {
+          if (isMounted) setPodeEja(Boolean(acessoRes.data.pode_eja))
         }
       } catch (err) {
         console.error('Erro ao carregar permissões granulares:', err)
@@ -169,7 +183,7 @@ export function ModalConfigurarAcessos({
     toast.info('Perfil rápido aplicado com sucesso!')
   }
 
-  // Salvar alterações no Supabase
+  // Salvar alterações no Supabase e na API de EJA
   const handleSalvar = async () => {
     if (!acessoUsuarioId) return
     setSalvando(true)
@@ -177,7 +191,7 @@ export function ModalConfigurarAcessos({
     try {
       const supabase = createClient()
 
-      // Converte mapa de toggles para array de inserção/update
+      // 1. Converte mapa de toggles para array de inserção/update de permissões granulares
       const payload: { acesso_usuario_id: string; permissao: string; permitido: boolean }[] = []
 
       GRUPOS_PERMISSOES.forEach((grupo) => {
@@ -190,18 +204,34 @@ export function ModalConfigurarAcessos({
         })
       })
 
-      const { error } = await (supabase as any)
+      const { error: permError } = await (supabase as any)
         .from('acessos_usuarios_permissoes')
         .upsert(payload, { onConflict: 'acesso_usuario_id, permissao' })
 
-      if (error) throw error
+      if (permError) throw permError
 
-      // Invalida cache de perfil do usuário se o ID for informado
+      // 2. Atualiza a flag macro pode_eja via Route Handler seguro
+      const ejaRes = await fetch('/api/permissoes/toggle-eja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acessoUsuarioId,
+          podeEja,
+          funcionarioId,
+        }),
+      })
+
+      if (!ejaRes.ok) {
+        const errorData = await ejaRes.json().catch(() => ({}))
+        console.warn('Aviso ao salvar permissão EJA via API:', errorData)
+      }
+
+      // 3. Invalida cache de perfil do usuário se o ID for informado
       if (funcionarioId) {
         invalidarCachePerfil(funcionarioId)
       }
 
-      toast.success('Permissões granulares salvas com sucesso!')
+      toast.success('Permissões do secretário salvas com sucesso!')
       onOpenChange(false)
       if (onSalvo) onSalvo()
     } catch (err: any) {
@@ -249,6 +279,46 @@ export function ModalConfigurarAcessos({
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Card Especial de Acesso ao Módulo EJA */}
+          <div className="bg-purple-950/20 border border-purple-500/30 rounded-xl p-4 space-y-3 shadow-xs">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0 mt-0.5">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-foreground text-sm">
+                      Módulo EJA (Educação de Jovens e Adultos)
+                    </h4>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      podeEja 
+                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' 
+                        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                    }`}>
+                      {podeEja ? 'ACESSO LIBERADO' : 'BLOQUEADO'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Libera o acesso completo às funções de secretaria da modalidade EJA (Alunos, Turmas, Avaliações, Matrículas e Ocorrências da EJA).
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle Switch EJA */}
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input
+                  type="checkbox"
+                  id="toggle-eja-macro"
+                  checked={podeEja}
+                  onChange={(e) => setPodeEja(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+          </div>
+
           {/* Perfis Rápidos (Presets) */}
           <div className="bg-surface-2 border border-borderCustom rounded-xl p-3.5 space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
