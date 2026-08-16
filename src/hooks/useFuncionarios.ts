@@ -7,6 +7,7 @@ import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { executeWithToast } from '@/lib/action-handler'
 import { Funcionario } from '@/types/funcionario'
 import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
+import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 
 export function useFuncionarios() {
   const supabase = createClient()
@@ -297,13 +298,9 @@ export function useFuncionarios() {
     const isLevel1 = authFuncionario?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
 
     if (!isLevel1) {
-      const { data: configRede } = await supabase
-        .from('configuracoes_rede')
-        .select('bloquear_edicao_funcionarios_rede')
-        .limit(1)
-        .single()
-
-      if (configRede?.bloquear_edicao_funcionarios_rede) {
+      const configRede = await buscarConfigBloqueioRede(supabase)
+      const travaAtiva = await verificarTravaEdicaoFuncionario(configRede, func.id, supabase)
+      if (travaAtiva) {
         toast.error('A edição e desligamento de funcionários foram temporariamente bloqueados pela gestão da rede.')
         return
       }

@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { logAudit } from '@/lib/audit/audit-agent'
@@ -7,6 +5,7 @@ import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notif
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
+import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 
 export interface Escola {
   id: string
@@ -91,27 +90,12 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     cargo: authFuncionario?.cargo ?? undefined,
   }
 
-  const verificarTravaGlobal = async (): Promise<boolean> => {
+  const verificarTravaGlobal = async (funcionarioAlvoId?: string): Promise<boolean> => {
     const isLevel1 = authFuncionario?.is_superadmin || (isAdminGlobalOrRoot && isAdminGlobalOrRoot()) || acessos?.some((a: any) => a.nivel === 1 && a.ativo)
     if (isLevel1) return false
 
-    try {
-      const { data: configRede, error } = await supabase
-        .from('configuracoes_rede')
-        .select('bloquear_edicao_funcionarios_rede')
-        .limit(1)
-        .single()
-
-      if (error) {
-        console.error('Erro ao verificar trava global de rede:', error)
-        return true // Fail-secure
-      }
-
-      return !!configRede?.bloquear_edicao_funcionarios_rede
-    } catch (err) {
-      console.error('Erro inesperado ao verificar trava global:', err)
-      return true // Fail-secure
-    }
+    const configRede = await buscarConfigBloqueioRede(supabase)
+    return verificarTravaEdicaoFuncionario(configRede, funcionarioAlvoId ?? null, supabase)
   }
 
   const carregar = useCallback(async () => {
@@ -329,7 +313,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -439,7 +423,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -522,7 +506,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     if (salvando) return
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -600,7 +584,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -682,7 +666,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     }
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -728,7 +712,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     if (!selecionado || !lotacaoId) return
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)
@@ -774,7 +758,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     if (!selecionado || !lotacaoId || !novaModalidade) return
     setSalvando(true)
     try {
-      const travaAtiva = await verificarTravaGlobal()
+      const travaAtiva = await verificarTravaGlobal(selecionado?.id)
       if (travaAtiva) {
         toast.error('A edição de ficha e lotações de funcionários foi temporariamente bloqueada pela gestão da rede.')
         setSalvando(false)

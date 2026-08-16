@@ -10,6 +10,7 @@ import { Cargo, Doencas, PosGraduacao, FuncionarioFormContextType, ModalFunciona
 import { invalidarCacheFoto } from '@/lib/photoCache'
 import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
+import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -612,18 +613,11 @@ export function useFuncionarioFormStates({
 
     if (!isLevel1) {
       try {
-        const { data: configRede, error } = await supabase
-          .from('configuracoes_rede')
-          .select('bloquear_edicao_funcionarios_rede')
-          .limit(1)
-          .single()
+        const configRede = await buscarConfigBloqueioRede(supabase)
+        // funcionario?.id = ficha sendo editada (null em cadastro novo → fail-open por design)
+        const travaAtiva = await verificarTravaEdicaoFuncionario(configRede, funcionario?.id ?? null, supabase)
 
-        // Fail-open: se houver erro de rede/conexão, loga aviso mas NÃO bloqueia o usuário.
-        // A query serve apenas para verificar se o sistema está BLOQUEADO = true.
-        // Em caso de falha de conectividade, assume-se que não há bloqueio ativo.
-        if (error) {
-          console.warn('[useFuncionarioFormStates] Aviso: não foi possível verificar restrição global da rede. Continuando com o submit.', error)
-        } else if (configRede?.bloquear_edicao_funcionarios_rede) {
+        if (travaAtiva) {
           toast.error('A edição de ficha de funcionários foi temporariamente bloqueada pela gestão da rede.')
           return
         }

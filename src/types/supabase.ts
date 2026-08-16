@@ -1335,6 +1335,8 @@ export type Database = {
       configuracoes_rede: {
         Row: {
           bloquear_edicao_funcionarios_rede: boolean | null
+          bloquear_por_secretarias: string[] | null
+          bloquear_por_escolas: string[] | null
           cargo_secretario: string | null
           id: string
           nome_rede: string | null
@@ -1345,6 +1347,8 @@ export type Database = {
         }
         Insert: {
           bloquear_edicao_funcionarios_rede?: boolean | null
+          bloquear_por_secretarias?: string[] | null
+          bloquear_por_escolas?: string[] | null
           cargo_secretario?: string | null
           id?: string
           nome_rede?: string | null
@@ -1355,6 +1359,8 @@ export type Database = {
         }
         Update: {
           bloquear_edicao_funcionarios_rede?: boolean | null
+          bloquear_por_secretarias?: string[] | null
+          bloquear_por_escolas?: string[] | null
           cargo_secretario?: string | null
           id?: string
           nome_rede?: string | null
