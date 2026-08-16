@@ -408,6 +408,15 @@ export default function HomePage() {
     : 99
   const podeVerKpiGerencial = isAdmin || nivelNaEscola <= 3
 
+  if (isContaEja()) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <p className="text-sm text-muted-foreground">Redirecionando para o Portal EJA...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8 -mt-2">
 

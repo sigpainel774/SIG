@@ -43,6 +43,10 @@ export default async function RootPage() {
     redirect('/admin')
   }
 
+  if (perfil.funcionario.is_conta_eja) {
+    redirect('/eja')
+  }
+
   redirect('/home')
 }
 

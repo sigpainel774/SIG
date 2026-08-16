@@ -58,7 +58,7 @@ export function Sidebar() {
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
   const isNivel1OrSuperior = funcionario?.is_superadmin || Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
   const temEscolaSelecionada = Boolean(selectedEscola) || isSimulating
-  const isSelecaoSecretaria = isSimulating ? false : (isRhRedeOnly ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria)))
+  const isSelecaoSecretaria = isSimulating ? false : (isRhRedeOnly ? false : (isEjaMode ? false : (isNivel1 ? !selectedSecretaria : (!selectedEscola && !selectedSecretaria))))
 
   const vinculosAtivos = vinculos?.filter((v) => v.ativo) || []
 

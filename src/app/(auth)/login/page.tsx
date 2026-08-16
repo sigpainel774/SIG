@@ -69,7 +69,7 @@ export default function LoginPage() {
       // 3. Após autenticação bem-sucedida, validar o status do funcionário no banco (com permissão RLS do usuário autenticado)
       const { data: funcCheck, error: funcCheckError } = await supabase
         .from('funcionarios')
-        .select('id, status, primeiro_acesso, is_superadmin, auth_user_id')
+        .select('id, status, primeiro_acesso, is_superadmin, is_conta_eja, auth_user_id')
         .eq('email', data.user.email || cleanEmail)
         .maybeSingle()
 
@@ -126,7 +126,8 @@ export default function LoginPage() {
 
       // Destino inteligente e determinístico
       const isSuperAdmin = funcCheck?.is_superadmin === true
-      const targetPath = isSuperAdmin ? '/admin' : '/home'
+      const isContaEja = funcCheck?.is_conta_eja === true
+      const targetPath = isSuperAdmin ? '/admin' : (isContaEja ? '/eja' : '/home')
 
       // Redirecionamento completo para hidratação limpa de sessão e cookies
       window.location.href = targetPath
