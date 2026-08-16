@@ -861,12 +861,29 @@ Solicitações de documentos (Declaração Bolsa Família, histórico, etc.) env
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
+### 69. `public.session_timeout_rules`
+Regras de encerramento compulsório de sessões (logoff por horário) para proteção de computadores da rede municipal (Nível 2 para baixo).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `nome`: `text` (Nome identificador da regra, NOT NULL)
+*   `ativo`: `boolean` (Default: false, NOT NULL)
+*   `escopo`: `text` ('rede', 'secretaria', 'escola', 'nivel', NOT NULL)
+*   `secretaria_id`: `uuid` (FK -> `public.secretarias.id`, Nullable)
+*   `escola_id`: `uuid` (FK -> `public.escolas.id`, Nullable)
+*   `nivel_acesso`: `integer` (Nível alvo: 2 a 6, Nullable)
+*   `horarios`: `text[]` / `ARRAY` (Lista de horários 'HH:MM', NOT NULL, Default: '{}')
+*   `dias_semana`: `smallint[]` / `ARRAY` (Dias da semana 0 a 6, Default: '{}')
+*   `tolerancia_minutos`: `integer` (Tolerância em minutos para captura retroativa, Default: 5, NOT NULL)
+*   `criado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `updated_at`: `timestamp with time zone` (Nullable)
+
 ---
 
 ## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
 
 | Nome da RPC | Parâmetros | Tipo de Retorno | Descrição & Propósito |
 |-------------|------------|-----------------|------------------------|
+| `public.get_session_timeout_rules_for_user` | `none` | `TABLE (id UUID, nome TEXT, horarios TEXT[], dias_semana SMALLINT[], tolerancia_minutos INT, escopo TEXT)` | Retorna as regras ativas de encerramento de sessão aplicáveis ao usuário logado (isenta Superadmin e Nível 1). |
 | `public.obter_admin_dashboard_kpis` | `p_escola_id UUID, p_data DATE, p_inicio_mes TIMESTAMPTZ` | `jsonb` | Retorna consolidação de KPIs (alunos, turmas, ocorrências, transferências pendentes, diários) com validação de acesso `auth.uid()`. |
 | `public.get_dashboard_resumo` | `p_escola_id UUID, p_funcionario_id UUID` | `jsonb` | Resumo consolidado de contadores da dashboard principal (total de alunos, turmas, funcionários ativos, comunicados, diários pendentes, ocorrências do mês) respeitando soft-delete (`deleted_at IS NULL`). |
 | `public.obter_multi_escolas_stats` | `p_funcionario_id UUID, p_escola_ids UUID[], p_data DATE` | `jsonb` | Estatísticas multi-escola de professores (turmas vinculadas, aulas do dia, chamadas pendentes). |
