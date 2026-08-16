@@ -5,14 +5,15 @@
  * está bloqueada pelas configurações globais da rede.
  *
  * Suporta três modos de bloqueio (cumulativos):
- *   1. Toda a rede  → bloquear_edicao_funcionarios_rede = true
+ *   1. Toda a rede    → bloquear_edicao_funcionarios_rede = true
  *   2. Por secretaria → escola do funcionário pertence a uma secretaria bloqueada
- *   3. Por escola   → escola do funcionário está na lista de escolas bloqueadas
+ *   3. Por escola     → escola do funcionário está na lista de escolas bloqueadas
  *
- * Semântica de falha:
- *   - Fail-open: erros de conectividade NÃO bloqueiam o usuário (conserva experiência).
- *   - Caso o funcionário-alvo não tenha vínculo de escola registrado, a verificação
- *     granular (por secretaria / por escola) retorna false (não bloqueado).
+ * Semântica de execução:
+ *   - Chama a RPC SECURITY DEFINER `verificar_trava_edicao_funcionario` no Postgres,
+ *     garantindo resolução atômica e imune a restrições de visibilidade RLS do client.
+ *   - Em caso de falha de conexão, opera em modo fail-open (retorna false) para não
+ *     bloquear indevidamente o usuário legítimo.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -52,9 +53,9 @@ export async function buscarConfigBloqueioRede(
 /**
  * Verifica se a edição do funcionário-alvo está bloqueada.
  *
- * @param configRede   Objeto com as configurações de bloqueio (pode ser null → fail-open).
- * @param funcionarioAlvoId  UUID do funcionário que se deseja editar.
- * @param supabase     Cliente Supabase (browser) para buscar vínculos do alvo.
+ * @param configRede         Objeto de configuração (opcional / fallback).
+ * @param funcionarioAlvoId  UUID do funcionário que se deseja editar (null em cadastro novo).
+ * @param supabase           Cliente Supabase.
  * @returns true  → edição BLOQUEADA
  *          false → edição PERMITIDA
  */
@@ -63,80 +64,67 @@ export async function verificarTravaEdicaoFuncionario(
   funcionarioAlvoId: string | null | undefined,
   supabase: SupabaseClient
 ): Promise<boolean> {
-  // Sem configuração (erro de rede) → fail-open
-  if (!configRede) return false
+  // Novo cadastro (sem funcionário alvo ainda) → liberado
+  if (!funcionarioAlvoId) {
+    // Se a rede inteira estiver bloqueada, checa se configRede já indica bloqueio global
+    if (configRede?.bloquear_edicao_funcionarios_rede === true) return true
+    return false
+  }
 
-  // ── 1. Bloqueio de toda a rede ────────────────────────────────
+  // 1. Prioriza a RPC SECURITY DEFINER (atômica e imune a RLS de client)
+  try {
+    const { data, error } = await supabase.rpc('verificar_trava_edicao_funcionario', {
+      p_funcionario_alvo_id: funcionarioAlvoId,
+    })
+
+    if (!error && typeof data === 'boolean') {
+      return data
+    }
+  } catch (rpcErr) {
+    console.warn('[verificarTravaBloqueio] RPC indisponível, usando fallback local.', rpcErr)
+  }
+
+  // 2. Fallback local baseado em configRede
+  if (!configRede) return false
   if (configRede.bloquear_edicao_funcionarios_rede === true) return true
 
   const bloqueadosPorSecretaria = configRede.bloquear_por_secretarias ?? []
   const bloqueadosPorEscola = configRede.bloquear_por_escolas ?? []
 
   const temBloqueioGranular = bloqueadosPorSecretaria.length > 0 || bloqueadosPorEscola.length > 0
-
-  // Sem bloqueio granular configurado → liberado
   if (!temBloqueioGranular) return false
 
-  // Sem funcionário alvo identificado → não bloqueia (edge case: novo cadastro)
-  if (!funcionarioAlvoId) return false
-
-  // ── 2. Busca escolas do funcionário-alvo via vínculos ativos ──
-  let escolasDoAlvo: { escola_id: string | null }[] = []
-
   try {
-    const { data: vinculos, error } = await supabase
+    const { data: vinculos } = await supabase
       .from('vinculos_funcionarios')
       .select('escola_id')
       .eq('funcionario_id', funcionarioAlvoId)
       .eq('ativo', true)
 
-    if (error) {
-      console.warn('[verificarTravaBloqueio] Erro ao buscar vínculos do funcionário-alvo.', error)
-      return false // fail-open
+    const escolaIds = (vinculos ?? [])
+      .map((v) => v.escola_id)
+      .filter((id): id is string => !!id)
+
+    if (escolaIds.length === 0) return false
+
+    if (bloqueadosPorEscola.length > 0 && escolaIds.some((id) => bloqueadosPorEscola.includes(id))) {
+      return true
     }
 
-    escolasDoAlvo = vinculos ?? []
-  } catch (err) {
-    console.warn('[verificarTravaBloqueio] Erro inesperado ao buscar vínculos.', err)
-    return false // fail-open
-  }
-
-  // Sem vínculos → não bloqueia (funcionário sem lotação não é afetado pelo filtro granular)
-  if (escolasDoAlvo.length === 0) return false
-
-  const escolaIdsDoAlvo = escolasDoAlvo
-    .map((v) => v.escola_id)
-    .filter((id): id is string => !!id)
-
-  // ── 3. Verificar bloqueio por escola ─────────────────────────
-  if (bloqueadosPorEscola.length > 0) {
-    const bloqueadoPorEscola = escolaIdsDoAlvo.some((id) => bloqueadosPorEscola.includes(id))
-    if (bloqueadoPorEscola) return true
-  }
-
-  // ── 4. Verificar bloqueio por secretaria ─────────────────────
-  if (bloqueadosPorSecretaria.length > 0) {
-    try {
-      const { data: escolas, error } = await supabase
+    if (bloqueadosPorSecretaria.length > 0) {
+      const { data: escolas } = await supabase
         .from('escolas')
         .select('id, secretaria_id')
-        .in('id', escolaIdsDoAlvo)
+        .in('id', escolaIds)
         .is('deleted_at', null)
 
-      if (error) {
-        console.warn('[verificarTravaBloqueio] Erro ao buscar secretaria_id das escolas.', error)
-        return false // fail-open
-      }
-
-      const bloqueadoPorSecretaria = (escolas ?? []).some(
+      const bloqueadoPorSec = (escolas ?? []).some(
         (esc) => esc.secretaria_id && bloqueadosPorSecretaria.includes(esc.secretaria_id)
       )
-
-      if (bloqueadoPorSecretaria) return true
-    } catch (err) {
-      console.warn('[verificarTravaBloqueio] Erro inesperado ao verificar secretaria.', err)
-      return false // fail-open
+      if (bloqueadoPorSec) return true
     }
+  } catch (fallbackErr) {
+    console.warn('[verificarTravaBloqueio] Erro no fallback local.', fallbackErr)
   }
 
   return false
