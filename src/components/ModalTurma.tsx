@@ -50,7 +50,8 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
     handleAddProfessor,
     handleRemoveProfessor,
     handleAddMateria,
-    handleRemoveMateria
+    handleRemoveMateria,
+    handleUpdateMateriaProfessor
   } = useModalTurmaForm({
     open,
     turma,
@@ -74,7 +75,7 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
           ? `Preencha os dados abaixo para ${turma ? 'editar a' : 'cadastrar uma nova'} turma.`
           : 'Visualize as informações, professores e matérias alocadas a esta turma.'
       }
-      maxWidth="sm:max-w-[550px]"
+      maxWidth="sm:max-w-[580px]"
       footer={
         <div className="w-full">
           {isEditMode ? (
@@ -221,11 +222,11 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
               </div>
 
               {isEditMode && (
-                <div className="flex gap-2">
-                  <div className="flex-1">
+                <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <Select onValueChange={(val) => handleSelectMateriaCatalogo((val as string) ?? '')}>
                       <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10">
-                        <SelectValue placeholder="-- Selecionar Componente Curricular --" />
+                        <SelectValue placeholder="-- Componente Curricular --" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border text-popover-foreground">
                         {catalogoMaterias.map((cat: any) => (
@@ -235,32 +236,76 @@ export function ModalTurma({ open, onOpenChange, turma, onSuccess }: ModalTurmaP
                         ))}
                       </SelectContent>
                     </Select>
+
+                    <Select value={novaMateriaProfId} onValueChange={(val) => setNovaMateriaProfId((val as string) ?? '')}>
+                      <SelectTrigger className="bg-input border-border text-foreground focus:ring-primary h-10">
+                        <SelectValue placeholder="-- Professor da Matéria --">
+                          {novaMateriaProfId && novaMateriaProfId !== 'sem_professor'
+                            ? (professoresEscola.find((prof: any) => prof.id === novaMateriaProfId)?.nome || (professoresEscola.length === 0 ? 'Carregando...' : novaMateriaProfId))
+                            : (novaMateriaProfId === 'sem_professor' ? 'Sem professor' : undefined)}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border text-popover-foreground">
+                        <SelectItem value="sem_professor">Sem professor</SelectItem>
+                        {professoresEscola.map((prof: any) => (
+                          <SelectItem key={prof.id} value={prof.id}>
+                            {prof.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button
                     onClick={handleAddMateria}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 h-10 cursor-pointer"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 h-9 cursor-pointer self-end text-xs rounded-lg"
                   >
-                    <Plus className="w-4 h-4 mr-1" /> Adicionar
+                    <Plus className="w-4 h-4 mr-1" /> Adicionar Matéria
                   </Button>
                 </div>
               )}
 
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {materias.length === 0 ? (
                   <div className="text-muted-foreground text-xs py-2 text-center">Nenhuma matéria adicionada a esta turma.</div>
                 ) : (
                   materias.map((mat: any) => (
-                    <div key={mat.id} className="flex justify-between items-center bg-card p-2.5 rounded-lg border border-border">
-                      <div className="flex items-center gap-2 text-xs text-foreground">
-                        <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{mat.nome}</span>
+                    <div key={mat.id} className="flex justify-between items-center bg-card p-2.5 rounded-lg border border-border gap-2">
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                          <BookOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{mat.nome}</span>
+                        </div>
+                        {isEditMode ? (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <select
+                              value={mat.professor_id ?? 'sem_professor'}
+                              onChange={(e) => handleUpdateMateriaProfessor(mat.id, e.target.value)}
+                              className="bg-background border border-border rounded text-foreground px-2 py-0.5 text-xs focus:ring-1 focus:ring-primary outline-none max-w-[220px]"
+                            >
+                              <option value="sem_professor" className="bg-background text-foreground">
+                                Sem professor
+                              </option>
+                              {professoresEscola.map((prof: any) => (
+                                <option key={prof.id} value={prof.id} className="bg-background text-foreground">
+                                  {prof.nome}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                            <User className="w-3 h-3 text-muted-foreground/60" />
+                            <span>{mat.funcionarios?.nome ?? 'Sem professor'}</span>
+                          </div>
+                        )}
                       </div>
                       {isEditMode && (
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveMateria(mat.id)}
-                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer"
+                          className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer shrink-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

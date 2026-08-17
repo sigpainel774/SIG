@@ -353,6 +353,44 @@ export function useModalTurmaForm({ open, turma, onSuccess, onOpenChange }: UseM
     }
   }
 
+  const handleUpdateMateriaProfessor = async (materiaId: string, professorId: string) => {
+    const profIdVal = professorId === 'sem_professor' || !professorId ? null : professorId
+
+    try {
+      if (profIdVal && turma?.id) {
+        const jaVinculado = vinculosProfessores.some(vp => vp.funcionario_id === profIdVal)
+        if (!jaVinculado) {
+          const { error: errorVinculo } = await supabase
+            .from('vinculos_turmas')
+            .insert({
+              funcionario_id: profIdVal,
+              turma_id: turma.id,
+              escola_id: escolaAtivaId,
+              tipo: 'professor'
+            })
+          if (errorVinculo) {
+            console.error('Erro ao criar vínculo automático do professor na turma:', errorVinculo)
+          } else {
+            toast.success('Professor vinculado à turma automaticamente!')
+            fetchVinculosProfessores()
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('materias')
+        .update({ professor_id: profIdVal })
+        .eq('id', materiaId)
+
+      if (error) throw error
+      toast.success('Professor da matéria atualizado!')
+      fetchMaterias()
+    } catch (err: any) {
+      toast.error('Erro ao atualizar professor da matéria: ' + (err?.message ?? 'Erro desconhecido'))
+      fetchMaterias()
+    }
+  }
+
   return {
     nome, setNome,
     anoLetivo, setAnoLetivo,
@@ -372,6 +410,7 @@ export function useModalTurmaForm({ open, turma, onSuccess, onOpenChange }: UseM
     handleAddProfessor,
     handleRemoveProfessor,
     handleAddMateria,
-    handleRemoveMateria
+    handleRemoveMateria,
+    handleUpdateMateriaProfessor
   }
 }
