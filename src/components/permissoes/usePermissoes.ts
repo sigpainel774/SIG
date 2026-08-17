@@ -389,30 +389,79 @@ export function usePermissoes() {
 
     const isNivel1 = nivelNum === 1 && !isRhRedeOption
 
+    const permissoesPadrao = isRhRedeOption
+      ? {
+          pode_rh_rede: true,
+          pode_funcionarios: true,
+          pode_mural: false,
+          pode_turmas: false,
+          pode_matriculas: false,
+          pode_alunos: false,
+          pode_ocorrencias: false,
+          pode_atestados: false,
+        }
+      : nivelNum === 1 || nivelNum === 2
+      ? {
+          pode_rh_rede: false,
+          pode_funcionarios: true,
+          pode_mural: true,
+          pode_turmas: true,
+          pode_matriculas: true,
+          pode_alunos: true,
+          pode_ocorrencias: true,
+          pode_atestados: true,
+        }
+      : nivelNum === 3
+      ? {
+          pode_rh_rede: false,
+          pode_funcionarios: false,
+          pode_mural: true,
+          pode_turmas: true,
+          pode_matriculas: true,
+          pode_alunos: true,
+          pode_ocorrencias: true,
+          pode_atestados: false,
+        }
+      : nivelNum === 4
+      ? {
+          pode_rh_rede: false,
+          pode_funcionarios: false,
+          pode_mural: true,
+          pode_turmas: true,
+          pode_matriculas: false,
+          pode_alunos: true,
+          pode_ocorrencias: false,
+          pode_atestados: false,
+        }
+      : nivelNum === 5
+      ? {
+          pode_rh_rede: false,
+          pode_funcionarios: true,
+          pode_mural: true,
+          pode_turmas: false,
+          pode_matriculas: false,
+          pode_alunos: false,
+          pode_ocorrencias: false,
+          pode_atestados: true,
+        }
+      : {
+          pode_rh_rede: false,
+          pode_funcionarios: false,
+          pode_mural: false,
+          pode_turmas: false,
+          pode_matriculas: false,
+          pode_alunos: false,
+          pode_ocorrencias: false,
+          pode_atestados: false,
+        }
+
     let error
     if (existente?.id) {
-      // UPDATE — atualizar nível e reativar
-      const updateData: any = { 
+      // UPDATE — atualizar nível e reativar com as permissões do nível
+      const updateData = { 
         nivel: nivelNum, 
         ativo: true,
-        pode_rh_rede: isRhRedeOption,
-        pode_funcionarios: true,
-      }
-      if (isNivel1) {
-        updateData.pode_mural = true
-        updateData.pode_turmas = true
-        updateData.pode_matriculas = true
-        updateData.pode_alunos = true
-        updateData.pode_ocorrencias = true
-        updateData.pode_atestados = true
-        updateData.pode_rh_rede = false
-      } else if (isRhRedeOption) {
-        updateData.pode_mural = false
-        updateData.pode_turmas = false
-        updateData.pode_matriculas = false
-        updateData.pode_alunos = false
-        updateData.pode_ocorrencias = false
-        updateData.pode_atestados = false
+        ...permissoesPadrao,
       }
       const { error: updateError } = await supabase
         .from('acessos_usuarios')
@@ -420,30 +469,13 @@ export function usePermissoes() {
         .eq('id', existente.id)
       error = updateError
     } else {
-      // INSERT — novo registro
-      const insertData: any = {
+      // INSERT — novo registro com as permissões do nível
+      const insertData = {
         funcionario_id: funcSelecionado.id,
         escola_id: escolaIdToSave,
         nivel: nivelNum,
         ativo: true,
-        pode_rh_rede: isRhRedeOption,
-        pode_funcionarios: true,
-      }
-      if (isNivel1) {
-        insertData.pode_mural = true
-        insertData.pode_turmas = true
-        insertData.pode_matriculas = true
-        insertData.pode_alunos = true
-        insertData.pode_ocorrencias = true
-        insertData.pode_atestados = true
-        insertData.pode_rh_rede = false
-      } else if (isRhRedeOption) {
-        insertData.pode_mural = false
-        insertData.pode_turmas = false
-        insertData.pode_matriculas = false
-        insertData.pode_alunos = false
-        insertData.pode_ocorrencias = false
-        insertData.pode_atestados = false
+        ...permissoesPadrao,
       }
       const { error: insertError } = await supabase
         .from('acessos_usuarios')
