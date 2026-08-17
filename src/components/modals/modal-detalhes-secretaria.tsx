@@ -5,8 +5,9 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, RefreshCw, CheckCircle2, User, Search, School, Stethoscope } from 'lucide-react'
+import { Building2, Plus, Edit, RefreshCw, CheckCircle2, User, Search, School, Stethoscope, Calendar } from 'lucide-react'
 import { ModalEscola } from '@/components/modals/modal-escola'
+import { ModalCalendarioAcademico } from '@/components/modals/modal-calendario-academico'
 import { ImportDataActions } from '@/components/admin/ImportDataActions'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
@@ -34,6 +35,7 @@ export function ModalDetalhesSecretaria({
   const [busca, setBusca] = useState('')
   const [modalNovaEscolaOpen, setModalNovaEscolaOpen] = useState(false)
   const [escolaToEdit, setEscolaToEdit] = useState<any | null>(null)
+  const [modalCalendarioOpen, setModalCalendarioOpen] = useState(false)
   
   const sessionTimestamp = useRef(Date.now()).current
   const isMounted = useRef(true)
@@ -164,6 +166,19 @@ export function ModalDetalhesSecretaria({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
+              {/* Botão de Calendário Acadêmico Oficial (Exclusivo Educação) */}
+              {isEducacao && (
+                <Button
+                  type="button"
+                  onClick={() => setModalCalendarioOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-9 shadow-sm"
+                  title="Gerenciar Calendário Acadêmico e Trimestres da Rede"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Calendário Acadêmico</span>
+                </Button>
+              )}
+
               {/* Opções Reutilizáveis de Importação de Dados */}
               <ImportDataActions 
                 secretariaIdFilter={secretaria.id} 
@@ -317,6 +332,16 @@ export function ModalDetalhesSecretaria({
             loadUnidades()
             if (onUpdate) onUpdate()
           }}
+        />
+      )}
+
+      {/* Modal de Calendário Acadêmico da Secretaria */}
+      {modalCalendarioOpen && (
+        <ModalCalendarioAcademico
+          open={modalCalendarioOpen}
+          onOpenChange={setModalCalendarioOpen}
+          secretariaId={secretaria.id}
+          secretariaNome={secretaria.nome}
         />
       )}
     </>
