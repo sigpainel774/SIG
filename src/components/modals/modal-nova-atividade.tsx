@@ -22,9 +22,19 @@ interface ModalNovaAtividadeProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  initialTurmaId?: string
+  initialMateriaId?: string
+  initialTrimestre?: string
 }
 
-export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaAtividadeProps) {
+export function ModalNovaAtividade({
+  open,
+  onOpenChange,
+  onSuccess,
+  initialTurmaId,
+  initialMateriaId,
+  initialTrimestre
+}: ModalNovaAtividadeProps) {
   const { funcionario, escolaAtivaId, acessos, isAdminGlobalOrRoot } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
 
@@ -35,13 +45,16 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
   const [materias, setMaterias] = useState<any[]>([])
   const [prazoMinimoDias, setPrazoMinimoDias] = useState<number>(5)
 
-  const [turmaId, setTurmaId] = useState('')
-  const [materiaId, setMateriaId] = useState('')
+  const [turmaId, setTurmaId] = useState(initialTurmaId ?? '')
+  const [materiaId, setMateriaId] = useState(initialMateriaId ?? '')
   const [titulo, setTitulo] = useState('')
-  const [trimestre, setTrimestre] = useState('')
+  const [trimestre, setTrimestre] = useState(initialTrimestre ?? '')
+  const [pontosMaximos, setPontosMaximos] = useState('2.5')
   const [dataAplicacao, setDataAplicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [arquivo, setArquivo] = useState<File | null>(null)
+  const [pontosJaCadastrados, setPontosJaCadastrados] = useState<number>(0)
+  const [atividadesCount, setAtividadesCount] = useState<number>(0)
 
   const isGlobalAdmin = isAdminGlobalOrRoot?.() ?? false
   const nivelNaEscola = escolaAtivaId
@@ -80,6 +93,46 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
     const dd = String(d.getDate()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd}`
   }
+
+  // Sincronizar initialProps quando o modal abre
+  useEffect(() => {
+    if (open) {
+      if (initialTurmaId) setTurmaId(initialTurmaId)
+      if (initialMateriaId) setMateriaId(initialMateriaId)
+      if (initialTrimestre) setTrimestre(initialTrimestre)
+    }
+  }, [open, initialTurmaId, initialMateriaId, initialTrimestre])
+
+  // Buscar total de pontos e contagem de atividades já cadastradas para a turma/materia/trimestre
+  useEffect(() => {
+    if (!open || !turmaId || !materiaId || !trimestre || !escolaAtivaId) {
+      setPontosJaCadastrados(0)
+      setAtividadesCount(0)
+      return
+    }
+
+    let active = true
+    const loadPontosAcumulados = async () => {
+      const supabase = createClient()
+      const { data, error } = await (supabase as any)
+        .from('atividades_secretaria')
+        .select('id, pontos_maximos')
+        .eq('escola_id', escolaAtivaId)
+        .eq('turma_id', turmaId)
+        .eq('materia_id', materiaId)
+        .eq('trimestre', Number(trimestre))
+
+      if (!error && data && active) {
+        const soma = data.reduce((acc: number, curr: any) => acc + (Number(curr.pontos_maximos) || 0), 0)
+        setPontosJaCadastrados(parseFloat(soma.toFixed(2)))
+        setAtividadesCount(data.length)
+      }
+    }
+    loadPontosAcumulados()
+    return () => {
+      active = false
+    }
+  }, [open, turmaId, materiaId, trimestre, escolaAtivaId])
 
   // Carregar turmas vinculadas ao professor
   useEffect(() => {
@@ -125,20 +178,27 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
         return
       }
       setMaterias(data ?? [])
-      setMateriaId('')
+      if (initialMateriaId && data?.some((m: any) => m.id === initialMateriaId)) {
+        setMateriaId(initialMateriaId)
+      } else if (!materiaId && data && data.length > 0) {
+        setMateriaId(data[0].id)
+      }
     }
     loadMaterias()
-  }, [turmaId, funcionario?.id])
+  }, [turmaId, funcionario?.id, initialMateriaId])
 
   const resetForm = () => {
-    setTurmaId('')
-    setMateriaId('')
+    setTurmaId(initialTurmaId ?? '')
+    setMateriaId(initialMateriaId ?? '')
     setTitulo('')
-    setTrimestre('')
+    setTrimestre(initialTrimestre ?? '')
+    setPontosMaximos('2.5')
     setDataAplicacao('')
     setObservacoes('')
     setArquivo(null)
     setMaterias([])
+    setPontosJaCadastrados(0)
+    setAtividadesCount(0)
   }
 
   const handleOpenChange = (val: boolean) => {
@@ -153,9 +213,26 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
     if (!materiaId) { toast.error('Selecione uma disciplina.'); return }
     if (!titulo.trim()) { toast.error('Informe o título da atividade.'); return }
     if (!trimestre) { toast.error('Selecione o trimestre.'); return }
+    
+    const ptsNum = Number(pontosMaximos.replace(',', '.'))
+    if (isNaN(ptsNum) || ptsNum < 1.0 || ptsNum > 10.0) {
+      toast.error('A pontuação mínima da atividade é 1.0 ponto (máximo de 10.0 pontos).')
+      return
+    }
+
+    if (atividadesCount >= 10) {
+      toast.error('Limite máximo de 10 atividades por trimestre atingido para esta disciplina.')
+      return
+    }
+
     if (!dataAplicacao) { toast.error('Informe a data de aplicação.'); return }
-    if (!arquivo) { toast.error('Selecione um arquivo para envio.'); return }
     if (!escolaAtivaId || !funcionario?.id) { toast.error('Sessão inválida. Recarregue a página.'); return }
+
+    // Validar se soma ultrapassa 10 pontos
+    if (pontosJaCadastrados + ptsNum > 10.0) {
+      toast.error(`A soma dos pontos (${(pontosJaCadastrados + ptsNum).toFixed(1)} pts) ultrapassa o limite de 10.0 pontos do trimestre. Pontos restantes disponíveis: ${(10.0 - pontosJaCadastrados).toFixed(1)} pts.`)
+      return
+    }
 
     // Validar antecedência mínima exigida pela direção (isenta diretores e admins)
     if (!isDiretoria && prazoMinimoDias > 0) {
@@ -170,24 +247,33 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
     }
 
     setLoading(true)
-    setLoadingMsg('Enviando arquivo...')
+    setLoadingMsg('Salvando atividade...')
 
     try {
       const supabase = createClient()
 
-      // 1. Upload do arquivo
-      const cleanName = arquivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
-      const path = `${escolaAtivaId}/${turmaId}/${Date.now()}_${cleanName}`
-      const { error: uploadError } = await supabase.storage
-        .from('atividades-secretaria')
-        .upload(path, arquivo, { upsert: false })
+      let arquivo_url = null
+      let arquivo_nome = null
+      let arquivo_tipo = null
 
-      if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`)
+      // 1. Upload do arquivo (se houver)
+      if (arquivo) {
+        setLoadingMsg('Enviando arquivo anexo...')
+        const cleanName = arquivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+        const path = `${escolaAtivaId}/${turmaId}/${Date.now()}_${cleanName}`
+        const { error: uploadError } = await supabase.storage
+          .from('atividades-secretaria')
+          .upload(path, arquivo, { upsert: false })
 
-      const { data: publicUrlData } = supabase.storage
-        .from('atividades-secretaria')
-        .getPublicUrl(path)
-      const arquivo_url = publicUrlData.publicUrl
+        if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`)
+
+        const { data: publicUrlData } = supabase.storage
+          .from('atividades-secretaria')
+          .getPublicUrl(path)
+        arquivo_url = publicUrlData.publicUrl
+        arquivo_nome = arquivo.name
+        arquivo_tipo = arquivo.type || null
+      }
 
       setLoadingMsg('Salvando atividade...')
 
@@ -211,13 +297,17 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
           professor_id: funcionario.id,
           titulo: titulo.trim(),
           trimestre: Number(trimestre),
+          pontos_maximos: ptsNum,
+          ordem_atividade: atividadesCount + 1,
           data_aplicacao: dataAplicacao,
           observacoes: observacoes.trim() || null,
           arquivo_url,
-          arquivo_nome: arquivo.name,
-          arquivo_tipo: arquivo.type || null,
+          arquivo_nome,
+          arquivo_tipo,
           ano_letivo: turmaData?.ano_letivo ?? null,
           status: 'recebida',
+          enviado_impressao: Boolean(arquivo),
+          enviado_impressao_em: arquivo ? new Date().toISOString() : null,
         })
         .select('id')
         .single()
@@ -408,8 +498,8 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
               />
             </div>
 
-            {/* Trimestre e Data em linha */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Trimestre, Pontos e Data em linha */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-muted-foreground text-sm">
                   Trimestre <span className="text-red-400">*</span>
@@ -427,6 +517,23 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
               </div>
 
               <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm flex items-center justify-between">
+                  <span>Pontos Máx. <span className="text-red-400">*</span></span>
+                  <span className="text-[11px] text-zinc-400 font-normal">Min: 1.0</span>
+                </Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  max="10"
+                  value={pontosMaximos}
+                  onChange={(e) => setPontosMaximos(e.target.value)}
+                  placeholder="Ex: 2.5"
+                  className="bg-input border-borderCustom text-foreground focus-visible:ring-highlight"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-muted-foreground text-sm">
                   Data de Aplicação <span className="text-red-400">*</span>
                 </Label>
@@ -437,13 +544,30 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
                   onChange={(e) => setDataAplicacao(e.target.value)}
                   className="bg-input border-borderCustom text-foreground focus-visible:ring-highlight"
                 />
-                {!isDiretoria && prazoMinimoDias > 0 && (
-                  <p className="text-[11px] text-amber-400/90 font-medium">
-                    Prazo mínimo de envio: {prazoMinimoDias} dia(s) de antecedência.
-                  </p>
-                )}
               </div>
             </div>
+
+            {/* Resumo de Pontos do Trimestre */}
+            {trimestre && (
+              <div className="bg-muted/40 border border-borderCustom rounded-lg p-3 text-xs flex items-center justify-between">
+                <div>
+                  <span className="text-muted-foreground">Pontos já cadastrados neste trimestre: </span>
+                  <strong className="text-foreground">{pontosJaCadastrados.toFixed(1)} / 10.0 pts</strong>
+                  <span className="text-zinc-500 ml-2">({atividadesCount}/10 atividades)</span>
+                </div>
+                <div className="font-semibold text-[#3ea6ff]">
+                  {pontosJaCadastrados + (Number(pontosMaximos) || 0) <= 10.0
+                    ? `Ficará: ${(pontosJaCadastrados + (Number(pontosMaximos) || 0)).toFixed(1)} / 10.0 pts`
+                    : <span className="text-red-400">Ultrapassa 10 pts</span>}
+                </div>
+              </div>
+            )}
+
+            {!isDiretoria && prazoMinimoDias > 0 && (
+              <p className="text-[11px] text-amber-400/90 font-medium">
+                Prazo mínimo para impressão: {prazoMinimoDias} dia(s) de antecedência.
+              </p>
+            )}
 
             {/* Observações */}
             <div className="space-y-1.5">
@@ -451,7 +575,7 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="Instruções adicionais para a secretaria (opcional)"
                 className="w-full rounded-md border border-borderCustom bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-highlight resize-none"
               />
@@ -459,8 +583,9 @@ export function ModalNovaAtividade({ open, onOpenChange, onSuccess }: ModalNovaA
 
             {/* Arquivo */}
             <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-sm">
-                Arquivo <span className="text-red-400">*</span>
+              <Label className="text-muted-foreground text-sm flex items-center justify-between">
+                <span>Arquivo para Impressão</span>
+                <span className="text-[11px] text-zinc-400 font-normal">Opcional para planejamento</span>
               </Label>
               <label className="flex items-center gap-3 cursor-pointer w-full rounded-md border border-dashed border-borderCustom bg-muted/60 px-4 py-3 hover:border-highlight/50 transition-colors group">
                 <Upload className="w-4 h-4 text-zinc-500 group-hover:text-[#3ea6ff] shrink-0" />
