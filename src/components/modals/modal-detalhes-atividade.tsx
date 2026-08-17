@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -70,12 +70,72 @@ export function ModalDetalhesAtividade({
   const [historico, setHistorico] = useState<any[]>([])
   const [loadingHistorico, setLoadingHistorico] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState(false)
+  const [loadingEnvioImpressao, setLoadingEnvioImpressao] = useState(false)
 
   const isGlobalAdmin = isAdminGlobalOrRoot?.() ?? false
   // Verificar se usuário é secretário (nível 3), diretor (nível 2) ou admin global na escola ativa
   const podeGerenciarStatus = isGlobalAdmin || acessos.some(
     (a) => (a.nivel === 2 || a.nivel === 3) && a.ativo && a.escola_id === escolaAtivaId,
   )
+
+  const isAutor = atividade?.professor_id === funcionario?.id || isGlobalAdmin
+
+  // Cálculo seguro de antecedência em dias (sem descompasso de timezone UTC - ES-05)
+  const diasAntecedencia = useMemo(() => {
+    if (!atividade?.data_aplicacao) return 0
+    const partes = atividade.data_aplicacao.split('T')[0].split('-')
+    if (partes.length !== 3) return 0
+    const [ano, mes, dia] = partes.map(Number)
+    const dataApp = new Date(ano, mes - 1, dia, 0, 0, 0)
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const diffMs = dataApp.getTime() - hoje.getTime()
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  }, [atividade?.data_aplicacao])
+
+  const podeEnviarImpressao = diasAntecedencia >= 7
+
+  // ── Enviar para Impressão com Antecedência de 7 Dias ────────────────────────
+  const handleEnviarParaImpressao = async () => {
+    if (!atividade?.id || !funcionario?.id) return
+    if (!podeEnviarImpressao) {
+      toast.error(`O envio para impressão exige antecedência mínima de 7 dias da data de aplicação. Faltam ${diasAntecedencia} dia(s).`)
+      return
+    }
+
+    setLoadingEnvioImpressao(true)
+    try {
+      const supabase = createClient()
+      const { error } = await (supabase as any)
+        .from('atividades_secretaria')
+        .update({
+          enviado_impressao: true,
+          enviado_impressao_em: new Date().toISOString(),
+          status: 'recebida',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', atividade.id)
+
+      if (error) throw error
+
+      await (supabase as any).from('atividades_secretaria_historico').insert({
+        atividade_id: atividade.id,
+        status_anterior: atividade.status ?? 'planejada',
+        status_novo: 'recebida',
+        alterado_por: funcionario.id,
+        alterado_por_nome: funcionario.nome ?? 'Professor',
+      })
+
+      toast.success('Atividade enviada para a fila de impressão da secretaria!')
+      onStatusChange()
+      onOpenChange(false)
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err?.message ?? 'Erro ao enviar para impressão.')
+    } finally {
+      setLoadingEnvioImpressao(false)
+    }
+  }
 
   const statusAtual: StatusAtividade = atividade?.status ?? 'recebida'
   const statusInfo = STATUS_CONFIG[statusAtual]
@@ -182,6 +242,14 @@ export function ModalDetalhesAtividade({
               <InfoRow label="Turma" value={atividade.turma_nome ?? atividade.turma_id ?? '—'} />
               <InfoRow label="Disciplina" value={atividade.materia_nome ?? atividade.materia_name ?? atividade.materia_id ?? '—'} />
               <InfoRow
+                label="Pontuação Máxima"
+                value={
+                  atividade.pontos_maximos
+                    ? `${Number(atividade.pontos_maximos).toFixed(1)} pontos`
+                    : '2.5 pontos'
+                }
+              />
+              <InfoRow
                 label="Data de Aplicação"
                 value={
                   atividade.data_aplicacao
@@ -199,6 +267,41 @@ export function ModalDetalhesAtividade({
               />
               <InfoRow label="Ano Letivo" value={atividade.ano_letivo ?? '—'} />
             </div>
+
+            {/* Ação de Envio para Impressão (Professor Autor) */}
+            {isAutor && atividade.arquivo_url && !atividade.enviado_impressao && (
+              <div className="mt-4 rounded-lg border border-border bg-card p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                      Envio para a Secretaria
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {podeEnviarImpressao
+                        ? `Atividade pronta para envio (${diasAntecedencia} dias até a aplicação).`
+                        : `Prazo mínimo de 7 dias não atingido (${diasAntecedencia} dias até a aplicação).`}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!podeEnviarImpressao || loadingEnvioImpressao}
+                    onClick={handleEnviarParaImpressao}
+                    className="bg-[#3ea6ff] hover:bg-[#0090ff] text-black font-bold gap-2"
+                  >
+                    {loadingEnvioImpressao ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Enviar para Impressão'
+                    )}
+                  </Button>
+                </div>
+                {!podeEnviarImpressao && (
+                  <p className="text-[11px] text-amber-500 font-medium">
+                    A secretaria exige antecedência mínima de 7 dias da data prevista de aplicação para confecção e impressão.
+                  </p>
+                )}
+              </div>
+            )}
 
             {atividade.observacoes && (
               <div className="mt-4 rounded-lg border border-border bg-[#1c1c1e] p-4">

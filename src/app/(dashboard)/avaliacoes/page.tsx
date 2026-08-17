@@ -82,6 +82,10 @@ function AvaliacoesContent() {
   // Estados de dados
   const [atividades, setAtividades] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [turmasDocente, setTurmasDocente] = useState<any[]>([])
+  const [turmaSelecionadaId, setTurmaSelecionadaId] = useState<string>('')
+  const [pendenciasPrazo, setPendenciasPrazo] = useState<any[]>([])
+  const [initialNovaAtiv, setInitialNovaAtiv] = useState<{ turmaId?: string; materiaId?: string; trimestre?: string }>({})
 
   // Filtros
   const [busca, setBusca] = useState('')
@@ -111,6 +115,81 @@ function AvaliacoesContent() {
   const isProfessor = nivelNaEscola === 4 || nivelNaEscola === 5 || funcionario?.cargo?.toLowerCase().includes('professor')
   const isSecretario = nivelNaEscola === 3 && podeVerFila
   const isDiretoria = nivelNaEscola === 2 || isGlobalAdmin
+
+  // Carregar turmas vinculadas ao docente na escola ativa
+  useEffect(() => {
+    if (!escolaAtivaId || !funcionario?.id) return
+    let active = true
+
+    const loadTurmasDocente = async () => {
+      const supabase = createClient()
+      let query = (supabase as any)
+        .from('turmas')
+        .select('id, nome, turno, ano_letivo')
+        .eq('escola_id', escolaAtivaId)
+        .order('nome', { ascending: true })
+
+      if (isProfessor && !isDiretoria && !isSecretario) {
+        const { data: vinculos } = await (supabase as any)
+          .from('vinculos_turmas')
+          .select('turma_id')
+          .eq('funcionario_id', funcionario.id)
+          .eq('escola_id', escolaAtivaId)
+          .eq('tipo', 'professor')
+
+        const turmaIds = (vinculos ?? []).map((v: any) => v.turma_id)
+        if (turmaIds.length > 0) {
+          query = query.in('id', turmaIds)
+        } else {
+          if (active) setTurmasDocente([])
+          return
+        }
+      }
+
+      const { data, error } = await query
+      if (!error && data && active) {
+        setTurmasDocente(data)
+        const urlTurma = searchParams.get('turma')
+        if (urlTurma && data.some((t: any) => t.id === urlTurma)) {
+          setTurmaSelecionadaId(urlTurma)
+        } else if (data.length > 0 && !turmaSelecionadaId) {
+          setTurmaSelecionadaId(data[0].id)
+        }
+      }
+    }
+
+    loadTurmasDocente()
+    return () => {
+      active = false
+    }
+  }, [escolaAtivaId, funcionario?.id, isProfessor, isDiretoria, isSecretario, searchParams])
+
+  // Verificar pendências de pontuação no trimestre (5 dias para o prazo)
+  useEffect(() => {
+    if (!escolaAtivaId) return
+    let active = true
+
+    const checkPendencias = async () => {
+      try {
+        const supabase = createClient()
+        const profId = (isProfessor && !isDiretoria && !isGlobalAdmin) ? funcionario?.id : null
+        const { data, error } = await (supabase as any).rpc('verificar_pendencias_pontuacao_trimestre', {
+          p_escola_id: escolaAtivaId,
+          p_professor_id: profId
+        })
+        if (!error && data && active) {
+          setPendenciasPrazo(data ?? [])
+        }
+      } catch (e) {
+        console.error('Erro ao verificar pendências de pontuação:', e)
+      }
+    }
+
+    checkPendencias()
+    return () => {
+      active = false
+    }
+  }, [escolaAtivaId, funcionario?.id, isProfessor, isDiretoria, isGlobalAdmin])
 
   // Definir aba ativa inicial com base no perfil
   useEffect(() => {
@@ -380,6 +459,29 @@ function AvaliacoesContent() {
         )}
       </div>
 
+      {/* ── BANNER DE ALERTA DE PRAZO (5 DIAS RESTANTES COM PONTUAÇÃO INCOMPLETA) ── */}
+      {pendenciasPrazo.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-amber-600 dark:text-amber-400 space-y-2 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Atenção: Trimestre com Pontuação Incompleta a 5 Dias do Encerramento</span>
+          </div>
+          <div className="text-xs space-y-1.5 pl-6">
+            {pendenciasPrazo.map((p: any, idx: number) => (
+              <div key={idx} className="flex flex-wrap items-center justify-between gap-2 border-t border-amber-500/15 pt-1.5 first:border-0 first:pt-0">
+                <span>
+                  <strong>{p.unidade}º Trimestre</strong> — Turma <strong>{p.turma_nome}</strong> ({p.materia_nome}): Pontuação atual de <strong>{p.total_pontos} / 10.0 pts</strong> ({p.total_atividades} atividades).
+                  {isDiretoria && <span className="ml-1 text-muted-foreground">(Prof. {p.professor_nome})</span>}
+                </span>
+                <span className="font-semibold bg-amber-500/20 px-2 py-0.5 rounded text-[11px]">
+                  Faltam {p.dias_restantes} dia(s) para o prazo ({p.data_limite})
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── KPIs GERENCIAIS (Diretoria, Admin e Root) ── */}
       {isDiretoria && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -388,6 +490,134 @@ function AvaliacoesContent() {
           <KPICardMini label="Concluídas" value={kpis.concluidas} icon={CheckCircle2} color="emerald" />
           <KPICardMini label="Tempo Médio Impressão" value={kpis.tempoMedioImpressao} icon={Clock} color="violet" />
           <KPICardMini label="Tempo Médio Entrega" value={kpis.tempoMedioEntrega} icon={Clock} color="rose" />
+        </div>
+      )}
+
+      {/* ── SELETOR DE TURMAS E PLANEJAMENTO DOS 3 TRIMESTRES ── */}
+      {isProfessor && turmasDocente.length > 0 && (
+        <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-borderCustom pb-3.5">
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Planejamento de Atividades por Turma</h3>
+              <p className="text-xs text-muted-foreground">
+                Selecione uma turma para visualizar e compor as atividades dos 3 trimestres (até 10 por unidade, somando 10 pts).
+              </p>
+            </div>
+
+            {/* Chips de Turmas */}
+            <div className="flex flex-wrap gap-1.5">
+              {turmasDocente.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTurmaSelecionadaId(t.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                    turmaSelecionadaId === t.id
+                      ? 'bg-[#3ea6ff] text-black font-bold'
+                      : 'bg-muted text-muted-foreground hover:text-foreground border border-borderCustom'
+                  }`}
+                >
+                  {t.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards dos 3 Trimestres para a Turma Selecionada */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((unid) => {
+              const ativsUnid = atividades.filter(
+                (a) =>
+                  a.turma_id === turmaSelecionadaId &&
+                  Number(a.trimestre) === unid &&
+                  (isProfessor && !isDiretoria ? a.professor_id === funcionario?.id : true)
+              )
+              const somaPontos = ativsUnid.reduce(
+                (acc, curr) => acc + (Number(curr.pontos_maximos) || 0),
+                0
+              )
+              const atingiu10 = somaPontos >= 10.0
+
+              return (
+                <div
+                  key={unid}
+                  className="rounded-xl border border-borderCustom bg-muted/20 p-4 space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-foreground">{unid}º Trimestre</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${
+                          atingiu10
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                        }`}
+                      >
+                        {somaPontos.toFixed(1)} / 10.0 pts
+                      </Badge>
+                    </div>
+
+                    <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-1.5 rounded-full ${atingiu10 ? 'bg-emerald-500' : 'bg-[#3ea6ff]'}`}
+                        style={{ width: `${Math.min(100, (somaPontos / 10) * 100)}%` }}
+                      />
+                    </div>
+
+                    {/* Lista de Atividades do Trimestre */}
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto pt-1">
+                      {ativsUnid.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic py-2 text-center">
+                          Nenhuma atividade cadastrada.
+                        </p>
+                      ) : (
+                        ativsUnid.map((at) => (
+                          <div
+                            key={at.id}
+                            onClick={() => abrirDetalhes(at)}
+                            className="bg-card hover:bg-muted/60 border border-borderCustom rounded-lg p-2 text-xs flex items-center justify-between cursor-pointer transition-colors"
+                          >
+                            <div className="truncate pr-2">
+                              <p className="font-semibold text-foreground truncate">{at.titulo}</p>
+                              <p className="text-[10.5px] text-muted-foreground truncate">
+                                {at.data_aplicacao
+                                  ? new Date(at.data_aplicacao + 'T00:00:00').toLocaleDateString('pt-BR')
+                                  : '—'}
+                              </p>
+                            </div>
+                            <span className="font-bold text-[#3ea6ff] shrink-0">
+                              {Number(at.pontos_maximos || 2.5).toFixed(1)} pts
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={ativsUnid.length >= 10 || somaPontos >= 10.0}
+                    onClick={() => {
+                      setInitialNovaAtiv({
+                        turmaId: turmaSelecionadaId,
+                        trimestre: String(unid),
+                      })
+                      setNovaAtividadeOpen(true)
+                    }}
+                    className="w-full text-xs font-bold border-borderCustom hover:bg-muted/80 gap-1.5 h-8 mt-2 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {ativsUnid.length >= 10
+                      ? 'Limite Atingido (10)'
+                      : somaPontos >= 10.0
+                      ? 'Total Completo (10 pts)'
+                      : `+ Nova Atividade (${unid}º Tri)`}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
@@ -581,13 +811,19 @@ function AvaliacoesContent() {
       </Card>
 
       {/* ── MODAIS ── */}
-      {novaAtividadeOpen && (
-        <ModalNovaAtividade
-          open={novaAtividadeOpen}
-          onOpenChange={setNovaAtividadeOpen}
-          onSuccess={fetchAtividades}
-        />
-      )}
+      <ModalNovaAtividade
+        open={novaAtividadeOpen}
+        onOpenChange={(open) => {
+          setNovaAtividadeOpen(open)
+          if (!open) setInitialNovaAtiv({})
+        }}
+        initialTurmaId={initialNovaAtiv.turmaId}
+        initialMateriaId={initialNovaAtiv.materiaId}
+        initialTrimestre={initialNovaAtiv.trimestre}
+        onSuccess={() => {
+          fetchAtividades()
+        }}
+      />
 
       {detalhesOpen && (
         <ModalDetalhesAtividade
