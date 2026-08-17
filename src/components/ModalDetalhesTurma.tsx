@@ -34,6 +34,7 @@ export function ModalDetalhesTurma({
   const {
     activeTab,
     setActiveTab,
+    isProfessor,
     selectedMateriaId,
     setSelectedMateriaId,
     setSelectedAgendaAulaId,
@@ -109,16 +110,22 @@ export function ModalDetalhesTurma({
       >
         {/* Abas Nativas do SIG */}
         <div>
-          <div className={`bg-muted/80 border border-border p-1 rounded-xl w-full grid ${portalComunicacoesAtivo ? 'grid-cols-5' : 'grid-cols-4'} h-11 text-muted-foreground`}>
-            <button
-              onClick={() => setActiveTab('materias')}
-              className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'materias' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              Matérias
-            </button>
+          <div className={`bg-muted/80 border border-border p-1 rounded-xl w-full grid ${
+            isProfessor
+              ? (portalComunicacoesAtivo ? 'grid-cols-4' : 'grid-cols-3')
+              : (portalComunicacoesAtivo ? 'grid-cols-5' : 'grid-cols-4')
+          } h-11 text-muted-foreground`}>
+            {!isProfessor && (
+              <button
+                onClick={() => setActiveTab('materias')}
+                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'materias' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                Matérias
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('alunos')}
               className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
@@ -160,7 +167,7 @@ export function ModalDetalhesTurma({
           </div>
 
           <div className="mt-4">
-            {activeTab === 'materias' && (
+            {!isProfessor && activeTab === 'materias' && (
               <TabMateriasTurma
                 isEditMode={isEditMode}
                 loading={loading}

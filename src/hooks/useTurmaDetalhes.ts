@@ -29,19 +29,22 @@ export function useTurmaDetalhes({
   initialAgendaAulaId,
   initialData
 }: UseTurmaDetalhesProps) {
-  const [activeTab, setActiveTab] = useState('materias')
-  const [searchAluno, setSearchAluno] = useState('')
-  const [selectedAluno, setSelectedAluno] = useState<any>(null)
-
   const supabase = createClient() as any
-  const { escolaAtivaId, acessos, funcionario } = useAuthStore()
+  const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot, isDiretor: checkDiretor, isProfessor: checkProfessor } = useAuthStore()
   const { isEditMode: globalEditMode } = useEditModeStore()
   
-  const isProfessor = !!(acessos?.some(a => a.nivel === 4 || a.nivel === 5) || funcionario?.cargo?.toLowerCase().includes('professor'))
+  const isAdmin = isAdminGlobalOrRoot ? isAdminGlobalOrRoot() : false
+  const isDiretor = checkDiretor ? checkDiretor() : acessos?.some(a => a.nivel === 2 && a.ativo)
+  const isSecretario = acessos?.some(a => a.nivel === 3 && a.ativo)
   const isCoordenador = !!funcionario?.cargo?.toLowerCase().includes('coordenador')
+  const isProfessor = (checkProfessor ? checkProfessor() : !!(acessos?.some(a => (a.nivel === 4 || a.nivel === 5) && a.ativo) || funcionario?.cargo?.toLowerCase().includes('professor'))) && !isAdmin && !isDiretor && !isSecretario
   const isEditMode = globalEditMode && !isProfessor && !isCoordenador
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const escolaNome = selectedEscola?.nome ?? 'Sem Escola'
+
+  const [activeTab, setActiveTab] = useState(isProfessor ? 'alunos' : 'materias')
+  const [searchAluno, setSearchAluno] = useState('')
+  const [selectedAluno, setSelectedAluno] = useState<any>(null)
 
   // Ref de montagem para evitar memory leaks
   const isMounted = useRef(true)
@@ -58,12 +61,21 @@ export function useTurmaDetalhes({
     if (open && !wasOpen.current) {
       if (initialMateriaId) {
         setActiveTab('frequencia')
+      } else if (isProfessor) {
+        setActiveTab('alunos')
       } else {
         setActiveTab('materias')
       }
     }
     wasOpen.current = open
-  }, [open, initialMateriaId])
+  }, [open, initialMateriaId, isProfessor])
+
+  // Blindagem caso a aba 'materias' fique ativa para professor
+  useEffect(() => {
+    if (isProfessor && activeTab === 'materias') {
+      setActiveTab('alunos')
+    }
+  }, [isProfessor, activeTab])
 
   // 1. Alunos e Matérias da Turma (Query Principal)
   const { data: turmaData, isLoading: loadingTurma, error: errorTurma, mutate: mutateTurmaData } = useSWR(
@@ -196,6 +208,7 @@ export function useTurmaDetalhes({
   return {
     activeTab,
     setActiveTab,
+    isProfessor,
     searchAluno,
     setSearchAluno,
     selectedAluno,
