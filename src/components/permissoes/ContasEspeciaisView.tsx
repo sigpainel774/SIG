@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check, Building2, GraduationCap } from 'lucide-react'
+import { Sparkles, Search, Star, ShieldAlert, AlertCircle, RefreshCw, UserCheck, XCircle, Briefcase, Plus, Check, Building2, GraduationCap, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -456,10 +456,17 @@ export function ContasEspeciaisView({ hook }: ContasEspeciaisViewProps) {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="bg-amber-500/15 text-amber-900 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-bold tracking-wide">
                             {cargoAtual}
                           </span>
+
+                          {((item.cargo ?? '').toLowerCase().includes('secretário') || (item.cargo ?? '').toLowerCase().includes('secretario')) && (item.cargo ?? '').toLowerCase().includes('educa') && (
+                            <span className="text-[11px] bg-primary/15 text-primary border border-primary/30 px-2 py-1 rounded-md font-bold flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Calendário Acadêmico Liberado
+                            </span>
+                          )}
                           
                           {(item.is_superadmin || (item.acessos_usuarios ?? []).some((a: any) => a.nivel === 1)) && (
                             <button
