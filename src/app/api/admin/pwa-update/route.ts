@@ -60,7 +60,7 @@ export async function GET() {
     const parsedStagger = Number.parseInt(config.get('pwa_stagger_seconds')?.valor ?? '60', 10)
 
     return NextResponse.json({
-      version: versionConfig?.valor ?? 'v12',
+      version: versionConfig?.valor ?? 'v13',
       message: config.get('pwa_update_message')?.valor ?? '',
       stagger_seconds: Number.isFinite(parsedStagger) ? parsedStagger : 60,
       updated_at: versionConfig?.updated_at ?? null,

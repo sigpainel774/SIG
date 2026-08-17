@@ -16,31 +16,31 @@
   "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/portal-pais/icon-192.png?v=1",
+      "src": "/portal-pais/icon-192.png?v=13",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/portal-pais/icon-192.png?v=1",
+      "src": "/portal-pais/icon-192.png?v=13",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/portal-pais/icon-512.png?v=1",
+      "src": "/portal-pais/icon-512.png?v=13",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/portal-pais/icon-512.png?v=1",
+      "src": "/portal-pais/icon-512.png?v=13",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/portal-pais/icon.svg?v=1",
+      "src": "/portal-pais/icon.svg?v=13",
       "sizes": "any",
       "type": "image/svg+xml"
     }

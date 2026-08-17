@@ -24,7 +24,7 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [newVersion, setNewVersion] = useState('')
   const [newMessage, setNewMessage] = useState('Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.')
-  const [currentVersion, setCurrentVersion] = useState('v11')
+  const [currentVersion, setCurrentVersion] = useState('v13')
   const [staggerSeconds, setStaggerSeconds] = useState(60)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
   const [updatedByName, setUpdatedByName] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
 
       if (error || !data || !isMounted.current) return
 
-      let serverVer = 'v11'
+      let serverVer = 'v13'
       let serverMsg = 'Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.'
       let serverStagger = 60
       let updatedAt: string | null = null
@@ -131,7 +131,7 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
   }, [supabase, checkVersion])
 
   const triggerUpdate = useCallback(() => {
-    const verToSave = newVersion || currentVersion || 'v12'
+    const verToSave = newVersion || currentVersion || 'v13'
 
     // 1. Salva nova versão no localStorage para não disparar novamente
     if (typeof window !== 'undefined') {

@@ -34,16 +34,16 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=13',
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg?v=13', type: 'image/svg+xml' },
+      { url: '/icon-192.png?v=13', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=13', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-192.png?v=13', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=13', sizes: '512x512', type: 'image/png' },
     ],
   },
   appleWebApp: {
@@ -65,9 +65,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SIG Sapeaçu" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png" />
+        <link rel="apple-touch-icon" href="/icon-192.png?v=13" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png?v=13" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png?v=13" />
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider

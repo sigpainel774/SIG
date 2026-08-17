@@ -1,27 +1,27 @@
-// SIG Sapeaçu — Service Worker v12
+// SIG Sapeaçu — Service Worker v13
 // Estratégia de Alta Performance & Segurança PWA:
 // 1. Assets Estáticos Imutáveis (_next/static, fontes, logos): Cache-First / SWR.
-// 2. Fotos 3x4 / Avatars Públicos (Supabase Storage): Stale-While-Revalidate (sig-photos-v12).
-// 3. Tiles de Mapa (Google, OSM, Esri): Stale-While-Revalidate com suporte a opaque responses (sig-maptiles-v12).
+// 2. Fotos 3x4 / Avatars Públicos (Supabase Storage): Stale-While-Revalidate (sig-photos-v13).
+// 3. Tiles de Mapa (Google, OSM, Esri): Stale-While-Revalidate com suporte a opaque responses (sig-maptiles-v13).
 // 4. Navegação HTML e Transições RSC: Network-Only (garante isolamento total entre sessões).
 // 5. Fallback Offline: Redireciona para /offline.html somente quando houver falha real de rede.
 
-const CACHE_NAME = 'sig-sapeacu-v12';
-const STATIC_CACHE_NAME = 'sig-static-v12';
-const MAP_TILES_CACHE_NAME = 'sig-maptiles-v12';
-const PHOTOS_CACHE_NAME = 'sig-photos-v12';
+const CACHE_NAME = 'sig-sapeacu-v13';
+const STATIC_CACHE_NAME = 'sig-static-v13';
+const MAP_TILES_CACHE_NAME = 'sig-maptiles-v13';
+const PHOTOS_CACHE_NAME = 'sig-photos-v13';
 
 // Assets estáticos essenciais do PWA (ícones, manifest e offline shell)
 const STATIC_ASSETS = [
-  '/manifest.json',
-  '/manifest-portal-pais.json?v=1',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon.svg',
-  '/portal-pais/icon-192.png?v=1',
-  '/portal-pais/icon-512.png?v=1',
-  '/portal-pais/apple-touch-icon.png?v=1',
-  '/portal-pais/icon.svg?v=1',
+  '/manifest.json?v=13',
+  '/manifest-portal-pais.json?v=13',
+  '/icon-192.png?v=13',
+  '/icon-512.png?v=13',
+  '/icon.svg?v=13',
+  '/portal-pais/icon-192.png?v=13',
+  '/portal-pais/icon-512.png?v=13',
+  '/portal-pais/apple-touch-icon.png?v=13',
+  '/portal-pais/icon.svg?v=13',
   '/offline.html',
   '/img/logo-prefeitura.png',
   '/img/brasaoSapeaçu.png',
