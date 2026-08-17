@@ -171,11 +171,13 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           }
 
           const selectedSecretaria = useSchoolStore.getState().selectedSecretaria
+          const selectedEscola = useSchoolStore.getState().selectedEscola
           const todasEscolas = useSchoolStore.getState().escolas
 
           let escolaIdsFiltradas: Set<string> | null = null
-          if (escolaAtivaId) {
-            escolaIdsFiltradas = new Set([escolaAtivaId])
+          const escolaEfetivaId = escolaAtivaId || selectedEscola?.id
+          if (escolaEfetivaId) {
+            escolaIdsFiltradas = new Set([escolaEfetivaId])
           } else if (selectedSecretaria) {
             const secId = selectedSecretaria.id
             const secNome = (selectedSecretaria.nome || '').toLowerCase()

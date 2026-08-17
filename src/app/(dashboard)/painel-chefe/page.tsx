@@ -86,7 +86,7 @@ export default function PainelChefePage() {
 
     let queryFunc = supabase
       .from('funcionarios')
-      .select('id, nome, cargo, orgao, status, email, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo)')
+      .select('id, nome, cargo, orgao, status, email, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo, escola_id), vinculos_funcionarios(escola_id, ativo)')
       .order('nome')
 
     if (isDir) {
@@ -109,6 +109,18 @@ export default function PainelChefePage() {
     if (!isMountedRef.current) return
 
     let filteredEquipe = (funcData || []).filter((f: any) => !f.is_conta_especial)
+    
+    // Se o usuário estiver numa unidade escolar ativa (ex: Diretor ou Chefe), filtra apenas servidores vinculados/com acesso àquela escola
+    if (state.escolaAtivaId && !isAdmin) {
+      filteredEquipe = filteredEquipe.filter((f: any) => {
+        const vincs = (f.vinculos_funcionarios as Array<{ escola_id: string; ativo: boolean }>) ?? []
+        const acs = (f.acessos_usuarios as Array<{ escola_id?: string | null; ativo: boolean }>) ?? []
+        const temVinc = vincs.some(v => v.ativo && v.escola_id === state.escolaAtivaId)
+        const temAc = acs.some(a => a.ativo && a.escola_id === state.escolaAtivaId)
+        return temVinc || temAc
+      })
+    }
+
     if (isDir && funcData) {
       // Filtros adicionais client-side mais complexos para Diretores (ABAC níveis)
       filteredEquipe = filteredEquipe.filter((f: any) => {
