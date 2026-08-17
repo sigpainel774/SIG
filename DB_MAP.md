@@ -928,7 +928,48 @@ Lançamento de notas obtidas por alunos em atividades individuais do diário ped
 *   `aluno_id`: `uuid` (FK -> `public.alunos.id` ON DELETE CASCADE, NOT NULL)
 *   `nota`: `numeric(4,2)` (Nota obtida pelo aluno na atividade de 0.00 a 10.00, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
-*   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+### 74. `public.security_threat_logs`
+Logs de tentativas de violação, ataques cibernéticos e anomalias capturados pelo WAF/IDS do SIG.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `tipo_ataque`: `text` (Ex: 'SQL_INJECTION', 'BRUTE_FORCE', 'XSS', 'PATH_TRAVERSAL', 'SCANNER_BOT', 'TOKEN_TAMPERING', 'RATE_LIMIT_ABUSE', 'PROBING', NOT NULL)
+*   `severidade`: `text` (Default: 'MEDIA', Valores: 'BAIXA', 'MEDIA', 'ALTA', 'CRITICA', NOT NULL)
+*   `status`: `text` (Default: 'BLOQUEADO', Valores: 'BLOQUEADO', 'DETECTADO', 'MITIGADO', 'INVESTIGANDO', NOT NULL)
+*   `ip_origem`: `text` (Endereço IPv4/IPv6 de origem, NOT NULL)
+*   `pais`, `cidade`: `text` (Geolocalização identificada via headers da CDN/Edge, Nullable)
+*   `user_agent`: `text` (User-Agent do cliente/atacante, Nullable)
+*   `rota_alvo`: `text` (Caminho da URL visada, NOT NULL)
+*   `metodo_http`: `text` (Default: 'GET', NOT NULL)
+*   `payload_detectado`: `text` (Trecho malicioso capturado na URL, cabeçalho ou body, Nullable)
+*   `headers_snapshot`: `jsonb` (Snapshot forense dos cabeçalhos HTTP da requisição, Nullable)
+*   `user_id`: `uuid` (FK -> `auth.users.id` caso o usuário estivesse autenticado, Nullable)
+*   `email_tentativa`: `text` (E-mail submetido na tentativa de login, Nullable)
+*   `detalhes_analise`: `jsonb` (Metadados forenses adicionais, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+
+### 75. `public.security_ip_rules`
+Gerenciamento de regras de bloqueio e liberação de IPs (Blacklist/Whitelist/Watchlist).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `ip_address`: `text` (Endereço IP único, NOT NULL)
+*   `tipo_regra`: `text` (Default: 'BLOCK', Valores: 'BLOCK', 'ALLOW', 'WATCH', NOT NULL)
+*   `motivo`: `text` (Justificativa do bloqueio ou liberação, NOT NULL)
+*   `bloqueado_ate`: `timestamp with time zone` (Data/hora de expiração do banimento, NULL se permanente, Nullable)
+*   `criado_por_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `criado_por_nome`: `text` (Default: 'Sistema WAF Automático', Nullable)
+*   `ativo`: `boolean` (Default: true, NOT NULL)
+*   `total_bloqueios_executados`: `integer` (Contador de requisições bloqueadas para este IP, Default: 0, Nullable)
+*   `created_at`, `updated_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+
+### 76. `public.security_settings`
+Parâmetros de configuração e sensibilidade do módulo de defesa do SIG.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `modo_operacao`: `text` (Default: 'ATIVO', Valores: 'ATIVO' ou 'MONITORAMENTO', NOT NULL)
+*   `bloqueio_automatico_bruteforce`: `boolean` (Default: true, NOT NULL)
+*   `limite_tentativas_login`: `integer` (Default: 5, NOT NULL)
+*   `janela_tempo_minutos`: `integer` (Default: 15, NOT NULL)
+*   `duracao_ban_minutos`: `integer` (Default: 60, NOT NULL)
+*   `notificar_superadmins_alertas_criticos`: `boolean` (Default: true, NOT NULL)
+*   `whitelist_ips_padrao`: `text[]` (Array de IPs confiáveis, Default: `ARRAY['127.0.0.1', '::1']`, Nullable)
+*   `updated_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
 ---
 

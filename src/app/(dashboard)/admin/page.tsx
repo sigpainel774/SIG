@@ -253,6 +253,13 @@ const adminGroups: AdminGroup[] = [
     badgeColor: 'bg-sky-500/10 text-sky-700 border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30',
     items: [
       {
+        title: 'Defesa & Segurança',
+        subtitle: 'WAF, ataques e bloqueios',
+        icon: ShieldAlert,
+        iconColor: 'text-rose-600 dark:text-rose-400',
+        path: '/admin/defesa',
+      },
+      {
         title: 'Relatórios',
         subtitle: 'Gráficos e estatísticas',
         icon: BarChart3,

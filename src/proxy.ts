@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { inspectUrlAndHeaders, recordThreatEventAsync } from '@/lib/security/threatDetector'
 
 /**
  * Injeta cabeçalhos de segurança HTTP em todas as respostas de saída.
@@ -21,13 +22,57 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 1. Identificação de IP para Rate Limiting
+  // 1. Identificação de IP para Rate Limiting e WAF
   const clientIp =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
     '127.0.0.1'
 
-  // 2. Definição da categoria de limitação com base no caminho
+  // 2. Inspeção WAF em tempo real (Detecção de SQLi, XSS, Path Traversal e Scanners)
+  // Ignora rotas de telemetria interna para evitar loops
+  if (!pathname.startsWith('/api/admin/defesa/log-threat')) {
+    const threatCheck = inspectUrlAndHeaders(request.nextUrl, request.headers, clientIp)
+    if (threatCheck.detected) {
+      const country = request.headers.get('x-vercel-ip-country') || request.headers.get('cf-ipcountry') || null
+      const city = request.headers.get('x-vercel-ip-city') || null
+      const userAgent = request.headers.get('user-agent') || null
+
+      recordThreatEventAsync({
+        tipo_ataque: threatCheck.pattern?.category ?? 'PROBING',
+        severidade: threatCheck.pattern?.severity ?? 'MEDIA',
+        status: threatCheck.blocked ? 'BLOQUEADO' : 'DETECTADO',
+        ip_origem: clientIp,
+        pais: country,
+        cidade: city,
+        user_agent: userAgent,
+        rota_alvo: pathname,
+        metodo_http: request.method,
+        payload_detectado: threatCheck.matchedPayload ?? null,
+        headers_snapshot: {
+          referer: request.headers.get('referer'),
+          origin: request.headers.get('origin'),
+          host: request.headers.get('host'),
+        },
+        detalhes_analise: {
+          reason: threatCheck.reason,
+          location: threatCheck.location,
+        },
+      })
+
+      if (threatCheck.blocked) {
+        const blockedResponse = NextResponse.json(
+          {
+            error: 'Requisição bloqueada pelo Sistema de Defesa Cibernética (WAF). Atividade suspeita registrada.',
+            incidentId: Date.now().toString(36),
+          },
+          { status: 403 }
+        )
+        return applySecurityHeaders(blockedResponse)
+      }
+    }
+  }
+
+  // 3. Definição da categoria de limitação com base no caminho
   let routeType: 'login' | 'verify' | 'general' = 'general'
   if (pathname.startsWith('/login') || pathname.startsWith('/portal-aluno/login') || pathname.startsWith('/api/auth')) {
     routeType = 'login'
