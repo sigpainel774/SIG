@@ -11,6 +11,8 @@ export interface Escola {
   id: string
   nome: string
   tipo?: string | null
+  secretaria_id?: string | null
+  is_teste?: boolean | null
 }
 
 export interface Cargo {
@@ -57,6 +59,14 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
   const { funcionario: authFuncionario, acessos, isDiretor, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const isDir = isDiretor()
   const isGlobalAdmin = isAdminGlobalOrRoot()
+  const isSuperAdminUser = Boolean(
+    authFuncionario?.is_superadmin === true ||
+    authFuncionario?.email?.toLowerCase().includes('super') ||
+    authFuncionario?.email?.toLowerCase().includes('admin') ||
+    authFuncionario?.email === 'super@admin.com' ||
+    authFuncionario?.email === 'adm@super.com' ||
+    isGlobalAdmin
+  )
   const restringirNivel = isDir && !isGlobalAdmin
 
   const [funcionarios, setFuncionarios] = useState<FuncItem[]>([])
@@ -102,18 +112,26 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
     if (!isMounted.current) return
     setLoading(true)
     try {
-      const [funcsRes, escsRes, cargsRes, vincsRes] = await Promise.all([
+      const [funcsRes, escsRes, cargsRes, vincsRes, secsRes] = await Promise.all([
         supabase
           .from('funcionarios')
           .select('id, nome, email, cpf, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at, status, is_superadmin, auth_user_id, acessos_usuarios(nivel, ativo)')
           .is('deleted_at', null)
           .order('nome'),
-        supabase.from('escolas').select('id, nome, tipo').is('deleted_at', null).or('is_teste.is.null,is_teste.eq.false').order('nome'),
+        supabase
+          .from('escolas')
+          .select('id, nome, tipo, secretaria_id, is_teste')
+          .is('deleted_at', null)
+          .order('nome'),
         supabase.from('cargos').select('id, nome').order('nome'),
         supabase
           .from('vinculos_funcionarios')
           .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio, carga_horaria, modalidade_ensino')
           .eq('ativo', true),
+        supabase
+          .from('secretarias')
+          .select('id, nome, ativo')
+          .is('deleted_at', null),
       ])
 
       if (!isMounted.current) return
@@ -122,9 +140,11 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
       const escsData = escsRes.data ?? []
       const cargsData = cargsRes.data ?? []
       const vincsData = vincsRes.data ?? []
+      const secsData = secsRes?.data ?? []
 
+      // Dicionário completo de escolas para lookup seguro de lotações existentes (evita 'Escola desconhecida')
       const escolaMap: Record<string, string> = {}
-      escsData.forEach((e) => { escolaMap[e.id] = e.nome })
+      escsData.forEach((e: any) => { escolaMap[e.id] = e.nome })
 
       const lista: FuncItem[] = funcsData
         .map((f: any) => ({
@@ -201,6 +221,46 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           return true
         })
 
+      // Identificar a secretaria de contexto para filtrar a lista de escolas oferecidas para seleção
+      const selectedSecretaria = useSchoolStore.getState().selectedSecretaria
+      const selectedEscola = useSchoolStore.getState().selectedEscola
+
+      let targetSecretariaId: string | null = null
+      if (selectedSecretaria?.id) {
+        targetSecretariaId = selectedSecretaria.id
+      } else if (selectedEscola?.secretaria_id) {
+        targetSecretariaId = selectedEscola.secretaria_id
+      } else if (escolaAtivaId) {
+        const escAtiva = escsData.find((e: any) => e.id === escolaAtivaId)
+        if (escAtiva?.secretaria_id) {
+          targetSecretariaId = escAtiva.secretaria_id
+        }
+      }
+
+      // Fallback padrão: se nenhuma secretaria foi explicitamente selecionada (Visão Geral), usa Secretaria de Educação
+      if (!targetSecretariaId) {
+        const secEducacao = secsData.find((s: any) => s.nome?.toLowerCase().includes('educa'))
+        if (secEducacao) {
+          targetSecretariaId = secEducacao.id
+        } else if (secsData.length > 0) {
+          targetSecretariaId = secsData[0].id
+        }
+      }
+
+      // Filtrar escolas para a seleção de novas lotações e transferências:
+      // 1. Manter apenas as escolas da secretaria ativa (previne vazamento de Saúde na Educação)
+      // 2. Se for superadmin (super@admin.com / adm@super.com / is_superadmin), permitir escolas com is_teste: true
+      // 3. Se não for superadmin, ocultar escolas com is_teste: true
+      const escolasDisponiveis: Escola[] = escsData.filter((e: any) => {
+        if (targetSecretariaId && e.secretaria_id && e.secretaria_id !== targetSecretariaId) {
+          return false
+        }
+        if (e.is_teste && !isSuperAdminUser) {
+          return false
+        }
+        return true
+      })
+
       // Montar lista unificada de cargos (tabela de cargos + cargos presentes em funcionários e vínculos)
       const cargosMap = new Map<string, Cargo>()
       cargsData.forEach((c) => {
@@ -232,7 +292,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
       )
 
       setFuncionarios(lista)
-      setEscolas(escsData)
+      setEscolas(escolasDisponiveis)
       setCargos(cargosOrdenados)
 
       if (funcionarioInicial) {
