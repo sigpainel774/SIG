@@ -77,7 +77,7 @@ export function CalendarioAcademicoContent({
   return (
     <div className="space-y-4">
       {/* Barra de Controle Superior: Navegação por Anos, Abas e Ações */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#18181b] border border-[#27272a] rounded-xl p-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border rounded-xl p-3 shadow-xs">
         {/* Seletor de Anos */}
         <div className="flex items-center gap-2">
           <Button
@@ -85,13 +85,13 @@ export function CalendarioAcademicoContent({
             variant="outline"
             size="sm"
             onClick={() => setAnoLetivo((prev) => prev - 1)}
-            className="h-8 w-8 p-0 cursor-pointer"
+            className="h-8 w-8 p-0 cursor-pointer bg-background"
             title="Ano Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-background/80 border border-border/60 rounded-lg">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-background border border-border/80 rounded-lg">
             <Calendar className="w-4 h-4 text-primary" />
             <span className="text-sm font-black text-foreground">{anoLetivo}</span>
             {anoLetivo === currentYear && (
@@ -100,7 +100,7 @@ export function CalendarioAcademicoContent({
               </Badge>
             )}
             {anoLetivo > currentYear && (
-              <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/30">
+              <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
                 Planejamento
               </Badge>
             )}
@@ -111,7 +111,7 @@ export function CalendarioAcademicoContent({
             variant="outline"
             size="sm"
             onClick={() => setAnoLetivo((prev) => prev + 1)}
-            className="h-8 w-8 p-0 cursor-pointer"
+            className="h-8 w-8 p-0 cursor-pointer bg-background"
             title="Próximo Ano"
           >
             <ChevronRight className="w-4 h-4" />
@@ -119,13 +119,13 @@ export function CalendarioAcademicoContent({
         </div>
 
         {/* Abas de Navegação */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-background/60 border border-border/60 rounded-lg p-1">
+        <div className="flex flex-wrap items-center gap-1.5 bg-muted/50 border border-border/60 rounded-lg p-1">
           <button
             type="button"
             onClick={() => setAbaAtiva('matriz')}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
               abaAtiva === 'matriz'
-                ? 'bg-primary text-primary-foreground shadow-sm'
+                ? 'bg-primary text-primary-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -138,7 +138,7 @@ export function CalendarioAcademicoContent({
             onClick={() => setAbaAtiva('trimestres')}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
               abaAtiva === 'trimestres'
-                ? 'bg-primary text-primary-foreground shadow-sm'
+                ? 'bg-primary text-primary-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -151,7 +151,7 @@ export function CalendarioAcademicoContent({
             onClick={() => setAbaAtiva('pontos')}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
               abaAtiva === 'pontos'
-                ? 'bg-primary text-primary-foreground shadow-sm'
+                ? 'bg-primary text-primary-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -167,7 +167,7 @@ export function CalendarioAcademicoContent({
             variant="outline"
             size="sm"
             onClick={handleAbrirHistorico}
-            className="h-8 text-xs text-muted-foreground hover:text-foreground border-border/80 cursor-pointer"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground border-border bg-background cursor-pointer"
           >
             <History className="w-3.5 h-3.5 mr-1.5 text-primary" />
             Histórico
@@ -178,7 +178,7 @@ export function CalendarioAcademicoContent({
             onClick={handleSalvar}
             disabled={saving || loading}
             size="sm"
-            className="h-8 text-xs bg-primary text-primary-foreground font-bold hover:bg-primary/90 cursor-pointer shadow-md"
+            className="h-8 text-xs bg-primary text-primary-foreground font-bold hover:bg-primary/90 cursor-pointer shadow-xs"
           >
             <Save className="w-3.5 h-3.5 mr-1.5" />
             {saving ? 'Salvando...' : 'Salvar'}
@@ -190,7 +190,7 @@ export function CalendarioAcademicoContent({
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="h-8 text-xs cursor-pointer"
+              className="h-8 text-xs cursor-pointer bg-background"
             >
               Fechar
             </Button>
@@ -199,7 +199,7 @@ export function CalendarioAcademicoContent({
       </div>
 
       {/* Banner Informativo sobre a Rede e Exceção do EMAEE com Status de Dias Letivos */}
-      <div className="bg-[#141416] border border-[#27272a] rounded-xl px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-sm">
+      <div className="bg-card border border-border rounded-xl px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-xs">
         <div className="flex items-center gap-2.5 text-muted-foreground">
           <Info className="w-4 h-4 text-primary shrink-0" />
           <span>
@@ -212,8 +212,8 @@ export function CalendarioAcademicoContent({
           <span
             className={`text-xs px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 ${
               calculoDiasLetivos.atingiuMeta
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
             }`}
           >
             {calculoDiasLetivos.atingiuMeta ? (
@@ -225,8 +225,8 @@ export function CalendarioAcademicoContent({
           </span>
 
           {hasUnsavedChanges && (
-            <span className="text-[11px] text-amber-400 flex items-center gap-1 font-semibold animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-semibold animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
               Alterações não salvas
             </span>
           )}
