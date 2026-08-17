@@ -134,7 +134,7 @@ export function useFuncionarios() {
           if (vistos.has(f.id)) return false
 
           // Se houver escolas filtradas, valida se o funcionário possui vínculo ou acesso a uma delas
-          if (escolaIdsFiltradas && escolaIdsFiltradas.length > 0 && !isAdminUser) {
+          if (escolaIdsFiltradas && escolaIdsFiltradas.length > 0) {
             const vincs = (f.vinculos_funcionarios as Array<{ escola_id: string; ativo: boolean }>) ?? []
             const acs = (f.acessos_usuarios as Array<{ escola_id?: string | null; ativo: boolean }>) ?? []
             const temVinc = vincs.some(v => v.ativo && escolaIdsFiltradas!.includes(v.escola_id))
@@ -190,8 +190,10 @@ export function useFuncionarios() {
             (f.vinculos_funcionarios as Array<Record<string, unknown>>) ?? []
           const acs =
             (f.acessos_usuarios as Array<Record<string, unknown>>) ?? []
-          const vinculoAtivo = vincs.find((v) => v.ativo)
-          const acessoAtivo = acs.find((a) => a.ativo && a.escola_id)
+          
+          // Prioriza o vínculo ativo na escola filtrada se houver
+          const vinculoAtivo = (escolaIdsFiltradas ? vincs.find((v) => v.ativo && escolaIdsFiltradas!.includes(v.escola_id as string)) : null) ?? vincs.find((v) => v.ativo)
+          const acessoAtivo = (escolaIdsFiltradas ? acs.find((a) => a.ativo && a.escola_id && escolaIdsFiltradas!.includes(a.escola_id as string)) : null) ?? acs.find((a) => a.ativo && a.escola_id)
           
           let nomeEscola: string | null = (vinculoAtivo?.escolas as { nome: string } | null)?.nome ?? null
           if (!nomeEscola && acessoAtivo?.escola_id) {
@@ -205,7 +207,7 @@ export function useFuncionarios() {
             apelido: f.apelido as string | null,
             email: f.email as string,
             cpf: f.cpf as string | null,
-            cargo: f.cargo as string | null,
+            cargo: (vinculoAtivo?.cargo as string) || (f.cargo as string | null),
             status: (f.status as string) ?? 'ativo',
             formacao: f.formacao as string | null,
             foto_url: f.foto_url as string | null,
