@@ -36,13 +36,13 @@ export function TransferenciaImediataForm({
   }
 
   return (
-    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
-      <h4 className="flex items-center gap-2 text-sm font-bold text-rose-400">
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-xs">
+      <h4 className="flex items-center gap-2 text-sm font-bold text-rose-600 dark:text-rose-400">
         <ArrowRightLeft className="w-4 h-4" />
         Transferência Imediata
       </h4>
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400">Remover da Lotação (Origem):</label>
+        <label className="text-xs text-muted-foreground font-medium">Remover da Lotação (Origem):</label>
         <Select
           value={origemId}
           onValueChange={(v) => setOrigemId(v ?? '')}
@@ -64,7 +64,7 @@ export function TransferenciaImediataForm({
         </Select>
       </div>
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400">Alocar em (Destino):</label>
+        <label className="text-xs text-muted-foreground font-medium">Alocar em (Destino):</label>
         <Select
           value={destinoEscolaId}
           onValueChange={(v) => setDestinoEscolaId(v ?? '')}
@@ -88,7 +88,7 @@ export function TransferenciaImediataForm({
       <Button
         onClick={handleSubmete}
         disabled={salvando || !origemId || !destinoEscolaId}
-        className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold gap-2 h-9"
+        className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold gap-2 h-9 cursor-pointer"
       >
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
         Mover Funcionário
