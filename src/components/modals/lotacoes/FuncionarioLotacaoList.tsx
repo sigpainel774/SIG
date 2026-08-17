@@ -64,8 +64,8 @@ export function FuncionarioLotacaoList({
   const tabClass = (t: TabFiltro) =>
     `px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center flex items-center justify-center min-h-[38px] sm:min-h-0 ${
       tab === t
-        ? 'bg-[#3ea6ff] text-[#0f0f0f]'
-        : 'bg-background text-muted-foreground hover:text-foreground hover:bg-muted'
+        ? 'bg-[#3ea6ff] text-[#0f0f0f] shadow-sm'
+        : 'bg-muted/60 dark:bg-background text-muted-foreground hover:text-foreground hover:bg-muted'
     }`
 
   useEffect(() => {
@@ -75,11 +75,11 @@ export function FuncionarioLotacaoList({
   }, [funcsFiltrados])
 
   return (
-    <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-border flex flex-col overflow-hidden">
+    <div className="w-full md:w-[310px] md:shrink-0 md:border-r border-border flex flex-col overflow-hidden bg-background">
       {/* Filtros */}
       <div className="p-3.5 sm:p-4 space-y-3 border-b border-border shrink-0">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome, CPF ou cargo..."
             value={busca}
@@ -119,7 +119,7 @@ export function FuncionarioLotacaoList({
       {/* Lista */}
       <div className="flex-1 overflow-y-auto">
         {funcsFiltrados.length === 0 ? (
-          <div className="p-6 text-center text-zinc-500 text-sm">
+          <div className="p-6 text-center text-muted-foreground text-sm">
             Nenhum funcionário encontrado.
           </div>
         ) : (
@@ -133,8 +133,8 @@ export function FuncionarioLotacaoList({
                 onClick={() => setSelecionado(f)}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-border cursor-pointer ${
                   isSelected
-                    ? 'bg-[#1a2940] border-l-2 border-l-[#3ea6ff]'
-                    : 'hover:bg-background'
+                    ? 'bg-sky-50 dark:bg-[#1a2940] border-l-2 border-l-[#3ea6ff]'
+                    : 'hover:bg-muted/40'
                 }`}
               >
                 <div
@@ -149,12 +149,12 @@ export function FuncionarioLotacaoList({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">{f.nome}</p>
-                  <p className="text-xs text-zinc-500 truncate">{f.cpf ?? 'Sem CPF'}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{f.nome}</p>
+                  <p className="text-xs text-muted-foreground truncate">{f.cpf ?? 'Sem CPF'}</p>
                 </div>
                 <div
                   className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    hasLotacao ? 'bg-emerald-400' : 'bg-amber-400'
+                    hasLotacao ? 'bg-emerald-500' : 'bg-amber-500'
                   }`}
                   title={hasLotacao ? 'Lotado' : 'Sem lotação'}
                 />

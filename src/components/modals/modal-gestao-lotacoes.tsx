@@ -153,25 +153,25 @@ export function ModalGestaoLotacoes({
             <div className="md:hidden sticky top-0 z-20 bg-background border-b border-border p-3 flex items-center justify-between">
               <button
                 onClick={() => setMobileView('list')}
-                className="flex items-center gap-2 text-xs font-semibold text-[#3ea6ff] hover:text-[#60a5fa] px-3 py-1.5 rounded-lg bg-background border border-border active:scale-95 transition-all cursor-pointer min-h-[38px]"
+                className="flex items-center gap-2 text-xs font-semibold text-sky-600 dark:text-[#3ea6ff] hover:text-sky-500 px-3 py-1.5 rounded-lg bg-background border border-border active:scale-95 transition-all cursor-pointer min-h-[38px]"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Voltar à Lista
               </button>
-              <span className="text-xs text-zinc-400 font-medium truncate max-w-[180px]">
+              <span className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">
                 {selecionado?.nome ?? 'Detalhes'}
               </span>
             </div>
 
             {!selecionado ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 text-zinc-500 min-h-[350px] p-6 text-center">
-                <User className="w-12 h-12 text-zinc-700" />
+              <div className="h-full flex flex-col items-center justify-center gap-3 text-muted-foreground min-h-[350px] p-6 text-center">
+                <User className="w-12 h-12 text-muted-foreground/40" />
                 <p className="text-sm">Selecione um funcionário na lista para gerenciar suas lotações.</p>
               </div>
             ) : (
               <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                 {/* Header do Funcionário */}
-                <div className="flex items-center justify-between bg-background rounded-xl p-3.5 sm:p-4 border border-border">
+                <div className="flex items-center justify-between bg-card rounded-xl p-3.5 sm:p-4 border border-border shadow-xs">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${avatarColor(selecionado.nome).bg} ${avatarColor(selecionado.nome).text}`}
@@ -184,24 +184,24 @@ export function ModalGestaoLotacoes({
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-white text-sm sm:text-base truncate">{selecionado.nome}</p>
-                      <p className="text-xs text-zinc-400 truncate">CPF: {selecionado.cpf ?? 'Não informado'}</p>
+                      <p className="font-bold text-foreground text-sm sm:text-base truncate">{selecionado.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate">CPF: {selecionado.cpf ?? 'Não informado'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-2">
                     <button
                       onClick={() => setModalMovOpen(true)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
                       title="Ver Histórico de Movimentações"
                     >
-                      <History className="w-3.5 h-3.5 text-purple-400" />
+                      <History className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                       <span className="hidden sm:inline">Movimentações</span>
                     </button>
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0 ${
                         selecionado.status === 'ativo'
-                          ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-muted text-zinc-400 border border-zinc-600/30'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-muted text-muted-foreground border border-border'
                       }`}
                     >
                       {selecionado.status}
@@ -219,12 +219,12 @@ export function ModalGestaoLotacoes({
 
                 {/* Lotações Ativas */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     <MapPin className="w-3.5 h-3.5" />
                     Lotações Atuais (Ativas)
                   </div>
                   {selecionado.lotacoes.length === 0 ? (
-                    <div className="bg-background border border-dashed border-[#3f3f46] rounded-xl p-4 text-center text-zinc-500 text-sm">
+                    <div className="bg-muted/30 border border-dashed border-border rounded-xl p-4 text-center text-muted-foreground text-sm">
                       Nenhuma lotação ativa.
                     </div>
                   ) : (
@@ -238,21 +238,21 @@ export function ModalGestaoLotacoes({
                         return (
                           <div
                             key={lot.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-background border border-border rounded-xl p-3.5 sm:px-4 sm:py-3 gap-3"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border border-border rounded-xl p-3.5 sm:px-4 sm:py-3 gap-3 shadow-xs"
                           >
                             <div className="flex-1 min-w-0 space-y-2 sm:space-y-1.5">
-                              <p className="text-sm font-semibold text-[#3ea6ff] truncate">
+                              <p className="text-sm font-semibold text-sky-600 dark:text-[#3ea6ff] truncate">
                                 {lot.escolaNome ?? 'Escola não encontrada'}
                               </p>
                               {podeGerenciarLotacao ? (
                                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
                                   <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Cargo:</span>
+                                    <span className="text-xs text-muted-foreground font-medium shrink-0">Cargo:</span>
                                     <select
                                       value={cargoExibido}
                                       onChange={(e) => handleAtualizarCargoLotacao(lot.id, e.target.value)}
                                       disabled={salvando}
-                                      className="bg-background border border-border text-foreground text-xs rounded px-2 py-1.5 sm:py-1 outline-none focus:border-[#3ea6ff] cursor-pointer flex-1 sm:flex-none"
+                                      className="bg-background border border-border text-foreground text-xs rounded px-2 py-1.5 sm:py-1 outline-none focus:border-sky-500 cursor-pointer flex-1 sm:flex-none"
                                     >
                                       <option value="">Selecione o cargo...</option>
                                       {cargos.map((c) => (
@@ -263,7 +263,7 @@ export function ModalGestaoLotacoes({
                                     </select>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Carga Horária:</span>
+                                    <span className="text-xs text-muted-foreground font-medium shrink-0">Carga Horária:</span>
                                     <div className="flex items-center gap-1">
                                       <input
                                         type="number"
@@ -279,18 +279,18 @@ export function ModalGestaoLotacoes({
                                           }
                                         }}
                                         disabled={salvando}
-                                        className="bg-background border border-border text-foreground text-xs rounded w-16 px-2 py-1.5 sm:py-1 outline-none focus:border-[#3ea6ff]"
+                                        className="bg-background border border-border text-foreground text-xs rounded w-16 px-2 py-1.5 sm:py-1 outline-none focus:border-sky-500"
                                       />
-                                      <span className="text-[11px] text-zinc-400 font-medium">h/sem</span>
+                                      <span className="text-[11px] text-muted-foreground font-medium">h/sem</span>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-zinc-400 font-medium shrink-0">Modalidade:</span>
+                                    <span className="text-xs text-muted-foreground font-medium shrink-0">Modalidade:</span>
                                     <select
                                       value={lot.modalidade_ensino ?? 'Regular'}
                                       onChange={(e) => handleAtualizarModalidadeLotacao(lot.id, e.target.value)}
                                       disabled={salvando}
-                                      className="bg-background border border-border text-foreground text-xs rounded px-2 py-1.5 sm:py-1 outline-none focus:border-[#3ea6ff] cursor-pointer font-medium"
+                                      className="bg-background border border-border text-foreground text-xs rounded px-2 py-1.5 sm:py-1 outline-none focus:border-sky-500 cursor-pointer font-medium"
                                     >
                                       <option value="Regular">Regular</option>
                                       {(lot.modalidade_ensino === 'EJA' || !isEmaeeLot) && (
@@ -300,7 +300,7 @@ export function ModalGestaoLotacoes({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                   <span>{cargoExibido || 'Cargo não definido'}</span>
                                   {lot.carga_horaria && <span>• {lot.carga_horaria}h/semana</span>}
                                   <span>• Modalidade: {lot.modalidade_ensino ?? 'Regular'}</span>
@@ -308,14 +308,14 @@ export function ModalGestaoLotacoes({
                               )}
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 border-border pt-2.5 sm:pt-0 mt-1 sm:mt-0">
-                              <span className="px-2.5 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
                                 Ativa
                               </span>
                               {isGlobalAdmin && (
                                 <button
                                   onClick={() => handleRemoverLotacao(lot)}
                                   disabled={salvando}
-                                  className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
+                                  className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
                                   title="Remover lotação"
                                 >
                                   <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
@@ -354,15 +354,15 @@ export function ModalGestaoLotacoes({
                     onSolicitar={handleSolicitarTransferencia}
                   />
                 ) : (
-                  <div className="bg-background/50 border border-dashed border-[#3f3f46] rounded-xl p-4 text-center text-zinc-500 text-sm">
+                  <div className="bg-muted/30 border border-dashed border-border rounded-xl p-4 text-center text-muted-foreground text-sm">
                     O funcionário não possui vínculo de lotação ativo nesta unidade escolar.
                   </div>
                 )}
 
                 {/* Nota de Auditoria */}
-                <div className="flex items-start gap-2 bg-background border border-border rounded-xl p-3">
-                  <Building2 className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-zinc-500">
+                <div className="flex items-start gap-2 bg-muted/40 border border-border rounded-xl p-3">
+                  <Building2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
                     Todas as ações de lotação são registradas no histórico funcional e na auditoria do sistema.
                   </p>
                 </div>

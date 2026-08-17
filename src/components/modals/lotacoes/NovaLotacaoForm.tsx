@@ -53,13 +53,13 @@ export function NovaLotacaoForm({
   }
 
   return (
-    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
-      <h4 className="flex items-center gap-2 text-sm font-bold text-[#3ea6ff]">
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-xs">
+      <h4 className="flex items-center gap-2 text-sm font-bold text-sky-600 dark:text-[#3ea6ff]">
         <Plus className="w-4 h-4" />
         Nova Lotação
       </h4>
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400 font-medium">Escola / Órgão:</label>
+        <label className="text-xs text-muted-foreground font-medium">Escola / Órgão:</label>
         <Select
           value={novaEscola}
           onValueChange={(v) => {
@@ -89,7 +89,7 @@ export function NovaLotacaoForm({
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-2 space-y-2">
-          <label className="text-xs text-zinc-400 font-medium">Cargo / Profissão:</label>
+          <label className="text-xs text-muted-foreground font-medium">Cargo / Profissão:</label>
           <Select
             value={novoCargo}
             onValueChange={(v) => setNovoCargo(v ?? '')}
@@ -111,7 +111,7 @@ export function NovaLotacaoForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-xs text-zinc-400 font-medium">Carga (h):</label>
+          <label className="text-xs text-muted-foreground font-medium">Carga (h):</label>
           <input
             type="number"
             min={1}
@@ -119,13 +119,13 @@ export function NovaLotacaoForm({
             value={novaCarga}
             onChange={(e) => setNovaCarga(e.target.value)}
             placeholder="Ex: 20"
-            className="w-full bg-background border border-border text-foreground text-sm h-9 rounded-md px-2.5 outline-none focus:border-[#3ea6ff]"
+            className="w-full bg-background border border-border text-foreground text-sm h-9 rounded-md px-2.5 outline-none focus:border-sky-500"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400 font-medium">Modalidade de Ensino:</label>
+        <label className="text-xs text-muted-foreground font-medium">Modalidade de Ensino:</label>
         <Select
           value={novaModalidade}
           onValueChange={(v) => setNovaModalidade(v ?? 'Regular')}
