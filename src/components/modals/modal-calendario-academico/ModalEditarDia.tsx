@@ -109,7 +109,7 @@ export function ModalEditarDia({
       }
     >
       <div className="space-y-4 py-2">
-        <div className="bg-[#18181b] border border-border/60 rounded-xl p-3 flex items-center justify-between">
+        <div className="bg-muted/40 border border-border/60 rounded-xl p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
               <Calendar className="w-4 h-4" />
@@ -122,8 +122,8 @@ export function ModalEditarDia({
           <span
             className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
               letivo
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
             }`}
           >
             {letivo ? 'Dia Letivo' : 'Não Letivo'}
@@ -135,7 +135,7 @@ export function ModalEditarDia({
             Tipo de Evento / Classificação
           </label>
           <Select value={tipo} onValueChange={(val: any) => handleTipoChange(val)}>
-            <SelectTrigger className="w-full h-9 text-xs bg-background/60">
+            <SelectTrigger className="w-full h-9 text-xs bg-background border-border text-foreground">
               <SelectValue placeholder="Selecione o tipo do dia" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
@@ -162,11 +162,11 @@ export function ModalEditarDia({
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Ex: Decreto Municipal 12/2026 - Ponto Facultativo"
-            className="h-9 text-xs bg-background/60"
+            className="h-9 text-xs bg-background border-border text-foreground"
           />
         </div>
 
-        <div className="bg-card border border-border/60 rounded-xl p-3 flex items-center justify-between">
+        <div className="bg-muted/30 border border-border/60 rounded-xl p-3 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-foreground">Contabilizar como Dia Letivo?</p>
             <p className="text-[11px] text-muted-foreground">

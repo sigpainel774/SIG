@@ -47,7 +47,7 @@ export default function CalendarioAcademicoPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Cabeçalho da Página */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141416] border border-[#26262a] p-6 rounded-2xl shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border p-6 rounded-2xl shadow-xs">
         <div className="flex items-start md:items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/25 flex items-center justify-center shrink-0 shadow-inner">
             <Calendar className="w-6 h-6" />
@@ -69,7 +69,7 @@ export default function CalendarioAcademicoPage() {
       </div>
 
       {/* Container Principal com o Calendário */}
-      <div className="bg-[#141416] border border-[#26262a] p-5 rounded-2xl shadow-sm">
+      <div className="bg-card border border-border p-5 rounded-2xl shadow-xs">
         <CalendarioAcademicoContent
           secretariaId={selectedSecretaria?.id}
           secretariaNome={selectedSecretaria?.nome}

@@ -86,7 +86,7 @@ export function HistoricoModal({
             {historico.map((item) => (
               <div
                 key={item.id}
-                className="bg-[#18181b] border border-border/60 rounded-xl p-3.5 space-y-2 hover:border-border transition-colors"
+                className="bg-card border border-border rounded-xl p-3.5 space-y-2 hover:border-border/80 transition-colors shadow-xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
@@ -105,7 +105,7 @@ export function HistoricoModal({
 
                 {item.detalhes_json?.dias_letivos_total !== undefined && (
                   <div className="flex items-center gap-2 pt-1 border-t border-border/30 text-[10px] text-muted-foreground">
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20">
                       {item.detalhes_json.dias_letivos_total} dias letivos
                     </span>
                     <span>•</span>
