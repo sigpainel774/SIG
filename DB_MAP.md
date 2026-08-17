@@ -875,7 +875,45 @@ Regras de encerramento compulsório de sessões (logoff por horário) para prote
 *   `tolerancia_minutos`: `integer` (Tolerância em minutos para captura retroativa, Default: 5, NOT NULL)
 *   `criado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
-*   `updated_at`: `timestamp with time zone` (Nullable)
+### 70. `public.calendarios_academicos`
+Calendário letivo anual oficial da Secretaria de Educação para a rede municipal (exceto EMAEE).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `secretaria_id`: `uuid` (FK -> `public.secretarias.id`, NOT NULL)
+*   `ano_letivo`: `integer` (Ano do calendário letivo, e.g. 2026, NOT NULL)
+*   `trimestre1_inicio`, `trimestre1_fim`: `date` (Início e fim do 1º Trimestre, Nullable)
+*   `trimestre2_inicio`, `trimestre2_fim`: `date` (Início e fim do 2º Trimestre, Nullable)
+*   `trimestre3_inicio`, `trimestre3_fim`: `date` (Início e fim do 3º Trimestre, Nullable)
+*   `recesso_junino_inicio`, `recesso_junino_fim`: `date` (Recesso escolar junino, Nullable)
+*   `recesso_fim_ano_inicio`, `recesso_fim_ano_fim`: `date` (Recesso de fim de ano / férias, Nullable)
+*   `meta_dias_letivos`: `integer` (Meta de dias de efetivo trabalho escolar LDB, Default: 200, Nullable)
+*   `ativo`: `boolean` (Default: true, Nullable)
+*   `publicado`: `boolean` (Default: true, Nullable)
+*   `updated_by`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `created_at`, `updated_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+
+### 71. `public.calendario_eventos`
+Feriados, pontos facultativos, sábados letivos e eventos cadastrados para o ano letivo.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `calendario_id`: `uuid` (FK -> `public.calendarios_academicos.id`, NOT NULL)
+*   `ano_letivo`: `integer` (NOT NULL)
+*   `data`: `date` (Data do evento, NOT NULL)
+*   `tipo`: `text` ('feriado_nacional', 'feriado_estadual', 'feriado_municipal', 'ponto_facultativo', 'recesso_escolar', 'sabado_letivo', 'dia_letivo_especial', 'conselho_classe', 'planejamento_pedagogico', NOT NULL)
+*   `descricao`: `text` (Descrição ou nome do feriado/decreto, NOT NULL)
+*   `letivo`: `boolean` (Indica se conta como dia de trabalho escolar, Default: false, NOT NULL)
+*   `criado_em`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+*   `criado_por`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+
+### 72. `public.calendario_historico`
+Trilha de auditoria das alterações no calendário acadêmico anual.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `calendario_id`: `uuid` (FK -> `public.calendarios_academicos.id`, NOT NULL)
+*   `ano_letivo`: `integer` (NOT NULL)
+*   `acao`: `text` ('criacao', 'alteracao_trimestre', 'adicao_evento', 'remocao_evento', 'edicao_evento', NOT NULL)
+*   `descricao_alteracao`: `text` (Descrição amigável da alteração, NOT NULL)
+*   `detalhes_json`: `jsonb` (Dump com valores anteriores e novos, Default: '{}'::jsonb, Nullable)
+*   `alterado_por_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `alterado_por_nome`: `text` (Nome do funcionário que alterou, Nullable)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
 ---
 
