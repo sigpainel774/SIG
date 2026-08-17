@@ -30,7 +30,8 @@ import {
   Clock,
   UserPlus,
   FileSpreadsheet,
-  MessageSquare
+  MessageSquare,
+  Calendar
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -49,10 +50,11 @@ export function Sidebar() {
   const pathname = usePathname()
   const supabase = createClient()
   const { isSimulating } = usePermissionSimulationStore()
-  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo, isContaEja } = useAuthStore()
+  const { funcionario, logout, isDiretor, isChefe, vinculos, acessos, escolaAtivaId, setEscolaAtivaId, isAdminGlobalOrRoot, isRhRedeExclusivo, isContaEja, isSecretarioEducacao } = useAuthStore()
   const isEjaMode = isContaEja()
   const isProfessor = acessos?.some(a => a.nivel === 4) || funcionario?.cargo?.toLowerCase().includes('professor')
   const isRhRedeOnly = isRhRedeExclusivo()
+  const isSecretario = isSecretarioEducacao()
   const { isMobileOpen, closeMobile } = useSidebarStore()
   const { selectedEscola, selectedSecretaria } = useSchoolStore()
   const isNivel1 = !funcionario?.is_superadmin && acessos?.some(a => a.nivel === 1 && a.ativo)
@@ -215,6 +217,9 @@ export function Sidebar() {
         {
           label: 'GESTÃO ACADÊMICA',
           items: [
+            ...(isSecretario ? [
+              { href: '/calendario-academico', label: 'Calendário Acadêmico', icon: Calendar }
+            ] : []),
             { href: '/alunos', label: 'Alunos', icon: GraduationCap },
             { href: '/turmas', label: 'Turmas', icon: BookOpen },
             { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
@@ -318,6 +323,7 @@ export function Sidebar() {
   ]
 
   const getIsActive = (href: string): boolean => {
+    if (href === '/calendario-academico') return pathname.startsWith('/calendario-academico')
     if (href === '/eja') return pathname === '/eja'
     if (href === '/home') return pathname === '/home' || pathname === '/'
     if (href === '/configuracoes') return pathname.startsWith('/configuracoes') || pathname.startsWith('/perfil') || pathname.startsWith('/permissoes')
@@ -453,8 +459,9 @@ export function Sidebar() {
 
           if (requerSelecaoEscolaParaDetalhes) {
             if (group.label === 'GESTÃO ACADÊMICA') {
+              const calItem = filteredItems.find(i => i.href === '/calendario-academico')
               const mainItem = filteredItems.find(i => i.href === '/alunos')
-              const extraItems = filteredItems.filter(i => i.href !== '/alunos')
+              const extraItems = filteredItems.filter(i => i.href !== '/alunos' && i.href !== '/calendario-academico')
 
               return (
                 <div key={groupIndex}>
@@ -469,6 +476,7 @@ export function Sidebar() {
                     </>
                   )}
                   <div className="space-y-1.5">
+                    {calItem && <NavLink item={calItem} />}
                     {mainItem && <NavLink item={mainItem} />}
                     <AnimatePresence initial={false}>
                       {temEscolaSelecionada && extraItems.length > 0 && (

@@ -566,6 +566,10 @@ Entregas oficiais de diários/planejamentos à secretaria escolar.
 *   `trimestre`: `integer` (Nullable)
 *   `ano_letivo`: `integer` (Default: EXTRACT(year FROM now()), NOT NULL)
 *   `arquivo_url`, `arquivo_nome`, `arquivo_tipo`: `text` (Nullable)
+*   `pontos_maximos`: `numeric(4,2)` (Pontuação máxima da atividade variando de 1.0 a 10.0, Default: 2.50, NOT NULL)
+*   `enviado_impressao`: `boolean` (Indica se a atividade foi enviada à secretaria/impressão, travando edições, Default: false, NOT NULL)
+*   `enviado_impressao_em`: `timestamp with time zone` (Data/hora do envio para impressão, Nullable)
+*   `ordem_atividade`: `integer` (Número de ordem da atividade no trimestre de 1 a 10, Default: 1, Nullable)
 *   `status`: `text` (Default: 'recebida', NOT NULL)
 *   `updated_by`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
@@ -646,6 +650,8 @@ Parâmetros e dados gerais da Secretaria de Educação e da rede municipal.
 *   `cargo_secretario`: `text` (Título do cargo, Default: 'Secretário(a) de Educação', Nullable)
 *   `nome_rede`: `text` (Nome do órgão da rede, Default: 'Secretaria Municipal de Educação de Sapeaçu', Nullable)
 *   `bloquear_edicao_funcionarios_rede`: `boolean` (Default: false, Bloqueio global de alteração de cadastros de servidores pela rede, NOT NULL)
+*   `bloquear_por_secretarias`: `uuid[]` / `ARRAY` (Lista de IDs de secretarias bloqueadas para alteração de servidores, Nullable)
+*   `bloquear_por_escolas`: `uuid[]` / `ARRAY` (Lista de IDs de escolas bloqueadas para alteração de servidores, Nullable)
 *   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
 ### 53. `public.responsaveis`
@@ -915,6 +921,15 @@ Trilha de auditoria das alterações no calendário acadêmico anual.
 *   `alterado_por_nome`: `text` (Nome do funcionário que alterou, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
+### 73. `public.notas_atividades`
+Lançamento de notas obtidas por alunos em atividades individuais do diário pedagógico (até 10 por trimestre).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `atividade_id`: `uuid` (FK -> `public.atividades_secretaria.id` ON DELETE CASCADE, NOT NULL)
+*   `aluno_id`: `uuid` (FK -> `public.alunos.id` ON DELETE CASCADE, NOT NULL)
+*   `nota`: `numeric(4,2)` (Nota obtida pelo aluno na atividade de 0.00 a 10.00, Nullable)
+*   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+*   `updated_at`: `timestamp with time zone` (Default: `now()`, Nullable)
+
 ---
 
 ## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
@@ -922,6 +937,8 @@ Trilha de auditoria das alterações no calendário acadêmico anual.
 | Nome da RPC | Parâmetros | Tipo de Retorno | Descrição & Propósito |
 |-------------|------------|-----------------|------------------------|
 | `public.get_session_timeout_rules_for_user` | `none` | `TABLE (id UUID, nome TEXT, horarios TEXT[], dias_semana SMALLINT[], tolerancia_minutos INT, escopo TEXT)` | Retorna as regras ativas de encerramento de sessão aplicáveis ao usuário logado (isenta Superadmin e Nível 1). |
+| `public.verificar_pendencias_pontuacao_trimestre` | `p_escola_id UUID, p_professor_id UUID DEFAULT NULL` | `jsonb` | Verifica se turmas e disciplinas possuem pontuação cadastrada inferior a 10.0 pts a 5 dias do encerramento oficial do trimestre (consultando `calendarios_academicos` e fallback para `prazos_unidades`), disparando notificações automáticas para Professores e Diretores. Excetua unidades EMAEE. |
+| `public.verificar_trava_edicao_funcionario` | `p_funcionario_alvo_id UUID` | `boolean` | Valida de forma atômica e segura se um servidor está bloqueado para edição cadastral por escopo de rede, secretaria ou unidade escolar. |
 | `public.obter_admin_dashboard_kpis` | `p_escola_id UUID, p_data DATE, p_inicio_mes TIMESTAMPTZ` | `jsonb` | Retorna consolidação de KPIs (alunos, turmas, ocorrências, transferências pendentes, diários) com validação de acesso `auth.uid()`. |
 | `public.get_dashboard_resumo` | `p_escola_id UUID, p_funcionario_id UUID` | `jsonb` | Resumo consolidado de contadores da dashboard principal (total de alunos, turmas, funcionários ativos, comunicados, diários pendentes, ocorrências do mês) respeitando soft-delete (`deleted_at IS NULL`). |
 | `public.obter_multi_escolas_stats` | `p_funcionario_id UUID, p_escola_ids UUID[], p_data DATE` | `jsonb` | Estatísticas multi-escola de professores (turmas vinculadas, aulas do dia, chamadas pendentes). |

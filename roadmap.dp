@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-08-16  
+**Última Atualização:** 2026-08-17  
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -11,6 +11,10 @@
 
 | Módulo / Funcionalidade | Status | Data Conclusão | Resumo da Entrega |
 |-------------------------|--------|----------------|-------------------|
+| **Cadastro e Gestão de Calendário Acadêmico Anual da Rede** | ✅ Concluído | 2026-08-17 | Schema de calendário (`calendarios_academicos`, `calendario_eventos`, `calendario_historico`), painel interativo em `/admin/secretarias` com matriz de 12 meses, cálculo automático de 200 dias letivos (LDB), gestão de trimestres, recessos e feriados nacionais automáticos com trilha de auditoria. |
+| **Critérios Flexíveis de Avaliação & Alertas Pedagógicos** | ✅ Concluído | 2026-08-17 | Tabela `notas_atividades`, pontuação customizável de 1 a 10 pts por atividade (totalizando 10.0 pts no trimestre), até 10 atividades por disciplina/trimestre, trava de edição ao enviar para impressão/secretaria (`enviado_impressao`) e RPC `verificar_pendencias_pontuacao_trimestre` com alerta a 5 dias do encerramento oficial do calendário (exceto EMAEE). |
+| **Encerramento Compulsório de Sessões (Session Timeout Rules)** | ✅ Concluído | 2026-08-16 | Tabela `session_timeout_rules`, modal administrativo de parametrização de horários/dias da semana por rede, secretaria, escola ou nível, e componente global `SessionTimeoutWatcher` para logoff compulsório com proteção exclusiva a usuários Nível 2+. |
+| **Trava Granular de Edição de Servidores por Secretaria/Escola** | ✅ Concluído | 2026-08-16 | Expansão de `configuracoes_rede` com `bloquear_por_secretarias` e `bloquear_por_escolas`, RPC `verificar_trava_edicao_funcionario` e travamento inteligente de formulários em `verificarTravaBloqueio.ts`. |
 | **Varredura e Correção de Erros Silenciosos (ES-1 a ES-12)** | ✅ Concluído | 2026-08-16 | Correção de 20 arquivos com classes Tailwind quebradas (`mutedmerald`), proteção contra violação de FK em notificações, ajustes em `isProfessor`/`canAccessEja`, lookups em Selects Base UI, try/catch em `localStorage`, resets de modais e montagem condicional. |
 | **Correção Consolidada de Bugs & Blindagem RLS (Auditoria)** | ✅ Concluído | 2026-08-16 | Blindagem de RLS em `mensagens_responsaveis` e `solicitacoes_responsaveis`, correção de `WITH CHECK (true)` em `assinatura`, prevenção de recursão em `turmas` e soft-delete na RPC `get_dashboard_resumo`. |
 | **Unificação de Notificações em Grupo & Baixa Coletiva** | ✅ Concluído | 2026-08-16 | RPCs `marcar_notificacao_lida_grupo` e `marcar_todas_notificacoes_lidas_usuario` com `grupo_id`, trigger automático com baixa coletiva e auditoria do servidor que processou ao confirmar ciência de ocorrências. |

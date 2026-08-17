@@ -18,6 +18,7 @@ src/
 │   │   ├── arquivos/     # Arquivamento geral de registros
 │   │   ├── atestados/    # Controle de Atestados médicos de funcionários
 │   │   ├── avaliacoes/   # Lançamento de Notas, Frequências e boletins
+│   │   ├── calendario-academico/ # Gestão do Calendário Letivo Oficial (Secretário de Educação & Admin)
 │   │   ├── coleta-local/ # Recursos de ponto/coleta off-line
 │   │   ├── configuracoes/# Preferências do sistema e níveis de notificações
 │   │   ├── documentos/   # Emissão de documentos oficiais e comprovantes
@@ -63,13 +64,14 @@ src/
 │
 ├── components/           # Componentes React
 │   ├── ui/               # Componentes primitivos do Shadcn/UI (e.g. Button, Dialog, SignaturePad)
-│   ├── modals/           # Modais específicos de gestão (e.g. modal-aluno, modal-funcionario)
+│   ├── modals/           # Modais específicos de gestão (e.g. modal-aluno, modal-funcionario, modal-calendario-academico, modal-session-timeout)
 │   ├── print/            # Visualizações e templates de impressão física (e.g. print-boletim, print-ficha)
 │   ├── map/              # Componentes de mapa (Leaflet/MapWrapper)
 │   ├── relatorios/       # Seções e componentes específicos de relatórios
 │   ├── Sidebar.tsx       # Menu lateral de navegação
 │   ├── Header.tsx        # Cabeçalho da dashboard
 │   ├── SchoolSelector.tsx # Seletor global de Escolas no header
+│   ├── SessionTimeoutWatcher.tsx # Observador de regras de encerramento de sessão
 │   ├── theme-provider.tsx # Provedor de tema claro/escuro
 │   ├── GradeSemanalSection.tsx # Grade de horários semanal das turmas
 │   ├── HorariosSlotsSection.tsx # Slots de horários de aula da escola
@@ -80,6 +82,7 @@ src/
 │   ├── supabaseServer.ts # Conexão Supabase Server Client (Server Components/API)
 │   ├── supabaseAdmin.ts  # Conexão Supabase Admin Bypass (Apenas Server/API - usar Service Role)
 │   ├── audit/            # Helpers para geração de logs de auditoria
+│   ├── feriadosNacionais.ts # Algoritmo de cálculo de feriados nacionais e móveis
 │   ├── profileCache.ts   # Sistema de cache local para perfis de funcionários
 │   ├── invalidarCachePerfil.ts # Helper para invalidação manual do cache de perfil
 │   ├── swrFetchers.ts    # Fetchers utilitários para uso com SWR
@@ -93,7 +96,8 @@ src/
 │   └── useFolhaPagamentoStore.ts # Gerenciamento do estado da folha de pagamentos
 │
 ├── hooks/                # Custom React Hooks reutilizáveis
-│   └── usePessoaForm.ts  # Hook utilitário para manipulação de formulários de Alunos/Funcionários
+│   ├── usePessoaForm.ts  # Hook utilitário para formulários de Alunos/Funcionários
+│   └── useCalendarioAcademico.ts # Hook com regras de negócio e CRUD do Calendário Acadêmico
 │
 ├── types/                # Definições de Tipos Globais TypeScript
 └── proxy.ts              # Roteador de segurança (ex-middleware.ts do Next.js 16)
@@ -171,6 +175,11 @@ src/
 *   **`public.desligamentos_programados`**: Agendamento de desligamentos futuros de vínculos de RH.
 *   **`public.adicionais_salario`**: Lançamento de adicionais (horas extras, gratificações) na folha.
 *   **`public.configuracoes_rede`**: Parâmetros e dados gerais da Secretaria de Educação.
+*   **`public.session_timeout_rules`**: Regras de encerramento compulsório de sessões administrativas por horário.
+*   **`public.calendarios_academicos`**: Calendário letivo anual oficial da Secretaria de Educação para a rede.
+*   **`public.calendario_eventos`**: Feriados, pontos facultativos, recessos e sábados letivos do calendário anual.
+*   **`public.calendario_historico`**: Trilha de auditoria das alterações no calendário letivo oficial.
+*   **`public.notas_atividades`**: Lançamento de notas individuais de atividades escolares do trimestre.
 
 ---
 

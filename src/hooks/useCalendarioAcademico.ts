@@ -73,6 +73,9 @@ export function useCalendarioAcademico({
   const supabase = createClient() as any
   const { funcionario } = useAuthStore()
 
+  const [resolvedSecretariaId, setResolvedSecretariaId] = useState<string>(secretariaId ?? '')
+  const [resolvedSecretariaNome, setResolvedSecretariaNome] = useState<string>('')
+
   const [anoLetivo, setAnoLetivo] = useState<number>(anoInicial)
   const [loading, setLoading] = useState<boolean>(true)
   const [saving, setSaving] = useState<boolean>(false)
@@ -109,6 +112,50 @@ export function useCalendarioAcademico({
       isMounted.current = false
     }
   }, [])
+
+  // Resolução automática da Secretaria Municipal de Educação se não for fornecida via props
+  useEffect(() => {
+    if (secretariaId) {
+      setResolvedSecretariaId(secretariaId)
+      return
+    }
+
+    let active = true
+    async function resolverSecEducacao() {
+      try {
+        const { data: secEdu } = await supabase
+          .from('secretarias')
+          .select('id, nome')
+          .is('deleted_at', null)
+          .ilike('nome', '%educa%')
+          .limit(1)
+          .maybeSingle()
+
+        if (active && secEdu) {
+          setResolvedSecretariaId(secEdu.id)
+          setResolvedSecretariaNome(secEdu.nome)
+        } else if (active) {
+          const { data: firstSec } = await supabase
+            .from('secretarias')
+            .select('id, nome')
+            .is('deleted_at', null)
+            .limit(1)
+            .maybeSingle()
+          if (active && firstSec) {
+            setResolvedSecretariaId(firstSec.id)
+            setResolvedSecretariaNome(firstSec.nome)
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao resolver secretaria de educação:', err)
+      }
+    }
+
+    resolverSecEducacao()
+    return () => {
+      active = false
+    }
+  }, [secretariaId, supabase])
 
   // Carrega os dados do ano selecionado
   const carregarCalendario = useCallback(async (ano: number, secId?: string) => {
@@ -258,10 +305,11 @@ export function useCalendarioAcademico({
   }, [supabase, dadosCalendario.id])
 
   useEffect(() => {
-    if (secretariaId) {
-      carregarCalendario(anoLetivo, secretariaId)
+    const secIdToLoad = secretariaId || resolvedSecretariaId
+    if (secIdToLoad) {
+      carregarCalendario(anoLetivo, secIdToLoad)
     }
-  }, [anoLetivo, secretariaId, carregarCalendario])
+  }, [anoLetivo, secretariaId, resolvedSecretariaId, carregarCalendario])
 
   // Atualiza um campo de trimestre ou recesso
   const setCampoCalendario = (campo: keyof CalendarioAcademicoDados, valor: any) => {
@@ -444,8 +492,9 @@ export function useCalendarioAcademico({
 
   // Salvar calendário completo no Supabase com auditoria
   const salvarCalendario = async (justificativa?: string) => {
-    if (!secretariaId) {
-      toast.error('Secretaria de Educação não informada.')
+    const targetSecId = secretariaId || resolvedSecretariaId || dadosCalendario.secretaria_id
+    if (!targetSecId) {
+      toast.error('Secretaria de Educação não identificada para salvar o calendário.')
       return false
     }
 
@@ -453,7 +502,7 @@ export function useCalendarioAcademico({
     try {
       // 1. Upsert em calendarios_academicos
       const payloadCal = {
-        secretaria_id: secretariaId,
+        secretaria_id: targetSecId,
         ano_letivo: anoLetivo,
         trimestre1_inicio: dadosCalendario.trimestre1_inicio,
         trimestre1_fim: dadosCalendario.trimestre1_fim,
@@ -528,10 +577,10 @@ export function useCalendarioAcademico({
           }
         },
         alterado_por_id: funcionario?.id ?? null,
-        alterado_por_nome: funcionario?.nome ?? 'Administrador da Secretaria'
+        alterado_por_nome: funcionario?.nome ?? 'Secretário(a) / Gestor da Educação'
       })
 
-      setDadosCalendario((prev) => ({ ...prev, id: calId }))
+      setDadosCalendario((prev) => ({ ...prev, id: calId, secretaria_id: targetSecId }))
       setHasUnsavedChanges(false)
       toast.success(`Calendário Acadêmico ${anoLetivo} salvo com sucesso!`)
       carregarHistorico()
@@ -563,6 +612,8 @@ export function useCalendarioAcademico({
     historico,
     loadingHistorico,
     carregarHistorico,
-    carregarCalendario
+    carregarCalendario,
+    resolvedSecretariaId,
+    resolvedSecretariaNome
   }
 }

@@ -42,6 +42,7 @@ interface AuthState {
   isRhRedeExclusivo: () => boolean;
   isContaEja: () => boolean;
   canAccessEja: () => boolean;
+  isSecretarioEducacao: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -202,6 +203,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (funcionario?.is_superadmin) return true;
     if (acessos.some(a => (a as any).pode_eja === true && a.ativo)) return true;
     return false;
+  },
+
+  isSecretarioEducacao: () => {
+    const funcionario = get().getFuncionarioAtivo();
+    const acessos = get().getAcessosAtivos();
+    if (funcionario?.is_superadmin) return true;
+    const isNivel1 = acessos.some(a => a.nivel === 1 && a.ativo);
+    if (!isNivel1) return false;
+    const rawCargo = (funcionario?.cargo ?? '').trim().toLowerCase();
+    const normCargo = rawCargo.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return (
+      (normCargo.includes('secretari') && normCargo.includes('educa')) ||
+      normCargo.includes('secretario(a) municipal de educacao')
+    );
   },
 }));
 
