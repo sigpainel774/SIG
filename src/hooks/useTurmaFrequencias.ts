@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import useSWR from 'swr'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import useSWR, { useSWRConfig } from 'swr'
 import { toast } from 'sonner'
-
 import { useAuthStore } from '@/store/useAuthStore'
 
 interface UseTurmaFrequenciasProps {
   open: boolean
   turma: any
+  alunos: any[]
   initialData?: string
   initialMateriaId?: string
   initialAgendaAulaId?: string | null
@@ -21,6 +21,7 @@ interface UseTurmaFrequenciasProps {
 export function useTurmaFrequencias({
   open,
   turma,
+  alunos,
   initialData,
   initialMateriaId,
   initialAgendaAulaId,
@@ -32,29 +33,37 @@ export function useTurmaFrequencias({
   const [dataFreq, setDataFreq] = useState(new Date().toISOString().split('T')[0])
   const [selectedMateriaId, setSelectedMateriaId] = useState<string>('')
   const [selectedAgendaAulaId, setSelectedAgendaAulaId] = useState<string | null>(null)
+  
+  // Estado local gerenciado para pré-seleção rápida e salvamento em lote
+  const [localFreqMap, setLocalFreqMap] = useState<Record<string, boolean>>({})
+  const [hasExistingRecords, setHasExistingRecords] = useState<boolean>(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false)
+  const [savingFreq, setSavingFreq] = useState<boolean>(false)
 
-  // 5. Frequências do dia e matéria selecionados
+  const { mutate } = useSWRConfig()
+
+  // 1. Chave de busca de Frequências do dia e matéria selecionados
   const freqKey = open && turma?.id && selectedMateriaId
     ? ['frequencias', turma.id, dataFreq, selectedMateriaId]
     : null
 
-  const { data: frequencias = {}, isLoading: loadingFreq, error: errorFreq, mutate: mutateFrequencias } = useSWR(
+  const { data: dbFrequencias, isLoading: loadingFreq, error: errorFreq, mutate: mutateFrequencias } = useSWR(
     freqKey,
     async () => {
       const { data, error } = await supabase
         .from('frequencias')
-        .select('aluno_id, presenca')
+        .select('aluno_id, presenca, agenda_aula_id')
         .eq('turma_id', turma.id)
         .eq('data', dataFreq)
         .eq('materia_id', selectedMateriaId)
       if (error) throw error
       const map: Record<string, boolean> = {}
       ;(data || []).forEach((f: any) => { map[f.aluno_id] = f.presenca })
-      return map
+      return { map, rawCount: (data || []).length }
     }
   )
 
-  // 6. Buscar prazo de limite em dias da rede
+  // 2. Buscar prazo de limite em dias da rede
   const { data: prazoFrequenciaDias = 15 } = useSWR(
     open ? 'prazo_frequencia_dias' : null,
     async () => {
@@ -67,13 +76,13 @@ export function useTurmaFrequencias({
     { revalidateOnFocus: false, dedupingInterval: 300000 }
   )
 
-  // Checar se usuário logado é Diretor ou Superadmin (reativo com Zustand)
+  // Checar se usuário logado é Diretor ou Superadmin
   const isDiretor = useAuthStore((state) => state.isDiretor())
   const isAdmin = useAuthStore((state) => state.isAdminGlobalOrRoot())
   const isDiretorOuAdmin = isDiretor || isAdmin
 
   // Calcular se o prazo limite expirou para esta data
-  const isPrazoExpirado = (() => {
+  const isPrazoExpirado = useMemo(() => {
     if (prazoFrequenciaDias === 0) return false // 0 = Sem trava
     if (isDiretorOuAdmin) return false // Direção/Superadmin isentos
 
@@ -84,7 +93,32 @@ export function useTurmaFrequencias({
     const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
     return diffDias > prazoFrequenciaDias
-  })()
+  }, [prazoFrequenciaDias, isDiretorOuAdmin, dataFreq])
+
+  // 3. Sincronizar dados do banco com o estado local e aplicar pré-população de presenças
+  useEffect(() => {
+    if (!open || loadingFreq) return
+
+    if (dbFrequencias && dbFrequencias.rawCount > 0) {
+      // Dia já lançado e gravado no banco: carregar dados reais
+      setLocalFreqMap(dbFrequencias.map)
+      setHasExistingRecords(true)
+      setHasUnsavedChanges(false)
+    } else if (alunos.length > 0) {
+      // Nova chamada (ainda não gravada): pré-popular todos os alunos como Presente (true)
+      const novoMapa: Record<string, boolean> = {}
+      alunos.forEach((aluno) => {
+        novoMapa[aluno.id] = true
+      })
+      setLocalFreqMap(novoMapa)
+      setHasExistingRecords(false)
+      setHasUnsavedChanges(false)
+    } else {
+      setLocalFreqMap({})
+      setHasExistingRecords(false)
+      setHasUnsavedChanges(false)
+    }
+  }, [dbFrequencias, loadingFreq, open, alunos, dataFreq, selectedMateriaId])
 
   useEffect(() => {
     if (errorFreq) {
@@ -116,9 +150,40 @@ export function useTurmaFrequencias({
     }
   }
 
-  const handleLancarFrequencia = async (alunoId: string, presenca: boolean) => {
+  // Alternar presença/falta de um aluno individualmente no estado local
+  const handleTogglePresenca = useCallback((alunoId: string, presenca: boolean) => {
     if (isPrazoExpirado) {
       toast.error(`A alteração de frequência para esta data está bloqueada. O prazo limite é de ${prazoFrequenciaDias} dias. Entre em contato com a Direção.`)
+      return
+    }
+
+    setLocalFreqMap((prev) => ({
+      ...prev,
+      [alunoId]: presenca
+    }))
+    setHasUnsavedChanges(true)
+  }, [isPrazoExpirado, prazoFrequenciaDias])
+
+  // Marcar todos os alunos como presentes em 1 clique
+  const handleMarcarTodosPresentes = useCallback(() => {
+    if (isPrazoExpirado) {
+      toast.error('Alteração bloqueada pelo prazo limite.')
+      return
+    }
+
+    const mapa: Record<string, boolean> = {}
+    alunos.forEach((aluno) => {
+      mapa[aluno.id] = true
+    })
+    setLocalFreqMap(mapa)
+    setHasUnsavedChanges(true)
+    toast.info('Todos os alunos foram marcados como presentes.')
+  }, [alunos, isPrazoExpirado])
+
+  // Salvar frequência completa de todos os alunos em lote
+  const handleSalvarFrequencia = async () => {
+    if (isPrazoExpirado) {
+      toast.error(`A alteração de frequência para esta data está bloqueada pelo prazo limite (${prazoFrequenciaDias} dias).`)
       return
     }
 
@@ -128,91 +193,49 @@ export function useTurmaFrequencias({
       return
     }
     if (!selectedMateriaId) {
-      toast.error('Selecione uma matéria antes de lançar a frequência.')
+      toast.error('Selecione uma matéria antes de salvar a frequência.')
+      return
+    }
+    if (alunos.length === 0) {
+      toast.error('Não há alunos matriculados nesta turma para registrar frequência.')
       return
     }
 
-    const anterior = frequencias[alunoId]
-    
-    // Atualização otimista no SWR
-    await mutateFrequencias(
-      (curr) => ({ ...(curr || {}), [alunoId]: presenca }),
-      { revalidate: false }
-    )
-
+    setSavingFreq(true)
     try {
+      // Montar payload em batch garantindo que todo aluno matriculado tenha seu status persistido
+      const payload = alunos.map((aluno) => ({
+        aluno_id: aluno.id,
+        turma_id: turma.id,
+        escola_id: targetEscolaId,
+        data: dataFreq,
+        presenca: localFreqMap[aluno.id] ?? true,
+        materia_id: selectedMateriaId,
+        agenda_aula_id: selectedAgendaAulaId ?? null
+      }))
+
       const { error } = await supabase
         .from('frequencias')
-        .upsert({
-          aluno_id: alunoId,
-          turma_id: turma.id,
-          escola_id: targetEscolaId,
-          data: dataFreq,
-          presenca: presenca,
-          materia_id: selectedMateriaId,
-          agenda_aula_id: selectedAgendaAulaId ?? null
-        }, { onConflict: 'aluno_id, data, materia_id' })
+        .upsert(payload, { onConflict: 'aluno_id, data, materia_id' })
 
       if (error) throw error
+
+      toast.success('Frequência salva com sucesso!')
+      setHasExistingRecords(true)
+      setHasUnsavedChanges(false)
+
+      // Atualiza SWR local
+      mutateFrequencias({ map: localFreqMap, rawCount: payload.length }, false)
+
+      // Revalida KPIs e listas de chamadas pendentes da Home
+      mutate((key: any) => typeof key === 'string' && key.startsWith('/api/home/'))
     } catch (err: any) {
       console.error('Erro ao salvar frequência:', err)
-      toast.error('Erro ao salvar presença: ' + err.message)
-      // Rollback
-      mutateFrequencias(
-        (curr) => {
-          const next = { ...(curr || {}) }
-          if (anterior === undefined) {
-            delete next[alunoId]
-          } else {
-            next[alunoId] = anterior
-          }
-          return next
-        },
-        { revalidate: false }
-      )
-    }
-  }
-
-  const handleLancarFrequenciaLote = async (lancamentos: { alunoId: string; presenca: boolean }[]) => {
-    if (isPrazoExpirado) {
-      toast.error(`A alteração de frequência para esta data está bloqueada. O prazo limite é de ${prazoFrequenciaDias} dias.`)
-      return
-    }
-
-    const targetEscolaId = escolaAtivaId || turma?.escola_id
-    if (!targetEscolaId || !selectedMateriaId) {
-      toast.error('Escola ou matéria não identificada.')
-      return
-    }
-
-    const payload = lancamentos.map(l => ({
-      aluno_id: l.alunoId,
-      turma_id: turma.id,
-      escola_id: targetEscolaId,
-      materia_id: selectedMateriaId,
-      agenda_aula_id: selectedAgendaAulaId ?? null,
-      data: dataFreq,
-      presenca: l.presenca
-    }))
-
-    await mutateFrequencias(
-      (curr) => {
-        const next = { ...(curr || {}) }
-        lancamentos.forEach(l => { next[l.alunoId] = l.presenca })
-        return next
-      },
-      { revalidate: false }
-    )
-
-    try {
-      const { data, error } = await supabase.rpc('salvar_frequencias_lote', { p_frequencias: payload })
-      if (error) throw error
-      if (data && !data.success) throw new Error(data.error || 'Erro no lote')
-      toast.success(`${lancamentos.length} frequências registradas em lote.`)
-    } catch (err: any) {
-      console.error('Erro ao salvar frequências em lote:', err)
-      toast.error('Erro ao salvar lote de presenças: ' + err.message)
-      mutateFrequencias()
+      toast.error('Erro ao salvar frequência: ' + (err?.message ?? 'Erro desconhecido'))
+    } finally {
+      if (isMounted.current) {
+        setSavingFreq(false)
+      }
     }
   }
 
@@ -223,13 +246,17 @@ export function useTurmaFrequencias({
     setSelectedMateriaId,
     selectedAgendaAulaId,
     setSelectedAgendaAulaId,
-    frequencias,
+    frequencias: localFreqMap,
+    hasExistingRecords,
+    hasUnsavedChanges,
+    savingFreq,
     loadingFreq,
     isPrazoExpirado,
     prazoFrequenciaDias,
     alterarData,
-    handleLancarFrequencia,
-    handleLancarFrequenciaLote,
+    handleTogglePresenca,
+    handleMarcarTodosPresentes,
+    handleSalvarFrequencia,
     mutateFrequencias
   }
 }

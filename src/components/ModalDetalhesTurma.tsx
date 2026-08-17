@@ -58,6 +58,9 @@ export function ModalDetalhesTurma({
     setSelectedAluno,
     isEditMode,
     frequencias,
+    hasExistingRecords,
+    hasUnsavedChanges,
+    savingFreq,
     isPrazoExpirado,
     prazoFrequenciaDias,
     notasState,
@@ -70,7 +73,9 @@ export function ModalDetalhesTurma({
     calculosNotas,
     defaultCalculos,
     mutateNotasServidor,
-    handleLancarFrequencia,
+    handleTogglePresenca,
+    handleMarcarTodosPresentes,
+    handleSalvarFrequencia,
     handleNotaChange,
     handleRecuperacaoChange,
     handleSalvarNotas,
@@ -204,9 +209,14 @@ export function ModalDetalhesTurma({
                 loading={loading}
                 loadingFreq={loadingFreq}
                 frequencias={frequencias}
+                hasExistingRecords={hasExistingRecords}
+                hasUnsavedChanges={hasUnsavedChanges}
+                savingFreq={savingFreq}
                 isPrazoExpirado={isPrazoExpirado}
                 prazoFrequenciaDias={prazoFrequenciaDias}
-                handleLancarFrequencia={handleLancarFrequencia}
+                handleTogglePresenca={handleTogglePresenca}
+                handleMarcarTodosPresentes={handleMarcarTodosPresentes}
+                handleSalvarFrequencia={handleSalvarFrequencia}
                 mutateFrequencias={mutateFrequencias}
               />
             )}

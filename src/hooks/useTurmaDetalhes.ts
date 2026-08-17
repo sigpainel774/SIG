@@ -148,6 +148,7 @@ export function useTurmaDetalhes({
   const frequenciasHook = useTurmaFrequencias({
     open,
     turma,
+    alunos,
     initialData,
     initialMateriaId,
     initialAgendaAulaId,
@@ -217,11 +218,16 @@ export function useTurmaDetalhes({
     selectedAgendaAulaId: frequenciasHook.selectedAgendaAulaId,
     setSelectedAgendaAulaId: frequenciasHook.setSelectedAgendaAulaId,
     frequencias: frequenciasHook.frequencias,
+    hasExistingRecords: frequenciasHook.hasExistingRecords,
+    hasUnsavedChanges: frequenciasHook.hasUnsavedChanges,
+    savingFreq: frequenciasHook.savingFreq,
     loadingFreq: frequenciasHook.loadingFreq,
     isPrazoExpirado: frequenciasHook.isPrazoExpirado,
     prazoFrequenciaDias: frequenciasHook.prazoFrequenciaDias,
     alterarData: frequenciasHook.alterarData,
-    handleLancarFrequencia: frequenciasHook.handleLancarFrequencia,
+    handleTogglePresenca: frequenciasHook.handleTogglePresenca,
+    handleMarcarTodosPresentes: frequenciasHook.handleMarcarTodosPresentes,
+    handleSalvarFrequencia: frequenciasHook.handleSalvarFrequencia,
     mutateFrequencias: frequenciasHook.mutateFrequencias,
 
     // Métodos e estados integrados do sub-hook de notas
