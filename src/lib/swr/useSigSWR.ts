@@ -39,7 +39,9 @@ export function useEscolasSWR() {
       const { data, error } = await supabase
         .from('escolas')
         .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, created_at, deleted_at')
+        .is('deleted_at', null)
         .eq('ativo', true)
+        .or('is_teste.is.null,is_teste.eq.false')
         .order('nome', { ascending: true })
 
       if (error) throw error
