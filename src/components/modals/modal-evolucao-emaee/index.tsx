@@ -55,8 +55,8 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
       setConduta('')
       setAssinaturaBase64(null)
       setDataAtendimento(new Date().toISOString().split('T')[0])
-      setProfissionalNome(funcionario?.nome || '')
-      setProfissionalRegistro((funcionario as any)?.registro_professional || '')
+      setProfissionalNome(funcionario?.nome ?? '')
+      setProfissionalRegistro((funcionario as any)?.registro_profissional ?? '')
     }
   }
 
@@ -88,15 +88,15 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
         .from('emaee_evolucoes')
         .insert({
           emaee_matricula_id: matriculaEmaeeId,
-          profissional_id: (funcionario?.id || null) as any,
+          profissional_id: (funcionario?.id ?? null) as any,
           especialidade,
           data_atendimento: dataAtendimento,
           tipo_atendimento: tipoAtendimento,
           resumo_evolucao: resumo,
           conduta_orientacoes: conduta || '',
           assinado_em: new Date().toISOString(),
-          profissional_nome: profissionalNome || null,
-          profissional_registro: profissionalRegistro || null
+          profissional_nome: profissionalNome ?? null,
+          profissional_registro: profissionalRegistro ?? null
         } as any)
         .select('id')
         .single()

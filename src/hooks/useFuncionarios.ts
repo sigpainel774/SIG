@@ -16,7 +16,7 @@ export function useFuncionarios() {
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
   const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
-  const isEmaee = selectedEscola?.tipo === 'EMAEE' || false
+  const isEmaee = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [cargosCadastrados, setCargosCadastrados] = useState<string[]>([])

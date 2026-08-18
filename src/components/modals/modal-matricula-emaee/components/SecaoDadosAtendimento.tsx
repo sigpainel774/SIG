@@ -14,9 +14,9 @@ export function SecaoDadosAtendimento() {
   } = useMatriculaEmaeeContext()
 
   return (
-    <section className="overflow-hidden border border-border rounded-2xl bg-gradient-to-b from-[#1a202c]/95 to-[#121621]/95 shadow-xl">
-      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-white/[0.012]">
-        <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl color-[#3ea6ff] bg-[#3ea6ff]/10 font-extrabold text-sm text-[#3ea6ff]">
+    <section className="overflow-hidden border border-border rounded-2xl bg-card shadow-sm dark:bg-gradient-to-b dark:from-[#1a202c]/95 dark:to-[#121621]/95 dark:shadow-xl">
+      <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-muted/40 dark:bg-white/[0.012]">
+        <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl bg-primary/10 font-extrabold text-sm text-primary">
           01
         </span>
         <div>
@@ -28,11 +28,11 @@ export function SecaoDadosAtendimento() {
       <div className="p-4 md:p-5 grid grid-cols-12 gap-4">
         {/* Unidade Escolar de Atendimento */}
         <div className="col-span-12 md:col-span-7">
-          <Label className="block mb-1.5 text-xs font-bold text-slate-200">
+          <Label className="block mb-1.5 text-xs font-bold text-foreground">
             Unidade escolar de atendimento <span className="text-rose-500">*</span>
           </Label>
           <select
-            className="w-full min-h-[42px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff] focus:ring-1 focus:ring-[#3ea6ff]/20 transition-all"
+            className="w-full min-h-[42px] px-3 py-2 border border-border rounded-xl outline-none bg-input text-foreground text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
             value={escolaAtendimentoId}
             onChange={(e) => setEscolaAtendimentoId(e.target.value)}
             required
@@ -48,15 +48,15 @@ export function SecaoDadosAtendimento() {
 
         {/* Localização */}
         <div className="col-span-12 md:col-span-3">
-          <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
-            <legend className="px-1 text-xs font-bold text-slate-200">
+          <fieldset className="p-3 border border-border rounded-xl bg-muted/50 dark:bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+            <legend className="px-1 text-xs font-bold text-foreground">
               Localização <span className="text-rose-500">*</span>
             </legend>
             <div className="flex flex-wrap gap-2.5 mt-1">
               <label className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 localizacaoAtendimento === 'Urbana'
-                  ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                  : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                  ? 'border-primary/60 bg-primary/10 text-foreground font-semibold'
+                  : 'border-border bg-input text-foreground/80 hover:border-primary/40'
               }`}>
                 <input
                   type="radio"
@@ -71,8 +71,8 @@ export function SecaoDadosAtendimento() {
 
               <label className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 localizacaoAtendimento === 'Rural'
-                  ? 'border-[#3ea6ff]/60 bg-[#3ea6ff]/15 text-foreground font-semibold'
-                  : 'border-border bg-[#121621] text-slate-300 hover:border-[#3ea6ff]/40'
+                  ? 'border-primary/60 bg-primary/10 text-foreground font-semibold'
+                  : 'border-border bg-input text-foreground/80 hover:border-primary/40'
               }`}>
                 <input
                   type="radio"
@@ -90,12 +90,12 @@ export function SecaoDadosAtendimento() {
 
         {/* Data da Matrícula */}
         <div className="col-span-12 md:col-span-2">
-          <Label className="block mb-1.5 text-xs font-bold text-slate-200">
+          <Label className="block mb-1.5 text-xs font-bold text-foreground">
             Data da matrícula <span className="text-rose-500">*</span>
           </Label>
           <Input
             type="date"
-            className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+            className="bg-input border-border text-foreground text-sm rounded-xl"
             value={dataMatricula}
             onChange={(e) => setDataMatricula(e.target.value)}
             required

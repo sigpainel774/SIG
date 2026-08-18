@@ -122,16 +122,37 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       try {
         const { data: escolasData, error } = await supabase
           .from('escolas')
-          .select('id, nome, tipo')
+          .select('id, nome, tipo, is_teste, secretaria_id, secretarias(id, nome)')
+          .is('deleted_at', null)
           .eq('ativo', true)
           .order('nome')
           
         if (error) throw error
 
         if (escolasData && isMounted) {
-          setEscolas(escolasData)
-          const emaeeList = escolasData.filter(e => e.tipo === 'EMAEE' || /emaee/i.test(e.nome))
-          setUnidadesEmaee(emaeeList.length > 0 ? emaeeList : escolasData)
+          // Filtrar estritamente escolas regulares da educação:
+          // 1. Exclui escolas teste (is_teste ou nome contendo 'teste')
+          // 2. Exclui unidades da Saúde (tipo SAUDE/UNIDADE_SAUDE, secretaria Saúde ou nome com termos médicos/postos)
+          // 3. Exclui unidades EMAEE (tipo EMAEE ou nome contendo 'emaee')
+          const escolasRegulares = (escolasData as any[]).filter((e) => {
+            if (e.is_teste) return false
+            if (/(^|\s)teste(\s|\d|$)/i.test(e.nome || '')) return false
+            if (e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE' || e.tipo === 'EMAEE') return false
+            if (/emaee/i.test(e.nome || '')) return false
+            const secNome = (e.secretarias as any)?.nome || ''
+            if (/sa[uú]de/i.test(secNome)) return false
+            if (/sa[uú]de|posto|ubs|usf|hospital|upa/i.test(e.nome || '')) return false
+            return true
+          })
+          setEscolas(escolasRegulares)
+
+          // Unidades EMAEE para atendimento
+          const emaeeList = (escolasData as any[]).filter((e) => 
+            !e.is_teste && 
+            !/(^|\s)teste(\s|\d|$)/i.test(e.nome || '') && 
+            (e.tipo === 'EMAEE' || /emaee/i.test(e.nome || ''))
+          )
+          setUnidadesEmaee(emaeeList.length > 0 ? emaeeList : escolasRegulares)
           if (!escolaAtendimentoId && emaeeList.length > 0) {
             setEscolaAtendimentoId(emaeeList[0].id)
           }
