@@ -16,17 +16,29 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const TABELAS = [
   'escolas',
+  'secretarias',
   'funcionarios',
   'vinculos_funcionarios',
   'acessos_usuarios',
+  'acessos_usuarios_permissoes',
   'alunos',
   'alunos_anexos',
   'turmas',
   'vinculos_turmas',
   'materias',
   'notas',
+  'notas_atividades',
   'frequencias',
   'ocorrencias',
+  'responsaveis',
+  'responsaveis_alunos',
+  'responsavel_audit_log',
+  'mensagens_responsaveis',
+  'solicitacoes_responsaveis',
+  'emaee_matriculas',
+  'emaee_evolucoes',
+  'emaee_especialidades_vinculadas',
+  'emaee_solicitacoes_relatorios',
   'atestados',
   'assinatura',
   'trash_bin',
@@ -52,6 +64,7 @@ const TABELAS = [
   'movimentacoes_funcionarios',
   'solicitacoes_rh',
   'comunicados',
+  'comunicados_lidos',
   'performance_metrics',
   'recuperacoes_finais',
   'solicitacoes_edicao_aluno',
@@ -66,8 +79,13 @@ const TABELAS = [
   'desligamentos_programados',
   'adicionais_salario',
   'configuracoes_rede',
+  'session_timeout_rules',
+  'calendarios_academicos',
+  'calendario_eventos',
+  'calendario_historico',
   'abastecimentos_veiculos',
-  'manutencoes_veiculos'
+  'manutencoes_veiculos',
+  'backup_registros'
 ];
 
 async function exportTable(tabela) {

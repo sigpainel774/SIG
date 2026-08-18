@@ -2,14 +2,13 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, UserPlus, Users, Sparkles } from 'lucide-react'
+import { ArrowLeft, UserPlus, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { IconTile } from '@/components/ui/icon-tile'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
-
 import { getAvatarUrl } from '@/lib/photoHelper'
 
 export default function ProfissionaisAEEPage() {
@@ -17,7 +16,7 @@ export default function ProfissionaisAEEPage() {
   const escolaEmaeeId = selectedEscola?.id
   const supabase = useMemo(() => createClient(), [])
 
-  const [profissionais, setProfissionais] = useState<any[]>([])
+  const [profissionaisAEE, setProfissionaisAEE] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // Controle de modal
@@ -46,6 +45,7 @@ export default function ProfissionaisAEEPage() {
         `)
         .eq('vinculos_funcionarios.escola_id', escolaEmaeeId)
         .eq('vinculos_funcionarios.ativo', true)
+        .eq('is_profissional_aee', true)
         .is('deleted_at', null)
         .order('nome')
 
@@ -58,11 +58,11 @@ export default function ProfissionaisAEEPage() {
           vistos.add(f.id)
           return true
         })
-        setProfissionais(unicos)
+        setProfissionaisAEE(unicos)
       }
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao buscar servidores da unidade.')
+      toast.error('Erro ao buscar profissionais AEE da unidade.')
     } finally {
       if (isMounted.current) setLoading(false)
     }
@@ -71,10 +71,6 @@ export default function ProfissionaisAEEPage() {
   useEffect(() => {
     carregarProfissionais()
   }, [escolaEmaeeId])
-
-  const profissionaisAEE = useMemo(() => {
-    return profissionais.filter(p => Boolean(p.is_profissional_aee))
-  }, [profissionais])
 
   const getColorByCargo = (cargo: string | null) => {
     const c = (cargo || '').toLowerCase()
@@ -116,27 +112,29 @@ export default function ProfissionaisAEEPage() {
           </Link>
           <IconTile icon={UserPlus} variant="primary" className="h-10 w-10 shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Profissionais AEE e Servidores</h1>
-            <p className="text-xs text-muted-foreground">Gestão de Profissionais AEE e Servidores lotados na unidade EMAEE</p>
+            <h1 className="text-2xl font-bold text-foreground">Profissionais AEE</h1>
+            <p className="text-xs text-muted-foreground">Gestão e vinculação de alunos com Profissionais AEE lotados na unidade EMAEE</p>
           </div>
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
-          Carregando servidores...
+          Carregando profissionais AEE...
         </div>
-      ) : profissionais.length === 0 ? (
+      ) : profissionaisAEE.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
           <UserPlus className="w-16 h-16 text-muted-foreground/30 mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum Servidor Encontrado</h2>
-          <p className="text-muted-foreground max-w-md">
-            Esta unidade EMAEE ainda não possui servidores vinculados ativamente.
+          <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum Profissional AEE Encontrado</h2>
+          <p className="text-muted-foreground max-w-md text-sm">
+            Esta unidade EMAEE ainda não possui profissionais AEE vinculados ativamente.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2 max-w-lg">
+            Para adicionar um profissional a esta lista, acesse a aba <strong>Servidores</strong> e marque a opção &quot;Profissional AEE&quot; na ficha do servidor (Dados Empregatícios).
           </p>
         </div>
       ) : (
         <div className="space-y-8">
-          {/* SEÇÃO 1: PROFISSIONAIS AEE */}
           <section className="space-y-4">
             <div className="flex items-center justify-between bg-card text-card-foreground border border-border p-4 rounded-xl shadow-sm">
               <div className="flex items-center gap-2.5">
@@ -147,100 +145,44 @@ export default function ProfissionaisAEEPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground hidden md:block">
-                Servidores com a opção "Profissional AEE" marcada em sua ficha cadastral (Dados Empregatícios)
-              </p>
-            </div>
-
-            {profissionaisAEE.length === 0 ? (
-              <div className="p-8 border border-dashed border-border rounded-2xl text-center bg-card shadow-sm">
-                <UserPlus className="w-10 h-10 text-muted-foreground/60 mx-auto mb-2" />
-                <p className="text-sm text-foreground font-medium">Nenhum Profissional AEE cadastrado nesta unidade.</p>
-                <p className="text-xs text-muted-foreground mt-1">Para adicionar um profissional a esta lista, acesse Servidores e marque a opção "Profissional AEE" na ficha (Dados Empregatícios).</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {profissionaisAEE.map(p => {
-                  const colors = getColorByCargo(p.cargo)
-                  const avatarUrl = getAvatarUrl(p)
-
-                  return (
-                    <div 
-                      key={p.id} 
-                      className={`flex flex-col border ${colors} rounded-2xl p-5 hover:scale-[1.02] transition-transform duration-200 shadow-md`}
-                    >
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="h-14 w-14 shrink-0 rounded-full border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
-                          {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={avatarUrl} alt={p.nome} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-xl font-bold text-muted-foreground">{p.nome.charAt(0)}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-bold text-foreground truncate" title={p.nome}>{p.nome}</h3>
-                          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium truncate">{p.cargo || 'Especialista AEE'}</p>
-                          <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded font-semibold border border-amber-500/20">Profissional AEE</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-auto pt-4 border-t border-border">
-                        <Button 
-                          variant="outline" 
-                          className="w-full bg-card hover:bg-accent text-foreground text-xs h-9 rounded-xl border border-border transition-colors shadow-sm"
-                          onClick={() => handleOpenModal(p)}
-                        >
-                          Vincular Aluno
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* SEÇÃO 2: SERVIDORES */}
-          <section className="space-y-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between bg-card text-card-foreground border border-border p-4 rounded-xl shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                <h2 className="text-lg font-bold text-foreground">Servidores</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20">
-                  {profissionais.length}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground hidden md:block">
-                Todos os servidores e profissionais lotados ativamente nesta unidade
+                Servidores com a opção &quot;Profissional AEE&quot; marcada em sua ficha cadastral (Dados Empregatícios)
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {profissionais.map(p => {
+              {profissionaisAEE.map(p => {
+                const colors = getColorByCargo(p.cargo)
                 const avatarUrl = getAvatarUrl(p)
-                const isAee = !!p.is_profissional_aee
 
                 return (
                   <div 
                     key={p.id} 
-                    className="flex flex-col border border-border bg-card rounded-2xl p-5 hover:border-borderCustom/80 dark:hover:border-[#333] transition-colors shadow-sm"
+                    className={`flex flex-col border ${colors} rounded-2xl p-5 hover:scale-[1.02] transition-transform duration-200 shadow-md`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 shrink-0 rounded-full border border-border overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-14 w-14 shrink-0 rounded-full border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
                         {avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarUrl} alt={p.nome} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-lg font-bold text-muted-foreground">{p.nome.charAt(0)}</span>
+                          <span className="text-xl font-bold text-muted-foreground">{p.nome.charAt(0)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-foreground truncate" title={p.nome}>{p.nome}</h3>
-                        <p className="text-xs text-muted-foreground truncate">{p.cargo || 'Servidor'}</p>
-                        {isAee && (
-                          <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-semibold">AEE Ativo</span>
-                        )}
+                        <p className="text-xs text-amber-600 dark:text-amber-400 font-medium truncate">{p.cargo || 'Especialista AEE'}</p>
+                        <span className="inline-block mt-1 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded font-semibold border border-amber-500/20">Profissional AEE</span>
                       </div>
+                    </div>
+                    
+                    <div className="mt-auto pt-4 border-t border-border">
+                      <Button 
+                        variant="outline" 
+                        className="w-full bg-card hover:bg-accent text-foreground text-xs h-9 rounded-xl border border-border transition-colors shadow-sm"
+                        onClick={() => handleOpenModal(p)}
+                      >
+                        Vincular Aluno
+                      </Button>
                     </div>
                   </div>
                 )
