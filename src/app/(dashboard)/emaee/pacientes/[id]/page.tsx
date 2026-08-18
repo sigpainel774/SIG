@@ -133,10 +133,6 @@ export default function PacienteDetalhesPage() {
           ),
           escolas:escola_regular_id (
             nome
-          ),
-          funcionarios:encaminhado_por (
-            nome,
-            assinatura_url
           )
         `)
         .eq('id', id)
