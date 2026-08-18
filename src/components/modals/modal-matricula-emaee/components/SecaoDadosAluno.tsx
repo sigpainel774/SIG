@@ -46,7 +46,8 @@ export function SecaoDadosAluno() {
     
     contatoEmergencia, setContatoEmergencia,
     telefoneEmergencia, setTelefoneEmergencia,
-    turnoAtendimento, setTurnoAtendimento
+    turnoAtendimento, setTurnoAtendimento,
+    isEditMode
   } = useMatriculaEmaeeContext()
 
   return (
@@ -58,88 +59,105 @@ export function SecaoDadosAluno() {
         <div className="flex-1">
           <h2 className="text-base font-bold text-foreground">Dados do aluno e Localização</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Localize o aluno cadastrado no SIG para auto-preencher seus dados ou cadastre um novo aluno manualmente com geolocalização.
+            {isEditMode
+              ? 'Edite qualquer dado cadastral, familiar, de endereço ou geolocalização do aluno no SIG.'
+              : 'Localize o aluno cadastrado no SIG para auto-preencher seus dados ou cadastre um novo aluno manualmente com geolocalização.'}
           </p>
         </div>
       </div>
 
       <div className="p-4 md:p-5 space-y-5">
-        {/* Campo de Busca viva de Aluno e Botão de Cadastro Manual */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="block text-xs font-bold text-foreground">
-              Buscar aluno no SIG <span className="text-rose-500">*</span>
-            </Label>
-            
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAtivarManual}
-              className={`text-xs h-7 rounded-lg gap-1.5 font-bold ${
-                isManualAluno 
-                  ? 'bg-primary/20 border-primary text-primary hover:bg-primary/30' 
-                  : 'border-border text-foreground hover:bg-muted'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              {isManualAluno ? 'Modo Cadastro Manual Ativo' : 'Cadastrar Aluno Novo Manualmente'}
-            </Button>
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Digite o nome, CPF ou identificação do Censo para buscar no SIG..."
-              value={searchTerm}
-              onChange={(e) => handleSearchAluno(e.target.value)}
-              className="pl-10 pr-10 bg-input border-border text-foreground text-sm rounded-xl"
-            />
-            {searchLoading && (
-              <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            {isManualAluno 
-              ? 'Você está preenchendo os dados de um novo aluno não cadastrado no SIG.' 
-              : 'Selecione um aluno na lista abaixo para auto-preencher, ou clique em "Cadastrar Aluno Novo Manualmente".'}
-          </p>
-
-          {/* Dropdown de Alunos Encontrados */}
-          {alunosEncontrados.length > 0 && (
-            <div className="relative z-20 mt-1 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-border">
-              {alunosEncontrados.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => handleSelectAluno(a)}
-                  className="w-full px-4 py-2.5 text-left flex items-center justify-between hover:bg-primary/10 transition-all text-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <User className="w-4 h-4 text-primary" />
-                    <div>
-                      <span className="font-bold text-foreground block">{a.nome}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {a.cpf ? `CPF: ${a.cpf}` : 'Sem CPF'} | Mãe: {a.nome_mae ?? 'Não inf.'}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-primary font-semibold text-[11px]">Selecionar</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Card Aluno Selecionado */}
-        {alunoSelecionado && (
-          <div className="flex items-center gap-3 p-3 border border-primary/30 rounded-xl bg-primary/10">
+        {/* Se estiver no Modo Edição, exibe banner informativo do aluno */}
+        {isEditMode ? (
+          <div className="flex items-center gap-3 p-3.5 border border-primary/40 rounded-xl bg-primary/10">
             <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-bold text-foreground block truncate">Aluno Vinculado: {alunoSelecionado.nome}</span>
-              <span className="text-[11px] text-muted-foreground block truncate">ID do Aluno no SIG: {alunoSelecionado.id}</span>
+              <span className="text-xs font-bold text-foreground block truncate">
+                Editando Ficha do Aluno: {nomeCompleto || alunoSelecionado?.nome}
+              </span>
+              <span className="text-[11px] text-muted-foreground block truncate">
+                {cpf ? `CPF: ${cpf}` : 'Sem CPF'} {alunoSelecionado?.id ? `• ID: ${alunoSelecionado.id}` : ''}
+              </span>
             </div>
+          </div>
+        ) : (
+          /* Campo de Busca viva de Aluno e Botão de Cadastro Manual (Modo Nova Matrícula) */
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="block text-xs font-bold text-foreground">
+                Buscar aluno no SIG <span className="text-rose-500">*</span>
+              </Label>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAtivarManual}
+                className={`text-xs h-7 rounded-lg gap-1.5 font-bold ${
+                  isManualAluno 
+                    ? 'bg-primary/20 border-primary text-primary hover:bg-primary/30' 
+                    : 'border-border text-foreground hover:bg-muted'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                {isManualAluno ? 'Modo Cadastro Manual Ativo' : 'Cadastrar Aluno Novo Manualmente'}
+              </Button>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Digite o nome, CPF ou identificação do Censo para buscar no SIG..."
+                value={searchTerm}
+                onChange={(e) => handleSearchAluno(e.target.value)}
+                className="pl-10 pr-10 bg-input border-border text-foreground text-sm rounded-xl"
+              />
+              {searchLoading && (
+                <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {isManualAluno 
+                ? 'Você está preenchendo os dados de um novo aluno não cadastrado no SIG.' 
+                : 'Selecione um aluno na lista abaixo para auto-preencher, ou clique em "Cadastrar Aluno Novo Manualmente".'}
+            </p>
+
+            {/* Dropdown de Alunos Encontrados */}
+            {alunosEncontrados.length > 0 && (
+              <div className="relative z-20 mt-1 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-border">
+                {alunosEncontrados.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => handleSelectAluno(a)}
+                    className="w-full px-4 py-2.5 text-left flex items-center justify-between hover:bg-primary/10 transition-all text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <User className="w-4 h-4 text-primary" />
+                      <div>
+                        <span className="font-bold text-foreground block">{a.nome}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {a.cpf ? `CPF: ${a.cpf}` : 'Sem CPF'} | Mãe: {a.nome_mae ?? 'Não inf.'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-primary font-semibold text-[11px]">Selecionar</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Card Aluno Selecionado */}
+            {alunoSelecionado && (
+              <div className="flex items-center gap-3 p-3 border border-primary/30 rounded-xl bg-primary/10">
+                <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-bold text-foreground block truncate">Aluno Vinculado: {alunoSelecionado.nome}</span>
+                  <span className="text-[11px] text-muted-foreground block truncate">{alunoSelecionado.cpf ? `CPF: ${alunoSelecionado.cpf}` : 'Sem CPF informado'}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

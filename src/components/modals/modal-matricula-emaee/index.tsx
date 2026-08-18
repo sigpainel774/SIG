@@ -15,7 +15,7 @@ import { SecaoDadosClinicos } from './components/SecaoDadosClinicos'
 import { SecaoAssinaturasComprovante } from './components/SecaoAssinaturasComprovante'
 
 function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOpen: boolean, handleOpenChange: (open: boolean) => void }) {
-  const { loading, handleSubmit, alunoSelecionado, nomeCompleto } = useMatriculaEmaeeContext()
+  const { loading, handleSubmit, alunoSelecionado, nomeCompleto, isEditMode } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -43,7 +43,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     <StandardDialog
       open={activeOpen}
       onOpenChange={handleOpenChange}
-      title="Ficha de Matrícula AEE 2026 — SIG"
+      title={isEditMode ? "Editar Ficha de Matrícula AEE 2026 — SIG" : "Ficha de Matrícula AEE 2026 — SIG"}
       maxWidth="sm:max-w-[1050px]"
       className="w-[95vw]"
       footer={
@@ -61,15 +61,17 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => formRef.current?.reset()}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl text-xs"
-            >
-              <RotateCcw className="w-3.5 h-3.5 mr-1" />
-              Limpar
-            </Button>
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => formRef.current?.reset()}
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl text-xs"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                Limpar
+              </Button>
+            )}
 
             <Button
               type="submit"
@@ -80,7 +82,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
               {loading ? 'Salvando...' : (
                 <span className="flex items-center gap-2">
                   <Save className="w-4 h-4" />
-                  Salvar Matrícula AEE
+                  {isEditMode ? 'Atualizar Matrícula AEE' : 'Salvar Matrícula AEE'}
                 </span>
               )}
             </Button>
@@ -93,10 +95,16 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
           <div>
             <p className="text-[11px] font-extrabold text-primary uppercase tracking-wider">EMAEE • Ano letivo 2026</p>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">Ficha de matrícula para AEE</h1>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              {isEditMode ? 'Editar ficha de matrícula para AEE' : 'Ficha de matrícula para AEE'}
+            </h1>
           </div>
-          <span className="self-start sm:self-auto px-3 py-1 border border-emerald-600/30 rounded-full text-emerald-700 bg-emerald-500/10 text-xs font-bold dark:border-success/30 dark:text-success dark:bg-success/10">
-            Nova Matrícula
+          <span className={`self-start sm:self-auto px-3 py-1 border rounded-full text-xs font-bold ${
+            isEditMode 
+              ? 'border-blue-600/30 text-blue-600 bg-blue-500/10 dark:border-[#3ea6ff]/30 dark:text-[#3ea6ff] dark:bg-[#3ea6ff]/10' 
+              : 'border-emerald-600/30 text-emerald-700 bg-emerald-500/10 dark:border-success/30 dark:text-success dark:bg-success/10'
+          }`}>
+            {isEditMode ? 'Edição de Matrícula' : 'Nova Matrícula'}
           </span>
         </div>
 

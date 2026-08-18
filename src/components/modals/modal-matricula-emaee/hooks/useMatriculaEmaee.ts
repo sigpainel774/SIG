@@ -135,15 +135,99 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
   const [unidadesEmaee, setUnidadesEmaee] = useState<{id: string, nome: string}[]>([])
 
+  const isEditMode = Boolean(props.matriculaEditar?.id)
+
+  // Sincronizar dados quando props.matriculaEditar estiver presente e o modal for aberto
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (props.matriculaEditar) {
+      const mat = props.matriculaEditar
+      const al = mat.alunos || {}
+      const dm = al.dados_matricula || {}
+
+      setAlunoSelecionado(al.id ? (al as AlunoSearchData) : null)
+      setIsManualAluno(false)
+      setSearchTerm(al.nome ?? '')
+
+      setNomeCompleto(al.nome ?? '')
+      setDataNascimento(al.data_nascimento ?? '')
+      setCpf(al.cpf ?? '')
+      setIdentificacaoCenso(al.identif_unica_censo ?? '')
+      setRg(al.rg ?? '')
+      setNis(al.nis ?? '')
+      setCertidaoNascimento(al.certidao_nascimento_novo_modelo ?? al.certidao_nascimento ?? '')
+      setCorRaca(al.cor_raca ?? dm.cor_raca ?? '')
+      setSexo(al.sexo ?? '')
+      setCidadeNascimento(al.municipio_nascimento ?? '')
+      setEstadoNascimento(al.uf_nascimento ?? 'BA')
+      setNomeMae(al.nome_mae ?? '')
+      setProfissaoMae(al.profissao_mae ?? '')
+      setNomePai(al.nome_pai ?? '')
+      setProfissaoPai(al.profissao_pai ?? '')
+      setEndereco(al.endereco ?? '')
+      setLatitude(al.latitude != null ? Number(al.latitude) : (dm.latitude != null ? Number(dm.latitude) : null))
+      setLongitude(al.longitude != null ? Number(al.longitude) : (dm.longitude != null ? Number(dm.longitude) : null))
+      setZonaResidencial(al.zona_residencial ?? 'Urbana')
+      setContatoEmergencia(al.nome_contato_emergencia ?? '')
+      setTelefoneEmergencia(al.telefone ?? '')
+
+      // Foto 3x4
+      const visualUrl = getVisualizacaoUrl({
+        foto_url: al.foto_url,
+        foto_avatar_path: al.foto_avatar_path,
+        foto_visualizacao_path: al.foto_visualizacao_path,
+        foto_updated_at: al.foto_updated_at
+      })
+      setFotoUrl(visualUrl || al.foto_url || null)
+      setFotoFile(null)
+
+      // Atendimento EMAEE
+      setEscolaAtendimentoId(mat.escola_atendimento_id ?? props.escolaEmaeeId ?? '')
+      setLocalizacaoAtendimento(mat.localizacao_atendimento ?? 'Urbana')
+      setDataMatricula(mat.data_matricula ? (mat.data_matricula.includes('T') ? mat.data_matricula.split('T')[0] : mat.data_matricula) : new Date().toISOString().split('T')[0])
+      setTurnoAtendimento(mat.turno_atendimento ?? 'Matutino')
+
+      // Escola Regular
+      setEscolaRegularId(mat.escola_regular_id ?? '')
+      setAnoEscolarizacao(mat.ano_escolarizacao ?? '')
+      setTurnoRegular(mat.turno_regular ?? '')
+      setTurmaRegular(mat.turma_regular ?? '')
+      setProfessorRegular(mat.professor_regular ?? '')
+      setGestorRegular(mat.gestor_regular ?? '')
+
+      // Dados Clínicos
+      setCidCodigo(mat.cid_codigo ?? '')
+      setOutrosTranstornos(mat.outros_transtornos ?? '')
+      setObservacoes(mat.principal_queixa ?? mat.observacoes_requerimento ?? '')
+      setDeficiencias({
+        def_baixa_visao: Boolean(mat.def_baixa_visao),
+        def_cegueira: Boolean(mat.def_cegueira),
+        def_auditiva: Boolean(mat.def_auditiva),
+        def_fisica: Boolean(mat.def_fisica),
+        def_intelectual: Boolean(mat.def_intelectual),
+        def_surdez: Boolean(mat.def_surdez),
+        def_surdocegueira: Boolean(mat.def_surdocegueira),
+        def_multipla: Boolean(mat.def_multipla),
+        transtorno_tea: Boolean(mat.transtorno_tea),
+        transtorno_outros: Boolean(mat.transtorno_outros),
+      })
+
+      // Assinaturas
+      setAssinaturaResponsavelUrl(mat.assinatura_responsavel_aluno_url ?? dm.assinatura_responsavel_url ?? null)
+      setAssinaturaServidorUrl(mat.assinatura_responsavel_matricula_url ?? funcionario?.assinatura_url ?? null)
+    }
+  }, [isOpen, props.matriculaEditar, props.escolaEmaeeId, funcionario?.assinatura_url])
+
   // Sincroniza unidade EMAEE selecionada e assinatura padrão do funcionário logado
   useEffect(() => {
-    if (props.escolaEmaeeId) {
+    if (props.escolaEmaeeId && !escolaAtendimentoId) {
       setEscolaAtendimentoId(props.escolaEmaeeId)
     }
     if (funcionario?.assinatura_url && !assinaturaServidorUrl) {
       setAssinaturaServidorUrl(funcionario.assinatura_url)
     }
-  }, [props.escolaEmaeeId, funcionario?.assinatura_url, assinaturaServidorUrl])
+  }, [props.escolaEmaeeId, funcionario?.assinatura_url, assinaturaServidorUrl, escolaAtendimentoId])
 
   // Carga das escolas no modal
   useEffect(() => {
@@ -357,10 +441,129 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
     setLoading(true)
     try {
-      let targetAlunoId = alunoSelecionado?.id
-
       const validEscolaAtendimento = (escolaAtendimentoId.trim() || props.escolaEmaeeId || '').trim() || null
       const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
+
+      // ==========================================
+      // CASO A: EDIÇÃO DE MATRÍCULA JÁ EXISTENTE
+      // ==========================================
+      if (isEditMode && props.matriculaEditar?.id) {
+        const matriculaId = props.matriculaEditar.id
+        const targetAlunoId = props.matriculaEditar.aluno_id || alunoSelecionado?.id
+
+        // 1. Atualizar dados do aluno se houver ID vinculado
+        if (targetAlunoId) {
+          const currentDadosMatricula = (props.matriculaEditar.alunos as any)?.dados_matricula || (alunoSelecionado as any)?.dados_matricula || {}
+          const updatedDadosMatricula = {
+            ...currentDadosMatricula,
+            cor_raca: corRaca || currentDadosMatricula.cor_raca,
+            assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
+          }
+
+          const updateAlunoPayload: any = {
+            nome: nomeCompleto.trim() || (alunoSelecionado?.nome ?? ''),
+            cpf: cpf || null,
+            rg: rg || null,
+            nis: nis || null,
+            identif_unica_censo: identificacaoCenso || null,
+            data_nascimento: dataNascimento || null,
+            certidao_nascimento_novo_modelo: certidaoNascimento || null,
+            sexo: sexo || null,
+            uf_nascimento: estadoNascimento || null,
+            municipio_nascimento: cidadeNascimento || null,
+            nome_mae: nomeMae || null,
+            profissao_mae: profissaoMae || null,
+            nome_pai: nomePai || null,
+            profissao_pai: profissaoPai || null,
+            endereco: endereco || null,
+            latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
+            longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
+            zona_residencial: zonaResidencial || 'Urbana',
+            nome_contato_emergencia: contatoEmergencia || null,
+            telefone: telefoneEmergencia || null,
+            dados_matricula: updatedDadosMatricula
+          }
+
+          if (codigoColetaLocal) {
+            updateAlunoPayload.codigo_temp_resp = codigoColetaLocal
+            updateAlunoPayload.codigo_temp_resp_criado_em = new Date().toISOString()
+          }
+
+          const { error: alunoUpdateError } = await (supabase
+            .from('alunos')
+            .update(updateAlunoPayload) as any)
+            .eq('id', targetAlunoId)
+
+          if (alunoUpdateError) console.warn('Aviso ao atualizar aluno no EMAEE:', alunoUpdateError)
+        }
+
+        // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado
+        if (fotoFile && targetAlunoId) {
+          try {
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const dataUrl = await resUrl.json()
+            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto 3x4.')
+
+            const uploadRes = await fetch(dataUrl.signedUrl, {
+              method: 'PUT',
+              body: fotoFile,
+              headers: { 'Content-Type': fotoFile.type }
+            })
+            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo da foto 3x4.')
+
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path })
+            })
+            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto 3x4.')
+          } catch (fotoErr: any) {
+            console.error('Erro no upload da foto 3x4:', fotoErr)
+            toast.error('Aviso: Houve um problema ao processar a nova foto 3x4 do aluno.')
+          }
+        }
+
+        // 3. Atualizar matrícula EMAEE
+        const updateMatriculaPayload: any = {
+          escola_atendimento_id: validEscolaAtendimento,
+          data_matricula: dataMatricula,
+          turno_atendimento: turnoAtendimento,
+          localizacao_atendimento: localizacaoAtendimento,
+          escola_regular_id: validEscolaRegular,
+          ano_escolarizacao: anoEscolarizacao || null,
+          turno_regular: turnoRegular || null,
+          turma_regular: turmaRegular || null,
+          professor_regular: professorRegular || null,
+          gestor_regular: gestorRegular || null,
+          principal_queixa: observacoes || null,
+          cid_codigo: cidCodigo || null,
+          outros_transtornos: outrosTranstornos || null,
+          observacoes_requerimento: observacoes || null,
+          assinatura_responsavel_matricula_url: assinaturaServidorUrl || props.matriculaEditar.assinatura_responsavel_matricula_url || null,
+          assinatura_responsavel_aluno_url: assinaturaResponsavelUrl || props.matriculaEditar.assinatura_responsavel_aluno_url || null,
+          autorizado_pelo_responsavel: Boolean(assinaturaResponsavelUrl || props.matriculaEditar.assinatura_responsavel_aluno_url),
+          responsavel_assinatura_nome: nomeMae || nomePai || props.matriculaEditar.responsavel_assinatura_nome || null,
+          responsavel_assinatura_cpf: cpf || props.matriculaEditar.responsavel_assinatura_cpf || null,
+          ...deficiencias,
+        }
+
+        const { error: matriculaUpdateErr } = await (supabase
+          .from('emaee_matriculas')
+          .update(updateMatriculaPayload) as any)
+          .eq('id', matriculaId)
+
+        if (matriculaUpdateErr) throw matriculaUpdateErr
+
+        toast.success('Ficha do aluno / Matrícula EMAEE atualizada com sucesso!')
+        if (props.onSuccess) props.onSuccess()
+        setIsOpen(false)
+        return
+      }
+
+      // ==========================================
+      // CASO B: CRIAÇÃO DE NOVA MATRÍCULA NO EMAEE
+      // ==========================================
+      let targetAlunoId = alunoSelecionado?.id
 
       // 1. Se for cadastro de ALUNO NOVO (não existente no SIG)
       if (!targetAlunoId) {
@@ -380,8 +583,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           nome_pai: nomePai || null,
           profissao_pai: profissaoPai || null,
           endereco: endereco || null,
-          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? latitude : null,
-          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? longitude : null,
+          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
+          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
           nome_contato_emergencia: contatoEmergencia || null,
           telefone: telefoneEmergencia || null,
@@ -427,8 +630,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           nome_pai: nomePai || null,
           profissao_pai: profissaoPai || null,
           endereco: endereco || null,
-          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? latitude : null,
-          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? longitude : null,
+          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
+          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
           nome_contato_emergencia: contatoEmergencia || null,
           telefone: telefoneEmergencia || null,
@@ -519,6 +722,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   }
 
   return {
+    isEditMode,
     loading,
     searchLoading,
     alunosEncontrados,

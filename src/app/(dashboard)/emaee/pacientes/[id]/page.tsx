@@ -28,7 +28,8 @@ import {
   Loader2,
   ChevronRight,
   History,
-  Sparkles
+  Sparkles,
+  Edit
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
+import { ModalMatriculaEmaee } from '@/components/modals/modal-matricula-emaee'
 import { PrintEvolucoesEmaee, EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
 import { PrintFichaInscricaoEmaee } from '@/components/print/print-ficha-inscricao-emaee'
 import { PrintComprovanteMatriculaEmaee } from '@/components/print/print-comprovante-matricula-emaee'
@@ -65,6 +67,9 @@ export default function PacienteDetalhesPage() {
   
   const [activeTab, setActiveTab] = useState<'evolucao' | 'especialistas' | 'anexos' | 'relatorios'>('evolucao')
   
+  // Estado de Edição de Ficha / Matrícula
+  const [modalEditarOpen, setModalEditarOpen] = useState(false)
+
   // Estados de Evolução
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
@@ -518,6 +523,18 @@ export default function PacienteDetalhesPage() {
             type="button"
             variant="outline"
             size="sm"
+            onClick={() => setModalEditarOpen(true)}
+            className="text-xs rounded-xl font-bold border-amber-500/40 text-amber-500 hover:bg-amber-500/10 gap-1.5 shadow-sm"
+            title="Editar dados cadastrais do aluno e da matrícula AEE"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Editar Ficha</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setPrintFichaOpen(true)}
             className="text-xs rounded-xl font-bold border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 gap-1.5 shadow-sm"
           >
@@ -542,7 +559,20 @@ export default function PacienteDetalhesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Side: Ficha Cadastral AEE */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-          <h2 className="text-sm font-bold text-foreground border-b border-border pb-2.5">Ficha de Identificação (AEE)</h2>
+          <div className="flex items-center justify-between border-b border-border pb-2.5">
+            <h2 className="text-sm font-bold text-foreground">Ficha de Identificação (AEE)</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setModalEditarOpen(true)}
+              className="h-7 px-2 text-xs font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg gap-1"
+              title="Editar todos os dados desta ficha"
+            >
+              <Edit className="w-3 h-3" />
+              <span>Editar</span>
+            </Button>
+          </div>
           
           <div className="space-y-3.5 text-xs">
             <div>
@@ -1152,6 +1182,20 @@ export default function PacienteDetalhesPage() {
         <PrintComprovanteMatriculaEmaee
           prontuario={prontuario}
           onClose={() => setPrintComprovanteOpen(false)}
+        />
+      )}
+
+      {/* Modal de Edição Plena da Ficha / Matrícula AEE */}
+      {modalEditarOpen && prontuario && (
+        <ModalMatriculaEmaee
+          open={modalEditarOpen}
+          onOpenChange={setModalEditarOpen}
+          escolaEmaeeId={prontuario.escola_atendimento_id || ''}
+          matriculaEditar={prontuario}
+          onSuccess={() => {
+            setModalEditarOpen(false)
+            carregarProntuario()
+          }}
         />
       )}
     </div>

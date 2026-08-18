@@ -17,7 +17,8 @@ import {
   MapPin,
   FileSpreadsheet,
   FileText,
-  Printer
+  Printer,
+  Edit
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,9 @@ export default function PacientesPage() {
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroZona, setFiltroZona] = useState('todos')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Estado de Edição de Ficha / Matrícula
+  const [matriculaEditando, setMatriculaEditando] = useState<any | null>(null)
 
   // Estados de Visualização de Impressão
   const [fichaInscricaoProntuario, setFichaInscricaoProntuario] = useState<any | null>(null)
@@ -273,6 +277,18 @@ export default function PacientesPage() {
 
                 {/* Botões Rápidos no Rodapé do Card */}
                 <div className="border-t border-border/50 pt-3 flex items-center gap-2">
+                  {/* Botão Editar Ficha Completa */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setMatriculaEditando(paciente)}
+                    className="shrink-0 text-amber-500 border-amber-500/30 hover:bg-amber-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    title="Editar Ficha e Dados do Aluno / Matrícula EMAEE"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </Button>
+
                   {/* Botão Ver Ficha de Inscrição */}
                   <Button
                     type="button"
@@ -308,6 +324,22 @@ export default function PacientesPage() {
             )
           })}
         </div>
+      )}
+
+      {/* Modal de Edição Completa de Ficha / Matrícula EMAEE */}
+      {matriculaEditando && (
+        <ModalMatriculaEmaee
+          open={!!matriculaEditando}
+          onOpenChange={(open) => {
+            if (!open) setMatriculaEditando(null)
+          }}
+          escolaEmaeeId={escolaAtivaId || ''}
+          matriculaEditar={matriculaEditando}
+          onSuccess={() => {
+            setMatriculaEditando(null)
+            setRefreshKey((prev) => prev + 1)
+          }}
+        />
       )}
 
       {/* Modal / Portal de Visualização e Impressão da Ficha de Inscrição EMAEE */}
