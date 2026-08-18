@@ -1712,6 +1712,7 @@ export type Database = {
           gestor_regular: string | null
           id: string
           localizacao_atendimento: string | null
+          numero_matricula_emaee: string | null
           observacoes_requerimento: string | null
           outros_transtornos: string | null
           principal_queixa: string | null
@@ -1751,6 +1752,7 @@ export type Database = {
           gestor_regular?: string | null
           id?: string
           localizacao_atendimento?: string | null
+          numero_matricula_emaee?: string | null
           observacoes_requerimento?: string | null
           outros_transtornos?: string | null
           principal_queixa?: string | null
@@ -1790,6 +1792,7 @@ export type Database = {
           gestor_regular?: string | null
           id?: string
           localizacao_atendimento?: string | null
+          numero_matricula_emaee?: string | null
           observacoes_requerimento?: string | null
           outros_transtornos?: string | null
           principal_queixa?: string | null

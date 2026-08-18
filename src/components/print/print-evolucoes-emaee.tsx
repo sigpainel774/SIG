@@ -146,7 +146,7 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
                   </td>
                   <td className="border border-black p-2 w-1/4">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Nº Matrícula EMAEE</span>
-                    <span className="font-semibold">{aluno.numero_matricula_emaee ?? 'Investigando'}</span>
+                    <span className="font-semibold">{aluno.numero_matricula_emaee ?? 'Não gerada'}</span>
                   </td>
                   <td className="border border-black p-2 w-1/4">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Localização</span>

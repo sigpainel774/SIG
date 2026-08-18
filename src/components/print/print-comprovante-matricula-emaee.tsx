@@ -78,7 +78,7 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
                 </td>
                 <td className="border border-black p-1.5 bg-gray-50/50 w-1/4">
                   <span className="font-bold block text-[7.5px] uppercase text-gray-600">Nº Matrícula EMAEE</span>
-                  <span className="font-bold text-[11px] font-mono text-purple-900">{prontuario?.numero_matricula_emaee ?? 'Investigando'}</span>
+                  <span className="font-bold text-[11px] font-mono text-purple-900">{prontuario?.numero_matricula_emaee ?? 'Não gerada'}</span>
                 </td>
               </tr>
               <tr>

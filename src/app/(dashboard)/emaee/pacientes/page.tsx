@@ -234,7 +234,7 @@ export default function PacientesPage() {
                           {paciente.alunos?.nome}
                         </h3>
                         <span className="text-[10px] text-muted-foreground truncate block">
-                          Matrícula: {paciente.numero_matricula_emaee ?? 'Investigando'}
+                          Matrícula: {paciente.numero_matricula_emaee ?? 'Não gerada'}
                         </span>
                       </div>
                     </div>

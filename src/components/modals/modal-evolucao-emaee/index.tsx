@@ -91,11 +91,11 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
       // 1. Fazer upload da assinatura digital primeiro no Storage
       const blob = base64ToBlob(assinaturaBase64)
       const fileName = `evolucao_${matriculaEmaeeId}_${Date.now()}_prof.png`
-      
+
       const { error: uploadErr } = await supabase.storage
         .from('assinaturas')
         .upload(fileName, blob, { contentType: 'image/png', upsert: true })
-        
+
       if (uploadErr) {
         console.error('Erro de upload da assinatura:', uploadErr)
         throw new Error('Falha ao processar e salvar a assinatura digital. Tente novamente.')
