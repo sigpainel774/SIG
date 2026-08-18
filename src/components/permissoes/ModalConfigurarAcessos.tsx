@@ -63,6 +63,7 @@ const GRUPOS_PERMISSOES: GrupoToggle[] = [
     itens: [
       { chave: 'secretaria.emitir_documentos', label: 'Emitir documentos escolares', descricao: 'Atestados, declarações e documentos acadêmicos' },
       { chave: 'relatorios.servidores', label: 'Relatório de Servidores', descricao: 'Visualizar relatório e estatísticas de servidores da escola' },
+      { chave: 'servidores.gerenciar_permissoes', label: 'Gerenciar Permissões de Servidores', descricao: 'Permite acessar a aba de permissões e gerenciar acessos dos servidores da unidade' },
     ],
   },
   {

@@ -137,6 +137,10 @@ export default function PacienteDetalhesPage() {
             nome_contato_emergencia,
             dados_matricula
           ),
+          escola_origem_fora_rede,
+          escola_origem_nome,
+          escola_origem_municipio,
+          escola_origem_uf,
           escolas:escola_regular_id (
             nome
           )
@@ -383,6 +387,10 @@ export default function PacienteDetalhesPage() {
   }
 
   const solicitarRelatorioEscola = async () => {
+    if (prontuario?.escola_origem_fora_rede || !prontuario?.escola_regular_id) {
+      toast.error('Este paciente é de fora da rede municipal ou não possui escola municipal vinculada. Solicitações devem ser feitas via ofício/documento físico externo.')
+      return
+    }
     if (!novaSolicitacao.motivo_solicitacao.trim()) {
       toast.error('Preencha a justificativa/motivo do relatório')
       return
@@ -429,7 +437,9 @@ export default function PacienteDetalhesPage() {
   }
 
   const aluno = prontuario.alunos
-  const regularEscola = prontuario.escolas?.nome ?? 'Não matriculado em escola regular / Encaminhamento externo'
+  const regularEscola = prontuario.escola_origem_fora_rede && prontuario.escola_origem_nome
+    ? `${prontuario.escola_origem_nome}${prontuario.escola_origem_municipio ? ` (${prontuario.escola_origem_municipio} - ${prontuario.escola_origem_uf ?? 'BA'})` : ''}`
+    : (prontuario.escolas?.nome ?? 'Não matriculado em escola regular / Encaminhamento externo')
 
   const atualizarStatusProntuario = async (novoStatus: string) => {
     const supabase = createClient()

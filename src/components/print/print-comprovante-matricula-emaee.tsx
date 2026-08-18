@@ -28,7 +28,9 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
 
   const aluno = prontuario?.alunos || {}
   const dm = aluno?.dados_matricula || {}
-  const escolaRegularNome = prontuario?.escolas?.nome ?? prontuario?.escola_regular_nome ?? dm?.escolaNome ?? 'Não informada / Encaminhamento externo'
+  const escolaRegularNome = prontuario?.escola_origem_fora_rede && prontuario?.escola_origem_nome
+    ? `${prontuario.escola_origem_nome}${prontuario.escola_origem_municipio ? ` (${prontuario.escola_origem_municipio} - ${prontuario.escola_origem_uf ?? 'BA'})` : ''}`
+    : (prontuario?.escolas?.nome ?? prontuario?.escola_regular_nome ?? dm?.escolaNome ?? 'Não informada / Encaminhamento externo')
   const defaultEmaeeLogo = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/escola_1785901172024.png'
 
   const assinaturaRespUrl = prontuario?.assinatura_responsavel_aluno_url || dm?.assinatura_responsavel_url || aluno?.assinatura_responsavel_url

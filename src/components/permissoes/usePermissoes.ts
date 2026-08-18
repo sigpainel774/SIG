@@ -21,7 +21,7 @@ export function usePermissoes() {
 
   const isGlobalAdmin = isAdminGlobalOrRoot()
   const isDir = isDiretor()
-  const restringirNivel = isDir && !isGlobalAdmin
+  const restringirNivel = !isGlobalAdmin
   const schoolIdToUse = escolaAtivaId
 
   const isRootPanel =

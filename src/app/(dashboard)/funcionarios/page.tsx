@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { createClient } from '@/lib/supabaseClient'
 
 const ModalFuncionario = dynamic(
   () =>
@@ -55,11 +56,56 @@ import { useImprimirFuncionario } from '@/hooks/useImprimirFuncionario'
 import { Funcionario } from '@/types/funcionario'
 
 export default function FuncionariosPage() {
-  const { isAdminGlobalOrRoot, isDiretor } = useAuthStore()
+  const { isAdminGlobalOrRoot, isDiretor, getAcessosAtivos, escolaAtivaId } = useAuthStore()
   const { isEditMode } = useEditModeStore()
   const isAdmin = isAdminGlobalOrRoot()
   const isDir = isDiretor()
-  const canManagePermissions = isAdmin || isDir
+  const [podeSecretarioPermissoes, setPodeSecretarioPermissoes] = useState(false)
+  const canManagePermissions = isAdmin || isDir || podeSecretarioPermissoes
+
+  useEffect(() => {
+    let isMounted = true
+    if (isAdmin || isDir) {
+      setPodeSecretarioPermissoes(true)
+      return
+    }
+
+    const acessos = getAcessosAtivos()
+    const acessosNivel3 = acessos.filter(a => a.nivel === 3 && a.ativo)
+    
+    if (acessosNivel3.length === 0) {
+      setPodeSecretarioPermissoes(false)
+      return
+    }
+
+    async function checarPermissaoSecretaria() {
+      try {
+        const supabase = createClient()
+        const ids = acessosNivel3.map(a => a.id).filter(Boolean)
+        if (ids.length === 0) return
+
+        const { data, error } = await (supabase as any)
+          .from('acessos_usuarios_permissoes')
+          .select('permitido, acesso_usuario_id')
+          .in('acesso_usuario_id', ids)
+          .eq('permissao', 'servidores.gerenciar_permissoes')
+          .eq('permitido', true)
+
+        if (!error && data && data.length > 0 && isMounted) {
+          setPodeSecretarioPermissoes(true)
+        } else if (isMounted) {
+          setPodeSecretarioPermissoes(false)
+        }
+      } catch {
+        if (isMounted) setPodeSecretarioPermissoes(false)
+      }
+    }
+
+    checarPermissaoSecretaria()
+    return () => {
+      isMounted = false
+    }
+  }, [isAdmin, isDir, getAcessosAtivos, escolaAtivaId])
 
   const [viewMode, setViewMode] = useState<'lista' | 'permissoes'>('lista')
 
