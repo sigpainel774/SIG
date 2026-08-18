@@ -15,7 +15,7 @@ import { SecaoDadosClinicos } from './components/SecaoDadosClinicos'
 import { SecaoAssinaturasComprovante } from './components/SecaoAssinaturasComprovante'
 
 function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOpen: boolean, handleOpenChange: (open: boolean) => void }) {
-  const { loading, handleSubmit, alunoSelecionado } = useMatriculaEmaeeContext()
+  const { loading, handleSubmit, alunoSelecionado, nomeCompleto } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -74,7 +74,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
             <Button
               type="submit"
               form="ficha-aee-form"
-              disabled={loading || !alunoSelecionado}
+              disabled={loading || (!alunoSelecionado && !nomeCompleto.trim())}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2.5 rounded-xl text-xs transition-all disabled:opacity-50"
             >
               {loading ? 'Salvando...' : (
