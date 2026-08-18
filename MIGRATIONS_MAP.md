@@ -119,6 +119,8 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 100 | `20260817_create_security_defense_module.sql` | 2026-08-17 | Criação das tabelas de Defesa e Segurança Cibernética (`security_threat_logs`, `security_ip_rules`, `security_settings`) com índices e RLS por Superadmin para WAF/IDS. | `public.security_threat_logs`, `public.security_ip_rules`, `public.security_settings` | `INSERT` permitido WAF + RLS Superadmin |
 | 101 | `20260818000000_secure_emaee_and_private_storage.sql` | 2026-08-18 | Privatização do bucket `alunos-anexos` para proteção de dados médicos (LGPD), criação do bucket `assinaturas`, extensão do check_tipo em `alunos_anexos`, índice único de prevenção de duplicidade em `emaee_matriculas`, função `fn_pode_acessar_emaee()` e blindagem da RPC `solicitar_encaminhamento_emaee`. | `storage.buckets`, `storage.objects`, `alunos_anexos`, `emaee_matriculas`, `emaee_evolucoes`, `emaee_especialidades_vinculadas`, `emaee_solicitacoes_relatorios` | `SECURITY DEFINER` + RLS Restritivo + Storage Privado |
 | 102 | `20260818020000_emaee_numero_matricula.sql` | 2026-08-18 | Ativação do sistema de geração automática de Número de Matrícula EMAEE (`numero_matricula_emaee`), com função sequencial `gerar_numero_matricula_emaee`, trigger atômico e preenchimento retroativo nos prontuários existentes. | `public.emaee_matriculas` | `SECURITY DEFINER` + Mantém RLS |
+| 104 | `20260818200000_emaee_escola_fora_da_rede.sql` | 2026-08-18 | Adiciona suporte para escolas de origem fora da rede municipal (colunas `escola_origem_fora_rede`, `escola_origem_nome`, `escola_origem_municipio`, `escola_origem_uf` na tabela `emaee_matriculas`). | `public.emaee_matriculas` | Mantém RLS Existente |
+
 
 
 

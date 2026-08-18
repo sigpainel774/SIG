@@ -66,6 +66,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   }
 
   // 3. Escola Regular
+  const [escolaOrigemForaRede, setEscolaOrigemForaRede] = useState(false)
+  const [escolaOrigemNome, setEscolaOrigemNome] = useState('')
+  const [escolaOrigemMunicipio, setEscolaOrigemMunicipio] = useState('')
+  const [escolaOrigemUf, setEscolaOrigemUf] = useState('BA')
   const [escolaRegularId, setEscolaRegularId] = useState<string>('')
   const [anoEscolarizacao, setAnoEscolarizacao] = useState('')
   const [turnoRegular, setTurnoRegular] = useState('')
@@ -189,6 +193,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setTurnoAtendimento(mat.turno_atendimento ?? 'Matutino')
 
       // Escola Regular
+      const foraRede = Boolean(mat.escola_origem_fora_rede || (mat.escola_origem_nome && !mat.escola_regular_id))
+      setEscolaOrigemForaRede(foraRede)
+      setEscolaOrigemNome(mat.escola_origem_nome ?? '')
+      setEscolaOrigemMunicipio(mat.escola_origem_municipio ?? '')
+      setEscolaOrigemUf(mat.escola_origem_uf ?? 'BA')
       setEscolaRegularId(mat.escola_regular_id ?? '')
       setAnoEscolarizacao(mat.ano_escolarizacao ?? '')
       setTurnoRegular(mat.turno_regular ?? '')
@@ -529,7 +538,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           data_matricula: dataMatricula,
           turno_atendimento: turnoAtendimento,
           localizacao_atendimento: localizacaoAtendimento,
-          escola_regular_id: validEscolaRegular,
+          escola_origem_fora_rede: escolaOrigemForaRede,
+          escola_origem_nome: escolaOrigemForaRede ? (escolaOrigemNome.trim() || null) : null,
+          escola_origem_municipio: escolaOrigemForaRede ? (escolaOrigemMunicipio.trim() || null) : null,
+          escola_origem_uf: escolaOrigemForaRede ? (escolaOrigemUf.trim().toUpperCase() || 'BA') : null,
+          escola_regular_id: escolaOrigemForaRede ? null : validEscolaRegular,
           ano_escolarizacao: anoEscolarizacao || null,
           turno_regular: turnoRegular || null,
           turma_regular: turmaRegular || null,
@@ -684,7 +697,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         data_matricula: dataMatricula,
         turno_atendimento: turnoAtendimento,
         localizacao_atendimento: localizacaoAtendimento,
-        escola_regular_id: validEscolaRegular,
+        escola_origem_fora_rede: escolaOrigemForaRede,
+        escola_origem_nome: escolaOrigemForaRede ? (escolaOrigemNome.trim() || null) : null,
+        escola_origem_municipio: escolaOrigemForaRede ? (escolaOrigemMunicipio.trim() || null) : null,
+        escola_origem_uf: escolaOrigemForaRede ? (escolaOrigemUf.trim().toUpperCase() || 'BA') : null,
+        escola_regular_id: escolaOrigemForaRede ? null : validEscolaRegular,
         ano_escolarizacao: anoEscolarizacao || null,
         turno_regular: turnoRegular || null,
         turma_regular: turmaRegular || null,
@@ -772,6 +789,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     turnoAtendimento, setTurnoAtendimento,
 
     // Escola Regular
+    escolaOrigemForaRede, setEscolaOrigemForaRede,
+    escolaOrigemNome, setEscolaOrigemNome,
+    escolaOrigemMunicipio, setEscolaOrigemMunicipio,
+    escolaOrigemUf, setEscolaOrigemUf,
     escolaRegularId, setEscolaRegularId,
     escolas,
     anoEscolarizacao, setAnoEscolarizacao,

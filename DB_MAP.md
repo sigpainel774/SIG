@@ -101,6 +101,14 @@ Gestão de permissões de acesso baseadas em atributos (ABAC).
 *   `pode_mural`, `pode_turmas`, `pode_funcionarios`, `pode_matriculas`, `pode_alunos`, `pode_ocorrencias`, `pode_atestados`, `pode_rh_rede`, `pode_eja`: `boolean` (Default: false, Nullable)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
+### 4.1. `public.acessos_usuarios_permissoes`
+Permissões granulares chave-valor atribuídas a usuários (ex: Secretárias de Nível 3).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
+*   `acesso_usuario_id`: `uuid` (FK -> `public.acessos_usuarios.id`, NOT NULL)
+*   `permissao`: `text` (Identificador da permissão, e.g. `'servidores.gerenciar_permissoes'`, `'relatorios.servidores'`, `'alunos.cadastrar'`, NOT NULL)
+*   `permitido`: `boolean` (Indica se a ação é concedida, NOT NULL, Default: false)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
 ### 5. `public.alunos`
 Cadastro geral de alunos.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `uuid_generate_v4()`)
@@ -753,7 +761,11 @@ Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
 *   `numero_matricula_emaee`: `text` (Número de matrícula sequencial do EMAEE gerado no padrão [ANO][COD_ESCOLA][SEQ], e.g. '202616001', UNIQUE, Nullable)
 *   `escola_atendimento_id`: `uuid` (FK -> `public.escolas.id`, Unidade EMAEE, NOT NULL)
-*   `escola_regular_id`: `uuid` (FK -> `public.escolas.id`, Escola de escolarização regular, Nullable)
+*   `escola_regular_id`: `uuid` (FK -> `public.escolas.id`, Escola de escolarização regular municipal, Nullable)
+*   `escola_origem_fora_rede`: `boolean` (Indica se a escola de escolarização regular é de fora da rede municipal, Default: false, Nullable)
+*   `escola_origem_nome`: `text` (Nome da unidade escolar de fora da rede / outro município, Nullable)
+*   `escola_origem_municipio`: `text` (Cidade / Município da escola de fora da rede, Nullable)
+*   `escola_origem_uf`: `text` (Estado / UF da escola de fora da rede, Nullable)
 *   `data_matricula`: `date` (NOT NULL, Default: `CURRENT_DATE`)
 *   `turno_atendimento`: `text` ('Matutino' ou 'Vespertino', NOT NULL, Default: 'Matutino')
 *   `localizacao_atendimento`: `text` ('Urbana' ou 'Rural', Default: 'Urbana', Nullable)

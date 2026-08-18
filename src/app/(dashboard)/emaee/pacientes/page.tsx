@@ -86,6 +86,10 @@ export default function PacientesPage() {
               nome_contato_emergencia,
               dados_matricula
             ),
+            escola_origem_fora_rede,
+            escola_origem_nome,
+            escola_origem_municipio,
+            escola_origem_uf,
             escolas:escola_regular_id (
               nome
             )
@@ -120,8 +124,9 @@ export default function PacientesPage() {
   const prontuariosFiltrados = prontuarios.filter(p => {
     const nomeAluno = (p.alunos?.nome || '').toLowerCase()
     const cpfAluno = (p.alunos?.cpf || '').toLowerCase()
+    const escolaNome = (p.escola_origem_nome || p.escolas?.nome || '').toLowerCase()
     const txtBusca = busca.toLowerCase()
-    const matchesBusca = nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca)
+    const matchesBusca = nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
     const matchesStatus = filtroStatus === 'todos' || p.status === filtroStatus
     const matchesZona = filtroZona === 'todos' || p.localizacao_atendimento === filtroZona
 
@@ -216,7 +221,9 @@ export default function PacientesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {prontuariosFiltrados.map((paciente) => {
-            const regularEscola = paciente.escolas?.nome ?? 'Sem Escola Regular';
+            const regularEscola = paciente.escola_origem_fora_rede && paciente.escola_origem_nome
+              ? `${paciente.escola_origem_nome}${paciente.escola_origem_municipio ? ` (${paciente.escola_origem_municipio} - ${paciente.escola_origem_uf ?? 'BA'})` : ''}`
+              : (paciente.escolas?.nome ?? 'Sem Escola Regular');
             const avatarUrl = getAvatarUrl(paciente.alunos);
             return (
               <div

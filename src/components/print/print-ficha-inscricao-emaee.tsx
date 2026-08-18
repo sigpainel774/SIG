@@ -40,7 +40,9 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
 
   const aluno = prontuario?.alunos || {}
   const dm = aluno?.dados_matricula || {}
-  const escolaRegularNome = prontuario?.escolas?.nome ?? prontuario?.escola_regular_nome ?? dm?.escolaNome ?? 'Não informada / Encaminhamento externo'
+  const escolaRegularNome = prontuario?.escola_origem_fora_rede && prontuario?.escola_origem_nome
+    ? `${prontuario.escola_origem_nome}${prontuario.escola_origem_municipio ? ` (${prontuario.escola_origem_municipio} - ${prontuario.escola_origem_uf ?? 'BA'})` : ''}`
+    : (prontuario?.escolas?.nome ?? prontuario?.escola_regular_nome ?? dm?.escolaNome ?? 'Não informada / Encaminhamento externo')
 
   const hasCoords = useMemo(() => {
     const lat = aluno?.latitude != null ? Number(aluno.latitude) : (dm?.latitude != null ? Number(dm.latitude) : null)

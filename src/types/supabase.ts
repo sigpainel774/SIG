@@ -1708,6 +1708,10 @@ export type Database = {
           def_surdocegueira: boolean | null
           deleted_at: string | null
           escola_atendimento_id: string
+          escola_origem_fora_rede: boolean | null
+          escola_origem_municipio: string | null
+          escola_origem_nome: string | null
+          escola_origem_uf: string | null
           escola_regular_id: string | null
           gestor_regular: string | null
           id: string
@@ -1748,6 +1752,10 @@ export type Database = {
           def_surdocegueira?: boolean | null
           deleted_at?: string | null
           escola_atendimento_id: string
+          escola_origem_fora_rede?: boolean | null
+          escola_origem_municipio?: string | null
+          escola_origem_nome?: string | null
+          escola_origem_uf?: string | null
           escola_regular_id?: string | null
           gestor_regular?: string | null
           id?: string
@@ -1788,6 +1796,10 @@ export type Database = {
           def_surdocegueira?: boolean | null
           deleted_at?: string | null
           escola_atendimento_id?: string
+          escola_origem_fora_rede?: boolean | null
+          escola_origem_municipio?: string | null
+          escola_origem_nome?: string | null
+          escola_origem_uf?: string | null
           escola_regular_id?: string | null
           gestor_regular?: string | null
           id?: string

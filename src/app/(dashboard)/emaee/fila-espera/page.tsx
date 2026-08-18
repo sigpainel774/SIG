@@ -76,8 +76,9 @@ export default function FilaEsperaPage() {
   const filaFiltrada = fila.filter((item) => {
     const nomeAluno = (item.alunos?.nome ?? '').toLowerCase()
     const cpfAluno = (item.alunos?.cpf ?? '').toLowerCase()
+    const escolaNome = (item.escola_origem_nome || item.escolas?.nome || '').toLowerCase()
     const txtBusca = busca.toLowerCase().trim()
-    return nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca)
+    return nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
   })
 
   const handleAdmitir = async () => {
@@ -215,7 +216,11 @@ export default function FilaEsperaPage() {
                     )}
                     <div className="flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                      <span className="truncate">Escola: {paciente.escolas?.nome ?? 'Sem escola vinculada'}</span>
+                      <span className="truncate">
+                        Escola: {paciente.escola_origem_fora_rede && paciente.escola_origem_nome
+                          ? `${paciente.escola_origem_nome}${paciente.escola_origem_municipio ? ` (${paciente.escola_origem_municipio} - ${paciente.escola_origem_uf ?? 'BA'})` : ''}`
+                          : (paciente.escolas?.nome ?? 'Sem escola vinculada')}
+                      </span>
                     </div>
                     {paciente.principal_queixa && (
                       <div className="mt-2.5 p-2 bg-muted/50 rounded-lg border border-border text-[11px] leading-relaxed text-muted-foreground max-h-[64px] overflow-y-auto">
