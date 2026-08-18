@@ -84,10 +84,6 @@ export default function PacientesPage() {
             ),
             escolas:escola_regular_id (
               nome
-            ),
-            funcionarios:encaminhado_por (
-              nome,
-              assinatura_url
             )
           `)
           .is('deleted_at', null)
