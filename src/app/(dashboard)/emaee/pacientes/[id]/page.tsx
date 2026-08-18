@@ -499,7 +499,7 @@ export default function PacienteDetalhesPage() {
                 </select>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Matrícula EMAEE: {prontuario.numero_matricula_emaee ?? 'Investigando'} | regular: {regularEscola}
+                Matrícula EMAEE: {prontuario.numero_matricula_emaee ?? 'Não gerada'} | regular: {regularEscola}
               </p>
             </div>
           </div>

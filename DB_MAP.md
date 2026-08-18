@@ -751,6 +751,7 @@ Confirmação e rastreamento de leitura individual de comunicados do mural por u
 Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
 *   `aluno_id`: `uuid` (FK -> `public.alunos.id`, NOT NULL)
+*   `numero_matricula_emaee`: `text` (Número de matrícula sequencial do EMAEE gerado no padrão [ANO][COD_ESCOLA][SEQ], e.g. '202616001', UNIQUE, Nullable)
 *   `escola_atendimento_id`: `uuid` (FK -> `public.escolas.id`, Unidade EMAEE, NOT NULL)
 *   `escola_regular_id`: `uuid` (FK -> `public.escolas.id`, Escola de escolarização regular, Nullable)
 *   `data_matricula`: `date` (NOT NULL, Default: `CURRENT_DATE`)

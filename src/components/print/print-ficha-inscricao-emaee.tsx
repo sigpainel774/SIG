@@ -192,7 +192,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                 </td>
                 <td className="border border-black p-1.5 bg-gray-50/40 w-1/4">
                   <span className="font-bold block text-[8px] uppercase text-gray-600">Nº Matrícula EMAEE</span>
-                  <span className="font-bold text-[11px] font-mono text-purple-800">{prontuario?.numero_matricula_emaee ?? 'Investigando'}</span>
+                  <span className="font-bold text-[11px] font-mono text-purple-800">{prontuario?.numero_matricula_emaee ?? 'Não gerada'}</span>
                 </td>
               </tr>
               <tr>
