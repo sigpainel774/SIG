@@ -276,17 +276,17 @@ export default function PacientesPage() {
                 </div>
 
                 {/* Botões Rápidos no Rodapé do Card */}
-                <div className="border-t border-border/50 pt-3 flex items-center gap-2">
+                <div className="border-t border-border/50 pt-3 grid grid-cols-2 gap-2">
                   {/* Botão Editar Ficha Completa */}
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setMatriculaEditando(paciente)}
-                    className="shrink-0 text-amber-500 border-amber-500/30 hover:bg-amber-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    className="w-full text-amber-500 border-amber-500/30 hover:bg-amber-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5 justify-center cursor-pointer"
                     title="Editar Ficha e Dados do Aluno / Matrícula EMAEE"
                   >
-                    <Edit className="w-3.5 h-3.5" />
-                    <span>Editar</span>
+                    <Edit className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Editar</span>
                   </Button>
 
                   {/* Botão Ver Ficha de Inscrição */}
@@ -294,11 +294,11 @@ export default function PacientesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setFichaInscricaoProntuario(paciente)}
-                    className="shrink-0 text-[#3ea6ff] border-[#3ea6ff]/30 hover:bg-[#3ea6ff]/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    className="w-full text-[#3ea6ff] border-[#3ea6ff]/30 hover:bg-[#3ea6ff]/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5 justify-center cursor-pointer"
                     title="Ver e Imprimir Ficha de Inscrição Completa com Minimapa"
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Ficha</span>
+                    <FileText className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Ficha</span>
                   </Button>
 
                   {/* Botão Imprimir Comprovante de Matrícula Rápido */}
@@ -306,17 +306,22 @@ export default function PacientesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setComprovanteMatriculaProntuario(paciente)}
-                    className="shrink-0 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    className="w-full text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5 justify-center cursor-pointer"
                     title="Imprimir Comprovante de Matrícula para o Responsável Assinar"
                   >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Comprovante</span>
+                    <Printer className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Comprovante</span>
                   </Button>
 
                   {/* Link Prontuário Completo */}
-                  <Link href={`/emaee/pacientes/${paciente.id}`} className="flex-1 min-w-0">
-                    <Button variant="outline" className="w-full text-xs rounded-xl font-bold py-1.5 border-border hover:bg-hoverCustom truncate">
-                      Prontuário
+                  <Link href={`/emaee/pacientes/${paciente.id}`} className="w-full min-w-0">
+                    <Button
+                      variant="outline"
+                      className="w-full text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5 border-border hover:bg-hoverCustom justify-center cursor-pointer"
+                      title="Acessar Prontuário e Histórico Clínico Completo"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">Prontuário</span>
                     </Button>
                   </Link>
                 </div>
