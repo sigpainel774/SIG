@@ -221,7 +221,29 @@ export default function PacienteDetalhesPage() {
 
       if (error) throw error
       if (data && isMounted.current) {
-        setAnexos(data)
+        // Gerar URLs assinadas temporárias (60 min) para acesso seguro aos anexos médicos
+        const anexosSeguros = await Promise.all(
+          data.map(async (anexo) => {
+            let rawPath = anexo.arquivo_url || ''
+            if (rawPath.includes('/alunos-anexos/')) {
+              rawPath = rawPath.split('/alunos-anexos/')[1].split('?')[0]
+            }
+            try {
+              const { data: signedData } = await supabase.storage
+                .from('alunos-anexos')
+                .createSignedUrl(rawPath, 3600)
+              return {
+                ...anexo,
+                signed_url: signedData?.signedUrl || anexo.arquivo_url
+              }
+            } catch (err) {
+              return { ...anexo, signed_url: anexo.arquivo_url }
+            }
+          })
+        )
+        if (isMounted.current) {
+          setAnexos(anexosSeguros)
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar anexos do aluno:', err)
@@ -301,10 +323,6 @@ export default function PacienteDetalhesPage() {
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('alunos-anexos')
-        .getPublicUrl(filePath)
-
       const performedBy = funcionario?.id && funcionario.id !== '' ? funcionario.id : null
 
       const { error: dbError } = await supabase
@@ -312,7 +330,7 @@ export default function PacienteDetalhesPage() {
         .insert({
           aluno_id: prontuario.aluno_id,
           nome: novoNomeAnexo.trim(),
-          arquivo_url: publicUrl,
+          arquivo_url: filePath,
           tipo: novoTipoAnexo,
           arquivado_por: performedBy
         })
@@ -561,7 +579,9 @@ export default function PacienteDetalhesPage() {
             </div>
             <div>
               <span className="text-muted-foreground block mb-0.5">Contato de Emergência</span>
-              <strong className="text-foreground">{aluno?.nome_contato_emergencia ?? '-'} {aluno?.telefone_emergencia ? `(${aluno.telefone_emergencia})` : ''}</strong>
+              <strong className="text-foreground">
+                {aluno?.nome_contato_emergencia ?? '-'} {aluno?.telefone ? `(${aluno.telefone})` : ((aluno?.dados_matricula as any)?.telefone_emergencia ? `(${(aluno?.dados_matricula as any).telefone_emergencia})` : '')}
+              </strong>
             </div>
           </div>
         </div>
@@ -848,7 +868,7 @@ export default function PacienteDetalhesPage() {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                          <a href={anexo.arquivo_url} target="_blank" rel="noopener noreferrer">
+                          <a href={anexo.signed_url || anexo.arquivo_url} target="_blank" rel="noopener noreferrer">
                             <Button variant="outline" size="sm" className="text-xs rounded-lg gap-1.5 h-8">
                               <Eye className="w-3.5 h-3.5" /> Download
                             </Button>

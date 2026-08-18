@@ -33,6 +33,7 @@ export interface AlunoMapeado {
   modalidade?: string;
   cidade?: string;
   zona?: string;
+  status?: string;
 }
 
 interface MapaAlunosProps {
@@ -48,6 +49,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
   const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'regular' | 'eja'>('todos');
   const [filtroZona, setFiltroZona] = useState<'todos' | 'Urbana' | 'Rural'>('todos');
   const [filtroCidade, setFiltroCidade] = useState<'todos' | 'sapeacu' | 'outras'>('todos');
+  const [filtroStatusEmaee, setFiltroStatusEmaee] = useState<'todos' | 'ATIVO' | 'EM_INVESTIGACAO' | 'FILA_ESPERA' | 'ALTA' | 'INATIVO'>('todos');
   const [fotoModal, setFotoModal] = useState<AlunoMapeado | null>(null);
 
   const cidadesUnicas = useMemo(() => {
@@ -64,11 +66,14 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
     prewarmSapeacuTiles();
   }, []);
 
-  // 1. Filtra alunos baseado no input de pesquisa e modalidade / cidade / zona
+  // 1. Filtra alunos baseado no input de pesquisa, status EMAEE e modalidade / cidade / zona
   const alunosFiltrados = useMemo(() => {
     const termo = buscaDebounced.toLowerCase().trim();
     return alunos.filter((a) => {
       if (isEmaee) {
+        if (filtroStatusEmaee !== 'todos') {
+          if (a.status !== filtroStatusEmaee) return false;
+        }
         if (filtroZona !== 'todos') {
           const aZona = (a.zona || '').toLowerCase();
           const filterZ = filtroZona.toLowerCase();
@@ -96,7 +101,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         (a.cidade && a.cidade.toLowerCase().includes(termo))
       );
     });
-  }, [buscaDebounced, filtroModalidade, filtroZona, filtroCidade, isEmaee, alunos]);
+  }, [buscaDebounced, filtroStatusEmaee, filtroModalidade, filtroZona, filtroCidade, isEmaee, alunos]);
 
   // 1.5 Filtro de coordenadas válidas para o mapa (evitar lat/lng 0 ou nulas - ES-4)
   const alunosValidos = useMemo(() => {
@@ -243,6 +248,85 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
         {/* Seletor de Filtro de Modalidade ou Cidade/Zona */}
         {isEmaee ? (
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Filtro de Status do EMAEE */}
+            <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54] flex-wrap">
+              <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+                <Filter className="w-3 h-3" /> Status:
+              </span>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('todos')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'todos'
+                    ? "bg-slate-700 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('ATIVO')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'ATIVO'
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-emerald-400/80 hover:text-emerald-300"
+                )}
+              >
+                Em Atendimento
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('EM_INVESTIGACAO')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'EM_INVESTIGACAO'
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-amber-400/80 hover:text-amber-300"
+                )}
+              >
+                Em Investigação
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('FILA_ESPERA')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'FILA_ESPERA'
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-sky-400/80 hover:text-sky-300"
+                )}
+              >
+                Fila de Espera
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('ALTA')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'ALTA'
+                    ? "bg-purple-500 text-white shadow-sm"
+                    : "text-purple-400/80 hover:text-purple-300"
+                )}
+              >
+                Alta Médica
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatusEmaee('INATIVO')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
+                  filtroStatusEmaee === 'INATIVO'
+                    ? "bg-rose-500 text-white shadow-sm"
+                    : "text-rose-400/80 hover:text-rose-300"
+                )}
+              >
+                Inativo
+              </button>
+            </div>
+
             {/* Filtro de Cidade */}
             <div className="flex items-center gap-1 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
               <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
@@ -494,6 +578,22 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                             )}>
                               {isEmaee ? (aluno.zona || 'Urbana') : (aluno.modalidade ?? 'Regular')}
                             </span>
+                            {isEmaee && aluno.status && (
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider shrink-0",
+                                aluno.status === 'ATIVO' ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" :
+                                aluno.status === 'EM_INVESTIGACAO' ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" :
+                                aluno.status === 'FILA_ESPERA' ? "bg-sky-500/20 text-sky-300 border border-sky-500/30" :
+                                aluno.status === 'ALTA' ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" :
+                                "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                              )}>
+                                {aluno.status === 'ATIVO' ? 'Em Atendimento' :
+                                 aluno.status === 'EM_INVESTIGACAO' ? 'Em Investigação' :
+                                 aluno.status === 'FILA_ESPERA' ? 'Fila de Espera' :
+                                 aluno.status === 'ALTA' ? 'Alta Médica' :
+                                 aluno.status === 'INATIVO' ? 'Inativo' : aluno.status}
+                              </span>
+                            )}
                           </div>
                           {aluno.turma && (
                             <span className="text-xs text-emerald-400 font-medium block mt-0.5 truncate">

@@ -1004,5 +1004,7 @@ Parâmetros de configuração e sensibilidade do módulo de defesa do SIG.
 | `fotos-avatars` | 🌐 Público | Imagens otimizadas e recortadas para exibição circular em avatares de listas/tabelas. |
 | `fotos-visualizacao` | 🌐 Público | Imagens otimizadas em média resolução para fichas e perfis de alunos/funcionários. |
 | `documentos-oficiais` | 🌐 Público | Comprovantes de matrícula, fichas e PDFs gerados com assinatura digital e QR Code. |
+| `alunos-anexos` | 🔒 Privado (LGPD / RLS) | Laudos médicos, exames, receitas e pareceres clínicos de alunos do EMAEE (URLs assinadas temporárias). |
 | `anexos-alunos` | 🔒 Privado / RLS | Certidões de nascimento, RG, atestados médicos e anexos sigilosos de alunos. |
-| `assinaturas` | 🌐 Público | Assinaturas de diretores e responsáveis para chancela de documentos. |
+| `assinaturas` | 🌐 Público | Assinaturas de diretores, responsáveis e profissionais de saúde para chancela e evoluções clínicas. |
+

@@ -94,7 +94,7 @@ export default function FilaEsperaPage() {
 
       // Log de Auditoria
       try {
-        await fetch('/api/audit/log-e-notificar', {
+        const auditRes = await fetch('/api/audit/log-e-notificar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -114,8 +114,11 @@ export default function FilaEsperaPage() {
             newData: { status: statusAdmissao }
           })
         })
+        if (!auditRes.ok) {
+          console.warn('Aviso: endpoint de auditoria retornou status não-200:', auditRes.status)
+        }
       } catch (auditErr) {
-        console.warn('Falha silenciosa de auditoria:', auditErr)
+        console.warn('Falha na comunicação de auditoria:', auditErr)
       }
 
       toast.success(`${selectedPaciente.alunos?.nome ?? 'Aluno'} admitido com sucesso!`)

@@ -34,6 +34,8 @@ export function ModalAssociarAlunoAEE({
   const [alunosDisponiveis, setAlunosDisponiveis] = useState<any[]>([])
   const [alunoSelecionadoId, setAlunoSelecionadoId] = useState<string>('')
   const [frequencia, setFrequencia] = useState<string>('SEMANAL')
+  const [diaSemana, setDiaSemana] = useState<number>(1)
+  const [horarioInicio, setHorarioInicio] = useState<string>('08:00')
 
   const supabase = useMemo(() => createClient(), [])
 
@@ -98,6 +100,8 @@ export function ModalAssociarAlunoAEE({
     if (!val) {
       setAlunoSelecionadoId('')
       setFrequencia('SEMANAL')
+      setDiaSemana(1)
+      setHorarioInicio('08:00')
     }
   }
 
@@ -110,6 +114,8 @@ export function ModalAssociarAlunoAEE({
 
     setLoading(true)
     try {
+      const formattedTime = horarioInicio.length === 5 ? `${horarioInicio}:00` : horarioInicio
+
       const { error } = await supabase
         .from('emaee_especialidades_vinculadas')
         .insert({
@@ -117,8 +123,8 @@ export function ModalAssociarAlunoAEE({
           profissional_id: profissionalId,
           especialidade: profissionalCargo || 'Outros',
           frequencia: frequencia,
-          dia_semana: 1, // Placeholder padrão
-          horario_inicio: '08:00:00'
+          dia_semana: diaSemana,
+          horario_inicio: formattedTime
         } as any)
 
       if (error) throw error
@@ -210,6 +216,35 @@ export function ModalAssociarAlunoAEE({
                 <SelectItem value="MENSAL">Mensal</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Dia da Semana</Label>
+              <Select value={String(diaSemana)} onValueChange={(val) => setDiaSemana(Number(val) || 1)}>
+                <SelectTrigger className="bg-background border-border text-foreground mt-1">
+                  <SelectValue placeholder="Dia da Semana" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-popover-foreground">
+                  <SelectItem value="1">Segunda-feira</SelectItem>
+                  <SelectItem value="2">Terça-feira</SelectItem>
+                  <SelectItem value="3">Quarta-feira</SelectItem>
+                  <SelectItem value="4">Quinta-feira</SelectItem>
+                  <SelectItem value="5">Sexta-feira</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">Horário de Início</Label>
+              <input
+                type="time"
+                value={horarioInicio}
+                onChange={(e) => setHorarioInicio(e.target.value)}
+                className="w-full bg-background border border-border text-foreground rounded-xl p-2.5 outline-none text-xs mt-1"
+                required
+              />
+            </div>
           </div>
         </div>
       </form>
