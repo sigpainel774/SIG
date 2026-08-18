@@ -3,6 +3,7 @@ export interface ModalMatriculaEmaeeProps {
   onOpenChange?: (open: boolean) => void
   trigger?: React.ReactNode
   escolaEmaeeId: string
+  matriculaEditar?: any
   onSuccess?: () => void
 }
 
