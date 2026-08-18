@@ -77,58 +77,62 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
     
     if (!especialidade) return toast.error('Selecione a especialidade')
     if (!resumo) return toast.error('Preencha o resumo da evolução')
-    if (!assinaturaBase64) return toast.error('A assinatura do profissional é obrigatória')
+    if (!assinaturaBase64 || assinaturaBase64.length < 200) {
+      return toast.error('A assinatura digital do profissional é obrigatória.')
+    }
+    if (!funcionario?.id) {
+      return toast.error('Profissional não autenticado ou perfil não encontrado.')
+    }
 
     setLoading(true)
     const supabase = createBrowserClient()
     
     try {
-      // 1. Inserir a evolução
-      const { data: evolucao, error: evError } = await supabase
-        .from('emaee_evolucoes')
-        .insert({
-          emaee_matricula_id: matriculaEmaeeId,
-          profissional_id: (funcionario?.id ?? null) as any,
-          especialidade,
-          data_atendimento: dataAtendimento,
-          tipo_atendimento: tipoAtendimento,
-          resumo_evolucao: resumo,
-          conduta_orientacoes: conduta || '',
-          assinado_em: new Date().toISOString(),
-          profissional_nome: profissionalNome ?? null,
-          profissional_registro: profissionalRegistro ?? null
-        } as any)
-        .select('id')
-        .single()
-        
-      if (evError) throw evError
-      
-      // 2. Fazer upload da assinatura (Storage)
+      // 1. Fazer upload da assinatura digital primeiro no Storage
       const blob = base64ToBlob(assinaturaBase64)
-      const fileName = `evolucao_${evolucao.id}_profissional.png`
+      const fileName = `evolucao_${matriculaEmaeeId}_${Date.now()}_prof.png`
       
       const { error: uploadErr } = await supabase.storage
         .from('assinaturas')
         .upload(fileName, blob, { contentType: 'image/png', upsert: true })
         
       if (uploadErr) {
-        // Fallback: se bucket não existir, tenta criar o bucket ou avisa e ignora (já que é dev)
-        console.error('Erro de upload, bucket pode não existir:', uploadErr)
-      } else {
-        const { data: pData } = supabase.storage.from('assinaturas').getPublicUrl(fileName)
-        
-        await supabase
-          .from('emaee_evolucoes')
-          .update({ assinatura_profissional_url: pData.publicUrl })
-          .eq('id', evolucao.id)
+        console.error('Erro de upload da assinatura:', uploadErr)
+        throw new Error('Falha ao processar e salvar a assinatura digital. Tente novamente.')
       }
 
-      toast.success('Evolução clínica salva com sucesso!')
+      const { data: pData } = supabase.storage.from('assinaturas').getPublicUrl(fileName)
+      const assinaturaUrl = pData?.publicUrl || null
+
+      if (!assinaturaUrl) {
+        throw new Error('Não foi possível gerar o link da assinatura digital.')
+      }
+
+      // 2. Inserir a evolução clínica assinada atomicamente
+      const { error: evError } = await supabase
+        .from('emaee_evolucoes')
+        .insert({
+          emaee_matricula_id: matriculaEmaeeId,
+          profissional_id: funcionario.id,
+          especialidade,
+          data_atendimento: dataAtendimento,
+          tipo_atendimento: tipoAtendimento,
+          resumo_evolucao: resumo,
+          conduta_orientacoes: conduta || '',
+          assinatura_profissional_url: assinaturaUrl,
+          assinado_em: new Date().toISOString(),
+          profissional_nome: funcionario.nome || profissionalNome || 'Profissional AEE',
+          profissional_registro: profissionalRegistro ?? null
+        } as any)
+        
+      if (evError) throw evError
+
+      toast.success('Evolução clínica assinada e salva com sucesso!')
       handleOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (err: any) {
-      console.error(err)
-      toast.error(err.message || 'Erro ao salvar evolução')
+      console.error('Erro ao salvar evolução clínica:', err)
+      toast.error(err.message || 'Erro ao salvar evolução clínica')
     } finally {
       setLoading(false)
     }
@@ -146,14 +150,15 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
         open={activeOpen}
         onOpenChange={handleOpenChange}
         title="Nova Evolução Clínica"
+        description="Registre o atendimento, as orientações e a assinatura do profissional responsável."
         maxWidth="sm:max-w-[800px]"
         footer={
-          <div className="flex justify-end gap-3 w-full">
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
             <Button
               type="button"
               variant="ghost"
               onClick={() => handleOpenChange(false)}
-              className="text-gray-400 hover:text-white"
+              className="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Cancelar
             </Button>
@@ -161,7 +166,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
               type="submit"
               form="form-evolucao-emaee"
               disabled={loading || !assinaturaBase64}
-              className="bg-[#3ea6ff] hover:bg-[#3ea6ff]/90 text-[#050505] font-bold px-6 py-2.5 rounded-xl transition-all disabled:opacity-50"
+              className="rounded-xl bg-primary px-6 py-2.5 font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? 'Salvando...' : (
                 <span className="flex items-center gap-2">
@@ -173,35 +178,34 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
           </div>
         }
       >
-        <form id="form-evolucao-emaee" onSubmit={handleSubmit} className="space-y-6 pb-6">
+        <form id="form-evolucao-emaee" onSubmit={handleSubmit} className="space-y-6 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-gray-300">Nome do Profissional *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">Nome do Profissional (Sua Conta)</Label>
               <Input
-                required
-                value={profissionalNome}
-                onChange={e => setProfissionalNome(e.target.value)}
-                className="bg-[#121212] border-[#2a2a2a] text-white mt-1"
+                readOnly
+                value={funcionario?.nome || profissionalNome || ''}
+                className="cursor-not-allowed border-border bg-muted/60 text-muted-foreground"
                 placeholder="Nome do profissional"
               />
             </div>
-            <div>
-              <Label className="text-xs text-gray-300">Registro Profissional *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">Registro Profissional *</Label>
               <Input
                 required
                 value={profissionalRegistro}
                 onChange={e => setProfissionalRegistro(e.target.value)}
-                className="bg-[#121212] border-[#2a2a2a] text-white mt-1"
+                className="border-border bg-input text-foreground placeholder:text-muted-foreground"
                 placeholder="Ex: CRP 03/12345"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-gray-300">Especialidade do Atendimento *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">Especialidade do Atendimento *</Label>
               <Select value={especialidade} onValueChange={(val) => setEspecialidade(val || '')} required>
-                <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+                <SelectTrigger className="border-border bg-input text-foreground">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border text-foreground">
@@ -217,21 +221,21 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
               </Select>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-gray-300">Data *</Label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">Data *</Label>
                 <Input 
                   type="date"
                   required
                   value={dataAtendimento}
                   onChange={e => setDataAtendimento(e.target.value)}
-                  className="bg-[#121212] border-[#2a2a2a] text-white mt-1"
+                  className="border-border bg-input text-foreground"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-gray-300">Modalidade</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">Modalidade</Label>
                 <Select value={tipoAtendimento} onValueChange={(val) => setTipoAtendimento(val || '')}>
-                  <SelectTrigger className="bg-[#121212] border-[#2a2a2a] text-white mt-1">
+                  <SelectTrigger className="border-border bg-input text-foreground">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border text-foreground">
@@ -245,28 +249,28 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
             </div>
           </div>
           
-          <div>
-            <Label className="text-xs text-gray-300">Resumo da Evolução (O que foi trabalhado/observado) *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-foreground">Resumo da Evolução (O que foi trabalhado/observado) *</Label>
             <Textarea
               required
               value={resumo}
               onChange={e => setResumo(e.target.value)}
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1 h-32 resize-none"
+              className="h-32 resize-none border-border bg-input text-foreground placeholder:text-muted-foreground"
               placeholder="Descreva detalhadamente o atendimento..."
             />
           </div>
           
-          <div>
-            <Label className="text-xs text-gray-300">Conduta e Orientações (Próximos passos)</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-foreground">Conduta e Orientações (Próximos passos)</Label>
             <Textarea
               value={conduta}
               onChange={e => setConduta(e.target.value)}
-              className="bg-[#121212] border-[#2a2a2a] text-white mt-1 h-20 resize-none"
+              className="h-20 resize-none border-border bg-input text-foreground placeholder:text-muted-foreground"
               placeholder="O que foi orientado ao paciente/responsável..."
             />
           </div>
           
-          <div className="bg-[#121212] p-4 rounded-xl border border-[#2a2a2a]">
+          <div className="rounded-xl border border-border bg-muted/40 p-4">
             <SignaturePad
               label="Assinatura do Profissional Responsável"
               value={assinaturaBase64}

@@ -366,7 +366,6 @@ export default function RelatoriosPage() {
                 )
               `)
               .eq('escola_atendimento_id', selectedEscola.id)
-              .eq('status', 'ATIVO')
               .is('deleted_at', null)
 
             if (error) throw error
@@ -397,7 +396,8 @@ export default function RelatoriosPage() {
                     longitude: Number(a.longitude),
                     modalidade: 'Regular',
                     cidade: dm.cidadeEndAluno || 'Sapeaçu',
-                    zona: dm.localizacaoAluno || m.localizacao_atendimento || 'Zona Urbana'
+                    zona: dm.localizacaoAluno || m.localizacao_atendimento || 'Zona Urbana',
+                    status: m.status || 'ATIVO'
                   }
                 })
             }

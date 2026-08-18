@@ -242,10 +242,14 @@ export default function PacientesPage() {
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 whitespace-nowrap ${
                       paciente.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                       paciente.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                      'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                      paciente.status === 'ALTA' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                      paciente.status === 'INATIVO' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                      'bg-sky-500/10 text-sky-400 border border-sky-500/20'
                     }`}>
                       {paciente.status === 'ATIVO' ? 'Em Atendimento' :
-                       paciente.status === 'EM_INVESTIGACAO' ? 'Em Investigação' : 'Fila de Espera'}
+                       paciente.status === 'EM_INVESTIGACAO' ? 'Em Investigação' :
+                       paciente.status === 'ALTA' ? 'Alta Médica / AEE' :
+                       paciente.status === 'INATIVO' ? 'Inativo / Desligado' : 'Fila de Espera'}
                     </span>
                   </div>
 
