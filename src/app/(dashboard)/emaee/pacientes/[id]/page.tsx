@@ -450,18 +450,18 @@ export default function PacienteDetalhesPage() {
                   value={prontuario.status ?? 'FILA_ESPERA'}
                   onChange={(e) => atualizarStatusProntuario(e.target.value)}
                   className={`px-3 py-1 rounded-full text-xs font-bold outline-none border cursor-pointer transition-all ${
-                    prontuario.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                    prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
-                    prontuario.status === 'ALTA' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
-                    prontuario.status === 'INATIVO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
-                    'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+                    prontuario.status === 'ATIVO' ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30' :
+                    prontuario.status === 'EM_INVESTIGACAO' ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30' :
+                    prontuario.status === 'ALTA' ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/30' :
+                    prontuario.status === 'INATIVO' ? 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30' :
+                    'bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-500/10 dark:text-zinc-300 dark:border-zinc-500/30'
                   }`}
                 >
-                  <option value="FILA_ESPERA" className="bg-[#121621] text-zinc-300">Fila de Espera</option>
-                  <option value="EM_INVESTIGACAO" className="bg-[#121621] text-amber-300">Em Investigação</option>
-                  <option value="ATIVO" className="bg-[#121621] text-emerald-300">Em Atendimento</option>
-                  <option value="ALTA" className="bg-[#121621] text-blue-300">Alta Médica</option>
-                  <option value="INATIVO" className="bg-[#121621] text-rose-300">Inativo</option>
+                  <option value="FILA_ESPERA" className="bg-popover text-zinc-700 dark:text-zinc-300">Fila de Espera</option>
+                  <option value="EM_INVESTIGACAO" className="bg-popover text-amber-900 dark:text-amber-300">Em Investigação</option>
+                  <option value="ATIVO" className="bg-popover text-emerald-800 dark:text-emerald-300">Em Atendimento</option>
+                  <option value="ALTA" className="bg-popover text-blue-800 dark:text-blue-300">Alta Médica</option>
+                  <option value="INATIVO" className="bg-popover text-rose-800 dark:text-rose-300">Inativo</option>
                 </select>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">

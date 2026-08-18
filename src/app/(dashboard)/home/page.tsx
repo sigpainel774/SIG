@@ -76,7 +76,7 @@ const ACESSO_RAPIDO_ITEMS = [
 ] as const
 
 const ACESSO_RAPIDO_SAUDE_ITEMS = [
-  { label: 'Servidores da Saúde', icon: Users, href: '/funcionarios' },
+  { label: 'Servidores', icon: Users, href: '/funcionarios' },
   { label: 'Escalas & Plantões', icon: UserCheck, href: '/painel-chefe' },
   { label: 'Atestados Médicos', icon: Stethoscope, href: '/atestados' },
   { label: 'Documentos', icon: FileText, href: '/documentos' },
@@ -928,7 +928,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 icon={Users}
-                label="Profissionais de Saúde"
+                label="Servidores"
                 value={saudeKpi?.totalProfissionais ?? 0}
                 loading={loadingKpi}
                 color="blue"

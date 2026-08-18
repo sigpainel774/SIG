@@ -199,7 +199,7 @@ export function Sidebar() {
         {
           label: 'EQUIPE & GESTÃO',
           items: [
-            { href: '/funcionarios', label: 'Equipe de Saúde', icon: Stethoscope },
+            { href: '/funcionarios', label: 'Servidores', icon: Users },
             { href: '/relatorios', label: 'Relatórios & Mapas', icon: FileBarChart },
             { href: '/arquivos', label: 'Arquivo Geral de Laudos', icon: Archive },
           ]

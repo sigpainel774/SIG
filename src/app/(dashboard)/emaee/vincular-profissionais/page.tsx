@@ -52,11 +52,17 @@ export default function ProfissionaisAEEPage() {
       if (error) throw error
 
       if (isMounted.current) {
-        setProfissionais(data || [])
+        const vistos = new Set<string>()
+        const unicos = (data || []).filter((f: any) => {
+          if (!f?.id || vistos.has(f.id)) return false
+          vistos.add(f.id)
+          return true
+        })
+        setProfissionais(unicos)
       }
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao buscar profissionais da unidade.')
+      toast.error('Erro ao buscar servidores da unidade.')
     } finally {
       if (isMounted.current) setLoading(false)
     }
@@ -67,7 +73,7 @@ export default function ProfissionaisAEEPage() {
   }, [escolaEmaeeId])
 
   const profissionaisAEE = useMemo(() => {
-    return profissionais.filter(p => !!p.is_profissional_aee)
+    return profissionais.filter(p => Boolean(p.is_profissional_aee))
   }, [profissionais])
 
   const getColorByCargo = (cargo: string | null) => {
@@ -110,8 +116,8 @@ export default function ProfissionaisAEEPage() {
           </Link>
           <IconTile icon={UserPlus} variant="primary" className="h-10 w-10 shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Equipe e Profissionais EMAEE</h1>
-            <p className="text-xs text-muted-foreground">Gestão de Profissionais AEE e Servidores lotados na unidade</p>
+            <h1 className="text-2xl font-bold text-foreground">Profissionais AEE e Servidores</h1>
+            <p className="text-xs text-muted-foreground">Gestão de Profissionais AEE e Servidores lotados na unidade EMAEE</p>
           </div>
         </div>
       </div>
@@ -141,7 +147,7 @@ export default function ProfissionaisAEEPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground hidden md:block">
-                Servidores com a marcação "Profissional AEE" ativa na ficha cadastral
+                Servidores com a opção "Profissional AEE" marcada em sua ficha cadastral (Dados Empregatícios)
               </p>
             </div>
 
@@ -149,7 +155,7 @@ export default function ProfissionaisAEEPage() {
               <div className="p-8 border border-dashed border-border rounded-2xl text-center bg-card shadow-sm">
                 <UserPlus className="w-10 h-10 text-muted-foreground/60 mx-auto mb-2" />
                 <p className="text-sm text-foreground font-medium">Nenhum Profissional AEE cadastrado nesta unidade.</p>
-                <p className="text-xs text-muted-foreground mt-1">Para adicionar um profissional a esta lista, marque a opção "Profissional AEE" na ficha de edição do servidor.</p>
+                <p className="text-xs text-muted-foreground mt-1">Para adicionar um profissional a esta lista, acesse Servidores e marque a opção "Profissional AEE" na ficha (Dados Empregatícios).</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
