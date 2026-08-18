@@ -5,6 +5,7 @@ import dynamicImport from 'next/dynamic'
 import { createClient } from '@/lib/supabaseClient'
 import {
   KeyRound,
+  Mail,
   RefreshCw,
   Pause,
   Trash2,
@@ -36,6 +37,7 @@ import { StandardTable, TableColumn } from '@/components/ui/table'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalContasEspeciais } from '@/components/modals/modal-contas-especiais'
 import { ModalResetSenhaUser } from '@/components/modals/modal-reset-senha-user'
+import { ModalUpdateEmailUser } from '@/components/modals/modal-update-email-user'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
@@ -129,6 +131,11 @@ export default function AdminAcessosPage() {
   const [modalContasEspeciaisOpen, setModalContasEspeciaisOpen] = useState(false)
 
   const [resetModalState, setResetModalState] = useState<{ open: boolean; item: AcessoItem | null }>({
+    open: false,
+    item: null,
+  })
+
+  const [emailModalState, setEmailModalState] = useState<{ open: boolean; item: AcessoItem | null }>({
     open: false,
     item: null,
   })
@@ -513,6 +520,10 @@ export default function AdminAcessosPage() {
     setItemParaExcluir(null)
   }
 
+  const handleOpenAlterarEmail = (item: AcessoItem) => {
+    setEmailModalState({ open: true, item })
+  }
+
   const handleOpenResetSenha = (item: AcessoItem) => {
     if (!item.auth_user_id) {
       toast.error(`O usuário "${item.funcionario}" ainda não possui uma conta de autenticação vinculada.`)
@@ -641,6 +652,15 @@ export default function AdminAcessosPage() {
 
         return (
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+            <button
+              type="button"
+              onClick={() => handleOpenAlterarEmail(item)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm bg-sky-100 dark:bg-sky-950/40 hover:bg-sky-200 dark:hover:bg-sky-900/60 border border-sky-400 dark:border-sky-500/40 text-sky-600 dark:text-sky-400 cursor-pointer"
+              title={`Alterar E-mail de Acesso de ${item.funcionario}`}
+            >
+              <Mail className="w-4 h-4" />
+            </button>
+
             <button
               type="button"
               onClick={() => handleOpenResetSenha(item)}
@@ -1477,6 +1497,23 @@ export default function AdminAcessosPage() {
           funcionarioId={resetModalState.item?.id}
           userName={resetModalState.item?.funcionario}
           userEmail={resetModalState.item?.email}
+        />
+      )}
+
+      {/* Modal Alterar E-mail do Usuário */}
+      {emailModalState.open && (
+        <ModalUpdateEmailUser
+          open={emailModalState.open}
+          onOpenChange={(open) => setEmailModalState((prev) => ({ ...prev, open }))}
+          authUserId={emailModalState.item?.auth_user_id}
+          funcionarioId={emailModalState.item?.id}
+          userName={emailModalState.item?.funcionario}
+          userEmail={emailModalState.item?.email}
+          onSuccess={(novoEmail) => {
+            setAcessos((prev) =>
+              prev.map((a) => (a.id === emailModalState.item?.id ? { ...a, email: novoEmail } : a))
+            )
+          }}
         />
       )}
 
