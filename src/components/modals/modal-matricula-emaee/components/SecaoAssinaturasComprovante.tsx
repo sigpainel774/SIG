@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SignaturePad } from '@/components/ui/SignaturePad'
-import { FileText, ShieldCheck, Smartphone, QrCode, X } from 'lucide-react'
+import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function SecaoAssinaturasComprovante() {
   const {
@@ -17,9 +18,11 @@ export function SecaoAssinaturasComprovante() {
     turnoAtendimento,
     dataMatricula,
     
-    // Assinaturas integradas
+    // Assinaturas integradas e Coleta Local
     assinaturaResponsavelUrl, setAssinaturaResponsavelUrl,
     assinaturaServidorUrl, setAssinaturaServidorUrl,
+    codigoColetaLocal,
+    gerarCodigoColetaLocal,
     celularSigningField,
     celularSigningCode,
     iniciarAssinaturaCelular,
@@ -27,8 +30,19 @@ export function SecaoAssinaturasComprovante() {
     funcionario
   } = useMatriculaEmaeeContext()
 
+  const [copied, setCopied] = React.useState(false)
+
   const nomeUnidadeSelecionada = unidadesEmaee.find(u => u.id === escolaAtendimentoId)?.nome || 'EMAEE — Unidade Sede'
   const nomeAlunoExibicao = nomeCompleto || alunoSelecionado?.nome || 'Aguardando seleção do aluno'
+
+  const handleCopyCode = () => {
+    if (codigoColetaLocal) {
+      navigator.clipboard.writeText(codigoColetaLocal)
+      setCopied(true)
+      toast.success('Código copiado para a área de transferência!')
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   return (
     <section className="overflow-hidden border border-border rounded-2xl bg-card shadow-sm dark:bg-gradient-to-b dark:from-[#1a202c]/95 dark:to-[#121621]/95 dark:shadow-xl">
@@ -37,8 +51,10 @@ export function SecaoAssinaturasComprovante() {
           05
         </span>
         <div>
-          <h2 className="text-base font-bold text-foreground">Responsáveis e comprovante</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Assinaturas integradas do servidor, responsável legal e comprovante destacável para entrega.</p>
+          <h2 className="text-base font-bold text-foreground">Responsáveis, Assinaturas e Comprovante</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Assinaturas integradas do servidor, responsável legal e comprovante destacável para entrega.
+          </p>
         </div>
       </div>
 
@@ -61,10 +77,54 @@ export function SecaoAssinaturasComprovante() {
             )}
           </div>
 
-          {/* Assinatura do Pai/Mãe/Responsável (Integrada ao Celular / Perfil) */}
+          {/* Assinatura do Pai/Mãe/Responsável (Integrada ao Celular / Perfil / Coleta Local) */}
           <div className="space-y-3">
+            {/* Barra superior de opções de assinatura do responsável */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-foreground">Assinatura do Responsável</span>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={gerarCodigoColetaLocal}
+                className="text-[11px] h-7 px-2.5 rounded-lg border-primary/40 text-primary hover:bg-primary/10 font-bold gap-1"
+                title="Gera código para o responsável assinar na página de Coleta Local ou Totem"
+              >
+                <Key className="w-3.5 h-3.5" />
+                {codigoColetaLocal ? 'Renovar Código Coleta Local' : 'Gerar Código Coleta Local'}
+              </Button>
+            </div>
+
+            {/* Painel de Código Coleta Local Ativo */}
+            {codigoColetaLocal && (
+              <div className="p-3 border border-primary/50 rounded-xl bg-primary/10 text-center space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    <Key className="w-4 h-4" /> Código de Coleta Local Gerado
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copiado' : 'Copiar'}
+                  </button>
+                </div>
+
+                <div className="inline-block px-5 py-2 bg-card dark:bg-[#0b0e14] border border-primary/40 rounded-xl text-2xl font-black text-primary tracking-widest font-mono">
+                  {codigoColetaLocal}
+                </div>
+
+                <p className="text-[10.5px] text-muted-foreground leading-tight">
+                  O responsável pode assinar no tablet ou totem em <strong className="text-foreground">/coleta-local</strong> informando o código acima.
+                </p>
+              </div>
+            )}
+
             <SignaturePad
-              label="Responsável pelo Aluno (Pai / Mãe / Tutor)"
+              label="Assinar na Tela (Pai / Mãe / Tutor)"
               value={assinaturaResponsavelUrl}
               onChange={setAssinaturaResponsavelUrl}
               isEditMode={true}
@@ -104,7 +164,7 @@ export function SecaoAssinaturasComprovante() {
                   Aponte a câmera do celular para o QR Code ou acesse a página de assinatura informando o código:
                 </p>
 
-                <div className="inline-block px-4 py-1.5 bg-card dark:bg-[#0b0e14] border border-primary/40 rounded-lg text-lg font-black text-primary tracking-widest">
+                <div className="inline-block px-4 py-1.5 bg-card dark:bg-[#0b0e14] border border-primary/40 rounded-lg text-lg font-black text-primary tracking-widest font-mono">
                   {celularSigningCode}
                 </div>
               </div>
@@ -116,7 +176,7 @@ export function SecaoAssinaturasComprovante() {
         <div className="p-4 md:p-5 border border-dashed border-primary/40 rounded-xl bg-primary/[0.045] space-y-4">
           <div className="flex items-center justify-center gap-2 text-center text-sm font-bold text-primary">
             <FileText className="w-4 h-4" />
-            <h3>Comprovante de matrícula AEE 2026</h3>
+            <h3>Comprovante de matrícula AEE {new Date().getFullYear()}</h3>
           </div>
 
           <div className="grid grid-cols-12 gap-3.5">
@@ -163,7 +223,7 @@ export function SecaoAssinaturasComprovante() {
                 <img
                   src={assinaturaServidorUrl}
                   alt="Assinatura do Responsável pela Matrícula"
-                  className="max-h-12 object-contain"
+                  className="max-h-12 object-contain mix-blend-multiply dark:mix-blend-normal"
                 />
               ) : (
                 <div className="h-10 w-full border-b border-border flex items-end justify-center pb-1 text-xs text-muted-foreground">
@@ -176,7 +236,7 @@ export function SecaoAssinaturasComprovante() {
 
         {/* Nota LGPD */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 border border-border rounded-xl bg-muted/60 dark:bg-[#121621]/60">
-          <ShieldCheck className="w-4 h-4 text-success flex-shrink-0" />
+          <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
           <span>Dados pessoais e clínicos: aplicar permissões RLS e tratamento compatível com a LGPD.</span>
         </div>
       </div>

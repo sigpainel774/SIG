@@ -15,14 +15,16 @@ import {
   AlertTriangle,
   FolderOpen,
   MapPin,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileText,
+  Printer
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalMatriculaEmaee } from '@/components/modals/modal-matricula-emaee'
-
+import { PrintFichaInscricaoEmaee } from '@/components/print/print-ficha-inscricao-emaee'
+import { PrintComprovanteMatriculaEmaee } from '@/components/print/print-comprovante-matricula-emaee'
 import { getAvatarUrl } from '@/lib/photoHelper'
 
 export default function PacientesPage() {
@@ -32,7 +34,11 @@ export default function PacientesPage() {
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroZona, setFiltroZona] = useState('todos')
-  const [refreshKey, setRefreshKey] = useState(0) // Adicionado refreshKey
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Estados de Visualização de Impressão
+  const [fichaInscricaoProntuario, setFichaInscricaoProntuario] = useState<any | null>(null)
+  const [comprovanteMatriculaProntuario, setComprovanteMatriculaProntuario] = useState<any | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -48,16 +54,40 @@ export default function PacientesPage() {
           .select(`
             *,
             alunos (
+              id,
               nome,
               foto_url,
               foto_avatar_path,
               foto_visualizacao_path,
               foto_updated_at,
               cpf,
-              telefone
+              rg,
+              nis,
+              inep,
+              identif_unica_censo,
+              cartao_sus,
+              certidao_nascimento,
+              data_nascimento,
+              sexo,
+              cor_raca,
+              nome_mae,
+              profissao_mae,
+              nome_pai,
+              profissao_pai,
+              telefone,
+              endereco,
+              latitude,
+              longitude,
+              zona_residencial,
+              nome_contato_emergencia,
+              dados_matricula
             ),
             escolas:escola_regular_id (
               nome
+            ),
+            funcionarios:encaminhado_por (
+              nome,
+              assinatura_url
             )
           `)
           .is('deleted_at', null)
@@ -241,10 +271,36 @@ export default function PacientesPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-border/50 pt-3.5 flex items-center justify-between gap-2">
-                  <Link href={`/emaee/pacientes/${paciente.id}`} className="w-full">
-                    <Button variant="outline" className="w-full text-xs rounded-xl font-bold py-1.5 border-border hover:bg-hoverCustom">
-                      Ver Prontuário Completo
+                {/* Botões Rápidos no Rodapé do Card */}
+                <div className="border-t border-border/50 pt-3 flex items-center gap-2">
+                  {/* Botão Ver Ficha de Inscrição */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFichaInscricaoProntuario(paciente)}
+                    className="shrink-0 text-[#3ea6ff] border-[#3ea6ff]/30 hover:bg-[#3ea6ff]/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    title="Ver e Imprimir Ficha de Inscrição Completa com Minimapa"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Ficha</span>
+                  </Button>
+
+                  {/* Botão Imprimir Comprovante de Matrícula Rápido */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setComprovanteMatriculaProntuario(paciente)}
+                    className="shrink-0 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 text-xs rounded-xl font-bold py-1.5 px-2.5 gap-1.5"
+                    title="Imprimir Comprovante de Matrícula para o Responsável Assinar"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Comprovante</span>
+                  </Button>
+
+                  {/* Link Prontuário Completo */}
+                  <Link href={`/emaee/pacientes/${paciente.id}`} className="flex-1 min-w-0">
+                    <Button variant="outline" className="w-full text-xs rounded-xl font-bold py-1.5 border-border hover:bg-hoverCustom truncate">
+                      Prontuário
                     </Button>
                   </Link>
                 </div>
@@ -252,6 +308,22 @@ export default function PacientesPage() {
             )
           })}
         </div>
+      )}
+
+      {/* Modal / Portal de Visualização e Impressão da Ficha de Inscrição EMAEE */}
+      {fichaInscricaoProntuario && (
+        <PrintFichaInscricaoEmaee
+          prontuario={fichaInscricaoProntuario}
+          onClose={() => setFichaInscricaoProntuario(null)}
+        />
+      )}
+
+      {/* Modal / Portal de Visualização e Impressão do Comprovante de Matrícula EMAEE */}
+      {comprovanteMatriculaProntuario && (
+        <PrintComprovanteMatriculaEmaee
+          prontuario={comprovanteMatriculaProntuario}
+          onClose={() => setComprovanteMatriculaProntuario(null)}
+        />
       )}
     </div>
   )

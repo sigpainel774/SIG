@@ -37,6 +37,8 @@ import { useParams } from 'next/navigation'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
 import { PrintEvolucoesEmaee, EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
+import { PrintFichaInscricaoEmaee } from '@/components/print/print-ficha-inscricao-emaee'
+import { PrintComprovanteMatriculaEmaee } from '@/components/print/print-comprovante-matricula-emaee'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 
@@ -66,6 +68,8 @@ export default function PacienteDetalhesPage() {
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
   const [printData, setPrintData] = useState<EvolucaoPrintData[] | null>(null)
+  const [printFichaOpen, setPrintFichaOpen] = useState(false)
+  const [printComprovanteOpen, setPrintComprovanteOpen] = useState(false)
 
   // Estados de Especialidades & Widget
   const [especialidades, setEspecialidades] = useState<any[]>([])
@@ -99,24 +103,40 @@ export default function PacienteDetalhesPage() {
         .select(`
           *,
           alunos (
+            id,
             nome,
             foto_url,
             foto_avatar_path,
             foto_visualizacao_path,
             foto_updated_at,
             cpf,
-            telefone,
             rg,
+            nis,
+            inep,
             identif_unica_censo,
+            cartao_sus,
+            certidao_nascimento,
+            data_nascimento,
             sexo,
             cor_raca,
+            nome_mae,
             profissao_mae,
+            nome_pai,
             profissao_pai,
+            telefone,
+            endereco,
+            latitude,
+            longitude,
+            zona_residencial,
             nome_contato_emergencia,
             dados_matricula
           ),
           escolas:escola_regular_id (
             nome
+          ),
+          funcionarios:encaminhado_por (
+            nome,
+            assinatura_url
           )
         `)
         .eq('id', id)
@@ -471,12 +491,36 @@ export default function PacienteDetalhesPage() {
           </div>
         </div>
 
-        {prontuario.cid_codigo && (
-          <div className="bg-rose-500/10 border border-rose-500/25 px-4 py-2 rounded-xl text-xs font-semibold text-rose-300 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400" />
-            <span>CID Principal: {prontuario.cid_codigo}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {prontuario.cid_codigo && (
+            <div className="bg-rose-500/10 border border-rose-500/25 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-300 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+              <span>CID: {prontuario.cid_codigo}</span>
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPrintFichaOpen(true)}
+            className="text-xs rounded-xl font-bold border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 gap-1.5 shadow-sm"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Ficha de Inscrição</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPrintComprovanteOpen(true)}
+            className="text-xs rounded-xl font-bold border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 gap-1.5 shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Comprovante</span>
+          </Button>
+        </div>
       </div>
 
       {/* Grid: Ficha Resumida na esquerda & Prontuário Clínico nas Abas da Direita */}
@@ -1077,6 +1121,20 @@ export default function PacienteDetalhesPage() {
           evolucoes={printData}
           escolaLogoUrl={selectedEscola?.logo_url}
           onClose={() => setPrintData(null)}
+        />
+      )}
+
+      {printFichaOpen && prontuario && (
+        <PrintFichaInscricaoEmaee
+          prontuario={prontuario}
+          onClose={() => setPrintFichaOpen(false)}
+        />
+      )}
+
+      {printComprovanteOpen && prontuario && (
+        <PrintComprovanteMatriculaEmaee
+          prontuario={prontuario}
+          onClose={() => setPrintComprovanteOpen(false)}
         />
       )}
     </div>
