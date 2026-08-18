@@ -387,19 +387,19 @@ export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
 
         {/* Seletor de Tipo de Vínculo (Exclusivo Nível 1 & Superadmin) */}
         {isLevel1OrSuperadmin && (
-          <div className="flex items-center gap-1.5 bg-[#1e283b] p-1 rounded-lg border border-[#2d3a54]">
-            <span className="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1 hidden sm:flex">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 p-1">
+            <span className="hidden items-center gap-1 px-2 text-[11px] font-medium text-muted-foreground sm:flex">
               <Filter className="w-3 h-3" /> Vínculo:
             </span>
             <select
               value={filtroVinculo}
               onChange={(e) => setFiltroVinculo(e.target.value as 'todos' | 'contratados' | 'nomeados' | 'efetivos')}
-              className="bg-[#141a27] text-xs font-semibold text-slate-200 border border-[#2d3a54] rounded-md px-2.5 py-1 outline-none focus:border-sky-500 cursor-pointer"
+              className="cursor-pointer rounded-md border border-border bg-input px-2.5 py-1 text-xs font-semibold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
-              <option value="todos">Todos</option>
-              <option value="contratados">Contratados</option>
-              <option value="nomeados">Nomeados</option>
-              <option value="efetivos">Efetivos</option>
+              <option value="todos" className="bg-popover text-popover-foreground">Todos</option>
+              <option value="contratados" className="bg-popover text-popover-foreground">Contratados</option>
+              <option value="nomeados" className="bg-popover text-popover-foreground">Nomeados</option>
+              <option value="efetivos" className="bg-popover text-popover-foreground">Efetivos</option>
             </select>
           </div>
         )}

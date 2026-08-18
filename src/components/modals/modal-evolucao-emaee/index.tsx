@@ -28,8 +28,16 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
   const { funcionario } = useAuthStore()
   const [loading, setLoading] = useState(false)
   
+  const getTodayLocal = () => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [especialidade, setEspecialidade] = useState('')
-  const [dataAtendimento, setDataAtendimento] = useState(new Date().toISOString().split('T')[0])
+  const [dataAtendimento, setDataAtendimento] = useState(getTodayLocal())
   const [tipoAtendimento, setTipoAtendimento] = useState('Presencial')
   const [resumo, setResumo] = useState('')
   const [conduta, setConduta] = useState('')
@@ -54,7 +62,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
       setResumo('')
       setConduta('')
       setAssinaturaBase64(null)
-      setDataAtendimento(new Date().toISOString().split('T')[0])
+      setDataAtendimento(getTodayLocal())
       setProfissionalNome(funcionario?.nome ?? '')
       setProfissionalRegistro((funcionario as any)?.registro_profissional ?? '')
     }

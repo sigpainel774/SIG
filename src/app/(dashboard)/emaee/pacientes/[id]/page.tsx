@@ -41,6 +41,7 @@ import { PrintFichaInscricaoEmaee } from '@/components/print/print-ficha-inscric
 import { PrintComprovanteMatriculaEmaee } from '@/components/print/print-comprovante-matricula-emaee'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
+import { formatDate } from '@/lib/utils'
 
 const sessionTimestamp = Date.now()
 
@@ -674,7 +675,7 @@ export default function PacienteDetalhesPage() {
                             <span>{evo.especialidade}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-muted-foreground">{new Date(evo.data_atendimento).toLocaleDateString('pt-BR')}</span>
+                            <span className="text-muted-foreground">{formatDate(evo.data_atendimento)}</span>
                             <button
                               onClick={() => setPrintData([evo])}
                               title="Imprimir esta evolução"
@@ -1049,7 +1050,7 @@ export default function PacienteDetalhesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground font-semibold">
-                            Data: {new Date(evo.data_atendimento).toLocaleDateString('pt-BR')}
+                            Data: {formatDate(evo.data_atendimento)}
                           </span>
                           <button
                             onClick={() => setPrintData([evo])}
