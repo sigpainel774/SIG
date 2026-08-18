@@ -66,7 +66,7 @@ export function SecaoEndereco() {
               <Input 
                 value={cep} 
                 onChange={(e) => setCep(e.target.value)} 
-                placeholder="44540-000" 
+                placeholder="" 
                 className="pr-8" 
               />
               <button
