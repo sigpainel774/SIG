@@ -4,14 +4,18 @@ import React from 'react'
 import { useMatriculaEmaeeContext } from '../context/MatriculaEmaeeContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Search, CheckCircle2, User, Loader2, Camera } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Search, CheckCircle2, User, Loader2, Camera, UserPlus, MapPin } from 'lucide-react'
+import { MiniMapa } from '@/components/map/MapWrapper'
 
 export function SecaoDadosAluno() {
   const {
     searchLoading,
     alunosEncontrados,
     alunoSelecionado,
+    isManualAluno,
     handleSelectAluno,
+    handleAtivarManual,
     handleSearchAluno,
     searchTerm,
     setSearchTerm,
@@ -34,8 +38,12 @@ export function SecaoDadosAluno() {
     profissaoMae, setProfissaoMae,
     nomePai, setNomePai,
     profissaoPai, setProfissaoPai,
+    
     endereco, setEndereco,
+    latitude, setLatitude,
+    longitude, setLongitude,
     zonaResidencial, setZonaResidencial,
+    
     contatoEmergencia, setContatoEmergencia,
     telefoneEmergencia, setTelefoneEmergencia,
     turnoAtendimento, setTurnoAtendimento
@@ -47,23 +55,43 @@ export function SecaoDadosAluno() {
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl bg-primary/10 font-extrabold text-sm text-primary">
           02
         </span>
-        <div>
-          <h2 className="text-base font-bold text-foreground">Dados do aluno</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Localize o aluno cadastrado no SIG para auto-preencher seus dados pessoais e evitar duplicações.</p>
+        <div className="flex-1">
+          <h2 className="text-base font-bold text-foreground">Dados do aluno e Localização</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Localize o aluno cadastrado no SIG para auto-preencher seus dados ou cadastre um novo aluno manualmente com geolocalização.
+          </p>
         </div>
       </div>
 
       <div className="p-4 md:p-5 space-y-5">
-        {/* Campo de Busca viva de Aluno */}
-        <div className="relative">
-          <Label className="block mb-1.5 text-xs font-bold text-foreground">
-            Buscar aluno no SIG <span className="text-rose-500">*</span>
-          </Label>
+        {/* Campo de Busca viva de Aluno e Botão de Cadastro Manual */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="block text-xs font-bold text-foreground">
+              Buscar aluno no SIG <span className="text-rose-500">*</span>
+            </Label>
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAtivarManual}
+              className={`text-xs h-7 rounded-lg gap-1.5 font-bold ${
+                isManualAluno 
+                  ? 'bg-primary/20 border-primary text-primary hover:bg-primary/30' 
+                  : 'border-border text-foreground hover:bg-muted'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              {isManualAluno ? 'Modo Cadastro Manual Ativo' : 'Cadastrar Aluno Novo Manualmente'}
+            </Button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Digite o nome, CPF ou identificação do Censo para buscar..."
+              placeholder="Digite o nome, CPF ou identificação do Censo para buscar no SIG..."
               value={searchTerm}
               onChange={(e) => handleSearchAluno(e.target.value)}
               className="pl-10 pr-10 bg-input border-border text-foreground text-sm rounded-xl"
@@ -72,13 +100,15 @@ export function SecaoDadosAluno() {
               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            O resultado selecionado fornecerá os dados do aluno. Selecione na lista abaixo.
+          <p className="text-[11px] text-muted-foreground">
+            {isManualAluno 
+              ? 'Você está preenchendo os dados de um novo aluno não cadastrado no SIG.' 
+              : 'Selecione um aluno na lista abaixo para auto-preencher, ou clique em "Cadastrar Aluno Novo Manualmente".'}
           </p>
 
           {/* Dropdown de Alunos Encontrados */}
           {alunosEncontrados.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-border">
+            <div className="relative z-20 mt-1 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-border">
               {alunosEncontrados.map((a) => (
                 <button
                   key={a.id}
@@ -108,7 +138,7 @@ export function SecaoDadosAluno() {
             <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-xs font-bold text-foreground block truncate">Aluno Vinculado: {alunoSelecionado.nome}</span>
-              <span className="text-[11px] text-muted-foreground block truncate">ID do Aluno: {alunoSelecionado.id}</span>
+              <span className="text-[11px] text-muted-foreground block truncate">ID do Aluno no SIG: {alunoSelecionado.id}</span>
             </div>
           </div>
         )}
@@ -157,16 +187,17 @@ export function SecaoDadosAluno() {
 
           <div className="grid grid-cols-12 gap-3.5">
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Nome completo <span className="text-rose-500">*</span></Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Nome completo <span className="text-rose-500">*</span></Label>
               <Input
                 value={nomeCompleto}
                 onChange={(e) => setNomeCompleto(e.target.value)}
                 className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                placeholder="Nome completo do aluno"
                 required
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Data de nascimento</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Data de nascimento</Label>
               <Input
                 type="date"
                 value={dataNascimento}
@@ -176,7 +207,7 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">CPF</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">CPF</Label>
               <Input
                 placeholder="000.000.000-00"
                 value={cpf}
@@ -185,7 +216,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Identificação única (Censo)</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Identificação única (Censo)</Label>
               <Input
                 value={identificacaoCenso}
                 onChange={(e) => setIdentificacaoCenso(e.target.value)}
@@ -193,7 +224,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Carteira de identidade (RG)</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Carteira de identidade (RG)</Label>
               <Input
                 value={rg}
                 onChange={(e) => setRg(e.target.value)}
@@ -202,7 +233,7 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-6">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Nº de Identificação Social (NIS)</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Nº de Identificação Social (NIS)</Label>
               <Input
                 value={nis}
                 onChange={(e) => setNis(e.target.value)}
@@ -210,7 +241,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-6">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Certidão de nascimento (modelo novo)</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Certidão de nascimento (modelo novo)</Label>
               <Input
                 value={certidaoNascimento}
                 onChange={(e) => setCertidaoNascimento(e.target.value)}
@@ -221,7 +252,7 @@ export function SecaoDadosAluno() {
             {/* Cor / Raça */}
             <div className="col-span-12 md:col-span-8">
               <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40">
-                <legend className="px-1 text-xs font-bold text-slate-200">Cor / raça</legend>
+                <legend className="px-1 text-xs font-bold text-foreground">Cor / raça</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Branco', 'Pardo', 'Preto', 'Amarelo', 'Indígena'].map((item) => (
                     <label key={item} className={`flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${
@@ -247,7 +278,7 @@ export function SecaoDadosAluno() {
             {/* Sexo */}
             <div className="col-span-12 md:col-span-4">
               <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
-                <legend className="px-1 text-xs font-bold text-slate-200">Sexo</legend>
+                <legend className="px-1 text-xs font-bold text-foreground">Sexo</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Feminino', 'Masculino'].map((s) => (
                     <label key={s} className={`flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
@@ -271,7 +302,7 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-7">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Cidade de nascimento</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Cidade de nascimento</Label>
               <Input
                 value={cidadeNascimento}
                 onChange={(e) => setCidadeNascimento(e.target.value)}
@@ -279,7 +310,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-5">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Estado de nascimento</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Estado de nascimento</Label>
               <select
                 value={estadoNascimento}
                 onChange={(e) => setEstadoNascimento(e.target.value)}
@@ -294,16 +325,16 @@ export function SecaoDadosAluno() {
           </div>
         </div>
 
-        {/* Subseção 2: Família e contato */}
+        {/* Subseção 2: Família, Endereço e Geolocalização (MiniMapa) */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[11px] font-extrabold text-primary uppercase tracking-wider">Família e contato</span>
+            <span className="text-[11px] font-extrabold text-primary uppercase tracking-wider">Família, Endereço e Geolocalização</span>
             <div className="h-px flex-1 bg-border"></div>
           </div>
 
           <div className="grid grid-cols-12 gap-3.5">
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Nome da mãe</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Nome da mãe</Label>
               <Input
                 value={nomeMae}
                 onChange={(e) => setNomeMae(e.target.value)}
@@ -311,7 +342,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Profissão da mãe</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Profissão da mãe</Label>
               <Input
                 value={profissaoMae}
                 onChange={(e) => setProfissaoMae(e.target.value)}
@@ -320,7 +351,7 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Nome do pai</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Nome do pai</Label>
               <Input
                 value={nomePai}
                 onChange={(e) => setNomePai(e.target.value)}
@@ -328,7 +359,7 @@ export function SecaoDadosAluno() {
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Profissão do pai</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Profissão do pai</Label>
               <Input
                 value={profissaoPai}
                 onChange={(e) => setProfissaoPai(e.target.value)}
@@ -337,16 +368,26 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Endereço</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Contato em caso de emergência</Label>
               <Input
-                value={endereco}
-                onChange={(e) => setEndereco(e.target.value)}
+                value={contatoEmergencia}
+                onChange={(e) => setContatoEmergencia(e.target.value)}
                 className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
+              <Label className="block mb-1 text-xs font-bold text-foreground">Telefone</Label>
+              <Input
+                placeholder="(75) 00000-0000"
+                value={telefoneEmergencia}
+                onChange={(e) => setTelefoneEmergencia(e.target.value)}
+                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
               <fieldset className="p-2.5 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
-                <legend className="px-1 text-xs font-bold text-slate-200">Zona residencial</legend>
+                <legend className="px-1 text-xs font-bold text-foreground">Zona residencial</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Rural', 'Urbana'].map((z) => (
                     <label key={z} className={`flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
@@ -370,26 +411,8 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Contato em caso de emergência</Label>
-              <Input
-                value={contatoEmergencia}
-                onChange={(e) => setContatoEmergencia(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-            <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-slate-200">Telefone</Label>
-              <Input
-                placeholder="(75) 00000-0000"
-                value={telefoneEmergencia}
-                onChange={(e) => setTelefoneEmergencia(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-
-            <div className="col-span-12">
-              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40">
-                <legend className="px-1 text-xs font-bold text-slate-200">
+              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+                <legend className="px-1 text-xs font-bold text-foreground">
                   Turno da matrícula para atendimento <span className="text-rose-500">*</span>
                 </legend>
                 <div className="flex flex-wrap gap-3 mt-1">
@@ -413,6 +436,31 @@ export function SecaoDadosAluno() {
                   ))}
                 </div>
               </fieldset>
+            </div>
+
+            {/* SEÇÃO DO MINIMAPA TRADICIONAL DO SIG */}
+            <div className="col-span-12 pt-2">
+              <div className="p-4 rounded-xl border border-border bg-[#0b0e14]/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4" /> Endereço Residencial e Geolocalização (MiniMapa)
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Alimenta automaticamente a Ficha e o Relatório de Geolocalização
+                  </span>
+                </div>
+
+                <MiniMapa
+                  initialLat={latitude != null ? latitude : undefined}
+                  initialLng={longitude != null ? longitude : undefined}
+                  onCoordinatesChange={(lat, lng) => {
+                    setLatitude(lat)
+                    setLongitude(lng)
+                  }}
+                  address={endereco}
+                  onAddressChange={(val) => setEndereco(val)}
+                />
+              </div>
             </div>
           </div>
         </div>

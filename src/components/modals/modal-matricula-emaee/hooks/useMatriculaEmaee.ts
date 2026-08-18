@@ -18,8 +18,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [localizacaoAtendimento, setLocalizacaoAtendimento] = useState('Urbana')
   const [dataMatricula, setDataMatricula] = useState(() => new Date().toISOString().split('T')[0])
   
-  // 2. Dados do Aluno Selecionado e Edição
+  // 2. Dados do Aluno Selecionado e Edição / Cadastro Manual
   const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSearchData | null>(null)
+  const [isManualAluno, setIsManualAluno] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   
   const [nomeCompleto, setNomeCompleto] = useState('')
@@ -32,13 +33,18 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [corRaca, setCorRaca] = useState('')
   const [sexo, setSexo] = useState('')
   const [cidadeNascimento, setCidadeNascimento] = useState('')
-  const [estadoNascimento, setEstadoNascimento] = useState('')
+  const [estadoNascimento, setEstadoNascimento] = useState('BA')
   const [nomeMae, setNomeMae] = useState('')
   const [profissaoMae, setProfissaoMae] = useState('')
   const [nomePai, setNomePai] = useState('')
   const [profissaoPai, setProfissaoPai] = useState('')
+  
+  // Endereço e Geolocalização (MiniMapa)
   const [endereco, setEndereco] = useState('')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
   const [zonaResidencial, setZonaResidencial] = useState('Urbana')
+  
   const [contatoEmergencia, setContatoEmergencia] = useState('')
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
   const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
@@ -85,9 +91,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_outros: false,
   })
 
-  // 5. Assinaturas Integradas (Responsável & Servidor)
+  // 5. Assinaturas Integradas (Responsável & Servidor) e Coleta Local
   const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
   const [assinaturaServidorUrl, setAssinaturaServidorUrl] = useState<string | null>(funcionario?.assinatura_url || null)
+  const [codigoColetaLocal, setCodigoColetaLocal] = useState<string | null>(null)
 
   // Polling de assinatura remota pelo celular (QR Code)
   const {
@@ -100,6 +107,29 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setAssinaturaResponsavelUrl,
     setAssinaturaFuncionarioUrl: setAssinaturaServidorUrl,
   })
+
+  // Gerador de código para Coleta Local
+  const gerarCodigoColetaLocal = async () => {
+    const token = Math.floor(100000 + Math.random() * 900000).toString()
+    setCodigoColetaLocal(token)
+    
+    if (alunoSelecionado?.id) {
+      try {
+        await (supabase
+          .from('alunos')
+          .update({
+            codigo_temp_resp: token,
+            codigo_temp_resp_criado_em: new Date().toISOString()
+          } as any)
+          .eq('id', alunoSelecionado.id) as any)
+        toast.success(`Código de Coleta Local gerado: ${token}`)
+      } catch (err) {
+        console.error('Erro ao salvar código no aluno:', err)
+      }
+    } else {
+      toast.success(`Código de Coleta Local gerado: ${token}. Ele será vinculado ao salvar o aluno.`)
+    }
+  }
 
   // Listas de apoio
   const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
@@ -130,10 +160,6 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         if (error) throw error
 
         if (escolasData && isMounted) {
-          // Filtrar estritamente escolas regulares da educação:
-          // 1. Exclui escolas teste (is_teste ou nome contendo 'teste')
-          // 2. Exclui unidades da Saúde (tipo SAUDE/UNIDADE_SAUDE, secretaria Saúde ou nome com termos médicos/postos)
-          // 3. Exclui unidades EMAEE (tipo EMAEE ou nome contendo 'emaee')
           const escolasRegulares = (escolasData as any[]).filter((e) => {
             if (e.is_teste) return false
             if (/(^|\s)teste(\s|\d|$)/i.test(e.nome || '')) return false
@@ -146,7 +172,6 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           })
           setEscolas(escolasRegulares)
 
-          // Unidades EMAEE para atendimento
           const emaeeList = (escolasData as any[]).filter((e) => 
             !e.is_teste && 
             !/(^|\s)teste(\s|\d|$)/i.test(e.nome || '') && 
@@ -171,6 +196,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   // Preenchimento dos campos ao selecionar aluno
   const handleSelectAluno = (aluno: AlunoSearchData) => {
     setAlunoSelecionado(aluno)
+    setIsManualAluno(false)
     setAlunosEncontrados([])
     setSearchTerm(aluno.nome)
     
@@ -191,6 +217,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setNomePai(aluno.nome_pai ?? '')
     setProfissaoPai(aluno.profissao_pai ?? '')
     setEndereco(aluno.endereco ?? '')
+    setLatitude(aluno.latitude != null ? Number(aluno.latitude) : null)
+    setLongitude(aluno.longitude != null ? Number(aluno.longitude) : null)
     setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
     setContatoEmergencia(aluno.nome_contato_emergencia ?? '')
     setTelefoneEmergencia(aluno.telefone ?? '')
@@ -212,6 +240,37 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     }
   }
 
+  // Ativar modo manual para novo aluno
+  const handleAtivarManual = () => {
+    setAlunoSelecionado(null)
+    setIsManualAluno(true)
+    setAlunosEncontrados([])
+    setNomeCompleto('')
+    setDataNascimento('')
+    setCpf('')
+    setIdentificacaoCenso('')
+    setRg('')
+    setNis('')
+    setCertidaoNascimento('')
+    setCorRaca('')
+    setSexo('')
+    setCidadeNascimento('SAPE AÇU')
+    setEstadoNascimento('BA')
+    setNomeMae('')
+    setProfissaoMae('')
+    setNomePai('')
+    setProfissaoPai('')
+    setEndereco('')
+    setLatitude(-12.7299932)
+    setLongitude(-39.1858195)
+    setZonaResidencial('Urbana')
+    setContatoEmergencia('')
+    setTelefoneEmergencia('')
+    setFotoUrl(null)
+    setFotoFile(null)
+    setAssinaturaResponsavelUrl(null)
+  }
+
   // Busca de alunos com debounce e cancelamento
   const handleSearchAluno = async (term: string) => {
     setSearchTerm(term)
@@ -230,6 +289,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           nome_mae, profissao_mae, nome_pai, profissao_pai, endereco,
           sexo, dados_matricula, uf_nascimento, municipio_nascimento,
           zona_residencial, nome_contato_emergencia, telefone,
+          latitude, longitude,
           foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at
         `) as any)
         .ilike('nome', `%${term}%`)
@@ -259,6 +319,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         zona_residencial: a.zona_residencial || 'Urbana',
         nome_contato_emergencia: a.nome_contato_emergencia || null,
         telefone: a.telefone || null,
+        latitude: a.latitude,
+        longitude: a.longitude,
         foto_url: a.foto_url || null,
         foto_avatar_path: a.foto_avatar_path || null,
         foto_visualizacao_path: a.foto_visualizacao_path || null,
@@ -282,8 +344,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!alunoSelecionado?.id) {
-      toast.error('Localize e selecione um aluno cadastrado no SIG')
+    // Validação: ou selecionou aluno ou digitou nome manual
+    if (!alunoSelecionado?.id && !nomeCompleto.trim()) {
+      toast.error('Informe o nome do aluno ou selecione um aluno cadastrado no SIG')
       return
     }
 
@@ -294,8 +357,99 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
     setLoading(true)
     try {
-      // 1. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
-      if (fotoFile) {
+      let targetAlunoId = alunoSelecionado?.id
+
+      const validEscolaAtendimento = (escolaAtendimentoId.trim() || props.escolaEmaeeId || '').trim() || null
+      const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
+
+      // 1. Se for cadastro de ALUNO NOVO (não existente no SIG)
+      if (!targetAlunoId) {
+        const insertAlunoPayload: any = {
+          nome: nomeCompleto.trim(),
+          cpf: cpf || null,
+          rg: rg || null,
+          nis: nis || null,
+          identif_unica_censo: identificacaoCenso || null,
+          data_nascimento: dataNascimento || null,
+          certidao_nascimento_novo_modelo: certidaoNascimento || null,
+          sexo: sexo || null,
+          uf_nascimento: estadoNascimento || null,
+          municipio_nascimento: cidadeNascimento || null,
+          nome_mae: nomeMae || null,
+          profissao_mae: profissaoMae || null,
+          nome_pai: nomePai || null,
+          profissao_pai: profissaoPai || null,
+          endereco: endereco || null,
+          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? latitude : null,
+          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? longitude : null,
+          zona_residencial: zonaResidencial || 'Urbana',
+          nome_contato_emergencia: contatoEmergencia || null,
+          telefone: telefoneEmergencia || null,
+          escola_id: validEscolaRegular || validEscolaAtendimento,
+          codigo_temp_resp: codigoColetaLocal || null,
+          codigo_temp_resp_criado_em: codigoColetaLocal ? new Date().toISOString() : null,
+          dados_matricula: {
+            cor_raca: corRaca || null,
+            assinatura_responsavel_url: assinaturaResponsavelUrl || null,
+          }
+        }
+
+        const { data: newAluno, error: newAlunoErr } = await (supabase
+          .from('alunos')
+          .insert(insertAlunoPayload) as any)
+          .select('id')
+          .single()
+
+        if (newAlunoErr) throw newAlunoErr
+        targetAlunoId = newAluno.id
+      } else {
+        // 2. Aluno já existente: Atualizar dados e coordenadas
+        const currentDadosMatricula = (alunoSelecionado as any)?.dados_matricula || {}
+        const updatedDadosMatricula = {
+          ...currentDadosMatricula,
+          cor_raca: corRaca || currentDadosMatricula.cor_raca,
+          assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
+        }
+
+        const updatePayload: any = {
+          nome: nomeCompleto || (alunoSelecionado?.nome ?? ''),
+          cpf: cpf || null,
+          rg: rg || null,
+          nis: nis || null,
+          identif_unica_censo: identificacaoCenso || null,
+          data_nascimento: dataNascimento || null,
+          certidao_nascimento_novo_modelo: certidaoNascimento || null,
+          sexo: sexo || null,
+          uf_nascimento: estadoNascimento || null,
+          municipio_nascimento: cidadeNascimento || null,
+          nome_mae: nomeMae || null,
+          profissao_mae: profissaoMae || null,
+          nome_pai: nomePai || null,
+          profissao_pai: profissaoPai || null,
+          endereco: endereco || null,
+          latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? latitude : null,
+          longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? longitude : null,
+          zona_residencial: zonaResidencial || 'Urbana',
+          nome_contato_emergencia: contatoEmergencia || null,
+          telefone: telefoneEmergencia || null,
+          dados_matricula: updatedDadosMatricula
+        }
+
+        if (codigoColetaLocal) {
+          updatePayload.codigo_temp_resp = codigoColetaLocal
+          updatePayload.codigo_temp_resp_criado_em = new Date().toISOString()
+        }
+
+        const { error: alunoUpdateError } = await (supabase
+          .from('alunos')
+          .update(updatePayload) as any)
+          .eq('id', targetAlunoId)
+
+        if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
+      }
+
+      // 3. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
+      if (fotoFile && targetAlunoId) {
         try {
           const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
           const dataUrl = await resUrl.json()
@@ -311,7 +465,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           const processRes = await fetch('/api/fotos/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity: 'alunos', id: alunoSelecionado.id, originalPath: dataUrl.path })
+            body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path })
           })
           if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto 3x4.')
         } catch (fotoErr: any) {
@@ -320,49 +474,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         }
       }
 
-      // 2. Atualizar dados do aluno se houver modificações + preservar/atualizar assinatura do responsável em dados_matricula
-      const currentDadosMatricula = (alunoSelecionado as any)?.dados_matricula || {}
-      const updatedDadosMatricula = {
-        ...currentDadosMatricula,
-        cor_raca: corRaca || currentDadosMatricula.cor_raca,
-        assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
-      }
-
-      const updatePayload: any = {
-        nome: nomeCompleto || alunoSelecionado.nome,
-        cpf: cpf || null,
-        rg: rg || null,
-        nis: nis || null,
-        identif_unica_censo: identificacaoCenso || null,
-        data_nascimento: dataNascimento || null,
-        certidao_nascimento_novo_modelo: certidaoNascimento || null,
-        sexo: sexo || null,
-        uf_nascimento: estadoNascimento || null,
-        municipio_nascimento: cidadeNascimento || null,
-        nome_mae: nomeMae || null,
-        profissao_mae: profissaoMae || null,
-        nome_pai: nomePai || null,
-        profissao_pai: profissaoPai || null,
-        endereco: endereco || null,
-        zona_residencial: zonaResidencial || 'Urbana',
-        nome_contato_emergencia: contatoEmergencia || null,
-        telefone: telefoneEmergencia || null,
-        dados_matricula: updatedDadosMatricula
-      }
-
-      const { error: alunoUpdateError } = await (supabase
-        .from('alunos')
-        .update(updatePayload) as any)
-        .eq('id', alunoSelecionado.id)
-
-      if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
-
-      // 3. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro ES-1)
-      const validEscolaAtendimento = (escolaAtendimentoId.trim() || props.escolaEmaeeId || '').trim() || null
-      const validEscolaRegular = escolaRegularId.trim() ? escolaRegularId.trim() : null
-
+      // 4. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro)
       const insertPayload: any = {
-        aluno_id: alunoSelecionado.id,
+        aluno_id: targetAlunoId,
         escola_atendimento_id: validEscolaAtendimento,
         data_matricula: dataMatricula,
         turno_atendimento: turnoAtendimento,
@@ -382,19 +496,18 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         autorizado_pelo_responsavel: !!assinaturaResponsavelUrl,
         data_autorizacao: assinaturaResponsavelUrl ? new Date().toISOString() : null,
         responsavel_assinatura_nome: nomeMae || nomePai || null,
+        responsavel_assinatura_cpf: cpf || null,
         ...deficiencias,
         status: 'FILA_ESPERA'
       }
 
-      const { data: matricula, error: matriculaError } = await (supabase
+      const { error: matriculaError } = await (supabase
         .from('emaee_matriculas')
         .insert(insertPayload) as any)
-        .select('id')
-        .single()
 
       if (matriculaError) throw matriculaError
 
-      toast.success('Ficha de Matrícula AEE salva com sucesso!')
+      toast.success('Ficha de Inscrição / Matrícula AEE salva com sucesso!')
       if (props.onSuccess) props.onSuccess()
       setIsOpen(false)
     } catch (err: any) {
@@ -410,7 +523,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     searchLoading,
     alunosEncontrados,
     alunoSelecionado,
+    isManualAluno,
     handleSelectAluno,
+    handleAtivarManual,
     handleSearchAluno,
     searchTerm,
     setSearchTerm,
@@ -441,8 +556,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     profissaoMae, setProfissaoMae,
     nomePai, setNomePai,
     profissaoPai, setProfissaoPai,
+    
+    // Endereço e Geolocalização
     endereco, setEndereco,
+    latitude, setLatitude,
+    longitude, setLongitude,
     zonaResidencial, setZonaResidencial,
+    
     contatoEmergencia, setContatoEmergencia,
     telefoneEmergencia, setTelefoneEmergencia,
     turnoAtendimento, setTurnoAtendimento,
@@ -462,9 +582,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     observacoes, setObservacoes,
     deficiencias, toggleDeficiencia,
 
-    // Assinaturas Integradas (Conta do Responsável / Servidor / QR Code Celular)
+    // Assinaturas Integradas & Coleta Local
     assinaturaResponsavelUrl, setAssinaturaResponsavelUrl,
     assinaturaServidorUrl, setAssinaturaServidorUrl,
+    codigoColetaLocal,
+    gerarCodigoColetaLocal,
     celularSigningField,
     celularSigningCode,
     iniciarAssinaturaCelular,
@@ -474,4 +596,3 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     handleSubmit
   }
 }
-
