@@ -144,7 +144,7 @@ export function DocumentosTab() {
             <Input
               value={cep}
               onChange={(e) => setCep(formatCEP(e.target.value))}
-              placeholder="44350-000"
+              placeholder=""
               className="bg-background dark:bg-[#181818] border-input text-foreground pr-8"
             />
             <button
