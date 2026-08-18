@@ -5,7 +5,11 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Building2, ChevronDown, Check, Globe } from 'lucide-react'
 import { useState, useRef, useEffect, useMemo } from 'react'
 
-export function SchoolSelector() {
+interface SchoolSelectorProps {
+  scope?: 'all' | 'emaee'
+}
+
+export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
   const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
   const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos, isContaEja } = useAuthStore()
   const isAdmin = isAdminGlobalOrRoot()
@@ -17,17 +21,27 @@ export function SchoolSelector() {
 
   const escolasOficiais = useMemo(() => escolas.filter((e) => !e.is_teste), [escolas])
 
+  const escolasDoEscopo = useMemo(() => {
+    if (scope !== 'emaee') return escolasOficiais
+
+    return escolasOficiais.filter((escola) => {
+      const tipo = escola.tipo?.trim().toUpperCase()
+      const nome = escola.nome.trim()
+      return tipo === 'EMAEE' || /\bEMAEE\b|\bEMAAE\b|\bEMMAE\b/i.test(nome)
+    })
+  }, [escolasOficiais, scope])
+
   const escolasPermitidas = useMemo(() => {
     if (isEja) {
-      return escolasOficiais.filter((e) => e.eja_ativo === true)
+      return escolasDoEscopo.filter((e) => e.eja_ativo === true)
     }
-    if (isAdmin) return escolasOficiais
+    if (isAdmin) return escolasDoEscopo
     if (vinculosAtivos.length > 0) {
-      const permitidas = escolasOficiais.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
-      return permitidas.length > 0 ? permitidas : escolasOficiais
+      const permitidas = escolasDoEscopo.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
+      return permitidas.length > 0 ? permitidas : escolasDoEscopo
     }
-    return escolasOficiais
-  }, [isAdmin, isEja, escolasOficiais, vinculosAtivos])
+    return escolasDoEscopo
+  }, [isAdmin, isEja, escolasDoEscopo, vinculosAtivos])
 
   // Agrupa as escolas por Secretaria mantenedora
   const escolasAgrupadas = useMemo(() => {

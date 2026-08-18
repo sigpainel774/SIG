@@ -682,7 +682,7 @@ export default function RelatoriosPage() {
 
         {/* Right side: School Selector + Print Button */}
         <div className="flex items-center gap-3 no-print">
-          <SchoolSelector />
+          <SchoolSelector scope={isEMAEE ? 'emaee' : 'all'} />
 
           <button
             onClick={handleGlobalPrint}
