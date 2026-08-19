@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
 
     if (downloadError || !fileData) {
       console.error('[API fotos/process] Erro ao baixar original:', downloadError)
+      if (originalPath) {
+        await supabaseAdmin.storage.from('fotos-originais').remove([originalPath]).catch(() => {})
+      }
       return NextResponse.json({ error: 'Falha ao processar o arquivo enviado' }, { status: 500 })
     }
 
@@ -82,6 +85,9 @@ export async function POST(req: NextRequest) {
       }
     } catch (metaErr: any) {
       console.error('[API fotos/process] Erro de validação de metadados (Imagem maliciosa ou corrompida):', metaErr)
+      if (originalPath) {
+        await supabaseAdmin.storage.from('fotos-originais').remove([originalPath]).catch(() => {})
+      }
       return NextResponse.json({ error: 'Imagem inválida, corrompida ou excede limites de segurança. ' + (metaErr.message || '') }, { status: 400 })
     }
 
