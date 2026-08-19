@@ -201,8 +201,10 @@ export function ModalEscola({
     setLoading(true)
     const supabase = createClient()
 
-    const latNum = latitude.trim() ? parseFloat(latitude.replace(',', '.')) : null
-    const lngNum = longitude.trim() ? parseFloat(longitude.replace(',', '.')) : null
+    const parsedLat = latitude.trim() ? parseFloat(latitude.replace(',', '.')) : null
+    const parsedLng = longitude.trim() ? parseFloat(longitude.replace(',', '.')) : null
+    const finalLat = (parsedLat !== null && !isNaN(parsedLat)) ? parsedLat : null
+    const finalLng = (parsedLng !== null && !isNaN(parsedLng)) ? parsedLng : null
     const secIdToSave = secretariaId || (secretarias.find(s => /educa/i.test(s.nome))?.id ?? null)
 
     try {
@@ -216,8 +218,8 @@ export function ModalEscola({
             ativo,
             logo_url: logoUrl || null,
             localizacao,
-            latitude: isNaN(latNum as any) ? null : latNum,
-            longitude: isNaN(lngNum as any) ? null : lngNum,
+            latitude: finalLat,
+            longitude: finalLng,
             diretor_id: diretorId || null,
             secretaria_id: secIdToSave
           } as any)
@@ -235,8 +237,8 @@ export function ModalEscola({
             ativo,
             logo_url: logoUrl || null,
             localizacao,
-            latitude: isNaN(latNum as any) ? null : latNum,
-            longitude: isNaN(lngNum as any) ? null : lngNum,
+            latitude: finalLat,
+            longitude: finalLng,
             diretor_id: diretorId || null,
             secretaria_id: secIdToSave
           } as any)

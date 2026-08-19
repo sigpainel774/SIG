@@ -20,6 +20,8 @@ export interface Escola {
   tipo?: string | null
   inep?: string | null
   localizacao?: string | null
+  latitude?: number | null
+  longitude?: number | null
   is_teste?: boolean
   portal_pais_ativo?: boolean
   portal_comunicacoes_ativo?: boolean
@@ -107,7 +109,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, is_teste, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, latitude, longitude, assinatura_diretor_url, codigo, secretaria_id, is_teste, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .eq('id', id)
               .is('deleted_at', null)
               .maybeSingle()
@@ -144,7 +146,7 @@ export const useSchoolStore = create<SchoolState>()(
             const supabase = createClient()
             const { data, error } = await supabase
               .from('escolas')
-              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, assinatura_diretor_url, codigo, secretaria_id, is_teste, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
+              .select('id, nome, logo_url, plano, modulos_ativos, endereco, telefone, inep, tipo, ativo, diretor_id, localizacao, latitude, longitude, assinatura_diretor_url, codigo, secretaria_id, is_teste, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, deleted_at, secretarias:secretaria_id(id, nome)')
               .is('deleted_at', null)
               .eq('ativo', true)
               .or('is_teste.is.null,is_teste.eq.false')
