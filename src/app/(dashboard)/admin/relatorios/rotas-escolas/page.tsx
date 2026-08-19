@@ -58,7 +58,16 @@ export default function RotasEscolasPage() {
     carregarEscolas();
   }, []);
 
-  const escolasComCoords = escolas.filter(
+  const isSemed = (e: EscolaMapeada) =>
+    e.inep === '01' ||
+    e.inep === '1' ||
+    e.tipo === 'SECRETARIA' ||
+    (e.nome || '').toUpperCase().includes('SEMED');
+
+  const unidadesEscolares = escolas.filter((e) => !isSemed(e));
+  const semedUnidade = escolas.find(isSemed);
+
+  const escolasComCoords = unidadesEscolares.filter(
     (e) =>
       e.latitude !== null &&
       e.longitude !== null &&
@@ -125,7 +134,14 @@ export default function RotasEscolasPage() {
             <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
               Escolas Cadastradas
             </span>
-            <span className="text-lg font-bold text-foreground">{escolas.length}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-foreground">{unidadesEscolares.length}</span>
+              {semedUnidade && (
+                <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                  + 1 Sede (INEP 01)
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
             <School className="w-4 h-4" />

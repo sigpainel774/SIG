@@ -13,7 +13,10 @@ import { GlobalErrorListener } from '@/components/providers/GlobalErrorListener'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -73,8 +76,8 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <NextTopLoader
@@ -91,7 +94,7 @@ export default function RootLayout({
           {children}
           <PwaUpdateModal />
           <GlobalErrorListener />
-          <Toaster theme="dark" />
+          <Toaster />
           <SpeedInsights />
           <Analytics />
         </ThemeProvider>

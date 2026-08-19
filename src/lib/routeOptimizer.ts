@@ -9,6 +9,7 @@ export interface PontoLocalizacao {
   latitude: number;
   longitude: number;
   tipo?: string;
+  inep?: string | null;
   endereco?: string | null;
   localizacao?: string | null;
   ordem?: number;
@@ -31,14 +32,15 @@ export interface ResultadoRoteiro {
   origemDefinida: PontoLocalizacao;
 }
 
-// Coordenadas padrao da Secretaria Municipal de Educacao / Centro de Sapeacu
+// Coordenadas padrão da Secretaria Municipal de Educação (SEMED - INEP 01) / Sapeaçu
 export const SEDE_SEMED_SAPEACU: PontoLocalizacao = {
-  id: 'sede-semed',
+  id: '5c991bf3-b73f-430a-8fc4-4a08312b591d',
   nome: 'Secretaria Municipal de Educação (SEMED)',
-  latitude: -12.7299932,
-  longitude: -39.1858195,
+  inep: '01',
+  latitude: -12.7261995,
+  longitude: -39.1859996,
   tipo: 'SECRETARIA',
-  endereco: 'Centro, Sapeaçu - BA',
+  endereco: 'Sapeaçu - BA',
   localizacao: 'URBANA',
 };
 
