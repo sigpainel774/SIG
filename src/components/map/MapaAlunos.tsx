@@ -323,7 +323,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                     : "text-rose-400/80 hover:text-rose-300"
                 )}
               >
-                Inativo
+                Arquivado
               </button>
             </div>
 
@@ -591,7 +591,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
                                  aluno.status === 'EM_INVESTIGACAO' ? 'Em Investigação' :
                                  aluno.status === 'FILA_ESPERA' ? 'Fila de Espera' :
                                  aluno.status === 'ALTA' ? 'Alta Médica' :
-                                 aluno.status === 'INATIVO' ? 'Inativo' : aluno.status}
+                                 aluno.status === 'INATIVO' ? 'Arquivado' : aluno.status}
                               </span>
                             )}
                           </div>

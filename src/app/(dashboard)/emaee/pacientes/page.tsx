@@ -194,7 +194,7 @@ export default function PacientesPage() {
             <option value="EM_INVESTIGACAO">Em Investigação</option>
             <option value="ATIVO">Em Atendimento</option>
             <option value="ALTA">Alta Médica</option>
-            <option value="INATIVO">Inativo</option>
+            <option value="INATIVO">Arquivado</option>
           </select>
 
           <select
@@ -260,7 +260,7 @@ export default function PacientesPage() {
                       {paciente.status === 'ATIVO' ? 'Em Atendimento' :
                        paciente.status === 'EM_INVESTIGACAO' ? 'Em Investigação' :
                        paciente.status === 'ALTA' ? 'Alta Médica / AEE' :
-                       paciente.status === 'INATIVO' ? 'Inativo / Desligado' : 'Fila de Espera'}
+                       paciente.status === 'INATIVO' ? 'Arquivado' : 'Fila de Espera'}
                     </span>
                   </div>
 
