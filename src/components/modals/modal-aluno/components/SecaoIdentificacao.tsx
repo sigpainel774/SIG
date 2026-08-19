@@ -5,7 +5,7 @@ import { useAlunoForm } from '../context/AlunoFormContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Camera } from 'lucide-react'
+import { Camera, Loader2, Trash2 } from 'lucide-react'
 
 export function SecaoIdentificacao() {
   const {
@@ -20,6 +20,8 @@ export function SecaoIdentificacao() {
     corRaca, setCorRaca,
     sexo, setSexo,
     fotoUrl, handleFotoUpload,
+    handleRemoverFoto,
+    isCompressingPhoto,
     rg, setRg,
     nis, setNis,
     sus, setSus,
@@ -38,24 +40,49 @@ export function SecaoIdentificacao() {
     <div className="space-y-4">
       {/* Foto 3x4 Upload */}
       <div className="student-edit-modal__photo-card photo-upload-card flex items-center gap-4 p-4 rounded-xl bg-white border border-[#D1D5DB]">
-        <div 
-          onClick={() => document.getElementById('modalFotoAlunoInput')?.click()}
-          className="photo-upload-circle w-20 h-20 rounded-full bg-[#F8FAFC] border-2 border-[#0067C0] text-[#0067C0] flex items-center justify-center overflow-hidden cursor-pointer hover:bg-[#E8F1FB] transition-colors"
-        >
-          {fotoUrl ? (
-            <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
-          ) : (
-            <Camera className="w-8 h-8 text-[#0067C0]" />
+        <div className="relative">
+          <div 
+            onClick={() => {
+              if (!isCompressingPhoto) {
+                document.getElementById('modalFotoAlunoInput')?.click()
+              }
+            }}
+            className={`photo-upload-circle w-20 h-20 rounded-full bg-[#F8FAFC] border-2 border-[#0067C0] text-[#0067C0] flex items-center justify-center overflow-hidden transition-colors ${
+              isCompressingPhoto ? 'cursor-wait opacity-80' : 'cursor-pointer hover:bg-[#E8F1FB]'
+            }`}
+            title="Clique para selecionar a foto"
+          >
+            {isCompressingPhoto ? (
+              <div className="flex flex-col items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-[#0067C0]" />
+                <span className="text-[9px] font-bold text-[#0067C0] mt-1">Otimizando</span>
+              </div>
+            ) : fotoUrl ? (
+              <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="w-8 h-8 text-[#0067C0]" />
+            )}
+          </div>
+          {!isCompressingPhoto && fotoUrl && (
+            <button
+              type="button"
+              onClick={handleRemoverFoto}
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center cursor-pointer shadow-sm transition-colors"
+              title="Remover foto do aluno"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
           )}
         </div>
         <div>
           <Label className="text-sm font-semibold text-[#1F2937]">Foto 3x4 do Aluno</Label>
-          <p className="text-xs text-[#6B7280] mt-0.5">Clique no círculo para selecionar a imagem.</p>
+          <p className="text-xs text-[#6B7280] mt-0.5">PNG, JPG, WebP · até 20MB (otimizada automaticamente)</p>
           <input 
             id="modalFotoAlunoInput" 
             type="file" 
-            accept="image/*" 
+            accept="image/jpeg,image/png,image/webp" 
             className="hidden" 
+            disabled={isCompressingPhoto}
             onChange={handleFotoUpload} 
           />
         </div>
