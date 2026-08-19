@@ -42,10 +42,13 @@ next-env.d.ts
 
 .vercel
  
-# Documentacao local
+# Documentacao local e planos de negocios / futuros
 PERMISSOES_ARQUITETURA.md
+PLANOS_FUTUROS.md
+roadmap.dp
 
-# Relatorios locais em PDF
+# Relatorios locais e documentos de negocio em PDF
+/output/
 /output/pdf/
 
 # Backups locais de banco de dados

@@ -567,33 +567,67 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           }
         }
 
-        // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado
+        // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado (com fallback resiliente)
         if (fotoFile && targetAlunoId) {
+          let photoSaved = false
           try {
             const requestId = crypto.randomUUID()
             const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${targetAlunoId}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
-            const dataUrl = await resUrl.json()
-            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto 3x4.')
-
-            const uploadRes = await fetch(dataUrl.signedUrl, {
-              method: 'PUT',
-              body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' }
-            })
-            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo da foto 3x4.')
-
-            const processRes = await fetch('/api/fotos/process', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path, requestId })
-            })
-            if (!processRes.ok) {
-              const errData = await processRes.json().catch(() => ({}))
-              throw new Error(errData.error || 'Erro ao otimizar e salvar as variações da foto 3x4.')
+            if (resUrl.ok) {
+              const dataUrl = await resUrl.json()
+              if (dataUrl?.signedUrl) {
+                const uploadRes = await fetch(dataUrl.signedUrl, {
+                  method: 'PUT',
+                  body: fotoFile,
+                  headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' }
+                })
+                if (uploadRes.ok) {
+                  const processRes = await fetch('/api/fotos/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path, requestId })
+                  })
+                  if (processRes.ok) {
+                    photoSaved = true
+                  }
+                }
+              }
             }
           } catch (fotoErr: any) {
-            console.error('Erro no upload da foto 3x4:', fotoErr)
-            toast.error('Aviso: Houve um problema ao processar a nova foto 3x4 do aluno.')
+            console.warn('[useMatriculaEmaee] Otimização server-side falhou, acionando fallback direto:', fotoErr)
+          }
+
+          // Fallback direto
+          if (!photoSaved) {
+            try {
+              const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+              const fileName = `${targetAlunoId}_${Date.now()}.${fileExt}`
+
+              const { error: uploadError } = await supabase.storage
+                .from('fotos_alunos')
+                .upload(fileName, fotoFile, { upsert: true })
+
+              if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('fotos_alunos')
+                  .getPublicUrl(fileName)
+
+                await supabase
+                  .from('alunos')
+                  .update({
+                    foto_url: publicUrl,
+                    foto_avatar_path: null,
+                    foto_visualizacao_path: null,
+                    foto_original_path: null,
+                    foto_updated_at: new Date().toISOString()
+                  })
+                  .eq('id', targetAlunoId)
+                photoSaved = true
+              }
+            } catch (fallbackErr) {
+              console.error('[useMatriculaEmaee] Erro no fallback de foto 3x4:', fallbackErr)
+              toast.error('Aviso: Houve um problema ao salvar a foto 3x4 do aluno.')
+            }
           }
         }
 

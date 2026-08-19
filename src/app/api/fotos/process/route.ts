@@ -229,6 +229,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[API fotos/process] Erro crítico:', error)
-    return NextResponse.json({ error: 'Erro interno durante processamento' }, { status: 500 })
+    return NextResponse.json({ error: error?.message || 'Erro interno durante processamento da foto' }, { status: 500 })
   }
 }
