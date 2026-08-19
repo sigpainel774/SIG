@@ -447,6 +447,9 @@ export function Sidebar() {
               return permitidos.includes(item.href)
             }
             if (item.href === '/painel-chefe') {
+              if (isEMAEE) {
+                return false
+              }
               if (isNivel1OrSuperior && !temEscolaSelecionada) {
                 return false
               }

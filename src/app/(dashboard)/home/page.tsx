@@ -24,6 +24,9 @@ import {
   FileText,
   Pin,
   Activity,
+  Heart,
+  UserPlus,
+  FileSpreadsheet,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { StandardDialog } from '@/components/ui/standard-dialog'
@@ -66,6 +69,13 @@ interface SaudeKPIData {
   documentosMes: number
 }
 
+interface EmaeeKPIData {
+  totalPacientes: number
+  filaEspera: number
+  profissionaisAee: number
+  relatoriosPendentes: number
+}
+
 const ACESSO_RAPIDO_ITEMS = [
   { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
   { label: 'Turmas', icon: BookOpen, href: '/turmas' },
@@ -81,6 +91,16 @@ const ACESSO_RAPIDO_SAUDE_ITEMS = [
   { label: 'Atestados Médicos', icon: Stethoscope, href: '/atestados' },
   { label: 'Documentos', icon: FileText, href: '/documentos' },
   { label: 'Relatórios', icon: FileBarChart, href: '/relatorios' },
+  { label: 'Mural de Avisos', icon: Pin, href: '/mural' },
+] as const
+
+const ACESSO_RAPIDO_EMAEE_ITEMS = [
+  { label: 'Pastas de Alunos', icon: Heart, href: '/emaee/pacientes' },
+  { label: 'Fila de Espera', icon: Clock, href: '/emaee/fila-espera' },
+  { label: 'Profissionais AEE', icon: UserPlus, href: '/emaee/vincular-profissionais' },
+  { label: 'Calendário de Aulas', icon: BookOpen, href: '/emaee/calendario-atendimentos' },
+  { label: 'Relatórios Escolas', icon: FileSpreadsheet, href: '/emaee/solicitacoes-escola' },
+  { label: 'Servidores', icon: Users, href: '/funcionarios' },
   { label: 'Mural de Avisos', icon: Pin, href: '/mural' },
 ] as const
 
@@ -214,19 +234,26 @@ export default function HomePage() {
 
   const [kpi, setKpi] = useState<KPIData | null>(null)
   const [saudeKpi, setSaudeKpi] = useState<SaudeKPIData | null>(null)
+  const [emaeeKpi, setEmaeeKpi] = useState<EmaeeKPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
 
-  // ── Detecção de Unidade de Saúde x Educação ──
+  // ── Detecção Estrita de EMAEE x Saúde x Educação Regular ──
+  const isEMAEE = useMemo(() => {
+    if (!selectedEscola) return false
+    return selectedEscola.tipo === 'EMAEE' || /emaee/i.test(selectedEscola.nome || '')
+  }, [selectedEscola])
+
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
   const isSaudeUnit = useMemo(() => {
+    if (isEMAEE) return false
     if (selectedSecretaria && /sa[uú]de/i.test(selectedSecretaria.nome)) return true
     if (selectedEscola) {
       if (selectedEscola.tipo === 'SAUDE' || selectedEscola.tipo === 'UNIDADE_SAUDE') return true
       if (/sa[uú]de/i.test(selectedEscola.secretariaNome || '')) return true
-      if (/sa[uú]de|posto|ubs|usf|hospital|upa|atendimento/i.test(selectedEscola.nome)) return true
+      if (/sa[uú]de|posto|ubs|usf|hospital|upa/i.test(selectedEscola.nome)) return true
     }
     return Boolean(secNome && /sa[uú]de/i.test(secNome))
-  }, [selectedSecretaria, selectedEscola, secNome])
+  }, [isEMAEE, selectedSecretaria, selectedEscola, secNome])
 
   // Estados para Professor
   interface TeacherKPIData {
@@ -256,10 +283,10 @@ export default function HomePage() {
   const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
   const activeEscolaId = selectedEscola?.id || escolaAtivaId
-  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(activeEscolaId)
+  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(!isEMAEE && !isSaudeUnit ? activeEscolaId : null)
 
   useEffect(() => {
-    if (dashboardSwrMetrics) {
+    if (dashboardSwrMetrics && !isEMAEE && !isSaudeUnit) {
       setKpi(prev => ({
         totalAlunos: dashboardSwrMetrics.totalAlunos ?? prev?.totalAlunos ?? 0,
         totalTurmas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmas ?? 0,
@@ -270,7 +297,7 @@ export default function HomePage() {
         atividadesPendentesSecretaria: dashboardSwrMetrics.diariosPendentes ?? prev?.atividadesPendentesSecretaria ?? 0,
       }))
     }
-  }, [dashboardSwrMetrics])
+  }, [dashboardSwrMetrics, isEMAEE, isSaudeUnit])
 
   const fetchKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
     if (isMounted.current && !dashboardSwrMetrics) setLoadingKpi(true)
@@ -302,17 +329,40 @@ export default function HomePage() {
     }
   }, [])
 
+  const fetchEmaeeKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
+    if (isMounted.current) setLoadingKpi(true)
+    try {
+      const res = await fetch(`/api/home/emaee-kpis?escolaId=${escolaId}`, { signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: EmaeeKPIData = await res.json()
+      if (isMounted.current) setEmaeeKpi(data)
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
+      console.error('[home] Erro ao carregar KPIs do EMAEE:', err)
+    } finally {
+      if (isMounted.current) setLoadingKpi(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (selectedEscola?.id) {
       const controller = new AbortController()
-      if (isSaudeUnit) {
+      if (isEMAEE) {
+        setKpi(null)
+        setSaudeKpi(null)
+        fetchEmaeeKpis(selectedEscola.id, controller.signal)
+      } else if (isSaudeUnit) {
+        setKpi(null)
+        setEmaeeKpi(null)
         fetchSaudeKpis(selectedEscola.id, controller.signal)
       } else {
+        setSaudeKpi(null)
+        setEmaeeKpi(null)
         fetchKpis(selectedEscola.id, controller.signal)
       }
       return () => controller.abort()
     }
-  }, [selectedEscola?.id, isSaudeUnit, fetchKpis, fetchSaudeKpis])
+  }, [selectedEscola?.id, isEMAEE, isSaudeUnit, fetchKpis, fetchSaudeKpis, fetchEmaeeKpis])
 
   // Buscar estatísticas rápidas por escola para professores multi-lotados
   const fetchSchoolStats = useCallback(async (signal?: AbortSignal) => {
@@ -883,7 +933,7 @@ export default function HomePage() {
           </Card>
         </div>
       ) : (
-        /* ── VISÃO 2: DASHBOARD DE KPIs DA UNIDADE DE SAÚDE OU ESCOLA ── */
+        /* ── VISÃO 2: DASHBOARD DE KPIs DA UNIDADE DE SAÚDE, ESCOLA OU EMAEE ── */
         <div className="space-y-6 animate-in fade-in duration-300">
 
           {/* Header da escola / unidade */}
@@ -896,6 +946,8 @@ export default function HomePage() {
                     alt={selectedEscola.nome}
                     className="w-full h-full object-contain p-1"
                   />
+                ) : isEMAEE ? (
+                  <Heart className="w-8 h-8 text-rose-400" />
                 ) : isSaudeUnit ? (
                   <Stethoscope className="w-8 h-8 text-emerald-400" />
                 ) : (
@@ -907,14 +959,22 @@ export default function HomePage() {
                   {selectedEscola.nome}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  {isSaudeUnit ? 'Painel de Gestão da Unidade de Saúde' : 'Painel de situação em tempo real'}
+                  {isEMAEE
+                    ? 'Espaço Municipal de Apoio e Educação Especializada'
+                    : isSaudeUnit
+                    ? 'Painel de Gestão da Unidade de Saúde'
+                    : 'Painel de situação em tempo real'}
                 </p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => isSaudeUnit ? fetchSaudeKpis(selectedEscola.id) : fetchKpis(selectedEscola.id)}
+              onClick={() => {
+                if (isEMAEE) fetchEmaeeKpis(selectedEscola.id)
+                else if (isSaudeUnit) fetchSaudeKpis(selectedEscola.id)
+                else fetchKpis(selectedEscola.id)
+              }}
               disabled={loadingKpi}
               className="text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
             >
@@ -923,8 +983,43 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {/* ── GRID DE KPIs PRINCIPAIS (SAÚDE OU EDUCAÇÃO) ── */}
-          {isSaudeUnit ? (
+          {/* ── GRID DE KPIs PRINCIPAIS (EMAEE, SAÚDE OU EDUCAÇÃO) ── */}
+          {isEMAEE ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KPICard
+                icon={Heart}
+                label="Pacientes Ativos"
+                value={emaeeKpi?.totalPacientes ?? 0}
+                loading={loadingKpi}
+                color="rose"
+                href="/emaee/pacientes"
+              />
+              <KPICard
+                icon={Clock}
+                label="Fila de Espera"
+                value={emaeeKpi?.filaEspera ?? 0}
+                loading={loadingKpi}
+                color="amber"
+                href="/emaee/fila-espera"
+              />
+              <KPICard
+                icon={UserPlus}
+                label="Profissionais AEE"
+                value={emaeeKpi?.profissionaisAee ?? 0}
+                loading={loadingKpi}
+                color="blue"
+                href="/emaee/vincular-profissionais"
+              />
+              <KPICard
+                icon={FileSpreadsheet}
+                label="Relatórios Pendentes"
+                value={emaeeKpi?.relatoriosPendentes ?? 0}
+                loading={loadingKpi}
+                color="violet"
+                href="/emaee/solicitacoes-escola"
+              />
+            </div>
+          ) : isSaudeUnit ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 icon={Users}
@@ -996,8 +1091,8 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── BARRA DE FREQUÊNCIA + ATIVIDADES SECRETARIA (Apenas para Educação) ── */}
-          {!isSaudeUnit && (
+          {/* ── BARRA DE FREQUÊNCIA + ATIVIDADES SECRETARIA (Apenas para Educação Regular) ── */}
+          {!isSaudeUnit && !isEMAEE && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FrequenciaBar
                 feitas={kpi?.turmasComFrequenciaHoje ?? 0}
@@ -1046,7 +1141,7 @@ export default function HomePage() {
               Acesso Rápido
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {(isSaudeUnit ? ACESSO_RAPIDO_SAUDE_ITEMS : ACESSO_RAPIDO_ITEMS).map((item) => {
+              {(isEMAEE ? ACESSO_RAPIDO_EMAEE_ITEMS : isSaudeUnit ? ACESSO_RAPIDO_SAUDE_ITEMS : ACESSO_RAPIDO_ITEMS).map((item) => {
                 const Icon = item.icon
                 return (
                   <Link key={item.href} href={item.href}>
