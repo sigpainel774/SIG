@@ -591,26 +591,38 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
-        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
+        // --- UPLOAD DIRETO DE FOTO (EDIÇÃO) ---
         if (fotoFile) {
           try {
-            const formData = new FormData()
-            formData.append('file', fotoFile)
-            formData.append('entity', 'alunos')
-            formData.append('id', alunoEditar.id)
+            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+            const fileName = `${alunoEditar.id}_${Date.now()}.${fileExt}`
 
-            const processRes = await fetch('/api/fotos/process', {
-              method: 'POST',
-              body: formData
-            })
-            const processData = await processRes.json().catch(() => ({}))
-            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
+            const { error: uploadError } = await supabase.storage
+              .from('fotos_alunos')
+              .upload(fileName, fotoFile, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('fotos_alunos')
+              .getPublicUrl(fileName)
+
+            await supabase
+              .from('alunos')
+              .update({
+                foto_url: publicUrl,
+                foto_avatar_path: null,
+                foto_visualizacao_path: null,
+                foto_original_path: null,
+                foto_updated_at: new Date().toISOString()
+              })
+              .eq('id', alunoEditar.id)
           } catch (err: any) {
-            console.error('Erro no processamento da foto:', err)
-            toast.error(err.message || 'O aluno foi salvo, mas houve um erro ao processar a foto.')
+            console.error('Erro no upload da foto do aluno:', err)
+            toast.error('Aviso: O aluno foi salvo, mas houve um erro ao salvar a foto.')
           }
         }
-        // --- FIM UPLOAD OTIMIZADO ---
+        // --- FIM UPLOAD DIRETO ---
 
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
@@ -658,26 +670,38 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
 
         toast.success('Aluno cadastrado com sucesso!')
 
-        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - CADASTRO) ---
+        // --- UPLOAD DIRETO DE FOTO (CADASTRO) ---
         if (fotoFile) {
           try {
-            const formData = new FormData()
-            formData.append('file', fotoFile)
-            formData.append('entity', 'alunos')
-            formData.append('id', savedAlunoId)
+            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+            const fileName = `${savedAlunoId}_${Date.now()}.${fileExt}`
 
-            const processRes = await fetch('/api/fotos/process', {
-              method: 'POST',
-              body: formData
-            })
-            const processData = await processRes.json().catch(() => ({}))
-            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
+            const { error: uploadError } = await supabase.storage
+              .from('fotos_alunos')
+              .upload(fileName, fotoFile, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('fotos_alunos')
+              .getPublicUrl(fileName)
+
+            await supabase
+              .from('alunos')
+              .update({
+                foto_url: publicUrl,
+                foto_avatar_path: null,
+                foto_visualizacao_path: null,
+                foto_original_path: null,
+                foto_updated_at: new Date().toISOString()
+              })
+              .eq('id', savedAlunoId)
           } catch (err: any) {
-            console.error('Erro no processamento da foto:', err)
-            toast.error(err.message || 'O aluno foi salvo, mas houve um erro ao processar a foto.')
+            console.error('Erro no upload da foto do aluno:', err)
+            toast.error('Aviso: O aluno foi salvo, mas houve um erro ao salvar a foto.')
           }
         }
-        // --- FIM UPLOAD OTIMIZADO ---
+        // --- FIM UPLOAD DIRETO ---
 
         let hasNewSigs = false
         if (newSignatureResponsavel) {

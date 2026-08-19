@@ -728,23 +728,35 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         }
       }
 
-      // 3. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
+      // 3. Upload direto da Foto 3x4 se um novo arquivo foi capturado
       if (fotoFile && targetAlunoId) {
         try {
-          const formData = new FormData()
-          formData.append('file', fotoFile)
-          formData.append('entity', 'alunos')
-          formData.append('id', targetAlunoId)
+          const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+          const fileName = `${targetAlunoId}_${Date.now()}.${fileExt}`
 
-          const processRes = await fetch('/api/fotos/process', {
-            method: 'POST',
-            body: formData
-          })
-          const processData = await processRes.json().catch(() => ({}))
-          if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto 3x4.')
+          const { error: uploadError } = await supabase.storage
+            .from('fotos_alunos')
+            .upload(fileName, fotoFile, { upsert: true })
+
+          if (uploadError) throw uploadError
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('fotos_alunos')
+            .getPublicUrl(fileName)
+
+          await supabase
+            .from('alunos')
+            .update({
+              foto_url: publicUrl,
+              foto_avatar_path: null,
+              foto_visualizacao_path: null,
+              foto_original_path: null,
+              foto_updated_at: new Date().toISOString()
+            })
+            .eq('id', targetAlunoId)
         } catch (fotoErr: any) {
-          console.error('Erro no upload da foto 3x4:', fotoErr)
-          toast.error(fotoErr.message || 'Aviso: Houve um problema ao processar a foto 3x4 do aluno.')
+          console.error('Erro no upload direto da foto 3x4:', fotoErr)
+          toast.error('Aviso: Houve um problema ao salvar a foto 3x4 do aluno.')
         }
       }
 
