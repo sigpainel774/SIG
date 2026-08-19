@@ -11,6 +11,8 @@ import { logAudit } from '@/lib/audit/audit-agent'
 import { useAlunoSignaturePolling } from './useAlunoSignaturePolling'
 import { AlunoFormContextType, ModalAlunoProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
+import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
+import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -143,6 +145,8 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
   
   // Foto State (Fase 3: Armazenamento local antes do envio)
   const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoRemovidaManualmente, setFotoRemovidaManualmente] = useState(false)
+  const [isCompressingPhoto, setIsCompressingPhoto] = useState(false)
   const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
   const [assinaturaFuncionarioUrl, setAssinaturaFuncionarioUrl] = useState<string | null>(null)
   const [newSignatureResponsavel, setNewSignatureResponsavel] = useState<string | null>(null)
@@ -232,7 +236,14 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       if (alunoEditar) {
         const dm = alunoEditar.dados_matricula || {}
         pessoaForm.populatePessoais({ ...alunoEditar, ...dm })
-        setFotoUrl(alunoEditar.foto_url || '')
+        
+        const rawFotoUrl = getVisualizacaoUrl(alunoEditar) || getAvatarUrl(alunoEditar) || alunoEditar.foto_url || ''
+        const fotoComCacheBust = rawFotoUrl ? `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}` : ''
+        setFotoUrl(fotoComCacheBust)
+        setFotoRemovidaManualmente(false)
+        setFotoFile(null)
+        setIsCompressingPhoto(false)
+
         setEscolaId(alunoEditar.escola_id || '')
         setTurmaId(alunoEditar.turma_id || '')
         setSus(alunoEditar.cartao_sus || dm.susAluno || '')
@@ -288,6 +299,8 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         pessoaForm.resetPessoais()
         setFotoUrl('')
         setFotoFile(null)
+        setFotoRemovidaManualmente(false)
+        setIsCompressingPhoto(false)
         setEscolaId(escolaAtivaId || '')
         setTurmaId('')
         setSus('')
@@ -357,12 +370,49 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     const file = e.target.files?.[0]
     if (!file) return
 
-    setFotoFile(file)
-    const reader = new FileReader()
-    reader.onload = () => {
-      setFotoUrl(reader.result as string)
+    if (!file.type || !file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).')
+      return
     }
-    reader.readAsDataURL(file)
+
+    setIsCompressingPhoto(true)
+    const toastId = file.size > 3 * 1024 * 1024 ? toast.loading(`Otimizando foto (${formatBytes(file.size)})...`) : null
+
+    try {
+      const result = await compressImageBeforeUpload(file, {
+        maxWidth: 2560,
+        maxHeight: 2560,
+        quality: 0.82,
+        mimeType: 'image/webp'
+      })
+
+      setFotoFile(result.file)
+      setFotoRemovidaManualmente(false)
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        setFotoUrl(reader.result as string)
+      }
+      reader.readAsDataURL(result.file)
+
+      if (toastId && result.wasCompressed) {
+        toast.success(`Foto otimizada com sucesso! (${formatBytes(result.originalSize)} ➔ ${formatBytes(result.compressedSize)})`, { id: toastId })
+      } else if (toastId) {
+        toast.dismiss(toastId)
+      }
+    } catch (err: any) {
+      console.error('[handleFotoUpload] Erro ao processar foto:', err)
+      if (toastId) toast.dismiss(toastId)
+      toast.error(err.message || 'Erro ao processar imagem selecionada.')
+    } finally {
+      setIsCompressingPhoto(false)
+    }
+  }
+
+  const handleRemoverFoto = () => {
+    setFotoFile(null)
+    setFotoUrl('')
+    setFotoRemovidaManualmente(true)
   }
 
   const handleEnviarSolicitacaoEdicao = async () => {
@@ -516,16 +566,18 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       dadosMatriculaObj.assinatura_responsavel_url = finalRespUrl
       dadosMatriculaObj.assinatura_funcionario_url = finalFuncUrl
 
+      const isFotoRemoved = fotoRemovidaManualmente && !fotoFile
+
       const payload: any = {
         nome: pessoaForm.nome,
         cpf: pessoaForm.cpf || null,
         inep: pessoaForm.censo || null,
         telefone: pessoaForm.telefone || null,
         data_nascimento: pessoaForm.nascimento || null,
-        foto_url: (!fotoUrl && !fotoFile) ? null : undefined,
-        foto_avatar_path: (!fotoUrl && !fotoFile) ? null : undefined,
-        foto_visualizacao_path: (!fotoUrl && !fotoFile) ? null : undefined,
-        foto_original_path: (!fotoUrl && !fotoFile) ? null : undefined,
+        foto_url: isFotoRemoved ? null : (!fotoUrl && !fotoFile ? null : undefined),
+        foto_avatar_path: isFotoRemoved ? null : (!fotoUrl && !fotoFile ? null : undefined),
+        foto_visualizacao_path: isFotoRemoved ? null : (!fotoUrl && !fotoFile ? null : undefined),
+        foto_original_path: isFotoRemoved ? null : (!fotoUrl && !fotoFile ? null : undefined),
         turma_id: turmaId || null,
         rg: pessoaForm.rg || null,
         nis: pessoaForm.nis || null,
@@ -591,38 +643,126 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
-        // --- UPLOAD DIRETO DE FOTO (EDIÇÃO) ---
+        // --- UPLOAD OTIMIZADO COM FALLBACK RESILIENTE DE FOTO (EDIÇÃO DE ALUNO) ---
         if (fotoFile) {
-          try {
-            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-            const fileName = `${alunoEditar.id}_${Date.now()}.${fileExt}`
+          const USE_LEGACY_UPLOAD = process.env.NEXT_PUBLIC_ENABLE_LEGACY_FOTO_UPLOAD === 'true'
+          
+          if (USE_LEGACY_UPLOAD) {
+            try {
+              const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+              const fileName = `${alunoEditar.id}_${Date.now()}.${fileExt}`
 
-            const { error: uploadError } = await supabase.storage
-              .from('fotos_alunos')
-              .upload(fileName, fotoFile, { upsert: true })
+              const { error: uploadError } = await supabase.storage
+                .from('fotos_alunos')
+                .upload(fileName, fotoFile, { upsert: true })
 
-            if (uploadError) throw uploadError
+              if (uploadError) throw uploadError
 
-            const { data: { publicUrl } } = supabase.storage
-              .from('fotos_alunos')
-              .getPublicUrl(fileName)
+              const { data: { publicUrl } } = supabase.storage
+                .from('fotos_alunos')
+                .getPublicUrl(fileName)
 
-            await supabase
-              .from('alunos')
-              .update({
-                foto_url: publicUrl,
-                foto_avatar_path: null,
-                foto_visualizacao_path: null,
-                foto_original_path: null,
-                foto_updated_at: new Date().toISOString()
-              })
-              .eq('id', alunoEditar.id)
-          } catch (err: any) {
-            console.error('Erro no upload da foto do aluno:', err)
-            toast.error('Aviso: O aluno foi salvo, mas houve um erro ao salvar a foto.')
+              await supabase
+                .from('alunos')
+                .update({
+                  foto_url: publicUrl,
+                  foto_avatar_path: null,
+                  foto_visualizacao_path: null,
+                  foto_original_path: null,
+                  foto_updated_at: new Date().toISOString()
+                })
+                .eq('id', alunoEditar.id)
+
+              await invalidarCacheFoto(publicUrl)
+            } catch (err: any) {
+              console.error('[useAlunoFormStates] Erro no upload direto legado da foto do aluno:', err)
+              toast.error('Aviso: A ficha foi atualizada, mas houve um erro ao salvar a foto.')
+            }
+          } else {
+            const toastFotoId = toast.loading('Processando foto do aluno...')
+            try {
+              let photoSaved = false
+
+              // 1. Tenta fluxo otimizado no servidor via URL assinada + Sharp
+              try {
+                const requestId = crypto.randomUUID()
+                const presignedRes = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${alunoEditar.id}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
+                if (presignedRes.ok) {
+                  const presignedData = await presignedRes.json()
+                  if (presignedData?.signedUrl) {
+                    toast.loading('Enviando foto...', { id: toastFotoId })
+                    const uploadRes = await fetch(presignedData.signedUrl, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
+                      body: fotoFile
+                    })
+                    if (uploadRes.ok) {
+                      toast.loading('Otimizando variantes da foto...', { id: toastFotoId })
+                      const processRes = await fetch('/api/fotos/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          entity: 'alunos',
+                          id: alunoEditar.id,
+                          originalPath: presignedData.path,
+                          requestId
+                        })
+                      })
+                      if (processRes.ok) {
+                        const processData = await processRes.json()
+                        if (processData.success && processData.data?.foto_url) {
+                          await invalidarCacheFoto(processData.data.foto_url)
+                        }
+                        photoSaved = true
+                        toast.dismiss(toastFotoId)
+                      } else {
+                        console.warn('[useAlunoFormStates] Otimização server-side falhou, acionando fallback direto...')
+                      }
+                    }
+                  }
+                }
+              } catch (serverErr) {
+                console.warn('[useAlunoFormStates] Erro na rota de otimização de foto do aluno:', serverErr)
+              }
+
+              // 2. Fallback automático resiliente: upload direto no Storage Supabase
+              if (!photoSaved) {
+                toast.loading('Salvando foto diretamente...', { id: toastFotoId })
+                const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+                const fileName = `${alunoEditar.id}_${Date.now()}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                  .from('fotos_alunos')
+                  .upload(fileName, fotoFile, { upsert: true })
+
+                if (uploadError) throw uploadError
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from('fotos_alunos')
+                  .getPublicUrl(fileName)
+
+                await supabase
+                  .from('alunos')
+                  .update({
+                    foto_url: publicUrl,
+                    foto_avatar_path: null,
+                    foto_visualizacao_path: null,
+                    foto_original_path: null,
+                    foto_updated_at: new Date().toISOString()
+                  })
+                  .eq('id', alunoEditar.id)
+
+                await invalidarCacheFoto(publicUrl)
+                toast.dismiss(toastFotoId)
+              }
+            } catch (err: any) {
+              console.error('[useAlunoFormStates] Erro no upload da foto do aluno:', err)
+              toast.dismiss(toastFotoId)
+              toast.error('Aviso: A ficha foi atualizada, mas houve um erro ao salvar a foto.')
+            }
           }
         }
-        // --- FIM UPLOAD DIRETO ---
+        // --- FIM UPLOAD FOTO (EDIÇÃO) ---
 
         toast.success('Ficha do aluno atualizada com sucesso!')
       } else {
@@ -670,38 +810,126 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
 
         toast.success('Aluno cadastrado com sucesso!')
 
-        // --- UPLOAD DIRETO DE FOTO (CADASTRO) ---
-        if (fotoFile) {
-          try {
-            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-            const fileName = `${savedAlunoId}_${Date.now()}.${fileExt}`
+        // --- UPLOAD OTIMIZADO DE FOTO (CADASTRO NOVO DE ALUNO) ---
+        if (fotoFile && savedAlunoId) {
+          const USE_LEGACY_UPLOAD = process.env.NEXT_PUBLIC_ENABLE_LEGACY_FOTO_UPLOAD === 'true'
+          
+          if (USE_LEGACY_UPLOAD) {
+            try {
+              const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+              const fileName = `${savedAlunoId}_${Date.now()}.${fileExt}`
 
-            const { error: uploadError } = await supabase.storage
-              .from('fotos_alunos')
-              .upload(fileName, fotoFile, { upsert: true })
+              const { error: uploadError } = await supabase.storage
+                .from('fotos_alunos')
+                .upload(fileName, fotoFile, { upsert: true })
 
-            if (uploadError) throw uploadError
+              if (uploadError) throw uploadError
 
-            const { data: { publicUrl } } = supabase.storage
-              .from('fotos_alunos')
-              .getPublicUrl(fileName)
+              const { data: { publicUrl } } = supabase.storage
+                .from('fotos_alunos')
+                .getPublicUrl(fileName)
 
-            await supabase
-              .from('alunos')
-              .update({
-                foto_url: publicUrl,
-                foto_avatar_path: null,
-                foto_visualizacao_path: null,
-                foto_original_path: null,
-                foto_updated_at: new Date().toISOString()
-              })
-              .eq('id', savedAlunoId)
-          } catch (err: any) {
-            console.error('Erro no upload da foto do aluno:', err)
-            toast.error('Aviso: O aluno foi salvo, mas houve um erro ao salvar a foto.')
+              await supabase
+                .from('alunos')
+                .update({
+                  foto_url: publicUrl,
+                  foto_avatar_path: null,
+                  foto_visualizacao_path: null,
+                  foto_original_path: null,
+                  foto_updated_at: new Date().toISOString()
+                })
+                .eq('id', savedAlunoId)
+
+              await invalidarCacheFoto(publicUrl)
+            } catch (err: any) {
+              console.error('[useAlunoFormStates] Erro no upload da foto do novo aluno:', err)
+              toast.error('Aviso: O aluno foi cadastrado, mas houve um erro ao salvar a foto.')
+            }
+          } else {
+            const toastFotoId = toast.loading('Processando foto do aluno...')
+            try {
+              let photoSaved = false
+
+              // 1. Tenta fluxo otimizado no servidor via URL assinada + Sharp
+              try {
+                const requestId = crypto.randomUUID()
+                const presignedRes = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${savedAlunoId}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
+                if (presignedRes.ok) {
+                  const presignedData = await presignedRes.json()
+                  if (presignedData?.signedUrl) {
+                    toast.loading('Enviando foto...', { id: toastFotoId })
+                    const uploadRes = await fetch(presignedData.signedUrl, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
+                      body: fotoFile
+                    })
+                    if (uploadRes.ok) {
+                      toast.loading('Otimizando variantes da foto...', { id: toastFotoId })
+                      const processRes = await fetch('/api/fotos/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          entity: 'alunos',
+                          id: savedAlunoId,
+                          originalPath: presignedData.path,
+                          requestId
+                        })
+                      })
+                      if (processRes.ok) {
+                        const processData = await processRes.json()
+                        if (processData.success && processData.data?.foto_url) {
+                          await invalidarCacheFoto(processData.data.foto_url)
+                        }
+                        photoSaved = true
+                        toast.dismiss(toastFotoId)
+                      } else {
+                        console.warn('[useAlunoFormStates] Otimização server-side falhou no novo aluno, acionando fallback direto...')
+                      }
+                    }
+                  }
+                }
+              } catch (serverErr) {
+                console.warn('[useAlunoFormStates] Erro na rota de otimização de foto no novo aluno:', serverErr)
+              }
+
+              // 2. Fallback automático resiliente: upload direto no Storage Supabase
+              if (!photoSaved) {
+                toast.loading('Salvando foto diretamente...', { id: toastFotoId })
+                const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+                const fileName = `${savedAlunoId}_${Date.now()}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                  .from('fotos_alunos')
+                  .upload(fileName, fotoFile, { upsert: true })
+
+                if (uploadError) throw uploadError
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from('fotos_alunos')
+                  .getPublicUrl(fileName)
+
+                await supabase
+                  .from('alunos')
+                  .update({
+                    foto_url: publicUrl,
+                    foto_avatar_path: null,
+                    foto_visualizacao_path: null,
+                    foto_original_path: null,
+                    foto_updated_at: new Date().toISOString()
+                  })
+                  .eq('id', savedAlunoId)
+
+                await invalidarCacheFoto(publicUrl)
+                toast.dismiss(toastFotoId)
+              }
+            } catch (err: any) {
+              console.error('[useAlunoFormStates] Erro no upload da foto do novo aluno:', err)
+              toast.dismiss(toastFotoId)
+              toast.error('Aviso: O aluno foi cadastrado, mas houve um erro ao salvar a foto.')
+            }
           }
         }
-        // --- FIM UPLOAD DIRETO ---
+        // --- FIM UPLOAD FOTO (CADASTRO) ---
 
         let hasNewSigs = false
         if (newSignatureResponsavel) {
@@ -906,7 +1134,9 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     iniciarAssinaturaCelular,
     cancelarAssinaturaCelular,
     clearDatabaseCodes,
+    isCompressingPhoto,
     handleFotoUpload,
+    handleRemoverFoto,
     toggleArrayItem,
     handleSubmit,
     ...pessoaForm

@@ -22,6 +22,7 @@ Atualizado automaticamente com o status real do repositório.
 | Ajuste de Mapas e Geolocalização | ✅ Implementado | Sessão 2026-07-22 — Tiles Leaflet atualizados com fallbacks resilientes (`MapaAlunos`, `MapaAuditoria`, `MapaGlobal`, `MiniMapa`) |
 | Contas Especiais & Portal EJA | ✅ Implementado | Sessão 2026-07-29 — Flag `is_conta_eja`, portal dedicado em `/eja`, isolamento de modalidades em relatórios, turmas e redirecionamento |
 | Portal do Aluno / Responsáveis | ✅ Implementado | Sessão 2026-08-14 — Schema SQL, RLS blindado, toggle no Super Painel, menu dinâmico na Sidebar da Secretaria, gestão em `/responsaveis`, login próprio, troca de senha e dashboard em `/portal-aluno` |
+| Compressão Segura de Fotos (Funcionários & Alunos) | ✅ Implementado | Sessão 2026-08-19 — Normalização client-side (fotos até 20MB -> ~2MB), bypass Vercel 4.5MB com upload direto assinado, variantes WebP 3x4 via Sharp no backend, validação ABAC/RLS e unificação nas fichas de Alunos e Funcionários |
 | Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
 | Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
 | Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys) | ⏳ Pendente | Proposto em 2026-08-15 — Autenticação biométrica rápida (Face ID / Digital) via WebAuthn/FIDO2 no celular |

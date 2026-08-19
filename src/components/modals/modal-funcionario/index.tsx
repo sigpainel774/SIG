@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2, Save, UserPlus, Camera, Plus } from 'lucide-react'
+import { Loader2, Save, UserPlus, Camera, Plus, Trash2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { ModalFuncionarioProps } from './types'
 import { FuncionarioFormProvider, useFuncionarioForm } from './context/FuncionarioFormContext'
@@ -38,6 +38,8 @@ function ModalFuncionarioContent() {
     handleEscolaChange,
     fotoPreview,
     handleFotoChange,
+    handleRemoverFoto,
+    isCompressingPhoto,
     handleSubmit,
     lotacoesModalOpen,
     setLotacoesModalOpen,
@@ -45,6 +47,11 @@ function ModalFuncionarioContent() {
 
   const escolas = useSchoolStore((state) => state.escolas)
   const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+
+  const getFotoSrc = () => {
+    if (!fotoPreview) return null
+    return fotoPreview
+  }
 
   const availableUnits = React.useMemo(() => {
     if (!selectedSecretaria) return escolas
@@ -64,17 +71,6 @@ function ModalFuncionarioContent() {
         : 'border-transparent text-muted-foreground hover:text-foreground'
     }`
 
-  // Cache buster persistente por ciclo de abertura para evitar refetching agressivo a cada render
-  const [cacheBuster] = useState(() => Date.now())
-
-  // Mitigação do Cache do Storage: Injeta timestamp se for URL remota (não base64)
-  const getFotoSrc = () => {
-    if (!fotoPreview) return null
-    if (fotoPreview.startsWith('data:')) return fotoPreview
-    if (fotoPreview.includes('?')) return fotoPreview
-    return `${fotoPreview}?t=${cacheBuster}`
-  }
-
   if (loadingData) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -91,8 +87,13 @@ function ModalFuncionarioContent() {
         {/* Foto 3x4 */}
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-[#3ea6ff]/40 overflow-hidden flex items-center justify-center">
-              {fotoPreview ? (
+            <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-[#3ea6ff]/40 overflow-hidden flex items-center justify-center relative">
+              {isCompressingPhoto ? (
+                <div className="flex flex-col items-center justify-center p-1 text-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-[#3ea6ff]" />
+                  <span className="text-[9px] text-[#3ea6ff] mt-1 font-semibold">Otimizando</span>
+                </div>
+              ) : fotoPreview ? (
                 <img src={getFotoSrc()!} alt="Foto 3x4" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-xs text-center text-zinc-500 font-bold">
@@ -100,24 +101,39 @@ function ModalFuncionarioContent() {
                 </span>
               )}
             </div>
-            <label
-              htmlFor="foto-input"
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#3ea6ff] flex items-center justify-center cursor-pointer hover:bg-[#0090ff] transition-colors"
-              title="Alterar foto"
-            >
-              <Camera className="w-3 h-3 text-white" />
-            </label>
+            {!isCompressingPhoto && (
+              <>
+                <label
+                  htmlFor="foto-input"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#3ea6ff] flex items-center justify-center cursor-pointer hover:bg-[#0090ff] transition-colors shadow-sm"
+                  title="Alterar foto"
+                >
+                  <Camera className="w-3 h-3 text-white" />
+                </label>
+                {fotoPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoverFoto}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors"
+                    title="Remover foto"
+                  >
+                    <Trash2 className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </>
+            )}
             <input
               id="foto-input"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
+              disabled={isCompressingPhoto}
               onChange={handleFotoChange}
             />
           </div>
           <div className="text-[11px] text-zinc-400">
             <p className="font-semibold text-zinc-300">Foto 3x4 do Servidor</p>
-            <p>PNG/JPG · max 5MB</p>
+            <p>PNG/JPG/WebP · até 20MB</p>
           </div>
         </div>
 
@@ -211,7 +227,7 @@ function ModalFuncionarioContent() {
 }
 
 function ModalFuncionarioFooter() {
-  const { loading, isEditing, handleOpenChange } = useFuncionarioForm()
+  const { loading, isEditing, isCompressingPhoto, handleOpenChange } = useFuncionarioForm()
   return (
     <div className="flex justify-end gap-2 w-full pt-2">
       <Button
@@ -225,11 +241,23 @@ function ModalFuncionarioFooter() {
       <Button
         type="submit"
         form="funcionario-form"
-        disabled={loading}
-        className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer border-none"
+        disabled={loading || isCompressingPhoto}
+        className="bg-highlight text-background hover:bg-highlight/90 font-bold gap-2 cursor-pointer border-none disabled:opacity-50"
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {loading ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Cadastrar Funcionário'}
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : isCompressingPhoto ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Save className="w-4 h-4" />
+        )}
+        {loading
+          ? 'Salvando...'
+          : isCompressingPhoto
+          ? 'Otimizando foto...'
+          : isEditing
+          ? 'Salvar Alterações'
+          : 'Cadastrar Funcionário'}
       </Button>
     </div>
   )

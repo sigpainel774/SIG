@@ -141,7 +141,9 @@ export interface AlunoFormContextType {
   iniciarAssinaturaCelular: (tipo: 'resp' | 'func') => Promise<void>
   cancelarAssinaturaCelular: () => Promise<void>
   clearDatabaseCodes: (fieldToClear?: 'resp' | 'func' | null) => Promise<void>
+  isCompressingPhoto: boolean
   handleFotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleRemoverFoto: () => void
   toggleArrayItem: (list: string[], item: string, setter: (val: string[]) => void) => void
   handleSubmit: (e: React.FormEvent) => Promise<void>
 

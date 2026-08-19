@@ -29,6 +29,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
     setJustificativaSolicitacao,
     handleEnviarSolicitacaoEdicao,
     loading,
+    isCompressingPhoto,
     escolas,
     escolaId,
     setEscolaId,
@@ -69,10 +70,17 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
           <Button
             type="submit"
             form="aluno-form"
-            disabled={loading}
+            disabled={loading || isCompressingPhoto}
             className="bg-[#0067C0] hover:bg-[#005299] text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50 shadow-xs"
           >
-            {loading ? 'Salvando...' : (
+            {loading ? (
+              'Salvando...'
+            ) : isCompressingPhoto ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Otimizando foto...
+              </span>
+            ) : (
               <span className="flex items-center gap-2">
                 <Save className="w-4 h-4" />
                 {alunoEditar ? 'Atualizar Ficha' : 'Salvar Ficha do Aluno'}

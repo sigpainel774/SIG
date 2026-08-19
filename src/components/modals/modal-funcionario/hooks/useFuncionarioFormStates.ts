@@ -11,6 +11,7 @@ import { invalidarCacheFoto } from '@/lib/photoCache'
 import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelper'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
+import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -56,6 +57,7 @@ export function useFuncionarioFormStates({
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
   const [fotoRemovidaManualmente, setFotoRemovidaManualmente] = useState(false)
+  const [isCompressingPhoto, setIsCompressingPhoto] = useState(false)
   const [lotacoesModalOpen, setLotacoesModalOpen] = useState(false)
 
   const isEditing = !!funcionario
@@ -521,15 +523,46 @@ export function useFuncionarioFormStates({
     }
   }, [activeOpen, funcionario])
 
-  // Foto handler
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Foto handler com normalização client-side resiliente
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setFotoFile(file)
-    setFotoRemovidaManualmente(false)
-    const reader = new FileReader()
-    reader.onload = () => setFotoPreview(reader.result as string)
-    reader.readAsDataURL(file)
+
+    if (!file.type || !file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).')
+      return
+    }
+
+    setIsCompressingPhoto(true)
+    const toastId = file.size > 3 * 1024 * 1024 ? toast.loading(`Otimizando foto (${formatBytes(file.size)})...`) : null
+
+    try {
+      const result = await compressImageBeforeUpload(file, {
+        maxWidth: 2560,
+        maxHeight: 2560,
+        quality: 0.82,
+        mimeType: 'image/webp'
+      })
+
+      setFotoFile(result.file)
+      setFotoRemovidaManualmente(false)
+
+      const reader = new FileReader()
+      reader.onload = () => setFotoPreview(reader.result as string)
+      reader.readAsDataURL(result.file)
+
+      if (toastId && result.wasCompressed) {
+        toast.success(`Foto otimizada com sucesso! (${formatBytes(result.originalSize)} ➔ ${formatBytes(result.compressedSize)})`, { id: toastId })
+      } else if (toastId) {
+        toast.dismiss(toastId)
+      }
+    } catch (err: any) {
+      console.error('[handleFotoChange] Erro ao processar foto:', err)
+      if (toastId) toast.dismiss(toastId)
+      toast.error(err.message || 'Erro ao processar imagem selecionada.')
+    } finally {
+      setIsCompressingPhoto(false)
+    }
   }
 
   const handleRemoverFoto = () => {
@@ -1406,6 +1439,7 @@ export function useFuncionarioFormStates({
     dataPreenchimento, setDataPreenchimento,
     fotoFile, setFotoFile,
     fotoPreview, setFotoPreview,
+    isCompressingPhoto,
     handleFotoChange,
     handleRemoverFoto,
     lotacoesModalOpen,
