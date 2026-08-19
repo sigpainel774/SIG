@@ -225,6 +225,66 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       // Assinaturas
       setAssinaturaResponsavelUrl(mat.assinatura_responsavel_aluno_url ?? dm.assinatura_responsavel_url ?? null)
       setAssinaturaServidorUrl(mat.assinatura_responsavel_matricula_url ?? funcionario?.assinatura_url ?? null)
+    } else {
+      // Reset limpo para Nova Matrícula
+      setAlunoSelecionado(null)
+      setIsManualAluno(false)
+      setSearchTerm('')
+      setNomeCompleto('')
+      setDataNascimento('')
+      setCpf('')
+      setIdentificacaoCenso('')
+      setRg('')
+      setNis('')
+      setCertidaoNascimento('')
+      setCorRaca('')
+      setSexo('')
+      setCidadeNascimento('')
+      setEstadoNascimento('BA')
+      setNomeMae('')
+      setProfissaoMae('')
+      setNomePai('')
+      setProfissaoPai('')
+      setEndereco('')
+      setLatitude(null)
+      setLongitude(null)
+      setZonaResidencial('Urbana')
+      setContatoEmergencia('')
+      setTelefoneEmergencia('')
+      setFotoUrl(null)
+      setFotoFile(null)
+      setEscolaAtendimentoId(props.escolaEmaeeId ?? '')
+      setLocalizacaoAtendimento('Urbana')
+      setDataMatricula(new Date().toISOString().split('T')[0])
+      setTurnoAtendimento('Matutino')
+      setEscolaOrigemForaRede(false)
+      setEscolaOrigemNome('')
+      setEscolaOrigemMunicipio('')
+      setEscolaOrigemUf('BA')
+      setEscolaRegularId('')
+      setAnoEscolarizacao('')
+      setTurnoRegular('')
+      setTurmaRegular('')
+      setProfessorRegular('')
+      setGestorRegular('')
+      setCidCodigo('')
+      setOutrosTranstornos('')
+      setObservacoes('')
+      setDeficiencias({
+        def_baixa_visao: false,
+        def_cegueira: false,
+        def_auditiva: false,
+        def_fisica: false,
+        def_intelectual: false,
+        def_surdez: false,
+        def_surdocegueira: false,
+        def_multipla: false,
+        transtorno_tea: false,
+        transtorno_outros: false,
+      })
+      setAssinaturaResponsavelUrl(null)
+      setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
+      setCodigoColetaLocal(null)
     }
   }, [isOpen, props.matriculaEditar, props.escolaEmaeeId, funcionario?.assinatura_url])
 
@@ -271,9 +331,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             (e.tipo === 'EMAEE' || /emaee/i.test(e.nome || ''))
           )
           setUnidadesEmaee(emaeeList.length > 0 ? emaeeList : escolasRegulares)
-          if (!escolaAtendimentoId && emaeeList.length > 0) {
-            setEscolaAtendimentoId(emaeeList[0].id)
-          }
+          setEscolaAtendimentoId(prev => prev || (emaeeList.length > 0 ? emaeeList[0].id : ''))
         }
       } catch (err) {
         console.error('Erro ao carregar escolas:', err)
@@ -284,7 +342,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       fetchData()
     }
     return () => { isMounted = false }
-  }, [isOpen, supabase, escolaAtendimentoId])
+  }, [isOpen, supabase])
 
   // Preenchimento dos campos ao selecionar aluno
   const handleSelectAluno = (aluno: AlunoSearchData) => {
@@ -503,7 +561,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             .update(updateAlunoPayload) as any)
             .eq('id', targetAlunoId)
 
-          if (alunoUpdateError) console.warn('Aviso ao atualizar aluno no EMAEE:', alunoUpdateError)
+          if (alunoUpdateError) {
+            console.error('Erro ao atualizar aluno no EMAEE:', alunoUpdateError)
+            toast.error('Aviso: Não foi possível atualizar todos os dados cadastrais do aluno.')
+          }
         }
 
         // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado
@@ -661,7 +722,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           .update(updatePayload) as any)
           .eq('id', targetAlunoId)
 
-        if (alunoUpdateError) console.warn('Aviso ao atualizar aluno:', alunoUpdateError)
+        if (alunoUpdateError) {
+          console.error('Erro ao sincronizar aluno no EMAEE:', alunoUpdateError)
+          toast.error('Aviso: Não foi possível atualizar todos os dados cadastrais do aluno.')
+        }
       }
 
       // 3. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
