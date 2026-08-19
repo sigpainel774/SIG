@@ -7,13 +7,11 @@ import {
   Bug, 
   Sparkles, 
   Search, 
-  Filter, 
   CheckCircle2, 
   XCircle, 
   Clock, 
   AlertCircle, 
   RefreshCw, 
-  MessageSquare,
   User,
   School,
   Calendar,
@@ -21,8 +19,10 @@ import {
   Check,
   X,
   Eye,
-  Send,
-  Loader2
+  Loader2,
+  Terminal,
+  Info,
+  AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,57 +43,88 @@ export interface BugReport {
   created_at: string
 }
 
+export interface SystemLog {
+  id: string
+  severity: 'info' | 'warning' | 'error' | 'critical'
+  context: string
+  message: string
+  error_code: string | null
+  user_id: string | null
+  metadata: any
+  resolved: boolean
+  created_at: string
+}
+
 export default function AdminReportsPage() {
   const supabase = createClient()
 
-  const [reports, setReports] = useState<BugReport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [buscando, setBuscando] = useState(false)
+  const [activeTab, setActiveTab] = useState<'chamados' | 'logs'>('chamados')
 
-  // Filtros
+  // Estados dos Chamados (Bug Reports)
+  const [reports, setReports] = useState<BugReport[]>([])
+  const [loadingReports, setLoadingReports] = useState(true)
+  const [buscando, setBuscando] = useState(false)
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS')
   const [filtroTipo, setFiltroTipo] = useState<string>('TODOS')
 
-  // Modal Detalhes & Resposta
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [modalReportOpen, setModalReportOpen] = useState(false)
   const [respostaInput, setRespostaInput] = useState('')
   const [salvandoStatus, setSalvandoStatus] = useState(false)
 
-  const loadReports = async () => {
+  // Estados dos Logs do Sistema
+  const [logs, setLogs] = useState<SystemLog[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(false)
+  const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null)
+  const [modalLogOpen, setModalLogOpen] = useState(false)
+
+  const loadData = async () => {
     setBuscando(true)
-    let supabaseData: BugReport[] = []
+    if (activeTab === 'chamados') {
+      setLoadingReports(true)
+      try {
+        const { data, error } = await (supabase.from as any)('bug_reports')
+          .select('id, tipo, titulo, descricao, autor_nome, autor_email, escola, resposta_root, status, created_at')
+          .order('created_at', { ascending: false })
 
-    try {
-      const { data, error } = await (supabase.from as any)('bug_reports')
-        .select('id, tipo, titulo, descricao, autor_nome, autor_email, escola, resposta_root, status, created_at, updated_at')
-        .order('created_at', { ascending: false })
-
-      if (data && !error) {
-        supabaseData = data as BugReport[]
+        if (data && !error) setReports(data as BugReport[])
+      } catch (err) {
+        console.warn('Erro ao carregar reports do banco:', err)
+      } finally {
+        setLoadingReports(false)
       }
-    } catch (err) {
-      console.warn('Erro ao carregar reports do banco:', err)
-    }
+    } else {
+      setLoadingLogs(true)
+      try {
+        const { data, error } = await (supabase.from as any)('system_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100) // Trazemos os últimos 100 por performance
 
-    setReports(supabaseData)
-    setLoading(false)
+        if (data && !error) setLogs(data as SystemLog[])
+      } catch (err) {
+        console.warn('Erro ao carregar system logs:', err)
+      } finally {
+        setLoadingLogs(false)
+      }
+    }
     setBuscando(false)
   }
 
   useEffect(() => {
-    loadReports()
-  }, [])
+    loadData()
+  }, [activeTab])
 
-  // Atualizar status no Supabase + state
-  const handleUpdateStatus = async (
+  // ============================
+  // LÓGICA DE CHAMADOS
+  // ============================
+  const handleUpdateReportStatus = async (
     id: string, 
     novoStatus: 'pendente' | 'em_analise' | 'resolvido' | 'rejeitado',
     resposta?: string
   ) => {
     setSalvandoStatus(true)
-
     try {
       const { error } = await (supabase.from as any)('bug_reports')
         .update({ 
@@ -103,462 +134,296 @@ export default function AdminReportsPage() {
         })
         .eq('id', id)
 
-      if (error) {
-        toast.error('Erro ao atualizar o chamado no banco de dados: ' + error.message)
-        setSalvandoStatus(false)
-        return
-      }
+      if (error) throw error
+
+      setReports(prev => prev.map(r => r.id === id ? { ...r, status: novoStatus, resposta_root: resposta !== undefined ? resposta : r.resposta_root } : r))
+      if (novoStatus === 'resolvido') toast.success('Reporte resolvido!')
+      else toast.info(`Reporte alterado para ${novoStatus}`)
+
+      if (modalReportOpen && selectedReport?.id === id) setModalReportOpen(false)
     } catch (err: any) {
-      console.error('Erro ao atualizar reporte:', err)
-      toast.error('Falha de conexão ao atualizar chamado.')
+      toast.error('Erro ao atualizar: ' + err.message)
+    } finally {
       setSalvandoStatus(false)
-      return
-    }
-
-    // Atualizar estado local
-    setReports(prev => prev.map(r => {
-      if (r.id === id) {
-        return {
-          ...r,
-          status: novoStatus,
-          resposta_root: resposta !== undefined ? resposta : r.resposta_root
-        }
-      }
-      return r
-    }))
-
-    setSalvandoStatus(false)
-
-    if (novoStatus === 'resolvido') {
-      toast.success('Reporte marcado como RESOLVIDO com sucesso!')
-    } else if (novoStatus === 'rejeitado') {
-      toast.info('Reporte marcado como REJEITADO.')
-    } else if (novoStatus === 'em_analise') {
-      toast.info('Reporte movido para EM ANÁLISE.')
-    }
-
-    if (modalOpen && selectedReport?.id === id) {
-      setSelectedReport(prev => prev ? { ...prev, status: novoStatus, resposta_root: resposta !== undefined ? resposta : prev.resposta_root } : null)
-      setModalOpen(false)
     }
   }
 
-  const handleOpenDetailModal = (report: BugReport) => {
-    setSelectedReport(report)
-    setRespostaInput(report.resposta_root || '')
-    setModalOpen(true)
-  }
-
-  // Filtrar reports
   const reportsFiltrados = reports.filter(item => {
     const matchBusca = 
       item.titulo.toLowerCase().includes(busca.toLowerCase()) ||
       item.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-      item.autor_nome.toLowerCase().includes(busca.toLowerCase()) ||
-      item.autor_email.toLowerCase().includes(busca.toLowerCase()) ||
-      (item.escola && item.escola.toLowerCase().includes(busca.toLowerCase()))
-
+      item.autor_nome.toLowerCase().includes(busca.toLowerCase())
     const matchStatus = filtroStatus === 'TODOS' || item.status === filtroStatus
     const matchTipo = filtroTipo === 'TODOS' || item.tipo === filtroTipo
-
     return matchBusca && matchStatus && matchTipo
   })
 
-  // Estatísticas
-  const totalReports = reports.length
-  const totalPendentes = reports.filter(r => r.status === 'pendente').length
-  const totalEmAnalise = reports.filter(r => r.status === 'em_analise').length
-  const totalResolvidos = reports.filter(r => r.status === 'resolvido').length
-  const totalRejeitados = reports.filter(r => r.status === 'rejeitado').length
+  // ============================
+  // LÓGICA DE LOGS DE SISTEMA
+  // ============================
+  const handleResolveLog = async (id: string, currentlyResolved: boolean) => {
+    try {
+      const { error } = await (supabase.from as any)('system_logs')
+        .update({ resolved: !currentlyResolved })
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      setLogs(prev => prev.map(l => l.id === id ? { ...l, resolved: !currentlyResolved } : l))
+      toast.success(currentlyResolved ? 'Log reaberto.' : 'Log marcado como resolvido.')
+    } catch (err) {
+      toast.error('Falha ao atualizar log.')
+    }
+  }
 
-  const getStatusBadge = (status: BugReport['status']) => {
-    switch (status) {
-      case 'pendente':
-        return (
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 flex items-center gap-1">
-            <Clock className="w-3 h-3" /> Pendente
-          </Badge>
-        )
-      case 'em_analise':
-        return (
-          <Badge variant="outline" className="bg-sky-500/10 text-sky-400 border-sky-500/30 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" /> Em Análise
-          </Badge>
-        )
-      case 'resolvido':
-        return (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Resolvido
-          </Badge>
-        )
-      case 'rejeitado':
-        return (
-          <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30 flex items-center gap-1">
-            <XCircle className="w-3 h-3" /> Rejeitado
-          </Badge>
-        )
+  const getLogIcon = (severity: string) => {
+    switch (severity) {
+      case 'critical': return <AlertTriangle className="w-5 h-5 text-rose-500" />
+      case 'error': return <XCircle className="w-5 h-5 text-red-400" />
+      case 'warning': return <AlertCircle className="w-5 h-5 text-amber-400" />
+      default: return <Info className="w-5 h-5 text-sky-400" />
     }
   }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-            <Bug className="w-8 h-8 text-rose-500" />
-            Central de Reports & Feedbacks
+            <ShieldCheck className="w-8 h-8 text-indigo-500" />
+            Central de Saúde do Sistema
             <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
               ROOT
             </span>
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Canal exclusivo para o SuperAdmin receber, analisar e marcar reports de bugs ou sugestões enviadas pelos usuários.
+            Gerencie chamados de usuários e monitore erros automáticos (logs) do sistema.
           </p>
         </div>
 
         <Button
-          onClick={loadReports}
+          onClick={loadData}
           disabled={buscando}
           className="bg-card border border-borderCustom text-foreground hover:bg-muted gap-2 shadow-sm shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${buscando ? 'animate-spin' : ''}`} />
-          <span>Atualizar Reports</span>
+          <span>Atualizar</span>
         </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Total Reports</p>
-            <p className="text-2xl font-bold text-foreground mt-1">{totalReports}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-            <Bug className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">Pendentes</p>
-            <p className="text-2xl font-bold text-amber-400 mt-1">{totalPendentes}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <Clock className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-sky-400 font-semibold uppercase tracking-wider">Em Análise</p>
-            <p className="text-2xl font-bold text-sky-400 mt-1">{totalEmAnalise}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Resolvidos</p>
-            <p className="text-2xl font-bold text-emerald-400 mt-1">{totalResolvidos}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center justify-between col-span-2 md:col-span-1">
-          <div>
-            <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider">Rejeitados</p>
-            <p className="text-2xl font-bold text-rose-400 mt-1">{totalRejeitados}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
-            <XCircle className="w-5 h-5" />
-          </div>
-        </div>
+      {/* Tabs Customizadas */}
+      <div className="flex gap-2 border-b border-borderCustom">
+        <button
+          onClick={() => setActiveTab('chamados')}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'chamados' 
+            ? 'border-indigo-500 text-indigo-400' 
+            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
+          }`}
+        >
+          <Bug className="w-4 h-4" /> Chamados e Sugestões
+        </button>
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'logs' 
+            ? 'border-rose-500 text-rose-400' 
+            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
+          }`}
+        >
+          <Terminal className="w-4 h-4" /> Logs Automáticos (Erros)
+        </button>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Busca */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
-            <Input
-              type="text"
-              placeholder="Buscar por título, usuário ou escola..."
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              className="bg-input border-borderCustom text-foreground pl-9 placeholder:text-muted-foreground h-11 rounded-xl focus:ring-highlight focus:border-highlight"
-            />
+      {activeTab === 'chamados' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
+              <Input
+                placeholder="Buscar chamados..."
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+                className="bg-input border-borderCustom pl-9 h-11 rounded-xl"
+              />
+            </div>
+            <select
+              value={filtroStatus}
+              onChange={e => setFiltroStatus(e.target.value)}
+              className="bg-input border border-borderCustom h-11 rounded-xl px-3 text-sm focus:outline-none"
+            >
+              <option value="TODOS">Todos os Status</option>
+              <option value="pendente">Pendentes</option>
+              <option value="resolvido">Resolvidos</option>
+            </select>
           </div>
 
-          {/* Filtro Status */}
-          <select
-            value={filtroStatus}
-            onChange={e => setFiltroStatus(e.target.value)}
-            className="w-full bg-input border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
-          >
-            <option value="TODOS">Todos os Status</option>
-            <option value="pendente">Pendentes</option>
-            <option value="em_analise">Em Análise</option>
-            <option value="resolvido">Resolvidos</option>
-            <option value="rejeitado">Rejeitados</option>
-          </select>
-
-          {/* Filtro Tipo */}
-          <select
-            value={filtroTipo}
-            onChange={e => setFiltroTipo(e.target.value)}
-            className="w-full bg-input border border-borderCustom text-foreground h-11 rounded-xl px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight"
-          >
-            <option value="TODOS">Todos os Tipos</option>
-            <option value="bug">Erro / Bug</option>
-            <option value="sugestao">Sugestão</option>
-          </select>
-
-          {/* Limpar Filtros */}
-          <button
-            type="button"
-            onClick={() => {
-              setBusca('')
-              setFiltroStatus('TODOS')
-              setFiltroTipo('TODOS')
-            }}
-            className="h-11 px-4 bg-muted hover:bg-muted/80 text-foreground border border-borderCustom rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-            <span>Limpar Filtros</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Reports List */}
-      <div className="space-y-3">
-        {loading ? (
-          <div className="bg-card border border-borderCustom rounded-2xl p-12 text-center text-muted-foreground space-y-3">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0090ff]" />
-            <p>Carregando reports de erros e sugestões...</p>
-          </div>
-        ) : reportsFiltrados.length === 0 ? (
-          <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
-            Nenhum report encontrado para os filtros selecionados.
-          </div>
-        ) : (
-          reportsFiltrados.map(report => {
-            const isBug = report.tipo === 'bug'
-            return (
-              <div
-                key={report.id}
-                className="bg-card border border-borderCustom hover:border-highlight/30 rounded-2xl p-5 shadow-sm transition-all space-y-4"
-              >
-                {/* Header do Card */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    {/* Badge Icon */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                      isBug 
-                        ? 'bg-rose-500/10 border border-rose-500/30 text-rose-500' 
-                        : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
-                    }`}>
-                      {isBug ? <Bug className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge 
-                          variant="outline"
-                          className={isBug ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}
-                        >
-                          {isBug ? 'BUG / ERRO' : 'SUGESTÃO'}
-                        </Badge>
-                        {getStatusBadge(report.status)}
-                      </div>
-
-                      <h3 className="text-base font-bold text-foreground mt-1.5 leading-snug">
-                        {report.titulo}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Date & Quick Actions */}
-                  <div className="flex items-center gap-2 self-start shrink-0">
-                    <span className="text-xs text-zinc-500 flex items-center gap-1 mr-2">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {new Date(report.created_at).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Descrição */}
-                <p className="text-sm text-foreground/80 bg-muted/60 p-3.5 rounded-xl border border-borderCustom leading-relaxed">
-                  {report.descricao}
-                </p>
-
-                {/* Resposta do Root (se houver) */}
-                {report.resposta_root && (
-                  <div className="bg-indigo-50 dark:bg-[#1e1b4b]/40 border border-indigo-200 dark:border-[#4338ca]/30 rounded-xl p-3.5 text-xs text-indigo-700 dark:text-indigo-200 space-y-1">
-                    <span className="font-bold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[10px]">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Resposta da Administração ROOT:
-                    </span>
-                    <p className="text-foreground text-sm leading-relaxed">
-                      {report.resposta_root}
-                    </p>
-                  </div>
-                )}
-
-                {/* Footer do Card: Autor Info & Botões de Ação ROOT */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-borderCustom">
-                  {/* Informações do Solicitante */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1.5 font-medium text-foreground/80">
-                      <User className="w-3.5 h-3.5 text-sky-400" />
-                      {report.autor_nome} ({report.autor_email})
-                    </span>
-                    {report.escola && (
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <School className="w-3.5 h-3.5 text-purple-400" />
-                        {report.escola}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Ações ROOT */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetailModal(report)}
-                      className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-borderCustom rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Detalhes / Responder</span>
-                    </button>
-
-                    {report.status !== 'resolvido' && (
-                      <button
-                        type="button"
-                        disabled={salvandoStatus}
-                        onClick={() => handleUpdateStatus(report.id, 'resolvido')}
-                        className="px-3 py-1.5 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Marcar Resolvido</span>
-                      </button>
-                    )}
-
-                    {report.status !== 'rejeitado' && (
-                      <button
-                        type="button"
-                        disabled={salvandoStatus}
-                        onClick={() => handleUpdateStatus(report.id, 'rejeitado')}
-                        className="px-3 py-1.5 bg-rose-600/20 border border-rose-500/40 text-rose-400 hover:bg-rose-600/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Marcar Rejeitado</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+          <div className="space-y-3">
+            {loadingReports ? (
+              <div className="p-12 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-500" /></div>
+            ) : reportsFiltrados.length === 0 ? (
+              <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
+                Nenhum chamado encontrado.
               </div>
-            )
-          })
-        )}
-      </div>
+            ) : (
+              reportsFiltrados.map(report => (
+                <div key={report.id} className="bg-card border border-borderCustom rounded-2xl p-5 shadow-sm space-y-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className={report.tipo === 'bug' ? 'text-rose-400 border-rose-500/30' : 'text-amber-400 border-amber-500/30'}>
+                          {report.tipo.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className="border-borderCustom">{report.status.toUpperCase()}</Badge>
+                      </div>
+                      <h3 className="font-bold text-base mt-2">{report.titulo}</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(report.created_at).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                  <p className="text-sm bg-muted/60 p-3.5 rounded-xl border border-borderCustom">{report.descricao}</p>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-borderCustom">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <User className="w-3.5 h-3.5" /> {report.autor_nome}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-muted border-borderCustom gap-1.5"
+                      onClick={() => {
+                        setSelectedReport(report)
+                        setRespostaInput(report.resposta_root || '')
+                        setModalReportOpen(true)
+                      }}
+                    >
+                      <Eye className="w-4 h-4" /> Detalhes / Responder
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Modal Detalhes & Responder Reporte */}
-      {selectedReport && modalOpen && (
+      {activeTab === 'logs' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="space-y-3">
+            {loadingLogs ? (
+              <div className="p-12 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-500" /></div>
+            ) : logs.length === 0 ? (
+              <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
+                Nenhum log automático registrado ainda. Ótimo sinal!
+              </div>
+            ) : (
+              logs.map(log => (
+                <div key={log.id} className={`bg-card border ${log.resolved ? 'border-borderCustom/50 opacity-70' : 'border-rose-500/30'} rounded-2xl p-5 shadow-sm space-y-3 transition-opacity`}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">{getLogIcon(log.severity)}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="border-borderCustom text-muted-foreground font-mono">{log.context}</Badge>
+                          {log.error_code && <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30 font-mono">Erro {log.error_code}</Badge>}
+                          {log.resolved && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">RESOLVIDO</Badge>}
+                        </div>
+                        <h3 className="font-bold text-sm md:text-base mt-2 text-foreground/90">{log.message}</h3>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground text-right shrink-0">
+                      <div>{new Date(log.created_at).toLocaleDateString('pt-BR')}</div>
+                      <div>{new Date(log.created_at).toLocaleTimeString('pt-BR')}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-2 pt-2 border-t border-borderCustom">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-muted border-borderCustom gap-1.5"
+                      onClick={() => {
+                        setSelectedLog(log)
+                        setModalLogOpen(true)
+                      }}
+                    >
+                      <Terminal className="w-4 h-4" /> Ver Metadata
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className={log.resolved ? "border-borderCustom text-muted-foreground" : "bg-emerald-600/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-600/30"}
+                      onClick={() => handleResolveLog(log.id, log.resolved)}
+                    >
+                      <Check className="w-4 h-4 mr-1.5" /> {log.resolved ? 'Reabrir Log' : 'Marcar Resolvido'}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reporte Original */}
+      {selectedReport && modalReportOpen && (
         <StandardDialog
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          title={`Gerenciar Reporte ROOT — ${selectedReport.titulo}`}
-          description={`Por: ${selectedReport.autor_nome ?? 'Usuário'} — ${selectedReport.escola ?? 'Escola'}`}
+          open={modalReportOpen}
+          onOpenChange={setModalReportOpen}
+          title={`Chamado — ${selectedReport.titulo}`}
           maxWidth="sm:max-w-xl"
           footer={
-            <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-end w-full border-t border-borderCustom">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setModalOpen(false)}
-                className="bg-card border-borderCustom text-foreground hover:bg-muted"
-              >
-                Fechar
-              </Button>
-
-              <Button
-                type="button"
-                disabled={salvandoStatus}
-                onClick={() => handleUpdateStatus(selectedReport.id, 'em_analise', respostaInput)}
-                className="bg-sky-600 hover:bg-sky-700 text-white font-bold gap-1.5"
-              >
-                <AlertCircle className="w-4 h-4" />
-                Em Análise
-              </Button>
-
-              <Button
-                type="button"
-                disabled={salvandoStatus}
-                onClick={() => handleUpdateStatus(selectedReport.id, 'rejeitado', respostaInput)}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1.5"
-              >
-                <X className="w-4 h-4" />
-                Marcar Rejeitado
-              </Button>
-
-              <Button
-                type="button"
-                disabled={salvandoStatus}
-                onClick={() => handleUpdateStatus(selectedReport.id, 'resolvido', respostaInput)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                Marcar Resolvido
-              </Button>
+            <div className="pt-2 flex flex-wrap gap-2 justify-end w-full border-t border-borderCustom">
+              <Button type="button" variant="outline" onClick={() => setModalReportOpen(false)}>Fechar</Button>
+              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'em_analise', respostaInput)} className="bg-sky-600 hover:bg-sky-700 text-white">Em Análise</Button>
+              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'resolvido', respostaInput)} className="bg-emerald-600 hover:bg-emerald-700 text-white">Resolver</Button>
             </div>
           }
         >
+          <div className="space-y-4 py-2">
+            <div className="bg-muted/60 p-3 rounded-xl border border-borderCustom text-sm">
+              <p><strong>Por:</strong> {selectedReport.autor_nome}</p>
+              <p><strong>Descrição:</strong> {selectedReport.descricao}</p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Resposta / Resolução (Opcional)</label>
+              <Textarea
+                value={respostaInput}
+                onChange={e => setRespostaInput(e.target.value)}
+                placeholder="Resposta..."
+                className="bg-input border-borderCustom min-h-[90px]"
+              />
+            </div>
+          </div>
+        </StandardDialog>
+      )}
 
-            <div className="space-y-4 py-2">
-              <div className="flex items-center justify-between bg-muted/60 p-3 rounded-xl border border-borderCustom">
-                <div>
-                  <h4 className="font-bold text-foreground text-base leading-snug">
-                    {selectedReport.titulo}
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Por: {selectedReport.autor_nome} — {selectedReport.escola}
-                  </p>
-                </div>
-                <div>{getStatusBadge(selectedReport.status)}</div>
+      {/* Modal Log Automático */}
+      {selectedLog && modalLogOpen && (
+        <StandardDialog
+          open={modalLogOpen}
+          onOpenChange={setModalLogOpen}
+          title="Detalhes do Log de Sistema"
+          maxWidth="sm:max-w-3xl"
+        >
+          <div className="space-y-4 py-2">
+            <div className="bg-muted/60 p-4 rounded-xl border border-borderCustom text-sm font-mono overflow-auto max-h-[60vh]">
+              <div className="mb-4 space-y-1">
+                <p><span className="text-muted-foreground">ID:</span> {selectedLog.id}</p>
+                <p><span className="text-muted-foreground">Contexto:</span> {selectedLog.context}</p>
+                <p><span className="text-muted-foreground">Mensagem:</span> {selectedLog.message}</p>
+                <p><span className="text-muted-foreground">User ID:</span> {selectedLog.user_id || 'Não Autenticado'}</p>
               </div>
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                  Descrição do Usuário
-                </label>
-                <div className="bg-muted/60 p-3.5 rounded-xl border border-borderCustom text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed">
-                  {selectedReport.descricao}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                  Resposta / Resolução do Administrador (Opcional)
-                </label>
-                <Textarea
-                  value={respostaInput}
-                  onChange={e => setRespostaInput(e.target.value)}
-                  placeholder="Escreva uma observação ou detalhes da solução para este reporte..."
-                  className="bg-input border-borderCustom text-foreground focus:ring-highlight focus:border-highlight min-h-[90px] rounded-xl text-sm"
-                />
+              <div className="pt-3 border-t border-borderCustom/50">
+                <p className="text-muted-foreground mb-2">METADATA (JSON):</p>
+                <pre className="text-xs text-sky-300 whitespace-pre-wrap break-words">
+                  {JSON.stringify(selectedLog.metadata, null, 2)}
+                </pre>
               </div>
             </div>
+          </div>
         </StandardDialog>
       )}
     </div>
