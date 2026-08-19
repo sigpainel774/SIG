@@ -57,7 +57,7 @@ export default function AdminEscolasPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, secretarias:secretaria_id(id, nome)')
+      .select('id, codigo, nome, logo_url, endereco, telefone, inep, tipo, ativo, localizacao, latitude, longitude, diretor_id, modulos_ativos, secretaria_id, is_teste, anexos_padrao, portal_pais_ativo, portal_comunicacoes_ativo, eja_ativo, created_at, secretarias:secretaria_id(id, nome)')
       .is('deleted_at', null)
       .order('nome', { ascending: true })
 
