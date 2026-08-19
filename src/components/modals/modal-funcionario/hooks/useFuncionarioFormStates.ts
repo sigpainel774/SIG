@@ -835,32 +835,54 @@ export function useFuncionarioFormStates({
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
-        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
+        // --- UPLOAD DIRETO DE FOTO (EDIÇÃO) ---
         if (fotoFile) {
           try {
-            const formData = new FormData()
-            formData.append('file', fotoFile)
-            formData.append('entity', 'funcionarios')
-            formData.append('id', funcionario.id)
+            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+            const fileName = `${funcionario.id}_${Date.now()}.${fileExt}`
 
-            const processRes = await fetch('/api/fotos/process', {
-              method: 'POST',
-              body: formData
-            })
-            const processData = await processRes.json().catch(() => ({}))
-            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
+            const { error: uploadError } = await supabase.storage
+              .from('fotos-funcionarios')
+              .upload(fileName, fotoFile, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('fotos-funcionarios')
+              .getPublicUrl(fileName)
+
+            const updatePhotoPayload = {
+              foto_url: publicUrl,
+              foto_avatar_path: null,
+              foto_visualizacao_path: null,
+              foto_original_path: null,
+              foto_updated_at: new Date().toISOString()
+            }
+
+            await supabase
+              .from('funcionarios')
+              .update(updatePhotoPayload)
+              .eq('id', funcionario.id)
 
             // Invalida o cache local do navegador para que a nova foto apareça imediatamente
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-            await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${funcionario.foto_avatar_path}`)
-            await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${funcionario.foto_visualizacao_path}`)
-            await invalidarCacheFoto(funcionario.foto_url)
+            await invalidarCacheFoto(publicUrl)
           } catch (fotoErr: any) {
-            console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário:', fotoErr)
-            toast.error(fotoErr.message || 'Aviso: Funcionário atualizado, mas houve erro ao processar a foto 3x4.')
+            console.error('[useFuncionarioFormStates] Erro no upload direto da foto do funcionário:', fotoErr)
+            toast.error('Aviso: Funcionário atualizado, mas houve erro ao salvar a foto.')
           }
+        } else if (fotoRemovidaManualmente) {
+          await supabase
+            .from('funcionarios')
+            .update({
+              foto_url: null,
+              foto_avatar_path: null,
+              foto_visualizacao_path: null,
+              foto_original_path: null,
+              foto_updated_at: new Date().toISOString()
+            })
+            .eq('id', funcionario.id)
         }
-        // --- FIM UPLOAD OTIMIZADO ---
+        // --- FIM UPLOAD DIRETO ---
 
         toast.success('Funcionário atualizado com sucesso!')
 
@@ -897,36 +919,44 @@ export function useFuncionarioFormStates({
           if (error) throw error
         }
 
-        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - CADASTRO NOVO) ---
+        // --- UPLOAD DIRETO DE FOTO (CADASTRO NOVO) ---
         if (fotoFile) {
           try {
             const idParaFoto = targetId
-            const formData = new FormData()
-            formData.append('file', fotoFile)
-            formData.append('entity', 'funcionarios')
-            formData.append('id', idParaFoto)
+            const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+            const fileName = `${idParaFoto}_${Date.now()}.${fileExt}`
 
-            const processRes = await fetch('/api/fotos/process', {
-              method: 'POST',
-              body: formData
-            })
-            const processData = await processRes.json().catch(() => ({}))
-            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
+            const { error: uploadError } = await supabase.storage
+              .from('fotos-funcionarios')
+              .upload(fileName, fotoFile, { upsert: true })
 
-            // Invalida o cache local do navegador para que a nova foto apareça imediatamente (cadastro novo)
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-            const oldAvatarPath = (funcionario as any)?.foto_avatar_path
-            const oldVisPath = (funcionario as any)?.foto_visualizacao_path
-            const oldFotoUrl = (funcionario as any)?.foto_url
-            if (oldAvatarPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${oldAvatarPath}`)
-            if (oldVisPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${oldVisPath}`)
-            if (oldFotoUrl) await invalidarCacheFoto(oldFotoUrl)
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('fotos-funcionarios')
+              .getPublicUrl(fileName)
+
+            const updatePhotoPayload = {
+              foto_url: publicUrl,
+              foto_avatar_path: null,
+              foto_visualizacao_path: null,
+              foto_original_path: null,
+              foto_updated_at: new Date().toISOString()
+            }
+
+            await supabase
+              .from('funcionarios')
+              .update(updatePhotoPayload)
+              .eq('id', idParaFoto)
+
+            // Invalida o cache local do navegador para que a nova foto apareça imediatamente
+            await invalidarCacheFoto(publicUrl)
           } catch (fotoErr: any) {
-            console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário:', fotoErr)
-            toast.error(fotoErr.message || 'Aviso: Funcionário cadastrado, mas houve erro ao processar a foto 3x4.')
+            console.error('[useFuncionarioFormStates] Erro no upload direto da foto do funcionário:', fotoErr)
+            toast.error('Aviso: Funcionário cadastrado, mas houve erro ao salvar a foto.')
           }
         }
-        // --- FIM UPLOAD OTIMIZADO ---
+        // --- FIM UPLOAD DIRETO ---
 
         // Criar ou garantir vínculo de funcionário na escola logada automaticamente
         if (escolaId) {
