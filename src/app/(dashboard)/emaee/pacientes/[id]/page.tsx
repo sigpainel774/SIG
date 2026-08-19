@@ -822,7 +822,11 @@ export default function PacienteDetalhesPage() {
 
                         <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-2 border-t border-border/40">
                           <span>Frequência: <strong>{esp.frequencia ?? 'Conforme demanda'}</strong></span>
-                          <span>{esp.horario_inicio ? `Horário: ${esp.horario_inicio}` : ''}</span>
+                          <span>
+                            {esp.horario_inicio
+                              ? `Horário: ${esp.horario_inicio.slice(0, 5)}${esp.horario_fim ? ` às ${esp.horario_fim.slice(0, 5)}` : ''}`
+                              : ''}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-end text-[11px] text-primary font-semibold pt-1 group-hover:translate-x-0.5 transition-transform">

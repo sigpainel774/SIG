@@ -75,7 +75,7 @@ export function Sidebar() {
 
   const modulosSecretaria = selectedSecretaria?.modulos_ativos || (
     isEMAEE 
-      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'pacientes', 'fila-espera', 'especialistas', 'relatorios-escola', 'arquivos', 'relatorios']
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'pacientes', 'fila-espera', 'especialistas', 'calendario-atendimentos', 'relatorios-escola', 'arquivos', 'relatorios']
       : isEducacao
       ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'alunos', 'turmas', 'matriculas', 'avaliacoes', 'ocorrencias', 'documentos', 'transferencias', 'arquivos', 'relatorios', 'central-atividades', 'lideranca']
       : isSaude
@@ -102,6 +102,7 @@ export function Sidebar() {
     '/emaee/pacientes': 'pacientes',
     '/emaee/fila-espera': 'fila-espera',
     '/emaee/vincular-profissionais': 'especialistas',
+    '/emaee/calendario-atendimentos': 'calendario-atendimentos',
     '/emaee/solicitacoes-escola': 'relatorios-escola',
   }
 
@@ -193,6 +194,7 @@ export function Sidebar() {
             { href: '/emaee/pacientes', label: 'Pastas de Alunos / Saúde', icon: Heart },
             { href: '/emaee/fila-espera', label: 'Fila de Espera & Admissão', icon: Clock },
             { href: '/emaee/vincular-profissionais', label: 'Profissionais AEE', icon: UserPlus },
+            { href: '/emaee/calendario-atendimentos', label: 'Calendário de Atendimentos', icon: Calendar },
             { href: '/emaee/solicitacoes-escola', label: 'Relatórios das Escolas', icon: FileSpreadsheet },
           ]
         },
@@ -436,7 +438,7 @@ export function Sidebar() {
             }
 
             const isAdmin = isAdminGlobalOrRoot()
-            if (!isAdmin && isProfessor) {
+            if (!isAdmin && isProfessor && !isEMAEE) {
               const permitidos = ['/home', '/mural', '/alunos', '/turmas', '/avaliacoes']
               return permitidos.includes(item.href)
             }

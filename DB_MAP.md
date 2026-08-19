@@ -792,6 +792,7 @@ Escala e agendamento de especialidades de atendimento no EMAEE.
 *   `frequencia`: `text` (Default: 'SEMANAL', Nullable)
 *   `dia_semana`: `smallint` (1 = Segunda, 2 = Terça, etc., NOT NULL)
 *   `horario_inicio`: `time` (NOT NULL)
+*   `horario_fim`: `time` (Horário de término do atendimento, Nullable)
 *   `ativo`: `boolean` (Default: true, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
