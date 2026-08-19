@@ -838,21 +838,14 @@ export function useFuncionarioFormStates({
         // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
         if (fotoFile) {
           try {
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json().catch(() => ({}))
-            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
-
-            const uploadRes = await fetch(dataUrl.signedUrl, {
-              method: 'PUT',
-              body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type }
-            })
-            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+            const formData = new FormData()
+            formData.append('file', fotoFile)
+            formData.append('entity', 'funcionarios')
+            formData.append('id', funcionario.id)
 
             const processRes = await fetch('/api/fotos/process', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
+              body: formData
             })
             const processData = await processRes.json().catch(() => ({}))
             if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
@@ -908,25 +901,14 @@ export function useFuncionarioFormStates({
         if (fotoFile) {
           try {
             const idParaFoto = targetId
-            
-            // 1. Solicita a Signed URL do bucket privado
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json().catch(() => ({}))
-            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+            const formData = new FormData()
+            formData.append('file', fotoFile)
+            formData.append('entity', 'funcionarios')
+            formData.append('id', idParaFoto)
 
-            // 2. Faz o upload direto
-            const uploadRes = await fetch(dataUrl.signedUrl, {
-              method: 'PUT',
-              body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type }
-            })
-            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
-
-            // 3. Manda processar e atualizar o banco
             const processRes = await fetch('/api/fotos/process', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
+              body: formData
             })
             const processData = await processRes.json().catch(() => ({}))
             if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')

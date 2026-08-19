@@ -14,23 +14,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { entity, id, originalPath } = await req.json()
+    let entity: string | null = null
+    let id: string | null = null
+    let originalPath: string | null = null
+    let buffer: ArrayBuffer | null = null
 
-    if (!entity || !id || !originalPath || !['alunos', 'funcionarios'].includes(entity)) {
+    const contentType = req.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      entity = formData.get('entity') as string | null
+      id = formData.get('id') as string | null
+      const file = formData.get('file') as File | null
+
+      if (!file) {
+        return NextResponse.json({ error: 'Nenhum arquivo de foto enviado' }, { status: 400 })
+      }
+
+      buffer = await file.arrayBuffer()
+    } else {
+      const body = await req.json().catch(() => ({}))
+      entity = body.entity
+      id = body.id
+      originalPath = body.originalPath
+
+      if (originalPath) {
+        const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+          .from('fotos-originais')
+          .download(originalPath)
+
+        if (downloadError || !fileData) {
+          console.error('[API fotos/process] Erro ao baixar original:', downloadError)
+          return NextResponse.json({ error: 'Falha ao processar o arquivo enviado' }, { status: 500 })
+        }
+
+        buffer = await fileData.arrayBuffer()
+      }
+    }
+
+    if (!entity || !id || !buffer || !['alunos', 'funcionarios'].includes(entity)) {
       return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
     }
-
-    // 1. Fazer o download do arquivo original enviado via Signed URL
-    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-      .from('fotos-originais')
-      .download(originalPath)
-
-    if (downloadError || !fileData) {
-      console.error('[API fotos/process] Erro ao baixar original:', downloadError)
-      return NextResponse.json({ error: 'Falha ao processar o arquivo enviado' }, { status: 500 })
-    }
-
-    const buffer = await fileData.arrayBuffer()
 
     // 2. Processar com Sharp simultaneamente (Avatar e Visualização)
     // .rotate() garante que fotos tiradas em celulares (com EXIF Orientation) sejam rotacionadas corretamente
@@ -60,8 +84,10 @@ export async function POST(req: NextRequest) {
       originalOtimizadoBuffer = origBuf
     } catch (sharpError) {
       console.error('[API fotos/process] Erro no processamento Sharp (arquivo inválido ou corrompido):', sharpError)
-      // Tenta remover o arquivo temporário enviado para não deixar lixo no storage
-      await supabaseAdmin.storage.from('fotos-originais').remove([originalPath]).catch(() => {})
+      // Tenta remover o arquivo temporário enviado se ele existiu
+      if (originalPath) {
+        await supabaseAdmin.storage.from('fotos-originais').remove([originalPath]).catch(() => {})
+      }
       return NextResponse.json({ error: 'Formato de imagem inválido ou corrompido' }, { status: 400 })
     }
 
@@ -108,8 +134,10 @@ export async function POST(req: NextRequest) {
       if (!visualizacaoRes.error) cleanupAttempts.push(supabaseAdmin.storage.from('fotos-visualizacao').remove([visualizacaoPath]))
       if (!originalRes.error) cleanupAttempts.push(supabaseAdmin.storage.from('fotos-originais').remove([finalOriginalPath]))
       
-      // Também remove a foto original temporária
-      cleanupAttempts.push(supabaseAdmin.storage.from('fotos-originais').remove([originalPath]))
+      // Também remove a foto original temporária se ela existiu
+      if (originalPath) {
+        cleanupAttempts.push(supabaseAdmin.storage.from('fotos-originais').remove([originalPath]))
+      }
       
       await Promise.allSettled(cleanupAttempts)
 
@@ -141,7 +169,7 @@ export async function POST(req: NextRequest) {
         supabaseAdmin.storage.from('fotos-avatar').remove([avatarPath]),
         supabaseAdmin.storage.from('fotos-visualizacao').remove([visualizacaoPath]),
         supabaseAdmin.storage.from('fotos-originais').remove([finalOriginalPath]),
-        supabaseAdmin.storage.from('fotos-originais').remove([originalPath])
+        ...(originalPath ? [supabaseAdmin.storage.from('fotos-originais').remove([originalPath])] : [])
       ])
       
       return NextResponse.json({ error: 'Erro ao atualizar os registros de foto no banco de dados' }, { status: 500 })
@@ -149,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     // 7. Sucesso! Agora sim apaga a foto temporária e limpa as fotos antigas
     await Promise.allSettled([
-      supabaseAdmin.storage.from('fotos-originais').remove([originalPath]),
+      ...(originalPath ? [supabaseAdmin.storage.from('fotos-originais').remove([originalPath])] : []),
       ...(oldRecord ? [
         oldRecord.foto_avatar_path && oldRecord.foto_avatar_path !== avatarPath ? supabaseAdmin.storage.from('fotos-avatar').remove([oldRecord.foto_avatar_path]) : Promise.resolve(),
         oldRecord.foto_visualizacao_path && oldRecord.foto_visualizacao_path !== visualizacaoPath ? supabaseAdmin.storage.from('fotos-visualizacao').remove([oldRecord.foto_visualizacao_path]) : Promise.resolve(),
