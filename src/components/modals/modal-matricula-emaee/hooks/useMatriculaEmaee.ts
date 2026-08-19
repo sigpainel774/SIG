@@ -570,23 +570,27 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado
         if (fotoFile && targetAlunoId) {
           try {
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const requestId = crypto.randomUUID()
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${targetAlunoId}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
             const dataUrl = await resUrl.json()
             if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto 3x4.')
 
             const uploadRes = await fetch(dataUrl.signedUrl, {
               method: 'PUT',
               body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type }
+              headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' }
             })
             if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo da foto 3x4.')
 
             const processRes = await fetch('/api/fotos/process', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path })
+              body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path, requestId })
             })
-            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto 3x4.')
+            if (!processRes.ok) {
+              const errData = await processRes.json().catch(() => ({}))
+              throw new Error(errData.error || 'Erro ao otimizar e salvar as variações da foto 3x4.')
+            }
           } catch (fotoErr: any) {
             console.error('Erro no upload da foto 3x4:', fotoErr)
             toast.error('Aviso: Houve um problema ao processar a nova foto 3x4 do aluno.')

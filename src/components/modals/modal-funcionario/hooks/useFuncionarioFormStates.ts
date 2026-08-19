@@ -835,6 +835,9 @@ export function useFuncionarioFormStates({
           })
         }).catch(err => console.error('Erro ao notificar diretor:', err))
 
+        let fotoUploadSuccess = true
+        let fotoUploadErrorMsg = ''
+
         // --- UPLOAD OTIMIZADO OU LEGADO DE FOTO (EDIÇÃO) ---
         if (fotoFile) {
           const USE_LEGACY_UPLOAD = process.env.NEXT_PUBLIC_ENABLE_LEGACY_FOTO_UPLOAD === 'true'
@@ -872,7 +875,8 @@ export function useFuncionarioFormStates({
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload direto legado:', fotoErr)
-              toast.error('Aviso: Funcionário atualizado, mas houve erro ao salvar a foto.')
+              fotoUploadSuccess = false
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload legado.'
             }
           } else {
             const toastId = toast.loading('Preparando foto...')
@@ -921,7 +925,8 @@ export function useFuncionarioFormStates({
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload otimizado da foto do funcionário:', fotoErr)
               toast.dismiss(toastId)
-              toast.error('Aviso: Funcionário atualizado, mas houve erro ao salvar a foto. ' + (fotoErr.message || ''))
+              fotoUploadSuccess = false
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no processamento da foto.'
             }
           }
         } else if (fotoRemovidaManualmente) {
@@ -938,7 +943,11 @@ export function useFuncionarioFormStates({
         }
         // --- FIM UPLOAD DIRETO ---
 
-        toast.success('Funcionário atualizado com sucesso!')
+        if (fotoFile && !fotoUploadSuccess) {
+          toast.warning(`Funcionário atualizado, mas houve erro ao salvar a foto: ${fotoUploadErrorMsg}`)
+        } else {
+          toast.success('Funcionário atualizado com sucesso!')
+        }
 
         if (authUserId) {
           const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
@@ -973,7 +982,42 @@ export function useFuncionarioFormStates({
           if (error) throw error
         }
 
-        // --- UPLOAD OTIMIZADO OU LEGADO DE FOTO (CADASTRO NOVO) ---
+        // 1. Criar ou garantir vínculo de funcionário na escola logada IMEDIATAMENTE antes da foto (Garante RLS)
+        if (escolaId) {
+          const parsedCarga = cargaHoraria.trim() !== '' && !isNaN(Number(cargaHoraria.trim())) ? parseInt(cargaHoraria.trim(), 10) : null
+
+          const { data: existingVinc } = await supabase
+            .from('vinculos_funcionarios')
+            .select('id')
+            .eq('funcionario_id', targetId)
+            .eq('escola_id', escolaId)
+            .maybeSingle()
+
+          if (!existingVinc) {
+            const { error: vincError } = await supabase
+              .from('vinculos_funcionarios')
+              .insert({
+                funcionario_id: targetId,
+                escola_id: escolaId,
+                cargo: cargo || null,
+                carga_horaria: parsedCarga,
+                modalidade_ensino: modalidadeEnsino || 'Regular',
+                ativo: true,
+                data_inicio: new Date().toISOString().split('T')[0]
+              })
+            if (vincError) console.error('Erro ao vincular escola:', vincError)
+          } else {
+            await supabase
+              .from('vinculos_funcionarios')
+              .update({ ativo: true, cargo: cargo || null, carga_horaria: parsedCarga, modalidade_ensino: modalidadeEnsino || 'Regular' })
+              .eq('id', existingVinc.id)
+          }
+        }
+
+        let fotoUploadSuccess = true
+        let fotoUploadErrorMsg = ''
+
+        // 2. --- UPLOAD OTIMIZADO OU LEGADO DE FOTO (CADASTRO NOVO) ---
         if (fotoFile) {
           const USE_LEGACY_UPLOAD = process.env.NEXT_PUBLIC_ENABLE_LEGACY_FOTO_UPLOAD === 'true'
           
@@ -1007,10 +1051,12 @@ export function useFuncionarioFormStates({
                 .update(updatePhotoPayload)
                 .eq('id', idParaFoto)
 
+              await invalidarCacheFoto(publicUrl)
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload direto da foto do funcionário novo:', fotoErr)
-              toast.error('Aviso: Funcionário criado, mas houve erro ao salvar a foto.')
+              fotoUploadSuccess = false
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload legado.'
             }
           } else {
             const toastId = toast.loading('Preparando foto...')
@@ -1049,47 +1095,24 @@ export function useFuncionarioFormStates({
                 const errData = await processRes.json().catch(() => ({}))
                 throw new Error(errData.error || 'Falha no processamento otimizado da imagem no servidor.')
               }
+
+              const processData = await processRes.json()
+
+              // Invalida o cache local do navegador para que a nova foto apareça imediatamente
+              if (processData.success && processData.data?.foto_url) {
+                await invalidarCacheFoto(processData.data.foto_url)
+              }
               
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload otimizado da foto do funcionário novo:', fotoErr)
               toast.dismiss(toastId)
-              toast.error('Aviso: Funcionário criado, mas houve erro ao salvar a foto. ' + (fotoErr.message || ''))
+              fotoUploadSuccess = false
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no processamento da foto.'
             }
           }
         }
         // --- FIM UPLOAD DIRETO ---
-
-        // Criar ou garantir vínculo de funcionário na escola logada automaticamente
-        if (escolaId) {
-          const parsedCarga = cargaHoraria.trim() !== '' && !isNaN(Number(cargaHoraria.trim())) ? parseInt(cargaHoraria.trim(), 10) : null
-
-          const { data: existingVinc } = await supabase
-            .from('vinculos_funcionarios')
-            .select('id')
-            .eq('funcionario_id', targetId)
-            .eq('escola_id', escolaId)
-            .maybeSingle()
-
-          if (!existingVinc) {
-            const { error: vincError } = await supabase
-              .from('vinculos_funcionarios')
-              .insert({
-                funcionario_id: targetId,
-                escola_id: escolaId,
-                cargo: cargo || null,
-                carga_horaria: parsedCarga,
-                ativo: true,
-                data_inicio: new Date().toISOString().split('T')[0]
-              })
-            if (vincError) console.error('Erro ao vincular escola:', vincError)
-          } else {
-            await supabase
-              .from('vinculos_funcionarios')
-              .update({ ativo: true, cargo: cargo || null, carga_horaria: parsedCarga })
-              .eq('id', existingVinc.id)
-          }
-        }
 
         const loggedUser = useAuthStore.getState().funcionario
         fetch('/api/audit/log-e-notificar', {
@@ -1174,7 +1197,9 @@ export function useFuncionarioFormStates({
         verificarEAtualizarRetornosAfastamentos(supabase).catch((e) => console.error(e))
 
         const temAfastamento = status === 'afastado' && Boolean(cid.trim())
-        if (existingFunc || isEditing) {
+        if (fotoFile && !fotoUploadSuccess) {
+          toast.warning(`Funcionário cadastrado, porém houve falha ao salvar a foto: ${fotoUploadErrorMsg}`)
+        } else if (existingFunc || isEditing) {
           toast.success(temAfastamento ? 'Ficha cadastral e dados de afastamento atualizados com sucesso!' : 'Ficha cadastral atualizada com sucesso!')
         } else {
           toast.success(temAfastamento ? 'Funcionário cadastrado e afastamento registrado com sucesso!' : 'Funcionário cadastrado com sucesso!')
