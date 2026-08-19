@@ -121,6 +121,7 @@ Este arquivo descreve o histórico completo e a finalidade de todas as migration
 | 102 | `20260818020000_emaee_numero_matricula.sql` | 2026-08-18 | Ativação do sistema de geração automática de Número de Matrícula EMAEE (`numero_matricula_emaee`), com função sequencial `gerar_numero_matricula_emaee`, trigger atômico e preenchimento retroativo nos prontuários existentes. | `public.emaee_matriculas` | `SECURITY DEFINER` + Mantém RLS |
 | 103 | `20260818200000_emaee_escola_fora_da_rede.sql` | 2026-08-18 | Adiciona suporte para escolas de origem fora da rede municipal (colunas `escola_origem_fora_rede`, `escola_origem_nome`, `escola_origem_municipio`, `escola_origem_uf` na tabela `emaee_matriculas`). | `public.emaee_matriculas` | Mantém RLS Existente |
 | 104 | `20260819000000_add_horario_fim_to_emaee_especialidades.sql` | 2026-08-19 | Adiciona a coluna `horario_fim` (`time without time zone`) na tabela `emaee_especialidades_vinculadas` para registro do término da sessão de atendimento AEE. | `public.emaee_especialidades_vinculadas` | Mantém RLS Existente |
+| 105 | `20260819100000_public_pwa_system_config.sql` | 2026-08-19 | Política RLS `leitura_publica_pwa` em `system_config` para permitir leitura não-autenticada das chaves de versão do PWA, evitando loops de atualização na tela de login. | `public.system_config` | RLS Leitura Pública (`pwa_%`) |
 
 
 
