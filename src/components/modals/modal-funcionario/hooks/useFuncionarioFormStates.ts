@@ -837,29 +837,34 @@ export function useFuncionarioFormStates({
 
         // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
         if (fotoFile) {
-          const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-          const dataUrl = await resUrl.json()
-          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+          try {
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const dataUrl = await resUrl.json()
+            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
 
-          const uploadRes = await fetch(dataUrl.signedUrl, {
-            method: 'PUT',
-            body: fotoFile,
-            headers: { 'Content-Type': fotoFile.type }
-          })
-          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+            const uploadRes = await fetch(dataUrl.signedUrl, {
+              method: 'PUT',
+              body: fotoFile,
+              headers: { 'Content-Type': fotoFile.type }
+            })
+            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
 
-          const processRes = await fetch('/api/fotos/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
-          })
-          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
+            })
+            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
 
-          // Invalida o cache local do navegador para que a nova foto apareça imediatamente
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-          await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${funcionario.foto_avatar_path}`)
-          await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${funcionario.foto_visualizacao_path}`)
-          await invalidarCacheFoto(funcionario.foto_url)
+            // Invalida o cache local do navegador para que a nova foto apareça imediatamente
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+            await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${funcionario.foto_avatar_path}`)
+            await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${funcionario.foto_visualizacao_path}`)
+            await invalidarCacheFoto(funcionario.foto_url)
+          } catch (fotoErr: any) {
+            console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário:', fotoErr)
+            toast.error(fotoErr.message || 'Aviso: Funcionário atualizado, mas houve erro ao processar a foto 3x4.')
+          }
         }
         // --- FIM UPLOAD OTIMIZADO ---
 
@@ -898,40 +903,44 @@ export function useFuncionarioFormStates({
           if (error) throw error
         }
 
-        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3) ---
+        // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - CADASTRO NOVO) ---
         if (fotoFile) {
-          const idParaFoto = targetId
-          
-          // 1. Solicita a Signed URL do bucket privado
-          const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-          const dataUrl = await resUrl.json()
-          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
+          try {
+            const idParaFoto = targetId
+            
+            // 1. Solicita a Signed URL do bucket privado
+            const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
+            const dataUrl = await resUrl.json()
+            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
 
-          // 2. Faz o upload direto
-          const uploadRes = await fetch(dataUrl.signedUrl, {
-            method: 'PUT',
-            body: fotoFile,
-            headers: { 'Content-Type': fotoFile.type }
-          })
-          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+            // 2. Faz o upload direto
+            const uploadRes = await fetch(dataUrl.signedUrl, {
+              method: 'PUT',
+              body: fotoFile,
+              headers: { 'Content-Type': fotoFile.type }
+            })
+            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
 
-          // 3. Manda processar e atualizar o banco
-          const processRes = await fetch('/api/fotos/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
-          })
-          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            // 3. Manda processar e atualizar o banco
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
+            })
+            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
 
-          // Invalida o cache local do navegador para que a nova foto apareça imediatamente (cadastro novo)
-          // Para cadastro novo o funcionário ainda não tem foto antiga, mas limpamos por precaução
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
-          const oldAvatarPath = (funcionario as any)?.foto_avatar_path
-          const oldVisPath = (funcionario as any)?.foto_visualizacao_path
-          const oldFotoUrl = (funcionario as any)?.foto_url
-          if (oldAvatarPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${oldAvatarPath}`)
-          if (oldVisPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${oldVisPath}`)
-          if (oldFotoUrl) await invalidarCacheFoto(oldFotoUrl)
+            // Invalida o cache local do navegador para que a nova foto apareça imediatamente (cadastro novo)
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
+            const oldAvatarPath = (funcionario as any)?.foto_avatar_path
+            const oldVisPath = (funcionario as any)?.foto_visualizacao_path
+            const oldFotoUrl = (funcionario as any)?.foto_url
+            if (oldAvatarPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-avatar/${oldAvatarPath}`)
+            if (oldVisPath) await invalidarCacheFoto(`${supabaseUrl}/storage/v1/object/public/fotos-visualizacao/${oldVisPath}`)
+            if (oldFotoUrl) await invalidarCacheFoto(oldFotoUrl)
+          } catch (fotoErr: any) {
+            console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário:', fotoErr)
+            toast.error(fotoErr.message || 'Aviso: Funcionário cadastrado, mas houve erro ao processar a foto 3x4.')
+          }
         }
         // --- FIM UPLOAD OTIMIZADO ---
 
