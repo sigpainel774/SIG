@@ -17,43 +17,72 @@ export async function POST(req: NextRequest) {
     let entity: string | null = null
     let id: string | null = null
     let originalPath: string | null = null
+    let requestId: string | null = null
     let buffer: ArrayBuffer | null = null
 
-    const contentType = req.headers.get('content-type') || ''
+    // Forçamos o uso de JSON. Não aceitamos mais multipart/form-data para evitar limite de 4.5MB da Vercel
+    const body = await req.json().catch(() => ({}))
+    entity = body.entity
+    id = body.id
+    originalPath = body.originalPath
+    requestId = body.requestId
 
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData()
-      entity = formData.get('entity') as string | null
-      id = formData.get('id') as string | null
-      const file = formData.get('file') as File | null
-
-      if (!file) {
-        return NextResponse.json({ error: 'Nenhum arquivo de foto enviado' }, { status: 400 })
-      }
-
-      buffer = await file.arrayBuffer()
-    } else {
-      const body = await req.json().catch(() => ({}))
-      entity = body.entity
-      id = body.id
-      originalPath = body.originalPath
-
-      if (originalPath) {
-        const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-          .from('fotos-originais')
-          .download(originalPath)
-
-        if (downloadError || !fileData) {
-          console.error('[API fotos/process] Erro ao baixar original:', downloadError)
-          return NextResponse.json({ error: 'Falha ao processar o arquivo enviado' }, { status: 500 })
-        }
-
-        buffer = await fileData.arrayBuffer()
-      }
+    if (!entity || !id || !originalPath || !['alunos', 'funcionarios'].includes(entity)) {
+      return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
     }
 
-    if (!entity || !id || !buffer || !['alunos', 'funcionarios'].includes(entity)) {
-      return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
+    // Validação ABAC / RLS (Fundamental para segurança antes de usar supabaseAdmin)
+    const { data: recordAuthCheck, error: rlsError } = await supabase
+      .from(entity as 'alunos' | 'funcionarios')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (rlsError || !recordAuthCheck) {
+      console.warn(`[API fotos/process] Acesso negado via RLS para entity ${entity} id ${id} por uid ${user.id}`)
+      return NextResponse.json({ error: 'Você não tem permissão para editar a foto deste registro.' }, { status: 403 })
+    }
+
+    // Validar se o caminho bate EXATAMENTE com o contrato (Prevenção de cruzamento de fotos e diretórios falsos)
+    // Contrato: temp/<uid>/<entity>/<id>/<requestId>.<ext>
+    const pathParts = originalPath.split('/')
+    if (pathParts.length < 5 || pathParts[1] !== user.id || pathParts[2] !== entity || pathParts[3] !== id) {
+      console.warn(`[API fotos/process] Caminho original fraudulento ou inválido: ${originalPath}`)
+      return NextResponse.json({ error: 'Caminho de arquivo inválido ou não autorizado.' }, { status: 400 })
+    }
+
+    // Baixar o arquivo temporário do bucket
+    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+      .from('fotos-originais')
+      .download(originalPath)
+
+    if (downloadError || !fileData) {
+      console.error('[API fotos/process] Erro ao baixar original:', downloadError)
+      return NextResponse.json({ error: 'Falha ao processar o arquivo enviado' }, { status: 500 })
+    }
+
+    buffer = await fileData.arrayBuffer()
+
+    // Proteção contra "Imagem Bomba" (Decompression Bomb) e Validação MIME Real (ES-F8)
+    try {
+      const metadata = await sharp(Buffer.from(buffer)).metadata()
+      
+      const width = metadata.width || 0
+      const height = metadata.height || 0
+      const pixels = width * height
+      
+      // Limite de segurança de 40 Megapixels
+      if (pixels > 40_000_000) {
+        throw new Error('A imagem excede o limite máximo de 40 Megapixels permitidos para processamento.')
+      }
+      
+      const format = metadata.format
+      if (!['jpeg', 'png', 'webp', 'jpg'].includes(format || '')) {
+        throw new Error(`Formato de imagem real não suportado: ${format}`)
+      }
+    } catch (metaErr: any) {
+      console.error('[API fotos/process] Erro de validação de metadados (Imagem maliciosa ou corrompida):', metaErr)
+      return NextResponse.json({ error: 'Imagem inválida, corrompida ou excede limites de segurança. ' + (metaErr.message || '') }, { status: 400 })
     }
 
     // 2. Processar com Sharp simultaneamente (Avatar e Visualização)
@@ -64,19 +93,20 @@ export async function POST(req: NextRequest) {
 
     try {
       const [avBuf, visBuf, origBuf] = await Promise.all([
-        sharp(Buffer.from(buffer))
+        sharp(Buffer.from(buffer!))
           .rotate()
-          .resize(256, 256, { fit: 'cover', position: 'top' })
-          .webp({ quality: 80, effort: 4 })
+          .resize(240, 320, { fit: 'cover', position: 'top' })
+          .webp({ quality: 78, effort: 4 })
           .toBuffer(),
-        sharp(Buffer.from(buffer))
+        sharp(Buffer.from(buffer!))
           .rotate()
-          .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-          .webp({ quality: 85, effort: 4 })
+          .resize(900, 1200, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 84, effort: 4 })
           .toBuffer(),
-        sharp(Buffer.from(buffer))
+        sharp(Buffer.from(buffer!))
           .rotate()
-          .webp({ quality: 90 })
+          .resize(1600, 2133, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 88, effort: 4 })
           .toBuffer()
       ])
       avatarBuffer = avBuf
@@ -114,13 +144,13 @@ export async function POST(req: NextRequest) {
     const [avatarRes, visualizacaoRes, originalRes] = await Promise.all([
       supabaseAdmin.storage
         .from('fotos-avatar')
-        .upload(avatarPath, avatarBlob, { contentType: 'image/webp', upsert: true }),
+        .upload(avatarPath, avatarBlob, { contentType: 'image/webp', upsert: false }),
       supabaseAdmin.storage
         .from('fotos-visualizacao')
-        .upload(visualizacaoPath, visualizacaoBlob, { contentType: 'image/webp', upsert: true }),
+        .upload(visualizacaoPath, visualizacaoBlob, { contentType: 'image/webp', upsert: false }),
       supabaseAdmin.storage
         .from('fotos-originais')
-        .upload(finalOriginalPath, originalOtimizadoBlob, { contentType: 'image/webp', upsert: true })
+        .upload(finalOriginalPath, originalOtimizadoBlob, { contentType: 'image/webp', upsert: false })
     ])
 
     // Verificar se algum upload retornou erro

@@ -28,6 +28,12 @@ export async function compressImageBeforeUpload(
   options: CompressionOptions = {}
 ): Promise<CompressionResult> {
   const originalSize = file.size
+  const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MiB
+
+  // Proteção rígida (ES-M1): Rejeitar tamanhos que causariam Out-of-Memory no celular antes de instanciar Canvas
+  if (originalSize > MAX_FILE_SIZE) {
+    throw new Error('O arquivo excede o limite máximo de 20 MB. Selecione uma versão menor ou altere a configuração da câmera.')
+  }
 
   // 1. Bypass seguro para arquivos que não são imagens (PDFs, DOCX, ZIP, etc.)
   if (!file.type || !file.type.startsWith('image/')) {
@@ -129,8 +135,14 @@ export async function compressImageBeforeUpload(
     }
 
   } catch (error) {
-    // Fallback transparente: se o Canvas falhar por qualquer motivo (RAM, browser antigo), usa a imagem original
-    console.warn('[imageCompression] Erro ao comprimir imagem no client-side, usando arquivo original:', error)
+    console.warn('[imageCompression] Erro ao comprimir imagem no client-side:', error)
+    
+    // (ES-F10) Se falhar e tiver mais de 6MB, bloquear envio para evitar onerar rede e tempo de servidor
+    if (originalSize > 6 * 1024 * 1024) {
+      throw new Error('Não foi possível otimizar uma foto pesada no seu aparelho. Por favor, tire outra foto com resolução menor ou selecione um arquivo mais leve.')
+    }
+
+    // Se tiver até 6MB, o upload assinado dá conta de subir e o servidor (Sharp) otimiza.
     return {
       file,
       originalSize,
