@@ -29,16 +29,27 @@ const MapaCalorAcessosReal = dynamic(() => import('./MapaCalorAcessos'), {
   loading: () => <MapLoadingSkeleton height="480px" /> 
 });
 
+const MapaRotasEscolasReal = dynamic(() => import('./MapaRotasEscolas'), { 
+  ssr: false, 
+  loading: () => <MapLoadingSkeleton height="580px" /> 
+});
+
 function MapLoadingSkeleton({ height }: { height: string }) {
   return (
     <div 
       style={{ height }} 
-      className="w-full rounded-xl bg-[#141a27] border border-[#232d42] flex items-center justify-center text-slate-400 animate-pulse"
+      className="w-full rounded-2xl bg-[#141a27] border border-[#232d42] flex items-center justify-center text-slate-400 animate-pulse"
     >
       <span className="text-sm font-semibold">Carregando mapa interativo...</span>
     </div>
   );
 }
 
-export { MiniMapaReal as MiniMapa, MapaGlobalReal as MapaGlobal, MapaAuditoriaReal as MapaAuditoria, MapaAlunosReal as MapaAlunos, MapaCalorAcessosReal as MapaCalorAcessos };
-
+export { 
+  MiniMapaReal as MiniMapa, 
+  MapaGlobalReal as MapaGlobal, 
+  MapaAuditoriaReal as MapaAuditoria, 
+  MapaAlunosReal as MapaAlunos, 
+  MapaCalorAcessosReal as MapaCalorAcessos,
+  MapaRotasEscolasReal as MapaRotasEscolas
+};

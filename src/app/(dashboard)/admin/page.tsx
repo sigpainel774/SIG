@@ -260,11 +260,11 @@ const adminGroups: AdminGroup[] = [
         path: '/admin/defesa',
       },
       {
-        title: 'Relatórios',
-        subtitle: 'Gráficos e estatísticas',
+        title: 'Relatórios Administrativos',
+        subtitle: 'Geolocalização, rotas e dados da rede',
         icon: BarChart3,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
-        path: '/relatorios',
+        path: '/admin/relatorios',
       },
       {
         title: 'Configurações',
