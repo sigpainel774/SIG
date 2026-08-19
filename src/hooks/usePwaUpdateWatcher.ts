@@ -37,6 +37,10 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
 
       if (error || !data || !isMounted.current) return
 
+      // Prevenção de loop de rebaixamento de versão: se a query retornou vazia
+      // (ex: não autenticado no login e bloqueado por RLS), abortar a checagem.
+      if (data.length === 0) return
+
       let serverVer = 'v13'
       let serverMsg = 'Uma nova versão do SIG foi disponibilizada. O sistema será atualizado automaticamente em instantes.'
       let serverStagger = 60
