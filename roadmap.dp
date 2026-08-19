@@ -44,6 +44,7 @@
 | **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
 | **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
 | **Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys)** | ⏳ Pendente | — | Login biométrico rápido (Face ID / Impressão Digital) via WebAuthn/FIDO2 para dispositivos móveis e PWA. Detalhes em `PLANOS_FUTUROS.md`. |
+| **Estúdio de Imagens IA & Conversão Autônoma (Zero SaaS)** | ⏳ Pendente | — | Remoção inteligente de fundo por IA client-side (Wasm/ONNX), conversão multiformato (WebP/PNG/AVIF) e enquadramento 3x4 automático com custo zero e LGPD. Detalhes em `PLANOS_FUTUROS.md`. |
 
 ---
 
@@ -69,6 +70,10 @@
 - **Escopo:** Autenticação instantânea por Face ID ou Impressão Digital no celular através do padrão WebAuthn/Passkeys, reduzindo o tempo de login para ~1s.
 - **Estrutura:** Tabela `biometria_dispositivos`, biblioteca `@simplewebauthn`, rotas de challenge e botão dinâmico em `/login`.
 - **Status:** Planejado.
+
+### 5. Estúdio de Imagens IA & Conversão Autônoma (Prioridade Média)
+- **Escopo:** Remoção inteligente de fundo de fotos por IA no navegador (Wasm/ONNX), enquadramento automático 3x4 (Face Detection) e conversão multiformato (WebP/PNG/AVIF) a custo zero, eliminando necessidade de SaaS externos pagos e garantindo 100% de conformidade com a LGPD.
+- **Status:** Planejado. Detalhes completos em `PLANOS_FUTUROS.md`.
 
 ---
 

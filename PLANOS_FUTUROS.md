@@ -3,7 +3,7 @@
 Este arquivo armazena planos de implementação, ideias e melhorias estruturados para execução futura.
 Atualizado automaticamente com o status real do repositório.
 
-**Última atualização:** 2026-08-14
+**Última atualização:** 2026-08-19
 
 ---
 
@@ -25,6 +25,7 @@ Atualizado automaticamente com o status real do repositório.
 | Módulo Roteiro e Paradas (Motoristas Nível 6) | ⏳ Pendente | Proposto em 2026-07-23 — Roteiro de paradas, geolocalização e confirmação de embarque/desembarque de alunos para contas nível 6 |
 | Assistente de IA para Logs de Auditoria | ⏳ Pendente | Proposto em 2026-07-20 — Assistente para responder sobre histórico de auditoria no sistema |
 | Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys) | ⏳ Pendente | Proposto em 2026-08-15 — Autenticação biométrica rápida (Face ID / Digital) via WebAuthn/FIDO2 no celular |
+| Estúdio de Imagens IA & Conversão Autônoma (Zero SaaS) | ⏳ Pendente | Proposto em 2026-08-19 — Remoção de fundo por IA client-side (Wasm/ONNX), conversão multiformato (WebP/PNG/AVIF) e enquadramento 3x4 automático com custo zero e LGPD |
 | Otimização `/configuracoes` (40KB → 8-12KB) | ✅ Implementado | Sessão 2026-07-18 — Código modularizado, corrigidos 8 erros silenciosos |
 | Refatoração e Otimização `modal-aluno.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, corrigidos 3 erros silenciosos |
 | Refatoração e Otimização `modal-funcionario.tsx` | ✅ Implementado | Sessão 2026-07-18 — Código modularizado com context/hooks, dividido em 6 abas de formulário |
@@ -732,5 +733,75 @@ Para manter a aplicação rápida e com custo zero de infraestrutura sem hospeda
 - [ ] Integrar botão e fluxo biométrico na tela de login (`src/app/(auth)/login/page.tsx`).
 - [ ] Criar aba / card "Dispositivos & Biometria" em `PerfilTab.tsx` para cadastro e revogação.
 - [ ] Validar compilação com `npx tsc --noEmit`.
+
+---
+
+## 📌 Estúdio de Imagens IA & Conversão Autônoma (Zero SaaS / Custo Zero)
+
+> **Status:** ⏳ Pendente — Proposto em 2026-08-19  
+> **Planejado em:** 2026-08-19  
+> **Objetivo:** Expandir a infraestrutura nativa de imagens do SIG para incluir **Remoção Inteligente de Fundo por IA (Client-Side via Wasm/ONNX)**, **Conversão Multiformato Dinâmica (WebP, PNG, JPG, AVIF)** e **Enquadramento Biométrico 3x4 Automático**, operando 100% no navegador do usuário e servidor local com **custo zero recorrente** e **conformidade total com a LGPD**.
+
+### 💡 Proposta de Valor & Diferenciais Estratégicos (Business & Eficiência)
+
+1. **Economia Recorrente de Custos (Substituição de SaaS Pagos)**:
+   - Elimina a necessidade de assinar serviços externos de recorte e manipulação (como *Remove.bg*, *Cloudinary*, *Imgix* ou *TinyPNG*), que custam entre R$ 0,50 e R$ 2,00 por foto processada ou planos corporativos de US$ 99 a US$ 500+/mês.
+   - Em uma rede municipal com 2.000 a 10.000 alunos e servidores, a economia acumulada é de milhares de reais por ano.
+
+2. **Privacidade e Conformidade Estrita com a LGPD**:
+   - Fotos de alunos (menores de idade) e servidores públicos **nunca saem do dispositivo ou do servidor seguro do município**. Nenhuma imagem é transferida para servidores de terceiros ou APIs de nuvem externas.
+
+3. **Padronização Visual Profissional Instantânea**:
+   - **Fotos 3x4 Oficiais:** Remove ruídos, fundos poluídos ou residenciais e aplica fundo branco/azul padrão de identificação civil em 1 clique.
+   - **Crachás e Carteirinhas:** Gera imagens com fundo transparente (PNG) ou alta compressão (WebP) para crachás de servidores e carteirinhas digitais de estudantes.
+
+4. **Conversão Multiformato e Compressão Extrema**:
+   - Suporte bidirecional para converter entre **JPEG, PNG, WebP e AVIF**, permitindo uploads de qualquer tipo de arquivo (câmeras de celular, scanners antigos, capturas de tela) com padronização automática e redução de até 95% no espaço em disco.
+
+---
+
+### 🛠️ Arquitetura Técnica Proposta
+
+```mermaid
+graph TD
+    A[Foto Capturada / Upload do Usuário] --> B[Client-Side Canvas / Wasm Engine]
+    B --> C{Ações Selecionadas pelo Usuário}
+    C -->|Remover Fundo| D[IA Local: @imgly/background-removal ou ONNX RMBG]
+    C -->|Enquadrar 3x4| E[Face Detection & Smart Crop]
+    C -->|Converter Formato| F[Conversão: WebP / PNG / AVIF]
+    D --> G[Preview Interativo no Modal]
+    E --> G
+    F --> G
+    G --> H[Upload Otimizado para Supabase Storage]
+    H --> I[Backend Sharp: Validação de Segurança & Redimensionamento Final]
+```
+
+1. **Remoção de Fundo por IA no Navegador (Client-Side)**:
+   - Utilização de `@imgly/background-removal` ou modelos leves em formato ONNX Runtime Web (`RMBG-1.4` / `BiRefNet-lite`).
+   - Processamento via WebAssembly (Wasm) acelerado por WebGPU/WebGL na máquina do operador, sem onerar a CPU do servidor.
+   - Alternância de fundo interativa: Fundo Transparente, Fundo Branco (padrão 3x4) ou Fundo Institucional (gradiente/azul).
+
+2. **Detecção Facial e Enquadramento Biométrico (Smart Crop 3x4)**:
+   - Algoritmo de detecção facial leve (ex: MediaPipe FaceMesh ou `@vladmandic/face-api`) para centralizar os olhos e ombros automaticamente, evitando cortes manuais imprecisos feitos pela secretaria.
+
+3. **Pipeline de Compressão e Conversão Backend (`sharp`)**:
+   - Manutenção e expansão da rota `/api/fotos/process` com suporte a exportações em PNG transparente (para crachás físicos) e WebP ultra-comprimido (para visualização no sistema e consumo mobile).
+
+---
+
+### Checklist de Execução
+- [ ] Avaliar e testar a biblioteca `@imgly/background-removal` em ambiente Next.js 16.
+- [ ] Criar componente de estúdio de foto (`src/components/ui/photo-studio-modal.tsx`) com opções de:
+  - Alternar fundo: Original, Transparente, Branco 3x4, Azul Oficial.
+  - Enquadramento automático no rosto (Face Crop).
+  - Ajuste fino de brilho e contraste antes de salvar.
+- [ ] Integrar o estúdio nos formulários de cadastro:
+  - Ficha do Aluno (`modal-aluno`)
+  - Ficha do Funcionário (`modal-funcionario`)
+  - Cadastro de Pacientes EMAEE (`/emaee/pacientes`)
+- [ ] Adicionar suporte a exportação direta de crachás com fundo transparente nas rotas de impressão.
+- [ ] Validar tempo de processamento em celulares e computadores com processadores modestos.
+- [ ] Validar compilação sem erros com `npx tsc --noEmit`.
+
 
 

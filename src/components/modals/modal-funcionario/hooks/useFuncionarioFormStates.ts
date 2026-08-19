@@ -838,13 +838,13 @@ export function useFuncionarioFormStates({
         let fotoUploadSuccess = true
         let fotoUploadErrorMsg = ''
 
-        // --- UPLOAD OTIMIZADO OU LEGADO DE FOTO (EDIÇÃO) ---
+        // --- UPLOAD OTIMIZADO COM FALLBACK RESILIENTE DE FOTO (EDIÇÃO) ---
         if (fotoFile) {
           const USE_LEGACY_UPLOAD = process.env.NEXT_PUBLIC_ENABLE_LEGACY_FOTO_UPLOAD === 'true'
           
           if (USE_LEGACY_UPLOAD) {
             try {
-              const toastId = toast.loading('Fazendo upload (Legado)...')
+              const toastId = toast.loading('Fazendo upload...')
               const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
               const fileName = `${funcionario.id}_${Date.now()}.${fileExt}`
 
@@ -876,57 +876,93 @@ export function useFuncionarioFormStates({
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload direto legado:', fotoErr)
               fotoUploadSuccess = false
-              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload legado.'
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload.'
             }
           } else {
             const toastId = toast.loading('Preparando foto...')
             try {
-              const requestId = crypto.randomUUID()
-              
-              // 1. Obter URL assinada para upload temporário seguro
-              const presignedRes = await fetch(`/api/fotos/presigned-url?entity=funcionarios&id=${funcionario.id}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
-              if (!presignedRes.ok) throw new Error('Falha ao obter URL de upload seguro.')
-              const presignedData = await presignedRes.json()
-              
-              // 2. Upload direto ao bucket fotos-originais
-              toast.loading('Enviando para o servidor...', { id: toastId })
-              const uploadRes = await fetch(presignedData.signedUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
-                body: fotoFile
-              })
-              if (!uploadRes.ok) throw new Error('Falha ao enviar arquivo temporário para processamento.')
-              
-              // 3. Chamar processamento no servidor (Sharp converte para WebP e limpa metadados)
-              toast.loading('Otimizando e gerando visualizações...', { id: toastId })
-              const processRes = await fetch('/api/fotos/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  entity: 'funcionarios',
-                  id: funcionario.id,
-                  originalPath: presignedData.path,
-                  requestId
-                })
-              })
-              
-              if (!processRes.ok) {
-                const errData = await processRes.json().catch(() => ({}))
-                throw new Error(errData.error || 'Falha no processamento otimizado da imagem no servidor.')
-              }
-              
-              const processData = await processRes.json()
+              let photoSaved = false
 
-              // Invalida o cache local do navegador para que a nova foto apareça imediatamente
-              if (processData.success && processData.data?.foto_url) {
-                await invalidarCacheFoto(processData.data.foto_url)
+              // 1. Tenta fluxo otimizado no servidor via URL assinada + Sharp
+              try {
+                const requestId = crypto.randomUUID()
+                const presignedRes = await fetch(`/api/fotos/presigned-url?entity=funcionarios&id=${funcionario.id}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
+                if (presignedRes.ok) {
+                  const presignedData = await presignedRes.json()
+                  if (presignedData?.signedUrl) {
+                    toast.loading('Enviando para o servidor...', { id: toastId })
+                    const uploadRes = await fetch(presignedData.signedUrl, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
+                      body: fotoFile
+                    })
+                    if (uploadRes.ok) {
+                      toast.loading('Otimizando e gerando visualizações...', { id: toastId })
+                      const processRes = await fetch('/api/fotos/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          entity: 'funcionarios',
+                          id: funcionario.id,
+                          originalPath: presignedData.path,
+                          requestId
+                        })
+                      })
+                      if (processRes.ok) {
+                        const processData = await processRes.json()
+                        if (processData.success && processData.data?.foto_url) {
+                          await invalidarCacheFoto(processData.data.foto_url)
+                        }
+                        photoSaved = true
+                      } else {
+                        console.warn('[useFuncionarioFormStates] Otimização server-side falhou, acionando fallback direto...')
+                      }
+                    }
+                  }
+                }
+              } catch (serverErr) {
+                console.warn('[useFuncionarioFormStates] Erro na rota de otimização server-side, acionando fallback direto:', serverErr)
               }
+
+              // 2. Fallback automático resiliente: upload direto no Storage Supabase
+              if (!photoSaved) {
+                toast.loading('Salvando foto diretamente...', { id: toastId })
+                const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+                const fileName = `${funcionario.id}_${Date.now()}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                  .from('fotos-funcionarios')
+                  .upload(fileName, fotoFile, { upsert: true })
+
+                if (uploadError) throw uploadError
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from('fotos-funcionarios')
+                  .getPublicUrl(fileName)
+
+                const updatePhotoPayload = {
+                  foto_url: publicUrl,
+                  foto_avatar_path: null,
+                  foto_visualizacao_path: null,
+                  foto_original_path: null,
+                  foto_updated_at: new Date().toISOString()
+                }
+
+                await supabase
+                  .from('funcionarios')
+                  .update(updatePhotoPayload)
+                  .eq('id', funcionario.id)
+
+                await invalidarCacheFoto(publicUrl)
+                photoSaved = true
+              }
+
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
-              console.error('[useFuncionarioFormStates] Erro no upload otimizado da foto do funcionário:', fotoErr)
+              console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário:', fotoErr)
               toast.dismiss(toastId)
               fotoUploadSuccess = false
-              fotoUploadErrorMsg = fotoErr.message || 'Falha no processamento da foto.'
+              fotoUploadErrorMsg = fotoErr.message || 'Falha ao salvar a foto.'
             }
           }
         } else if (fotoRemovidaManualmente) {
@@ -1024,7 +1060,7 @@ export function useFuncionarioFormStates({
           if (USE_LEGACY_UPLOAD) {
             try {
               const idParaFoto = targetId
-              const toastId = toast.loading('Fazendo upload (Legado)...')
+              const toastId = toast.loading('Fazendo upload...')
               const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
               const fileName = `${idParaFoto}_${Date.now()}.${fileExt}`
 
@@ -1056,59 +1092,94 @@ export function useFuncionarioFormStates({
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload direto da foto do funcionário novo:', fotoErr)
               fotoUploadSuccess = false
-              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload legado.'
+              fotoUploadErrorMsg = fotoErr.message || 'Falha no upload.'
             }
           } else {
             const toastId = toast.loading('Preparando foto...')
             try {
               const idParaFoto = targetId
-              const requestId = crypto.randomUUID()
-              
-              // 1. Obter URL assinada para upload temporário seguro
-              const presignedRes = await fetch(`/api/fotos/presigned-url?entity=funcionarios&id=${idParaFoto}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
-              if (!presignedRes.ok) throw new Error('Falha ao obter URL de upload seguro.')
-              const presignedData = await presignedRes.json()
-              
-              // 2. Upload direto ao bucket fotos-originais
-              toast.loading('Enviando para o servidor...', { id: toastId })
-              const uploadRes = await fetch(presignedData.signedUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
-                body: fotoFile
-              })
-              if (!uploadRes.ok) throw new Error('Falha ao enviar arquivo temporário para processamento.')
-              
-              // 3. Chamar processamento no servidor (Sharp converte para WebP e limpa metadados)
-              toast.loading('Otimizando e gerando visualizações...', { id: toastId })
-              const processRes = await fetch('/api/fotos/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  entity: 'funcionarios',
-                  id: idParaFoto,
-                  originalPath: presignedData.path,
-                  requestId
-                })
-              })
-              
-              if (!processRes.ok) {
-                const errData = await processRes.json().catch(() => ({}))
-                throw new Error(errData.error || 'Falha no processamento otimizado da imagem no servidor.')
+              let photoSaved = false
+
+              // 1. Tenta fluxo otimizado no servidor
+              try {
+                const requestId = crypto.randomUUID()
+                const presignedRes = await fetch(`/api/fotos/presigned-url?entity=funcionarios&id=${idParaFoto}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
+                if (presignedRes.ok) {
+                  const presignedData = await presignedRes.json()
+                  if (presignedData?.signedUrl) {
+                    toast.loading('Enviando para o servidor...', { id: toastId })
+                    const uploadRes = await fetch(presignedData.signedUrl, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' },
+                      body: fotoFile
+                    })
+                    if (uploadRes.ok) {
+                      toast.loading('Otimizando e gerando visualizações...', { id: toastId })
+                      const processRes = await fetch('/api/fotos/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          entity: 'funcionarios',
+                          id: idParaFoto,
+                          originalPath: presignedData.path,
+                          requestId
+                        })
+                      })
+                      if (processRes.ok) {
+                        const processData = await processRes.json()
+                        if (processData.success && processData.data?.foto_url) {
+                          await invalidarCacheFoto(processData.data.foto_url)
+                        }
+                        photoSaved = true
+                      } else {
+                        console.warn('[useFuncionarioFormStates] Otimização server-side falhou no novo funcionário, acionando fallback direto...')
+                      }
+                    }
+                  }
+                }
+              } catch (serverErr) {
+                console.warn('[useFuncionarioFormStates] Erro na rota de otimização de foto no novo funcionário:', serverErr)
               }
 
-              const processData = await processRes.json()
+              // 2. Fallback automático resiliente: upload direto no Storage Supabase
+              if (!photoSaved) {
+                toast.loading('Salvando foto diretamente...', { id: toastId })
+                const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+                const fileName = `${idParaFoto}_${Date.now()}.${fileExt}`
 
-              // Invalida o cache local do navegador para que a nova foto apareça imediatamente
-              if (processData.success && processData.data?.foto_url) {
-                await invalidarCacheFoto(processData.data.foto_url)
+                const { error: uploadError } = await supabase.storage
+                  .from('fotos-funcionarios')
+                  .upload(fileName, fotoFile, { upsert: true })
+
+                if (uploadError) throw uploadError
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from('fotos-funcionarios')
+                  .getPublicUrl(fileName)
+
+                const updatePhotoPayload = {
+                  foto_url: publicUrl,
+                  foto_avatar_path: null,
+                  foto_visualizacao_path: null,
+                  foto_original_path: null,
+                  foto_updated_at: new Date().toISOString()
+                }
+
+                await supabase
+                  .from('funcionarios')
+                  .update(updatePhotoPayload)
+                  .eq('id', idParaFoto)
+
+                await invalidarCacheFoto(publicUrl)
+                photoSaved = true
               }
               
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
-              console.error('[useFuncionarioFormStates] Erro no upload otimizado da foto do funcionário novo:', fotoErr)
+              console.error('[useFuncionarioFormStates] Erro no upload da foto do funcionário novo:', fotoErr)
               toast.dismiss(toastId)
               fotoUploadSuccess = false
-              fotoUploadErrorMsg = fotoErr.message || 'Falha no processamento da foto.'
+              fotoUploadErrorMsg = fotoErr.message || 'Falha ao salvar a foto.'
             }
           }
         }
