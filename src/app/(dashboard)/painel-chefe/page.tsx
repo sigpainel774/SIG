@@ -44,15 +44,22 @@ export default function PainelChefePage() {
   const [busca, setBusca] = useState('')
   const [cargosGerenciados, setCargosGerenciados] = useState<string[]>([])
   const [isModalEscalaOpen, setIsModalEscalaOpen] = useState(false)
+  const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const selectedSecretaria = useSchoolStore((state) => state.selectedSecretaria)
+  const isEMAEE = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
   const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
 
   useEffect(() => {
+    if (isEMAEE) {
+      toast.info('O Painel de Liderança e Escalas de Serviço não se aplica ao EMAEE.')
+      router.push('/home')
+      return
+    }
     if (funcionario && !isDiretor() && !isChefe() && !isAdminGlobalOrRoot()) {
       toast.error('Acesso restrito a Administradores (Nível 1), Diretores (Nível 2) e Chefes de Equipe (Nível 5).')
       router.push('/home')
     }
-  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, router])
+  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, isEMAEE, router])
 
   const supabase = createClient()
   const [equipe, setEquipe] = useState<any[]>([])
