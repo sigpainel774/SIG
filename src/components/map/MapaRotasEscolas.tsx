@@ -55,7 +55,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const buscaDebounced = useDeferredValue(busca);
   const [filtroZona, setFiltroZona] = useState<'todos' | 'URBANA' | 'RURAL'>('todos');
 
-  // Coordenadas padrao de Sapeacu - BA
+  // Coordenadas padrão de Sapeaçu - BA
   const SAPEACU_CENTER: [number, number] = useMemo(() => [-12.7299932, -39.1858195], []);
   const mapRef = useRef<L.Map>(null);
 
@@ -68,7 +68,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [calculandoRota, setCalculandoRota] = useState(false);
   const [resultadoRoteiro, setResultadoRoteiro] = useState<ResultadoRoteiro | null>(null);
 
-  // Escolas validas com coordenadas
+  // Escolas válidas com coordenadas
   const escolasValidas = useMemo(() => {
     const list: EscolaComCoordenadas[] = [];
     for (const e of escolas) {
@@ -98,41 +98,28 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       if (!termo) return true;
       return (
         e.nome.toLowerCase().includes(termo) ||
-        (e.endereco && e.endereco.toLowerCase().includes(termo)) ||
-        (e.inep && e.inep.toLowerCase().includes(termo))
+        (e.endereco || '').toLowerCase().includes(termo) ||
+        (e.inep || '').toLowerCase().includes(termo)
       );
     });
-  }, [escolasValidas, filtroZona, buscaDebounced]);
+  }, [escolasValidas, buscaDebounced, filtroZona]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (mapRef.current) {
-        mapRef.current.invalidateSize();
-      }
-    }, 200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const recentralizarSapeacu = () => {
-    if (mapRef.current) {
-      mapRef.current.invalidateSize();
-      mapRef.current.setView(SAPEACU_CENTER, 14);
-    }
-  };
-
+  // Adicionar/Remover escola do roteiro
   const toggleEscolaRoteiro = (ponto: PontoLocalizacao) => {
     setEscolasSelecionadas((prev) => {
-      const existe = prev.some((p) => p.id === ponto.id);
+      const existe = prev.some((item) => item.id === ponto.id);
       if (existe) {
-        return prev.filter((p) => p.id !== ponto.id);
+        return prev.filter((item) => item.id !== ponto.id);
       } else {
         return [...prev, ponto];
       }
     });
+    setResultadoRoteiro(null);
   };
 
   const removerEscolaRoteiro = (id: string) => {
-    setEscolasSelecionadas((prev) => prev.filter((p) => p.id !== id));
+    setEscolasSelecionadas((prev) => prev.filter((item) => item.id !== id));
+    setResultadoRoteiro(null);
   };
 
   const limparRoteiro = () => {
@@ -140,61 +127,77 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     setResultadoRoteiro(null);
   };
 
+  // Calcular Rota Otimizada
   const handleCalcularMelhorRoteiro = async () => {
     if (escolasSelecionadas.length === 0) return;
 
     setCalculandoRota(true);
     try {
-      const pontoPartida = incluirSede ? SEDE_SEMED_SAPEACU : escolasSelecionadas[0];
-      const destinos = incluirSede
-        ? escolasSelecionadas
-        : escolasSelecionadas.slice(1);
-
-      const ordemOtimizada = otimizarOrdemVisitas(
-        pontoPartida,
-        destinos,
-        incluirSede && retornarAoSede
-      );
-
       const consumoKmL = parseFloat(consumoKmLInput.replace(',', '.')) || 10.0;
       const precoLitro = parseFloat(precoCombustivelInput.replace(',', '.')) || 6.29;
 
-      const resultado = await obterRotaViariaReal(
-        ordemOtimizada,
-        consumoKmL,
-        precoLitro
-      );
+      const pontoInicial = incluirSede ? SEDE_SEMED_SAPEACU : escolasSelecionadas[0];
+      const destinos = incluirSede
+        ? escolasSelecionadas
+        : escolasSelecionadas.filter((p) => p.id !== pontoInicial.id);
+
+      const pontosOrdenados = otimizarOrdemVisitas(pontoInicial, destinos, retornarAoSede);
+      const resultado = await obterRotaViariaReal(pontosOrdenados, consumoKmL, precoLitro);
 
       setResultadoRoteiro(resultado);
 
-      if (mapRef.current && resultado.coordenadasPolyline.length > 0) {
-        const bounds = L.latLngBounds(resultado.coordenadasPolyline);
-        mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+      // Ajusta o zoom do mapa para enquadrar todos os pontos do roteiro
+      if (mapRef.current && resultado.pontosOrdenados.length > 0) {
+        const bounds = L.latLngBounds(
+          resultado.pontosOrdenados.map((p) => [p.latitude, p.longitude] as [number, number])
+        );
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
       }
+    } catch (err) {
+      console.error('Erro ao calcular roteiro:', err);
     } finally {
       setCalculandoRota(false);
     }
   };
 
-  const criarIconeEscola = (escola: EscolaMapeada, indiceRoteiro?: number) => {
-    const isRural = (escola.localizacao || '').toUpperCase().includes('RURAL');
-    const isEmaee = (escola.tipo || '').toUpperCase().includes('EMAEE') || escola.nome.toUpperCase().includes('EMAEE');
+  // Centralizar mapa em Sapeaçu
+  const recentralizarSapeacu = () => {
+    if (mapRef.current) {
+      mapRef.current.setView(SAPEACU_CENTER, 14, { animate: true });
+    }
+  };
 
-    const numeroBadge =
-      indiceRoteiro !== undefined
-        ? `<span style="position: absolute; top: -6px; right: -6px; background: #22c55e; color: #ffffff; font-size: 11px; font-weight: 800; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #0f172a; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">${indiceRoteiro}</span>`
+  // Criação de Ícones Customizados
+  const criarIconeEscola = (escola: EscolaComCoordenadas, ordem?: number) => {
+    const isRural = (escola.localizacao || '').toUpperCase().includes('RURAL');
+    const isEspecial = escola.tipo === 'ESPECIAL' || escola.nome.toUpperCase().includes('EMAEE');
+
+    let bgColor = isRural ? '#f59e0b' : '#0284c7';
+    let borderColor = isRural ? '#d97706' : '#0369a1';
+    if (isEspecial) {
+      bgColor = '#8b5cf6';
+      borderColor = '#6d28d9';
+    }
+
+    const estaSelecionada = escolasSelecionadas.some((p) => p.id === escola.id);
+
+    const badgeOrdemHtml =
+      ordem !== undefined
+        ? `<span style="position: absolute; top: -7px; right: -7px; background: #10b981; color: #ffffff; font-size: 11px; font-weight: 800; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">${ordem}</span>`
+        : estaSelecionada
+        ? `<span style="position: absolute; top: -6px; right: -6px; background: #38bdf8; color: #0f172a; font-size: 10px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.25);">✓</span>`
         : '';
 
-    const corBg = isRural ? '#d97706' : (isEmaee ? '#9333ea' : '#0284c7');
-
     return L.divIcon({
-      className: 'custom-school-icon',
+      className: 'custom-escola-marker',
       html: `
         <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
-          <div style="width: 32px; height: 32px; border-radius: 10px; background: ${corBg}; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #ffffff;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M18 5v17"/><path d="m4 6 8-4 8 4"/><path d="M6 5v17"/></svg>
+          <div style="width: 32px; height: 32px; border-radius: 12px; background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: #ffffff; transform: ${
+        estaSelecionada ? 'scale(1.15)' : 'scale(1)'
+      }; transition: all 0.2s ease;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M18 5v17"/><path d="m4 6 8-4 8 4"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></svg>
           </div>
-          ${numeroBadge}
+          ${badgeOrdemHtml}
         </div>
       `,
       iconSize: [34, 34],
@@ -224,22 +227,22 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     <div className="flex flex-col xl:flex-row gap-5 w-full">
       {/* Coluna Principal: Mapa e Barra de Filtros */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
-        {/* Barra Superior com Pesquisa, Filtro de Zona e Botao Sapeacu */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#141416] border border-[#26262a] p-3.5 rounded-2xl shadow-sm">
-          <div className="flex flex-1 items-center gap-2.5 min-w-[220px] bg-[#1a1a1e] px-3.5 py-2 rounded-xl border border-[#2d2d32]">
-            <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+        {/* Barra Superior com Pesquisa, Filtro de Zona e Botão Sapeaçu */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border p-3.5 rounded-2xl shadow-2xs">
+          <div className="flex flex-1 items-center gap-2.5 min-w-[220px] bg-surface-2 dark:bg-secondary/40 px-3.5 py-2 rounded-xl border border-border">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
               type="text"
               placeholder="Buscar escola por nome, endereço ou código INEP..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="bg-transparent border-none text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none w-full"
+              className="bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none w-full"
             />
           </div>
 
           {/* Filtro Urbana / Rural */}
-          <div className="flex items-center gap-1 bg-[#1a1a1e] p-1 rounded-xl border border-[#2d2d32]">
-            <span className="text-xs font-medium text-zinc-400 px-2 flex items-center gap-1 hidden sm:flex">
+          <div className="flex items-center gap-1 bg-surface-2 dark:bg-secondary/40 p-1 rounded-xl border border-border">
+            <span className="text-xs font-medium text-muted-foreground px-2 flex items-center gap-1 hidden sm:flex">
               <Filter className="w-3.5 h-3.5" /> Zona:
             </span>
             <button
@@ -248,8 +251,8 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               className={cn(
                 'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                 filtroZona === 'todos'
-                  ? 'bg-sky-500 text-white shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Todas ({escolasValidas.length})
@@ -260,11 +263,17 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               className={cn(
                 'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                 filtroZona === 'URBANA'
-                  ? 'bg-sky-500 text-white shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Urbana ({escolasValidas.filter((e) => (e.localizacao || '').toUpperCase().includes('URBANA')).length})
+              Urbana (
+              {
+                escolasValidas.filter((e) =>
+                  (e.localizacao || '').toUpperCase().includes('URBANA')
+                ).length
+              }
+              )
             </button>
             <button
               type="button"
@@ -272,18 +281,24 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               className={cn(
                 'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                 filtroZona === 'RURAL'
-                  ? 'bg-amber-500 text-white shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Rural ({escolasValidas.filter((e) => (e.localizacao || '').toUpperCase().includes('RURAL')).length})
+              Rural (
+              {
+                escolasValidas.filter((e) =>
+                  (e.localizacao || '').toUpperCase().includes('RURAL')
+                ).length
+              }
+              )
             </button>
           </div>
 
           <button
             type="button"
             onClick={recentralizarSapeacu}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-xl hover:bg-sky-500/20 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 dark:border-sky-500/30 rounded-xl hover:bg-sky-500/20 transition-colors cursor-pointer shadow-2xs"
             title="Recentralizar Mapa em Sapeaçu"
           >
             <MapPin className="w-3.5 h-3.5" />
@@ -292,7 +307,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         </div>
 
         {/* Container do Mapa Leaflet */}
-        <div className="w-full h-[580px] rounded-2xl overflow-hidden border border-[#26262a] shadow-xl relative z-0">
+        <div className="w-full h-[580px] rounded-2xl overflow-hidden border border-border shadow-md relative z-0">
           <MapContainer
             ref={mapRef}
             center={SAPEACU_CENTER}
@@ -321,53 +336,61 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             </LayersControl>
 
             {incluirSede && (
-              <Marker position={[SEDE_SEMED_SAPEACU.latitude, SEDE_SEMED_SAPEACU.longitude]} icon={iconeSede}>
+              <Marker
+                position={[SEDE_SEMED_SAPEACU.latitude, SEDE_SEMED_SAPEACU.longitude]}
+                icon={iconeSede}
+              >
                 <Popup className="custom-popup" autoPan={false}>
-                  <div className="p-3 bg-[#182030] text-zinc-100 rounded-xl border border-[#2d3a54] min-w-[220px]">
-                    <div className="flex items-center gap-2 font-bold text-sky-400 text-sm mb-1">
+                  <div className="p-3 bg-card text-foreground rounded-xl border border-border min-w-[220px] shadow-lg">
+                    <div className="flex items-center gap-2 font-bold text-sky-600 dark:text-sky-400 text-sm mb-1">
                       <Navigation className="w-4 h-4" />
                       Ponto de Partida (Sede)
                     </div>
-                    <div className="text-xs font-semibold text-zinc-200 mb-1">{SEDE_SEMED_SAPEACU.nome}</div>
-                    <div className="text-[11px] text-zinc-400">{SEDE_SEMED_SAPEACU.endereco}</div>
+                    <div className="text-xs font-semibold text-foreground mb-1">
+                      {SEDE_SEMED_SAPEACU.nome}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {SEDE_SEMED_SAPEACU.endereco}
+                    </div>
                   </div>
                 </Popup>
               </Marker>
             )}
 
             {escolasFiltradas.map((esc) => {
-              const idxNoRoteiro = resultadoRoteiro?.pontosOrdenados.findIndex((p) => p.id === esc.id);
-              const numOrdem = idxNoRoteiro !== undefined && idxNoRoteiro !== -1 ? idxNoRoteiro + 1 : undefined;
+              const idxNoRoteiro = resultadoRoteiro?.pontosOrdenados.findIndex(
+                (p) => p.id === esc.id
+              );
+              const numOrdem =
+                idxNoRoteiro !== undefined && idxNoRoteiro !== -1 ? idxNoRoteiro + 1 : undefined;
               const estaSelecionada = escolasSelecionadas.some((p) => p.id === esc.id);
               const icone = criarIconeEscola(esc, numOrdem);
 
               return (
-                <Marker
-                  key={esc.id}
-                  position={[esc.latitude, esc.longitude]}
-                  icon={icone}
-                >
+                <Marker key={esc.id} position={[esc.latitude, esc.longitude]} icon={icone}>
                   <Popup className="custom-popup" autoPan={false}>
-                    <div className="p-3.5 bg-[#182030] text-zinc-100 rounded-xl border border-[#2d3a54] min-w-[240px]">
+                    <div className="p-3.5 bg-card text-foreground rounded-xl border border-border min-w-[240px] shadow-lg">
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <span
                           className={cn(
                             'text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider',
                             (esc.localizacao || '').toUpperCase().includes('RURAL')
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                              : 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
                           )}
                         >
                           Zona {esc.localizacao ?? 'Urbana'}
                         </span>
                         {esc.inep && (
-                          <span className="text-[10px] text-zinc-400">INEP: {esc.inep}</span>
+                          <span className="text-[10px] text-muted-foreground">INEP: {esc.inep}</span>
                         )}
                       </div>
-                      <h4 className="font-bold text-sm text-zinc-100 leading-tight mb-1.5">{esc.nome}</h4>
+                      <h4 className="font-bold text-sm text-foreground leading-tight mb-1.5">
+                        {esc.nome}
+                      </h4>
                       {esc.endereco && (
-                        <p className="text-xs text-zinc-400 mb-3 flex items-start gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground mb-3 flex items-start gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                           <span>{esc.endereco}</span>
                         </p>
                       )}
@@ -386,10 +409,10 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                           })
                         }
                         className={cn(
-                          'w-full py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm',
+                          'w-full py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs',
                           estaSelecionada
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
-                            : 'bg-sky-500 text-white hover:bg-sky-600'
+                            ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/25'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
                         )}
                       >
                         {estaSelecionada ? (
@@ -423,17 +446,18 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             )}
           </MapContainer>
 
-          <div className="absolute bottom-3 left-3 z-[1000] bg-[#141416]/90 backdrop-blur-md border border-[#26262a] p-2.5 rounded-xl shadow-lg flex items-center gap-3 text-xs text-zinc-300">
+          {/* Legenda Flutuante com Suporte a Light/Dark */}
+          <div className="absolute bottom-3 left-3 z-[1000] bg-card/95 backdrop-blur-md border border-border p-2.5 rounded-xl shadow-lg flex items-center gap-3 text-xs text-foreground font-medium">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-sky-500 border border-white/50"></span>
+              <span className="w-3 h-3 rounded-md bg-sky-500 border border-white/50 shadow-2xs"></span>
               <span>Urbana</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-amber-500 border border-white/50"></span>
+              <span className="w-3 h-3 rounded-md bg-amber-500 border border-white/50 shadow-2xs"></span>
               <span>Rural</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-purple-500 border border-white/50"></span>
+              <span className="w-3 h-3 rounded-md bg-purple-500 border border-white/50 shadow-2xs"></span>
               <span>EMAEE / Especial</span>
             </div>
           </div>
@@ -442,73 +466,74 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
       {/* Coluna Lateral: Painel de Planejamento de Roteiro */}
       <div className="w-full xl:w-[380px] shrink-0 flex flex-col gap-4">
-        <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 shadow-sm flex flex-col gap-4">
-          <div className="flex items-center justify-between border-b border-[#26262a] pb-3">
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
                 <Route className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-zinc-100">Roteiro de Visitas</h3>
-                <p className="text-xs text-zinc-400">Melhor caminho & economia</p>
+                <h3 className="font-bold text-sm text-foreground">Roteiro de Visitas</h3>
+                <p className="text-xs text-muted-foreground">Melhor caminho & economia</p>
               </div>
             </div>
             {escolasSelecionadas.length > 0 && (
               <button
                 type="button"
                 onClick={limparRoteiro}
-                className="text-xs text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors flex items-center gap-1 cursor-pointer font-medium"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Limpar
               </button>
             )}
           </div>
 
-          {/* Parametros de Partida & Veiculo */}
-          <div className="grid grid-cols-2 gap-3 bg-[#1a1a1e] p-3 rounded-xl border border-[#2d2d32]">
+          {/* Parâmetros de Partida & Veículo */}
+          <div className="grid grid-cols-2 gap-3 bg-surface-2 dark:bg-secondary/40 p-3 rounded-xl border border-border">
             <div>
-              <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1 mb-1">
-                <Fuel className="w-3.5 h-3.5 text-sky-400" /> Consumo (km/L)
+              <label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mb-1">
+                <Fuel className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" /> Consumo (km/L)
               </label>
               <input
                 type="text"
                 value={consumoKmLInput}
                 onChange={(e) => setConsumoKmLInput(e.target.value)}
                 placeholder="10.0"
-                className="w-full bg-[#141416] border border-[#333339] rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-sky-500"
+                className="w-full bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-sky-500 shadow-2xs font-semibold"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1 mb-1">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Gasolina (R$/L)
+              <label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mb-1">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />{' '}
+                Gasolina (R$/L)
               </label>
               <input
                 type="text"
                 value={precoCombustivelInput}
                 onChange={(e) => setPrecoCombustivelInput(e.target.value)}
                 placeholder="6.29"
-                className="w-full bg-[#141416] border border-[#333339] rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-emerald-500 shadow-2xs font-semibold"
               />
             </div>
 
             <div className="col-span-2 flex flex-col gap-1.5 pt-1">
-              <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
                 <input
                   type="checkbox"
                   checked={incluirSede}
                   onChange={(e) => setIncluirSede(e.target.checked)}
-                  className="rounded border-zinc-700 text-sky-600 focus:ring-sky-500"
+                  className="rounded border-border text-sky-600 focus:ring-sky-500"
                 />
                 Partir da Secretaria (SEMED - Centro)
               </label>
 
               {incluirSede && (
-                <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={retornarAoSede}
                     onChange={(e) => setRetornarAoSede(e.target.checked)}
-                    className="rounded border-zinc-700 text-sky-600 focus:ring-sky-500"
+                    className="rounded border-border text-sky-600 focus:ring-sky-500"
                   />
                   Retornar à Secretaria no fim do roteiro
                 </label>
@@ -519,17 +544,17 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
           {/* Lista de Escolas Selecionadas */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-300">
+              <span className="text-xs font-bold text-foreground">
                 Escolas no Roteiro ({escolasSelecionadas.length})
               </span>
             </div>
 
             {escolasSelecionadas.length === 0 ? (
-              <div className="p-4 rounded-xl border border-dashed border-[#2d2d32] text-center text-zinc-500 text-xs flex flex-col items-center gap-1.5">
-                <School className="w-6 h-6 text-zinc-600" />
+              <div className="p-4 rounded-xl border border-dashed border-border text-center text-muted-foreground text-xs flex flex-col items-center gap-1.5 bg-surface-2/40">
+                <School className="w-6 h-6 text-muted-foreground/60" />
                 <span>Nenhuma escola selecionada.</span>
-                <span className="text-[11px] text-zinc-600">
-                  Clique nos marcadores no mapa ou adicione abaixo.
+                <span className="text-[11px] text-muted-foreground/80">
+                  Clique nos marcadores no mapa ou selecione uma unidade.
                 </span>
               </div>
             ) : (
@@ -537,18 +562,18 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                 {escolasSelecionadas.map((esc, index) => (
                   <div
                     key={esc.id}
-                    className="flex items-center justify-between bg-[#1a1a1e] border border-[#2d2d32] px-3 py-2 rounded-xl text-xs"
+                    className="flex items-center justify-between bg-surface-2 dark:bg-secondary/40 border border-border px-3 py-2 rounded-xl text-xs"
                   >
                     <div className="flex items-center gap-2 min-w-0 pr-2">
-                      <span className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center text-[10px] shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-400 font-bold flex items-center justify-center text-[10px] shrink-0">
                         {index + 1}
                       </span>
-                      <span className="font-medium text-zinc-200 truncate">{esc.nome}</span>
+                      <span className="font-medium text-foreground truncate">{esc.nome}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removerEscolaRoteiro(esc.id)}
-                      className="text-zinc-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
+                      className="text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1 cursor-pointer"
                       title="Remover"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -559,18 +584,18 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             )}
           </div>
 
-          {/* Botao de Calcular Rota Otima */}
+          {/* Botão de Calcular Rota Ótima */}
           <button
             type="button"
             disabled={escolasSelecionadas.length === 0 || calculandoRota}
             onClick={handleCalcularMelhorRoteiro}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {calculandoRota ? (
               <span>Otimizando roteiro...</span>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-sky-200" />
+                <Sparkles className="w-4 h-4" />
                 Calcular Melhor Roteiro
               </>
             )}
@@ -578,44 +603,53 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
           {/* Painel de Resultados do Roteiro */}
           {resultadoRoteiro && (
-            <div className="flex flex-col gap-3 bg-[#1a1a1e] border border-sky-500/30 p-3.5 rounded-xl animate-in fade-in-50 duration-300">
-              <div className="flex items-center justify-between border-b border-[#2d2d32] pb-2.5">
-                <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-emerald-400" /> Roteiro Otimizado
+            <div className="flex flex-col gap-3 bg-surface-2 dark:bg-secondary/40 border border-sky-500/30 p-3.5 rounded-xl animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <span className="text-xs font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Roteiro
+                  Otimizado
                 </span>
                 <a
                   href={resultadoRoteiro.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+                  className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" /> Abrir no Google Maps
                 </a>
               </div>
 
-              {/* Indicadores de Consumo & Distancia */}
+              {/* Indicadores de Consumo & Distância */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#141416] p-2.5 rounded-lg border border-[#2d2d32]">
-                  <span className="text-[10px] text-zinc-400 block mb-0.5">Distância Total</span>
-                  <span className="text-sm font-extrabold text-zinc-100">
+                <div className="bg-card p-2.5 rounded-lg border border-border shadow-2xs">
+                  <span className="text-[10px] text-muted-foreground block mb-0.5 font-medium">
+                    Distância Total
+                  </span>
+                  <span className="text-sm font-extrabold text-foreground">
                     {resultadoRoteiro.distanciaTotalKm} km
                   </span>
                 </div>
-                <div className="bg-[#141416] p-2.5 rounded-lg border border-[#2d2d32]">
-                  <span className="text-[10px] text-zinc-400 block mb-0.5">Gasolina Estimada</span>
-                  <span className="text-sm font-extrabold text-amber-400">
+                <div className="bg-card p-2.5 rounded-lg border border-border shadow-2xs">
+                  <span className="text-[10px] text-muted-foreground block mb-0.5 font-medium">
+                    Gasolina Estimada
+                  </span>
+                  <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400">
                     {resultadoRoteiro.consumoLitros} L
                   </span>
                 </div>
-                <div className="bg-[#141416] p-2.5 rounded-lg border border-[#2d2d32]">
-                  <span className="text-[10px] text-zinc-400 block mb-0.5">Custo Estimado</span>
-                  <span className="text-sm font-extrabold text-emerald-400">
+                <div className="bg-card p-2.5 rounded-lg border border-border shadow-2xs">
+                  <span className="text-[10px] text-muted-foreground block mb-0.5 font-medium">
+                    Custo Estimado
+                  </span>
+                  <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
                     R$ {resultadoRoteiro.custoTotalReais.toFixed(2)}
                   </span>
                 </div>
-                <div className="bg-[#141416] p-2.5 rounded-lg border border-[#2d2d32]">
-                  <span className="text-[10px] text-zinc-400 block mb-0.5">Tempo em Trânsito</span>
-                  <span className="text-sm font-extrabold text-violet-400">
+                <div className="bg-card p-2.5 rounded-lg border border-border shadow-2xs">
+                  <span className="text-[10px] text-muted-foreground block mb-0.5 font-medium">
+                    Tempo em Trânsito
+                  </span>
+                  <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">
                     ~{resultadoRoteiro.tempoEstimadoMinutos} min
                   </span>
                 </div>
@@ -623,11 +657,13 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
               {/* Paradas Passo a Passo */}
               <div className="flex flex-col gap-1.5 pt-1">
-                <span className="text-[11px] font-bold text-zinc-400">Ordem de Paradas:</span>
+                <span className="text-[11px] font-bold text-muted-foreground">
+                  Ordem de Paradas:
+                </span>
                 <div className="flex flex-col gap-1 max-h-[140px] overflow-y-auto pr-1">
                   {resultadoRoteiro.pontosOrdenados.map((p, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-zinc-300">
-                      <span className="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 font-bold text-[9px] flex items-center justify-center shrink-0">
+                    <div key={idx} className="flex items-center gap-2 text-xs text-foreground">
+                      <span className="w-4 h-4 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold text-[9px] flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
                       <span className="truncate">{p.nome}</span>

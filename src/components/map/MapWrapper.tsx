@@ -38,7 +38,7 @@ function MapLoadingSkeleton({ height }: { height: string }) {
   return (
     <div 
       style={{ height }} 
-      className="w-full rounded-2xl bg-[#141a27] border border-[#232d42] flex items-center justify-center text-slate-400 animate-pulse"
+      className="w-full rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground animate-pulse shadow-2xs"
     >
       <span className="text-sm font-semibold">Carregando mapa interativo...</span>
     </div>
