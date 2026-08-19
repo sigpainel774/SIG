@@ -675,28 +675,209 @@ export default function RelatoriosPage() {
           <BarChart3 className="w-8 h-8 text-foreground stroke-[2.5]" />
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
+          toast.error("Não foi possível carregar as coordenadas dos alunos.")
+        } finally {
+          if (active) {
+            setIsLoadingMapAlunos(false)
+          }
+        }
+      }
+      fetchMapDataAlunos()
+    }
+
+    return () => {
+      active = false
+    }
+  }, [activeReport, mapaAba, selectedEscola])
+
+  // Global print function
+  const handleGlobalPrint = () => {
+    if (activeReport === 'mapa') {
+      return
+    }
+    window.print()
+  }
+
+  if (printableSubView === 'ficha') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between no-print pb-2 border-b border-border">
+          <Button variant="ghost" onClick={() => setPrintableSubView(null)} className="text-muted-foreground hover:bg-hoverCustom gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar ao Relatório
+          </Button>
+        </div>
+        <PrintFicha />
+      </div>
+    )
+  }
+
+  // Render Detailed Report View (When a report card is clicked)
+  if (activeReport) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-200">
+        {/* Top Navigation & Print Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-4 no-print pb-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setActiveReport(null)}
+              className="bg-secondary hover:bg-hoverCustom border-border text-foreground gap-2 rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar aos Relatórios
+            </Button>
+
+            <div className="h-6 w-px bg-border" />
+
+            <div>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                {REPORT_CARDS.find(r => r.id === activeReport)?.title}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {selectedEscola ? `Filtro: ${selectedEscola.nome}` : 'Visão Geral da Rede (Macro Sapeaçu)'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+
+
+            {activeReport === 'desempenho' && selectedEscola && (
+              <Button
+                onClick={() => setPrintableSubView('ficha')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl gap-2"
+              >
+                <FileCheck className="w-4 h-4" /> Visualizar Ficha Cadastral (A4)
+              </Button>
+            )}
+
+            {activeReport !== 'mapa' && (
+              <Button
+                onClick={handleGlobalPrint}
+                className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-muted-foreground" />
+                Imprimir (A4)
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic Content based on Macro vs School Specific */}
+        {activeReport === 'servidores' ? (
+          <RelatorioServidores />
+        ) : activeReport === 'desempenho' ? (
+          <RelatorioNotas selectedEscola={selectedEscola} />
+        ) : activeReport === 'mapa' ? (
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Logístico</span>
+                  <h3 className="text-xl font-bold text-foreground mt-0.5">Mapa de Geolocalização</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
+                    {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Abas: Funcionários / Alunos */}
+              <div className="flex items-center gap-1 bg-secondary/60 border border-border rounded-xl p-1 w-fit mb-6">
+                <button
+                  onClick={() => setMapaAba('funcionarios')}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                    mapaAba === 'funcionarios'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                  )}
+                >
+                  <Users className="w-4 h-4" />
+                  Funcionários
+                </button>
+                <button
+                  onClick={() => setMapaAba('alunos')}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                    mapaAba === 'alunos'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                  )}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  Alunos
+                </button>
+              </div>
+
+              {/* Conteúdo da aba ativa */}
+              {mapaAba === 'funcionarios' ? (
+                isLoadingMap ? (
+                  <div className="w-full h-[520px] rounded-2xl bg-surface-1 border border-border flex items-center justify-center text-muted-foreground animate-pulse">
+                    <span className="text-sm font-semibold">Buscando dados geográficos...</span>
+                  </div>
+                ) : (
+                  <MapaGlobal funcionarios={mapData} isEmaee={isEMAEE} />
+                )
+              ) : (
+                isLoadingMapAlunos ? (
+                  <div className="w-full h-[520px] rounded-2xl bg-surface-1 border border-border flex items-center justify-center text-muted-foreground animate-pulse">
+                    <span className="text-sm font-semibold">Buscando dados geográficos dos alunos...</span>
+                  </div>
+                ) : (
+                  <MapaAlunos alunos={mapDataAlunos} />
+                )
+              )}
+            </div>
+          </div>
+        ) : activeReport === 'necessidades_especiais' ? (
+          <RelatorioNecessidades selectedEscola={selectedEscola} />
+        ) : activeReport === 'ocorrencias' ? (
+          <RelatorioOcorrencias selectedEscola={selectedEscola} />
+        ) : (
+          <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
+            <h3 className="text-xl font-bold text-foreground mb-3">
+              Módulo de Relatório em Construção
+            </h3>
+            <p className="text-muted-foreground max-w-md text-sm">
+              Os dados e gráficos para o relatório de <strong className="text-primary">{REPORT_CARDS.find(r => r.id === activeReport)?.title}</strong> estão sendo estruturados.
+              Eles serão disponibilizados nas próximas etapas do projeto.
+            </p>
+          </div>
+        )}
+
+
+      </div>
+    )
+  }
+
+  // MAIN PAGE LAYOUT MATCHING USER SCREENSHOT EXACTLY
+  const borderColors = {
+    primary: 'bg-primary',
+    success: 'bg-success',
+    destructive: 'bg-destructive',
+    warning: 'bg-warning',
+  }
+
+  return (
+    <div className="space-y-7 -mt-2">
+      {/* Top Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Title & Icon on Left */}
+        <div className="flex items-center gap-3.5">
+          <BarChart3 className="w-8 h-8 text-foreground stroke-[2.5]" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
               {selectedEscola ? `Visão Geral — ${selectedEscola.nome}` : 'Visão Geral da Rede'}
             </h1>
           </div>
         </div>
 
-        {/* Right side: School Selector + Print Button */}
+        {/* Right side: School Selector */}
         <div className="flex items-center gap-3 no-print">
           <SchoolSelector scope={isEMAEE ? 'emaee' : 'all'} />
-
-          <button
-            onClick={handleGlobalPrint}
-            className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
-          >
-            <Printer className="w-4 h-4 text-muted-foreground" />
-            Imprimir
-          </button>
-        </div>
-      </div>
-
-      {/* Mode Banner Indicator if School Selected */}
-      {selectedEscola && (
-        <div className="bg-card border border-primary/30 rounded-xl p-3.5 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className={`w-3 h-3 rounded-full ${selectedEscola.color}`} />
             <span>

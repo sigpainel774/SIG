@@ -511,7 +511,7 @@ export default function PacienteDetalhesPage() {
                   <option value="EM_INVESTIGACAO" className="bg-popover text-amber-900 dark:text-amber-300">Em Investigação</option>
                   <option value="ATIVO" className="bg-popover text-emerald-800 dark:text-emerald-300">Em Atendimento</option>
                   <option value="ALTA" className="bg-popover text-blue-800 dark:text-blue-300">Alta Médica</option>
-                  <option value="INATIVO" className="bg-popover text-rose-800 dark:text-rose-300">Inativo</option>
+                  <option value="INATIVO" className="bg-popover text-rose-800 dark:text-rose-300">Arquivado</option>
                 </select>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
