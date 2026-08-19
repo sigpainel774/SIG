@@ -839,7 +839,7 @@ export function useFuncionarioFormStates({
         if (fotoFile) {
           try {
             const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json()
+            const dataUrl = await resUrl.json().catch(() => ({}))
             if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
 
             const uploadRes = await fetch(dataUrl.signedUrl, {
@@ -854,7 +854,8 @@ export function useFuncionarioFormStates({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ entity: 'funcionarios', id: funcionario.id, originalPath: dataUrl.path })
             })
-            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            const processData = await processRes.json().catch(() => ({}))
+            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
 
             // Invalida o cache local do navegador para que a nova foto apareça imediatamente
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
@@ -910,7 +911,7 @@ export function useFuncionarioFormStates({
             
             // 1. Solicita a Signed URL do bucket privado
             const resUrl = await fetch(`/api/fotos/presigned-url?entity=funcionarios&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json()
+            const dataUrl = await resUrl.json().catch(() => ({}))
             if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
 
             // 2. Faz o upload direto
@@ -927,7 +928,8 @@ export function useFuncionarioFormStates({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ entity: 'funcionarios', id: idParaFoto, originalPath: dataUrl.path })
             })
-            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            const processData = await processRes.json().catch(() => ({}))
+            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
 
             // Invalida o cache local do navegador para que a nova foto apareça imediatamente (cadastro novo)
             const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
