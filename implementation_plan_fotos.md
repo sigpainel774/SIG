@@ -1,123 +1,239 @@
-# Plano de otimização de fotos — SIG
+# Plano de reativação da compressão de fotos — SIG
 
-## Contexto
+**Status:** Planejado — prioridade crítica
 
-O SIG hoje envia fotos de alunos e funcionários ao Supabase Storage no formato e tamanho originais. Como os mesmos arquivos são usados em avatares de 40–56 px, listas, mapas, modais e impressões, uma foto de celular pode transferir vários megabytes para uma área que precisa de poucas dezenas de kilobytes.
+**Atualizado em:** 2026-08-19
 
-O objetivo é preservar, quando necessário, o arquivo original como documento privado e gerar automaticamente versões pequenas, padronizadas e adequadas a cada tela. Nenhuma tela operacional deve usar a foto original.
+**Escopo imediato:** foto 3x4 da ficha de funcionários
 
-## Erros silenciosos
+**Escopo posterior:** reutilização controlada para alunos e outros cadastros
 
-| ID | Achado | Consequência |
-| --- | --- | --- |
-| ES-F1 | A interface de funcionário informa máximo de 5 MB, mas o handler não valida o tamanho. | Arquivos grandes podem ser enviados apesar da mensagem exibida. |
-| ES-F2 | A foto de aluno aceita `image/*` sem limite de peso, pixels ou formato. | HEIC, GIFs, imagens enormes e formatos não previstos podem chegar ao Storage. |
-| ES-F3 | A mesma URL original atende avatar, lista, mapa e modal. | CSS reduz apenas a exibição, não o download nem a decodificação da imagem. |
-| ES-F4 | O mapa pré-carrega fotos de todos os funcionários visíveis. | Uma base grande gera tráfego e uso de memória desnecessários ao abrir o mapa. |
+## 1. Contexto e causa da regressão
 
-## Arquitetura proposta
+Em 2026-08-19 o fluxo otimizado da ficha de funcionários foi alterado para enviar o arquivo binário como `multipart/form-data` para `/api/fotos/process`. Em produção, a Vercel limita o corpo de entrada de uma Function a 4,5 MB. Portanto, fotos de celular próximas dos 5 MB anunciados pela interface falhavam com HTTP 413 antes de o `sharp` executar.
 
-### Contrato de arquivos
+Como contenção, o commit `306c77b` suspendeu a otimização e voltou a gravar a foto original diretamente no bucket público legado `fotos-funcionarios`. O cadastro voltou a ter um caminho de upload, mas perdeu compressão, variantes, limpeza transacional e parte do tratamento de erros.
 
-Para cada nova foto, o sistema receberá um arquivo original e produzirá duas versões públicas:
+O objetivo deste plano é reativar a compressão sem fazer os bytes da imagem atravessarem uma Route Handler da Vercel, proteger o original e tornar cada etapa observável e autorizada.
 
-| Variante | Dimensões máximas | Formato | Meta de peso | Uso |
+## 2. Decisão de arquitetura
+
+### 2.1 Fluxo escolhido
+
+```text
+Celular/navegador
+  1. valida arquivo e dimensões
+  2. normaliza localmente quando necessário
+          |
+          v
+API de autorização gera URL assinada curta
+          |
+          v
+Upload direto ao bucket privado fotos-originais
+          |
+          v
+/api/fotos/process recebe somente JSON com caminho e ID
+          |
+          v
+Sharp valida novamente e gera variantes WebP
+          |
+          v
+Storage + atualização do registro + limpeza compensatória
+```
+
+O arquivo nunca será enviado como `multipart/form-data` para a Vercel. A Route Handler receberá apenas JSON pequeno, por exemplo `entity`, `id`, `originalPath` e `requestId`.
+
+### 2.2 Por que esta é a melhor opção
+
+| Opção | Avaliação |
+| --- | --- |
+| Binário passando pela Vercel | Rejeitada: limite rígido de 4,5 MB e maior uso de memória/CPU. |
+| Upload direto ao bucket público legado | Rejeitada como solução final: não comprime, expõe foto integral e produz arquivos órfãos. |
+| Somente compressão no navegador | Insuficiente: o cliente pode falhar, ser manipulado ou não suportar o formato. |
+| URL assinada + normalização cliente + validação/Sharp servidor | Escolhida: evita o limite da Vercel, reduz tráfego móvel e mantém validação confiável no servidor. |
+| TUS resumível para toda foto | Desnecessário no fluxo normalizado; fica reservado para futura necessidade de arquivos acima de 6 MB. |
+
+O Supabase recomenda upload padrão para arquivos de até 6 MB e upload resumível acima desse tamanho. Por isso, a imagem enviada ao bucket terá meta de até 3 MiB, mesmo quando a foto capturada originalmente for muito maior.
+
+## 3. Política para fotos tiradas pelo celular
+
+### 3.1 Limites definidos
+
+| Camada | Limite | Comportamento |
+| --- | ---: | --- |
+| Arquivo selecionado/capturado | até **20 MiB** | Acima disso, rejeitar antes de ler o arquivo e orientar o usuário a reduzir a resolução ou usar modo compatível. |
+| Formatos na primeira entrega | JPEG, PNG e WebP | HEIC/HEIF será rejeitado com mensagem orientando “Mais compatível/JPEG”; suporte só após teste explícito do runtime. |
+| Quantidade de pixels de entrada | até **40 megapixels** | Acima disso, rejeitar ou exigir redução local antes do upload; impede estouro de memória com fotos de 108/200 MP. |
+| Maior dimensão | até **10.000 px** antes da normalização | Proteção adicional contra imagens anormais ou maliciosas. |
+| Arquivo normalizado enviado | meta de **até 3 MiB** | Mantém o upload padrão abaixo da recomendação de 6 MB do Supabase. |
+| Maior dimensão normalizada | **2.560 px** | É mais que suficiente para recorte e impressão de ficha, reduzindo memória e banda. |
+
+### 3.2 Regra para uma foto muito pesada
+
+1. Se a foto tiver até 6 MiB e respeitar pixels/formato, ela pode seguir pelo upload direto assinado; o servidor ainda a normaliza e remove metadados.
+2. Se tiver entre 6 e 20 MiB, o navegador deve redimensionar para no máximo 2.560 px no lado maior, converter para WebP com qualidade inicial 0,82 e tentar atingir até 3 MiB.
+3. Se a normalização no navegador falhar e o arquivo original tiver até 6 MiB, usar o upload direto assinado como fallback e deixar o Sharp concluir.
+4. Se a normalização falhar para um arquivo acima de 6 MiB, não realizar upload silencioso. Mostrar instrução para refazer a foto, selecionar uma versão menor ou configurar a câmera para JPEG/modo compatível.
+5. Acima de 20 MiB ou 40 MP, rejeitar imediatamente. Para foto cadastral 3x4, essa resolução não agrega qualidade útil e aumenta fortemente o risco de travamento em celulares modestos.
+
+O limite de 20 MiB é o limite de **entrada do usuário**, não o tamanho que ficará armazenado. A meta persistida será muito menor.
+
+### 3.3 Captura pela câmera
+
+A interface poderá oferecer duas ações separadas:
+
+- **Tirar foto:** input dedicado com `accept="image/jpeg,image/png,image/webp"` e `capture="user"` em dispositivos que respeitem essa indicação.
+- **Escolher da galeria:** input sem `capture`, com os mesmos formatos.
+
+`accept` e `capture` são apenas orientações ao dispositivo; tipo, bytes e metadados precisam ser validados pelo código. A prévia deve informar tamanho original, tamanho normalizado e redução obtida antes de salvar.
+
+## 4. Contrato de arquivos resultantes
+
+| Variante | Dimensões | Formato/qualidade inicial | Meta de peso | Visibilidade e uso |
 | --- | ---: | --- | ---: | --- |
-| `avatar` | 160×200 px | WebP | até 60 KB | listas, cards, sidebar, mapa |
-| `visualizacao` | 480×600 px | WebP | até 180 KB | modal e ampliação |
-| `original` | sem alteração, opcional | formato recebido validado | até 8 MB | comprovação administrativa; bucket privado |
+| `avatar` | 240×320 px, 3:4 | WebP 78 | até 80 KB | Listas, cards, sidebar, mapa e crachá. |
+| `visualizacao` | 900×1200 px, 3:4 | WebP 84 | até 300 KB | Modal, ficha e visualização ampliada. |
+| `original_otimizado` | até 1600×2133 px, 3:4 | WebP 88 | até 1,5 MiB | Bucket privado; impressão ou recuperação autorizada. |
 
-O recorte será central, preservando proporção 3×4 (`object-fit: cover`). O sistema deve aceitar somente JPEG, PNG e WebP; converter para WebP e remover metadados EXIF, incluindo geolocalização.
+O recorte deve aplicar orientação EXIF antes do corte, privilegiar a região superior/rosto e remover metadados EXIF, inclusive geolocalização. Se a meta de peso não for atingida, reduzir qualidade em passos controlados até um piso definido; nunca criar loop ilimitado.
 
-### Processamento recomendado
+## 5. Infraestrutura existente e ajustes necessários
 
-1. O navegador valida tipo, tamanho e dimensões antes de iniciar o envio; isso impede tentativas óbvias e oferece feedback imediato.
-2. A foto é enviada para um bucket privado temporário, não para a URL pública final.
-3. Uma função de servidor autenticada processa a imagem com `sharp` (ou Edge Function equivalente), gera as duas variantes e grava seus caminhos nos buckets apropriados.
-4. Após sucesso, a função atualiza a coluna de foto com o caminho da versão `avatar` e, idealmente, registra também `foto_avatar_path`, `foto_visualizacao_path` e `foto_original_path`.
-5. O cliente recebe apenas URLs públicas/destinadas a cada tamanho. O original fica acessível somente por URL assinada e perfil autorizado.
+Os buckets e campos principais já existem. Não devem ser recriados sem necessidade:
 
-Não usar o processamento no navegador como única garantia: ele é útil para prévia e economia de upload, mas não substitui a validação no servidor.
+| Recurso | Estado atual | Ação planejada |
+| --- | --- | --- |
+| `fotos-originais` | Privado | Manter privado; definir limite/MIME e caminhos temporários por usuário e entidade. |
+| `fotos-avatar` | Público | Manter para variantes pequenas, com escrita exclusiva do servidor. |
+| `fotos-visualizacao` | Público | Manter para variante de ficha/modal, com escrita exclusiva do servidor. |
+| `fotos-funcionarios` | Público, limite 5 MiB | Manter apenas para compatibilidade legada durante transição; não receber novas fotos após ativação. |
+| Campos `foto_*` | Já presentes em `funcionarios` | Reutilizar `foto_url`, `foto_avatar_path`, `foto_visualizacao_path`, `foto_original_path` e `foto_updated_at`. |
+| `sharp` | Já instalado | Manter em runtime Node; não usar Edge runtime para esse processamento. |
 
-### Onde ficam os arquivos e como acessá-los
+Qualquer migration de políticas Storage deverá ser criada somente após consulta ao `MIGRATIONS_MAP.md` e registrada nele na mesma alteração.
 
-| Conteúdo | Local | Visibilidade | Acesso na interface |
-| --- | --- | --- | --- |
-| `avatar` e `visualizacao` atuais | Buckets `fotos-avatar` e `fotos-visualizacao` | Público controlado pelas políticas do sistema | Uso automático nas telas; não exige ação do usuário |
-| Original enviado após a nova função | Bucket privado `fotos-originais` | Nunca público; somente URL assinada temporária | Aba **Foto e histórico** no modal de cadastro/detalhes correspondente |
-| Foto anterior à migração | Bucket atual, preservado durante a retenção | Mantém a política existente, sem ser alterada pela migração | Aba **Foto e histórico**, como “Foto legada” |
-| Cópia de segurança da migração | Bucket privado `backup-fotos-legadas/<data-da-migracao>/` | ROOT e job de servidor; sem URLs públicas | Não é exibida no fluxo comum; disponível ao ROOT pelo botão **Restaurar foto legada** |
+## 6. Erros silenciosos que o plano deve eliminar
 
-O acesso será incluído nos modais já usados para cada cadastro:
+| ID | Achado atual | Correção planejada |
+| --- | --- | --- |
+| ES-F1 | A tela informa 5 MB, mas não valida `file.size`. | Validar antes de `FileReader`, com limite real e mensagem coerente. |
+| ES-F2 | O fluxo atual não comprime e grava a foto integral publicamente. | Retomar bucket privado + variantes WebP. |
+| ES-F3 | Erro do `UPDATE funcionarios` após upload não é verificado. | Desestruturar e tratar `error`; falha deve acionar rollback e impedir toast de sucesso. |
+| ES-F4 | Pode aparecer aviso de falha da foto e depois sucesso geral. | Um único resultado final por operação, com estado `partial_failure` explícito apenas se necessário. |
+| ES-F5 | `upsert: true` é usado com nomes únicos e políticas incompletas para sobrescrita. | Caminhos imutáveis e `upsert: false`. |
+| ES-F6 | Variantes antigas e fotos legadas podem ficar órfãs. | Limpeza compensatória somente após persistência confirmada; job separado para legados. |
+| ES-F7 | `/api/fotos/process` aceita qualquer `id` para qualquer autenticado e usa service role. | Revalidar ABAC/RLS por entidade, secretaria/escola e permissão de edição antes do admin client. |
+| ES-F8 | MIME é confiado ao input/extensão. | Validar assinatura real e `sharp.metadata()` no servidor. |
+| ES-F9 | Avatar chamado de 3x4 é gerado atualmente em 256×256. | Gerar 240×320 e testar enquadramento real. |
+| ES-F10 | O helper cliente faz fallback silencioso para o original. | Fallback condicionado ao limite de 6 MiB; acima disso, bloquear com orientação clara. |
+| ES-F11 | Store/cache pode continuar exibindo a URL antiga após sucesso. | Usar a resposta da API para atualizar preview, store e cache por `foto_updated_at`. |
+| ES-F12 | Não há correlação entre autorização, upload e processamento. | Adotar `requestId`, logs por etapa e caminho temporário verificável. |
 
-1. **Aluno:** `ModalDetalhesAluno` e o modal de edição de aluno receberão a aba **Foto e histórico**.
-2. **Funcionário:** o modal de funcionário receberá a mesma aba **Foto e histórico**.
-3. A aba mostra a variante atual, data da última geração, estado da migração e, para usuários autorizados, ações de **Ver original**, **Ver foto legada** e **Restaurar foto legada**.
-4. “Ver original” não revela a URL do Storage: o sistema solicita uma URL assinada de curta duração ao servidor, abre a visualização e registra a consulta. Para alunos, restringir a ação a perfil autorizado da mesma escola; para restauração, restringir ao ROOT.
-5. O backup técnico não fica navegável por pastas nem exposto em telas administrativas gerais; seu acesso acontece somente como parte de uma restauração auditada.
+## 7. Mudanças propostas por fase
 
-## Mudanças propostas
+### Fase 0 — Preparação e proteção do rollout
 
-### Fase 1 — Contrato, segurança e infraestrutura
+1. Criar uma flag de configuração para alternar entre `legacy_direct` e `optimized_signed` sem novo deploy emergencial.
+2. Registrar métricas mínimas por etapa: tamanho original/normalizado, duração, status HTTP, entidade e `requestId`, sem nome, CPF ou URL assinada.
+3. Levantar e congelar as políticas Storage atuais antes de qualquer migration.
+4. Manter o fluxo legado disponível apenas como rollback temporário e claramente sinalizado nos logs.
 
-1. Criar buckets separados: `fotos-originais` privado, `fotos-avatar` público/controlado e `fotos-visualizacao` público/controlado. Definir RLS por escola e por perfil; foto de aluno merece atenção extra por LGPD.
-2. Criar migration para armazenar os três caminhos e `foto_updated_at`, mantendo temporariamente `foto_url` para compatibilidade. Criar índices apenas onde realmente houver consulta por esses campos.
-3. Implementar Route Handler autenticado para receber/processar fotos. O handler valida MIME real, peso máximo de 8 MB e dimensões máximas de 6000×6000 antes de chamar o processador.
-4. Adicionar `sharp` ao ambiente Node do servidor. Se a plataforma impedir seu uso no deploy, migrar o mesmo contrato para uma função dedicada de processamento com suporte nativo à biblioteca.
-5. Definir exclusão segura: ao substituir/remover foto, excluir variantes e original antigos somente após a nova geração confirmar sucesso; registrar a ação em auditoria.
+### Fase 1 — Segurança e contrato das APIs
 
-### Fase 2 — Geração e integração de interface
+1. Alterar `/api/fotos/presigned-url` para receber também `entity` e `id`, autenticar a sessão e confirmar que o usuário pode editar o registro conforme nível, secretaria, escola, vínculo e trava de edição.
+2. Gerar caminho temporário como `temp/<auth.uid>/<entity>/<id>/<requestId>.<ext>` e URL assinada de curta duração.
+3. Alterar `/api/fotos/process` para aceitar somente JSON com caminho; remover o ramo `multipart/form-data` para impedir regressão.
+4. Repetir a autorização no processamento. Nunca confiar apenas na autorização feita ao emitir a URL.
+5. Confirmar que o caminho pertence ao usuário, entidade, ID e `requestId` informados.
+6. Validar MIME real, pixels, dimensões e tamanho antes de decodificar integralmente.
+7. Usar `supabaseAdmin` somente depois dessas verificações.
 
-1. Implementar utilitário de processamento: corrigir orientação EXIF, limitar pixels, recortar 3×4, converter WebP e usar qualidade inicial 82 (avatar) e 85 (visualização). Caso a meta de peso não seja atingida, reduzir qualidade progressivamente até o limite mínimo definido.
-2. Substituir os uploads atuais de aluno e funcionário pelo novo endpoint. Aplicar o mesmo fluxo a logos em um escopo separado, sem recorte 3×4.
-3. Validar no cliente JPEG/PNG/WebP, até 8 MB e até 6000×6000; apresentar a prévia local e mensagens claras em caso de recusa.
-4. Usar sempre `avatar` em listas, turmas, lotações, sidebar e marcadores de mapa; usar `visualizacao` somente no modal de foto ampliada; manter impressão em variante própria ou `visualizacao`, conforme qualidade validada.
-5. Remover o pré-carregamento amplo do mapa. Carregar avatares apenas dos marcadores no viewport/cluster aberto, com concorrência limitada e `loading="lazy"` onde aplicável.
+### Fase 2 — Normalização no celular e integração da ficha
 
-### Fase 3 — Migração do acervo e limpeza
+1. Refatorar `imageCompression.ts` para suportar política de foto cadastral: limites, orientação, destino WebP, retorno tipado de erro e ausência de fallback silencioso.
+2. Validar o arquivo antes de criar Data URL; preferir `URL.createObjectURL` para a prévia e revogá-la ao trocar/fechar o modal.
+3. Exibir progresso por estágio: `Preparando foto`, `Enviando`, `Otimizando` e `Salvando ficha`.
+4. Reativar o fluxo assinado em cadastro e edição de funcionário.
+5. Consumir `data` retornado pela API para atualizar a foto exibida e o Zustand/cache do próprio usuário.
+6. Separar resultado da ficha e resultado da foto sem mensagens contraditórias. Se a foto falhar, manter o modal aberto e permitir nova tentativa sem repetir todo o cadastro.
 
-1. Criar uma tabela de controle de migração, por exemplo `migracao_fotos`, com o ID do aluno/funcionário, URL original, hash do arquivo original, caminhos gerados, status, tentativas, erro, operador e timestamps. A tabela impede processamento duplicado e torna a operação auditável.
-2. Antes de qualquer alteração, gerar um inventário congelado de todas as fotos atuais: entidade, ID, escola, URL, tamanho, MIME, hash SHA-256 e data. Exportar esse inventário para local protegido e registrar a contagem esperada por entidade.
-3. Fazer backup por cópia, nunca por movimentação: copiar cada original para o bucket privado e versionado `backup-fotos-legadas/<data-da-migracao>/...`. Validar quantidade, tamanho e hash de cada cópia antes de marcar o item como apto à migração. O objeto antigo e a coluna `foto_url` permanecem intactos nesta etapa.
-4. Criar job administrativo paginado, acessível exclusivamente ao ROOT, para baixar uma cópia, gerar as variantes e gravá-las em caminhos novos e imutáveis. O job precisa ser idempotente, reiniciável, limitado por concorrência e registrar sucesso ou falha por item.
-5. Aplicar atualização atômica no registro somente depois que ambas as variantes forem gravadas e validadas. Manter `foto_url_legacy` com a URL anterior; os novos campos passam a apontar para as variantes. Em falha, não alterar o registro nem excluir qualquer objeto.
-6. Começar com lote piloto de 20 registros em ambiente de teste e depois com 20 registros reais escolhidos de forma representativa. Conferir qualidade visual, hashes, permissões, listas, mapas, PDFs e impressões antes da execução total.
-7. Executar em lotes pequenos, por exemplo 50 imagens por rodada, com painel de progresso, pausa manual, reprocessamento apenas das falhas e relatório final comparando `inventariado = backup confirmado = processado + falha registrada`.
-8. Oferecer reversão por item e global: reverter os campos de foto para `foto_url_legacy`, manter variantes produzidas para diagnóstico e registrar a ação em auditoria. A reversão não deve depender da foto no cache do navegador.
-9. Manter originais antigos, backup e `foto_url_legacy` por período de retenção aprovado — sugestão inicial de 90 dias após validação completa. Só então, com exportação do relatório, backup conferido e autorização explícita, permitir exclusão em uma operação separada e reversível via lixeira/soft-delete.
-10. Após o período de observação, tornar `foto_url` um campo de compatibilidade ou removê-lo em migration posterior. Compactar também os assets institucionais locais, consolidar os três PNGs idênticos e corrigir as dimensões declaradas dos screenshots PWA.
+### Fase 3 — Processamento, consistência e limpeza
 
-### Salvaguardas obrigatórias da migração
+1. Criar uma instância base de `sharp` após validação de metadados e gerar as três variantes com limite explícito de pixels.
+2. Usar caminhos novos e imutáveis; nunca sobrescrever objeto CDN.
+3. Fazer upload das variantes, verificar cada resultado e somente então atualizar `funcionarios`.
+4. Se qualquer upload ou atualização falhar, remover apenas os objetos criados pela tentativa atual e preservar a foto anterior.
+5. Após o banco confirmar sucesso, apagar o temporário e tentar remover as variantes antigas. Falha nessa limpeza gera log e fila de manutenção, não desfaz uma foto válida.
+6. Registrar troca e remoção de foto em auditoria sem armazenar conteúdo ou URL assinada.
 
-1. Usar credenciais de servidor exclusivamente no job; a `SUPABASE_SERVICE_ROLE_KEY` nunca chega ao navegador nem é exposta em logs.
-2. Restringir execução, retomada, reversão e exclusão ao ROOT; exigir confirmação explícita para cada operação em massa e registrar-a em `audit_logs`.
-3. Não sobrescrever objetos: usar nomes com versão/data e habilitar versionamento ou retenção do bucket quando disponível.
-4. Não considerar URL acessível como backup válido: validar status HTTP, tamanho e SHA-256 da cópia. Guardar hashes no inventário para detectar corrupção ou arquivo divergente.
-5. Tratar fotos de alunos como dados pessoais: buckets privados para original/backup, URLs assinadas com validade curta e acesso limitado à escola autorizada.
-6. Estabelecer parada automática se a taxa de falhas superar 2% em um lote; o sistema conserva os itens não processados e apresenta a causa antes de permitir continuidade.
+### Fase 4 — Rollout e legado
 
-## Prioridade
+1. Ativar primeiro nas escolas de teste e em um grupo pequeno de usuários.
+2. Testar ao menos um Android intermediário, um Android de câmera alta resolução e um iPhone/Safari.
+3. Observar por 48 horas: taxa de sucesso, 401/403, 413, 422, 5xx, duração do Sharp e tamanho final.
+4. Ampliar gradualmente a flag para produção.
+5. Inventariar fotos órfãs/legadas antes de qualquer exclusão. Não apagar automaticamente durante a reativação.
+6. Planejar a migração do acervo como tarefa separada, idempotente, com backup e rollback.
+
+## 8. Prioridades
 
 | Item | Gargalo/ES | Fase | Impacto |
 | --- | --- | --- | --- |
-| Endpoint autenticado + buckets segregados | Originais públicos e sem padronização | 1 | Crítico |
-| Validação real de tipo/peso/dimensões | ES-F1 e ES-F2 | 1 | Alto |
-| Geração de avatar e visualização WebP | ES-F3 | 2 | Alto |
-| Atualização das telas para variantes | Download de originais em avatars | 2 | Alto |
-| Limite de pré-carregamento do mapa | ES-F4 | 2 | Médio/alto |
-| Migração idempotente do acervo | Fotos antigas pesadas | 3 | Alto |
-| Limpeza de duplicados e PWA | Peso estático | 3 | Médio |
+| Voltar ao upload assinado direto | Limite Vercel 4,5 MB | 1 | Crítico |
+| ABAC antes da service role | ES-F7 | 1 | Crítico |
+| Remover multipart da Route Handler | Regressão de arquitetura | 1 | Crítico |
+| Validar peso, MIME e megapixels | ES-F1, ES-F8 e imagem-bomba | 1–2 | Crítico |
+| Tratar erro do banco e rollback | ES-F3 e ES-F4 | 2–3 | Alto |
+| Normalizar fotos de 6–20 MiB | Uso por câmera de celular | 2 | Alto |
+| Variantes 3x4 e remoção de EXIF | ES-F2 e ES-F9 | 3 | Alto |
+| Atualizar cache/store com resposta real | ES-F11 | 2 | Médio/alto |
+| Limpeza e migração de legado | ES-F6 | 4 | Médio; executar separadamente |
 
-## Plano de verificação
+## 9. Plano de verificação
 
-1. Enviar JPEG de 6–8 MB, PNG transparente e WebP; confirmar que cada um resulta em avatar e visualização dentro das metas, com orientação correta e sem EXIF.
-2. Tentar GIF, HEIC, arquivo disfarçado, mais de 8 MB e imagem com mais de 6000 px; confirmar rejeição antes da persistência.
-3. Conferir que lista, turma, lotação e mapa solicitam apenas a URL `avatar`; confirmar que modal solicita `visualizacao` e que o original não é público.
-4. Validar permissões com usuários de escolas distintas e perfil sem autorização; nenhuma URL privada ou foto de outra escola pode ser acessível.
-5. Executar a migração piloto duas vezes e confirmar idempotência, preservação dos registros já processados e relatório de falhas.
-6. Antes do lote real, comparar o inventário com as cópias de backup: mesma contagem, mesmo tamanho e mesmo SHA-256; interromper se houver qualquer divergência.
-7. Durante a migração, conferir em cada lote que nenhum registro perde a URL anterior antes da validação de `avatar` e `visualizacao`; simular falha de processamento e confirmar que o registro original permanece utilizável.
-8. Testar a reversão de um aluno e de um funcionário, depois uma reversão de lote, confirmando que a tela retorna à URL legada e que os originais continuam acessíveis somente a perfis autorizados.
-9. Antes de qualquer limpeza, emitir relatório assinado de inventário, backup, processados, falhas e itens revertidos; exigir aprovação operacional explícita e aguardar o prazo de retenção.
-10. Validar impressão, PDF e cache após troca de foto; confirmar invalidação por `foto_updated_at`, sem timestamp aleatório a cada renderização.
-11. Rodar `npx tsc --noEmit --incremental false` ao fim de cada fase e testar manualmente em celular com rede limitada.
+### 9.1 Testes automatizados
+
+1. Testar validação com 0 byte, MIME ausente, JPEG válido, PNG, WebP, arquivo disfarçado, GIF e HEIC.
+2. Testar limites em 5,9 MiB, 6,1 MiB, 19,9 MiB e 20,1 MiB.
+3. Testar 12 MP, 40 MP e acima de 40 MP, incluindo EXIF rotacionado.
+4. Confirmar que o endpoint rejeita caminho temporário pertencente a outro usuário, outra entidade ou outro ID.
+5. Simular falha em cada etapa: autorização, URL assinada, upload temporário, Sharp, cada bucket e update do banco.
+6. Confirmar que uma segunda chamada com o mesmo `requestId` é idempotente ou retorna estado já concluído sem duplicar objetos.
+7. Rodar `cmd /c "npx tsc --noEmit --incremental false"` ao fim de cada fase.
+
+### 9.2 Checklist manual em celular
+
+- Tirar foto pela câmera frontal e escolher foto da galeria.
+- Usar foto comum de 2–5 MB e foto pesada de 10–20 MB.
+- Testar rede Wi-Fi, 4G instável, interrupção e repetição.
+- Confirmar enquadramento 3x4, orientação, nitidez e ausência de atraso excessivo.
+- Confirmar mensagens de formato, peso e resolução em linguagem simples.
+- Verificar que cancelar ou fechar o modal libera a prévia e não deixa upload órfão.
+- Confirmar que a nova foto aparece imediatamente na ficha, lista, sidebar e crachá.
+- Confirmar que o original privado não abre por URL pública.
+
+### 9.3 Critérios de aceite
+
+- Nenhum arquivo binário de foto passa pela Vercel Function.
+- Fotos capturadas de até 20 MiB são aceitas quando normalizáveis e chegam ao Storage com meta de até 3 MiB.
+- Arquivos fora do contrato são rejeitados antes de alterar a ficha.
+- Avatar, visualização e original otimizado são gerados e persistidos com caminhos coerentes.
+- A foto anterior permanece utilizável em qualquer falha intermediária.
+- Usuário sem permissão não consegue emitir URL nem processar foto de outro registro.
+- Não há toast de sucesso quando banco ou foto falham.
+- TypeScript e testes manuais em dispositivos reais passam antes da ativação geral.
+
+## 10. Rollback
+
+1. Desativar `optimized_signed` pela flag e retornar temporariamente a `legacy_direct` sem reverter schema.
+2. Não excluir as variantes já válidas nem os caminhos anteriores durante o rollback.
+3. Preservar logs e `requestId` das falhas para diagnóstico.
+4. Corrigir a causa, repetir o piloto e somente então reativar gradualmente.
+
+## 11. Referências técnicas
+
+- Vercel Functions — limite de corpo de 4,5 MB: <https://vercel.com/docs/functions/limitations>
+- Vercel — recomendação de upload direto ao destino: <https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions>
+- Supabase — upload padrão recomendado até 6 MB: <https://supabase.com/docs/guides/storage/uploads/standard-uploads>
+- Supabase — limites por bucket e limite global: <https://supabase.com/docs/guides/storage/uploads/file-limits>
+- Supabase — upload resumível para arquivos grandes: <https://supabase.com/features/resumable-uploads>

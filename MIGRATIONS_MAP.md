@@ -142,3 +142,4 @@ Este arquivo descreve o hist√≥rico completo e a finalidade de todas as migration
 
 
 
+| 27 | 20260819123057_create_system_logs.sql | 2026-08-19 | Tabela para logs autom·ticos do sistema. | public.system_logs | Authenticated/Anon Insert |

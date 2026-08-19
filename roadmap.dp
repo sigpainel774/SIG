@@ -1,6 +1,6 @@
 # SIG - Roadmap & Status Oficial de Tarefas (roadmap.dp)
 
-**Última Atualização:** 2026-08-17  
+**Última Atualização:** 2026-08-19
 **Repositório:** github.com/sigpainel774/SIG  
 **Branch Principal:** `main`  
 **Produção:** https://sig-six-kappa.vercel.app  
@@ -40,6 +40,7 @@
 | **Módulo Secretário de Educação & Limpeza Boletim** | ✅ Concluído | 2026-07-23 | Tabela `configuracoes_rede`, modal `/admin/escolas`, integração de assinaturas de relatórios e remoção de dados falsos. |
 | **Integração Resend + Primeiro Acesso** | ✅ Concluído | 2026-07-21 | Rota `/primeiro-acesso` (interceptador no `proxy.ts`), troca obrigatória de senha e envio de e-mails via Resend SMTP. |
 | **Verificação QR Code / Crachá de Funcionário** | ✅ Concluído | 2026-07-20 | Rota pública `/verificar/funcionario/[id]` para leitura de QR Code e validação instantânea de vínculo de funcionário. |
+| **Reativação Segura da Compressão de Fotos de Funcionários** | 🛠️ Planejado — Crítico | — | Restaurar upload direto por URL assinada, normalização de fotos pesadas no celular, variantes WebP 3x4, autorização ABAC e rollback seguro. Plano detalhado em `implementation_plan_fotos.md`. |
 | **Assistente de IA para Logs de Auditoria** | ⏳ Pendente | — | Assistente IA integrado ao painel admin para responder dúvidas sobre o histórico e operações no banco de dados. |
 | **Módulo Roteiro e Paradas (Motoristas Nível 6)** | ⏳ Pendente | — | Painel mobile para motoristas (perfil nível 6) acompanharem paradas, rota e check-in de alunos no transporte. |
 | **Acesso Rápido por Biometria Mobile (WebAuthn / Passkeys)** | ⏳ Pendente | — | Login biométrico rápido (Face ID / Impressão Digital) via WebAuthn/FIDO2 para dispositivos móveis e PWA. Detalhes em `PLANOS_FUTUROS.md`. |
@@ -48,15 +49,23 @@
 
 ## 📋 Detalhamento dos Próximos Passos (Pendências)
 
-### 1. Módulo Roteiro e Paradas - Motoristas Nível 6 (Prioridade Alta)
+### 1. Reativação Segura da Compressão de Fotos (Prioridade Crítica)
+
+- **Escopo:** Reativar a compressão da foto 3x4 de funcionários sem enviar o binário pela Vercel, usando normalização no celular, upload direto assinado para bucket privado e processamento Sharp autorizado no servidor.
+- **Limite planejado:** aceitar seleção/captura de até 20 MiB e 40 MP, normalizando para meta de até 3 MiB; acima dos limites, rejeitar com orientação clara.
+- **Segurança:** validar ABAC/RLS antes de emitir a URL e novamente antes de usar `supabaseAdmin`; preservar a foto anterior em qualquer falha.
+- **Plano:** `implementation_plan_fotos.md`.
+- **Status:** Planejado; implementação ainda não iniciada.
+
+### 2. Módulo Roteiro e Paradas - Motoristas Nível 6 (Prioridade Alta)
 - **Escopo:** Interface simplificada em `/ponto-mobile` ou `/transporte-mobile` para motoristas visualizarem paradas do itinerário, registrarem presenças no ônibus e avisarem imprevistos.
 - **Status:** Planejado.
 
-### 2. Assistente de IA para Logs de Auditoria (Prioridade Média)
+### 3. Assistente de IA para Logs de Auditoria (Prioridade Média)
 - **Escopo:** Painel de chat interativo em `/admin/root` alimentado por consultas em `audit_logs` para diagnósticos rápidos pelo Superadmin.
 - **Status:** Planejado.
 
-### 3. Acesso Rápido por Biometria Mobile (Prioridade Média)
+### 4. Acesso Rápido por Biometria Mobile (Prioridade Média)
 - **Escopo:** Autenticação instantânea por Face ID ou Impressão Digital no celular através do padrão WebAuthn/Passkeys, reduzindo o tempo de login para ~1s.
 - **Estrutura:** Tabela `biometria_dispositivos`, biblioteca `@simplewebauthn`, rotas de challenge e botão dinâmico em `/login`.
 - **Status:** Planejado.

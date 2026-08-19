@@ -8,6 +8,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import NextTopLoader from 'nextjs-toploader'
 import { PwaUpdateModal } from '@/components/PwaUpdateModal'
+import { GlobalErrorListener } from '@/components/providers/GlobalErrorListener'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -89,6 +90,7 @@ export default function RootLayout({
           />
           {children}
           <PwaUpdateModal />
+          <GlobalErrorListener />
           <Toaster theme="dark" />
           <SpeedInsights />
           <Analytics />
