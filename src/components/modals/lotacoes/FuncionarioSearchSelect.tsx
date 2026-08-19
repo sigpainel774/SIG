@@ -3,14 +3,19 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Search, ChevronDown, Check, X, Loader2 } from 'lucide-react'
 
-export interface EscolaOption {
+export interface FuncionarioOption {
   id: string
   nome: string
+  cargo?: string | null
+  cargo_vinculo?: string | null
+  cpf?: string | null
+  email?: string | null
+  foto_url?: string | null
   [key: string]: any
 }
 
-interface EscolaSearchSelectProps {
-  escolas: EscolaOption[]
+interface FuncionarioSearchSelectProps {
+  funcionarios: FuncionarioOption[]
   value: string
   onChange: (value: string) => void
   placeholder?: string
@@ -19,15 +24,15 @@ interface EscolaSearchSelectProps {
   className?: string
 }
 
-export function EscolaSearchSelect({
-  escolas,
+export function FuncionarioSearchSelect({
+  funcionarios,
   value,
   onChange,
-  placeholder = 'Selecione uma escola...',
+  placeholder = 'Selecione um funcionário...',
   disabled = false,
   loading = false,
   className = '',
-}: EscolaSearchSelectProps) {
+}: FuncionarioSearchSelectProps) {
   const [open, setOpen] = useState(false)
   const [busca, setBusca] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -47,26 +52,39 @@ export function EscolaSearchSelect({
     }
   }, [open])
 
-  // Normaliza o termo e filtra a lista de escolas
-  const escolasFiltradas = useMemo(() => {
-    if (!busca.trim()) return escolas
+  // Normaliza o termo e filtra a lista de funcionários por Nome, Cargo ou CPF
+  const funcionariosFiltrados = useMemo(() => {
+    if (!busca.trim()) return funcionarios
     const termoNormalizado = busca
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
+      .replace(/[.\-\s]/g, '')
 
-    return escolas.filter((e) =>
-      (e.nome ?? '')
+    return funcionarios.filter((f) => {
+      const nomeNorm = (f.nome ?? '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
-        .includes(termoNormalizado)
-    )
-  }, [escolas, busca])
 
-  const escolaSelecionada = useMemo(() => {
-    return escolas.find((e) => e.id === value)
-  }, [escolas, value])
+      const cargoNorm = (f.cargo_vinculo ?? f.cargo ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      const cpfLimpo = (f.cpf ?? '').replace(/[.\-\s]/g, '')
+
+      return (
+        nomeNorm.includes(busca.toLowerCase().trim()) ||
+        cargoNorm.includes(busca.toLowerCase().trim()) ||
+        (cpfLimpo && cpfLimpo.includes(termoNormalizado))
+      )
+    })
+  }, [funcionarios, busca])
+
+  const funcionarioSelecionado = useMemo(() => {
+    return funcionarios.find((f) => f.id === value)
+  }, [funcionarios, value])
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
@@ -80,18 +98,27 @@ export function EscolaSearchSelect({
         }}
         className="w-full flex items-center justify-between bg-background border border-border text-foreground text-sm h-10 rounded-md px-3 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="truncate pr-2">
+        <div className="flex items-center gap-2 truncate min-w-0 pr-2">
           {loading ? (
-            <span className="flex items-center gap-2 text-muted-foreground text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
-              Carregando escolas...
-            </span>
-          ) : escolaSelecionada ? (
-            <span className="font-semibold text-foreground text-xs">{escolaSelecionada.nome}</span>
+              <span>Carregando funcionários...</span>
+            </div>
+          ) : funcionarioSelecionado ? (
+            <div className="flex flex-col truncate">
+              <span className="font-semibold text-foreground text-xs truncate">
+                {funcionarioSelecionado.nome}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {funcionarioSelecionado.cargo_vinculo ?? funcionarioSelecionado.cargo ?? 'Sem Cargo'}
+                {funcionarioSelecionado.cpf ? ` • CPF: ${funcionarioSelecionado.cpf}` : ''}
+              </span>
+            </div>
           ) : (
             <span className="text-muted-foreground text-xs">{placeholder}</span>
           )}
-        </span>
+        </div>
+
         <div className="flex items-center gap-1 shrink-0 ml-2">
           {value && !disabled && !loading && (
             <span
@@ -116,14 +143,14 @@ export function EscolaSearchSelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 min-w-[260px]">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 min-w-[280px]">
           <div className="p-2 border-b border-border bg-muted/30">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
                 type="text"
                 autoFocus
-                placeholder="Pesquisar escola por nome..."
+                placeholder="Pesquisar por nome, cargo ou CPF..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full bg-background border border-border text-foreground text-xs rounded-md pl-8 pr-2.5 py-2 outline-none focus:border-sky-500 placeholder:text-muted-foreground"
@@ -131,25 +158,27 @@ export function EscolaSearchSelect({
             </div>
           </div>
 
-          <div className="max-h-52 overflow-y-auto p-1 divide-y divide-border/20">
+          <div className="max-h-56 overflow-y-auto p-1 divide-y divide-border/20">
             {loading ? (
               <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin text-sky-500" />
-                <span>Carregando escolas...</span>
+                <span>Carregando funcionários da unidade...</span>
               </div>
-            ) : escolasFiltradas.length === 0 ? (
+            ) : funcionariosFiltrados.length === 0 ? (
               <div className="py-6 text-center text-xs text-muted-foreground">
-                {escolas.length === 0 ? 'Nenhuma escola disponível.' : 'Nenhuma escola encontrada.'}
+                {funcionarios.length === 0
+                  ? 'Nenhum funcionário ativo vinculado a esta escola.'
+                  : 'Nenhum funcionário encontrado para esta busca.'}
               </div>
             ) : (
-              escolasFiltradas.map((e) => {
-                const isSelected = value === e.id
+              funcionariosFiltrados.map((f) => {
+                const isSelected = value === f.id
                 return (
                   <button
-                    key={e.id}
+                    key={f.id}
                     type="button"
                     onClick={() => {
-                      onChange(e.id)
+                      onChange(f.id)
                       setOpen(false)
                       setBusca('')
                     }}
@@ -159,9 +188,15 @@ export function EscolaSearchSelect({
                         : 'text-foreground hover:bg-muted'
                     }`}
                   >
-                    <span className="truncate">{e.nome}</span>
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="truncate font-medium">{f.nome}</span>
+                      <span className="text-[11px] text-muted-foreground truncate">
+                        {f.cargo_vinculo ?? f.cargo ?? 'Sem Cargo'}
+                        {f.cpf ? ` • CPF: ${f.cpf}` : ''}
+                      </span>
+                    </div>
                     {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-sky-500 shrink-0 ml-2" />
+                      <Check className="w-4 h-4 text-sky-500 shrink-0 ml-2" />
                     )}
                   </button>
                 )

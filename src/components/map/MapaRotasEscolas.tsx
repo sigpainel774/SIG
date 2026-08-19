@@ -68,10 +68,53 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [calculandoRota, setCalculandoRota] = useState(false);
   const [resultadoRoteiro, setResultadoRoteiro] = useState<ResultadoRoteiro | null>(null);
 
-  // Escolas válidas com coordenadas
+  // Localização da SEMED (INEP 01 - Sede Administrativa da Educação)
+  const semedUnidade = useMemo(() => {
+    return escolas.find(
+      (e) =>
+        e.inep === '01' ||
+        e.inep === '1' ||
+        e.tipo === 'SECRETARIA' ||
+        (e.nome || '').toUpperCase().includes('SEMED') ||
+        (e.nome || '').toLowerCase() === 'sede'
+    );
+  }, [escolas]);
+
+  const pontoSede: PontoLocalizacao = useMemo(() => {
+    if (semedUnidade) {
+      const lat = parseCoordinate(semedUnidade.latitude);
+      const lng = parseCoordinate(semedUnidade.longitude);
+      if (lat !== null && lng !== null) {
+        return {
+          id: semedUnidade.id,
+          nome: semedUnidade.nome.includes('SEMED')
+            ? semedUnidade.nome
+            : 'Secretaria Municipal de Educação (SEMED)',
+          latitude: lat,
+          longitude: lng,
+          tipo: 'SECRETARIA',
+          inep: semedUnidade.inep ?? '01',
+          endereco: semedUnidade.endereco ?? 'Centro, Sapeaçu - BA',
+          localizacao: semedUnidade.localizacao ?? 'URBANA',
+        };
+      }
+    }
+    return SEDE_SEMED_SAPEACU;
+  }, [semedUnidade]);
+
+  // Escolas válidas com coordenadas (excluindo a SEMED, que atua como Sede / Ponto de Partida oficial)
   const escolasValidas = useMemo(() => {
     const list: EscolaComCoordenadas[] = [];
     for (const e of escolas) {
+      const isSemed =
+        e.inep === '01' ||
+        e.inep === '1' ||
+        e.tipo === 'SECRETARIA' ||
+        e.id === semedUnidade?.id ||
+        (e.nome || '').toUpperCase().includes('SEMED');
+
+      if (isSemed) continue;
+
       const lat = parseCoordinate(e.latitude);
       const lng = parseCoordinate(e.longitude);
       if (lat !== null && lng !== null) {
@@ -85,7 +128,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       }
     }
     return list;
-  }, [escolas]);
+  }, [escolas, semedUnidade]);
 
   // Escolas filtradas para a listagem/busca
   const escolasFiltradas = useMemo(() => {
@@ -136,7 +179,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       const consumoKmL = parseFloat(consumoKmLInput.replace(',', '.')) || 10.0;
       const precoLitro = parseFloat(precoCombustivelInput.replace(',', '.')) || 6.29;
 
-      const pontoInicial = incluirSede ? SEDE_SEMED_SAPEACU : escolasSelecionadas[0];
+      const pontoInicial = incluirSede ? pontoSede : escolasSelecionadas[0];
       const destinos = incluirSede
         ? escolasSelecionadas
         : escolasSelecionadas.filter((p) => p.id !== pontoInicial.id);
@@ -337,21 +380,32 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
             {incluirSede && (
               <Marker
-                position={[SEDE_SEMED_SAPEACU.latitude, SEDE_SEMED_SAPEACU.longitude]}
+                position={[pontoSede.latitude, pontoSede.longitude]}
                 icon={iconeSede}
               >
                 <Popup className="custom-popup" autoPan={false}>
-                  <div className="p-3 bg-card text-foreground rounded-xl border border-border min-w-[220px] shadow-lg">
+                  <div className="p-3.5 bg-card text-foreground rounded-xl border border-border min-w-[240px] shadow-lg">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                        Sede Administrativa
+                      </span>
+                      <span className="text-[10px] font-extrabold text-sky-600 dark:text-sky-400">
+                        INEP: {pontoSede.inep ?? '01'}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 font-bold text-sky-600 dark:text-sky-400 text-sm mb-1">
                       <Navigation className="w-4 h-4" />
-                      Ponto de Partida (Sede)
+                      Ponto de Partida / Chegada
                     </div>
-                    <div className="text-xs font-semibold text-foreground mb-1">
-                      {SEDE_SEMED_SAPEACU.nome}
+                    <div className="text-xs font-bold text-foreground mb-1">
+                      {pontoSede.nome}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {SEDE_SEMED_SAPEACU.endereco}
-                    </div>
+                    {pontoSede.endereco && (
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span>{pontoSede.endereco}</span>
+                      </div>
+                    )}
                   </div>
                 </Popup>
               </Marker>
@@ -406,6 +460,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                             endereco: esc.endereco,
                             localizacao: esc.localizacao,
                             tipo: esc.tipo ?? 'MUNICIPAL',
+                            inep: esc.inep,
                           })
                         }
                         className={cn(
@@ -447,7 +502,11 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
           </MapContainer>
 
           {/* Legenda Flutuante com Suporte a Light/Dark */}
-          <div className="absolute bottom-3 left-3 z-[1000] bg-card/95 backdrop-blur-md border border-border p-2.5 rounded-xl shadow-lg flex items-center gap-3 text-xs text-foreground font-medium">
+          <div className="absolute bottom-3 left-3 z-[1000] bg-card/95 backdrop-blur-md border border-border p-2.5 rounded-xl shadow-lg flex flex-wrap items-center gap-3 text-xs text-foreground font-medium">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-blue-600 border border-white/50 shadow-2xs"></span>
+              <span>SEMED (INEP 01)</span>
+            </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-sky-500 border border-white/50 shadow-2xs"></span>
               <span>Urbana</span>
@@ -524,7 +583,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                   onChange={(e) => setIncluirSede(e.target.checked)}
                   className="rounded border-border text-sky-600 focus:ring-sky-500"
                 />
-                Partir da Secretaria (SEMED - Centro)
+                Partir da Secretaria (SEMED - INEP 01)
               </label>
 
               {incluirSede && (
