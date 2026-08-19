@@ -47,45 +47,45 @@ export function ModalAvaliarTransferencia({
     >
       <div className="space-y-4">
         <div>
-          <span className="text-xs text-[#aaa]">Nome do {activeTab === 'alunos' ? 'Aluno' : 'Funcionário'}</span>
-          <p className="text-white font-semibold text-base mt-0.5">{nomeEntidade}</p>
+          <span className="text-xs text-muted-foreground">Nome do {activeTab === 'alunos' ? 'Aluno' : 'Funcionário'}</span>
+          <p className="text-foreground font-semibold text-base mt-0.5">{nomeEntidade}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-xs text-[#aaa]">Origem</span>
-            <p className="text-white text-sm font-medium mt-0.5">{transferencia.origem?.nome ?? 'Rede'}</p>
+            <span className="text-xs text-muted-foreground">Origem</span>
+            <p className="text-foreground text-sm font-medium mt-0.5">{transferencia.origem?.nome ?? 'Rede'}</p>
           </div>
           <div>
-            <span className="text-xs text-[#aaa]">Destino</span>
-            <p className="text-white text-sm font-medium mt-0.5">
+            <span className="text-xs text-muted-foreground">Destino</span>
+            <p className="text-foreground text-sm font-medium mt-0.5">
               {transferencia.fora_da_rede ? 'Fora da Rede Municipal' : (transferencia.destino?.nome ?? 'Rede')}
             </p>
           </div>
         </div>
 
         <div>
-          <span className="text-xs text-[#aaa]">Motivo da Solicitação</span>
-          <div className="bg-[#121212] p-3 rounded-lg border border-[#26262a] text-zinc-300 text-sm mt-1">
+          <span className="text-xs text-muted-foreground">Motivo da Solicitação</span>
+          <div className="bg-muted/50 p-3 rounded-lg border border-border text-foreground text-sm mt-1">
             {transferencia.motivo ?? 'Sem motivo informado.'}
           </div>
         </div>
 
         {transferencia.status === 'PENDENTE' && isEditMode ? (
           <div className="space-y-2 pt-2">
-            <label className="text-xs text-[#aaa] font-medium">Justificativa / Observações (Obrigatório para Rejeitar)</label>
+            <label className="text-xs text-muted-foreground font-medium">Justificativa / Observações (Obrigatório para Rejeitar)</label>
             <textarea
               value={justificativa}
               onChange={(e) => setJustificativa(e.target.value)}
               placeholder="Escreva a resposta para o solicitante..."
-              className="w-full min-h-[90px] p-3 rounded-lg bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500 resize-none"
+              className="w-full min-h-[90px] p-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-sky-500 resize-none"
             />
           </div>
         ) : (
           transferencia.resposta_texto && (
             <div>
-              <span className="text-xs text-[#aaa]">Justificativa do Retorno</span>
-              <div className="bg-[#121212] p-3 rounded-lg border border-[#26262a] text-zinc-300 text-sm mt-1 italic">
+              <span className="text-xs text-muted-foreground">Justificativa do Retorno</span>
+              <div className="bg-muted/50 p-3 rounded-lg border border-border text-foreground text-sm mt-1 italic">
                 "{transferencia.resposta_texto}"
               </div>
             </div>
@@ -93,11 +93,11 @@ export function ModalAvaliarTransferencia({
         )}
       </div>
 
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#26262a]">
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
         <Button 
           variant="ghost" 
           onClick={() => onOpenChange(false)}
-          className="text-[#aaa] hover:bg-[#27272a] hover:text-white"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           Fechar
         </Button>
@@ -108,7 +108,7 @@ export function ModalAvaliarTransferencia({
           <Button
             disabled={processing}
             onClick={onReverter}
-            className="bg-amber-600/20 text-amber-500 hover:bg-amber-600 hover:text-white border border-amber-600/50 font-bold gap-2"
+            className="bg-amber-600/20 text-amber-600 dark:text-amber-400 hover:bg-amber-600 hover:text-white border border-amber-600/50 font-bold gap-2"
           >
             <RefreshCw className={cn("w-4 h-4", processing && "animate-spin")} />
             Reverter Transferência
@@ -119,7 +119,7 @@ export function ModalAvaliarTransferencia({
             <Button 
               disabled={processing}
               onClick={() => onDecidir(false)}
-              className="bg-rose-600/20 text-rose-500 hover:bg-rose-600 hover:text-white border border-rose-600/50"
+              className="bg-rose-600/20 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white border border-rose-600/50"
             >
               <X className="w-4 h-4 mr-2" /> Rejeitar
             </Button>

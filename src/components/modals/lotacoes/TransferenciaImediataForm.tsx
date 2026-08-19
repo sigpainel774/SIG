@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowRightLeft, Loader2 } from 'lucide-react'
 import { Escola, Lotacao } from '@/hooks/useGestaoLotacoes'
+import { EscolaSearchSelect } from './EscolaSearchSelect'
 
 interface TransferenciaImediataFormProps {
   escolas: Escola[]
@@ -65,25 +66,13 @@ export function TransferenciaImediataForm({
       </div>
       <div className="space-y-2">
         <label className="text-xs text-muted-foreground font-medium">Alocar em (Destino):</label>
-        <Select
+        <EscolaSearchSelect
+          escolas={escolas}
           value={destinoEscolaId}
-          onValueChange={(v) => setDestinoEscolaId(v ?? '')}
-        >
-          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
-            <SelectValue placeholder="Selecione uma escola...">
-              {destinoEscolaId
-                ? (escolas.find((e) => e.id === destinoEscolaId)?.nome || (escolas.length === 0 ? 'Carregando...' : destinoEscolaId))
-                : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border text-popover-foreground">
-            {escolas.map((e) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={setDestinoEscolaId}
+          placeholder="Selecione uma escola..."
+          disabled={salvando}
+        />
       </div>
       <Button
         onClick={handleSubmete}
