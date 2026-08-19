@@ -36,6 +36,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
 import { getAvatarUrl } from '@/lib/photoHelper'
+import { PrintCalendarioAtendimentos } from '@/components/print/print-calendario-atendimentos'
 
 const DIAS_SEMANA_NOMES: Record<number, string> = {
   1: 'Segunda-feira',
@@ -98,6 +99,9 @@ export default function CalendarioAtendimentosPage() {
   const [modalExcluirOpen, setModalExcluirOpen] = useState(false)
   const [atendimentoParaExcluir, setAtendimentoParaExcluir] = useState<any>(null)
   const [excluindo, setExcluindo] = useState(false)
+
+  // Modal de Impressão Oficial da Grade
+  const [modalImprimirOpen, setModalImprimirOpen] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -635,6 +639,37 @@ export default function CalendarioAtendimentosPage() {
         />
       )}
 
+      {/* Modal Oficial de Impressão da Grade */}
+      {modalImprimirOpen && (
+        <PrintCalendarioAtendimentos
+          vinculos={atendimentosFiltrados}
+          escolaNome={selectedEscola?.nome}
+          escolaLogoUrl={selectedEscola?.logo_url}
+          filtroProfissionalNome={
+            filtroProfissional !== 'todos'
+              ? profissionais.find((p) => p.id === filtroProfissional)?.nome
+              : undefined
+          }
+          filtroEspecialidade={filtroEspecialidade !== 'todos' ? filtroEspecialidade : undefined}
+          filtroTurno={
+            filtroTurno !== 'todos'
+              ? filtroTurno === 'matutino'
+                ? 'Matutino'
+                : 'Vespertino'
+              : undefined
+          }
+          filtroDiaSemanaNome={
+            filtroDiaSemana !== 'todos'
+              ? DIAS_SEMANA_NOMES[Number(filtroDiaSemana)]
+              : undefined
+          }
+          totalSessoes={kpis.totalSessoes}
+          totalProfissionais={kpis.totalProfissionais}
+          totalAlunos={kpis.totalAlunos}
+          onClose={() => setModalImprimirOpen(false)}
+        />
+      )}
+
       {/* Header Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
@@ -657,8 +692,8 @@ export default function CalendarioAtendimentosPage() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => window.print()}
-            className="text-xs rounded-xl border-border bg-card hover:bg-accent text-foreground gap-1.5 shadow-sm"
+            onClick={() => setModalImprimirOpen(true)}
+            className="text-xs rounded-xl border-border bg-card hover:bg-accent text-foreground gap-1.5 shadow-sm cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Imprimir Grade</span>
