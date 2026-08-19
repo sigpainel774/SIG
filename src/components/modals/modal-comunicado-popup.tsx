@@ -25,7 +25,7 @@ interface ComunicadoPopup {
 
 export function ModalComunicadoPopup() {
   const { funcionario, acessos, vinculos } = useAuthStore()
-  const { selectedSecretaria } = useSchoolStore()
+  const { selectedSecretaria, selectedEscola } = useSchoolStore()
   const [popups, setPopups] = useState<ComunicadoPopup[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [open, setOpen] = useState(false)
@@ -91,6 +91,14 @@ export function ModalComunicadoPopup() {
           query = query.eq('secretaria_id', selectedSecretaria.id)
         }
 
+        if (selectedEscola?.created_at) {
+          query = query.gte('created_at', selectedEscola.created_at)
+        }
+
+        if (funcionario?.created_at) {
+          query = query.gte('created_at', funcionario.created_at)
+        }
+
         const { data, error } = await query
 
         if (!active) return
@@ -127,7 +135,7 @@ export function ModalComunicadoPopup() {
     return () => {
       active = false
     }
-  }, [authUserId, isTargetForUser, selectedSecretaria?.id])
+  }, [authUserId, isTargetForUser, selectedSecretaria?.id, selectedEscola?.created_at, funcionario?.created_at])
 
   // Scroll lock no body do celular/desktop quando o modal estiver aberto
   useEffect(() => {

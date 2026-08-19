@@ -105,6 +105,10 @@ export default function MuralPage() {
       query = (query as any).gte('created_at', selectedEscola.created_at)
     }
 
+    if (!podePublicar && funcionario?.created_at) {
+      query = (query as any).gte('created_at', funcionario.created_at)
+    }
+
     const { data, error } = await query
 
     if (error) {
@@ -132,6 +136,10 @@ export default function MuralPage() {
 
         if (selectedEscola?.created_at) {
           query = (query as any).gte('created_at', selectedEscola.created_at)
+        }
+
+        if (!podePublicar && funcionario?.created_at) {
+          query = (query as any).gte('created_at', funcionario.created_at)
         }
 
         const [comunicadosRes, birthdayRes] = await Promise.all([
@@ -163,7 +171,7 @@ export default function MuralPage() {
     }
 
     fetchData()
-  }, [selectedSecretaria?.id, selectedEscola?.id, selectedEscola?.created_at])
+  }, [selectedSecretaria?.id, selectedEscola?.id, selectedEscola?.created_at, podePublicar, funcionario?.created_at])
 
   const filteredNotices = useMemo(() => {
     if (!selectedDate) return notices
