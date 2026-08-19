@@ -594,26 +594,20 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - EDIÇÃO) ---
         if (fotoFile) {
           try {
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json()
-            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
-
-            const uploadRes = await fetch(dataUrl.signedUrl, {
-              method: 'PUT',
-              body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type }
-            })
-            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+            const formData = new FormData()
+            formData.append('file', fotoFile)
+            formData.append('entity', 'alunos')
+            formData.append('id', alunoEditar.id)
 
             const processRes = await fetch('/api/fotos/process', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'alunos', id: alunoEditar.id, originalPath: dataUrl.path })
+              body: formData
             })
-            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            const processData = await processRes.json().catch(() => ({}))
+            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
           } catch (err: any) {
             console.error('Erro no processamento da foto:', err)
-            toast.error('O aluno foi salvo, mas houve um erro ao processar a foto.')
+            toast.error(err.message || 'O aluno foi salvo, mas houve um erro ao processar a foto.')
           }
         }
         // --- FIM UPLOAD OTIMIZADO ---
@@ -667,26 +661,20 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         // --- INÍCIO UPLOAD OTIMIZADO DE FOTO (FASE 3 - CADASTRO) ---
         if (fotoFile) {
           try {
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
-            const dataUrl = await resUrl.json()
-            if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto.')
-
-            const uploadRes = await fetch(dataUrl.signedUrl, {
-              method: 'PUT',
-              body: fotoFile,
-              headers: { 'Content-Type': fotoFile.type }
-            })
-            if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo de foto.')
+            const formData = new FormData()
+            formData.append('file', fotoFile)
+            formData.append('entity', 'alunos')
+            formData.append('id', savedAlunoId)
 
             const processRes = await fetch('/api/fotos/process', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ entity: 'alunos', id: savedAlunoId, originalPath: dataUrl.path })
+              body: formData
             })
-            if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto.')
+            const processData = await processRes.json().catch(() => ({}))
+            if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto.')
           } catch (err: any) {
             console.error('Erro no processamento da foto:', err)
-            toast.error('O aluno foi salvo, mas houve um erro ao processar a foto.')
+            toast.error(err.message || 'O aluno foi salvo, mas houve um erro ao processar a foto.')
           }
         }
         // --- FIM UPLOAD OTIMIZADO ---

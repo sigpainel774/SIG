@@ -731,26 +731,20 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       // 3. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
       if (fotoFile && targetAlunoId) {
         try {
-          const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&fileName=${encodeURIComponent(fotoFile.name)}`)
-          const dataUrl = await resUrl.json()
-          if (!resUrl.ok) throw new Error(dataUrl.error || 'Erro ao gerar permissão de upload da foto 3x4.')
-
-          const uploadRes = await fetch(dataUrl.signedUrl, {
-            method: 'PUT',
-            body: fotoFile,
-            headers: { 'Content-Type': fotoFile.type }
-          })
-          if (!uploadRes.ok) throw new Error('Erro ao enviar o arquivo da foto 3x4.')
+          const formData = new FormData()
+          formData.append('file', fotoFile)
+          formData.append('entity', 'alunos')
+          formData.append('id', targetAlunoId)
 
           const processRes = await fetch('/api/fotos/process', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path })
+            body: formData
           })
-          if (!processRes.ok) throw new Error('Erro ao otimizar e salvar as variações da foto 3x4.')
+          const processData = await processRes.json().catch(() => ({}))
+          if (!processRes.ok) throw new Error(processData.error || 'Erro ao otimizar e salvar as variações da foto 3x4.')
         } catch (fotoErr: any) {
           console.error('Erro no upload da foto 3x4:', fotoErr)
-          toast.error('Aviso: Houve um problema ao processar a foto 3x4 do aluno.')
+          toast.error(fotoErr.message || 'Aviso: Houve um problema ao processar a foto 3x4 do aluno.')
         }
       }
 
