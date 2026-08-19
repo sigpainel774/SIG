@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MapContainer, TileLayer, LayersControl, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Search, ExternalLink, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Corrige os ícones padrão do Leaflet no ambiente de empacotamento (Next.js)
 // @ts-ignore
@@ -53,6 +54,8 @@ export default function MiniMapa({
 
   const [lat, setLat] = useState<number>(hasInitialCoords ? initialLat! : SAPEACU_LAT);
   const [lng, setLng] = useState<number>(hasInitialCoords ? initialLng! : SAPEACU_LNG);
+  const [latInput, setLatInput] = useState<string>(hasInitialCoords ? String(initialLat) : String(SAPEACU_LAT));
+  const [lngInput, setLngInput] = useState<string>(hasInitialCoords ? String(initialLng) : String(SAPEACU_LNG));
   const [zoom, setZoom] = useState<number>(hasInitialCoords ? 16 : 14);
   const [isSearching, setIsSearching] = useState(false);
   const [localAddress, setLocalAddress] = useState(address || '');
@@ -72,11 +75,15 @@ export default function MiniMapa({
     ) {
       setLat(initialLat);
       setLng(initialLng);
+      setLatInput(String(initialLat));
+      setLngInput(String(initialLng));
       setZoom(16);
       mapRef.current?.setView([initialLat, initialLng], 16);
     } else if (!initialLat && !initialLng) {
       setLat(SAPEACU_LAT);
       setLng(SAPEACU_LNG);
+      setLatInput(String(SAPEACU_LAT));
+      setLngInput(String(SAPEACU_LNG));
       setZoom(14);
       mapRef.current?.setView([SAPEACU_LAT, SAPEACU_LNG], 14);
     }
@@ -109,6 +116,8 @@ export default function MiniMapa({
           const newPos = marker.getLatLng();
           setLat(newPos.lat);
           setLng(newPos.lng);
+          setLatInput(newPos.lat.toFixed(7));
+          setLngInput(newPos.lng.toFixed(7));
           onCoordinatesChange(newPos.lat, newPos.lng);
         }
       },
@@ -120,6 +129,8 @@ export default function MiniMapa({
   const handleMapClick = useCallback((clickedLat: number, clickedLng: number) => {
     setLat(clickedLat);
     setLng(clickedLng);
+    setLatInput(clickedLat.toFixed(7));
+    setLngInput(clickedLng.toFixed(7));
     onCoordinatesChange(clickedLat, clickedLng);
   }, [onCoordinatesChange]);
 
@@ -136,6 +147,8 @@ export default function MiniMapa({
     if (cached) {
       setLat(cached.lat);
       setLng(cached.lng);
+      setLatInput(cached.lat.toFixed(7));
+      setLngInput(cached.lng.toFixed(7));
       setZoom(16);
       onCoordinatesChange(cached.lat, cached.lng);
       mapRef.current?.setView([cached.lat, cached.lng], 16);
@@ -174,11 +187,13 @@ export default function MiniMapa({
         geocodeCacheRef.current.set(termoOriginal, { lat: newLat, lng: newLng });
         setLat(newLat);
         setLng(newLng);
+        setLatInput(newLat.toFixed(7));
+        setLngInput(newLng.toFixed(7));
         setZoom(16);
         onCoordinatesChange(newLat, newLng);
         mapRef.current?.setView([newLat, newLng], 16);
       } else {
-        if (!silent) alert('Endereço não encontrado no mapa. Tente digitar com nome da cidade/UF ou arraste o marcador manualmente.');
+        if (!silent) toast.warning('Endereço não encontrado no mapa. Tente digitar com nome da cidade/UF ou arraste o marcador manualmente.');
       }
     } catch (error: any) {
       if (error.name === 'AbortError') return;
@@ -210,11 +225,11 @@ export default function MiniMapa({
     <div className="w-full flex flex-col gap-3">
       {/* Input de Endereço */}
       <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1">Endereço</label>
+        <label className="block text-xs font-semibold text-foreground/80 mb-1">Endereço</label>
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 bg-[#141a27] border border-[#232d42] rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+            className="flex-1 bg-background dark:bg-[#141a27] border border-input dark:border-[#232d42] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
             placeholder="Rua, número, bairro, cidade"
             value={localAddress}
             onChange={(e) => {
@@ -226,7 +241,7 @@ export default function MiniMapa({
             type="button"
             onClick={() => handleGeocode(false)}
             disabled={isSearching}
-            className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-800 text-slate-950 font-bold rounded-lg text-sm transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-bold rounded-lg text-sm transition-colors flex items-center gap-2"
           >
             <Search className="w-4 h-4" />
             {isSearching ? 'Buscando...' : 'Buscar'}
@@ -235,15 +250,15 @@ export default function MiniMapa({
       </div>
 
       {/* Header do Mini-Mapa */}
-      <div className="flex justify-between items-center text-xs text-slate-400">
-        <span className="flex items-center gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-sky-400" />
-          Posição no Mapa <span className="text-slate-500">(arraste o pino ou clique no mapa para ajustar)</span>
+      <div className="flex justify-between items-center text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5 font-medium">
+          <MapPin className="w-3.5 h-3.5 text-primary" />
+          Posição no Mapa <span className="text-muted-foreground/75 font-normal">(arraste o pino ou clique no mapa para ajustar)</span>
         </span>
         <button
           type="button"
           onClick={handleOpenGoogleMaps}
-          className="text-sky-400 hover:underline flex items-center gap-1 transition-all"
+          className="text-primary hover:underline flex items-center gap-1 transition-all font-medium"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           Ver no Google Maps
@@ -251,7 +266,7 @@ export default function MiniMapa({
       </div>
 
       {/* Container Leaflet */}
-      <div className="w-full h-[286px] rounded-xl overflow-hidden border border-[#232d42] bg-[#141a27] z-0">
+      <div className="w-full h-[286px] rounded-xl overflow-hidden border border-border dark:border-[#232d42] bg-muted/40 dark:bg-[#141a27] z-0">
         <MapContainer
           center={[lat, lng]}
           zoom={zoom}
@@ -286,14 +301,15 @@ export default function MiniMapa({
       {/* Inputs Manuais de Lat/Lng */}
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <label className="block text-slate-500 mb-1">Latitude</label>
+          <label className="block text-muted-foreground font-medium mb-1">Latitude</label>
           <input
-            type="number"
-            step="any"
-            className="w-full bg-[#141a27] border border-[#232d42] rounded-lg px-3 py-1.5 text-slate-300"
-            value={lat.toFixed(7)}
+            type="text"
+            className="w-full bg-background dark:bg-[#141a27] border border-input dark:border-[#232d42] rounded-lg px-3 py-1.5 text-foreground text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+            value={latInput}
             onChange={(e) => {
-              const val = parseFloat(e.target.value);
+              const strVal = e.target.value;
+              setLatInput(strVal);
+              const val = parseFloat(strVal);
               if (!isNaN(val)) {
                 setLat(val);
                 onCoordinatesChange(val, lng);
@@ -303,14 +319,15 @@ export default function MiniMapa({
           />
         </div>
         <div>
-          <label className="block text-slate-500 mb-1">Longitude</label>
+          <label className="block text-muted-foreground font-medium mb-1">Longitude</label>
           <input
-            type="number"
-            step="any"
-            className="w-full bg-[#141a27] border border-[#232d42] rounded-lg px-3 py-1.5 text-slate-300"
-            value={lng.toFixed(7)}
+            type="text"
+            className="w-full bg-background dark:bg-[#141a27] border border-input dark:border-[#232d42] rounded-lg px-3 py-1.5 text-foreground text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+            value={lngInput}
             onChange={(e) => {
-              const val = parseFloat(e.target.value);
+              const strVal = e.target.value;
+              setLngInput(strVal);
+              const val = parseFloat(strVal);
               if (!isNaN(val)) {
                 setLng(val);
                 onCoordinatesChange(lat, val);

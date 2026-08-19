@@ -209,7 +209,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomeCompleto}
                 onChange={(e) => setNomeCompleto(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
                 placeholder="Nome completo do aluno"
                 required
               />
@@ -220,7 +220,7 @@ export function SecaoDadosAluno() {
                 type="date"
                 value={dataNascimento}
                 onChange={(e) => setDataNascimento(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -230,7 +230,7 @@ export function SecaoDadosAluno() {
                 placeholder="000.000.000-00"
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -238,7 +238,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={identificacaoCenso}
                 onChange={(e) => setIdentificacaoCenso(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -246,7 +246,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={rg}
                 onChange={(e) => setRg(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -255,7 +255,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nis}
                 onChange={(e) => setNis(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-6">
@@ -263,13 +263,13 @@ export function SecaoDadosAluno() {
               <Input
                 value={certidaoNascimento}
                 onChange={(e) => setCertidaoNascimento(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
             {/* Cor / Raça */}
             <div className="col-span-12 md:col-span-8">
-              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40">
+              <fieldset className="p-3 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40">
                 <legend className="px-1 text-xs font-bold text-foreground">Cor / raça</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Branco', 'Pardo', 'Preto', 'Amarelo', 'Indígena'].map((item) => (
@@ -295,7 +295,7 @@ export function SecaoDadosAluno() {
 
             {/* Sexo */}
             <div className="col-span-12 md:col-span-4">
-              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+              <fieldset className="p-3 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40 h-full flex flex-col justify-center">
                 <legend className="px-1 text-xs font-bold text-foreground">Sexo</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Feminino', 'Masculino'].map((s) => (
@@ -324,7 +324,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={cidadeNascimento}
                 onChange={(e) => setCidadeNascimento(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-5">
@@ -332,7 +332,7 @@ export function SecaoDadosAluno() {
               <select
                 value={estadoNascimento}
                 onChange={(e) => setEstadoNascimento(e.target.value)}
-                className="w-full min-h-[40px] px-3 py-2 border border-border rounded-xl outline-none bg-[#121621] text-foreground text-sm focus:border-[#3ea6ff]"
+                className="w-full min-h-[40px] px-3 py-2 border border-border rounded-xl outline-none bg-input text-foreground text-sm focus:border-primary"
               >
                 <option value="">Selecione a UF</option>
                 {['BA', 'AL', 'AM', 'AP', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'].map(uf => (
@@ -356,7 +356,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomeMae}
                 onChange={(e) => setNomeMae(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -364,7 +364,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={profissaoMae}
                 onChange={(e) => setProfissaoMae(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -373,7 +373,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={nomePai}
                 onChange={(e) => setNomePai(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -381,7 +381,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={profissaoPai}
                 onChange={(e) => setProfissaoPai(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
@@ -390,7 +390,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={contatoEmergencia}
                 onChange={(e) => setContatoEmergencia(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -399,12 +399,12 @@ export function SecaoDadosAluno() {
                 placeholder="(75) 00000-0000"
                 value={telefoneEmergencia}
                 onChange={(e) => setTelefoneEmergencia(e.target.value)}
-                className="bg-[#121621] border-border text-foreground text-sm rounded-xl"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
 
             <div className="col-span-12 md:col-span-4">
-              <fieldset className="p-2.5 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+              <fieldset className="p-2.5 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40 h-full flex flex-col justify-center">
                 <legend className="px-1 text-xs font-bold text-foreground">Zona residencial</legend>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {['Rural', 'Urbana'].map((z) => (
@@ -429,7 +429,7 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-8">
-              <fieldset className="p-3 border border-border rounded-xl bg-[#0b0e14]/40 h-full flex flex-col justify-center">
+              <fieldset className="p-3 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40 h-full flex flex-col justify-center">
                 <legend className="px-1 text-xs font-bold text-foreground">
                   Turno da matrícula para atendimento <span className="text-rose-500">*</span>
                 </legend>
@@ -458,7 +458,7 @@ export function SecaoDadosAluno() {
 
             {/* SEÇÃO DO MINIMAPA TRADICIONAL DO SIG */}
             <div className="col-span-12 pt-2">
-              <div className="p-4 rounded-xl border border-border bg-[#0b0e14]/60 space-y-3">
+              <div className="p-4 rounded-xl border border-border bg-muted/40 dark:bg-[#0b0e14]/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                     <MapPin className="w-4 h-4" /> Endereço Residencial e Geolocalização (MiniMapa)
