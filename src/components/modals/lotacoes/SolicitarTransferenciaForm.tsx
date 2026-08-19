@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowRightLeft, Loader2 } from 'lucide-react'
 import { Escola, Lotacao } from '@/hooks/useGestaoLotacoes'
+import { EscolaSearchSelect } from './EscolaSearchSelect'
 
 interface SolicitarTransferenciaFormProps {
   escolas: Escola[]
@@ -57,25 +58,13 @@ export function SolicitarTransferenciaForm({
         </div>
         <div className="space-y-1">
           <label className="text-[11px] text-muted-foreground font-medium block">Escola de Destino:</label>
-          <Select
+          <EscolaSearchSelect
+            escolas={escolasDisponiveis}
             value={destinoEscolaId}
-            onValueChange={(v) => setDestinoEscolaId(v ?? '')}
-          >
-            <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
-              <SelectValue placeholder="Selecione a escola destino...">
-                {destinoEscolaId
-                  ? (escolasDisponiveis.find((e) => e.id === destinoEscolaId)?.nome || (escolasDisponiveis.length === 0 ? 'Carregando...' : destinoEscolaId))
-                  : undefined}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border text-popover-foreground">
-              {escolasDisponiveis.map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={setDestinoEscolaId}
+            placeholder="Selecione a escola destino..."
+            disabled={salvando}
+          />
         </div>
       </div>
       <div className="space-y-1">

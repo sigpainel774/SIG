@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { coletarAuthUserIds } from '@/lib/notifications/lotacaoNotifications'
+import { EscolaSearchSelect } from '@/components/modals/lotacoes/EscolaSearchSelect'
 import { toast } from 'sonner'
 
 interface ModalTransferirFuncionarioProps {
@@ -272,11 +273,11 @@ export function ModalTransferirFuncionario({
       <div className="space-y-4">
         {/* Selecionar Funcionário */}
         <div className="space-y-2">
-          <Label className="text-[#ccc] text-[13px]">Funcionário da Escola</Label>
+          <Label className="text-foreground text-[13px]">Funcionário da Escola</Label>
           <select
             value={funcionarioSelecionadoId}
             onChange={(e) => setFuncionarioSelecionadoId(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
+            className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm outline-none focus:border-sky-500 cursor-pointer"
           >
             <option value="">
               {funcionarios.length === 0 ? 'Carregando funcionários...' : 'Selecione o funcionário...'}
@@ -294,9 +295,9 @@ export function ModalTransferirFuncionario({
             id="foraDaRedeFunc" 
             checked={foraDaRede}
             onChange={(e) => setForaDaRede(e.target.checked)}
-            className="w-4 h-4 accent-sky-500 rounded border-gray-600 bg-gray-700 cursor-pointer"
+            className="w-4 h-4 accent-sky-500 rounded border-border cursor-pointer"
           />
-          <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-400 font-semibold cursor-pointer">
+          <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-600 dark:text-sky-400 font-semibold cursor-pointer">
             Transferência para FORA DA REDE MUNICIPAL (Desvincula e Arquiva)
           </label>
         </div>
@@ -304,27 +305,24 @@ export function ModalTransferirFuncionario({
         {/* Selecionar Escola de Destino se não for Fora da Rede */}
         {!foraDaRede && (
           <div className="space-y-2">
-            <Label className="text-[#ccc] text-[13px]">Escola de Destino</Label>
-            <select
+            <Label className="text-foreground text-[13px]">Escola de Destino</Label>
+            <EscolaSearchSelect
+              escolas={escolas}
               value={escolaDestinoId}
-              onChange={(e) => setEscolaDestinoId(e.target.value)}
-              className="w-full h-10 px-3 rounded-md bg-[#121212] border border-[#3f3f46] text-white text-sm outline-none focus:border-sky-500"
-            >
-              <option value="">Selecione a escola destino...</option>
-              {escolas.map(e => (
-                <option key={e.id} value={e.id}>{e.nome}</option>
-              ))}
-            </select>
+              onChange={setEscolaDestinoId}
+              placeholder="Selecione a escola destino..."
+              disabled={loading}
+            />
           </div>
         )}
 
         {/* Motivo */}
         <div className="space-y-2">
-          <Label className="text-[#ccc] text-[13px]">Motivo / Justificativa</Label>
+          <Label className="text-foreground text-[13px]">Motivo / Justificativa</Label>
           <Textarea
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            className="w-full bg-[#121212] border-[#3f3f46] text-white resize-none text-sm"
+            className="w-full bg-background border-border text-foreground placeholder:text-muted-foreground resize-none text-sm"
             rows={3}
             placeholder="Digite o motivo da transferência ou portaria correspondente..."
           />

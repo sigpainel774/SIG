@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Plus, Loader2, Search, ChevronDown, Check, X } from 'lucide-react'
 import { Escola, Cargo } from '@/hooks/useGestaoLotacoes'
+import { EscolaSearchSelect } from './EscolaSearchSelect'
 
 interface NovaLotacaoFormProps {
   escolas: Escola[]
@@ -95,32 +96,20 @@ export function NovaLotacaoForm({
       </h4>
       <div className="space-y-2">
         <label className="text-xs text-muted-foreground font-medium">Escola / Órgão:</label>
-        <Select
+        <EscolaSearchSelect
+          escolas={escolas}
           value={novaEscola}
-          onValueChange={(v) => {
-            setNovaEscola(v ?? '')
+          onChange={(v) => {
+            setNovaEscola(v)
             const esc = escolas.find((e) => e.id === v)
             const isEmaee = esc?.tipo === 'EMAEE' || /emaee/i.test(esc?.nome || '')
             if (isEmaee) {
               setNovaModalidade('Regular')
             }
           }}
-        >
-          <SelectTrigger className="bg-background border-border text-foreground text-sm h-9">
-            <SelectValue placeholder="Selecione uma escola...">
-              {novaEscola
-                ? (escolas.find((e) => e.id === novaEscola)?.nome || (escolas.length === 0 ? 'Carregando...' : novaEscola))
-                : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border text-popover-foreground">
-            {escolas.map((e) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Selecione uma escola..."
+          disabled={salvando}
+        />
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-2 space-y-2 relative" ref={cargoDropdownRef}>

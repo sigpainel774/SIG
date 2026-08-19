@@ -34,7 +34,7 @@ export function TransferenciasHeader({
             variant="outline" 
             onClick={onRefresh} 
             disabled={loading}
-            className="bg-[#121212] border-[#3f3f46] text-white hover:bg-[#27272a] h-10"
+            className="bg-background border-border text-foreground hover:bg-muted h-10"
             title="Atualizar dados"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
