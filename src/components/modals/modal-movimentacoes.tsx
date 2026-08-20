@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabaseClient'
 import { StandardDialog } from '@/components/ui/standard-dialog'
@@ -19,24 +19,30 @@ import {
   MessageSquare,
   GraduationCap,
   Building2,
+  History,
+  RotateCcw,
+  PlusCircle,
 } from 'lucide-react'
+
+export type MovimentacaoStatus = 'APROVADO' | 'RECUSADO' | 'REVERTIDO' | 'PENDENTE'
 
 export interface MovimentacaoItem {
   id: string
   data: string
   tipo: string
   descricao: string
-  orgao_origem?: string
-  orgao_destino?: string
-  portaria?: string
+  orgao_origem?: string | null
+  orgao_destino?: string | null
+  portaria?: string | null
   // Dados de Transferência (solicitações/tramitações)
   isTransferencia?: boolean
-  status?: string // 'PENDENTE' | 'APROVADO' | 'RECUSADO'
-  solicitanteNome?: string
-  respondidoPorNome?: string
-  respondidoEm?: string
-  respostaTexto?: string
-  motivo?: string
+  status?: MovimentacaoStatus
+  rawStatus?: string | null
+  solicitanteNome?: string | null
+  respondidoPorNome?: string | null
+  respondidoEm?: string | null
+  respostaTexto?: string | null
+  motivo?: string | null
 }
 
 interface ModalMovimentacoesProps {
@@ -56,6 +62,36 @@ interface ModalMovimentacoesProps {
   movimentacoes?: MovimentacaoItem[]
 }
 
+export function normalizeStatus(status?: string | null): MovimentacaoStatus {
+  const s = (status || '').toUpperCase().trim()
+  if (s === 'APROVADO' || s === 'APROVADA' || s === 'ACEITA' || s === 'ACEITO') return 'APROVADO'
+  if (s === 'RECUSADO' || s === 'RECUSADA' || s === 'REJEITADO' || s === 'REJEITADA') return 'RECUSADO'
+  if (s === 'REVERTIDO' || s === 'REVERTIDA') return 'REVERTIDO'
+  return 'PENDENTE'
+}
+
+export function getStatusLabel(status?: string | null): string {
+  const norm = normalizeStatus(status)
+  if (norm === 'APROVADO') return 'Aprovada'
+  if (norm === 'RECUSADO') return 'Recusada'
+  if (norm === 'REVERTIDO') return 'Revertida'
+  return 'Pendente'
+}
+
+export function getStatusBadgeClass(status?: string | null): string {
+  const norm = normalizeStatus(status)
+  if (norm === 'APROVADO') {
+    return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+  }
+  if (norm === 'RECUSADO') {
+    return 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
+  }
+  if (norm === 'REVERTIDO') {
+    return 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400'
+  }
+  return 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+}
+
 export function ModalMovimentacoes({
   open = false,
   onOpenChange,
@@ -66,17 +102,21 @@ export function ModalMovimentacoes({
   const [mounted, setMounted] = useState(false)
   const [listMovimentacoes, setListMovimentacoes] = useState<MovimentacaoItem[]>([])
   const [loading, setLoading] = useState(true)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
   }, [])
 
   const handleOpenChange = (val: boolean) => {
     if (onOpenChange) onOpenChange(val)
   }
 
-  const nome = funcionario?.nome || nomeServidor || 'Servidor'
+  const nome = funcionario?.nome ?? nomeServidor ?? 'Servidor'
 
   useEffect(() => {
     if (!open) return
@@ -91,89 +131,138 @@ export function ModalMovimentacoes({
       if (funcionario?.id) {
         const supabase = createClient()
 
-        // 1. Busca histórico de portarias/atos em movimentacoes_funcionarios
-        const { data: dataMovs } = await supabase
-          .from('movimentacoes_funcionarios')
-          .select('id, funcionario_id, tipo, descricao, data, orgao_origem, orgao_destino, portaria, created_at')
-          .eq('funcionario_id', funcionario.id)
-          .order('data', { ascending: false })
+        // Executa buscas paralelas para compor a timeline histórica completa
+        const [resMovs, resTransf, resVincs] = await Promise.all([
+          // 1. Busca atos, portarias e movimentações registradas
+          supabase
+            .from('movimentacoes_funcionarios')
+            .select('id, funcionario_id, tipo, descricao, data, orgao_origem, orgao_destino, portaria, created_at')
+            .eq('funcionario_id', funcionario.id)
+            .order('data', { ascending: false }),
 
-        // 2. Busca histórico de solicitações e trâmites de transferência
-        const { data: dataTransf } = await supabase
-          .from('transferencias_funcionarios')
-          .select(`
-            id,
-            funcionario_id,
-            escola_origem_id,
-            escola_destino_id,
-            solicitante_id,
-            motivo,
-            fora_da_rede,
-            status,
-            resposta_texto,
-            respondido_por,
-            respondido_em,
-            created_at,
-            origem:escolas!transferencias_funcionarios_escola_origem_id_fkey(nome),
-            destino:escolas!transferencias_funcionarios_escola_destino_id_fkey(nome),
-            solicitante:funcionarios!transferencias_funcionarios_solicitante_id_fkey(nome),
-            respondido:funcionarios!transferencias_funcionarios_respondido_por_fkey(nome)
-          `)
-          .eq('funcionario_id', funcionario.id)
-          .order('created_at', { ascending: false })
+          // 2. Busca solicitações e trâmites de transferência
+          supabase
+            .from('transferencias_funcionarios')
+            .select(`
+              id,
+              funcionario_id,
+              escola_origem_id,
+              escola_destino_id,
+              solicitante_id,
+              motivo,
+              fora_da_rede,
+              status,
+              resposta_texto,
+              respondido_por,
+              respondido_em,
+              created_at,
+              origem:escolas!transferencias_funcionarios_escola_origem_id_fkey(nome),
+              destino:escolas!transferencias_funcionarios_escola_destino_id_fkey(nome),
+              solicitante:funcionarios!transferencias_funcionarios_solicitante_id_fkey(nome),
+              respondido:funcionarios!transferencias_funcionarios_respondido_por_fkey(nome)
+            `)
+            .eq('funcionario_id', funcionario.id)
+            .order('created_at', { ascending: false }),
+
+          // 3. Busca histórico de vínculos e lotações (ativos e inativos)
+          supabase
+            .from('vinculos_funcionarios')
+            .select(`
+              id,
+              funcionario_id,
+              escola_id,
+              cargo,
+              ativo,
+              data_inicio,
+              data_fim,
+              carga_horaria,
+              modalidade_ensino,
+              created_at,
+              escola:escolas!vinculos_funcionarios_escola_id_fkey(nome)
+            `)
+            .eq('funcionario_id', funcionario.id)
+            .order('data_inicio', { ascending: false }),
+        ])
+
+        if (!isMountedRef.current) return
+
+        const dataMovs = resMovs.data ?? []
+        const dataTransf = resTransf.data ?? []
+        const dataVincs = resVincs.data ?? []
 
         const itemsCombined: MovimentacaoItem[] = []
+        const seenKeys = new Set<string>()
 
-        // Mapeia atos funcionais
-        if (dataMovs) {
-          dataMovs.forEach((m: any) => {
+        // A. Mapeia atos e movimentações funcionais
+        dataMovs.forEach((m: any) => {
+          const key = `mov-${m.tipo}-${m.data}-${m.orgao_destino ?? ''}`
+          seenKeys.add(key)
+          itemsCombined.push({
+            id: m.id,
+            data: m.data || m.created_at,
+            tipo: m.tipo ?? 'Movimentação Funcional',
+            descricao: m.descricao ?? 'Registro de movimentação funcional.',
+            orgao_origem: m.orgao_origem ?? null,
+            orgao_destino: m.orgao_destino ?? null,
+            portaria: m.portaria ?? null,
+            isTransferencia: false,
+          })
+        })
+
+        // B. Mapeia trâmites e solicitações de transferência
+        dataTransf.forEach((t: any) => {
+          const normStatus = normalizeStatus(t.status)
+          let tipo = 'Solicitação de Transferência'
+          if (normStatus === 'APROVADO') tipo = 'Transferência Aprovada'
+          if (normStatus === 'RECUSADO') tipo = 'Transferência Recusada'
+          if (normStatus === 'REVERTIDO') tipo = 'Transferência Revertida'
+
+          const origemNome = t.origem?.nome ?? 'Escola de Origem'
+          const destinoNome = t.fora_da_rede ? 'Fora da Rede Municipal' : (t.destino?.nome ?? 'Escola de Destino')
+
+          itemsCombined.push({
+            id: t.id,
+            data: t.created_at,
+            tipo,
+            descricao: t.motivo ? `Motivo do Pedido: ${t.motivo}` : 'Solicitação formal de transferência de lotação.',
+            orgao_origem: origemNome,
+            orgao_destino: destinoNome,
+            isTransferencia: true,
+            status: normStatus,
+            rawStatus: t.status,
+            solicitanteNome: t.solicitante?.nome ?? 'Sistema / Não identificado',
+            respondidoPorNome: t.respondido?.nome ?? null,
+            respondidoEm: t.respondido_em ?? null,
+            respostaTexto: t.resposta_texto ?? null,
+            motivo: t.motivo ?? null,
+          })
+        })
+
+        // C. Mapeia histórico de vínculos que não possuam registro explícito em movimentações
+        dataVincs.forEach((v: any) => {
+          const escNome = v.escola?.nome ?? 'Unidade Escolar'
+          const dataRef = v.data_inicio || v.created_at
+          const keyInclusao = `mov-Lotação / Inclusão-${dataRef}-${escNome}`
+          const keyTransf = `mov-Lotação / Transferência-${dataRef}-${escNome}`
+
+          if (!seenKeys.has(keyInclusao) && !seenKeys.has(keyTransf)) {
             itemsCombined.push({
-              id: m.id,
-              data: m.data || m.created_at,
-              tipo: m.tipo || 'Movimentação Funcional',
-              descricao: m.descricao,
-              orgao_origem: m.orgao_origem,
-              orgao_destino: m.orgao_destino,
-              portaria: m.portaria,
+              id: `vinc-${v.id}`,
+              data: dataRef,
+              tipo: v.ativo ? 'Lotação Registrada' : 'Lotação Anterior (Histórico)',
+              descricao: `Vínculo institucional na unidade ${escNome}${v.cargo ? ` no cargo de ${v.cargo}` : ''}${v.carga_horaria ? ` (${v.carga_horaria}h/semana)` : ''}${v.data_fim ? ` — encerrado em ${v.data_fim}` : ''}.`,
+              orgao_origem: v.ativo ? null : escNome,
+              orgao_destino: v.ativo ? escNome : null,
               isTransferencia: false,
             })
-          })
-        }
+          }
+        })
 
-        // Mapeia trâmites de transferência
-        if (dataTransf) {
-          dataTransf.forEach((t: any) => {
-            const statusUpper = (t.status || 'PENDENTE').toUpperCase()
-            let tipo = 'Solicitação de Transferência'
-            if (statusUpper === 'APROVADO') tipo = 'Transferência Aprovada'
-            if (statusUpper === 'RECUSADO') tipo = 'Transferência Recusada'
-
-            const origemNome = t.origem?.nome || 'Escola Origem'
-            const destinoNome = t.fora_da_rede ? 'Fora da Rede Municipal' : (t.destino?.nome || 'Escola Destino')
-
-            itemsCombined.push({
-              id: t.id,
-              data: t.created_at,
-              tipo,
-              descricao: t.motivo ? `Motivo do Pedido: ${t.motivo}` : 'Solicitação de transferência registrada.',
-              orgao_origem: origemNome,
-              orgao_destino: destinoNome,
-              isTransferencia: true,
-              status: statusUpper,
-              solicitanteNome: t.solicitante?.nome || 'Sistema / Não identificado',
-              respondidoPorNome: t.respondido?.nome,
-              respondidoEm: t.respondido_em,
-              respostaTexto: t.resposta_texto,
-              motivo: t.motivo,
-            })
-          })
-        }
-
-        // Ordena por data decrescente
+        // Ordena tudo por data decrescente (mais recente primeiro)
         itemsCombined.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
         setListMovimentacoes(itemsCombined)
       }
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
 
     fetchMovimentacoes()
@@ -187,25 +276,35 @@ export function ModalMovimentacoes({
     if (item.isTransferencia) {
       if (item.status === 'APROVADO') return <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
       if (item.status === 'RECUSADO') return <XCircle className="w-5 h-5 text-rose-500 dark:text-rose-400" />
+      if (item.status === 'REVERTIDO') return <RotateCcw className="w-5 h-5 text-purple-500 dark:text-purple-400" />
       return <Clock className="w-5 h-5 text-amber-500 dark:text-amber-400" />
     }
 
-    switch (item.tipo) {
-      case 'Lotação / Transferência':
-        return <ArrowRightLeft className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-      case 'Admissão / Posse':
-        return <Building className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-      case 'Progressão Funcional':
-        return <ShieldCheck className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-      default:
-        return <Calendar className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+    const t = (item.tipo || '').toLowerCase()
+    if (t.includes('transferência') || t.includes('transferencia')) {
+      return <ArrowRightLeft className="w-5 h-5 text-blue-500 dark:text-blue-400" />
     }
+    if (t.includes('inclusão') || t.includes('inclusao') || t.includes('admissão') || t.includes('posse')) {
+      return <PlusCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+    }
+    if (t.includes('encerramento') || t.includes('anterior')) {
+      return <History className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+    }
+    if (t.includes('progressão') || t.includes('progressao')) {
+      return <ShieldCheck className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+    }
+    return <Calendar className="w-5 h-5 text-sky-500 dark:text-sky-400" />
   }
 
   const formatarDataHora = (iso: string | undefined | null) => {
     if (!iso) return '—'
     try {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+        const [y, m, d] = iso.split('-')
+        return `${d}/${m}/${y}`
+      }
       const d = new Date(iso)
+      if (isNaN(d.getTime())) return iso
       return d.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -220,9 +319,21 @@ export function ModalMovimentacoes({
 
   const formatarDataSimples = (iso: string | undefined | null) => {
     if (!iso) return '—'
-    const [y, m, d] = iso.split('-')
-    if (!y || !m || !d) return iso
-    return `${d}/${m}/${y}`
+    try {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+        const [y, m, d] = iso.split('-')
+        return `${d}/${m}/${y}`
+      }
+      const d = new Date(iso)
+      if (isNaN(d.getTime())) return iso
+      return d.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    } catch {
+      return iso
+    }
   }
 
   const dataHoraEmissao = new Date().toLocaleDateString('pt-BR', {
@@ -239,7 +350,7 @@ export function ModalMovimentacoes({
       <StandardDialog
         open={open}
         onOpenChange={handleOpenChange}
-        title="Relatório de Movimentações de Servidor"
+        title="Histórico de Movimentações e Lotações"
         description={`Servidor: ${nome}`}
         maxWidth="sm:max-w-[750px]"
         footer={
@@ -277,7 +388,7 @@ export function ModalMovimentacoes({
                     Cargo / Órgão
                   </span>
                   <span className="text-xs font-semibold text-foreground">
-                    {funcionario.cargo || 'Não informado'} ({funcionario.orgao || 'Sem órgão'})
+                    {funcionario.cargo ?? 'Não informado'} ({funcionario.orgao ?? 'Sem órgão'})
                   </span>
                 </div>
               </div>
@@ -305,7 +416,7 @@ export function ModalMovimentacoes({
                     Formação Acadêmica
                   </span>
                   <span className="text-xs font-semibold text-foreground">
-                    {funcionario.formacao || 'Não informada'}
+                    {funcionario.formacao ?? 'Não informada'}
                   </span>
                 </div>
               </div>
@@ -316,7 +427,7 @@ export function ModalMovimentacoes({
           <div className="space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-primary" />
-              Linha do Tempo Funcional & Transferências
+              Linha do Tempo Funcional & Transferências ({listMovimentacoes.length})
             </h4>
 
             {loading ? (
@@ -357,19 +468,9 @@ export function ModalMovimentacoes({
                         </h4>
                         {mov.isTransferencia && (
                           <span
-                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
-                              mov.status === 'APROVADO'
-                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                : mov.status === 'RECUSADO'
-                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
-                                : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
-                            }`}
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${getStatusBadgeClass(mov.status)}`}
                           >
-                            {mov.status === 'APROVADO'
-                              ? 'Aprovada'
-                              : mov.status === 'RECUSADO'
-                              ? 'Recusada'
-                              : 'Pendente'}
+                            {getStatusLabel(mov.status)}
                           </span>
                         )}
                       </div>
@@ -407,7 +508,7 @@ export function ModalMovimentacoes({
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <User className="w-3.5 h-3.5 text-sky-500 shrink-0" />
                           <span>
-                            Solicitado por: <strong className="text-foreground font-semibold">{mov.solicitanteNome}</strong>
+                            Solicitado por: <strong className="text-foreground font-semibold">{mov.solicitanteNome ?? 'Sistema'}</strong>
                           </span>
                         </div>
 
@@ -415,7 +516,7 @@ export function ModalMovimentacoes({
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <User className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                             <span>
-                              {mov.status === 'RECUSADO' ? 'Recusado por' : 'Aprovado por'}:{' '}
+                              {mov.status === 'RECUSADO' ? 'Recusado por' : mov.status === 'REVERTIDO' ? 'Revertido por' : 'Aprovado por'}:{' '}
                               <strong className="text-foreground font-semibold">{mov.respondidoPorNome}</strong>
                               {mov.respondidoEm && ` em ${formatarDataHora(mov.respondidoEm)}`}
                             </span>
@@ -427,6 +528,8 @@ export function ModalMovimentacoes({
                             className={`p-3 rounded-xl border flex items-start gap-2.5 ${
                               mov.status === 'RECUSADO'
                                 ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
+                                : mov.status === 'REVERTIDO'
+                                ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20'
                                 : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                             }`}
                           >
@@ -534,7 +637,7 @@ export function ModalMovimentacoes({
                               : 'bg-gray-50 text-gray-700 border-gray-400'
                           }`}
                         >
-                          SITUAÇÃO: {mov.status === 'APROVADO' ? 'APROVADA' : mov.status === 'RECUSADO' ? 'RECUSADA' : 'PENDENTE'}
+                          SITUAÇÃO: {getStatusLabel(mov.status).toUpperCase()}
                         </span>
                       )}
                     </div>
@@ -564,12 +667,12 @@ export function ModalMovimentacoes({
                     <div className="pt-1 border-t border-gray-200 text-[9px] space-y-1">
                       <div>
                         <strong>Solicitante do Pedido: </strong>
-                        <span>{mov.solicitanteNome}</span>
+                        <span>{mov.solicitanteNome ?? 'Sistema'}</span>
                       </div>
 
                       {mov.respondidoPorNome && (
                         <div>
-                          <strong>{mov.status === 'RECUSADO' ? 'Recusado por: ' : 'Aprovado por: '}</strong>
+                          <strong>{mov.status === 'RECUSADO' ? 'Recusado por: ' : mov.status === 'REVERTIDO' ? 'Revertido por: ' : 'Aprovado por: '}</strong>
                           <span>{mov.respondidoPorNome}</span>
                           {mov.respondidoEm && <span> (em {formatarDataHora(mov.respondidoEm)})</span>}
                         </div>
