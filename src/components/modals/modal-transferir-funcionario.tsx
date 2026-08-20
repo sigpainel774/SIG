@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowRightLeft, Building2, User, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowRightLeft, Building2, User, AlertCircle, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { logAudit } from '@/lib/audit/audit-agent'
-import { coletarAuthUserIds } from '@/lib/notifications/lotacaoNotifications'
+import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
+import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 import { EscolaSearchSelect } from '@/components/modals/lotacoes/EscolaSearchSelect'
 import { FuncionarioSearchSelect, FuncionarioOption } from '@/components/modals/lotacoes/FuncionarioSearchSelect'
 import { toast } from 'sonner'
@@ -27,8 +28,17 @@ export function ModalTransferirFuncionario({
   onSuccess
 }: ModalTransferirFuncionarioProps) {
   const supabase = createClient()
-  const { funcionario: usuarioLogado, escolaAtivaId: authEscolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario: usuarioLogado, escolaAtivaId: authEscolaAtivaId, isAdminGlobalOrRoot, isSecretarioEducacao } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
+
+  // Determina se o usuário tem privilégio de gestão da rede (Secretário de Educação / Nível 1 / Superadmin)
+  const isGestorRedeOuSecretario = useMemo(() => {
+    return Boolean(
+      isAdminGlobalOrRoot?.() || 
+      isSecretarioEducacao?.() || 
+      usuarioLogado?.is_superadmin === true
+    )
+  }, [isAdminGlobalOrRoot, isSecretarioEducacao, usuarioLogado])
 
   // Escola de Origem inicial
   const escolaPadraoId = authEscolaAtivaId || selectedEscola?.id || ''
@@ -46,8 +56,14 @@ export function ModalTransferirFuncionario({
   const [escolaDestinoId, setEscolaDestinoId] = useState('')
   const [foraDaRede, setForaDaRede] = useState(false)
   const [motivo, setMotivo] = useState('')
+  
+  // Opção do Fluxo 2 (Transferência Direta da Secretaria)
+  const [efetivarDiretoSecretaria, setEfetivarDiretoSecretaria] = useState(false)
 
-  // Sincroniza escolaOrigemId quando o modal abre ou a escola selecionada muda
+  // Trava contra duplo clique / concorrência
+  const isSubmitting = useRef(false)
+
+  // Sincroniza estados quando o modal abre ou a escola selecionada muda
   useEffect(() => {
     if (open) {
       const activeId = authEscolaAtivaId || selectedEscola?.id || ''
@@ -56,6 +72,8 @@ export function ModalTransferirFuncionario({
       setEscolaDestinoId('')
       setForaDaRede(false)
       setMotivo('')
+      setEfetivarDiretoSecretaria(false)
+      isSubmitting.current = false
     }
   }, [open, authEscolaAtivaId, selectedEscola])
 
@@ -69,7 +87,7 @@ export function ModalTransferirFuncionario({
       try {
         const { data, error } = await supabase
           .from('escolas')
-          .select('id, nome, tipo, ativo')
+          .select('id, nome, tipo, ativo, diretor_id')
           .is('deleted_at', null)
           .eq('ativo', true)
           .order('nome', { ascending: true })
@@ -198,12 +216,20 @@ export function ModalTransferirFuncionario({
     return esc?.nome ?? (selectedEscola?.id === escolaOrigemId ? selectedEscola.nome : 'Escola Selecionada')
   }, [escolaOrigemId, escolas, selectedEscola])
 
+  // Nome da escola de destino para exibição
+  const nomeEscolaDestino = useMemo(() => {
+    if (!escolaDestinoId) return ''
+    const esc = escolas.find((e) => e.id === escolaDestinoId)
+    return esc?.nome ?? 'Escola de Destino'
+  }, [escolaDestinoId, escolas])
+
   // Funcionário selecionado completo
   const funcionarioObj = useMemo(() => {
     return funcionarios.find((f) => f.id === funcionarioSelecionadoId)
   }, [funcionarios, funcionarioSelecionadoId])
 
   const handleSubmeter = async () => {
+    if (isSubmitting.current) return
     if (!escolaOrigemId) {
       toast.error('Selecione a Escola de Origem')
       return
@@ -225,6 +251,21 @@ export function ModalTransferirFuncionario({
       return
     }
 
+    // Validação da trava global da rede (apenas para não-administradores)
+    if (!isGestorRedeOuSecretario) {
+      try {
+        const configRede = await buscarConfigBloqueioRede(supabase)
+        const travaAtiva = await verificarTravaEdicaoFuncionario(configRede, funcionarioSelecionadoId, supabase)
+        if (travaAtiva) {
+          toast.error('A movimentação e edição deste servidor foi bloqueada temporariamente pela Secretaria de Educação.')
+          return
+        }
+      } catch (travaErr) {
+        console.warn('Erro ao checar trava global:', travaErr)
+      }
+    }
+
+    isSubmitting.current = true
     setLoadingGeral(true)
 
     try {
@@ -260,6 +301,13 @@ export function ModalTransferirFuncionario({
 
           if (deactivateError) throw deactivateError
         }
+
+        // Limpa automaticamente o diretor_id da escola de origem se ele for o diretor cadastrado
+        await supabase
+          .from('escolas')
+          .update({ diretor_id: null })
+          .eq('id', escolaOrigemId)
+          .eq('diretor_id', funcionarioSelecionadoId)
 
         // Verificar se ele tem outros vínculos ativos na rede
         const { data: outrosVinculos, error: checkError } = await supabase
@@ -317,8 +365,127 @@ export function ModalTransferirFuncionario({
           const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
           await invalidarCachePerfil(funcionarioObj.auth_user_id)
         }
+      } else if (isGestorRedeOuSecretario && efetivarDiretoSecretaria) {
+        // =========================================================================
+        // FLUXO 2: Transferência Direta / Imediata pela Secretaria de Educação
+        // =========================================================================
+        
+        // 1. Inativar vínculo na escola de origem
+        if (lotacaoVinculoId) {
+          const { error: deactError } = await supabase
+            .from('vinculos_funcionarios')
+            .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+            .eq('id', lotacaoVinculoId)
+          if (deactError) throw deactError
+        }
+
+        // 2. Limpar diretor_id na escola de origem se o servidor for o diretor cadastrado
+        await supabase
+          .from('escolas')
+          .update({ diretor_id: null })
+          .eq('id', escolaOrigemId)
+          .eq('diretor_id', funcionarioSelecionadoId)
+
+        // 3. Criar novo vínculo ativo na escola de destino
+        const cargoNovo = (funcionarioObj as any).cargo_vinculo || funcionarioObj.cargo || 'Funcionário'
+        const { error: createVinculoError } = await supabase
+          .from('vinculos_funcionarios')
+          .insert({
+            funcionario_id: funcionarioSelecionadoId,
+            escola_id: escolaDestinoId,
+            cargo: cargoNovo,
+            ativo: true,
+            data_inicio: new Date().toISOString().split('T')[0]
+          })
+        if (createVinculoError) throw createVinculoError
+
+        // 4. Inserir registro na tabela de transferências já com status 'ACEITA'
+        const { error: insTransfError } = await (supabase as any)
+          .from('transferencias_funcionarios')
+          .insert({
+            funcionario_id: funcionarioSelecionadoId,
+            escola_origem_id: escolaOrigemId,
+            escola_destino_id: escolaDestinoId,
+            solicitante_id: usuarioLogado.id,
+            motivo: `TRANSFERENCIA DIRETA SECRETARIA: ${motivo.trim()}`,
+            fora_da_rede: false,
+            ficha_snapshot: funcionarioObj,
+            lotacao_id: lotacaoVinculoId,
+            status: 'ACEITA',
+            respondido_por: usuarioLogado.id,
+            respondido_em: new Date().toISOString(),
+            resposta_texto: 'Transferência direta efetivada pela Secretaria de Educação / Sede'
+          })
+        if (insTransfError) throw insTransfError
+
+        // 5. Arquivar snapshot histórico
+        await supabase
+          .from('arquivados')
+          .insert({
+            tipo: 'FUNCIONARIO_TRANSFERIDO',
+            referencia_id: funcionarioSelecionadoId,
+            tabela_origem: 'funcionarios',
+            motivo: `TRANSFERENCIA DIRETA: Movimentado pela Secretaria de Educação de ${nomeEscolaOrigem} para ${nomeEscolaDestino}`,
+            escola_origem_id: escolaOrigemId,
+            arquivado_por: usuarioLogado.id,
+            payload_completo: funcionarioObj,
+            status: 'TRANSFERIDO'
+          })
+
+        // 6. Auditoria
+        await logAudit({
+          supabase,
+          action: 'UPDATE',
+          entity: 'funcionarios (TRANSFERENCIA DIRETA SECRETARIA)',
+          entityId: funcionarioSelecionadoId,
+          newData: { escola_origem_id: escolaOrigemId, escola_destino_id: escolaDestinoId },
+          performedBy: { 
+            id: usuarioLogado?.id ?? null, 
+            name: usuarioLogado?.nome ?? '', 
+            email: usuarioLogado?.email ?? '' 
+          },
+          tenantId: escolaOrigemId || undefined
+        })
+
+        // 7. Notificar Chefes da Origem, Chefes do Destino e o próprio Funcionário
+        try {
+          const chefesOrigem = await coletarAuthUserIds(supabase, [escolaOrigemId], [2])
+          const chefesDestino = await coletarAuthUserIds(supabase, [escolaDestinoId], [2, 3])
+
+          const destinatarios = new Set<string>([...chefesOrigem, ...chefesDestino])
+          if (funcionarioObj.auth_user_id) destinatarios.add(funcionarioObj.auth_user_id)
+          // Não precisa notificar o próprio usuário que realizou a ação
+          if (usuarioLogado.auth_user_id) destinatarios.delete(usuarioLogado.auth_user_id)
+
+          const listDest = Array.from(destinatarios)
+          if (listDest.length > 0) {
+            await (supabase as any).rpc('criar_notificacoes', {
+              p_destinatarios: listDest,
+              p_title: 'Transferência de Servidor Efetivada',
+              p_message: `O servidor ${funcionarioObj.nome} foi transferido diretamente pela Secretaria de Educação de ${nomeEscolaOrigem} para ${nomeEscolaDestino}.`,
+              p_type: 'INFO',
+              p_link: '/transferencias?tab=funcionarios'
+            })
+          }
+        } catch (notifErr) {
+          console.warn('Erro não-crítico ao emitir notificações de transferência direta:', notifErr)
+        }
+
+        if (funcionarioObj.auth_user_id) {
+          const { invalidarCachePerfil } = await import('@/lib/invalidarCachePerfil')
+          await invalidarCachePerfil(funcionarioObj.auth_user_id)
+        }
+
+        toast.success(`Funcionário transferido diretamente para ${nomeEscolaDestino}!`)
       } else {
-        // Fluxo de solicitação interna pendente
+        // =========================================================================
+        // FLUXO 1: Solicitação com Despacho (Diretor ou Gestor solicita)
+        // =========================================================================
+        
+        // Verificar se a escola destino possui chefes/diretores cadastrados
+        const chefesDestino = await coletarAuthUserIds(supabase, [escolaDestinoId], [2, 3])
+        const aguardaDespachoSede = chefesDestino.length === 0
+
         const { data: insertData, error: insertError } = await (supabase as any)
           .from('transferencias_funcionarios')
           .insert({
@@ -330,7 +497,8 @@ export function ModalTransferirFuncionario({
             fora_da_rede: false,
             ficha_snapshot: funcionarioObj,
             lotacao_id: lotacaoVinculoId,
-            status: 'PENDENTE'
+            status: 'PENDENTE',
+            aguarda_despacho_sede: aguardaDespachoSede
           })
           .select('id')
           .single()
@@ -339,34 +507,59 @@ export function ModalTransferirFuncionario({
 
         const transferId = insertData?.id
 
-        // Notificar chefes do DESTINO (nível 2 e 3) e chefes de ORIGEM (nível 2)
+        // Disparo estruturado de notificações
         try {
-          const chefesDestino = await coletarAuthUserIds(supabase, [escolaDestinoId], [2, 3])
           const chefesOrigem = await coletarAuthUserIds(supabase, [escolaOrigemId], [2])
+          const adminsGlobaisSede = await coletarAuthUserIdsAdminsGlobais(supabase)
 
           const destinatariosDestino = Array.from(new Set<string>(chefesDestino))
           const destinatariosOrigem = Array.from(new Set<string>(chefesOrigem))
+          // Admins da Sede (excluindo o próprio solicitante se for admin)
+          const destinatariosSede = Array.from(new Set<string>(adminsGlobaisSede)).filter(
+            (id) => id !== usuarioLogado.auth_user_id
+          )
 
+          // 1. Notificar Gestores do Destino (se houver)
           if (destinatariosDestino.length > 0) {
             await (supabase as any).rpc('criar_notificacoes', {
               p_destinatarios: destinatariosDestino,
               p_tenant_id: escolaDestinoId,
-              p_title: 'Nova Solicitação de Transferência de Funcionário',
-              p_message: `O servidor ${funcionarioObj.nome} solicitou transferência para sua escola.`,
+              p_title: 'Nova Solicitação de Transferência de Servidor',
+              p_message: `A unidade ${nomeEscolaOrigem} solicitou a transferência do servidor ${funcionarioObj.nome} para sua escola.`,
               p_type: 'INFO',
               p_link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
               p_grupo_id: null
             })
           }
 
+          // 2. Notificar Gestores da Origem
           if (destinatariosOrigem.length > 0) {
             await (supabase as any).rpc('criar_notificacoes', {
               p_destinatarios: destinatariosOrigem,
               p_tenant_id: escolaOrigemId,
-              p_title: 'Transferência de Funcionário Solicitada',
-              p_message: `Uma solicitação de transferência do servidor ${funcionarioObj.nome} para outra escola foi registrada.`,
+              p_title: 'Transferência de Servidor Solicitada',
+              p_message: `Uma solicitação de transferência do servidor ${funcionarioObj.nome} para ${nomeEscolaDestino} foi registrada.`,
               p_type: 'INFO',
               p_link: `/transferencias?tab=funcionarios&subtab=submissoes`,
+              p_grupo_id: null
+            })
+          }
+
+          // 3. Notificar o Secretário de Educação & Administradores da Sede
+          if (destinatariosSede.length > 0) {
+            const tituloSede = aguardaDespachoSede
+              ? '[Sede] Pedido de Transferência (Escola sem direção)'
+              : 'Solicitação de Transferência de Servidor'
+            const msgSede = aguardaDespachoSede
+              ? `A unidade ${nomeEscolaOrigem} solicitou a transferência de ${funcionarioObj.nome} para ${nomeEscolaDestino} (escola sem direção cadastrada). Favor despachar o pedido na central da Sede.`
+              : `A unidade ${nomeEscolaOrigem} solicitou a transferência do servidor ${funcionarioObj.nome} para ${nomeEscolaDestino}.`
+
+            await (supabase as any).rpc('criar_notificacoes', {
+              p_destinatarios: destinatariosSede,
+              p_title: tituloSede,
+              p_message: msgSede,
+              p_type: 'INFO',
+              p_link: `/transferencias?tab=funcionarios&subtab=recebimentos${transferId ? `&id=${transferId}` : ''}`,
               p_grupo_id: null
             })
           }
@@ -374,7 +567,11 @@ export function ModalTransferirFuncionario({
           console.warn('Alerta ao emitir notificações de transferência:', notifErr)
         }
 
-        toast.success('Solicitação de transferência enviada com sucesso!')
+        if (aguardaDespachoSede) {
+          toast.success('Solicitação enviada! A escola destino não possui direção cadastrada, o pedido foi encaminhado diretamente para despacho da Secretaria de Educação.')
+        } else {
+          toast.success('Solicitação de transferência enviada com sucesso!')
+        }
       }
 
       onOpenChange(false)
@@ -383,6 +580,7 @@ export function ModalTransferirFuncionario({
       console.error('Erro ao submeter transferência de funcionário:', err)
       toast.error(`Erro ao registrar transferência: ${err.message || 'Falha inesperada.'}`)
     } finally {
+      isSubmitting.current = false
       setLoadingGeral(false)
     }
   }
@@ -391,8 +589,8 @@ export function ModalTransferirFuncionario({
     <StandardDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Solicitar Transferência de Funcionário"
-      maxWidth="sm:max-w-[520px]"
+      title="Transferência de Funcionário"
+      maxWidth="sm:max-w-[540px]"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
           <Button 
@@ -415,7 +613,9 @@ export function ModalTransferirFuncionario({
             ) : (
               <>
                 <ArrowRightLeft className="w-4 h-4" />
-                Confirmar Transferência
+                {isGestorRedeOuSecretario && efetivarDiretoSecretaria && !foraDaRede
+                  ? 'Efetivar Transferência Direta'
+                  : 'Confirmar Transferência'}
               </>
             )}
           </Button>
@@ -426,6 +626,30 @@ export function ModalTransferirFuncionario({
         <p className="text-muted-foreground text-xs leading-relaxed">
           Transfira ou solicite a movimentação de um servidor ativo desta unidade escolar para outra unidade da rede municipal ou para fora do município.
         </p>
+
+        {/* Painel do Fluxo 2 exclusivo para Secretário de Educação / Gestão da Rede */}
+        {isGestorRedeOuSecretario && !foraDaRede && (
+          <div className="bg-sky-500/10 border border-sky-500/30 rounded-xl p-3 space-y-2">
+            <div className="flex items-start gap-2.5">
+              <input
+                type="checkbox"
+                id="efetivarDireto"
+                checked={efetivarDiretoSecretaria}
+                onChange={(e) => setEfetivarDiretoSecretaria(e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-sky-600 rounded border-border cursor-pointer shrink-0"
+              />
+              <label htmlFor="efetivarDireto" className="text-xs text-foreground cursor-pointer select-none">
+                <span className="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Efetivar Imediatamente como Secretaria de Educação (Transferência Direta)
+                </span>
+                <span className="text-muted-foreground text-[11px] block mt-0.5 leading-snug">
+                  Quando marcado, o servidor é movimentado imediatamente entre as unidades sem necessitar de aprovação pendente posterior.
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Seleção/Exibição da Escola de Origem */}
         <div className="space-y-1.5">
@@ -496,7 +720,7 @@ export function ModalTransferirFuncionario({
             onChange={(e) => setForaDaRede(e.target.checked)}
             className="w-4 h-4 mt-0.5 accent-sky-500 rounded border-border cursor-pointer shrink-0"
           />
-          <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-600 dark:text-sky-400 font-medium leading-tight cursor-pointer">
+          <label htmlFor="foraDaRedeFunc" className="text-xs text-sky-600 dark:text-sky-400 font-medium leading-tight cursor-pointer select-none">
             <span className="font-semibold block">Transferência para FORA DA REDE MUNICIPAL</span>
             <span className="text-muted-foreground text-[11px]">
               Encerra o vínculo com a rede municipal e move o histórico para o arquivo morto da unidade.

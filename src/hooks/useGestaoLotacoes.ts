@@ -535,13 +535,14 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         if (lotacaoOrigem?.escola_id) escolasEnvolvidas.push(lotacaoOrigem.escola_id)
         if (destinoEscolaId) escolasEnvolvidas.push(destinoEscolaId)
         const chefes = await coletarAuthUserIds(supabase, escolasEnvolvidas, [2])
-        const destinatarios = new Set<string>(chefes)
+        const adminsGlobais = await coletarAuthUserIdsAdminsGlobais(supabase)
+        const destinatarios = new Set<string>([...chefes, ...adminsGlobais])
         if (selecionado?.auth_user_id) destinatarios.add(selecionado.auth_user_id)
         if (destinatarios.size > 0) {
           await (supabase as any).rpc('criar_notificacoes', {
             p_destinatarios: Array.from(destinatarios),
             p_title: 'Mudança de Lotação',
-            p_message: `O funcionário ${selecionado.nome} foi transferido de ${lotacaoOrigem?.escolaNome ?? 'escola anterior'} para ${escolaDestinoNome} pelo Administrador.`,
+            p_message: `O funcionário ${selecionado.nome} foi transferido de ${lotacaoOrigem?.escolaNome ?? 'escola anterior'} para ${escolaDestinoNome} pela Secretaria / Administrador.`,
             p_type: 'INFO',
             p_link: '/funcionarios'
           })

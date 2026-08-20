@@ -123,18 +123,5 @@ Este arquivo descreve o histÃ³rico completo e a finalidade de todas as migrati
 | 104 | `20260819000000_add_horario_fim_to_emaee_especialidades.sql` | 2026-08-19 | Adiciona a coluna `horario_fim` (`time without time zone`) na tabela `emaee_especialidades_vinculadas` para registro do tÃ©rmino da sessÃ£o de atendimento AEE. | `public.emaee_especialidades_vinculadas` | MantÃ©m RLS Existente |
 | 105 | `20260819100000_public_pwa_system_config.sql` | 2026-08-19 | Política RLS `leitura_publica_pwa` em `system_config` para permitir leitura não-autenticada das chaves de versão do PWA, evitando loops de atualização na tela de login. | `public.system_config` | RLS Leitura Pública (`pwa_%`) |
 | 106 | `20260819214500_update_relatorio_servidores_status.sql` | 2026-08-19 | Atualização da RPC `get_relatorio_servidores` com suporte ao parâmetro `p_status` ('Todos', 'ativo', 'afastado'), contadores de servidores ativos/afastados e taxa de afastamento para o Painel de Recursos Humanos. | `public.funcionarios`, `public.vinculos_funcionarios` | `SECURITY DEFINER` |
+| 107 | `20260820120000_transferencias_sede_e_notificacoes_secretario.sql` | 2026-08-20 | Adiciona coluna `aguarda_despacho_sede` em `transferencias_funcionarios` e atualiza a RPC `processar_decisao_transferencia_lotacao` com permissão para despacho da Secretaria de Educação e limpeza de `diretor_id` na origem. | `public.transferencias_funcionarios`, `public.escolas`, `public.vinculos_funcionarios` | `SECURITY DEFINER` |
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-| 27 | 20260819123057_create_system_logs.sql | 2026-08-19 | Tabela para logs automáticos do sistema. | public.system_logs | Authenticated/Anon Insert |

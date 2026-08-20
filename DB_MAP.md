@@ -563,6 +563,7 @@ Gerenciamento de movimentações internas de funcionários da rede.
 *   `respondido_em`: `timestamp with time zone` (Nullable)
 *   `ficha_snapshot`, `arquivos_anexos`: `jsonb` (Nullable)
 *   `lotacao_id`: `uuid` (Nullable)
+*   `aguarda_despacho_sede`: `boolean` (Default: false, Indica se a transferência aguarda despacho da Secretaria por ausência de direção no destino, Nullable)
 *   `created_at`: `timestamp with time zone` (Default: `now()`, Nullable)
 
 ### 44. `public.atividades_secretaria`

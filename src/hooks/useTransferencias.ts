@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { logAudit } from '@/lib/audit/audit-agent'
-import { coletarAuthUserIds } from '@/lib/notifications/lotacaoNotifications'
+import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
 import { toast } from 'sonner'
 
 export function useTransferencias() {
@@ -14,8 +14,16 @@ export function useTransferencias() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   
-  const { funcionario, escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { funcionario, escolaAtivaId, isAdminGlobalOrRoot, isSecretarioEducacao } = useAuthStore()
   const { isEditMode } = useEditModeStore()
+
+  const isGestorRede = useMemo(() => {
+    return Boolean(
+      isAdminGlobalOrRoot?.() || 
+      isSecretarioEducacao?.() || 
+      funcionario?.is_superadmin === true
+    )
+  }, [isAdminGlobalOrRoot, isSecretarioEducacao, funcionario])
 
   // Abas de estado
   const [activeTab, setActiveTab] = useState<'alunos' | 'funcionarios'>('alunos')
@@ -44,12 +52,11 @@ export function useTransferencias() {
   }, [])
 
   const loadTransferencias = useCallback(async () => {
-    if (!escolaAtivaId) return
     if (isMounted.current) setLoading(true)
     
     try {
-      // 1. Alunos
-      const { data: alData } = await supabase
+      // 1. Alunos Query
+      let queryAl = supabase
         .from('transferencias_alunos')
         .select(`
           *,
@@ -58,11 +65,26 @@ export function useTransferencias() {
           destino:escola_destino_id(nome),
           solicitante:solicitante_id(id, nome, auth_user_id)
         `)
-        .or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
         .order('created_at', { ascending: false })
 
-      // 2. Funcionários
-      const { data: funcData } = await supabase
+      // Se for diretor de unidade escolar específica, filtra pelas escolas de origem ou destino
+      if (!isGestorRede && escolaAtivaId) {
+        queryAl = queryAl.or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
+      } else if (!isGestorRede && !escolaAtivaId) {
+        // Diretor sem escola ativa não tem dados a exibir
+        if (isMounted.current) {
+          setTransferenciasAlunos([])
+          setTransferenciasFuncionarios([])
+          setLoading(false)
+        }
+        return { al: [], func: [] }
+      }
+
+      const { data: alData, error: alError } = await queryAl
+      if (alError) console.error('Erro ao buscar transferências de alunos:', alError)
+
+      // 2. Funcionários Query
+      let queryFunc = supabase
         .from('transferencias_funcionarios')
         .select(`
           *,
@@ -71,8 +93,14 @@ export function useTransferencias() {
           destino:escola_destino_id(nome),
           solicitante:solicitante_id(id, nome, auth_user_id)
         `)
-        .or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
         .order('created_at', { ascending: false })
+
+      if (!isGestorRede && escolaAtivaId) {
+        queryFunc = queryFunc.or(`escola_origem_id.eq.${escolaAtivaId},escola_destino_id.eq.${escolaAtivaId}`)
+      }
+
+      const { data: funcData, error: funcError } = await queryFunc
+      if (funcError) console.error('Erro ao buscar transferências de funcionários:', funcError)
 
       if (!isMounted.current) return
 
@@ -89,9 +117,9 @@ export function useTransferencias() {
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [escolaAtivaId])
+  }, [escolaAtivaId, isGestorRede, supabase])
 
-  // URL Params parsing
+  // URL Params parsing com busca direta de segurança por ID
   useEffect(() => {
     const tabParam = searchParams.get('tab')
     const subtabParam = searchParams.get('subtab')
@@ -105,22 +133,51 @@ export function useTransferencias() {
     }
     
     if (idParam) {
-      loadTransferencias().then((data) => {
-        if (!isMounted.current || !data) return
-        const { al, func } = data
+      loadTransferencias().then(async (data) => {
+        if (!isMounted.current) return
+        const { al = [], func = [] } = data || {}
         let found = null
         if (tabParam === 'funcionarios') {
           found = func.find((f: any) => f.id === idParam)
         } else {
           found = al.find((a: any) => a.id === idParam)
         }
-        if (found) {
+
+        // Se não encontrou na lista padrão, faz lookup direto por ID
+        if (!found) {
+          try {
+            const table = tabParam === 'funcionarios' ? 'transferencias_funcionarios' : 'transferencias_alunos'
+            const relation = tabParam === 'funcionarios' 
+              ? 'funcionarios(nome, cpf, cargo, auth_user_id)' 
+              : 'alunos(nome, cpf)'
+
+            const { data: singleData } = await supabase
+              .from(table)
+              .select(`
+                *,
+                ${relation},
+                origem:escola_origem_id(nome),
+                destino:escola_destino_id(nome),
+                solicitante:solicitante_id(id, nome, auth_user_id)
+              `)
+              .eq('id', idParam)
+              .maybeSingle()
+
+            if (singleData && isMounted.current) {
+              found = singleData
+            }
+          } catch (fetchSingleErr) {
+            console.warn('Erro ao buscar transferência específica por ID:', fetchSingleErr)
+          }
+        }
+
+        if (found && isMounted.current) {
           setTransferenciaSelecionada(found)
           setModalDecisaoOpen(true)
         }
       })
     }
-  }, [searchParams, loadTransferencias])
+  }, [searchParams, loadTransferencias, supabase])
 
   useEffect(() => {
     loadTransferencias()
@@ -130,12 +187,36 @@ export function useTransferencias() {
     const list = activeTab === 'alunos' ? transferenciasAlunos : transferenciasFuncionarios
     
     if (historicoAberto) {
-      return list.filter((t: any) => t.status !== 'PENDENTE')
+      if (isGestorRede) {
+        if (!escolaAtivaId) return list.filter((t: any) => t.status !== 'PENDENTE')
+        return list.filter((t: any) => 
+          (t.escola_origem_id === escolaAtivaId || t.escola_destino_id === escolaAtivaId || t.aguarda_despacho_sede) &&
+          t.status !== 'PENDENTE'
+        )
+      }
+      return list.filter((t: any) => 
+        (t.escola_origem_id === escolaAtivaId || t.escola_destino_id === escolaAtivaId) && 
+        t.status !== 'PENDENTE'
+      )
     }
 
     if (activeSubTab === 'recebimentos') {
+      if (isGestorRede) {
+        // Se for gestor da rede na Sede (sem escola ativa) ou com escola selecionada:
+        // Exibe pedidos destinados à escola ativa E pedidos da rede inteira que aguardam despacho da Sede
+        if (!escolaAtivaId) {
+          return list.filter((t: any) => t.status === 'PENDENTE')
+        }
+        return list.filter((t: any) => 
+          (t.escola_destino_id === escolaAtivaId || t.aguarda_despacho_sede === true) && 
+          t.status === 'PENDENTE'
+        )
+      }
       return list.filter((t: any) => t.escola_destino_id === escolaAtivaId && t.status === 'PENDENTE')
     } else {
+      if (isGestorRede && !escolaAtivaId) {
+        return list
+      }
       return list.filter((t: any) => t.escola_origem_id === escolaAtivaId)
     }
   }
@@ -259,7 +340,9 @@ export function useTransferencias() {
         }
 
       } else {
-        // Funcionários
+        // =========================================================================
+        // Decisão em Transferência de Funcionários
+        // =========================================================================
         if (transferenciaSelecionada.lotacao_id) {
           const { error: rpcError } = await (supabase as any).rpc('processar_decisao_transferencia_lotacao', {
             p_transferencia_id: transferenciaSelecionada.id,
@@ -292,6 +375,13 @@ export function useTransferencias() {
 
             if (deactivateError) throw deactivateError
 
+            // Limpa diretor_id na escola de origem se o servidor for o diretor cadastrado
+            await supabase
+              .from('escolas')
+              .update({ diretor_id: null })
+              .eq('id', transferenciaSelecionada.escola_origem_id)
+              .eq('diretor_id', transferenciaSelecionada.funcionario_id)
+
             const cargoAnterior = transferenciaSelecionada.funcionarios?.cargo || 'Funcionário'
             const { error: activateError } = await supabase
               .from('vinculos_funcionarios')
@@ -305,21 +395,13 @@ export function useTransferencias() {
 
             if (activateError) throw activateError
 
-            const { error: accessError } = await supabase
-              .from('acessos_usuarios')
-              .update({ escola_id: transferenciaSelecionada.escola_destino_id })
-              .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
-              .eq('escola_id', transferenciaSelecionada.escola_origem_id)
-
-            if (accessError) throw accessError
-
             const { error: archiveError } = await supabase
               .from('arquivados')
               .insert({
                 tipo: 'FUNCIONARIO_TRANSFERIDO',
                 referencia_id: transferenciaSelecionada.funcionario_id,
                 tabela_origem: 'funcionarios',
-                motivo: `TRANSFERENCIA: Transferido para a escola ${transferenciaSelecionada.destino?.nome ?? 'Destino'}`,
+                motivo: `TRANSFERENCIA: Transferido para a escola ${transferenciaSelecionada.destino?.nome ?? 'Destino'}${isGestorRede ? ' (Despachado pela Secretaria de Educação)' : ''}`,
                 escola_origem_id: transferenciaSelecionada.escola_origem_id,
                 arquivado_por: funcionario.id,
                 payload_completo: transferenciaSelecionada.ficha_snapshot || {},
@@ -340,29 +422,28 @@ export function useTransferencias() {
           }
         }
 
-        // 4a-4c (ES-5): bloco fora do if/else — cobre tanto o branch lotacao_id quanto o branch sem lotacao_id
-        // 4a: corrigido para usar solicitante.auth_user_id em vez de solicitante_id (funcionarios.id)
+        // Notificar solicitante, servidor e diretores das escolas envolvidas
         const solicitanteAuthId = transferenciaSelecionada.solicitante?.auth_user_id
         const funcionarioAuthId = transferenciaSelecionada.funcionarios?.auth_user_id
 
         const destinatariosDecisao = new Set<string>()
         if (solicitanteAuthId) destinatariosDecisao.add(solicitanteAuthId)
-        // 4b: notificar o próprio funcionário transferido
         if (funcionarioAuthId && funcionarioAuthId !== solicitanteAuthId) {
           destinatariosDecisao.add(funcionarioAuthId)
         }
 
         if (destinatariosDecisao.size > 0) {
+          const despachanteTexto = isGestorRede ? 'pela Secretaria de Educação' : 'pela escola de destino'
           await (supabase as any).rpc('criar_notificacoes', {
             p_destinatarios: Array.from(destinatariosDecisao),
-            p_title: `Transferência de Funcionário ${statusDestino}`,
-            p_message: `O pedido de transferência do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi ${statusDestino.toLowerCase()} pela escola de destino.`,
+            p_title: `Transferência de Servidor ${statusDestino}`,
+            p_message: `O pedido de transferência do funcionário ${transferenciaSelecionada.funcionarios?.nome ?? 'Funcionário'} foi ${statusDestino.toLowerCase()} ${despachanteTexto}.${justificativa ? ` Motivo: ${justificativa}` : ''}`,
             p_type: aceitar ? 'SUCCESS' : 'ERROR',
             p_link: '/transferencias?tab=funcionarios&subtab=submissoes'
           })
         }
 
-        // 4c: ao aceitar, notificar chefes (nível 2) da escola de ORIGEM
+        // Ao aceitar, notificar diretores da escola de ORIGEM
         if (aceitar && transferenciaSelecionada.escola_origem_id) {
           try {
             const chefesOrigem = await coletarAuthUserIds(
@@ -422,7 +503,6 @@ export function useTransferencias() {
 
       if (error) throw error
 
-      // ES-1 corrigido: usar auth_user_id em vez de funcionarios.id
       const userIds = new Set<string>()
 
       const { data: acessosEnvolvidos } = await supabase
@@ -496,6 +576,7 @@ export function useTransferencias() {
     loading,
     isEditMode,
     isAdminGlobalOrRoot,
+    isGestorRede,
     escolaAtivaId,
     items,
     loadTransferencias,
