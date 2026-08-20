@@ -450,6 +450,21 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         performedBy: performer,
       })
 
+      // Gravar no histórico oficial de movimentações do funcionário
+      try {
+        await supabase.from('movimentacoes_funcionarios').insert({
+          funcionario_id: selecionado.id,
+          tipo: 'Lotação / Inclusão',
+          descricao: `Lotação adicionada na unidade ${escolaNome}${cargoFinal ? ` no cargo de ${cargoFinal}` : ''}${finalCarga ? ` (${finalCarga}h/sem)` : ''}.`,
+          data: new Date().toISOString().split('T')[0],
+          orgao_origem: null,
+          orgao_destino: escolaNome,
+          portaria: null,
+        })
+      } catch (movErr) {
+        console.warn('Erro não-crítico ao registrar movimentação funcional:', movErr)
+      }
+
       toast.success(`Lotação adicionada em ${escolaNome}`)
 
       // Notificar chefes da escola de destino e o próprio funcionário
@@ -534,6 +549,21 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         performedBy: performer,
       })
 
+      // Gravar no histórico oficial de movimentações do funcionário
+      try {
+        await supabase.from('movimentacoes_funcionarios').insert({
+          funcionario_id: selecionado.id,
+          tipo: 'Lotação / Transferência',
+          descricao: `Transferência direta da unidade ${lotacaoOrigem?.escolaNome ?? 'Escola de Origem'} para ${escolaDestinoNome} realizada pela gestão.`,
+          data: new Date().toISOString().split('T')[0],
+          orgao_origem: lotacaoOrigem?.escolaNome ?? null,
+          orgao_destino: escolaDestinoNome,
+          portaria: null,
+        })
+      } catch (movErr) {
+        console.warn('Erro não-crítico ao registrar movimentação funcional:', movErr)
+      }
+
       // Notificar chefes de origem, chefes de destino e o próprio funcionário
       try {
         const escolasEnvolvidas: string[] = []
@@ -604,6 +634,24 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         oldData: { escola: lotacao.escolaNome, cargo: lotacao.cargo },
         performedBy: performer,
       })
+
+      // Gravar no histórico oficial de movimentações do funcionário
+      const funcIdAlvo = lotacao.funcionario_id || selecionado?.id
+      if (funcIdAlvo) {
+        try {
+          await supabase.from('movimentacoes_funcionarios').insert({
+            funcionario_id: funcIdAlvo,
+            tipo: 'Lotação / Encerramento',
+            descricao: `Lotação na unidade ${lotacao.escolaNome ?? 'Escola'} encerrada pela gestão.`,
+            data: new Date().toISOString().split('T')[0],
+            orgao_origem: lotacao.escolaNome ?? null,
+            orgao_destino: null,
+            portaria: null,
+          })
+        } catch (movErr) {
+          console.warn('Erro não-crítico ao registrar movimentação funcional:', movErr)
+        }
+      }
 
       // ES-6: Notificar chefes da unidade e o próprio funcionário desvinculado
       try {
