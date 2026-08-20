@@ -143,6 +143,7 @@ export default function RelatorioServidores() {
 
   // Filtros em tempo real
   const [filtroEscolaId, setFiltroEscolaId] = useState<string>('')
+  const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroCargo, setFiltroCargo] = useState<string>('')
   const [filtroModalidade, setFiltroModalidade] = useState<string>('Todos')
   const [filtroVinculo, setFiltroVinculo] = useState<string>('Todos')
@@ -199,7 +200,9 @@ export default function RelatorioServidores() {
           .filter((v) => !v.funcionarios?.is_conta_especial)
           .filter((v) => {
             const statusUpper = (v.funcionarios?.status ?? 'ATIVO').toUpperCase()
-            return statusUpper === 'ATIVO' || statusUpper === ''
+            if (filtroStatus === 'ativo' && statusUpper !== 'ATIVO' && statusUpper !== '') return false
+            if (filtroStatus === 'afastado' && statusUpper !== 'AFASTADO') return false
+            return true
           })
           .map((v) => {
             const f = v.funcionarios
@@ -259,7 +262,7 @@ export default function RelatorioServidores() {
         setIsLoadingOccupants(false)
       }
     }
-  }, [supabase, filtroEscolaId, filtroModalidade, filtroVinculo])
+  }, [supabase, filtroEscolaId, filtroModalidade, filtroVinculo, filtroStatus])
 
   // Filtro de ocupantes pesquisados no modal
   const filteredOccupants = useMemo(() => {
@@ -301,6 +304,7 @@ export default function RelatorioServidores() {
         p_cargo: filtroCargo || undefined,
         p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
         p_vinculo_tipo: filtroVinculo === 'Todos' ? undefined : filtroVinculo,
+        p_status: filtroStatus === 'Todos' ? undefined : filtroStatus,
       })
 
       if (!isMountedRef.current || currentRequest !== requestCounter.current) return
@@ -336,7 +340,7 @@ export default function RelatorioServidores() {
         setIsLoading(false)
       }
     }
-  }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo])
+  }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo, filtroStatus])
 
   useEffect(() => {
     if (activeTab === 'geral') {
@@ -398,7 +402,8 @@ export default function RelatorioServidores() {
               const matchCargo = !filtroCargo || s.cargo === filtroCargo
               const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase().includes(filtroModalidade.toUpperCase())
               const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase().includes(filtroVinculo.toUpperCase())
-              return matchCargo && matchMod && matchVinc
+              const matchStatus = filtroStatus === 'Todos' || (s.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
+              return matchCargo && matchMod && matchVinc && matchStatus
             })
             .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 
@@ -572,7 +577,7 @@ export default function RelatorioServidores() {
               <h3 className="text-sm font-bold text-foreground">Filtros do Relatório</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {/* Select Escola */}
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
@@ -593,6 +598,22 @@ export default function RelatorioServidores() {
                       {esc.nome}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Select Status */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                  Status Funcional
+                </label>
+                <select
+                  value={filtroStatus}
+                  onChange={(e) => setFiltroStatus(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none focus:border-primary font-medium cursor-pointer"
+                >
+                  <option value="Todos">Todos os Status</option>
+                  <option value="ativo">Em Exercício (Ativo)</option>
+                  <option value="afastado">Afastado / Licença</option>
                 </select>
               </div>
 
