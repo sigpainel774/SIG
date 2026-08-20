@@ -46,6 +46,16 @@ export function ModalAvaliarTransferencia({
       maxWidth="sm:max-w-lg"
     >
       <div className="space-y-4">
+        {transferencia.aguarda_despacho_sede && transferencia.status === 'PENDENTE' && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg flex items-start gap-2.5">
+            <span className="text-amber-500 text-base font-bold mt-0.5">⚠️</span>
+            <div className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+              <strong className="block font-bold">Despacho da Secretaria de Educação (Sede)</strong>
+              A escola de destino não possui equipe gestora cadastrada. O aceite ou recusa desta movimentação de servidor compete à Secretaria Municipal de Educação.
+            </div>
+          </div>
+        )}
+
         <div>
           <span className="text-xs text-muted-foreground">Nome do {activeTab === 'alunos' ? 'Aluno' : 'Funcionário'}</span>
           <p className="text-foreground font-semibold text-base mt-0.5">{nomeEntidade}</p>

@@ -141,6 +141,11 @@ function TransferenciasContent() {
                         {sol.lotacao_id ? 'Lotação Específica' : 'Transferência Completa'}
                       </span>
                     )}
+                    {sol.aguarda_despacho_sede && sol.status === 'PENDENTE' && (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded w-fit font-bold mt-1 flex items-center gap-1">
+                        🏛️ Aguarda Despacho da Sede (Sem Direção)
+                      </span>
+                    )}
                   </div>
                 )
               },

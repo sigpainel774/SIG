@@ -43,14 +43,15 @@ export async function coletarAuthUserIds(
 }
 
 /**
- * Coleta os `auth_user_id` dos administradores globais (nível 1) ativos,
- * independentemente de escola.
+ * Coleta os `auth_user_id` dos administradores globais (nível 1), superadmins
+ * e do Secretário Municipal de Educação ativos na rede.
  */
 export async function coletarAuthUserIdsAdminsGlobais(
   supabase: SupabaseClient
 ): Promise<string[]> {
   const userIds = new Set<string>()
 
+  // 1. Busca usuários com nível 1 ativo em acessos_usuarios
   const { data: admins } = await supabase
     .from('acessos_usuarios')
     .select('funcionarios(auth_user_id)')
@@ -60,6 +61,22 @@ export async function coletarAuthUserIdsAdminsGlobais(
   if (admins) {
     admins.forEach((acc: any) => {
       const id = acc.funcionarios?.auth_user_id
+      if (id && typeof id === 'string' && id.length > 0) {
+        userIds.add(id)
+      }
+    })
+  }
+
+  // 2. Busca superadmins e servidores com cargo de Secretário de Educação ativos
+  const { data: superAdminsOuSecretarios } = await supabase
+    .from('funcionarios')
+    .select('auth_user_id, is_superadmin, cargo')
+    .is('deleted_at', null)
+    .or('is_superadmin.eq.true,cargo.ilike.%secretari%educa%')
+
+  if (superAdminsOuSecretarios) {
+    superAdminsOuSecretarios.forEach((f: any) => {
+      const id = f.auth_user_id
       if (id && typeof id === 'string' && id.length > 0) {
         userIds.add(id)
       }
