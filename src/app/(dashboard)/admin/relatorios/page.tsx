@@ -46,6 +46,22 @@ export default function RelatoriosAdministrativosPage() {
       status: 'disponivel' as const,
     },
     {
+      id: 'atestados',
+      title: 'Recursos Humanos & Afastamentos',
+      description:
+        'Painel analítico do quadro de servidores, monitoramento de afastamentos e licenças, distribuição de vínculos e relação nominal.',
+      icon: Stethoscope,
+      badge: 'Recursos Humanos',
+      badgeColor: 'bg-amber-500/10 text-amber-700 border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-500/10 border-amber-500/20 dark:bg-amber-500/15 dark:border-amber-500/30',
+      bgGradient: 'from-amber-500/5 via-amber-500/0 to-transparent dark:from-amber-500/10 dark:via-amber-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-amber-500/40 dark:border-borderCustom dark:hover:border-amber-500/40',
+      path: '/admin/relatorios/atestados',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
+    {
       id: 'servidores',
       title: 'Relatório Geral de Servidores da Rede',
       description:
@@ -176,22 +192,7 @@ export default function RelatoriosAdministrativosPage() {
       destaque: false,
       status: 'construcao' as const,
     },
-    {
-      id: 'atestados',
-      title: 'Atestados & Afastamentos de Servidores',
-      description:
-        'Estatísticas e gráficos de afastamentos médicos, licenças de servidores, mapa de CIDs recorrentes e impacto na escala docente.',
-      icon: Stethoscope,
-      badge: 'Recursos Humanos',
-      badgeColor: 'bg-rose-500/10 text-rose-700 border-rose-500/25 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30',
-      iconColor: 'text-rose-600 dark:text-rose-400',
-      iconBg: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/15 dark:border-rose-500/30',
-      bgGradient: 'from-rose-500/5 via-rose-500/0 to-transparent dark:from-rose-500/10 dark:via-rose-500/5 dark:to-transparent',
-      borderColor: 'border-border hover:border-rose-500/40 dark:border-borderCustom dark:hover:border-rose-500/40',
-      path: '/admin/relatorios/atestados',
-      destaque: false,
-      status: 'construcao' as const,
-    },
+
     {
       id: 'merenda',
       title: 'Alimentação & Merenda Escolar',
