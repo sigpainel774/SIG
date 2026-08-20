@@ -226,6 +226,7 @@ export function usePermissoes() {
       const { data: cargosDb } = await supabase
         .from('cargos')
         .select('nome')
+        .is('deleted_at', null)
         .eq('ativo', true)
         .order('nome')
 

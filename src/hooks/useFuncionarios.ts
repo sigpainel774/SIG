@@ -37,6 +37,7 @@ export function useFuncionarios() {
           .from('cargos')
           .select('nome')
           .is('deleted_at', null)
+          .eq('ativo', true)
           .order('nome', { ascending: true })
 
         if (error) {
@@ -45,9 +46,13 @@ export function useFuncionarios() {
         }
 
         if (isMounted && data) {
-          const nomes = data
-            .map((c: { nome: string }) => (c.nome ?? '').trim())
-            .filter(Boolean)
+          const nomes = Array.from(
+            new Set(
+              data
+                .map((c: { nome: string }) => (c.nome ?? '').trim())
+                .filter(Boolean)
+            )
+          )
           setCargosCadastrados(nomes)
         }
       } catch (err) {

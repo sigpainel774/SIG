@@ -67,12 +67,12 @@ export function EmpregoTab() {
           >
             <option value="">Selecione a função</option>
             {cargos.map((c) => (
-              <option key={c.id} value={c.nome}>
+              <option key={c.id || c.nome} value={c.nome}>
                 {c.nome}
               </option>
             ))}
             {/* Fallback para cargos antigos não listados no banco */}
-            {!!cargo && !cargos.some(c => c.nome === cargo) && cargo !== 'Outro' && (
+            {!!cargo && !cargos.some(c => (c.nome ?? '').trim().toLowerCase() === (cargo ?? '').trim().toLowerCase()) && cargo !== 'Outro' && (
               <option value={cargo}>{cargo}</option>
             )}
             <option value="Outro">Outro (especificar)</option>

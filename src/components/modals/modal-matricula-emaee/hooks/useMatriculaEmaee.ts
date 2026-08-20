@@ -305,7 +305,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       try {
         const { data: escolasData, error } = await supabase
           .from('escolas')
-          .select('id, nome, tipo, is_teste, secretaria_id, secretarias(id, nome)')
+          .select('id, nome, tipo, inep, is_teste, secretaria_id, secretarias(id, nome)')
           .is('deleted_at', null)
           .eq('ativo', true)
           .order('nome')
@@ -316,8 +316,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           const escolasRegulares = (escolasData as any[]).filter((e) => {
             if (e.is_teste) return false
             if (/(^|\s)teste(\s|\d|$)/i.test(e.nome || '')) return false
-            if (e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE' || e.tipo === 'EMAEE') return false
+            if (e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE' || e.tipo === 'EMAEE' || e.tipo === 'SECRETARIA') return false
             if (/emaee/i.test(e.nome || '')) return false
+            if (e.inep === '01' || e.inep === '1') return false
+            if (/semed|secretaria municipal de educa/i.test(e.nome || '')) return false
             const secNome = (e.secretarias as any)?.nome || ''
             if (/sa[uú]de/i.test(secNome)) return false
             if (/sa[uú]de|posto|ubs|usf|hospital|upa/i.test(e.nome || '')) return false

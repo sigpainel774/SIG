@@ -123,7 +123,12 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           .select('id, nome, tipo, secretaria_id, is_teste')
           .is('deleted_at', null)
           .order('nome'),
-        supabase.from('cargos').select('id, nome').order('nome'),
+        supabase
+          .from('cargos')
+          .select('id, nome')
+          .is('deleted_at', null)
+          .eq('ativo', true)
+          .order('nome'),
         supabase
           .from('vinculos_funcionarios')
           .select('id, funcionario_id, school_id:escola_id, cargo, ativo, data_inicio, carga_horaria, modalidade_ensino')
