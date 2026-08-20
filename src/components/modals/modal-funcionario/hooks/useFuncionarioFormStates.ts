@@ -211,9 +211,21 @@ export function useFuncionarioFormStates({
     supabase
       .from('cargos')
       .select('id, nome')
+      .is('deleted_at', null)
+      .eq('ativo', true)
       .order('nome')
       .then(({ data }) => {
-        if (isMounted && data) setCargos(data)
+        if (isMounted && data) {
+          // Deduplica por nome para evitar duplicidades visuais de cargos homônimos de secretarias distintas
+          const vistos = new Set<string>()
+          const listaUnica = data.filter((c) => {
+            const nomeTrim = (c.nome ?? '').trim()
+            if (!nomeTrim || vistos.has(nomeTrim.toLowerCase())) return false
+            vistos.add(nomeTrim.toLowerCase())
+            return true
+          })
+          setCargos(listaUnica)
+        }
       })
     return () => {
       isMounted = false
