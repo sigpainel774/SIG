@@ -777,6 +777,7 @@ Matrícula clínica, prontuário e acolhimento especializado do EMAEE.
 *   `ano_escolarizacao`, `turno_regular`, `turma_regular`, `professor_regular`, `gestor_regular`: `text` (Dados da escola regular, Nullable)
 *   `principal_queixa`, `cid_codigo`, `observacoes_requerimento`, `outros_transtornos`: `text` (Queixa clínica e diagnósticos CID, Nullable)
 *   `def_baixa_visao`, `def_cegueira`, `def_auditiva`, `def_fisica`, `def_intelectual`, `def_surdez`, `def_surdocegueira`, `def_multipla`, `transtorno_tea`, `transtorno_outros`: `boolean` (Mapeamento AEE Censo, Default: false)
+*   `condicoes_saude`: `jsonb` (Default: '{}'::jsonb, Mapeamento das condições de saúde/neurodesenvolvimento e CIDs específicos como TEA, TDAH, DI, Dislexia, Disgrafia, TOD, Ansiedade, Superdotação, Nullable)
 *   `anexos_requerimento`: `jsonb` (Documentos e laudos anexados no encaminhamento ou requerimento, Nullable)
 *   `tipo_encaminhamento`: `text` (Modalidade ou motivo do encaminhamento clínico, Nullable)
 *   `encaminhado_por`: `uuid` (FK -> `public.funcionarios.id`, Funcionário autor do encaminhamento, Nullable)

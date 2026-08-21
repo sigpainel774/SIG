@@ -11,8 +11,20 @@ export function SecaoDadosClinicos() {
     cidCodigo, setCidCodigo,
     outrosTranstornos, setOutrosTranstornos,
     observacoes, setObservacoes,
-    deficiencias, toggleDeficiencia
+    deficiencias, toggleDeficiencia,
+    condicoesSaude, toggleCondicao, setCidCondicao
   } = useMatriculaEmaeeContext()
+
+  const condicoesList = [
+    { key: 'transtorno_tea', label: 'Transtorno do Espectro Autista (TEA)' },
+    { key: 'tdah', label: 'Transtorno do Déficit de Atenção com Hiperatividade (TDAH)' },
+    { key: 'deficiencia_intelectual', label: 'Deficiência Intelectual (DI)' },
+    { key: 'dislexia', label: 'Dislexia' },
+    { key: 'disgrafia_disortografia', label: 'Disgrafia / Disortografia' },
+    { key: 'tod', label: 'Transtorno Opositor Desafiador (TOD)' },
+    { key: 'ansiedade', label: 'Transtornos de Ansiedade' },
+    { key: 'superdotacao', label: 'Superdotação' },
+  ] as const
 
   return (
     <section className="overflow-hidden border border-border rounded-2xl bg-card shadow-sm dark:bg-gradient-to-b dark:from-[#1a202c]/95 dark:to-[#121621]/95 dark:shadow-xl">
@@ -22,7 +34,7 @@ export function SecaoDadosClinicos() {
         </span>
         <div>
           <h2 className="text-base font-bold text-foreground">Dados clínicos e deficiências</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Marque todas as condições de deficiência e transtornos informados nos laudos/documentos do aluno.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Marque todas as condições de deficiência e neurodesenvolvimento informadas nos laudos/documentos do aluno.</p>
         </div>
       </div>
 
@@ -36,7 +48,6 @@ export function SecaoDadosClinicos() {
               { key: 'def_cegueira', label: 'Cegueira' },
               { key: 'def_auditiva', label: 'Deficiência auditiva' },
               { key: 'def_fisica', label: 'Deficiência física' },
-              { key: 'def_intelectual', label: 'Deficiência intelectual' },
               { key: 'def_surdez', label: 'Surdez' },
               { key: 'def_surdocegueira', label: 'Surdocegueira' },
               { key: 'def_multipla', label: 'Deficiência múltipla' }
@@ -64,29 +75,54 @@ export function SecaoDadosClinicos() {
           </div>
         </fieldset>
 
-        {/* Transtornos */}
+        {/* Outras Condições de Saúde e Neurodesenvolvimento */}
         <fieldset className="p-3.5 border border-border rounded-xl bg-muted/50 dark:bg-[#0b0e14]/40">
-          <legend className="px-1 text-xs font-bold text-foreground">Transtornos</legend>
-          <div className="flex flex-wrap gap-2.5 mt-2">
-            <label className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
-              deficiencias.transtorno_tea
-                ? 'border-primary/60 bg-primary/10 text-foreground font-semibold'
-                : 'border-border bg-input text-foreground/80 hover:border-primary/40'
-            }`}>
-              <input
-                type="checkbox"
-                checked={deficiencias.transtorno_tea}
-                onChange={() => toggleDeficiencia('transtorno_tea')}
-                className="w-4 h-4 rounded accent-primary"
-              />
-              Transtorno do Espectro Autista (TEA)
-            </label>
+          <legend className="px-1 text-xs font-bold text-foreground">Outras Condições de Saúde e Neurodesenvolvimento</legend>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 mt-2">
+            {condicoesList.map((item) => {
+              const cond = condicoesSaude[item.key]
+              const isChecked = Boolean(cond?.selecionado)
+              return (
+                <div
+                  key={item.key}
+                  className={`flex flex-col justify-between p-3 rounded-xl border transition-all ${
+                    isChecked
+                      ? 'border-primary/60 bg-primary/10 text-foreground'
+                      : 'border-border bg-input text-foreground/80 hover:border-primary/40'
+                  }`}
+                >
+                  <label className="flex items-start gap-2 text-xs font-medium cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleCondicao(item.key)}
+                      className="w-4 h-4 mt-0.5 rounded accent-primary shrink-0"
+                    />
+                    <span className={isChecked ? 'font-semibold text-foreground' : 'text-foreground/90'}>
+                      {item.label}
+                    </span>
+                  </label>
+
+                  {isChecked && (
+                    <div className="mt-2.5 pt-2 border-t border-primary/20" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="text"
+                        placeholder="Especifíque o CID"
+                        value={cond?.cid ?? ''}
+                        onChange={(e) => setCidCondicao(item.key, e.target.value)}
+                        className="h-7 text-xs bg-background/80 border-border text-foreground placeholder:text-muted-foreground/60 rounded-lg px-2 shadow-inner"
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </fieldset>
 
         <div className="grid grid-cols-12 gap-3.5">
           <div className="col-span-12 md:col-span-8">
-            <Label className="block mb-1 text-xs font-bold text-foreground">Outros transtornos</Label>
+            <Label className="block mb-1 text-xs font-bold text-foreground">Outras condições</Label>
             <Input
               placeholder="Especifique, se houver"
               value={outrosTranstornos}
@@ -96,7 +132,7 @@ export function SecaoDadosClinicos() {
           </div>
 
           <div className="col-span-12 md:col-span-4">
-            <Label className="block mb-1 text-xs font-bold text-foreground">CID (Classificação Internacional de Doenças)</Label>
+            <Label className="block mb-1 text-xs font-bold text-foreground">CID Geral / Principal</Label>
             <Input
               placeholder="Ex.: F84.0"
               value={cidCodigo}

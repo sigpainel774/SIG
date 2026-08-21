@@ -146,6 +146,41 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_outros: false,
   })
 
+  const [condicoesSaude, setCondicoesSaude] = useState({
+    transtorno_tea: { selecionado: false, cid: '' },
+    tdah: { selecionado: false, cid: '' },
+    deficiencia_intelectual: { selecionado: false, cid: '' },
+    dislexia: { selecionado: false, cid: '' },
+    disgrafia_disortografia: { selecionado: false, cid: '' },
+    tod: { selecionado: false, cid: '' },
+    ansiedade: { selecionado: false, cid: '' },
+    superdotacao: { selecionado: false, cid: '' },
+  })
+
+  const toggleCondicao = (key: keyof typeof condicoesSaude) => {
+    setCondicoesSaude(prev => {
+      const current = prev[key] || { selecionado: false, cid: '' }
+      const nextSelected = !current.selecionado
+      return {
+        ...prev,
+        [key]: {
+          selecionado: nextSelected,
+          cid: nextSelected ? current.cid : ''
+        }
+      }
+    })
+  }
+
+  const setCidCondicao = (key: keyof typeof condicoesSaude, cid: string) => {
+    setCondicoesSaude(prev => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || { selecionado: true }),
+        cid
+      }
+    }))
+  }
+
   // 5. Assinaturas Integradas (Responsável & Servidor) e Coleta Local
   const [assinaturaResponsavelUrl, setAssinaturaResponsavelUrl] = useState<string | null>(null)
   const [assinaturaServidorUrl, setAssinaturaServidorUrl] = useState<string | null>(funcionario?.assinatura_url || null)
@@ -281,6 +316,42 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         transtorno_outros: Boolean(mat.transtorno_outros),
       })
 
+      const condicoesJson = mat.condicoes_saude || {}
+      setCondicoesSaude({
+        transtorno_tea: {
+          selecionado: Boolean(condicoesJson.transtorno_tea?.selecionado ?? mat.transtorno_tea),
+          cid: condicoesJson.transtorno_tea?.cid ?? (mat.transtorno_tea ? (mat.cid_codigo ?? '') : '')
+        },
+        tdah: {
+          selecionado: Boolean(condicoesJson.tdah?.selecionado),
+          cid: condicoesJson.tdah?.cid ?? ''
+        },
+        deficiencia_intelectual: {
+          selecionado: Boolean(condicoesJson.deficiencia_intelectual?.selecionado ?? mat.def_intelectual),
+          cid: condicoesJson.deficiencia_intelectual?.cid ?? ''
+        },
+        dislexia: {
+          selecionado: Boolean(condicoesJson.dislexia?.selecionado),
+          cid: condicoesJson.dislexia?.cid ?? ''
+        },
+        disgrafia_disortografia: {
+          selecionado: Boolean(condicoesJson.disgrafia_disortografia?.selecionado),
+          cid: condicoesJson.disgrafia_disortografia?.cid ?? ''
+        },
+        tod: {
+          selecionado: Boolean(condicoesJson.tod?.selecionado),
+          cid: condicoesJson.tod?.cid ?? ''
+        },
+        ansiedade: {
+          selecionado: Boolean(condicoesJson.ansiedade?.selecionado),
+          cid: condicoesJson.ansiedade?.cid ?? ''
+        },
+        superdotacao: {
+          selecionado: Boolean(condicoesJson.superdotacao?.selecionado),
+          cid: condicoesJson.superdotacao?.cid ?? ''
+        },
+      })
+
       // Assinaturas
       setAssinaturaResponsavelUrl(mat.assinatura_responsavel_aluno_url ?? dm.assinatura_responsavel_url ?? null)
       setAssinaturaServidorUrl(mat.assinatura_responsavel_matricula_url ?? funcionario?.assinatura_url ?? null)
@@ -346,6 +417,16 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         def_multipla: false,
         transtorno_tea: false,
         transtorno_outros: false,
+      })
+      setCondicoesSaude({
+        transtorno_tea: { selecionado: false, cid: '' },
+        tdah: { selecionado: false, cid: '' },
+        deficiencia_intelectual: { selecionado: false, cid: '' },
+        dislexia: { selecionado: false, cid: '' },
+        disgrafia_disortografia: { selecionado: false, cid: '' },
+        tod: { selecionado: false, cid: '' },
+        ansiedade: { selecionado: false, cid: '' },
+        superdotacao: { selecionado: false, cid: '' },
       })
       setAssinaturaResponsavelUrl(null)
       setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
@@ -741,6 +822,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           responsavel_assinatura_nome: nomeMae || nomePai || props.matriculaEditar.responsavel_assinatura_nome || null,
           responsavel_assinatura_cpf: cpf || props.matriculaEditar.responsavel_assinatura_cpf || null,
           ...deficiencias,
+          transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
+          def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
+          condicoes_saude: condicoesSaude,
         }
 
         const { error: matriculaUpdateErr } = await (supabase
@@ -937,6 +1021,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         responsavel_assinatura_nome: nomeMae || nomePai || null,
         responsavel_assinatura_cpf: cpf || null,
         ...deficiencias,
+        transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
+        def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
+        condicoes_saude: condicoesSaude,
         status: 'FILA_ESPERA'
       }
 
@@ -1034,6 +1121,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     outrosTranstornos, setOutrosTranstornos,
     observacoes, setObservacoes,
     deficiencias, toggleDeficiencia,
+    condicoesSaude, toggleCondicao, setCidCondicao,
 
     // Assinaturas Integradas & Coleta Local
     assinaturaResponsavelUrl, setAssinaturaResponsavelUrl,
