@@ -15,6 +15,7 @@ import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib
 import { EscolaSearchSelect } from '@/components/modals/lotacoes/EscolaSearchSelect'
 import { FuncionarioSearchSelect, FuncionarioOption } from '@/components/modals/lotacoes/FuncionarioSearchSelect'
 import { toast } from 'sonner'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 interface ModalTransferirFuncionarioProps {
   open: boolean
@@ -296,7 +297,7 @@ export function ModalTransferirFuncionario({
           // 1. Inativar vínculo na escola de origem por id
           const { error: deactivateError } = await supabase
             .from('vinculos_funcionarios')
-            .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+            .update({ ativo: false, data_fim: getHojeBrasilia() })
             .eq('id', lotacaoVinculoId)
 
           if (deactivateError) throw deactivateError
@@ -374,7 +375,7 @@ export function ModalTransferirFuncionario({
         if (lotacaoVinculoId) {
           const { error: deactError } = await supabase
             .from('vinculos_funcionarios')
-            .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+            .update({ ativo: false, data_fim: getHojeBrasilia() })
             .eq('id', lotacaoVinculoId)
           if (deactError) throw deactError
         }
@@ -395,7 +396,7 @@ export function ModalTransferirFuncionario({
             escola_id: escolaDestinoId,
             cargo: cargoNovo,
             ativo: true,
-            data_inicio: new Date().toISOString().split('T')[0]
+            data_inicio: getHojeBrasilia()
           })
         if (createVinculoError) throw createVinculoError
 

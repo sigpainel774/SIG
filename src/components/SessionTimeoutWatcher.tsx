@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
 import { toast } from 'sonner'
+import { getHoraMinutoBrasilia } from '@/lib/dateUtils'
 
 interface TimeoutRule {
   id: string
@@ -136,11 +137,7 @@ export function SessionTimeoutWatcher() {
     if (!rules.length || loggedOutRef.current) return
     if (funcionario?.is_superadmin || isSimulating) return
 
-    const now = new Date()
-    const currentDay = now.getDay() // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
-    const currentHours = now.getHours()
-    const currentMinutes = now.getMinutes()
-    const currentTotalMinutes = currentHours * 60 + currentMinutes
+    const { horas: currentHours, minutos: currentMinutes, diaSemana: currentDay, totalMinutos: currentTotalMinutes } = getHoraMinutoBrasilia()
 
     for (const rule of rules) {
       // Checar se o dia da semana é atendido (se dias_semana for vazio ou null, aplica todos os dias)

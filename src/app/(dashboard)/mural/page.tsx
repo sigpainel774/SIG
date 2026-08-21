@@ -15,6 +15,7 @@ import { CachedImage } from '@/components/ui/cached-image'
 import { getAvatarUrl } from '@/lib/photoHelper'
 
 import { sendPushToUser } from '@/lib/push/sendPushToUser'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
@@ -210,7 +211,7 @@ export default function MuralPage() {
 
     setSalvando(true)
     const supabase = createClient()
-    const hojeStr = new Date().toISOString().split('T')[0]
+    const hojeStr = getHojeBrasilia()
 
     let anexoUrl = null
     let anexoNome = null

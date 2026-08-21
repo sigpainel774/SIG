@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Fuel, Loader2, Save } from 'lucide-react'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 interface VeiculoItem {
   id: string
@@ -39,7 +40,7 @@ export function ModalAbastecimento({
   const [saving, setSaving] = useState(false)
 
   const [veiculoId, setVeiculoId] = useState('')
-  const [data, setData] = useState(new Date().toISOString().split('T')[0])
+  const [data, setData] = useState(getHojeBrasilia())
   const [odometroKm, setOdometroKm] = useState('')
   const [litros, setLitros] = useState('')
   const [valorTotal, setValorTotal] = useState('')
@@ -48,7 +49,7 @@ export function ModalAbastecimento({
 
   useEffect(() => {
     if (open) {
-      setData(new Date().toISOString().split('T')[0])
+      setData(getHojeBrasilia())
       setOdometroKm('')
       setLitros('')
       setValorTotal('')

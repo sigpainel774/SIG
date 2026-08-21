@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabaseServer'
+import { getHojeBrasilia, getInicioMesBrasilia } from '@/lib/dateUtils'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Formatar a data local respeitando o fuso horário de Brasília (UTC-3)
-  const hoje = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
-  const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const hoje = getHojeBrasilia()
+  const inicioMes = getInicioMesBrasilia()
 
   try {
     const { data: kpiData, error: rpcError } = await (supabase as any).rpc('obter_admin_dashboard_kpis', {

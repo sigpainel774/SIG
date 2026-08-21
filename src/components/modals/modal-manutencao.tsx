@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Wrench, Loader2, Save } from 'lucide-react'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 interface VeiculoItem {
   id: string
@@ -40,7 +41,7 @@ export function ModalManutencao({
   const [saving, setSaving] = useState(false)
 
   const [veiculoId, setVeiculoId] = useState('')
-  const [data, setData] = useState(new Date().toISOString().split('T')[0])
+  const [data, setData] = useState(getHojeBrasilia())
   const [tipo, setTipo] = useState<'PREVENTIVA' | 'CORRETIVA'>('PREVENTIVA')
   const [odometroKm, setOdometroKm] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -50,7 +51,7 @@ export function ModalManutencao({
 
   useEffect(() => {
     if (open) {
-      setData(new Date().toISOString().split('T')[0])
+      setData(getHojeBrasilia())
       setTipo('PREVENTIVA')
       setOdometroKm('')
       setDescricao('')

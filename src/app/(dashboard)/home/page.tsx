@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 import {
   Building2,
   GraduationCap,
@@ -1174,7 +1175,7 @@ export default function HomePage() {
           turma={selectedTurmaChamada}
           initialMateriaId={selectedAulaChamada?.materia_id}
           initialAgendaAulaId={selectedAulaChamada?.id}
-          initialData={new Date().toISOString().split('T')[0]}
+          initialData={getHojeBrasilia()}
         />
       )}
 

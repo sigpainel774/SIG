@@ -2,6 +2,7 @@
 
 import { getAvatarUrl } from '@/lib/photoHelper'
 import { Button } from '@/components/ui/button'
+import { getDataBrasiliaOffset } from '@/lib/dateUtils'
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,9 +63,7 @@ export function TabFrequenciasTurma({
 }: TabFrequenciasTurmaProps) {
   // Navegação de Datas na Frequência
   const alterarData = (dias: number) => {
-    const d = new Date(dataFreq + 'T00:00:00')
-    d.setDate(d.getDate() + dias)
-    setDataFreq(d.toISOString().split('T')[0])
+    setDataFreq(getDataBrasiliaOffset(dias, dataFreq))
   }
 
   // Contadores rápidos para feedback ao professor

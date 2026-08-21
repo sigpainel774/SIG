@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { getHojeBrasilia, getDataBrasiliaOffset } from '@/lib/dateUtils'
 import {
   ShieldAlert,
   ShieldCheck,
@@ -146,12 +147,8 @@ export default function SecurityDefensePage() {
   const [savingIp, setSavingIp] = useState(false)
 
   // Relatórios
-  const [reportStartDate, setReportStartDate] = useState<string>(() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 30)
-    return d.toISOString().split('T')[0]
-  })
-  const [reportEndDate, setReportEndDate] = useState<string>(() => new Date().toISOString().split('T')[0])
+  const [reportStartDate, setReportStartDate] = useState<string>(() => getDataBrasiliaOffset(-30))
+  const [reportEndDate, setReportEndDate] = useState<string>(() => getHojeBrasilia())
   const [reportTipo, setReportTipo] = useState<string>('ALL')
   const [reportLogs, setReportLogs] = useState<ThreatLog[]>([])
   const [loadingReport, setLoadingReport] = useState(false)
