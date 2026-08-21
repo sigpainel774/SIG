@@ -27,6 +27,7 @@ import {
   Users
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { formatNameTitleCase, sanitizeEmail } from '@/lib/stringUtils'
 
 interface AlunoOption {
   id: string
@@ -623,6 +624,7 @@ export function ModalCadastroResponsavel({
                       id="nome_edit"
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
+                      onBlur={() => setNome(formatNameTitleCase(nome))}
                       required
                       className="bg-background border-border h-8 text-xs"
                     />
@@ -635,7 +637,7 @@ export function ModalCadastroResponsavel({
                       id="email_edit"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
                       required
                       className="bg-background border-border h-8 text-xs"
                     />
@@ -712,6 +714,7 @@ export function ModalCadastroResponsavel({
                     id="nome"
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
+                    onBlur={() => setNome(formatNameTitleCase(nome))}
                     placeholder="Ex: Maria dos Santos Silva"
                     required
                     className="bg-background border-border text-foreground"
@@ -726,7 +729,7 @@ export function ModalCadastroResponsavel({
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
                     placeholder="nome@email.com"
                     required
                     className="bg-background border-border text-foreground"

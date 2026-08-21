@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { sanitizeEmail } from '@/lib/stringUtils'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -161,7 +162,7 @@ export function ModalUpdateEmailUser({
             placeholder="ex: novoemail@escola.gov.br"
             value={novoEmail}
             onChange={(e) => {
-              setNovoEmail(e.target.value)
+              setNovoEmail(sanitizeEmail(e.target.value))
               if (confirmStep) setConfirmStep(false)
             }}
             className="bg-background border-[#3f3f46] text-foreground h-11 focus:ring-sky-500 focus:border-sky-500 font-mono text-sm"
@@ -179,7 +180,7 @@ export function ModalUpdateEmailUser({
             placeholder="Repita o novo e-mail"
             value={confirmarEmail}
             onChange={(e) => {
-              setConfirmarEmail(e.target.value)
+              setConfirmarEmail(sanitizeEmail(e.target.value))
               if (confirmStep) setConfirmStep(false)
             }}
             className="bg-background border-[#3f3f46] text-foreground h-11 focus:ring-sky-500 focus:border-sky-500 font-mono text-sm"

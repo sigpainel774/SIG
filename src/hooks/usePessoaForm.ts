@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
+import { formatNameTitleCase, sanitizeEmail } from '@/lib/stringUtils'
 
 export interface PessoaFormOptions {
   estadoCivilDefault?: string
@@ -142,10 +143,10 @@ export function usePessoaForm(options?: PessoaFormOptions) {
         return
       }
 
-      if (data.logradouro) setRua(data.logradouro)
-      if (data.bairro) setBairro(data.bairro)
-      if (data.localidade) setCidadeEnd(data.localidade)
-      if (data.uf) setUfEnd(data.uf)
+      if (data.logradouro) setRua(formatNameTitleCase(data.logradouro))
+      if (data.bairro) setBairro(formatNameTitleCase(data.bairro))
+      if (data.localidade) setCidadeEnd(formatNameTitleCase(data.localidade))
+      if (data.uf) setUfEnd(data.uf.toUpperCase())
       toast.success('Endereço localizado via CEP!')
     } catch (err) {
       console.error('Erro ao buscar CEP:', err)
@@ -202,9 +203,9 @@ export function usePessoaForm(options?: PessoaFormOptions) {
   // Função para popular com dados arbitrários
   const populatePessoais = (data: any) => {
     if (!data) return
-    setNome(data.nome ?? '')
-    setApelido(data.apelido ?? '')
-    setEmail(data.email ?? '')
+    setNome(data.nome ? formatNameTitleCase(data.nome) : '')
+    setApelido(data.apelido ? formatNameTitleCase(data.apelido) : '')
+    setEmail(data.email ? sanitizeEmail(data.email) : '')
     setCpf(data.cpf ? formatCPF(data.cpf) : '')
     setCenso(data.censo ?? data.inep ?? '')
     setEstadoCivil(data.estado_civil ?? data.estadoCivilAluno ?? options?.estadoCivilDefault ?? 'Não declarado')
@@ -214,19 +215,19 @@ export function usePessoaForm(options?: PessoaFormOptions) {
     setNacionalidade(data.nacionalidade ?? data.nacionalidadeAluno ?? options?.nacionalidadeDefault ?? 'Brasileira')
     setNacionalidadeEspec(data.nacionalidade_especificacao ?? '')
     setTelefone(data.telefone ? formatTelefone(data.telefone) : '')
-    setMae(data.nome_mae ?? data.maeAluno ?? '')
+    setMae(data.nome_mae ?? data.maeAluno ? formatNameTitleCase(data.nome_mae ?? data.maeAluno) : '')
     setTelMae(data.telMaeAluno ? formatTelefone(data.telMaeAluno) : '')
-    setPai(data.nome_pai ?? data.paiAluno ?? '')
+    setPai(data.nome_pai ?? data.paiAluno ? formatNameTitleCase(data.nome_pai ?? data.paiAluno) : '')
     setTelPai(data.telPaiAluno ? formatTelefone(data.telPaiAluno) : '')
     setRg(data.rg ?? data.rgAluno ?? '')
     setNis(data.nis ?? data.nisAluno ?? '')
-    setCidadeNasc(data.municipio_nascimento ?? data.cidadeNascAluno ?? '')
+    setCidadeNasc(data.municipio_nascimento ?? data.cidadeNascAluno ? formatNameTitleCase(data.municipio_nascimento ?? data.cidadeNascAluno) : '')
     setUfNasc(data.uf_nascimento ?? data.ufNascAluno ?? options?.ufNascDefault ?? '')
-    setRua(data.logradouro ?? data.ruaAluno ?? data.rua ?? '')
+    setRua(data.logradouro ?? data.ruaAluno ?? data.rua ? formatNameTitleCase(data.logradouro ?? data.ruaAluno ?? data.rua) : '')
     setNumero(data.numero ?? data.numeroAluno ?? '')
     setCep(data.cep ? formatCEP(data.cep) : (data.cepAluno ? formatCEP(data.cepAluno) : ''))
-    setBairro(data.bairro ?? data.bairroAluno ?? '')
-    setCidadeEnd(data.cidade ?? data.cidadeEndAluno ?? options?.cidadeEndDefault ?? 'SAPE AÇU')
+    setBairro(data.bairro ?? data.bairroAluno ? formatNameTitleCase(data.bairro ?? data.bairroAluno) : '')
+    setCidadeEnd(data.cidade ?? data.cidadeEndAluno ? formatNameTitleCase(data.cidade ?? data.cidadeEndAluno) : (options?.cidadeEndDefault ?? 'SAPE AÇU'))
     setUfEnd(data.uf_residencia ?? data.ufEndAluno ?? options?.ufEndDefault ?? 'BA')
     setAreaLocalizacao(data.area_residencia ?? data.areaLocalizacaoAluno ?? options?.areaLocalizacaoDefault ?? 'Urbana')
     setAreaDiferenciada(data.area_diferenciada ?? data.areaDiferenciadaAluno ?? options?.areaDiferenciadaDefault ?? 'Não está em área diferenciada')
@@ -254,7 +255,7 @@ export function usePessoaForm(options?: PessoaFormOptions) {
     // Estados básicos e setters
     nome, setNome,
     apelido, setApelido,
-    email, setEmail,
+    email, setEmail: (val: string) => setEmail(sanitizeEmail(val)),
     cpf, setCpf: handleCpfChange,
     censo, setCenso,
     estadoCivil, setEstadoCivil,
@@ -299,6 +300,8 @@ export function usePessoaForm(options?: PessoaFormOptions) {
     formatCEP,
     formatTelefone,
     validateCPF,
+    formatNameTitleCase,
+    sanitizeEmail,
 
     // ALIASES DE COMPATIBILIDADE (para evitar alterar JSX existente)
     // modal-funcionario aliases

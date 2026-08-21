@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 import { useSchoolStore } from '@/store/useSchoolStore'
+import { formatNameTitleCase, sanitizeEmail } from '@/lib/stringUtils'
 
 export function PessoaisTab() {
   const {
@@ -38,6 +39,7 @@ export function PessoaisTab() {
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            onBlur={() => setNome(formatNameTitleCase(nome))}
             placeholder="Nome completo conforme documentos"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
             required
@@ -48,6 +50,7 @@ export function PessoaisTab() {
           <Input
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
+            onBlur={() => setApelido(formatNameTitleCase(apelido))}
             placeholder="Ex: Zezinho, Prof. Léo"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -89,7 +92,7 @@ export function PessoaisTab() {
           <Input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
             placeholder="maria@escola.com"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
             required
@@ -159,6 +162,7 @@ export function PessoaisTab() {
           <Input
             value={nomeMae}
             onChange={(e) => setNomeMae(e.target.value)}
+            onBlur={() => setNomeMae(formatNameTitleCase(nomeMae))}
             placeholder="Nome completo da mãe"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -168,6 +172,7 @@ export function PessoaisTab() {
           <Input
             value={nomePai}
             onChange={(e) => setNomePai(e.target.value)}
+            onBlur={() => setNomePai(formatNameTitleCase(nomePai))}
             placeholder="Nome completo do pai"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -192,6 +197,7 @@ export function PessoaisTab() {
           <Input
             value={nacionalidadeEspec}
             onChange={(e) => setNacionalidadeEspec(e.target.value)}
+            onBlur={() => setNacionalidadeEspec(formatNameTitleCase(nacionalidadeEspec))}
             placeholder="Qual país?"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -203,6 +209,7 @@ export function PessoaisTab() {
               <Input
                 value={municipioNasc}
                 onChange={(e) => setMunicipioNasc(e.target.value)}
+                onBlur={() => setMunicipioNasc(formatNameTitleCase(municipioNasc))}
                 placeholder="Cidade de nascimento"
                 className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
               />

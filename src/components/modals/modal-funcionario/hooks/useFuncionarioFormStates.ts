@@ -12,6 +12,7 @@ import { verificarEAtualizarRetornosAfastamentos } from '@/lib/afastamentosHelpe
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
+import { formatNameTitleCase, sanitizeEmail } from '@/lib/stringUtils'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -683,16 +684,26 @@ export function useFuncionarioFormStates({
       // A foto só é zerada do banco se o usuário tiver removido manualmente a imagem prévia
       const isFotoRemoved = fotoRemovidaManualmente && !fotoFile
 
+      const nomeFormatado = formatNameTitleCase(nome)
+      const apelidoFormatado = apelido ? formatNameTitleCase(apelido) : null
+      const nomeMaeFormatado = nomeMae ? formatNameTitleCase(nomeMae) : null
+      const nomePaiFormatado = nomePai ? formatNameTitleCase(nomePai) : null
+      const logradouroFormatado = logradouro ? formatNameTitleCase(logradouro) : null
+      const bairroFormatado = bairro ? formatNameTitleCase(bairro) : null
+      const cidadeFormatada = cidade ? formatNameTitleCase(cidade) : null
+      const municipioNascFormatado = municipioNasc ? formatNameTitleCase(municipioNasc) : null
+      const nacionalidadeEspecFormatada = nacionalidadeEspec ? formatNameTitleCase(nacionalidadeEspec) : null
+
       // Mitigação do Bug Silencioso de UX no Endereço: se os campos básicos de endereço estão vazios, limpa do banco (salva como null)
-      const hasEnderecoPreenchido = !!(logradouro?.trim() || bairro?.trim() || cidade?.trim())
+      const hasEnderecoPreenchido = !!(logradouroFormatado?.trim() || bairroFormatado?.trim() || cidadeFormatada?.trim())
       const enderecoFinal = hasEnderecoPreenchido
-        ? `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${ufResidencia}`
+        ? `${logradouroFormatado}, ${numero} - ${bairroFormatado}, ${cidadeFormatada} - ${ufResidencia}`
         : null
 
-      const cleanEmail = email.trim().toLowerCase()
+      const cleanEmail = sanitizeEmail(email)
 
       const basePayload: any = {
-        nome,
+        nome: nomeFormatado,
         email: cleanEmail,
         cpf: cpf || null,
         cargo: cargo || null,
@@ -709,23 +720,23 @@ export function useFuncionarioFormStates({
         estado_civil: estadoCivil || null,
         cor_raca: corRaca || null,
         sexo: sexo || null,
-        nome_mae: nomeMae || null,
-        nome_pai: nomePai || null,
+        nome_mae: nomeMaeFormatado,
+        nome_pai: nomePaiFormatado,
         nacionalidade: nacionalidade || null,
-        nacionalidade_especificacao: nacionalidadeEspec || null,
-        municipio_nascimento: municipioNasc || null,
+        nacionalidade_especificacao: nacionalidadeEspecFormatada,
+        municipio_nascimento: municipioNascFormatado,
         uf_nascimento: ufNasc || null,
         rg: rg || null,
         nis: nis || null,
-        logradouro: logradouro || null,
+        logradouro: logradouroFormatado,
         numero: numero || null,
         cep: cep || null,
-        bairro: bairro || null,
-        cidade: cidade || null,
+        bairro: bairroFormatado,
+        cidade: cidadeFormatada,
         uf_residencia: ufResidencia || null,
         area_residencia: areaResidencia || null,
         area_diferenciada: areaDiferenciada || null,
-        apelido: apelido?.trim() || null,
+        apelido: apelidoFormatado,
         telefone: telefone?.trim() || null,
         telefone_emergencia: telefoneEmergencia?.trim() || null,
         data_admissao: dataAdmissao || null,

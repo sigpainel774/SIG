@@ -13,6 +13,7 @@ import { AlunoFormContextType, ModalAlunoProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
+import { formatNameTitleCase } from '@/lib/stringUtils'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -458,9 +459,18 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     setLoading(true)
     const supabase = createClient()
 
+    const nomeFormatado = formatNameTitleCase(pessoaForm.nome)
+    const maeFormatada = formatNameTitleCase(pessoaForm.mae)
+    const paiFormatado = formatNameTitleCase(pessoaForm.pai)
+    const ruaFormatada = formatNameTitleCase(pessoaForm.rua)
+    const bairroFormatado = formatNameTitleCase(pessoaForm.bairro)
+    const cidadeEndFormatada = formatNameTitleCase(pessoaForm.cidadeEnd)
+    const cidadeNascFormatada = formatNameTitleCase(pessoaForm.cidadeNasc)
+    const enderecoFormatado = endereco ? formatNameTitleCase(endereco) : ruaFormatada
+
     const dadosMatriculaObj: any = {
       escolaId,
-      nomeAluno: pessoaForm.nome,
+      nomeAluno: nomeFormatado,
       nascimentoAluno: pessoaForm.nascimento,
       censoAluno: pessoaForm.censo,
       cpfAluno: pessoaForm.cpf,
@@ -474,13 +484,13 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       susAluno: sus,
       certidaoAluno: certidao,
       nacionalidadeAluno: pessoaForm.nacionalidade,
-      cidadeNascAluno: pessoaForm.cidadeNasc,
+      cidadeNascAluno: cidadeNascFormatada,
       ufNascAluno: pessoaForm.ufNasc,
-      maeAluno: pessoaForm.mae,
+      maeAluno: maeFormatada,
       telMaeAluno: pessoaForm.telMae,
-      paiAluno: pessoaForm.pai,
+      paiAluno: paiFormatado,
       telPaiAluno: pessoaForm.telPai,
-      enderecoAluno: endereco,
+      enderecoAluno: enderecoFormatado,
       tipoMatricula,
       dataMatricula,
       localizacaoAluno: localizacao,
@@ -489,11 +499,11 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       turmaAluno: turmaLetra,
       transporteAluno: transporte,
       rotaTransporteAluno: rotaTransporte,
-      ruaAluno: pessoaForm.rua,
+      ruaAluno: ruaFormatada,
       numeroAluno: pessoaForm.numero,
       cepAluno: pessoaForm.cep,
-      bairroAluno: pessoaForm.bairro,
-      cidadeEndAluno: pessoaForm.cidadeEnd,
+      bairroAluno: bairroFormatado,
+      cidadeEndAluno: cidadeEndFormatada,
       ufEndAluno: pessoaForm.ufEnd,
       areaLocalizacaoAluno: pessoaForm.areaLocalizacao,
       areaDiferenciadaAluno: pessoaForm.areaDiferenciada,
@@ -569,7 +579,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       const isFotoRemoved = fotoRemovidaManualmente && !fotoFile
 
       const payload: any = {
-        nome: pessoaForm.nome,
+        nome: nomeFormatado,
         cpf: pessoaForm.cpf || null,
         inep: pessoaForm.censo || null,
         telefone: pessoaForm.telefone || null,
@@ -583,9 +593,9 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         nis: pessoaForm.nis || null,
         cartao_sus: sus || null,
         certidao_nascimento: certidao || null,
-        nome_mae: pessoaForm.mae || null,
-        nome_pai: pessoaForm.pai || null,
-        endereco: endereco || pessoaForm.rua || null,
+        nome_mae: maeFormatada || null,
+        nome_pai: paiFormatado || null,
+        endereco: enderecoFormatado || null,
         latitude: pessoaForm.latitude ?? null,
         longitude: pessoaForm.longitude ?? null,
         serie: serie || null,
