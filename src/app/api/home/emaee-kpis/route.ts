@@ -35,12 +35,16 @@ export async function GET(req: NextRequest) {
       .is('deleted_at', null)
       .eq('status', 'FILA_ESPERA')
 
-    // 3. Profissionais / Servidores vinculados à unidade EMAEE
-    const { count: profissionaisAee } = await supabase
-      .from('vinculos_funcionarios')
-      .select('id', { count: 'exact', head: true })
-      .eq('escola_id', escolaId)
-      .eq('ativo', true)
+    // 3. Profissionais AEE vinculados à unidade EMAEE
+    const { data: profsAee } = await supabase
+      .from('funcionarios')
+      .select('id, vinculos_funcionarios!inner(escola_id, ativo)')
+      .eq('vinculos_funcionarios.escola_id', escolaId)
+      .eq('vinculos_funcionarios.ativo', true)
+      .eq('is_profissional_aee', true)
+      .is('deleted_at', null)
+
+    const profissionaisAee = profsAee ? new Set(profsAee.map((p: any) => p.id)).size : 0
 
     // 4. Solicitações de Relatórios de Escolas pendentes
     const { count: relatoriosPendentes } = await supabase
