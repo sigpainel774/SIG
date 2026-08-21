@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MiniMapa } from '@/components/map/MapWrapper'
 import { Loader2, Search } from 'lucide-react'
+import { formatNameTitleCase } from '@/lib/stringUtils'
 
 export function SecaoEndereco() {
   const {
@@ -37,6 +38,7 @@ export function SecaoEndereco() {
             <Input 
               value={rua} 
               onChange={(e) => setRua(e.target.value)} 
+              onBlur={() => setRua(formatNameTitleCase(rua))}
               placeholder="Rua do Brito" 
               className="mt-1" 
             />
@@ -85,6 +87,7 @@ export function SecaoEndereco() {
             <Input 
               value={bairro} 
               onChange={(e) => setBairro(e.target.value)} 
+              onBlur={() => setBairro(formatNameTitleCase(bairro))}
               placeholder="Brito" 
               className="mt-1" 
             />
@@ -95,6 +98,7 @@ export function SecaoEndereco() {
             <Input 
               value={cidadeEnd} 
               onChange={(e) => setCidadeEnd(e.target.value)} 
+              onBlur={() => setCidadeEnd(formatNameTitleCase(cidadeEnd))}
               placeholder="SAPE AÇU" 
               className="mt-1" 
             />

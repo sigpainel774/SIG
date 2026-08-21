@@ -7,6 +7,7 @@ import { MiniMapa } from '@/components/map/MapWrapper'
 import { useFuncionarioForm } from '../context/FuncionarioFormContext'
 import { Loader2, Search, Navigation } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatNameTitleCase } from '@/lib/stringUtils'
 
 export function DocumentosTab() {
   const {
@@ -118,6 +119,7 @@ export function DocumentosTab() {
           <Input
             value={logradouro}
             onChange={(e) => setLogradouro(e.target.value)}
+            onBlur={() => setLogradouro(formatNameTitleCase(logradouro))}
             placeholder="Ex: Av. Sete de Setembro"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -167,6 +169,7 @@ export function DocumentosTab() {
           <Input
             value={bairro}
             onChange={(e) => setBairro(e.target.value)}
+            onBlur={() => setBairro(formatNameTitleCase(bairro))}
             placeholder="Ex: Centro"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
@@ -176,6 +179,7 @@ export function DocumentosTab() {
           <Input
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
+            onBlur={() => setCidade(formatNameTitleCase(cidade))}
             placeholder="Ex: Sapeaçu"
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />

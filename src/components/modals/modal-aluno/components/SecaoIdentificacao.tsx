@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Camera, Loader2, Trash2 } from 'lucide-react'
+import { formatNameTitleCase } from '@/lib/stringUtils'
 
 export function SecaoIdentificacao() {
   const {
@@ -101,6 +102,7 @@ export function SecaoIdentificacao() {
               <Input 
                 value={nome} 
                 onChange={(e) => setNome(e.target.value)} 
+                onBlur={() => setNome(formatNameTitleCase(nome))}
                 placeholder="Nome do Aluno" 
                 className="mt-1" 
                 required
@@ -274,6 +276,7 @@ export function SecaoIdentificacao() {
               <Input 
                 value={cidadeNasc} 
                 onChange={(e) => setCidadeNasc(e.target.value)} 
+                onBlur={() => setCidadeNasc(formatNameTitleCase(cidadeNasc))}
                 placeholder="Salvador" 
                 className="mt-1" 
               />
@@ -304,6 +307,7 @@ export function SecaoIdentificacao() {
               <Input 
                 value={mae} 
                 onChange={(e) => setMae(e.target.value)} 
+                onBlur={() => setMae(formatNameTitleCase(mae))}
                 placeholder="Nome Completo da Mãe" 
                 className="mt-1" 
               />
@@ -325,6 +329,7 @@ export function SecaoIdentificacao() {
               <Input 
                 value={pai} 
                 onChange={(e) => setPai(e.target.value)} 
+                onBlur={() => setPai(formatNameTitleCase(pai))}
                 placeholder="Nome Completo do Pai" 
                 className="mt-1" 
               />
@@ -345,6 +350,7 @@ export function SecaoIdentificacao() {
             <Input 
               value={endereco} 
               onChange={(e) => setEndereco(e.target.value)} 
+              onBlur={() => setEndereco(formatNameTitleCase(endereco))}
               placeholder="Endereço Completo" 
               className="mt-1" 
             />

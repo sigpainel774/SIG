@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { UserPlus, Sparkles, Copy, Check, Eye, EyeOff, ShieldCheck, Mail, AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { sanitizeEmail } from '@/lib/stringUtils'
 
 interface ModalCreateAuthUserProps {
   open: boolean
@@ -233,7 +234,7 @@ export function ModalCreateAuthUser({
               placeholder="ex: servidor@escola.gov.br"
               value={emailInput}
               onChange={e => {
-                setEmailInput(e.target.value)
+                setEmailInput(sanitizeEmail(e.target.value))
                 if (confirmStep) setConfirmStep(false)
               }}
               className="bg-background border-[#3f3f46] text-foreground h-11 pr-10 focus:ring-emerald-500 focus:border-emerald-500 font-mono text-sm"
