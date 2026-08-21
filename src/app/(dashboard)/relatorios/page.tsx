@@ -23,6 +23,9 @@ const RelatorioOcorrencias = dynamic(() => import('@/components/relatorios/Relat
 const RelatorioServidores = dynamic(() => import('@/components/relatorios/RelatorioServidores'), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando painel de servidores...</div>
 })
+const RelatorioEmaeeEstrategico = dynamic(() => import('@/components/relatorios/RelatorioEmaeeEstrategico'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório estratégico do EMAEE...</div>
+})
 const PrintFicha = dynamic(() => import('@/components/print/print-ficha').then(m => ({ default: m.PrintFicha })), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ficha...</div>
 })
@@ -43,11 +46,12 @@ import {
   GraduationCap,
   FileCheck,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  Heart
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | 'fila_espera' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
@@ -99,6 +103,13 @@ const REPORT_CARDS = [
     title: 'Central de Atividades',
     description: 'Trilha de auditoria, matrículas, edições e acessos a fichas.',
     icon: Activity,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'emaee_estrategico' as const,
+    title: 'Relatório Estratégico EMAEE',
+    description: 'Inteligência clínica, censo de neurodesenvolvimento, especialidades e rede.',
+    icon: Heart,
     variant: 'primary' as const,
   },
   {
@@ -560,6 +571,8 @@ export default function RelatoriosPage() {
         {/* Dynamic Content based on Macro vs School Specific */}
         {activeReport === 'servidores' ? (
           <RelatorioServidores />
+        ) : activeReport === 'emaee_estrategico' ? (
+          <RelatorioEmaeeEstrategico selectedEscola={selectedEscola} />
         ) : activeReport === 'desempenho' ? (
           <RelatorioNotas selectedEscola={selectedEscola} />
         ) : activeReport === 'mapa' ? (
@@ -697,6 +710,7 @@ export default function RelatoriosPage() {
             'mapa': 'geolocalizacao',
             'presenca': 'geolocalizacao',
             'atividades': 'central-atividades',
+            'emaee_estrategico': 'pacientes',
             'necessidades_especiais': 'pacientes',
             'fila_espera': 'fila-espera',
           }
@@ -709,7 +723,7 @@ export default function RelatoriosPage() {
           }
 
           if (isEMAEE) {
-            const permitidosEMAEE = ['necessidades_especiais', 'fila_espera', 'mapa']
+            const permitidosEMAEE = ['emaee_estrategico', 'necessidades_especiais', 'fila_espera', 'mapa']
             return permitidosEMAEE.includes(card.id)
           }
           if (isSaude) {
@@ -718,6 +732,9 @@ export default function RelatoriosPage() {
           }
           if (card.id === 'servidores') {
             return podeVerRelatorioServidores
+          }
+          if (card.id === 'emaee_estrategico') {
+            return isSuperAdminOrNivel1 || isDiretor || isEMAEE
           }
           return true
         }).map((card) => {
