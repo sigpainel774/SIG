@@ -28,6 +28,7 @@ import {
   LogOut,
   ChevronRight,
   UserCheck,
+  UserPlus,
   Calendar
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,6 +39,7 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { ModalContasEspeciais } from '@/components/modals/modal-contas-especiais'
 import { ModalResetSenhaUser } from '@/components/modals/modal-reset-senha-user'
 import { ModalUpdateEmailUser } from '@/components/modals/modal-update-email-user'
+import { ModalCreateAuthUser } from '@/components/modals/modal-create-auth-user'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 
@@ -136,6 +138,11 @@ export default function AdminAcessosPage() {
   })
 
   const [emailModalState, setEmailModalState] = useState<{ open: boolean; item: AcessoItem | null }>({
+    open: false,
+    item: null,
+  })
+
+  const [createAuthModalState, setCreateAuthModalState] = useState<{ open: boolean; item: AcessoItem | null }>({
     open: false,
     item: null,
   })
@@ -532,6 +539,10 @@ export default function AdminAcessosPage() {
     setResetModalState({ open: true, item })
   }
 
+  const handleOpenCreateAuth = (item: AcessoItem) => {
+    setCreateAuthModalState({ open: true, item })
+  }
+
   const renderNivelBadge = (nivel: string) => {
     const cleanNivel = nivel.toUpperCase()
     if (cleanNivel.includes('SECRETARIA')) {
@@ -659,6 +670,20 @@ export default function AdminAcessosPage() {
               title={`Alterar E-mail de Acesso de ${item.funcionario}`}
             >
               <Mail className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenCreateAuth(item)}
+              disabled={hasAuthAccount}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+                !hasAuthAccount
+                  ? 'bg-emerald-100 dark:bg-emerald-950/40 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-400 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400 cursor-pointer'
+                  : 'bg-muted border border-border text-muted-foreground opacity-30 cursor-not-allowed'
+              }`}
+              title={!hasAuthAccount ? `Criar Conta de Acesso Autoconfirmada para ${item.funcionario}` : 'Usuário já possui conta de autenticação criada.'}
+            >
+              <UserPlus className="w-4 h-4" />
             </button>
 
             <button
@@ -1512,6 +1537,28 @@ export default function AdminAcessosPage() {
           onSuccess={(novoEmail) => {
             setAcessos((prev) =>
               prev.map((a) => (a.id === emailModalState.item?.id ? { ...a, email: novoEmail } : a))
+            )
+          }}
+        />
+      )}
+
+      {/* Modal Criar Conta de Acesso Autoconfirmada */}
+      {createAuthModalState.open && (
+        <ModalCreateAuthUser
+          open={createAuthModalState.open}
+          onOpenChange={(open) => setCreateAuthModalState((prev) => ({ ...prev, open }))}
+          funcionarioId={createAuthModalState.item?.id}
+          userName={createAuthModalState.item?.funcionario}
+          userEmail={createAuthModalState.item?.email}
+          cargo={createAuthModalState.item?.nivel}
+          escolaNome={createAuthModalState.item?.escola}
+          onSuccess={(authUserId, novoEmail) => {
+            setAcessos((prev) =>
+              prev.map((a) =>
+                a.id === createAuthModalState.item?.id
+                  ? { ...a, auth_user_id: authUserId, email: novoEmail, status: 'ATIVO' }
+                  : a
+              )
             )
           }}
         />
