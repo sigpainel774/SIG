@@ -13,6 +13,7 @@ import { AlunoFormContextType, ModalAlunoProps } from '../types'
 import { invalidarCacheFoto } from '@/lib/photoCache'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 import { formatNameTitleCase } from '@/lib/stringUtils'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
@@ -101,7 +102,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
 
   // 5. Matrícula & Etapa
   const [tipoMatricula, setTipoMatricula] = useState('Renovação')
-  const [dataMatricula, setDataMatricula] = useState(new Date().toISOString().split('T')[0])
+  const [dataMatricula, setDataMatricula] = useState(getHojeBrasilia())
   const [localizacao, setLocalizacao] = useState('Zona Urbana')
   const [serie, setSerie] = useState('')
   const [turno, setTurno] = useState('Matutino')
@@ -255,7 +256,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         pessoaForm.setTelMae(dm.telMaeAluno || '')
         pessoaForm.setTelPai(dm.telPaiAluno || '')
         setTipoMatricula(dm.tipoMatricula || 'Renovação')
-        setDataMatricula(dm.dataMatricula || new Date().toISOString().split('T')[0])
+        setDataMatricula(dm.dataMatricula || getHojeBrasilia())
         setLocalizacao(dm.localizacaoAluno || 'Zona Urbana')
         setTurno(dm.turnoAluno || 'Matutino')
         setTurmaLetra(dm.turmaAluno || '')
@@ -311,7 +312,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         pessoaForm.setTelMae('')
         pessoaForm.setTelPai('')
         setTipoMatricula('Renovação')
-        setDataMatricula(new Date().toISOString().split('T')[0])
+        setDataMatricula(getHojeBrasilia())
         setLocalizacao('Zona Urbana')
         setTurno('Matutino')
         setTurmaLetra('')

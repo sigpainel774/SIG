@@ -13,6 +13,7 @@ import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 import { formatNameTitleCase, sanitizeEmail } from '@/lib/stringUtils'
+import { getHojeBrasilia, getDataBrasiliaOffset } from '@/lib/dateUtils'
 
 // Constante de sessão para cache-busting estável (evita flickering de imagem ao re-renderizar)
 const sessionTimestamp = Date.now()
@@ -374,9 +375,7 @@ export function useFuncionarioFormStates({
               if (latestAtestado.data_fim) {
                 setDataFimAfastamento(latestAtestado.data_fim)
               } else if (latestAtestado.data_inclusao && latestAtestado.dias_afastamento) {
-                const dt = new Date(latestAtestado.data_inclusao)
-                dt.setDate(dt.getDate() + (latestAtestado.dias_afastamento - 1))
-                setDataFimAfastamento(dt.toISOString().split('T')[0])
+                setDataFimAfastamento(getDataBrasiliaOffset(latestAtestado.dias_afastamento - 1, latestAtestado.data_inclusao))
               } else {
                 setDataFimAfastamento('')
               }
@@ -470,7 +469,7 @@ export function useFuncionarioFormStates({
         setDocMestradoUrl('')
         setDocDoutoradoUrl('')
         setObservacoes('')
-        setDataPreenchimento(new Date().toISOString().split('T')[0])
+        setDataPreenchimento(getHojeBrasilia())
         setCid('')
         setDiasAfastamento('1')
         setDataFimAfastamento('')
@@ -853,7 +852,7 @@ export function useFuncionarioFormStates({
                 carga_horaria: parsedCarga,
                 modalidade_ensino: modalidadeEnsino || 'Regular',
                 ativo: true,
-                data_inicio: new Date().toISOString().split('T')[0]
+                data_inicio: getHojeBrasilia()
               })
           }
         } else {
@@ -1095,7 +1094,7 @@ export function useFuncionarioFormStates({
                 carga_horaria: parsedCarga,
                 modalidade_ensino: modalidadeEnsino || 'Regular',
                 ativo: true,
-                data_inicio: new Date().toISOString().split('T')[0]
+                data_inicio: getHojeBrasilia()
               })
             if (vincError) console.error('Erro ao vincular escola:', vincError)
           } else {

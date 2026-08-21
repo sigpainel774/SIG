@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 import { buscarConfigBloqueioRede, verificarTravaEdicaoFuncionario } from '@/lib/verificarTravaBloqueio'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 export interface Escola {
   id: string
@@ -417,7 +418,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         carga_horaria: finalCarga,
         modalidade_ensino: modalidadeFinal,
         ativo: true,
-        data_inicio: new Date().toISOString().split('T')[0],
+        data_inicio: getHojeBrasilia(),
       })
       if (error) throw error
 
@@ -456,7 +457,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           funcionario_id: selecionado.id,
           tipo: 'Lotação / Inclusão',
           descricao: `Lotação adicionada na unidade ${escolaNome}${cargoFinal ? ` no cargo de ${cargoFinal}` : ''}${finalCarga ? ` (${finalCarga}h/sem)` : ''}.`,
-          data: new Date().toISOString().split('T')[0],
+          data: getHojeBrasilia(),
           orgao_origem: null,
           orgao_destino: escolaNome,
           portaria: null,
@@ -517,7 +518,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
 
       const { error: deactivateError } = await supabase
          .from('vinculos_funcionarios')
-         .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+         .update({ ativo: false, data_fim: getHojeBrasilia() })
          .eq('id', origemId)
       if (deactivateError) throw deactivateError
 
@@ -535,7 +536,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
         escola_id: destinoEscolaId,
         cargo: lotacaoOrigem?.cargo || selecionado.cargo || null,
         ativo: true,
-        data_inicio: new Date().toISOString().split('T')[0],
+        data_inicio: getHojeBrasilia(),
       })
       if (insertError) throw insertError
 
@@ -555,7 +556,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
           funcionario_id: selecionado.id,
           tipo: 'Lotação / Transferência',
           descricao: `Transferência direta da unidade ${lotacaoOrigem?.escolaNome ?? 'Escola de Origem'} para ${escolaDestinoNome} realizada pela gestão.`,
-          data: new Date().toISOString().split('T')[0],
+          data: getHojeBrasilia(),
           orgao_origem: lotacaoOrigem?.escolaNome ?? null,
           orgao_destino: escolaDestinoNome,
           portaria: null,
@@ -613,7 +614,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
 
       const { error } = await supabase
         .from('vinculos_funcionarios')
-        .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+        .update({ ativo: false, data_fim: getHojeBrasilia() })
         .eq('id', lotacao.id)
       if (error) throw error
 
@@ -643,7 +644,7 @@ export function useGestaoLotacoes({ open, funcionarioInicial }: UseGestaoLotacoe
             funcionario_id: funcIdAlvo,
             tipo: 'Lotação / Encerramento',
             descricao: `Lotação na unidade ${lotacao.escolaNome ?? 'Escola'} encerrada pela gestão.`,
-            data: new Date().toISOString().split('T')[0],
+            data: getHojeBrasilia(),
             orgao_origem: lotacao.escolaNome ?? null,
             orgao_destino: null,
             portaria: null,

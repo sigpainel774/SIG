@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabaseServer'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   // Se data não for informada, assume a data atual no fuso de Brasília
   if (!data) {
-    data = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+    data = getHojeBrasilia()
   }
 
   const supabase = await createClient()

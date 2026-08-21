@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 import {
   Select,
   SelectContent,
@@ -36,7 +37,7 @@ export function ModalNovaOcorrencia({
   const [tipo, setTipo] = useState('')
   const [gravidade, setGravidade] = useState('Leve')
   const [descricao, setDescricao] = useState('')
-  const [data, setData] = useState(new Date().toISOString().split('T')[0])
+  const [data, setData] = useState(getHojeBrasilia())
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
@@ -47,7 +48,7 @@ export function ModalNovaOcorrencia({
       setTipo('')
       setGravidade('Leve')
       setDescricao('')
-      setData(new Date().toISOString().split('T')[0])
+      setData(getHojeBrasilia())
     }
   }, [open])
 

@@ -5,6 +5,7 @@ import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
 import { getVisualizacaoUrl } from '@/lib/photoHelper'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMatriculaEmaeeProps, isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const supabase = createBrowserClient()
@@ -16,7 +17,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   // 1. Dados do Atendimento
   const [escolaAtendimentoId, setEscolaAtendimentoId] = useState(props.escolaEmaeeId || '')
   const [localizacaoAtendimento, setLocalizacaoAtendimento] = useState('Urbana')
-  const [dataMatricula, setDataMatricula] = useState(() => new Date().toISOString().split('T')[0])
+  const [dataMatricula, setDataMatricula] = useState(() => getHojeBrasilia())
   
   // 2. Dados do Aluno Selecionado e Edição / Cadastro Manual
   const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSearchData | null>(null)
@@ -247,7 +248,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       // Atendimento EMAEE
       setEscolaAtendimentoId(mat.escola_atendimento_id ?? props.escolaEmaeeId ?? '')
       setLocalizacaoAtendimento(mat.localizacao_atendimento ?? 'Urbana')
-      setDataMatricula(mat.data_matricula ? (mat.data_matricula.includes('T') ? mat.data_matricula.split('T')[0] : mat.data_matricula) : new Date().toISOString().split('T')[0])
+      setDataMatricula(mat.data_matricula ? (mat.data_matricula.includes('T') ? mat.data_matricula.split('T')[0] : mat.data_matricula) : getHojeBrasilia())
       setTurnoAtendimento(mat.turno_atendimento ?? 'Matutino')
 
       // Escola Regular
@@ -319,7 +320,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setFotoFile(null)
       setEscolaAtendimentoId(props.escolaEmaeeId ?? '')
       setLocalizacaoAtendimento('Urbana')
-      setDataMatricula(new Date().toISOString().split('T')[0])
+      setDataMatricula(getHojeBrasilia())
       setTurnoAtendimento('Matutino')
       setEscolaOrigemForaRede(false)
       setEscolaOrigemNome('')

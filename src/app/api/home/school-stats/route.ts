@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabaseServer'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const hoje = new Date().toISOString().split('T')[0]
+  const hoje = getHojeBrasilia()
 
   try {
     const { data: stats, error: rpcError } = await (supabase as any).rpc('obter_multi_escolas_stats', {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getHojeBrasilia, getDataBrasiliaOffset } from '@/lib/dateUtils'
 
 interface UseTurmaFrequenciasProps {
   open: boolean
@@ -30,7 +31,7 @@ export function useTurmaFrequencias({
   supabase,
   isMounted
 }: UseTurmaFrequenciasProps) {
-  const [dataFreq, setDataFreq] = useState(new Date().toISOString().split('T')[0])
+  const [dataFreq, setDataFreq] = useState(getHojeBrasilia())
   const [selectedMateriaId, setSelectedMateriaId] = useState<string>('')
   const [selectedAgendaAulaId, setSelectedAgendaAulaId] = useState<string | null>(null)
   
@@ -143,10 +144,8 @@ export function useTurmaFrequencias({
   }, [open, materias, selectedMateriaId])
 
   const alterarData = (dias: number) => {
-    const d = new Date(dataFreq + 'T00:00:00')
-    d.setDate(d.getDate() + dias)
     if (isMounted.current) {
-      setDataFreq(d.toISOString().split('T')[0])
+      setDataFreq(getDataBrasiliaOffset(dias, dataFreq))
     }
   }
 

@@ -8,6 +8,7 @@ import { useEditModeStore } from '@/store/useEditModeStore'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { coletarAuthUserIds, coletarAuthUserIdsAdminsGlobais } from '@/lib/notifications/lotacaoNotifications'
 import { toast } from 'sonner'
+import { getHojeBrasilia } from '@/lib/dateUtils'
 
 export function useTransferencias() {
   const router = useRouter()
@@ -368,7 +369,7 @@ export function useTransferencias() {
           if (aceitar) {
             const { error: deactivateError } = await supabase
               .from('vinculos_funcionarios')
-              .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0] })
+              .update({ ativo: false, data_fim: getHojeBrasilia() })
               .eq('funcionario_id', transferenciaSelecionada.funcionario_id)
               .eq('escola_id', transferenciaSelecionada.escola_origem_id)
               .eq('ativo', true)
@@ -390,7 +391,7 @@ export function useTransferencias() {
                 escola_id: transferenciaSelecionada.escola_destino_id,
                 cargo: cargoAnterior,
                 ativo: true,
-                data_inicio: new Date().toISOString().split('T')[0]
+                data_inicio: getHojeBrasilia()
               })
 
             if (activateError) throw activateError

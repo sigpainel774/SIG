@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamicImport from 'next/dynamic'
 import { createClient } from '@/lib/supabaseClient'
+import { getHojeBrasilia, getDataBrasiliaOffset } from '@/lib/dateUtils'
 import {
   KeyRound,
   Mail,
@@ -241,10 +242,8 @@ export default function AdminAcessosPage() {
 
       // 2. Carregar Histórico Diário de Logins
       const days = parseInt(filtroPeriodoDiario, 10) || 30
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - days)
-      const startDateStr = startDate.toISOString().split('T')[0]
-      const endDateStr = new Date().toISOString().split('T')[0]
+      const startDateStr = getDataBrasiliaOffset(-days)
+      const endDateStr = getHojeBrasilia()
 
       const { data: diariosData, error: diariosError } = await (supabase as any).rpc('get_daily_login_history_admin', {
         p_start_date: startDateStr,
@@ -814,7 +813,7 @@ export default function AdminAcessosPage() {
 
   // Cálculo de KPIs executivos
   const totalSessoesAtivas = sessoesAtivas.length
-  const totalLoginsHoje = loginsDiarios.filter((d) => d.data_acesso === new Date().toISOString().split('T')[0]).length
+  const totalLoginsHoje = loginsDiarios.filter((d) => d.data_acesso === getHojeBrasilia()).length
   const tempoMedioSegundos =
     loginsDiarios.length > 0
       ? Math.round(loginsDiarios.reduce((acc, curr) => acc + (curr.total_tempo_tela_segundos || 0), 0) / loginsDiarios.length)
