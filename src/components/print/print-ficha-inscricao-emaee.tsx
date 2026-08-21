@@ -100,13 +100,35 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
     { key: 'def_cegueira', label: 'Cegueira' },
     { key: 'def_auditiva', label: 'Def. Auditiva' },
     { key: 'def_fisica', label: 'Def. Física' },
-    { key: 'def_intelectual', label: 'Def. Intelectual' },
     { key: 'def_surdez', label: 'Surdez' },
     { key: 'def_surdocegueira', label: 'Surdocegueira' },
     { key: 'def_multipla', label: 'Def. Múltipla' },
-    { key: 'transtorno_tea', label: 'Autismo (TEA)' },
-    { key: 'transtorno_outros', label: 'Outros Transtornos' },
   ]
+
+  // Lista de condições de saúde e neurodesenvolvimento
+  const condicoesSaudeLabels: Record<string, string> = {
+    transtorno_tea: 'TEA (Autismo)',
+    tdah: 'TDAH',
+    deficiencia_intelectual: 'Def. Intelectual (DI)',
+    dislexia: 'Dislexia',
+    disgrafia_disortografia: 'Disgrafia/Disortografia',
+    tod: 'TOD',
+    ansiedade: 'Transtorno de Ansiedade',
+    superdotacao: 'Superdotação',
+  }
+
+  const condicoesSaudeData = (prontuario?.condicoes_saude as Record<string, { selecionado?: boolean, cid?: string }>) || {}
+  const condicoesAtivas = Object.entries(condicoesSaudeLabels)
+    .filter(([key]) => {
+      if (condicoesSaudeData[key]?.selecionado) return true
+      if (key === 'transtorno_tea' && prontuario?.transtorno_tea) return true
+      if (key === 'deficiencia_intelectual' && prontuario?.def_intelectual) return true
+      return false
+    })
+    .map(([key, label]) => {
+      const cid = condicoesSaudeData[key]?.cid || (key === 'transtorno_tea' ? prontuario?.cid_codigo : '')
+      return { key, label, cid: cid?.trim() }
+    })
 
   const assinaturaRespUrl = prontuario?.assinatura_responsavel_aluno_url || dm?.assinatura_responsavel_url || aluno?.assinatura_responsavel_url
   const assinaturaServidorUrl = prontuario?.assinatura_responsavel_matricula_url || prontuario?.funcionarios?.assinatura_url
@@ -331,7 +353,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
             <tbody>
               <tr>
                 <td className="border border-black p-1.5 w-1/4 bg-gray-50/50">
-                  <span className="font-bold block text-[8px] uppercase text-gray-600">Código CID-10</span>
+                  <span className="font-bold block text-[8px] uppercase text-gray-600">Código CID-10 Geral</span>
                   <span className="font-bold text-rose-700 text-[11px]">{prontuario?.cid_codigo || 'Não informado / Em investigação'}</span>
                 </td>
                 <td colSpan={2} className="border border-black p-1.5">
@@ -339,10 +361,24 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                   <span>{prontuario?.principal_queixa || prontuario?.observacoes_requerimento || 'Não informado'}</span>
                 </td>
               </tr>
+              {condicoesAtivas.length > 0 && (
+                <tr>
+                  <td colSpan={3} className="border border-black p-1.5 bg-purple-50/20">
+                    <span className="font-bold block text-[8px] uppercase text-purple-900">Condições de Saúde e Neurodesenvolvimento Identificadas</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {condicoesAtivas.map(c => (
+                        <span key={c.key} className="inline-block px-1.5 py-0.5 border border-purple-800/40 rounded bg-white text-purple-950 font-bold text-[9px]">
+                          {c.label}{c.cid ? ` [CID: ${c.cid}]` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
               {prontuario?.outros_transtornos && (
                 <tr>
                   <td colSpan={3} className="border border-black p-1.5">
-                    <span className="font-bold block text-[8px] uppercase text-gray-600">Outros Transtornos / Comorbidades</span>
+                    <span className="font-bold block text-[8px] uppercase text-gray-600">Outras Condições / Comorbidades</span>
                     <span>{prontuario.outros_transtornos}</span>
                   </td>
                 </tr>
@@ -352,10 +388,10 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
 
           {/* 5. MAPEAMENTO AEE (CENSO ESCOLAR) */}
           <div className="bg-black text-white font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wide">
-            5. MAPEAMENTO AEE (CENSO ESCOLAR)
+            5. MAPEAMENTO AEE — DEFICIÊNCIAS (CENSO ESCOLAR)
           </div>
           <div className="border border-black p-2 mb-2 bg-gray-50/30">
-            <div className="grid grid-cols-5 gap-2 text-[9px]">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 text-[9px]">
               {deficienciasList.map((d) => {
                 const checked = !!prontuario?.[d.key]
                 return (
