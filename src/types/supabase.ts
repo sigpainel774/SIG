@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      registros_visitas_rotas: {
+        Row: {
+          created_at: string
+          data_hora_chegada: string
+          distancia_ponto_metros: number | null
+          escola_id: string | null
+          funcionario_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          odometro_km: number | null
+          observacoes: string | null
+          rota_nome: string
+          sincronizado_em: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora_chegada?: string
+          distancia_ponto_metros?: number | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          odometro_km?: number | null
+          observacoes?: string | null
+          rota_nome?: string
+          sincronizado_em?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          data_hora_chegada?: string
+          distancia_ponto_metros?: number | null
+          escola_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          odometro_km?: number | null
+          observacoes?: string | null
+          rota_nome?: string
+          sincronizado_em?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_visitas_rotas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_visitas_rotas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       abastecimentos_veiculos: {
         Row: {
           created_at: string | null

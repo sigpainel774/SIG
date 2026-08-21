@@ -1,0 +1,245 @@
+﻿/**
+ * Gerenciador de Armazenamento Local e Fila Offline (IndexedDB / LocalStorage)
+ * SIG - Sapeaçu / BA
+ */
+
+import { PontoLocalizacao, ResultadoRoteiro } from './routeOptimizer';
+
+export interface VisitaPonto {
+  id: string; // UUID único gerado no dispositivo (idempotência)
+  escola_id: string | null;
+  escola_nome: string;
+  funcionario_id: string | null;
+  rota_nome: string;
+  data_hora_chegada: string;
+  latitude: number | null;
+  longitude: number | null;
+  distancia_ponto_metros: number | null;
+  odometro_km: number | null;
+  observacoes: string | null;
+  status: 'REALIZADA' | 'IMPREVISTO' | 'AUSENTE';
+  sincronizado: boolean;
+  tentativas_sync?: number;
+}
+
+export interface RotaAtivaState {
+  id: string;
+  nome: string;
+  data_inicio: string;
+  escolasSelecionadas: PontoLocalizacao[];
+  resultadoRoteiro: ResultadoRoteiro | null;
+  paradasConcluidas: string[]; // array de IDs de escolas
+  emNavegacao: boolean;
+}
+
+const DB_NAME = 'sig_rotas_offline_db';
+const DB_VERSION = 1;
+const STORE_ROTAS = 'rota_ativa';
+const STORE_VISITAS = 'visitas_queue';
+
+const LS_FALLBACK_ROTA = 'sig_offline_rota_ativa';
+const LS_FALLBACK_VISITAS = 'sig_offline_visitas_queue';
+
+/**
+ * Abre a conexão com o banco IndexedDB local
+ */
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !window.indexedDB) {
+      return reject(new Error('IndexedDB não suportado neste ambiente'));
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_ROTAS)) {
+        db.createObjectStore(STORE_ROTAS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_VISITAS)) {
+        const visitasStore = db.createObjectStore(STORE_VISITAS, { keyPath: 'id' });
+        visitasStore.createIndex('sincronizado', 'sincronizado', { unique: false });
+        visitasStore.createIndex('data_hora_chegada', 'data_hora_chegada', { unique: false });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Salva a rota ativa na memória persistente
+ */
+export async function salvarRotaAtiva(rota: RotaAtivaState): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  // Fallback rápido no localStorage
+  try {
+    localStorage.setItem(LS_FALLBACK_ROTA, JSON.stringify(rota));
+  } catch {}
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_ROTAS, 'readwrite');
+      const store = tx.objectStore(STORE_ROTAS);
+      const req = store.put(rota);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('Fallback para localStorage na rota ativa:', err);
+  }
+}
+
+/**
+ * Recupera a rota ativa salva
+ */
+export async function obterRotaAtiva(): Promise<RotaAtivaState | null> {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_ROTAS, 'readonly');
+      const store = tx.objectStore(STORE_ROTAS);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const list = req.result as RotaAtivaState[];
+        if (list && list.length > 0) {
+          resolve(list[0]);
+        } else {
+          // Tenta ler do localStorage
+          const cached = localStorage.getItem(LS_FALLBACK_ROTA);
+          resolve(cached ? JSON.parse(cached) : null);
+        }
+      };
+      req.onerror = () => {
+        const cached = localStorage.getItem(LS_FALLBACK_ROTA);
+        resolve(cached ? JSON.parse(cached) : null);
+      };
+    });
+  } catch {
+    const cached = localStorage.getItem(LS_FALLBACK_ROTA);
+    return cached ? JSON.parse(cached) : null;
+  }
+}
+
+/**
+ * Limpa a rota ativa atual
+ */
+export async function limparRotaAtiva(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(LS_FALLBACK_ROTA);
+  } catch {}
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_ROTAS, 'readwrite');
+      const store = tx.objectStore(STORE_ROTAS);
+      store.clear();
+      tx.oncomplete = () => resolve();
+    });
+  } catch {}
+}
+
+/**
+ * Adiciona um registro de visita ou check-in na fila offline
+ */
+export async function enfileirarVisitaOffline(visita: VisitaPonto): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  // Atualiza LocalStorage como cópia de segurança
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
+    const list: VisitaPonto[] = saved ? JSON.parse(saved) : [];
+    const idx = list.findIndex((item) => item.id === visita.id);
+    if (idx >= 0) {
+      list[idx] = visita;
+    } else {
+      list.push(visita);
+    }
+    localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(list));
+  } catch {}
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_VISITAS, 'readwrite');
+      const store = tx.objectStore(STORE_VISITAS);
+      const req = store.put(visita);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('Erro ao salvar no IndexedDB, mantido no localStorage:', err);
+  }
+}
+
+/**
+ * Retorna todas as visitas não sincronizadas
+ */
+export async function obterVisitasPendentes(): Promise<VisitaPonto[]> {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_VISITAS, 'readonly');
+      const store = tx.objectStore(STORE_VISITAS);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const list = (req.result as VisitaPonto[]) || [];
+        const pendentes = list.filter((v) => !v.sincronizado);
+        resolve(pendentes);
+      };
+      req.onerror = () => {
+        const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
+        const list: VisitaPonto[] = saved ? JSON.parse(saved) : [];
+        resolve(list.filter((v) => !v.sincronizado));
+      };
+    });
+  } catch {
+    const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
+    const list: VisitaPonto[] = saved ? JSON.parse(saved) : [];
+    return list.filter((v) => !v.sincronizado);
+  }
+}
+
+/**
+ * Marca visitas como sincronizadas e limpa itens antigos
+ */
+export async function marcarVisitasComoSincronizadas(ids: string[]): Promise<void> {
+  if (typeof window === 'undefined' || ids.length === 0) return;
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
+    if (saved) {
+      const list: VisitaPonto[] = JSON.parse(saved);
+      const updated = list.map((item) => (ids.includes(item.id) ? { ...item, sincronizado: true } : item));
+      localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(updated));
+    }
+  } catch {}
+
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_VISITAS, 'readwrite');
+    const store = tx.objectStore(STORE_VISITAS);
+
+    for (const id of ids) {
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const record = getReq.result as VisitaPonto;
+        if (record) {
+          record.sincronizado = true;
+          store.put(record);
+        }
+      };
+    }
+  } catch (err) {
+    console.error('Erro ao marcar visitas como sincronizadas:', err);
+  }
+}
