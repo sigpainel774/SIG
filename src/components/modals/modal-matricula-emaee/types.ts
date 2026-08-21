@@ -34,5 +34,10 @@ export interface AlunoSearchData {
   foto_avatar_path?: string | null
   foto_visualizacao_path?: string | null
   foto_updated_at?: string | null
+  escola_id?: string | null
+  escola_nome?: string | null
+  turma_id?: string | null
+  turma_nome?: string | null
+  atendido_emaee?: boolean | null
   dados_matricula?: any
 }

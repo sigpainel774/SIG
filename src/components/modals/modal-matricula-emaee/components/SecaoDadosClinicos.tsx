@@ -18,7 +18,7 @@ export function SecaoDadosClinicos() {
     <section className="overflow-hidden border border-border rounded-2xl bg-card shadow-sm dark:bg-gradient-to-b dark:from-[#1a202c]/95 dark:to-[#121621]/95 dark:shadow-xl">
       <div className="flex items-start gap-3 p-4 md:p-5 border-b border-border bg-muted/40 dark:bg-white/[0.012]">
         <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl bg-primary/10 font-extrabold text-sm text-primary">
-          04
+          03
         </span>
         <div>
           <h2 className="text-base font-bold text-foreground">Dados clínicos e deficiências</h2>

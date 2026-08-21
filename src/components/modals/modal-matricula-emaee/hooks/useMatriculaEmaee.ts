@@ -20,7 +20,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   
   // 2. Dados do Aluno Selecionado e Edição / Cadastro Manual
   const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSearchData | null>(null)
-  const [isManualAluno, setIsManualAluno] = useState(false)
+  const [isManualAluno, setIsManualAluno] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   
   const [nomeCompleto, setNomeCompleto] = useState('')
@@ -32,18 +32,68 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [certidaoNascimento, setCertidaoNascimento] = useState('')
   const [corRaca, setCorRaca] = useState('')
   const [sexo, setSexo] = useState('')
-  const [cidadeNascimento, setCidadeNascimento] = useState('')
+  const [cidadeNascimento, setCidadeNascimento] = useState('Sapeaçu')
   const [estadoNascimento, setEstadoNascimento] = useState('BA')
   const [nomeMae, setNomeMae] = useState('')
   const [profissaoMae, setProfissaoMae] = useState('')
   const [nomePai, setNomePai] = useState('')
   const [profissaoPai, setProfissaoPai] = useState('')
   
-  // Endereço e Geolocalização (MiniMapa)
+  // Endereço Residencial Estruturado com CEP e Geolocalização (MiniMapa)
+  const [cep, setCep] = useState('')
+  const [rua, setRua] = useState('')
+  const [numero, setNumero] = useState('')
+  const [bairro, setBairro] = useState('')
+  const [cidadeEndereco, setCidadeEndereco] = useState('Sapeaçu')
+  const [ufEndereco, setUfEndereco] = useState('BA')
+  const [isFetchingCep, setIsFetchingCep] = useState(false)
   const [endereco, setEndereco] = useState('')
-  const [latitude, setLatitude] = useState<number | null>(null)
-  const [longitude, setLongitude] = useState<number | null>(null)
+  const [latitude, setLatitude] = useState<number | null>(-12.7299932)
+  const [longitude, setLongitude] = useState<number | null>(-39.1858195)
   const [zonaResidencial, setZonaResidencial] = useState('Urbana')
+
+  const formatCEP = (value: string) => {
+    const clean = value.replace(/\D/g, '')
+    return clean
+      .replace(/^(\d{5})(\d)/, '$1-$2')
+      .substring(0, 9)
+  }
+
+  const consultarCep = async (cepParam?: string) => {
+    const clean = (cepParam ?? cep).replace(/\D/g, '')
+    if (clean.length !== 8) {
+      if (cepParam !== undefined) toast.error('CEP incompleto. Digite os 8 números.')
+      return
+    }
+    setIsFetchingCep(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`)
+      const data = await res.json()
+      if (data.erro) {
+        toast.error('CEP não localizado na base dos Correios.')
+        return
+      }
+      if (data.logradouro) setRua(data.logradouro)
+      if (data.bairro) setBairro(data.bairro)
+      if (data.localidade) setCidadeEndereco(data.localidade)
+      if (data.uf) setUfEndereco(data.uf)
+
+      const partes = [
+        data.logradouro,
+        numero ? `nº ${numero}` : '',
+        data.bairro,
+        data.localidade ? `${data.localidade} - ${data.uf || 'BA'}` : '',
+        `CEP: ${formatCEP(clean)}`
+      ].filter(Boolean)
+      setEndereco(partes.join(', '))
+      toast.success('Endereço localizado via CEP!')
+    } catch (err) {
+      console.error('Erro ao consultar ViaCEP:', err)
+      toast.error('Não foi possível consultar o CEP.')
+    } finally {
+      setIsFetchingCep(false)
+    }
+  }
   
   const [contatoEmergencia, setContatoEmergencia] = useState('')
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
@@ -169,9 +219,17 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setProfissaoMae(al.profissao_mae ?? '')
       setNomePai(al.nome_pai ?? '')
       setProfissaoPai(al.profissao_pai ?? '')
-      setEndereco(al.endereco ?? '')
-      setLatitude(al.latitude != null ? Number(al.latitude) : (dm.latitude != null ? Number(dm.latitude) : null))
-      setLongitude(al.longitude != null ? Number(al.longitude) : (dm.longitude != null ? Number(dm.longitude) : null))
+      
+      // Endereço Residencial Estruturado
+      setCep(dm.cep ?? '')
+      setRua(dm.rua ?? dm.logradouro ?? al.endereco ?? '')
+      setNumero(dm.numero ?? '')
+      setBairro(dm.bairro ?? '')
+      setCidadeEndereco(dm.cidade_endereco ?? dm.cidadeEnd ?? 'Sapeaçu')
+      setUfEndereco(dm.uf_endereco ?? dm.ufEnd ?? 'BA')
+      setEndereco(al.endereco ?? dm.endereco_formatado ?? '')
+      setLatitude(al.latitude != null ? Number(al.latitude) : (dm.latitude != null ? Number(dm.latitude) : -12.7299932))
+      setLongitude(al.longitude != null ? Number(al.longitude) : (dm.longitude != null ? Number(dm.longitude) : -39.1858195))
       setZonaResidencial(al.zona_residencial ?? 'Urbana')
       setContatoEmergencia(al.nome_contato_emergencia ?? '')
       setTelefoneEmergencia(al.telefone ?? '')
@@ -226,9 +284,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setAssinaturaResponsavelUrl(mat.assinatura_responsavel_aluno_url ?? dm.assinatura_responsavel_url ?? null)
       setAssinaturaServidorUrl(mat.assinatura_responsavel_matricula_url ?? funcionario?.assinatura_url ?? null)
     } else {
-      // Reset limpo para Nova Matrícula
+      // Reset limpo para Nova Matrícula (Abertura Padrão em Modo Manual)
       setAlunoSelecionado(null)
-      setIsManualAluno(false)
+      setIsManualAluno(true)
       setSearchTerm('')
       setNomeCompleto('')
       setDataNascimento('')
@@ -239,15 +297,21 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setCertidaoNascimento('')
       setCorRaca('')
       setSexo('')
-      setCidadeNascimento('')
+      setCidadeNascimento('Sapeaçu')
       setEstadoNascimento('BA')
       setNomeMae('')
       setProfissaoMae('')
       setNomePai('')
       setProfissaoPai('')
+      setCep('')
+      setRua('')
+      setNumero('')
+      setBairro('')
+      setCidadeEndereco('Sapeaçu')
+      setUfEndereco('BA')
       setEndereco('')
-      setLatitude(null)
-      setLongitude(null)
+      setLatitude(-12.7299932)
+      setLongitude(-39.1858195)
       setZonaResidencial('Urbana')
       setContatoEmergencia('')
       setTelefoneEmergencia('')
@@ -386,6 +450,15 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setFotoUrl(visualUrl || aluno.foto_url || null)
     setFotoFile(null)
 
+    // Se aluno pertencer a uma escola regular da rede municipal, auto-seleciona escola e turma
+    if (aluno.escola_id && aluno.escola_id !== props.escolaEmaeeId) {
+      setEscolaOrigemForaRede(false)
+      setEscolaRegularId(aluno.escola_id)
+      if (aluno.turma_nome) {
+        setTurmaRegular(aluno.turma_nome)
+      }
+    }
+
     // Carregar assinatura existente do responsável se já salva na ficha do aluno
     const dadosMatricula = (aluno as any).dados_matricula || {}
     if (dadosMatricula.assinatura_responsavel_url) {
@@ -443,7 +516,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           sexo, dados_matricula, uf_nascimento, municipio_nascimento,
           zona_residencial, nome_contato_emergencia, telefone,
           latitude, longitude,
-          foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at
+          foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at,
+          escola_id, turma_id, atendido_emaee,
+          turmas:turma_id (nome, ano_letivo),
+          escolas:escola_id (nome)
         `) as any)
         .ilike('nome', `%${term}%`)
         .is('deleted_at', null)
@@ -478,6 +554,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         foto_avatar_path: a.foto_avatar_path || null,
         foto_visualizacao_path: a.foto_visualizacao_path || null,
         foto_updated_at: a.foto_updated_at || null,
+        escola_id: a.escola_id || null,
+        escola_nome: a.escolas?.nome || null,
+        turma_id: a.turma_id || null,
+        turma_nome: a.turmas?.nome || null,
+        atendido_emaee: a.atendido_emaee ?? false,
         dados_matricula: a.dados_matricula
       }))
       
@@ -679,6 +760,17 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       // ==========================================
       let targetAlunoId = alunoSelecionado?.id
 
+      const logradouroFinal = rua.trim()
+      const enderecoCompleto = [
+        logradouroFinal,
+        numero.trim() ? `nº ${numero.trim()}` : '',
+        bairro.trim(),
+        cidadeEndereco.trim() ? `${cidadeEndereco.trim()} - ${ufEndereco || 'BA'}` : '',
+        cep.trim() ? `CEP: ${cep.trim()}` : ''
+      ].filter(Boolean).join(', ')
+
+      const enderecoFinal = endereco.trim() || enderecoCompleto || null
+
       // 1. Se for cadastro de ALUNO NOVO (não existente no SIG)
       if (!targetAlunoId) {
         const insertAlunoPayload: any = {
@@ -690,23 +782,31 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           data_nascimento: dataNascimento || null,
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
           sexo: sexo || null,
-          uf_nascimento: estadoNascimento || null,
-          municipio_nascimento: cidadeNascimento || null,
+          uf_nascimento: estadoNascimento || 'BA',
+          municipio_nascimento: cidadeNascimento || 'Sapeaçu',
           nome_mae: nomeMae || null,
           profissao_mae: profissaoMae || null,
           nome_pai: nomePai || null,
           profissao_pai: profissaoPai || null,
-          endereco: endereco || null,
+          endereco: enderecoFinal,
           latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
           longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
           nome_contato_emergencia: contatoEmergencia || null,
           telefone: telefoneEmergencia || null,
-          escola_id: validEscolaRegular || validEscolaAtendimento,
+          escola_id: validEscolaAtendimento,
+          atendido_emaee: true,
           codigo_temp_resp: codigoColetaLocal || null,
           codigo_temp_resp_criado_em: codigoColetaLocal ? new Date().toISOString() : null,
           dados_matricula: {
             cor_raca: corRaca || null,
+            cep: cep || null,
+            rua: rua || null,
+            numero: numero || null,
+            bairro: bairro || null,
+            cidade_endereco: cidadeEndereco || 'Sapeaçu',
+            uf_endereco: ufEndereco || 'BA',
+            endereco_formatado: enderecoFinal,
             assinatura_responsavel_url: assinaturaResponsavelUrl || null,
           }
         }
@@ -725,6 +825,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         const updatedDadosMatricula = {
           ...currentDadosMatricula,
           cor_raca: corRaca || currentDadosMatricula.cor_raca,
+          cep: cep || currentDadosMatricula.cep,
+          rua: rua || currentDadosMatricula.rua,
+          numero: numero || currentDadosMatricula.numero,
+          bairro: bairro || currentDadosMatricula.bairro,
+          cidade_endereco: cidadeEndereco || currentDadosMatricula.cidade_endereco || 'Sapeaçu',
+          uf_endereco: ufEndereco || currentDadosMatricula.uf_endereco || 'BA',
+          endereco_formatado: enderecoFinal || currentDadosMatricula.endereco_formatado,
           assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
         }
 
@@ -737,18 +844,19 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           data_nascimento: dataNascimento || null,
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
           sexo: sexo || null,
-          uf_nascimento: estadoNascimento || null,
-          municipio_nascimento: cidadeNascimento || null,
+          uf_nascimento: estadoNascimento || 'BA',
+          municipio_nascimento: cidadeNascimento || 'Sapeaçu',
           nome_mae: nomeMae || null,
           profissao_mae: profissaoMae || null,
           nome_pai: nomePai || null,
           profissao_pai: profissaoPai || null,
-          endereco: endereco || null,
+          endereco: enderecoFinal,
           latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
           longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
           nome_contato_emergencia: contatoEmergencia || null,
           telefone: telefoneEmergencia || null,
+          atendido_emaee: true,
           dados_matricula: updatedDadosMatricula
         }
 
@@ -888,7 +996,16 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     nomePai, setNomePai,
     profissaoPai, setProfissaoPai,
     
-    // Endereço e Geolocalização
+    // Endereço Residencial Estruturado e Geolocalização
+    cep, setCep,
+    rua, setRua,
+    numero, setNumero,
+    bairro, setBairro,
+    cidadeEndereco, setCidadeEndereco,
+    ufEndereco, setUfEndereco,
+    isFetchingCep,
+    consultarCep,
+    formatCEP,
     endereco, setEndereco,
     latitude, setLatitude,
     longitude, setLongitude,

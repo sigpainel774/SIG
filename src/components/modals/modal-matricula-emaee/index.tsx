@@ -8,7 +8,6 @@ import { ModalMatriculaEmaeeProps } from './types'
 import { MatriculaEmaeeProvider, useMatriculaEmaeeContext } from './context/MatriculaEmaeeContext'
 
 // Subseções
-import { SecaoDadosAtendimento } from './components/SecaoDadosAtendimento'
 import { SecaoDadosAluno } from './components/SecaoDadosAluno'
 import { SecaoEscolaRegular } from './components/SecaoEscolaRegular'
 import { SecaoDadosClinicos } from './components/SecaoDadosClinicos'
@@ -24,11 +23,10 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
   }
 
   const steps = [
-    { id: 1, title: 'Atendimento', anchor: 'atendimento' },
-    { id: 2, title: 'Aluno', anchor: 'aluno' },
-    { id: 3, title: 'Escola regular', anchor: 'escola-regular' },
-    { id: 4, title: 'Dados clínicos', anchor: 'deficiencia' },
-    { id: 5, title: 'Assinaturas', anchor: 'assinaturas' },
+    { id: 1, title: 'Aluno e Endereço', anchor: 'aluno' },
+    { id: 2, title: 'Escola regular', anchor: 'escola-regular' },
+    { id: 3, title: 'Dados clínicos', anchor: 'deficiencia' },
+    { id: 4, title: 'Assinaturas', anchor: 'assinaturas' },
   ]
 
   const scrollToSection = (stepId: number, anchor: string) => {
@@ -134,12 +132,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           })}
         </nav>
 
-        {/* Formulário Principal com as 5 seções */}
+        {/* Formulário Principal com as 4 seções */}
         <form ref={formRef} id="ficha-aee-form" onSubmit={handleSubmit} className="space-y-6">
-          <div id="atendimento">
-            <SecaoDadosAtendimento />
-          </div>
-
           <div id="aluno">
             <SecaoDadosAluno />
           </div>
