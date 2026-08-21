@@ -425,7 +425,7 @@ export function SecaoDadosAluno() {
                     </div>
                     <div className="relative">
                       <Input
-                        placeholder="44530-000"
+                        placeholder=""
                         value={cep}
                         onChange={(e) => {
                           const val = formatCEP(e.target.value)
