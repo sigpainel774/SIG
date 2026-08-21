@@ -32,7 +32,7 @@ export function SecaoEscolaRegular() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border-b border-border bg-muted/40 dark:bg-white/[0.012]">
         <div className="flex items-start gap-3">
           <span className="grid place-items-center w-9 h-9 flex-shrink-0 rounded-xl bg-primary/10 font-extrabold text-sm text-primary">
-            03
+            02
           </span>
           <div>
             <h2 className="text-base font-bold text-foreground">Unidade escolar da escolarização regular</h2>

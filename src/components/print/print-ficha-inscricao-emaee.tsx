@@ -72,14 +72,25 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
 
   if (!mounted) return null
 
-  // Helper para formatar data BR
+  // Helper para formatar data BR (dd/mm/aaaa)
   const formatarData = (val?: string | null) => {
     if (!val) return '-'
+    const str = String(val).trim()
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      const [ano, mes, dia] = str.substring(0, 10).split('-')
+      return `${dia}/${mes}/${ano}`
+    }
     try {
-      const d = new Date(val.includes('T') ? val : `${val}T00:00:00`)
-      return isNaN(d.getTime()) ? val : d.toLocaleDateString('pt-BR')
+      const d = new Date(str.includes('T') ? str : `${str}T00:00:00`)
+      if (!isNaN(d.getTime())) {
+        const dia = String(d.getDate()).padStart(2, '0')
+        const mes = String(d.getMonth() + 1).padStart(2, '0')
+        const ano = d.getFullYear()
+        return `${dia}/${mes}/${ano}`
+      }
+      return str
     } catch {
-      return val
+      return str
     }
   }
 

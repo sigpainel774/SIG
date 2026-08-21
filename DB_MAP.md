@@ -133,9 +133,9 @@ Cadastro geral de alunos.
 *   `uf_nascimento`, `municipio_nascimento`, `zona_residencial`: `text` (Local de nascimento e zona residencial Urbana/Rural, Nullable)
 *   `codigo_temp_resp`: `text` (Código de acesso temporário para o Responsável pelo aluno, Nullable)
 *   `codigo_temp_func`: `text` (Código de acesso temporário para funcionários, Nullable)
-*   `codigo_temp_resp_criado_em`: `timestamp with time zone` (Data de expiração do código do Responsável, Nullable)
 *   `codigo_temp_func_criado_em`: `timestamp with time zone` (Data de expiração do código do funcionário, Nullable)
 *   `historico`: `text` (Histórico escolar e anotações pedagógicas gerais, Nullable)
+*   `atendido_emaee`: `boolean` (Default: false, Indica se o aluno possui encaminhamento ou atendimento ativo no EMAEE, NOT NULL)
 *   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 *   `deleted_at`: `timestamp with time zone` (Nullable)
 
