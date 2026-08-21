@@ -180,6 +180,7 @@ src/
 *   **`public.calendario_eventos`**: Feriados, pontos facultativos, recessos e sábados letivos do calendário anual.
 *   **`public.calendario_historico`**: Trilha de auditoria das alterações no calendário letivo oficial.
 *   **`public.notas_atividades`**: Lançamento de notas individuais de atividades escolares do trimestre.
+*   **`public.logs_acesso_relatorios`**: Logs de auditoria e conformidade de acesso aos relatórios estratégicos e dados sensíveis de saúde (LGPD).
 
 ---
 

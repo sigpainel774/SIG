@@ -991,12 +991,29 @@ Parâmetros de configuração e sensibilidade do módulo de defesa do SIG.
 *   `whitelist_ips_padrao`: `text[]` (Array de IPs confiáveis, Default: `ARRAY['127.0.0.1', '::1']`, Nullable)
 *   `updated_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
 
+### 77. `public.logs_acesso_relatorios`
+Logs de auditoria e conformidade de acesso aos relatórios estratégicos e dados sensíveis de saúde (LGPD).
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `usuario_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `auth_user_id`: `uuid` (FK -> `auth.users.id`, Nullable)
+*   `nivel_acesso`: `text` (Ex: 'Superadmin Root', 'Nível 1 (Secretaria de Educação)', 'Nível 2 (Gestão EMAEE)', NOT NULL)
+*   `relatorio`: `text` (Identificador do relatório, e.g. 'emaee_estrategico', NOT NULL, Default: 'emaee_estrategico')
+*   `escopo`: `text` (Descrição da abrangência consultada, e.g. 'Rede Municipal de Sapeaçu' ou nome da unidade EMAEE, NOT NULL)
+*   `acao`: `text` (Ação realizada: 'visualizacao', 'impressao', 'exportacao', NOT NULL)
+*   `ip`: `text` (Endereço IP do requisitante, Nullable)
+*   `user_agent`: `text` (Navegador/Agente HTTP, Nullable)
+*   `criado_em`: `timestamp with time zone` (NOT NULL, Default: `now()`)
+
 ---
 
 ## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
 
 | Nome da RPC | Parâmetros | Tipo de Retorno | Descrição & Propósito |
 |-------------|------------|-----------------|------------------------|
+| `public.obter_relatorio_emaee_agregado` | `p_ano INT DEFAULT NULL, p_escola_id UUID DEFAULT NULL` | `jsonb` | Retorna o payload consolidado de 5 eixos do Relatório Estratégico do EMAEE (KPIs, epidemiologia, especialidades, escolas de origem, intersetorialidade, logística) com validação de `auth.uid()`, bloqueio de dados nominais para Nível 1 e registro de auditoria. |
+| `public.obter_relatorio_emaee_detalhe_paciente` | `p_paciente_id UUID` | `jsonb` | Retorna o detalhe de prontuário individual de um paciente exclusivamente para gestores clínicos Nível 2 vinculados à mesma unidade EMAEE. Bloqueia Nível 1 e acessos externos. |
+| `public.obter_logs_acesso_relatorios` | `p_limit INT DEFAULT 50, p_offset INT DEFAULT 0, p_relatorio TEXT DEFAULT NULL, p_data_inicio DATE DEFAULT NULL, p_data_fim DATE DEFAULT NULL` | `TABLE (...)` | Retorna o histórico paginado de acessos e ações nos relatórios estratégicos para auditoria administrativa (Apenas Superadmin e Nível 1). |
+| `public.registrar_log_acao_relatorio` | `p_relatorio TEXT, p_acao TEXT, p_escopo TEXT DEFAULT 'Rede Municipal de Sapeaçu'` | `boolean` | Registra explicitamente ações disparadas pelo frontend como 'impressao' de relatórios oficiais. |
 | `public.get_session_timeout_rules_for_user` | `none` | `TABLE (id UUID, nome TEXT, horarios TEXT[], dias_semana SMALLINT[], tolerancia_minutos INT, escopo TEXT)` | Retorna as regras ativas de encerramento de sessão aplicáveis ao usuário logado (isenta Superadmin e Nível 1). |
 | `public.verificar_pendencias_pontuacao_trimestre` | `p_escola_id UUID, p_professor_id UUID DEFAULT NULL` | `jsonb` | Verifica se turmas e disciplinas possuem pontuação cadastrada inferior a 10.0 pts a 5 dias do encerramento oficial do trimestre (consultando `calendarios_academicos` e fallback para `prazos_unidades`), disparando notificações automáticas para Professores e Diretores. Excetua unidades EMAEE. |
 | `public.verificar_trava_edicao_funcionario` | `p_funcionario_alvo_id UUID` | `boolean` | Valida de forma atômica e segura se um servidor está bloqueado para edição cadastral por escopo de rede, secretaria ou unidade escolar. |
