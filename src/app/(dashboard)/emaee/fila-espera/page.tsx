@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { StandardDialog } from '@/components/ui/standard-dialog'
+import { getAvatarUrl } from '@/lib/photoHelper'
 
 export default function FilaEsperaPage() {
   const { escolaAtivaId, funcionario } = useAuthStore()
@@ -29,57 +30,88 @@ export default function FilaEsperaPage() {
   const [busca, setBusca] = useState('')
   const [admitindo, setAdmitindo] = useState(false)
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   // Controle do modal de admissão
   const [selectedPaciente, setSelectedPaciente] = useState<any | null>(null)
   const [statusAdmissao, setStatusAdmissao] = useState<'ATIVO' | 'EM_INVESTIGACAO'>('ATIVO')
 
   const carregarFila = async () => {
-    if (!escolaAtivaId) return
     setCarregando(true)
     const supabase = createClient()
     try {
-      const { data, error } = await supabase
+      const isEmaeeUnit = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome ?? '')
+
+      let query = supabase
         .from('emaee_matriculas')
         .select(`
           *,
-          alunos!inner (
+          alunos (
             id,
             nome,
             cpf,
             telefone,
-            data_nascimento
+            data_nascimento,
+            foto_url,
+            foto_avatar_path,
+            foto_visualizacao_path,
+            foto_updated_at
           ),
+          escola_origem_fora_rede,
+          escola_origem_nome,
+          escola_origem_municipio,
+          escola_origem_uf,
           escolas:escola_regular_id (
             nome
           )
         `)
-        .eq('escola_atendimento_id', escolaAtivaId)
         .eq('status', 'FILA_ESPERA')
         .is('deleted_at', null)
         .order('data_matricula', { ascending: true })
 
+      if (escolaAtivaId && isEmaeeUnit) {
+        query = query.eq('escola_atendimento_id', escolaAtivaId)
+      }
+
+      const { data, error } = await query
+
       if (error) throw error
-      setFila(data ?? [])
+      if (isMounted.current) {
+        setFila(data ?? [])
+      }
     } catch (err: any) {
       console.error('Erro ao carregar fila de espera:', err)
       toast.error('Erro ao obter os registros da fila de espera.')
+      if (isMounted.current) {
+        setFila([])
+      }
     } finally {
-      setFila((prev) => prev ?? [])
-      setCarregando(false)
+      if (isMounted.current) {
+        setCarregando(false)
+      }
     }
   }
 
   useEffect(() => {
     carregarFila()
-  }, [escolaAtivaId])
+  }, [escolaAtivaId, selectedEscola?.id])
 
-  const filaFiltrada = fila.filter((item) => {
-    const nomeAluno = (item.alunos?.nome ?? '').toLowerCase()
-    const cpfAluno = (item.alunos?.cpf ?? '').toLowerCase()
-    const escolaNome = (item.escola_origem_nome || item.escolas?.nome || '').toLowerCase()
-    const txtBusca = busca.toLowerCase().trim()
-    return nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
-  })
+  const filaFiltrada = useMemo(() => {
+    return fila.filter((item) => {
+      const nomeAluno = (item.alunos?.nome ?? '').toLowerCase()
+      const cpfAluno = (item.alunos?.cpf ?? '').toLowerCase()
+      const escolaNome = (item.escola_origem_nome ?? item.escolas?.nome ?? '').toLowerCase()
+      const txtBusca = busca.toLowerCase().trim()
+      return nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
+    })
+  }, [fila, busca])
 
   const handleAdmitir = async () => {
     if (!selectedPaciente) return
@@ -99,7 +131,7 @@ export default function FilaEsperaPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            escolaId: escolaAtivaId,
+            escolaId: selectedPaciente?.escola_atendimento_id ?? escolaAtivaId ?? null,
             titulo: 'Admissão do EMAEE',
             mensagem: `${funcionario?.nome ?? 'Profissional'} admitiu o aluno ${selectedPaciente.alunos?.nome ?? 'Desconhecido'} na fila de espera com status: ${statusAdmissao === 'ATIVO' ? 'Em Atendimento' : 'Em Investigação'}.`,
             tipoNotificacao: 'matricula',
@@ -129,7 +161,9 @@ export default function FilaEsperaPage() {
       console.error('Erro ao admitir aluno:', err)
       toast.error('Erro ao admitir o aluno da fila de espera: ' + (err.message ?? 'Tente novamente.'))
     } finally {
-      setAdmitindo(false)
+      if (isMounted.current) {
+        setAdmitindo(false)
+      }
     }
   }
 
@@ -185,6 +219,8 @@ export default function FilaEsperaPage() {
               ? new Date(`${paciente.data_matricula}T00:00:00`).toLocaleDateString('pt-BR')
               : 'Não informada'
 
+            const avatarUrl = getAvatarUrl(paciente.alunos)
+
             return (
               <Card
                 key={paciente.id}
@@ -193,12 +229,20 @@ export default function FilaEsperaPage() {
                 <div>
                   <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {paciente.alunos?.nome?.substring(0, 2).toUpperCase()}
-                      </div>
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={paciente.alunos?.nome ?? 'Aluno'}
+                          className="w-10 h-10 rounded-xl object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {paciente.alunos?.nome?.substring(0, 2).toUpperCase() ?? 'AL'}
+                        </div>
+                      )}
                       <div>
                         <h3 className="text-sm font-semibold text-foreground truncate max-w-[160px]" title={paciente.alunos?.nome}>
-                          {paciente.alunos?.nome}
+                          {paciente.alunos?.nome ?? 'Sem nome'}
                         </h3>
                         <span className="text-[10px] text-muted-foreground block">
                           Cadastro: {dataCadastro}
@@ -324,3 +368,4 @@ export default function FilaEsperaPage() {
     </div>
   )
 }
+
