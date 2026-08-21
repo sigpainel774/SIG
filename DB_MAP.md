@@ -1004,7 +1004,23 @@ Logs de auditoria e conformidade de acesso aos relatórios estratégicos e dados
 *   `user_agent`: `text` (Navegador/Agente HTTP, Nullable)
 *   `criado_em`: `timestamp with time zone` (NOT NULL, Default: `now()`)
 
+### 78. `public.registros_visitas_rotas`
+Histórico de visitas, paradas e check-ins realizados durante a execução de rotas e roteiros de escolas com suporte a sincronização offline.
+*   `id`: `uuid` (Primary Key, NOT NULL, Default: `gen_random_uuid()`)
+*   `escola_id`: `uuid` (FK -> `public.escolas.id`, Nullable)
+*   `funcionario_id`: `uuid` (FK -> `public.funcionarios.id`, Nullable)
+*   `rota_nome`: `text` (Nome do roteiro, Default: 'Roteiro de Visitas', NOT NULL)
+*   `data_hora_chegada`: `timestamp with time zone` (Data/hora de registro da visita, NOT NULL, Default: `now()`)
+*   `latitude`, `longitude`: `numeric` (Coordenadas geográficas do registro, Nullable)
+*   `distancia_ponto_metros`: `numeric` (Distância em metros até a escola de destino, Nullable)
+*   `odometro_km`: `numeric` (Quilometragem opcional do veículo, Nullable)
+*   `observacoes`: `text` (Anotações ou ocorrências registradas na parada, Nullable)
+*   `status`: `text` ('REALIZADA', 'IMPREVISTO', 'AUSENTE', Default: 'REALIZADA', NOT NULL)
+*   `sincronizado_em`: `timestamp with time zone` (Data/hora de sincronização com o banco de dados, NOT NULL, Default: `now()`)
+*   `created_at`: `timestamp with time zone` (NOT NULL, Default: `timezone('utc'::text, now())`)
+
 ---
+
 
 ## ⚡ Stored Procedures & Funções RPC (PL/pgSQL)
 
