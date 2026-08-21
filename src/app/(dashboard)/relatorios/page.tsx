@@ -14,9 +14,6 @@ import { toast } from 'sonner'
 const RelatorioNotas = dynamic(() => import('@/components/relatorios/RelatorioNotas'), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório de desempenho...</div>
 })
-const RelatorioNecessidades = dynamic(() => import('@/components/relatorios/RelatorioNecessidades'), {
-  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório...</div>
-})
 const RelatorioOcorrencias = dynamic(() => import('@/components/relatorios/RelatorioOcorrencias'), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ocorrências...</div>
 })
@@ -46,12 +43,11 @@ import {
   GraduationCap,
   FileCheck,
   Activity,
-  ShieldAlert,
   Heart
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'necessidades_especiais' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
@@ -111,13 +107,6 @@ const REPORT_CARDS = [
     description: 'Inteligência clínica, censo de neurodesenvolvimento, especialidades e rede.',
     icon: Heart,
     variant: 'primary' as const,
-  },
-  {
-    id: 'necessidades_especiais' as const,
-    title: 'Necessidades Especiais',
-    description: 'Módulo em desenvolvimento. Informações de AEE e Ficha de Saúde.',
-    icon: ShieldAlert,
-    variant: 'warning' as const,
   },
 ]
 
@@ -556,7 +545,7 @@ export default function RelatoriosPage() {
               </Button>
             )}
 
-            {activeReport !== 'mapa' && (
+            {activeReport !== 'mapa' && activeReport !== 'emaee_estrategico' && (
               <Button
                 onClick={handleGlobalPrint}
                 className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
@@ -638,8 +627,6 @@ export default function RelatoriosPage() {
               )}
             </div>
           </div>
-        ) : activeReport === 'necessidades_especiais' ? (
-          <RelatorioNecessidades selectedEscola={selectedEscola} />
         ) : activeReport === 'ocorrencias' ? (
           <RelatorioOcorrencias selectedEscola={selectedEscola} />
         ) : (
@@ -711,7 +698,6 @@ export default function RelatoriosPage() {
             'presenca': 'geolocalizacao',
             'atividades': 'central-atividades',
             'emaee_estrategico': 'pacientes',
-            'necessidades_especiais': 'pacientes',
             'fila_espera': 'fila-espera',
           }
           const modulosSecretaria = selectedSecretaria?.modulos_ativos
@@ -723,7 +709,7 @@ export default function RelatoriosPage() {
           }
 
           if (isEMAEE) {
-            const permitidosEMAEE = ['emaee_estrategico', 'necessidades_especiais', 'fila_espera', 'mapa']
+            const permitidosEMAEE = ['emaee_estrategico', 'fila_espera', 'mapa']
             return permitidosEMAEE.includes(card.id)
           }
           if (isSaude) {

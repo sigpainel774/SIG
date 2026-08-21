@@ -5,7 +5,6 @@ import {
   Heart,
   Users,
   Activity,
-  Printer,
   RefreshCw,
   ShieldCheck,
   Building2,
@@ -39,7 +38,7 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts'
-import { PrintRelatorioEmaeeEstrategico, RelatorioEmaeePrintPayload } from '@/components/print/print-relatorio-emaee-estrategico'
+import { RelatorioEmaeePrintPayload } from '@/components/print/print-relatorio-emaee-estrategico'
 
 interface RelatorioEmaeeProps {
   selectedEscola?: {
@@ -72,7 +71,6 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'epidemiologia' | 'especialidades' | 'origem' | 'logistica'>('epidemiologia')
   const [data, setData] = useState<RelatorioEmaeePrintPayload | null>(null)
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const isMountedRef = useRef<boolean>(true)
@@ -242,15 +240,6 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
             >
               <RefreshCw className={cn('w-3.5 h-3.5 text-muted-foreground', isRefreshing && 'animate-spin text-primary')} />
               <span>{isRefreshing ? 'Atualizando...' : 'Atualizar Dados'}</span>
-            </Button>
-
-            {/* Botão Imprimir A4 */}
-            <Button
-              onClick={() => setIsPrintModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-xl gap-2 h-9 shadow"
-            >
-              <Printer className="w-4 h-4" />
-              Visualizar & Imprimir (A4)
             </Button>
           </div>
         </div>
@@ -633,14 +622,6 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal de Impressão A4 */}
-      {isPrintModalOpen && data && (
-        <PrintRelatorioEmaeeEstrategico
-          data={data}
-          onClose={() => setIsPrintModalOpen(false)}
-        />
       )}
     </div>
   )
