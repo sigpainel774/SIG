@@ -115,12 +115,20 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   });
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Modal de Check-in Manual
+  // Estados do Ciclo de Vida da Ronda (Livre: Iniciar, Pausar, Retomar, Finalizar)
+  const [statusRonda, setStatusRonda] = useState<'INATIVA' | 'EM_ANDAMENTO' | 'PAUSADA'>('INATIVA');
+  const [horaInicioRonda, setHoraInicioRonda] = useState<string | null>(null);
+  const [modalFinalizarRondaAberto, setModalFinalizarRondaAberto] = useState(false);
+
+  // Modal de Check-in (Ponto da Rota ou Ponto Livre / Avulso)
   const [modalCheckinAberto, setModalCheckinAberto] = useState(false);
   const [escolaCheckin, setEscolaCheckin] = useState<PontoLocalizacao | null>(null);
+  const [isCheckinLivre, setIsCheckinLivre] = useState(false);
+  const [nomeLocalLivre, setNomeLocalLivre] = useState('');
   const [obsCheckin, setObsCheckin] = useState('');
   const [statusVisitaInput, setStatusVisitaInput] = useState<'REALIZADA' | 'IMPREVISTO' | 'AUSENTE'>('REALIZADA');
   const [odometroInput, setOdometroInput] = useState('');
+
 
   // Localização da SEMED (INEP 01 - Sede Administrativa da Educação)
   const semedUnidade = useMemo(() => {
@@ -416,35 +424,87 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     }
   };
 
-  // Iniciar / Pausar Navegação com GPS
-  const toggleNavegacaoGps = () => {
-    if (gpsAtivo) {
-      pararGps();
-      toast.info('Navegação GPS pausada.');
-    } else {
-      iniciarGps();
-      setSeguirCarro(true);
-      toast.success('Navegação iniciada! GPS em alta precisão ativo.', {
-        icon: '🚗',
-      });
-    }
+  // Controles do Ciclo de Vida da Ronda Livre
+  const iniciarRonda = () => {
+    iniciarGps();
+    setSeguirCarro(true);
+    setStatusRonda('EM_ANDAMENTO');
+    const agora = new Date().toISOString();
+    setHoraInicioRonda(agora);
+    salvarRotaAtiva({
+      id: 'rota_ativa_atual',
+      nome: 'Roteiro de Visitas',
+      data_inicio: agora,
+      escolasSelecionadas,
+      resultadoRoteiro,
+      paradasConcluidas,
+      emNavegacao: true,
+    });
+    toast.success('Ronda iniciada! GPS em alta precisão ativo.', {
+      icon: '🚗',
+    });
   };
 
-  // Abrir modal de Check-in para uma escola
+  const pausarRonda = () => {
+    pararGps();
+    setStatusRonda('PAUSADA');
+    toast.info('Ronda e navegação GPS pausadas.');
+  };
+
+  const retomarRonda = () => {
+    iniciarGps();
+    setSeguirCarro(true);
+    setStatusRonda('EM_ANDAMENTO');
+    toast.success('Ronda retomada! Rastreamento GPS ativo.', {
+      icon: '🚗',
+    });
+  };
+
+  const abrirFinalizacaoRonda = () => {
+    setModalFinalizarRondaAberto(true);
+  };
+
+  const confirmarFinalizarRonda = async () => {
+    pararGps();
+    setStatusRonda('INATIVA');
+    setHoraInicioRonda(null);
+    setModalFinalizarRondaAberto(false);
+    toast.success('Ronda finalizada com sucesso! Todos os registros foram consolidados.');
+  };
+
+  // Abrir modal de Check-in para uma escola da rota
   const abrirCheckinEscola = (esc: PontoLocalizacao) => {
     setEscolaCheckin(esc);
+    setIsCheckinLivre(false);
+    setNomeLocalLivre('');
     setObsCheckin('');
     setStatusVisitaInput('REALIZADA');
     setOdometroInput('');
     setModalCheckinAberto(true);
   };
 
-  // Confirmar Registro de Visita / Check-in
+  // Abrir modal de Check-in Livre (ponto avulso)
+  const abrirCheckinLivre = () => {
+    setEscolaCheckin(null);
+    setIsCheckinLivre(true);
+    setNomeLocalLivre('');
+    setObsCheckin('');
+    setStatusVisitaInput('REALIZADA');
+    setOdometroInput('');
+    setModalCheckinAberto(true);
+  };
+
+  // Confirmar Registro de Visita / Check-in (Escola ou Ponto Livre)
   const salvarCheckinVisita = async () => {
-    if (!escolaCheckin) return;
+    const nomeFinal = isCheckinLivre
+      ? (nomeLocalLivre.trim() || 'Check-in Livre / Ponto Avulso')
+      : (escolaCheckin?.nome || 'Ponto de Parada');
 
     let distMetros: number | null = null;
-    if (posicaoVeiculo && escolaCheckin.latitude && escolaCheckin.longitude) {
+    const latPonto = escolaCheckin?.latitude ?? posicaoVeiculo?.latitude ?? SEDE_SEMED_SAPEACU.latitude;
+    const lngPonto = escolaCheckin?.longitude ?? posicaoVeiculo?.longitude ?? SEDE_SEMED_SAPEACU.longitude;
+
+    if (posicaoVeiculo && escolaCheckin?.latitude && escolaCheckin?.longitude) {
       distMetros = Math.round(
         calcularDistanciaHaversine(
           posicaoVeiculo.latitude,
@@ -457,13 +517,13 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
     const novoRegistro: VisitaPonto = {
       id: crypto.randomUUID(),
-      escola_id: escolaCheckin.tipo === 'SECRETARIA' ? null : escolaCheckin.id,
-      escola_nome: escolaCheckin.nome,
+      escola_id: isCheckinLivre || escolaCheckin?.tipo === 'SECRETARIA' ? null : (escolaCheckin?.id ?? null),
+      escola_nome: nomeFinal,
       funcionario_id: funcionario?.id ?? null,
       rota_nome: 'Roteiro de Visitas',
       data_hora_chegada: new Date().toISOString(),
-      latitude: posicaoVeiculo?.latitude ?? escolaCheckin.latitude,
-      longitude: posicaoVeiculo?.longitude ?? escolaCheckin.longitude,
+      latitude: posicaoVeiculo?.latitude ?? latPonto,
+      longitude: posicaoVeiculo?.longitude ?? lngPonto,
       distancia_ponto_metros: distMetros,
       odometro_km: odometroInput ? parseFloat(odometroInput.replace(',', '.')) : null,
       observacoes: obsCheckin.trim() || null,
@@ -474,27 +534,29 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     // 1. Salva na fila offline local (IndexedDB)
     await enfileirarVisitaOffline(novoRegistro);
 
-    // 2. Atualiza estado de paradas concluídas
-    const novasConcluidas = Array.from(new Set([...paradasConcluidas, escolaCheckin.id]));
-    setParadasConcluidas(novasConcluidas);
+    // 2. Atualiza estado de paradas concluídas (se for escola cadastrada)
+    if (escolaCheckin?.id) {
+      const novasConcluidas = Array.from(new Set([...paradasConcluidas, escolaCheckin.id]));
+      setParadasConcluidas(novasConcluidas);
 
-    if (resultadoRoteiro) {
-      salvarRotaAtiva({
-        id: 'rota_ativa_atual',
-        nome: 'Roteiro de Visitas',
-        data_inicio: new Date().toISOString(),
-        escolasSelecionadas,
-        resultadoRoteiro,
-        paradasConcluidas: novasConcluidas,
-        emNavegacao: gpsAtivo,
-      });
+      if (resultadoRoteiro) {
+        salvarRotaAtiva({
+          id: 'rota_ativa_atual',
+          nome: 'Roteiro de Visitas',
+          data_inicio: horaInicioRonda || new Date().toISOString(),
+          escolasSelecionadas,
+          resultadoRoteiro,
+          paradasConcluidas: novasConcluidas,
+          emNavegacao: gpsAtivo,
+        });
+      }
     }
 
     const pendentes = await obterVisitasPendentes();
     setVisitasPendentes(pendentes);
     setModalCheckinAberto(false);
 
-    toast.success(`Check-in em ${escolaCheckin.nome} registrado!`, {
+    toast.success(`Check-in em "${nomeFinal}" registrado!`, {
       description: isOnline
         ? 'Enviando ao servidor...'
         : 'Salvo no aparelho. Será enviado quando a internet voltar.',
@@ -505,6 +567,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       sincronizarFilaComServidor();
     }
   };
+
 
   // Iniciar Download de Mapa Offline de Sapeaçu
   const handleBaixarMapaOffline = async () => {
@@ -670,8 +733,19 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             )}
           </div>
 
-          {/* Botões de Ação GPS e Download Offline */}
-          <div className="flex items-center gap-2">
+          {/* Botões de Ação da Ronda, GPS e Download Offline */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Botão de Check-in Livre (Qualquer Local) */}
+            <button
+              type="button"
+              onClick={abrirCheckinLivre}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/25 transition-colors cursor-pointer shadow-2xs"
+              title="Registrar um ponto de parada ou check-in avulso em qualquer local"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Check-in Livre</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setModalOfflineAberto(true)}
@@ -687,28 +761,51 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={toggleNavegacaoGps}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm',
-                gpsAtivo
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-              )}
-            >
-              {gpsAtivo ? (
-                <>
+            {/* Controles de Ronda: Iniciar / Pausar / Retomar / Finalizar */}
+            {statusRonda === 'INATIVA' ? (
+              <button
+                type="button"
+                onClick={iniciarRonda}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                <Car className="w-4 h-4" />
+                <span>Iniciar Ronda</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl border border-border">
+                {statusRonda === 'EM_ANDAMENTO' ? (
+                  <button
+                    type="button"
+                    onClick={pausarRonda}
+                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all cursor-pointer shadow-xs"
+                    title="Pausar rastreamento da ronda"
+                  >
+                    <Square className="w-3.5 h-3.5" />
+                    <span>Pausar</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={retomarRonda}
+                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all cursor-pointer shadow-xs"
+                    title="Retomar rastreamento da ronda"
+                  >
+                    <Car className="w-3.5 h-3.5" />
+                    <span>Retomar</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={abrirFinalizacaoRonda}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-all cursor-pointer shadow-xs"
+                  title="Finalizar e encerrar esta ronda"
+                >
                   <Square className="w-3.5 h-3.5" />
-                  <span>Pausar GPS</span>
-                </>
-              ) : (
-                <>
-                  <Car className="w-4 h-4" />
-                  <span>Iniciar Navegação GPS</span>
-                </>
-              )}
-            </button>
+                  <span>Finalizar Ronda</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -721,7 +818,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400">
-                  <span>Navegando com GPS via Satélite</span>
+                  <span>Ronda em Andamento (GPS Satélite)</span>
                   {posicaoVeiculo && (
                     <span className="text-[11px] text-foreground font-semibold">
                       • {posicaoVeiculo.speedKmh} km/h
@@ -736,7 +833,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                       : `${proximaParada.distanciaMetros} metros`})
                   </p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Aguardando definição de rota...</p>
+                  <p className="text-xs text-muted-foreground">Rastreando trajeto em tempo real...</p>
                 )}
               </div>
             </div>
@@ -1431,8 +1528,8 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         </div>
       )}
 
-      {/* Modal de Check-in / Registro de Visita */}
-      {modalCheckinAberto && escolaCheckin && (
+      {/* Modal de Check-in / Registro de Visita (Escola da Rota ou Ponto Livre) */}
+      {modalCheckinAberto && (
         <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-border pb-3">
@@ -1441,8 +1538,12 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-foreground">Registro de Chegada / Visita</h3>
-                  <p className="text-xs text-muted-foreground truncate max-w-[240px]">{escolaCheckin.nome}</p>
+                  <h3 className="font-bold text-sm text-foreground">
+                    {isCheckinLivre ? 'Check-in Livre / Ponto Avulso' : 'Registro de Chegada / Visita'}
+                  </h3>
+                  <p className="text-xs text-muted-foreground truncate max-w-[240px]">
+                    {isCheckinLivre ? 'Registro instantâneo via GPS' : (escolaCheckin?.nome ?? 'Ponto da Rota')}
+                  </p>
                 </div>
               </div>
               <button
@@ -1455,6 +1556,21 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             </div>
 
             <div className="flex flex-col gap-3">
+              {isCheckinLivre && (
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">
+                    Nome do Local / Ponto Avulso *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Posto São Cristóvão, Secretaria de Obras, Escola Fechada..."
+                    value={nomeLocalLivre}
+                    onChange={(e) => setNomeLocalLivre(e.target.value)}
+                    className="w-full bg-surface-2 dark:bg-secondary/40 border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-sky-500 font-semibold"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">
                   Status da Visita
@@ -1527,6 +1643,66 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmação para Finalizar Ronda */}
+      {modalFinalizarRondaAberto && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                  <Car className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Finalizar Ronda</h3>
+                  <p className="text-xs text-muted-foreground">Consolidação e encerramento do trajeto</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalFinalizarRondaAberto(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-surface-2 dark:bg-secondary/40 border border-border rounded-xl text-xs text-muted-foreground flex flex-col gap-2">
+              <p className="text-foreground font-semibold">
+                Deseja realmente finalizar a ronda em andamento?
+              </p>
+              <p>
+                O rastreamento de GPS será desativado e todos os check-ins registrados ficarão disponíveis no Histórico & Replay.
+              </p>
+              {horaInicioRonda && (
+                <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-foreground font-bold">
+                  <span>Início da Ronda:</span>
+                  <span>{new Date(horaInicioRonda).toLocaleTimeString('pt-BR')}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setModalFinalizarRondaAberto(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                Continuar Ronda
+              </button>
+              <button
+                type="button"
+                onClick={confirmarFinalizarRonda}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <Square className="w-3.5 h-3.5" />
+                Confirmar e Finalizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
