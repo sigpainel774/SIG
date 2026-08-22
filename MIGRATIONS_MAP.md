@@ -13,7 +13,7 @@ Este arquivo descreve o histÃ³rico completo e a finalidade de todas as migrati
 
 ---
 
-## ðŸ—ºï¸� InventÃ¡rio Completo de Migrations (68 Arquivos)
+## 🗺️ Inventário Completo de Migrations (112 Arquivos)
 
 | # | Arquivo / Migration | Data / Prefixo | PropÃ³sito & DescriÃ§Ã£o | Tabelas / Entidades Afetadas | RLS / SeguranÃ§a |
 |---|---------------------|----------------|-----------------------|------------------------------|-----------------|
@@ -128,3 +128,4 @@ Este arquivo descreve o histÃ³rico completo e a finalidade de todas as migrati
 | 109 | `20260821150000_add_condicoes_saude_to_emaee_matriculas.sql` | 2026-08-21 | Adiciona coluna `condicoes_saude` (JSONB) na tabela `public.emaee_matriculas` para mapeamento das condições de saúde e neurodesenvolvimento com CIDs específicos (TEA, TDAH, DI, Dislexia, Disgrafia, TOD, Ansiedade, Superdotação). | `public.emaee_matriculas` | Mantém RLS Existente |
 | 110 | `20260821160000_relatorio_estrategico_emaee_and_logs.sql` | 2026-08-21 | Criação da tabela `logs_acesso_relatorios`, índices de agregação, RPCs `obter_relatorio_emaee_agregado`, `obter_relatorio_emaee_detalhe_paciente`, `obter_logs_acesso_relatorios` e `registrar_log_acao_relatorio` com segregação LGPD. | `public.logs_acesso_relatorios`, `public.emaee_matriculas`, `public.emaee_evolucoes` | `SECURITY DEFINER` + RLS Superadmin/Nível 1 |
 | 111 | `20260822000000_create_registros_visitas_rotas.sql` | 2026-08-22 | Criação da tabela `registros_visitas_rotas`, índices de rota, escola e funcionário, e políticas RLS para auditoria de check-ins e visitas offline/online. | `public.registros_visitas_rotas` | RLS Authenticated |
+| 112 | `20260822140000_fix_overloaded_rpcs_cleanup.sql` | 2026-08-22 | Limpeza de sobrecargas obsoletas das RPCs `get_relatorio_servidores`, `get_birthdays_of_month` e `get_user_navigation_trail_admin` para eliminar erro 42725 de ambiguidade no PostgreSQL/PostgREST. | RPCs do schema `public` | `SECURITY DEFINER` |
