@@ -19,12 +19,17 @@ import {
   Route,
   Navigation,
   Gauge,
+  MoreVertical,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MapaReplayPercurso } from './MapWrapper';
 import { VisitaHistoricoItem } from './MapaReplayPercurso';
 import { SEDE_SEMED_SAPEACU } from '@/lib/routeOptimizer';
+import { StandardDialog } from '@/components/ui/standard-dialog';
+import { Button } from '@/components/ui/button';
+import { removerVisitaOffline } from '@/lib/offlineRouteStore';
 
 export default function HistoricoPercursosTab() {
   const supabase = createClient();
@@ -33,7 +38,11 @@ export default function HistoricoPercursosTab() {
   const [busca, setBusca] = useState('');
   const [filtroData, setFiltroData] = useState<string>('todas');
   const [sessaoSelecionada, setSessaoSelecionada] = useState<string | null>(null);
+  const [menuAbertoId, setMenuAbertoId] = useState<string | null>(null);
+  const [itemParaExcluir, setItemParaExcluir] = useState<VisitaHistoricoItem | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const isMounted = useRef(true);
+
 
   useEffect(() => {
     return () => {
@@ -123,9 +132,36 @@ export default function HistoricoPercursosTab() {
     }
   };
 
-  useEffect(() => {
-    carregarHistorico();
-  }, []);
+  // Função para executar a exclusão da visita / ronda
+  const handleConfirmarExclusao = async () => {
+    if (!itemParaExcluir) return;
+
+    setExcluindo(true);
+    try {
+      // 1. Remove do Supabase
+      const { error } = await supabase
+        .from('registros_visitas_rotas')
+        .delete()
+        .eq('id', itemParaExcluir.id);
+
+      if (error) throw error;
+
+      // 2. Remove da fila local do IndexedDB / LocalStorage para evitar re-sincronização
+      await removerVisitaOffline(itemParaExcluir.id);
+
+      // 3. Atualiza estado em memória
+      setVisitas((prev) => prev.filter((v) => v.id !== itemParaExcluir.id));
+      toast.success(`Registro de "${itemParaExcluir.escola_nome}" excluído com sucesso!`);
+      setItemParaExcluir(null);
+    } catch (err: any) {
+      console.error('Erro ao excluir registro de visita:', err);
+      toast.error('Não foi possível excluir o registro. Verifique suas permissões.');
+    } finally {
+      if (isMounted.current) {
+        setExcluindo(false);
+      }
+    }
+  };
 
   // Agrupamento de visitas por data (Fuso Horário do Brasil)
   const sessoesPorData = useMemo(() => {
@@ -207,6 +243,7 @@ export default function HistoricoPercursosTab() {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-200">
+
       {/* Cards de Resumo Analítico */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
@@ -374,12 +411,13 @@ export default function HistoricoPercursosTab() {
             <thead className="bg-muted/60 text-muted-foreground font-semibold border-b border-border uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="py-2.5 px-3">Data / Hora</th>
-                <th className="py-2.5 px-3">Unidade Escolar</th>
+                <th className="py-2.5 px-3">Unidade / Local</th>
                 <th className="py-2.5 px-3">Localização</th>
                 <th className="py-2.5 px-3">Distância GPS</th>
                 <th className="py-2.5 px-3">Responsável</th>
                 <th className="py-2.5 px-3">Status</th>
                 <th className="py-2.5 px-3">Observações</th>
+                <th className="py-2.5 px-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -468,13 +506,42 @@ export default function HistoricoPercursosTab() {
                         </span>
                       )}
                     </td>
+
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <div className="relative inline-block text-left">
+                        <button
+                          type="button"
+                          onClick={() => setMenuAbertoId(menuAbertoId === item.id ? null : item.id)}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                          title="Opções do Registro"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {menuAbertoId === item.id && (
+                          <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-card border border-border p-1.5 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuAbertoId(null);
+                                setItemParaExcluir(item);
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-lg font-semibold transition-colors cursor-pointer text-left"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Excluir Registro
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
 
               {visitasFiltradasTabela.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
                     <p className="text-xs font-semibold">Nenhuma parada encontrada com os filtros selecionados.</p>
                   </td>
                 </tr>
@@ -483,6 +550,67 @@ export default function HistoricoPercursosTab() {
           </table>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Exclusão com StandardDialog */}
+      {itemParaExcluir && (
+        <StandardDialog
+          open={Boolean(itemParaExcluir)}
+          onOpenChange={(open) => {
+            if (!open && !excluindo) setItemParaExcluir(null);
+          }}
+          title="Excluir Registro de Ronda"
+          description="Tem certeza que deseja excluir esta parada registrada no histórico de geolocalização?"
+          maxWidth="sm:max-w-[440px]"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={excluindo}
+                onClick={() => setItemParaExcluir(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={excluindo}
+                onClick={handleConfirmarExclusao}
+                className="gap-1.5 font-bold"
+              >
+                {excluindo ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Confirmar Exclusão
+                  </>
+                )}
+              </Button>
+            </div>
+          }
+        >
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div className="text-xs text-destructive-foreground space-y-1">
+              <p className="font-bold text-foreground">
+                Local: <span className="text-destructive font-bold">{itemParaExcluir.escola_nome}</span>
+              </p>
+              <p className="text-muted-foreground">
+                Horário: {new Date(itemParaExcluir.data_hora_chegada).toLocaleString('pt-BR', { timeZone: 'America/Bahia' })}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Esta ação removerá este ponto da auditoria de rotas e do simulador de replay.
+              </p>
+            </div>
+          </div>
+        </StandardDialog>
+      )}
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Gerenciador de Armazenamento Local e Fila Offline (IndexedDB / LocalStorage)
  * SIG - Sapeaçu / BA
  */
@@ -243,3 +243,30 @@ export async function marcarVisitasComoSincronizadas(ids: string[]): Promise<voi
     console.error('Erro ao marcar visitas como sincronizadas:', err);
   }
 }
+
+/**
+ * Remove uma visita do armazenamento local (IndexedDB e LocalStorage)
+ */
+export async function removerVisitaOffline(id: string): Promise<void> {
+  if (typeof window === 'undefined' || !id) return;
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
+    if (saved) {
+      const list: VisitaPonto[] = JSON.parse(saved);
+      const filtered = list.filter((item) => item.id !== id);
+      localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(filtered));
+    }
+  } catch {}
+
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_VISITAS, 'readwrite');
+    const store = tx.objectStore(STORE_VISITAS);
+    store.delete(id);
+  } catch (err) {
+    console.error('Erro ao remover visita do IndexedDB:', err);
+  }
+}
+
+
