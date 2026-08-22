@@ -6,8 +6,18 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SignaturePad } from '@/components/ui/SignaturePad'
-import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check } from 'lucide-react'
+import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check, UserPlus, CalendarDays, Clock, Trash2, User } from 'lucide-react'
 import { toast } from 'sonner'
+import { ModalVincularProfissionalAlunoAEE, VinculoAEEConfig } from './ModalVincularProfissionalAlunoAEE'
+
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  1: 'Segunda-feira',
+  2: 'Terça-feira',
+  3: 'Quarta-feira',
+  4: 'Quinta-feira',
+  5: 'Sexta-feira',
+  6: 'Sábado'
+}
 
 export function SecaoAssinaturasComprovante() {
   const {
@@ -18,6 +28,13 @@ export function SecaoAssinaturasComprovante() {
     turnoAtendimento,
     dataMatricula,
     
+    // Especialistas e Vínculos AEE
+    vinculosAEE,
+    adicionarVinculoAEE,
+    removerVinculoAEE,
+    modalVincularAEEOpen,
+    setModalVincularAEEOpen,
+
     // Assinaturas integradas e Coleta Local
     assinaturaResponsavelUrl, setAssinaturaResponsavelUrl,
     assinaturaServidorUrl, setAssinaturaServidorUrl,
@@ -34,6 +51,7 @@ export function SecaoAssinaturasComprovante() {
 
   const nomeUnidadeSelecionada = unidadesEmaee.find(u => u.id === escolaAtendimentoId)?.nome || 'EMAEE — Unidade Sede'
   const nomeAlunoExibicao = nomeCompleto || alunoSelecionado?.nome || 'Aguardando seleção do aluno'
+  const vinculosVisiveis = vinculosAEE.filter((v: VinculoAEEConfig) => !v.isRemovido)
 
   const handleCopyCode = () => {
     if (codigoColetaLocal) {
@@ -51,15 +69,111 @@ export function SecaoAssinaturasComprovante() {
           04
         </span>
         <div>
-          <h2 className="text-base font-bold text-foreground">Responsáveis, Assinaturas e Comprovante</h2>
+          <h2 className="text-base font-bold text-foreground">Responsáveis, Assinaturas e Atendimento AEE</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Assinaturas integradas do servidor, responsável legal e comprovante destacável para entrega.
+            Vinculação de especialistas AEE, assinaturas integradas do servidor, responsável legal e comprovante destacável.
           </p>
         </div>
       </div>
 
       <div className="p-4 md:p-5 space-y-6">
-        {/* Painel de Assinaturas Digitais Integradas */}
+        {/* ========================================================================= */}
+        {/* 1. MÓDULO DE DESTAQUE: VINCULAÇÃO DE PROFISSIONAIS AEE                     */}
+        {/* ========================================================================= */}
+        <div className="p-4 rounded-xl bg-card dark:bg-[#141416] border border-border space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+              <UserPlus className="w-4 h-4 text-primary" />
+              Atendimento Especializado (Profissionais AEE)
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => setModalVincularAEEOpen(true)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-8 px-3 gap-1.5 shrink-0 cursor-pointer border-none shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" />
+              Vincular Profissional AEE
+            </Button>
+          </div>
+
+          {/* Lista de Atendimentos / Profissionais Vinculados */}
+          {vinculosVisiveis.length === 0 ? (
+            <div className="p-6 rounded-xl bg-muted/40 dark:bg-[#181818] border border-border text-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-muted dark:bg-[#1f1f23] border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                <User className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-semibold text-foreground">Nenhum profissional AEE vinculado a esta matrícula.</p>
+              <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
+                Clique no botão <strong>"Vincular Profissional AEE"</strong> acima para definir os especialistas do EMAEE, dias da semana, horários e periodicidade do atendimento (Semanal ou Quinzenal).
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {vinculosVisiveis.map((v: VinculoAEEConfig) => (
+                <div
+                  key={v.tempId || v.id}
+                  className="p-3.5 rounded-xl border border-border bg-card dark:bg-[#141416] hover:bg-muted/40 dark:hover:bg-[#1c1c20] flex items-start justify-between gap-3 relative group hover:border-primary/40 transition-all shadow-sm"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-muted dark:bg-[#1f1f23] border border-border overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                      {v.profissionalFoto ? (
+                        <img
+                          src={v.profissionalFoto}
+                          alt={v.profissionalNome}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none'
+                          }}
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-xs font-bold text-foreground truncate">{v.profissionalNome}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium truncate">{v.profissionalCargo}</p>
+                      
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                        <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold">
+                          {v.frequencia}
+                        </span>
+                        <span className="bg-muted dark:bg-[#1f1f23] text-foreground border border-border px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3 text-muted-foreground" />
+                          {DIAS_SEMANA_MAP[v.diaSemana] || 'Dia não def.'}
+                        </span>
+                        <span className="bg-muted dark:bg-[#1f1f23] text-foreground border border-border px-2 py-0.5 rounded-md flex items-center gap-1 font-mono">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          {v.horarioInicio} - {v.horarioFim}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removerVinculoAEE(v.id || v.tempId)}
+                    className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0 rounded-lg"
+                    title="Remover atendimento deste profissional"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-[11px] text-muted-foreground italic">
+            * Os atendimentos e agendamentos configurados acima serão consolidados e salvos na agenda do EMAEE ao salvar esta ficha de matrícula.
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 2. PAINEL DE ASSINATURAS DIGITAIS INTEGRADAS                              */}
+        {/* ========================================================================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/50 dark:bg-[#0b0e14]/50 p-4 rounded-xl border border-border">
           {/* Assinatura do Servidor / Responsável pela Matrícula (Puxada do Perfil) */}
           <div className="space-y-3">
@@ -240,6 +354,17 @@ export function SecaoAssinaturasComprovante() {
           <span>Dados pessoais e clínicos: aplicar permissões RLS e tratamento compatível com a LGPD.</span>
         </div>
       </div>
+
+      {/* Sub-Modal de Seleção e Agendamento do Profissional AEE */}
+      {modalVincularAEEOpen && (
+        <ModalVincularProfissionalAlunoAEE
+          open={modalVincularAEEOpen}
+          onOpenChange={setModalVincularAEEOpen}
+          vinculosExistentes={vinculosAEE}
+          onAdicionarVinculo={adicionarVinculoAEE}
+          escolaEmaeeId={escolaAtendimentoId}
+        />
+      )}
     </section>
   )
 }
