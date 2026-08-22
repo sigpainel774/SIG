@@ -182,7 +182,8 @@ export default function RelatoriosPage() {
   useEffect(() => {
     let active = true
     if (activeReport === 'mapa') {
-      const cacheKey = `sig_map_func_${selectedEscola?.id || 'all'}`
+      const escopoSecKey = isSaude ? 'saude' : (isEMAEE ? 'emaee' : 'educacao')
+      const cacheKey = `sig_map_func_${escopoSecKey}_${selectedEscola?.id || 'all'}`
       
       try {
         const cached = sessionStorage.getItem(cacheKey)
@@ -208,7 +209,16 @@ export default function RelatoriosPage() {
               id,
               cargo,
               escola_id,
-              escolas (nome),
+              escolas!inner (
+                id,
+                nome,
+                tipo,
+                secretaria_id,
+                secretarias (
+                  id,
+                  nome
+                )
+              ),
               funcionarios!inner (
                 id,
                 nome,
@@ -241,14 +251,21 @@ export default function RelatoriosPage() {
           if (data && active) {
             const anyData = data as any[]
             const mapped = anyData
-              .filter(v => 
-                v.funcionarios?.latitude != null && 
-                v.funcionarios?.longitude != null &&
-                Number(v.funcionarios.latitude) !== 0 && 
-                Number(v.funcionarios.longitude) !== 0 && 
-                !isNaN(Number(v.funcionarios.latitude)) && 
-                !isNaN(Number(v.funcionarios.longitude))
-              )
+              .filter(v => {
+                if (v.funcionarios?.latitude == null || v.funcionarios?.longitude == null) return false
+                const lat = Number(v.funcionarios.latitude)
+                const lng = Number(v.funcionarios.longitude)
+                if (lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return false
+
+                // Blindagem de secretaria na visão geral
+                if (!selectedEscola) {
+                  const secNomeItem = v.escolas?.secretarias?.nome || ''
+                  const isSaudeItem = /sa[uú]de/i.test(secNomeItem) || v.escolas?.tipo === 'SAUDE' || v.escolas?.tipo === 'UNIDADE_SAUDE'
+                  if (isEducacao && isSaudeItem) return false
+                  if (isSaude && !isSaudeItem) return false
+                }
+                return true
+              })
               .map(v => {
                 const rawMod = (v.funcionarios?.modalidade_ensino || '').toString().toUpperCase()
                 const rawCargo = (v.cargo || '').toString().toUpperCase()
@@ -306,13 +323,14 @@ export default function RelatoriosPage() {
     return () => {
       active = false
     }
-  }, [activeReport, selectedEscola])
+  }, [activeReport, selectedEscola, isEducacao, isSaude, isEMAEE])
 
   // Fetch data para o Mapa de Alunos (com cache em sessionStorage)
   useEffect(() => {
     let active = true
     if (activeReport === 'mapa' && mapaAba === 'alunos') {
-      const cacheKey = `sig_map_alunos_${selectedEscola?.id || 'all'}`
+      const escopoSecKey = isSaude ? 'saude' : (isEMAEE ? 'emaee' : 'educacao')
+      const cacheKey = `sig_map_alunos_${escopoSecKey}_${selectedEscola?.id || 'all'}`
       
       try {
         const cached = sessionStorage.getItem(cacheKey)
@@ -409,7 +427,16 @@ export default function RelatoriosPage() {
                 serie,
                 modalidade_mat:dados_matricula->>modalidade,
                 etapa_mat:dados_matricula->>etapa,
-                escolas (nome),
+                escolas!inner (
+                  id,
+                  nome,
+                  tipo,
+                  secretaria_id,
+                  secretarias (
+                    id,
+                    nome
+                  )
+                ),
                 turmas (nome)
               `)
               .is('deleted_at', null)
@@ -425,12 +452,20 @@ export default function RelatoriosPage() {
 
             if (data && active) {
               mapped = (data as any[])
-                .filter(a => 
-                  Number(a.latitude) !== 0 && 
-                  Number(a.longitude) !== 0 && 
-                  !isNaN(Number(a.latitude)) && 
-                  !isNaN(Number(a.longitude))
-                )
+                .filter(a => {
+                  const lat = Number(a.latitude)
+                  const lng = Number(a.longitude)
+                  if (lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return false
+
+                  // Blindagem de secretaria na visão macro
+                  if (!selectedEscola) {
+                    const secNomeItem = a.escolas?.secretarias?.nome || ''
+                    const isSaudeItem = /sa[uú]de/i.test(secNomeItem) || a.escolas?.tipo === 'SAUDE' || a.escolas?.tipo === 'UNIDADE_SAUDE'
+                    if (isEducacao && isSaudeItem) return false
+                    if (isSaude && !isSaudeItem) return false
+                  }
+                  return true
+                })
                 .map((a) => {
                   const turmaNome = (a.turmas as any)?.nome ?? ''
                   const serieNome = a.serie ?? ''
@@ -484,7 +519,7 @@ export default function RelatoriosPage() {
     return () => {
       active = false
     }
-  }, [activeReport, mapaAba, selectedEscola])
+  }, [activeReport, mapaAba, selectedEscola, isEducacao, isSaude, ejaMode])
 
   const handleGlobalPrint = () => {
     if (activeReport === 'mapa') {
