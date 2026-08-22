@@ -34,6 +34,11 @@ const MapaRotasEscolasReal = dynamic(() => import('./MapaRotasEscolas'), {
   loading: () => <MapLoadingSkeleton height="580px" /> 
 });
 
+const MapaReplayPercursoReal = dynamic(() => import('./MapaReplayPercurso'), { 
+  ssr: false, 
+  loading: () => <MapLoadingSkeleton height="520px" /> 
+});
+
 function MapLoadingSkeleton({ height }: { height: string }) {
   return (
     <div 
@@ -51,5 +56,6 @@ export {
   MapaAuditoriaReal as MapaAuditoria, 
   MapaAlunosReal as MapaAlunos, 
   MapaCalorAcessosReal as MapaCalorAcessos,
-  MapaRotasEscolasReal as MapaRotasEscolas
+  MapaRotasEscolasReal as MapaRotasEscolas,
+  MapaReplayPercursoReal as MapaReplayPercurso
 };

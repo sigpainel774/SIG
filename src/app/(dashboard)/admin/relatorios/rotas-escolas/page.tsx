@@ -18,10 +18,14 @@ import { MapaRotasEscolas } from '@/components/map/MapWrapper';
 import { EscolaMapeada } from '@/components/map/MapaRotasEscolas';
 import { toast } from 'sonner';
 
+import HistoricoPercursosTab from '@/components/map/HistoricoPercursosTab';
+import { History, Compass } from 'lucide-react';
+
 export default function RotasEscolasPage() {
   const supabase = createClient();
   const [escolas, setEscolas] = useState<EscolaMapeada[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [abaAtiva, setAbaAtiva] = useState<'roteirizador' | 'historico'>('roteirizador');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -115,6 +119,34 @@ export default function RotasEscolasPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Navegação entre Abas */}
+          <div className="flex items-center bg-card border border-border p-1 rounded-xl shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('roteirizador')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                abaAtiva === 'roteirizador'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+              Roteirizador & Ao Vivo
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('historico')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                abaAtiva === 'historico'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              Histórico & Simulação
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={carregarEscolas}
@@ -127,80 +159,86 @@ export default function RotasEscolasPage() {
         </div>
       </div>
 
-      {/* Cards de Resumo & Estatísticas Rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
-              Escolas Cadastradas
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-foreground">{unidadesEscolares.length}</span>
-              {semedUnidade && (
-                <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
-                  + 1 Sede (INEP 01)
+      {abaAtiva === 'roteirizador' ? (
+        <>
+          {/* Cards de Resumo & Estatísticas Rápidas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div>
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
+                  Escolas Cadastradas
                 </span>
-              )}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-lg font-bold text-foreground">{unidadesEscolares.length}</span>
+                  {semedUnidade && (
+                    <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                      + 1 Sede (INEP 01)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <School className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div>
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
+                  Com Geolocalização
+                </span>
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {escolasComCoords.length}
+                </span>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 dark:bg-emerald-500/15 dark:border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <MapPin className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div>
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
+                  Zona Urbana
+                </span>
+                <span className="text-lg font-bold text-sky-600 dark:text-sky-400">
+                  {escolasUrbanas.length}
+                </span>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <Building2 className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div>
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
+                  Zona Rural
+                </span>
+                <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                  {escolasRurais.length}
+                </span>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 dark:bg-amber-500/15 dark:border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <Route className="w-4 h-4" />
+              </div>
             </div>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-            <School className="w-4 h-4" />
-          </div>
-        </div>
 
-        <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
-              Com Geolocalização
-            </span>
-            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-              {escolasComCoords.length}
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 dark:bg-emerald-500/15 dark:border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <MapPin className="w-4 h-4" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
-              Zona Urbana
-            </span>
-            <span className="text-lg font-bold text-sky-600 dark:text-sky-400">
-              {escolasUrbanas.length}
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-            <Building2 className="w-4 h-4" />
-          </div>
-        </div>
-
-        <div className="bg-card border border-border p-3.5 rounded-2xl flex items-center justify-between shadow-2xs">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
-              Zona Rural
-            </span>
-            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
-              {escolasRurais.length}
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 dark:bg-amber-500/15 dark:border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <Route className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
-
-      {/* Componente do Mapa e Otimizador de Rotas */}
-      {carregando ? (
-        <div className="w-full h-[580px] rounded-2xl bg-card border border-border flex flex-col items-center justify-center gap-3 text-muted-foreground animate-pulse">
-          <Loader2 className="w-8 h-8 animate-spin text-sky-600 dark:text-sky-400" />
-          <span className="text-sm font-semibold">
-            Carregando mapa e unidades escolares de Sapeaçu...
-          </span>
-        </div>
+          {/* Componente do Mapa e Otimizador de Rotas */}
+          {carregando ? (
+            <div className="w-full h-[580px] rounded-2xl bg-card border border-border flex flex-col items-center justify-center gap-3 text-muted-foreground animate-pulse">
+              <Loader2 className="w-8 h-8 animate-spin text-sky-600 dark:text-sky-400" />
+              <span className="text-sm font-semibold">
+                Carregando mapa e unidades escolares de Sapeaçu...
+              </span>
+            </div>
+          ) : (
+            <MapaRotasEscolas escolas={escolas} />
+          )}
+        </>
       ) : (
-        <MapaRotasEscolas escolas={escolas} />
+        <HistoricoPercursosTab />
       )}
     </div>
   );
