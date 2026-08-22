@@ -16,7 +16,6 @@ import {
   Building2,
   UserCheck,
   KeyRound,
-  Briefcase,
   Activity,
   FileSearch,
   Trash2,
@@ -29,7 +28,6 @@ import {
   Bell,
   Flag,
   AlertTriangle,
-  Bus,
   ArchiveRestore,
   Gauge,
   TrendingUp,
@@ -91,17 +89,10 @@ const adminGroups: AdminGroup[] = [
     items: [
       {
         title: 'Secretarias',
-        subtitle: 'Gerenciar secretarias',
+        subtitle: 'Gerenciar secretarias, escolas e unidades',
         icon: Building2,
         iconColor: 'text-sky-600 dark:text-sky-300',
         path: '/admin/secretarias',
-      },
-      {
-        title: 'Escolas & Unidades',
-        subtitle: 'Todas as unidades',
-        icon: Building2,
-        iconColor: 'text-sky-600 dark:text-sky-400',
-        path: '/admin/escolas',
       },
     ],
   },
@@ -125,13 +116,6 @@ const adminGroups: AdminGroup[] = [
         icon: KeyRound,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
         path: '/admin/acessos',
-      },
-      {
-        title: 'Cargos',
-        subtitle: 'Cargos e funções',
-        icon: Briefcase,
-        iconColor: 'text-amber-600 dark:text-amber-400',
-        path: '/admin/cargos',
       },
       {
         title: 'Solicitações',

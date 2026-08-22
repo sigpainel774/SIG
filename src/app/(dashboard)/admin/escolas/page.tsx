@@ -2,26 +2,22 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, UserCheck, Printer, LayoutGrid } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import dynamic from 'next/dynamic'
-import { ImportDataActions } from '@/components/admin/ImportDataActions'
 
 // Imports dinâmicos de modais sob demanda
 const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').then(m => m.ModalEscola), { ssr: false })
 const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
-const ModalConfigSecretario = dynamic(() => import('@/components/modals/modal-config-secretario').then(m => m.ModalConfigSecretario), { ssr: false })
 const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
 const ModalContasPaisEscola = dynamic(() => import('@/components/modals/modal-contas-pais-escola').then(m => m.ModalContasPaisEscola), { ssr: false })
 
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Users } from 'lucide-react'
-
 import { useLocalSearch } from '@/hooks/useLocalSearch'
 import { executeWithToast } from '@/lib/action-handler'
 
@@ -39,7 +35,6 @@ export default function AdminEscolasPage() {
   const [configAnexosOpen, setConfigAnexosOpen] = useState(false)
   const [escolaParaAnexos, setEscolaParaAnexos] = useState<any | null>(null)
 
-  const [configSecretarioOpen, setConfigSecretarioOpen] = useState(false)
   const [filaImpressaoOpen, setFilaImpressaoOpen] = useState(false)
 
   const [escolaParaPais, setEscolaParaPais] = useState<any | null>(null)
@@ -67,15 +62,7 @@ export default function AdminEscolasPage() {
       console.error('Erro ao carregar escolas:', error)
       toast.error('Erro ao carregar lista de escolas.')
     } else if (data) {
-      // Filtra exclusivamente escolas/unidades pertencentes à Secretaria de Educação
-      const escolasEducacao = (data || []).filter((e: any) => {
-        const secNome = e.secretarias?.nome || ''
-        const isSaude = /sa[uú]de/i.test(secNome) || /posto de sa[uú]de|usf/i.test(e.nome)
-        if (isSaude) return false
-        if (secNome) return /educa/i.test(secNome)
-        return true
-      })
-      setEscolas(escolasEducacao)
+      setEscolas(data || [])
     }
     setLoading(false)
   }
@@ -230,27 +217,7 @@ export default function AdminEscolasPage() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={() => setFilaImpressaoOpen(true)}
-            className="bg-card border-border text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
-            title="Gerenciar e Excluir Atividades na Fila de Impressão"
-          >
-            <Printer className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-amber-400" /> Fila de Impressão
-          </Button>
-
-          {/* Botões Reutilizáveis de Importação */}
-          <ImportDataActions onSuccess={loadEscolas} />
-
-          <Button 
-            variant="outline"
-            onClick={() => setConfigSecretarioOpen(true)}
-            className="bg-card border-border text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-muted font-semibold text-xs rounded-xl h-9"
-            title="Configurar Titular da Secretaria de Educação"
-          >
-            <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" /> Secretário de Educação
-          </Button>
-          <Button 
+          <Button
             variant="outline"
             onClick={loadEscolas}
             disabled={loading}
@@ -303,14 +270,6 @@ export default function AdminEscolasPage() {
           onOpenChange={setConfigAnexosOpen}
           escola={escolaParaAnexos}
           onSuccess={loadEscolas}
-        />
-      )}
-
-      {/* Modal de Configurar Secretário de Educação */}
-      {configSecretarioOpen && (
-        <ModalConfigSecretario
-          open={configSecretarioOpen}
-          onOpenChange={setConfigSecretarioOpen}
         />
       )}
 

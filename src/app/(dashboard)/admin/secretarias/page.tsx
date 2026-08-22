@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Briefcase, Eye, Calendar } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ModalSecretaria } from '@/components/modals/modal-secretaria'
-import { ModalCargosSecretaria } from '@/components/modals/modal-cargos-secretaria'
 import { ModalDetalhesSecretaria } from '@/components/modals/modal-detalhes-secretaria'
-import { ModalCalendarioAcademico } from '@/components/modals/modal-calendario-academico'
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -25,24 +23,18 @@ export default function AdminSecretariasPage() {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Modal Criar / Editar Secretaria
   const [modalOpen, setModalOpen] = useState(false)
   const [secretariaToEdit, setSecretariaToEdit] = useState<any | null>(null)
 
-  const [modalCargosOpen, setModalCargosOpen] = useState(false)
-  const [secretariaForCargos, setSecretariaForCargos] = useState<any | null>(null)
-
+  // Modal Detalhes / Hub da Secretaria
   const [modalDetalhesOpen, setModalDetalhesOpen] = useState(false)
   const [secretariaForDetalhes, setSecretariaForDetalhes] = useState<any | null>(null)
-
-  const [modalCalendarioOpen, setModalCalendarioOpen] = useState(false)
-  const [secretariaForCalendario, setSecretariaForCalendario] = useState<any | null>(null)
 
   const isMounted = useRef(true)
 
   useEffect(() => {
-    return () => {
-      isMounted.current = false
-    }
+    return () => { isMounted.current = false }
   }, [])
 
   const loadSecretarias = async () => {
@@ -79,48 +71,37 @@ export default function AdminSecretariasPage() {
     setModalOpen(true)
   }
 
-  const handleGerenciarCargos = (sec: any, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setSecretariaForCargos(sec)
-    setModalCargosOpen(true)
-  }
-
   const handleAbrirDetalhes = (sec: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setSecretariaForDetalhes(sec)
     setModalDetalhesOpen(true)
   }
 
-  const handleAbrirCalendario = (sec: any, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setSecretariaForCalendario(sec)
-    setModalCalendarioOpen(true)
-  }
-
   const handleExcluirSecretaria = async (sec: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    const confirm = window.confirm(`Deseja realmente mover a secretaria "${sec.nome}" para a Lixeira Global?`)
+    const confirm = window.confirm(
+      `Deseja realmente mover a secretaria "${sec.nome}" para a Lixeira Global?`
+    )
     if (!confirm) return
 
     await executeWithToast({
-      action: () => softDeleteToTrash({
-        supabase,
-        tableName: 'secretarias',
-        recordId: sec.id,
-        recordSummary: sec.nome,
-        recordPayload: sec,
-        performedBy: {
-          id: funcionario?.id ?? null,
-          name: funcionario?.nome || 'Administrador',
-          email: funcionario?.email || 'admin@super.com'
-        }
-      }),
+      action: () =>
+        softDeleteToTrash({
+          supabase,
+          tableName: 'secretarias',
+          recordId: sec.id,
+          recordSummary: sec.nome,
+          recordPayload: sec,
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome || 'Administrador',
+            email: funcionario?.email || 'admin@super.com',
+          },
+        }),
       setLoading,
       successMessage: 'Secretaria enviada para a Lixeira Global!',
       errorMessage: 'Erro ao excluir secretaria',
-      onSuccess: () => {
-        loadSecretarias()
-      }
+      onSuccess: loadSecretarias,
     })
   }
 
@@ -130,8 +111,8 @@ export default function AdminSecretariasPage() {
     {
       header: 'Logo',
       className: 'w-16',
-      accessor: (sec) => (
-        <div 
+      accessor: sec => (
+        <div
           onClick={() => handleAbrirDetalhes(sec)}
           className="w-10 h-10 rounded-md border border-[#27272a] bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
         >
@@ -141,18 +122,15 @@ export default function AdminSecretariasPage() {
             <Building2 className="w-5 h-5 text-sky-400" />
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Secretaria Mantenedora',
-      accessor: (sec) => {
+      accessor: sec => {
         const isEducacao = /educa/i.test(sec.nome)
         return (
-          <div 
-            onClick={() => handleAbrirDetalhes(sec)}
-            className="cursor-pointer group"
-          >
-            <div className="font-bold text-foreground group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors flex items-center gap-2">
+          <div onClick={() => handleAbrirDetalhes(sec)} className="cursor-pointer group">
+            <div className="font-bold text-foreground group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
               {sec.nome}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -160,97 +138,81 @@ export default function AdminSecretariasPage() {
             </p>
           </div>
         )
-      }
+      },
     },
     {
       header: 'Unidades',
-      accessor: (sec) => {
+      accessor: sec => {
         const qtd = Array.isArray(sec.escolas) ? sec.escolas.length : 0
         const isEducacao = /educa/i.test(sec.nome)
         return (
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             onClick={() => handleAbrirDetalhes(sec)}
             className="bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30 text-xs cursor-pointer hover:bg-sky-500/20"
           >
             {qtd} {qtd === 1 ? (isEducacao ? 'Escola' : 'Unidade') : (isEducacao ? 'Escolas' : 'Unidades')}
           </Badge>
         )
-      }
+      },
     },
     {
       header: 'Status',
-      accessor: (sec) => (
-        <Badge variant="outline" className={`text-xs ${sec.ativo !== false ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+      accessor: sec => (
+        <Badge
+          variant="outline"
+          className={`text-xs ${
+            sec.ativo !== false
+              ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+              : 'bg-rose-500/20 text-rose-500 border-rose-500/30'
+          }`}
+        >
           {sec.ativo !== false ? 'ATIVA' : 'INATIVA'}
         </Badge>
-      )
+      ),
     },
     {
       header: 'Ações',
-      headClassName: 'text-right w-64',
+      headClassName: 'text-right w-44',
       className: 'text-right',
-      accessor: (sec) => {
-        const isEducacao = /educa/i.test(sec.nome)
-        return (
-          <div className="flex justify-end items-center gap-1.5">
-            {isEducacao && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={(e) => handleAbrirCalendario(sec, e)}
-                className="h-8 px-2.5 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold gap-1 rounded-lg cursor-pointer shadow-xs"
-                title="Gerenciar Calendário Acadêmico e Trimestres da Rede"
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Calendário</span>
-              </Button>
-            )}
+      accessor: sec => (
+        <div className="flex justify-end items-center gap-1.5">
+          {/* Abrir Hub da Secretaria */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={e => handleAbrirDetalhes(sec, e)}
+            className="h-8 px-2.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30 font-semibold gap-1 rounded-lg cursor-pointer"
+            title="Abrir Hub da Secretaria (Unidades, Cargos, Calendário…)"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Abrir</span>
+          </Button>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={(e) => handleAbrirDetalhes(sec, e)}
-              className="h-8 px-2.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30 font-semibold gap-1 rounded-lg cursor-pointer"
-              title="Abrir Modal com Unidades"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Unidades</span>
-            </Button>
+          {/* Editar */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={e => handleEditarSecretaria(sec, e)}
+            className="h-8 w-8 p-0 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-500/10 rounded-lg"
+            title="Editar Secretaria"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={(e) => handleGerenciarCargos(sec, e)}
-              className="h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/10 rounded-lg"
-              title="Cargos da Secretaria"
-            >
-              <Briefcase className="w-4 h-4" />
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={(e) => handleEditarSecretaria(sec, e)}
-              className="h-8 w-8 p-0 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-500/10 rounded-lg"
-              title="Editar Secretaria"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={(e) => handleExcluirSecretaria(sec, e)}
-              className="h-8 w-8 p-0 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg"
-              title="Excluir Secretaria (Lixeira)"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        )
-      }
-    }
+          {/* Excluir */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={e => handleExcluirSecretaria(sec, e)}
+            className="h-8 w-8 p-0 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg"
+            title="Excluir Secretaria (Lixeira)"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -262,12 +224,13 @@ export default function AdminSecretariasPage() {
             <Building2 className="w-6 h-6 text-sky-500" /> Secretarias Municipais
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
-            Gestão dos órgãos mantenedores das unidades escolares e administrativas da Rede Municipal.
+            Gestão dos órgãos mantenedores. Clique em{' '}
+            <strong>"Abrir"</strong> para gerenciar unidades, cargos e configurações de cada secretaria.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <Button 
+          <Button
             variant="outline"
             onClick={loadSecretarias}
             disabled={loading}
@@ -275,7 +238,10 @@ export default function AdminSecretariasPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={handleNovaSecretaria} className="bg-sky-600 text-white hover:bg-sky-700 font-semibold gap-1.5">
+          <Button
+            onClick={handleNovaSecretaria}
+            className="bg-sky-600 text-white hover:bg-sky-700 font-semibold gap-1.5"
+          >
             <Plus className="w-4 h-4" /> Nova Secretaria
           </Button>
         </div>
@@ -284,10 +250,10 @@ export default function AdminSecretariasPage() {
       {/* Busca */}
       <div className="flex items-center gap-3 bg-card border border-borderCustom p-3 rounded-xl max-w-md shadow-sm">
         <Search className="w-4 h-4 text-muted-foreground" />
-        <Input 
-          placeholder="Buscar secretaria por nome..." 
+        <Input
+          placeholder="Buscar secretaria por nome..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           className="bg-transparent border-none text-foreground focus-visible:ring-0 placeholder:text-muted-foreground h-7 text-sm"
         />
       </div>
@@ -296,7 +262,7 @@ export default function AdminSecretariasPage() {
       <StandardTable
         data={secretariasFiltradas}
         columns={columns}
-        keyExtractor={(sec) => sec.id}
+        keyExtractor={sec => sec.id}
         loading={loading}
         loadingMessage="Carregando lista de secretarias..."
         emptyMessage="Nenhuma secretaria encontrada."
@@ -313,33 +279,13 @@ export default function AdminSecretariasPage() {
         />
       )}
 
-      {/* Modal Gerenciar Cargos da Secretaria */}
-      {modalCargosOpen && (
-        <ModalCargosSecretaria
-          open={modalCargosOpen}
-          onOpenChange={setModalCargosOpen}
-          secretariaId={secretariaForCargos?.id}
-          secretariaNome={secretariaForCargos?.nome}
-        />
-      )}
-
-      {/* Modal de Detalhes e Unidades da Secretaria */}
+      {/* Modal Hub da Secretaria (Unidades + Cargos + Calendário + …) */}
       {modalDetalhesOpen && (
         <ModalDetalhesSecretaria
           open={modalDetalhesOpen}
           onOpenChange={setModalDetalhesOpen}
           secretaria={secretariaForDetalhes}
           onUpdate={loadSecretarias}
-        />
-      )}
-
-      {/* Modal de Calendário Acadêmico da Rede */}
-      {modalCalendarioOpen && (
-        <ModalCalendarioAcademico
-          open={modalCalendarioOpen}
-          onOpenChange={setModalCalendarioOpen}
-          secretariaId={secretariaForCalendario?.id}
-          secretariaNome={secretariaForCalendario?.nome}
         />
       )}
     </div>
