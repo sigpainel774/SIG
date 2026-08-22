@@ -98,12 +98,102 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [calculandoRota, setCalculandoRota] = useState(false);
   const [resultadoRoteiro, setResultadoRoteiro] = useState<ResultadoRoteiro | null>(null);
 
+  // Estados de Rotas Designadas (Sistema Alpha)
+  const [rotasDesignadas, setRotasDesignadas] = useState<any[]>([]);
+  const [rotaAtivaDesignada, setRotaAtivaDesignada] = useState<any | null>(null);
+  const [loadingRotasDesignadas, setLoadingRotasDesignadas] = useState(false);
+
   // Estados de Navegação & Offline
   const [seguirCarro, setSeguirCarro] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [visitasPendentes, setVisitasPendentes] = useState<VisitaPonto[]>([]);
   const [sincronizando, setSincronizando] = useState(false);
   const [paradasConcluidas, setParadasConcluidas] = useState<string[]>([]);
+
+  // Carregar Rotas Designadas do Supabase
+  const carregarRotasDesignadas = useCallback(async () => {
+    setLoadingRotasDesignadas(true);
+    try {
+      const { data, error } = await supabase
+        .from('alpha_rotas')
+        .select(`
+          id,
+          nome,
+          descricao,
+          motorista_id,
+          veiculo_id,
+          turno,
+          pontos_parada,
+          ativo,
+          motorista:motorista_id (id, nome, cargo),
+          veiculo:veiculo_id (id, placa, modelo)
+        `)
+        .eq('ativo', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (data) {
+        setRotasDesignadas(data);
+
+        // Se o motorista logado tiver uma rota atribuída, auto-seleciona
+        if (funcionario?.id && !rotaAtivaDesignada) {
+          const minhaRota = data.find((r: any) => r.motorista_id === funcionario.id);
+          if (minhaRota) {
+            setRotaAtivaDesignada(minhaRota);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao carregar rotas designadas do Alpha:', err);
+    } finally {
+      setLoadingRotasDesignadas(false);
+    }
+  }, [supabase, funcionario?.id]);
+
+  useEffect(() => {
+    carregarRotasDesignadas();
+  }, [carregarRotasDesignadas]);
+
+  // Aplicar Rota Designada Selecionada
+  const aplicarRotaDesignada = (rota: any) => {
+    if (!rota) {
+      setRotaAtivaDesignada(null);
+      return;
+    }
+
+    setRotaAtivaDesignada(rota);
+    const paradas = Array.isArray(rota.pontos_parada) ? rota.pontos_parada : [];
+
+    const pontosFormatados: PontoLocalizacao[] = paradas.map((p: any) => ({
+      id: p.id,
+      nome: p.nome,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      inep: p.inep ?? undefined,
+      localizacao: p.localizacao ?? 'URBANA',
+      tipo: p.tipo ?? 'MUNICIPAL',
+    }));
+
+    setEscolasSelecionadas(pontosFormatados);
+    setResultadoRoteiro(null);
+    setParadasConcluidas([]);
+
+    salvarRotaAtiva({
+      id: 'rota_ativa_atual',
+      rota_id: rota.id,
+      veiculo_id: rota.veiculo_id,
+      nome: rota.nome,
+      data_inicio: new Date().toISOString(),
+      escolasSelecionadas: pontosFormatados,
+      resultadoRoteiro: null,
+      paradasConcluidas: [],
+      emNavegacao: gpsAtivo,
+    });
+
+    toast.success(`Rota "${rota.nome}" carregada com ${pontosFormatados.length} paradas!`, {
+      icon: '📍',
+    });
+  };
 
   // Estados do Modal de Download de Mapa Offline
   const [modalOfflineAberto, setModalOfflineAberto] = useState(false);
@@ -129,104 +219,6 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [statusVisitaInput, setStatusVisitaInput] = useState<'REALIZADA' | 'IMPREVISTO' | 'AUSENTE'>('REALIZADA');
   const [odometroInput, setOdometroInput] = useState('');
 
-
-  // Localização da SEMED (INEP 01 - Sede Administrativa da Educação)
-  const semedUnidade = useMemo(() => {
-    return escolas.find(
-      (e) =>
-        e.inep === '01' ||
-        e.inep === '1' ||
-        e.tipo === 'SECRETARIA' ||
-        (e.nome || '').toUpperCase().includes('SEMED') ||
-        (e.nome || '').toLowerCase() === 'sede'
-    );
-  }, [escolas]);
-
-  const pontoSede: PontoLocalizacao = useMemo(() => {
-    if (semedUnidade) {
-      const lat = parseCoordinate(semedUnidade.latitude);
-      const lng = parseCoordinate(semedUnidade.longitude);
-      if (lat !== null && lng !== null) {
-        return {
-          id: semedUnidade.id,
-          nome: semedUnidade.nome.includes('SEMED')
-            ? semedUnidade.nome
-            : 'Secretaria Municipal de Educação (SEMED)',
-          latitude: lat,
-          longitude: lng,
-          tipo: 'SECRETARIA',
-          inep: semedUnidade.inep ?? '01',
-          endereco: semedUnidade.endereco ?? 'Centro, Sapeaçu - BA',
-          localizacao: semedUnidade.localizacao ?? 'URBANA',
-        };
-      }
-    }
-    return SEDE_SEMED_SAPEACU;
-  }, [semedUnidade]);
-
-  // Hook de GPS em Tempo Real
-  const {
-    ativo: gpsAtivo,
-    posicao: posicaoVeiculo,
-    proximaParada,
-    iniciarGps,
-    pararGps,
-  } = useGpsTracker({
-    escolasDestino: resultadoRoteiro?.pontosOrdenados.filter((p) => p.tipo !== 'SECRETARIA') || escolasSelecionadas,
-    onChegadaPonto: (ponto, distM) => {
-      if (!paradasConcluidas.includes(ponto.id)) {
-        toast.info(`Você está chegando em ${ponto.nome} (${distM}m).`, {
-          duration: 4000,
-        });
-      }
-    },
-  });
-
-  // Escolas válidas com coordenadas (excluindo a SEMED)
-  const escolasValidas = useMemo(() => {
-    const list: EscolaComCoordenadas[] = [];
-    for (const e of escolas) {
-      const isSemed =
-        e.inep === '01' ||
-        e.inep === '1' ||
-        e.tipo === 'SECRETARIA' ||
-        e.id === semedUnidade?.id ||
-        (e.nome || '').toUpperCase().includes('SEMED');
-
-      if (isSemed) continue;
-
-      const lat = parseCoordinate(e.latitude);
-      const lng = parseCoordinate(e.longitude);
-      if (lat !== null && lng !== null) {
-        list.push({
-          ...e,
-          latitude: lat,
-          longitude: lng,
-          tipo: e.tipo ?? 'MUNICIPAL',
-          localizacao: e.localizacao ?? 'URBANA',
-        });
-      }
-    }
-    return list;
-  }, [escolas, semedUnidade]);
-
-  // Escolas filtradas para a busca
-  const escolasFiltradas = useMemo(() => {
-    const termo = buscaDebounced.toLowerCase().trim();
-    return escolasValidas.filter((e) => {
-      if (filtroZona !== 'todos') {
-        const zona = (e.localizacao || '').toUpperCase();
-        if (!zona.includes(filtroZona)) return false;
-      }
-      if (!termo) return true;
-      return (
-        e.nome.toLowerCase().includes(termo) ||
-        (e.endereco || '').toLowerCase().includes(termo) ||
-        (e.inep || '').toLowerCase().includes(termo)
-      );
-    });
-  }, [escolasValidas, buscaDebounced, filtroZona]);
-
   // 1. Sincronização da fila offline com o Supabase (Idempotente com upsert)
   const sincronizarFilaComServidor = useCallback(async () => {
     const pendentes = await obterVisitasPendentes();
@@ -241,6 +233,8 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         id: v.id,
         escola_id: v.escola_id,
         funcionario_id: v.funcionario_id || funcionario?.id || null,
+        rota_id: v.rota_id ?? null,
+        veiculo_id: v.veiculo_id ?? null,
         rota_nome: v.rota_nome || 'Roteiro de Visitas',
         data_hora_chegada: v.data_hora_chegada,
         latitude: v.latitude,
@@ -249,6 +243,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         odometro_km: v.odometro_km,
         observacoes: v.observacoes,
         status: v.status,
+        is_alpha: true,
         sincronizado_em: new Date().toISOString(),
       }));
 
@@ -520,7 +515,9 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       escola_id: isCheckinLivre || escolaCheckin?.tipo === 'SECRETARIA' ? null : (escolaCheckin?.id ?? null),
       escola_nome: nomeFinal,
       funcionario_id: funcionario?.id ?? null,
-      rota_nome: 'Roteiro de Visitas',
+      rota_id: rotaAtivaDesignada?.id ?? null,
+      veiculo_id: rotaAtivaDesignada?.veiculo_id ?? null,
+      rota_nome: rotaAtivaDesignada?.nome || 'Roteiro de Visitas',
       data_hora_chegada: new Date().toISOString(),
       latitude: posicaoVeiculo?.latitude ?? latPonto,
       longitude: posicaoVeiculo?.longitude ?? lngPonto,
@@ -542,7 +539,9 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       if (resultadoRoteiro) {
         salvarRotaAtiva({
           id: 'rota_ativa_atual',
-          nome: 'Roteiro de Visitas',
+          rota_id: rotaAtivaDesignada?.id ?? null,
+          veiculo_id: rotaAtivaDesignada?.veiculo_id ?? null,
+          nome: rotaAtivaDesignada?.nome || 'Roteiro de Visitas',
           data_inicio: horaInicioRonda || new Date().toISOString(),
           escolasSelecionadas,
           resultadoRoteiro,
@@ -1182,6 +1181,79 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
       {/* Coluna Lateral: Planejador de Roteiro & Resultados */}
       <div className="w-full xl:w-[380px] shrink-0 flex flex-col gap-4">
+        {/* Seção de Rotas Designadas (Sistema Alpha) */}
+        {rotasDesignadas.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-500" />
+                <h4 className="text-xs font-bold text-foreground">Rotas Planejadas Alpha</h4>
+              </div>
+              <span className="text-[10px] bg-violet-500/10 text-violet-600 dark:text-violet-400 font-extrabold px-2 py-0.5 rounded-md border border-violet-500/20">
+                {rotasDesignadas.length} DISPONÍVEIS
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+              {rotasDesignadas.map((r) => {
+                const isMinhaRota = funcionario?.id && r.motorista_id === funcionario.id;
+                const isAtiva = rotaAtivaDesignada?.id === r.id;
+                const qtdParadas = Array.isArray(r.pontos_parada) ? r.pontos_parada.length : 0;
+
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => aplicarRotaDesignada(isAtiva ? null : r)}
+                    className={cn(
+                      'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5',
+                      isAtiva
+                        ? 'bg-violet-600/15 border-violet-500 text-foreground shadow-xs'
+                        : isMinhaRota
+                        ? 'bg-sky-500/10 border-sky-500/40 text-foreground hover:bg-sky-500/15'
+                        : 'bg-surface-2 dark:bg-secondary/40 border-border hover:border-violet-500/30'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-xs truncate flex items-center gap-1.5">
+                        {isAtiva && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                        {r.nome}
+                      </span>
+                      {isMinhaRota && (
+                        <span className="text-[9px] font-extrabold bg-sky-500 text-white px-1.5 py-0.2 rounded shrink-0">
+                          SUA ROTA
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>
+                        {r.veiculo ? `🚐 ${r.veiculo.modelo} (${r.veiculo.placa})` : '🚐 Veículo avulso'}
+                      </span>
+                      <span className="font-bold text-violet-600 dark:text-violet-400">
+                        {qtdParadas} paradas • {r.turno}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {rotaAtivaDesignada && (
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Rota ativa:</span>
+                <button
+                  type="button"
+                  onClick={() => aplicarRotaDesignada(null)}
+                  className="text-rose-500 hover:underline font-bold text-[10px] cursor-pointer"
+                >
+                  Desmarcar rota
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2.5">
@@ -1189,8 +1261,14 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                 <Route className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Roteiro de Visitas</h3>
-                <p className="text-xs text-muted-foreground">Melhor caminho & economia</p>
+                <h3 className="font-bold text-sm text-foreground">
+                  {rotaAtivaDesignada ? rotaAtivaDesignada.nome : 'Roteiro de Visitas'}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {rotaAtivaDesignada?.veiculo
+                    ? `Veículo: ${rotaAtivaDesignada.veiculo.modelo} (${rotaAtivaDesignada.veiculo.placa})`
+                    : 'Melhor caminho & economia'}
+                </p>
               </div>
             </div>
             {escolasSelecionadas.length > 0 && (

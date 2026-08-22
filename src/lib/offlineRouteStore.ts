@@ -10,6 +10,8 @@ export interface VisitaPonto {
   escola_id: string | null;
   escola_nome: string;
   funcionario_id: string | null;
+  rota_id?: string | null;
+  veiculo_id?: string | null;
   rota_nome: string;
   data_hora_chegada: string;
   latitude: number | null;
@@ -24,6 +26,8 @@ export interface VisitaPonto {
 
 export interface RotaAtivaState {
   id: string;
+  rota_id?: string | null;
+  veiculo_id?: string | null;
   nome: string;
   data_inicio: string;
   escolasSelecionadas: PontoLocalizacao[];

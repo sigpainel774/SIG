@@ -416,19 +416,22 @@ export default function AdminAlphaPage() {
               {funcoes.map((fn) => (
                 <div
                   key={fn.id}
+                  onClick={() => router.push(`/admin/alpha/funcoes/${fn.codigo}`)}
                   className={cn(
-                    'bg-card border rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all',
+                    'group bg-card border rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md hover:border-violet-500/50',
                     fn.ativo ? 'border-border' : 'border-border/60 opacity-75 bg-card/60'
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                         <AlphaIcon name={fn.icone} className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-sm text-foreground">{fn.nome}</h3>
+                          <h3 className="font-bold text-sm text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                            {fn.nome}
+                          </h3>
                           <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             Ordem #{fn.ordem}
                           </span>
@@ -439,10 +442,13 @@ export default function AdminAlphaPage() {
                       </div>
                     </div>
 
-                    {/* Toggle de ativação */}
+                    {/* Toggle de ativação com stopPropagation */}
                     <button
                       type="button"
-                      onClick={() => handleToggleAtivo(fn)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleAtivo(fn)
+                      }}
                       disabled={updatingFuncaoId === fn.id}
                       className={cn(
                         'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
@@ -460,15 +466,26 @@ export default function AdminAlphaPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border text-xs font-mono text-muted-foreground">
-                    <span className="truncate max-w-[240px]">Rota: {fn.rota}</span>
-                    <Link
-                      href={fn.rota}
-                      target="_blank"
-                      className="text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 font-sans font-bold"
-                    >
-                      <span>Testar</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </Link>
+                    <span className="truncate max-w-[180px] sm:max-w-[240px]">Rota: {fn.rota}</span>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={fn.rota}
+                        target="_blank"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-muted-foreground hover:text-foreground flex items-center gap-1 font-sans text-xs px-2 py-1 rounded-lg hover:bg-hoverCustom transition-colors"
+                      >
+                        <span>Testar</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                      <Link
+                        href={`/admin/alpha/funcoes/${fn.codigo}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-violet-600 dark:text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 font-sans font-bold text-xs transition-colors"
+                      >
+                        <span>Configurar</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
