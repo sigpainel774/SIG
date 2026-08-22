@@ -238,6 +238,13 @@ const adminGroups: AdminGroup[] = [
     badgeColor: 'bg-sky-500/10 text-sky-700 border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30',
     items: [
       {
+        title: 'Sistema Alpha (Lab)',
+        subtitle: 'Módulos experimentais, funções ativas e contas de teste',
+        icon: FlaskConical,
+        iconColor: 'text-violet-600 dark:text-violet-400',
+        path: '/admin/alpha',
+      },
+      {
         title: 'Defesa & Segurança',
         subtitle: 'WAF, ataques e bloqueios',
         icon: ShieldAlert,

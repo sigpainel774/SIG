@@ -195,24 +195,39 @@ export async function proxy(request: NextRequest) {
         return applySecurityHeaders(NextResponse.redirect(url))
       }
     } else {
-      // ─── BLOQUEIO DE STAFF ──────────────────────────────────────────────
+      // ─── BLOQUEIO DE STAFF / CONTAS ALPHA ──────────────────────────────
+      const isAlphaAccount = user.user_metadata?.is_alpha === true
+
       // Servidores não acessam a área de pais
       if (pathname.startsWith('/portal-aluno') && !pathname.startsWith('/portal-aluno/login')) {
         const url = request.nextUrl.clone()
-        url.pathname = '/home'
+        url.pathname = isAlphaAccount ? '/alpha' : '/home'
         return applySecurityHeaders(NextResponse.redirect(url))
       }
 
-      // Roteamento padrão de servidores (Superadmin vs Staff)
+      // Contas Alpha operacionais (não superadmin) ficam restritas ao ecossistema /alpha
+      if (isAlphaAccount && !user.app_metadata?.is_superadmin) {
+        if (!pathname.startsWith('/alpha') && !pathname.startsWith('/api') && !pathname.startsWith('/login')) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/alpha'
+          return applySecurityHeaders(NextResponse.redirect(url))
+        }
+      }
+
+      // Roteamento padrão de servidores (Superadmin vs Staff vs Alpha)
       if (pathname === '/' || pathname.startsWith('/login') || pathname === '/home') {
         const isSuperAdmin = user.app_metadata?.is_superadmin === true
         const isSimulating = request.cookies.get('sig_simulating')?.value === '1'
 
-        if (isSuperAdmin && !isSimulating && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios')) {
+        if (isAlphaAccount && !isSuperAdmin) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/alpha'
+          return applySecurityHeaders(NextResponse.redirect(url))
+        } else if (isSuperAdmin && !isSimulating && !pathname.startsWith('/admin') && !pathname.startsWith('/relatorios') && !pathname.startsWith('/alpha')) {
           const url = request.nextUrl.clone()
           url.pathname = '/admin'
           return applySecurityHeaders(NextResponse.redirect(url))
-        } else if (!isSuperAdmin && (pathname === '/' || pathname.startsWith('/login'))) {
+        } else if (!isSuperAdmin && !isAlphaAccount && (pathname === '/' || pathname.startsWith('/login'))) {
           const url = request.nextUrl.clone()
           url.pathname = '/home'
           return applySecurityHeaders(NextResponse.redirect(url))
