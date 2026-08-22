@@ -5,6 +5,7 @@ import { useAlunoForm } from '../context/AlunoFormContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { HeartPulse, Bus, ShieldAlert, Activity } from 'lucide-react'
 
 export function SecaoSaude() {
   const {
@@ -59,47 +60,49 @@ export function SecaoSaude() {
   ]
 
   return (
-    <div className="space-y-4">
-      {/* 6. Transporte Escolar */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          6. Transporte Escolar
+    <div className="space-y-6 py-2">
+      {/* 1. Transporte Escolar e Vacinação */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <Bus className="w-4 h-4 text-highlight" />
+          Transporte Escolar & Imunização
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center bg-[#F8FAFC] p-3 rounded-xl border border-[#D1D5DB]">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-[#181818] p-3.5 rounded-xl border border-borderCustom">
           <div className="flex items-center gap-3">
             <input 
               type="checkbox" 
               id="chkTransporte" 
               checked={transporte} 
               onChange={(e) => setTransporte(e.target.checked)}
-              className="w-4 h-4 accent-[#0067C0] rounded border-input"
+              className="w-4 h-4 accent-[#3ea6ff] rounded border-borderCustom cursor-pointer"
             />
-            <label htmlFor="chkTransporte" className="text-sm font-semibold text-[#1F2937] cursor-pointer">
-              Utiliza Transporte Público?
+            <label htmlFor="chkTransporte" className="text-xs font-semibold text-foreground cursor-pointer">
+              Utiliza Transporte Escolar Público?
             </label>
           </div>
 
           {transporte && (
             <div>
-              <Label className="text-xs text-muted-foreground font-medium">Qual a Rota do Transporte?</Label>
+              <Label className="text-xs text-muted-foreground font-medium">Linha / Rota do Transporte</Label>
               <Input 
                 value={rotaTransporte} 
                 onChange={(e) => setRotaTransporte(e.target.value)} 
                 placeholder="Ex: Rota 02 - Zona Rural" 
-                className="mt-1" 
+                className="mt-1 h-8 bg-[#141416] border-borderCustom text-xs" 
               />
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 items-start">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Situação Vacinal Geral</Label>
             <Select value={situacaoVacinal} onValueChange={(val) => setSituacaoVacinal(val || 'Em dia')}>
-              <SelectTrigger className="mt-1 w-full">
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
                 <SelectItem value="Em dia">Em dia</SelectItem>
                 <SelectItem value="Atrasada">Atrasada</SelectItem>
                 <SelectItem value="Não Vacinado">Não Vacinado</SelectItem>
@@ -108,282 +111,263 @@ export function SecaoSaude() {
           </div>
 
           {situacaoVacinal !== 'Em dia' && (
-            <div>
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Motivo de não vacinação / atraso</Label>
               <Input 
                 value={motivoNaoVacinacaoGeral} 
                 onChange={(e) => setMotivoNaoVacinacaoGeral(e.target.value)} 
-                placeholder="Opção da família / Recomendação" 
-                className="mt-1" 
+                placeholder="Opção da família / Recomendação médica" 
+                className="h-8 bg-[#181818] border-borderCustom text-xs" 
               />
             </div>
           )}
         </div>
+      </div>
 
-        <div className="mt-3">
-          <Label className="text-xs text-muted-foreground font-medium">Outras observações de saúde</Label>
+      {/* 2. Ficha de Saúde e Anamnese */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <HeartPulse className="w-4 h-4 text-highlight" />
+          Ficha de Saúde & Anamnese Clínica
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Diabetes</Label>
+            <Select value={diabete} onValueChange={(val) => setDiabete(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Convulsões / Epilepsia</Label>
+            <Select value={convulsoes} onValueChange={(val) => setConvulsoes(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Asma / Bronquite</Label>
+            <Select value={asma} onValueChange={(val) => setAsma(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Infecções Recorrentes</Label>
+            <Select value={infeccoes} onValueChange={(val) => setInfeccoes(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Restrição para Exercícios Físicos</Label>
+            <Select value={restricaoExercicio} onValueChange={(val) => setRestricaoExercicio(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Teve COVID-19?</Label>
+            <Select value={covid} onValueChange={(val) => setCovid(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {covid === 'Sim' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground font-medium">Quando teve COVID-19?</Label>
+              <Input 
+                value={covidQuando} 
+                onChange={(e) => setCovidQuando(e.target.value)} 
+                placeholder="Ex: Ano de 2021" 
+                className="h-8 bg-[#141416] border-borderCustom text-xs" 
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground font-medium">Situação Vacinal COVID-19</Label>
+              <Input 
+                value={situacaoVacinalCovid} 
+                onChange={(e) => setSituacaoVacinalCovid(e.target.value)} 
+                placeholder="Ex: 2 doses tomadas" 
+                className="h-8 bg-[#141416] border-borderCustom text-xs" 
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-3 bg-[#181818] rounded-xl border border-borderCustom space-y-2">
+            <Label className="text-xs font-semibold text-foreground">Alergia a Medicamentos?</Label>
+            <Select value={alergiaMed} onValueChange={(val) => setAlergiaMed(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#141416] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+            {alergiaMed === 'Sim' && (
+              <Input 
+                value={alergiaMedQuais} 
+                onChange={(e) => setAlergiaMedQuais(e.target.value)} 
+                placeholder="Quais medicamentos?" 
+                className="h-8 bg-[#141416] border-borderCustom text-xs mt-2" 
+              />
+            )}
+          </div>
+
+          <div className="p-3 bg-[#181818] rounded-xl border border-borderCustom space-y-2">
+            <Label className="text-xs font-semibold text-foreground">Restrição Alimentar / Intolerância?</Label>
+            <Select value={restricaoAlimentar} onValueChange={(val) => setRestricaoAlimentar(val || 'Não')}>
+              <SelectTrigger className="h-8 bg-[#141416] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Não">Não</SelectItem>
+                <SelectItem value="Sim">Sim</SelectItem>
+              </SelectContent>
+            </Select>
+            {restricaoAlimentar === 'Sim' && (
+              <Input 
+                value={restricaoAlimentarQuais} 
+                onChange={(e) => setRestricaoAlimentarQuais(e.target.value)} 
+                placeholder="Quais alimentos / intolerâncias?" 
+                className="h-8 bg-[#141416] border-borderCustom text-xs mt-2" 
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground font-medium">Outras Restrições ou Observações de Saúde</Label>
           <Input 
             value={restricoesSaude} 
             onChange={(e) => setRestricoesSaude(e.target.value)} 
-            placeholder="Alergias, cuidados especiais, etc." 
-            className="mt-1" 
+            placeholder="Ex: Utiliza medicação contínua, prótese, etc." 
+            className="h-8 bg-[#181818] border-borderCustom text-xs" 
           />
         </div>
       </div>
 
-      {/* 9. Ficha de Saúde / Anamnese */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          9. Ficha de Saúde / Anamnese
+      {/* 3. Necessidades Educacionais Especiais (NEE) */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-3">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <ShieldAlert className="w-4 h-4 text-highlight" />
+          Necessidades Educacionais Especiais (NEE)
         </div>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Diabete?</Label>
-              <Select value={diabete} onValueChange={(val) => setDiabete(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Convulsões?</Label>
-              <Select value={convulsoes} onValueChange={(val) => setConvulsoes(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Asma Brônquica?</Label>
-              <Select value={asma} onValueChange={(val) => setAsma(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Infecções freq.?</Label>
-              <Select value={infeccoes} onValueChange={(val) => setInfeccoes(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Restrição a Exercício?</Label>
-              <Select value={restricaoExercicio} onValueChange={(val) => setRestricaoExercicio(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Teve COVID-19?</Label>
-              <Select value={covid} onValueChange={(val) => setCovid(val || 'Não')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {covid === 'Sim' && (
-              <div>
-                <Label className="text-xs text-muted-foreground font-medium">Quando teve COVID-19?</Label>
-                <Input 
-                  value={covidQuando} 
-                  onChange={(e) => setCovidQuando(e.target.value)} 
-                  placeholder="Ex: Em 2021" 
-                  className="mt-1" 
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Situação Vacinal COVID-19</Label>
-              <Select value={situacaoVacinalCovid} onValueChange={(val) => setSituacaoVacinalCovid(val || '')}>
-                <SelectTrigger className="mt-1 w-full">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="D1">D1 (1ª Dose)</SelectItem>
-                  <SelectItem value="D2">D2 (2ª Dose)</SelectItem>
-                  <SelectItem value="Reforço">Reforço</SelectItem>
-                  <SelectItem value="Não foi vacinado">Não foi vacinado</SelectItem>
-                  <SelectItem value="Não informado">Não informado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {situacaoVacinalCovid === 'Não foi vacinado' && (
-              <div>
-                <Label className="text-xs text-muted-foreground font-medium">Motivo de não vacinação</Label>
-                <Input 
-                  value={motivoNaoVacinacaoCovid} 
-                  onChange={(e) => setMotivoNaoVacinacaoCovid(e.target.value)} 
-                  placeholder="Opção da família / Recomendação" 
-                  className="mt-1" 
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground font-medium">Alergia a Matérias / Medicamentos?</Label>
-              <Select value={alergiaMed} onValueChange={(val) => setAlergiaMed(val || 'Não')}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-              {alergiaMed === 'Sim' && (
-                <Input 
-                  value={alergiaMedQuais} 
-                  onChange={(e) => setAlergiaMedQuais(e.target.value)} 
-                  placeholder="Quais alergias?" 
-                  className="mt-1" 
-                />
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground font-medium">Restrições Alimentares?</Label>
-              <Select value={restricaoAlimentar} onValueChange={(val) => setRestricaoAlimentar(val || 'Não')}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Não">Não</SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-              {restricaoAlimentar === 'Sim' && (
-                <Input 
-                  value={restricaoAlimentarQuais} 
-                  onChange={(e) => setRestricaoAlimentarQuais(e.target.value)} 
-                  placeholder="Quais restrições alimentares?" 
-                  className="mt-1" 
-                />
-              )}
-            </div>
-          </div>
+        <div className="w-64 space-y-1">
+          <Label className="text-xs text-muted-foreground font-medium">Possui NEE?</Label>
+          <Select value={nee} onValueChange={(val) => setNee(val || 'Não')}>
+            <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectItem value="Não">Não</SelectItem>
+              <SelectItem value="Sim">Sim, indicar quais</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {nee !== 'Não' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+            {OPCOES_NEE.map((opcao) => (
+              <label 
+                key={opcao}
+                className="flex items-center gap-2 p-2 bg-[#141416] border border-borderCustom rounded-lg text-xs cursor-pointer hover:border-highlight transition-colors text-zinc-300"
+              >
+                <input 
+                  type="checkbox" 
+                  checked={neeSelecionadas.includes(opcao)}
+                  onChange={() => toggleArrayItem(neeSelecionadas, opcao, setNeeSelecionadas)}
+                  className="accent-[#3ea6ff]"
+                />
+                <span className="truncate">{opcao}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 10. Necessidade Educativa Especial (NEE) */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          10. Necessidade Educativa Especial (NEE)
+      {/* 4. Deficiências */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-3">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <Activity className="w-4 h-4 text-highlight" />
+          Deficiências Físicas, Sensoriais ou Intelectuais
         </div>
-        <div className="space-y-3">
-          <div className="w-56">
-            <Label className="text-xs text-muted-foreground font-medium">Possui NEE?</Label>
-            <Select value={nee} onValueChange={(val) => setNee(val || 'Não')}>
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Não">Não</SelectItem>
-                <SelectItem value="Sim">Sim, indique qual(is)</SelectItem>
-              </SelectContent>
-            </Select>
+
+        <div className="w-64 space-y-1">
+          <Label className="text-xs text-muted-foreground font-medium">Possui Deficiência Diagnosticada?</Label>
+          <Select value={deficiencia} onValueChange={(val) => setDeficiencia(val || 'Não')}>
+            <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectItem value="Não">Não</SelectItem>
+              <SelectItem value="Sim">Sim, indicar quais</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {deficiencia !== 'Não' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+            {OPCOES_DEFICIENCIA.map((opcao) => (
+              <label 
+                key={opcao}
+                className="flex items-center gap-2 p-2 bg-[#141416] border border-borderCustom rounded-lg text-xs cursor-pointer hover:border-highlight transition-colors text-zinc-300"
+              >
+                <input 
+                  type="checkbox" 
+                  checked={deficienciasSelecionadas.includes(opcao)}
+                  onChange={() => toggleArrayItem(deficienciasSelecionadas, opcao, setDeficienciasSelecionadas)}
+                  className="accent-[#3ea6ff]"
+                />
+                <span className="truncate">{opcao}</span>
+              </label>
+            ))}
           </div>
-
-          {nee !== 'Não' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
-              {OPCOES_NEE.map((opcao) => (
-                <label 
-                  key={opcao}
-                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
-                >
-                  <input 
-                    type="checkbox" 
-                    checked={neeSelecionadas.includes(opcao)}
-                    onChange={() => toggleArrayItem(neeSelecionadas, opcao, setNeeSelecionadas)}
-                    className="accent-[#0067C0]"
-                  />
-                  <span>{opcao}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 11. Deficiências */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          11. Deficiência Física, Auditiva ou Visual
-        </div>
-        <div className="space-y-3">
-          <div className="w-56">
-            <Label className="text-xs text-muted-foreground font-medium">Possui Deficiência?</Label>
-            <Select value={deficiencia} onValueChange={(val) => setDeficiencia(val || 'Não')}>
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Não">Não</SelectItem>
-                <SelectItem value="Sim">Sim, indique qual(is)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {deficiencia !== 'Não' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
-              {OPCOES_DEFICIENCIA.map((opcao) => (
-                <label 
-                  key={opcao}
-                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
-                >
-                  <input 
-                    type="checkbox" 
-                    checked={deficienciasSelecionadas.includes(opcao)}
-                    onChange={() => toggleArrayItem(deficienciasSelecionadas, opcao, setDeficienciasSelecionadas)}
-                    className="accent-[#0067C0]"
-                  />
-                  <span>{opcao}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )
 }
-
