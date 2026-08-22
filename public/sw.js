@@ -10,6 +10,7 @@ const CACHE_NAME = 'sig-sapeacu-v13';
 const STATIC_CACHE_NAME = 'sig-static-v13';
 const MAP_TILES_CACHE_NAME = 'sig-maptiles-v13';
 const PHOTOS_CACHE_NAME = 'sig-photos-v13';
+const ALPHA_CACHE_NAME = 'sig-alpha-v13';
 
 // Assets estáticos essenciais do PWA (ícones, manifest e offline shell)
 const STATIC_ASSETS = [
@@ -49,7 +50,8 @@ self.addEventListener('activate', (event) => {
             key !== STATIC_CACHE_NAME &&
             key !== CACHE_NAME &&
             key !== MAP_TILES_CACHE_NAME &&
-            key !== PHOTOS_CACHE_NAME
+            key !== PHOTOS_CACHE_NAME &&
+            key !== ALPHA_CACHE_NAME
           ) {
             return caches.delete(key);
           }
@@ -133,6 +135,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 3. CACHE DEDICADO DO SISTEMA ALPHA (Rotas /alpha/* - Stale-While-Revalidate para HTML e RSC Payloads)
+  const isAlphaRoute = url.pathname.startsWith('/alpha');
+  const isRscRequest = event.request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
+
+  if (isAlphaRoute && !url.pathname.startsWith('/api')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              caches.open(ALPHA_CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(async () => {
+            if (cachedResponse) return cachedResponse;
+            // Se não tiver cache exato da rota, tenta servir a raiz /alpha como fallback de App Shell
+            const alphaRootFallback = await caches.match('/alpha');
+            if (alphaRootFallback) return alphaRootFallback;
+            const offlinePage = await caches.match('/offline.html');
+            return offlinePage;
+          });
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
   // Ignora endpoints de API, Supabase genérico (Auth/DB), extensões do Chrome, dev HMR e Server Actions
   if (
     url.pathname.startsWith('/api') ||
@@ -145,7 +179,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First / SWR
+  // 4. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First / SWR
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.endsWith('.png') ||
@@ -176,7 +210,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Navegação HTML e payloads RSC -> Network-Only
+  // 5. Navegação HTML em outras rotas normais -> Network-Only com fallback
   const isHtmlNavigation =
     event.request.mode === 'navigate' &&
     event.request.headers.get('accept')?.includes('text/html');

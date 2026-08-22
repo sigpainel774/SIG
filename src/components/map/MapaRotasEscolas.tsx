@@ -51,6 +51,10 @@ import {
   verificarStatusMapaOffline,
   DownloadProgress,
 } from '@/lib/mapTileDownloader';
+import {
+  salvarCacheEntidadeAlpha,
+  obterCacheEntidadeAlpha,
+} from '@/lib/alphaOfflineManager';
 import { createClient } from '@/lib/supabaseClient';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
@@ -110,45 +114,63 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [sincronizando, setSincronizando] = useState(false);
   const [paradasConcluidas, setParadasConcluidas] = useState<string[]>([]);
 
-  // Carregar Rotas Designadas do Supabase
+  // Carregar Rotas Designadas do Supabase com fallback offline
   const carregarRotasDesignadas = useCallback(async () => {
     setLoadingRotasDesignadas(true);
+    // 1. Tenta carregar do cache IndexedDB
     try {
-      const { data, error } = await supabase
-        .from('alpha_rotas')
-        .select(`
-          id,
-          nome,
-          descricao,
-          motorista_id,
-          veiculo_id,
-          turno,
-          pontos_parada,
-          ativo,
-          motorista:motorista_id (id, nome, cargo),
-          veiculo:veiculo_id (id, placa, modelo)
-        `)
-        .eq('ativo', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      if (data) {
-        setRotasDesignadas(data);
-
-        // Se o motorista logado tiver uma rota atribuída, auto-seleciona
+      const cached = await obterCacheEntidadeAlpha<any[]>('rotas-escolas', 'rotas_designadas');
+      if (cached && cached.length > 0) {
+        setRotasDesignadas(cached);
         if (funcionario?.id && !rotaAtivaDesignada) {
-          const minhaRota = data.find((r: any) => r.motorista_id === funcionario.id);
-          if (minhaRota) {
-            setRotaAtivaDesignada(minhaRota);
-          }
+          const minhaRota = cached.find((r: any) => r.motorista_id === funcionario.id);
+          if (minhaRota) setRotaAtivaDesignada(minhaRota);
         }
       }
-    } catch (err) {
-      console.error('Erro ao carregar rotas designadas do Alpha:', err);
-    } finally {
+    } catch {}
+
+    // 2. Se estiver online, atualiza do Supabase e salva no cache
+    if (navigator.onLine) {
+      try {
+        const { data, error } = await supabase
+          .from('alpha_rotas')
+          .select(`
+            id,
+            nome,
+            descricao,
+            motorista_id,
+            veiculo_id,
+            turno,
+            pontos_parada,
+            ativo,
+            motorista:motorista_id (id, nome, cargo),
+            veiculo:veiculo_id (id, placa, modelo)
+          `)
+          .eq('ativo', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        if (data) {
+          setRotasDesignadas(data);
+          await salvarCacheEntidadeAlpha('rotas-escolas', 'rotas_designadas', data);
+
+          // Se o motorista logado tiver uma rota atribuída, auto-seleciona
+          if (funcionario?.id && !rotaAtivaDesignada) {
+            const minhaRota = data.find((r: any) => r.motorista_id === funcionario.id);
+            if (minhaRota) {
+              setRotaAtivaDesignada(minhaRota);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao atualizar rotas designadas do servidor, mantendo cache:', err);
+      } finally {
+        setLoadingRotasDesignadas(false);
+      }
+    } else {
       setLoadingRotasDesignadas(false);
     }
-  }, [supabase, funcionario?.id]);
+  }, [supabase, funcionario?.id, rotaAtivaDesignada]);
 
   useEffect(() => {
     carregarRotasDesignadas();

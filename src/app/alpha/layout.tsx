@@ -7,6 +7,8 @@ import { AuthInitializer } from '@/components/AuthInitializer'
 import { AlphaSidebar } from '@/components/alpha/AlphaSidebar'
 import { FlaskConical } from 'lucide-react'
 
+import { AlphaConnectivityBanner } from '@/components/alpha/AlphaConnectivityBanner'
+
 export const dynamic = 'force-dynamic'
 
 export default async function AlphaLayout({ children }: { children: ReactNode }) {
@@ -48,19 +50,16 @@ export default async function AlphaLayout({ children }: { children: ReactNode })
       {/* Conteúdo Principal da Rota Alpha */}
       <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden overflow-y-auto">
         {/* Faixa superior discreta de identificação do ambiente */}
-        <div className="bg-linear-to-r from-violet-950/40 via-background to-background border-b border-border/70 px-4 py-2 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <FlaskConical className="w-3.5 h-3.5 text-violet-400" />
-            <span className="font-semibold text-foreground">Ambiente Alpha Encapsulado</span>
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">
-              — Dados de testes e funções experimentais isolados
+        <div className="bg-linear-to-r from-violet-950/40 via-background to-background border-b border-border/70 px-4 py-2 text-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+            <FlaskConical className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+            <span className="font-semibold text-foreground truncate">Ambiente Alpha Encapsulado</span>
+            <span className="text-[11px] text-muted-foreground hidden md:inline">
+              — Laboratório 100% Offline-First
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              SISTEMA ATIVO
-            </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <AlphaConnectivityBanner />
           </div>
         </div>
 

@@ -21,6 +21,11 @@ import { EscolaMapeada } from '@/components/map/MapaRotasEscolas'
 import HistoricoPercursosTab from '@/components/map/HistoricoPercursosTab'
 import { toast } from 'sonner'
 
+import {
+  salvarCacheEntidadeAlpha,
+  obterCacheEntidadeAlpha,
+} from '@/lib/alphaOfflineManager'
+
 export default function AlphaRotasEscolasPage() {
   const supabase = createClient()
   const [escolas, setEscolas] = useState<EscolaMapeada[]>([])
@@ -35,23 +40,38 @@ export default function AlphaRotasEscolasPage() {
   }, [])
 
   const carregarEscolas = async () => {
-    setCarregando(true)
+    // 1. Tenta carregar do cache offline primeiro (instantâneo)
     try {
-      const { data, error } = await supabase
-        .from('escolas')
-        .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo')
-        .is('deleted_at', null)
-        .order('nome')
-
-      if (error) throw error
-
-      if (isMounted.current) {
-        setEscolas(data || [])
+      const cached = await obterCacheEntidadeAlpha<EscolaMapeada[]>('rotas-escolas', 'escolas')
+      if (isMounted.current && cached && cached.length > 0) {
+        setEscolas(cached)
+        setCarregando(false)
       }
-    } catch (err) {
-      console.error('Erro ao carregar escolas para geolocalização no Alpha:', err)
-      toast.error('Não foi possível carregar as escolas municipais.')
-    } finally {
+    } catch {}
+
+    // 2. Se estiver online, atualiza do Supabase e salva no cache
+    if (navigator.onLine) {
+      try {
+        const { data, error } = await supabase
+          .from('escolas')
+          .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo')
+          .is('deleted_at', null)
+          .order('nome')
+
+        if (error) throw error
+
+        if (isMounted.current && data) {
+          setEscolas(data)
+          await salvarCacheEntidadeAlpha('rotas-escolas', 'escolas', data)
+        }
+      } catch (err) {
+        console.warn('Falha ao atualizar escolas do servidor, utilizando cache local:', err)
+      } finally {
+        if (isMounted.current) {
+          setCarregando(false)
+        }
+      }
+    } else {
       if (isMounted.current) {
         setCarregando(false)
       }

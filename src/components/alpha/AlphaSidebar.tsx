@@ -22,6 +22,11 @@ import { AlphaIcon } from './AlphaIcon'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
+import {
+  salvarCacheModulosAlpha,
+  obterCacheModulosAlpha,
+} from '@/lib/alphaOfflineManager'
+
 export interface AlphaFuncao {
   id: string
   codigo: string
@@ -50,20 +55,35 @@ export function AlphaSidebar() {
     let isMounted = true
 
     async function loadFuncoes() {
+      // 1. Tenta carregar do cache local primeiro (instantâneo)
       try {
-        const { data, error } = await supabase
-          .from('alpha_funcoes')
-          .select('*')
-          .eq('ativo', true)
-          .order('ordem', { ascending: true })
-
-        if (error) throw error
-        if (isMounted && data) {
-          setFuncoes(data)
+        const cached = await obterCacheModulosAlpha()
+        if (isMounted && cached && cached.length > 0) {
+          setFuncoes(cached)
+          setLoading(false)
         }
-      } catch (err) {
-        console.error('Erro ao carregar funções da sidebar Alpha:', err)
-      } finally {
+      } catch {}
+
+      // 2. Se estiver online, busca a versão mais recente do Supabase e atualiza o cache
+      if (navigator.onLine) {
+        try {
+          const { data, error } = await supabase
+            .from('alpha_funcoes')
+            .select('*')
+            .eq('ativo', true)
+            .order('ordem', { ascending: true })
+
+          if (error) throw error
+          if (isMounted && data) {
+            setFuncoes(data)
+            await salvarCacheModulosAlpha(data)
+          }
+        } catch (err) {
+          console.warn('Falha de rede ao atualizar funções da sidebar Alpha, mantendo cache:', err)
+        } finally {
+          if (isMounted) setLoading(false)
+        }
+      } else {
         if (isMounted) setLoading(false)
       }
     }
