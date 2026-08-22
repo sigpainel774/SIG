@@ -11,7 +11,9 @@ interface SchoolSelectorProps {
 
 export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
   const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
-  const { isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos, isContaEja } = useAuthStore()
+  const { funcionario, acessos, isAdminGlobalOrRoot, escolaAtivaId, setEscolaAtivaId, vinculos, isContaEja } = useAuthStore()
+  const isSuperAdmin = Boolean(funcionario?.is_superadmin)
+  const isNivel1 = !isSuperAdmin && Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
   const isAdmin = isAdminGlobalOrRoot()
   const isEja = isContaEja()
   const [isOpen, setIsOpen] = useState(false)
@@ -31,17 +33,66 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
     })
   }, [escolasOficiais, scope])
 
+  // IDs de secretarias autorizadas para o Nível 1
+  const secretariasIdsNivel1 = useMemo<string[] | null>(() => {
+    if (!isNivel1) return null
+    const acs = acessos?.filter(a => a.nivel === 1 && a.ativo) || []
+    const ids = acs.flatMap(a => (a as any).secretarias_ids || []).filter(Boolean)
+    return ids.length > 0 ? ids : null
+  }, [isNivel1, acessos])
+
   const escolasPermitidas = useMemo(() => {
     if (isEja) {
       return escolasDoEscopo.filter((e) => e.eja_ativo === true)
     }
-    if (isAdmin) return escolasDoEscopo
-    if (vinculosAtivos.length > 0) {
-      const permitidas = escolasDoEscopo.filter((e) => vinculosAtivos.some((v) => v.escola_id === e.id))
-      return permitidas.length > 0 ? permitidas : escolasDoEscopo
+
+    // Superadmin: Acesso global irrestrito a todas as secretarias e unidades
+    if (isSuperAdmin) {
+      return escolasDoEscopo
     }
-    return escolasDoEscopo
-  }, [isAdmin, isEja, escolasDoEscopo, vinculosAtivos])
+
+    // Nível 1 (Secretário de Educação / Saúde / Admin de Pasta)
+    if (isNivel1) {
+      if (secretariasIdsNivel1 && secretariasIdsNivel1.length > 0) {
+        return escolasDoEscopo.filter(e => e.secretaria_id && secretariasIdsNivel1.includes(e.secretaria_id))
+      }
+
+      if (selectedSecretaria?.id) {
+        return escolasDoEscopo.filter(e => e.secretaria_id === selectedSecretaria.id)
+      }
+
+      // Detecção por contexto do cargo/pasta do Secretário
+      const cargoNorm = (funcionario?.cargo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      const isCargoSaude = /saude/i.test(cargoNorm)
+
+      if (isCargoSaude) {
+        return escolasDoEscopo.filter(e => {
+          const secNome = e.secretariaNome || (e.secretarias as any)?.nome || ''
+          return /sa[uú]de/i.test(secNome) || e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE'
+        })
+      }
+
+      // Default para Secretário de Educação: apenas escolas regulares e EMAEE, excluindo Saúde
+      return escolasDoEscopo.filter(e => {
+        const secNome = e.secretariaNome || (e.secretarias as any)?.nome || ''
+        const isSaude = /sa[uú]de/i.test(secNome) || e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE'
+        return !isSaude
+      })
+    }
+
+    // Nível 2 e Nível 3 (Diretores, Secretários Escolares, etc.)
+    const allowedSchoolIds = new Set([
+      ...vinculosAtivos.map(v => v.escola_id),
+      ...(acessos?.filter(a => a.ativo && a.escola_id).map(a => a.escola_id as string) || [])
+    ])
+
+    if (allowedSchoolIds.size > 0) {
+      return escolasDoEscopo.filter((e) => allowedSchoolIds.has(e.id))
+    }
+
+    // Sem fallback aberto para outras secretarias ou unidades
+    return []
+  }, [isSuperAdmin, isNivel1, isEja, escolasDoEscopo, secretariasIdsNivel1, selectedSecretaria?.id, funcionario?.cargo, vinculosAtivos, acessos])
 
   // Agrupa as escolas por Secretaria mantenedora
   const escolasAgrupadas = useMemo(() => {
@@ -58,7 +109,7 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
     loadEscolas()
   }, [loadEscolas])
 
-  // Sincroniza a store de escola com a store de autenticação no carregamento
+  // Sincroniza a store de escola com a store de autenticação no carregamento com auto-limpeza
   useEffect(() => {
     if (selectedEscola?.is_teste) {
       if (escolaAtivaId !== selectedEscola.id) {
@@ -68,22 +119,37 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
     }
 
     if (escolasPermitidas.length > 0) {
+      // Auto-limpeza: Se havia uma escola selecionada no cache local que não pertence às escolasPermitidas (ex: USF na Educação)
+      if (selectedEscola && !escolasPermitidas.some(e => e.id === selectedEscola.id)) {
+        if (isSuperAdmin || isNivel1) {
+          setSelectedEscola(null)
+          setEscolaAtivaId(null)
+        } else {
+          setSelectedEscola(escolasPermitidas[0])
+          setEscolaAtivaId(escolasPermitidas[0].id)
+        }
+        return
+      }
+
       if (escolaAtivaId) {
         const escola = escolasPermitidas.find(e => e.id === escolaAtivaId)
         if (escola && selectedEscola?.id !== escola.id) {
           setSelectedEscola(escola)
-        } else if (!escola && !isAdmin) {
+        } else if (!escola && !isSuperAdmin && !isNivel1) {
           setSelectedEscola(escolasPermitidas[0])
           setEscolaAtivaId(escolasPermitidas[0].id)
         }
       } else if (!escolaAtivaId && selectedEscola) {
         setEscolaAtivaId(selectedEscola.id)
-      } else if (!escolaAtivaId && !selectedEscola && !isAdmin && !selectedSecretaria) {
+      } else if (!escolaAtivaId && !selectedEscola && !isSuperAdmin && !isNivel1 && !selectedSecretaria) {
         setSelectedEscola(escolasPermitidas[0])
         setEscolaAtivaId(escolasPermitidas[0].id)
       }
+    } else if (!isSuperAdmin && !isNivel1 && selectedEscola) {
+      setSelectedEscola(null)
+      setEscolaAtivaId(null)
     }
-  }, [escolasPermitidas, escolaAtivaId, selectedEscola, selectedSecretaria, isAdmin, setSelectedEscola, setEscolaAtivaId])
+  }, [escolasPermitidas, escolaAtivaId, selectedEscola, selectedSecretaria, isSuperAdmin, isNivel1, setSelectedEscola, setEscolaAtivaId])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -95,7 +161,7 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  if (escolasPermitidas.length === 0 && !isAdmin) {
+  if (escolasPermitidas.length === 0 && !isSuperAdmin && !isNivel1) {
     return null
   }
 
@@ -125,7 +191,9 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
           ) : (
             <>
               <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-              <span className="font-semibold text-sky-200 truncate">Todas as Unidades (Rede Municipal)</span>
+              <span className="font-semibold text-sky-200 truncate">
+                {isSuperAdmin ? 'Todas as Unidades (Rede Municipal)' : 'Visão Geral da Rede'}
+              </span>
             </>
           )}
         </div>
@@ -138,7 +206,8 @@ export function SchoolSelector({ scope = 'all' }: SchoolSelectorProps) {
             Selecione a Unidade Foco
           </div>
 
-          {isAdmin && (
+          {/* Visão Global da Rede exclusiva para Superadmin raiz */}
+          {isSuperAdmin && (
             <button
               onClick={() => {
                 setSelectedEscola(null)

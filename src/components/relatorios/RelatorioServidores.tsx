@@ -87,10 +87,55 @@ const PALETTE_CARGOS = [
 
 export default function RelatorioServidores() {
   const supabase = createClient()
-  const { escolas, selectedEscola } = useSchoolStore()
-  const { acessos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
+  const { escolas, selectedEscola, selectedSecretaria } = useSchoolStore()
+  const { acessos, isAdminGlobalOrRoot, escolaAtivaId, funcionario, vinculos } = useAuthStore()
 
-  const isSuperAdminOrNivel1 = isAdminGlobalOrRoot() || acessos?.some(a => a.nivel === 1 && a.ativo)
+  const isSuperAdmin = Boolean(funcionario?.is_superadmin)
+  const isNivel1 = !isSuperAdmin && Boolean(acessos?.some(a => a.nivel === 1 && a.ativo))
+  const isSuperAdminOrNivel1 = isSuperAdmin || isNivel1
+
+  const secretariasIdsNivel1 = useMemo<string[] | null>(() => {
+    if (!isNivel1) return null
+    const acs = acessos?.filter(a => a.nivel === 1 && a.ativo) || []
+    const ids = acs.flatMap(a => (a as any).secretarias_ids || []).filter(Boolean)
+    return ids.length > 0 ? ids : null
+  }, [isNivel1, acessos])
+
+  const escolasPermitidas = useMemo(() => {
+    const escolasOficiais = escolas.filter(e => !e.is_teste)
+    if (isSuperAdmin) return escolasOficiais
+
+    if (isNivel1) {
+      if (secretariasIdsNivel1 && secretariasIdsNivel1.length > 0) {
+        return escolasOficiais.filter(e => e.secretaria_id && secretariasIdsNivel1.includes(e.secretaria_id))
+      }
+      if (selectedSecretaria?.id) {
+        return escolasOficiais.filter(e => e.secretaria_id === selectedSecretaria.id)
+      }
+      const cargoNorm = (funcionario?.cargo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      const isCargoSaude = /saude/i.test(cargoNorm)
+      if (isCargoSaude) {
+        return escolasOficiais.filter(e => {
+          const secNome = e.secretariaNome || (e.secretarias as any)?.nome || ''
+          return /sa[uú]de/i.test(secNome) || e.tipo === 'SAUDE' || e.tipo === 'UNIDADE_SAUDE'
+        })
+      }
+      return escolasOficiais.filter(e => {
+        const secNome = e.secretariaNome || (e.secretarias as any)?.nome || ''
+        return !/sa[uú]de/i.test(secNome) && e.tipo !== 'SAUDE' && e.tipo !== 'UNIDADE_SAUDE'
+      })
+    }
+
+    const vinculosAtivos = vinculos?.filter(v => v.ativo) || []
+    const allowedSchoolIds = new Set([
+      ...vinculosAtivos.map(v => v.escola_id),
+      ...(acessos?.filter(a => a.ativo && a.escola_id).map(a => a.escola_id as string) || [])
+    ])
+    if (allowedSchoolIds.size > 0) {
+      return escolasOficiais.filter(e => allowedSchoolIds.has(e.id))
+    }
+    return []
+  }, [escolas, isSuperAdmin, isNivel1, secretariasIdsNivel1, selectedSecretaria?.id, funcionario?.cargo, vinculos, acessos])
 
   const [activeTab, setActiveTab] = useState<'geral' | 'orcamento'>('geral')
   const [isMounted, setIsMounted] = useState(false)
@@ -423,11 +468,12 @@ export default function RelatorioServidores() {
   const nomeEscolaAtiva = useMemo(() => {
     if (selectedEscola) return selectedEscola.nome
     if (filtroEscolaId) {
-      const esc = escolas.find(e => e.id === filtroEscolaId)
+      const esc = escolasPermitidas.find(e => e.id === filtroEscolaId)
       if (esc) return esc.nome
     }
-    return 'Rede Municipal (Todas as Escolas)'
-  }, [selectedEscola, filtroEscolaId, escolas])
+    if (isSuperAdmin) return 'Rede Municipal (Todas as Secretarias)'
+    return `${selectedSecretaria?.nome || 'Secretaria Municipal de Educação'} (Todas as Escolas)`
+  }, [selectedEscola, filtroEscolaId, escolasPermitidas, isSuperAdmin, selectedSecretaria?.nome])
 
   // Dados para o Gráfico de Pizza de Vínculos
   const chartDataVinculos = useMemo(() => {
@@ -592,8 +638,9 @@ export default function RelatorioServidores() {
                     !isSuperAdminOrNivel1 && "opacity-80 cursor-not-allowed bg-secondary/30"
                   )}
                 >
-                  {isSuperAdminOrNivel1 && <option value="">Rede Municipal (Todas as Escolas)</option>}
-                  {escolas.map((esc) => (
+                  {isSuperAdmin && <option value="">Rede Municipal (Todas as Secretarias)</option>}
+                  {isNivel1 && <option value="">{selectedSecretaria?.nome || 'Secretaria Municipal de Educação'} (Todas as Escolas)</option>}
+                  {escolasPermitidas.map((esc) => (
                     <option key={esc.id} value={esc.id}>
                       {esc.nome}
                     </option>
