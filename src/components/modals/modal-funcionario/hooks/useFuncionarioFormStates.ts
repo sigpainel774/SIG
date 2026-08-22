@@ -128,7 +128,9 @@ export function useFuncionarioFormStates({
 
   // Emprego
   const [cargo, setCargo] = useState('')
+  const [cargoOrigem, setCargoOrigem] = useState('')
   const [cargaHoraria, setCargaHoraria] = useState('')
+  const [cargaHorariaEfetiva, setCargaHorariaEfetiva] = useState('')
   const [funcaoEspec, setFuncaoEspec] = useState('')
   const [tipoVinculo, setTipoVinculo] = useState('Contratado')
   const [tipoVinculoEspec, setTipoVinculoEspec] = useState('')
@@ -271,6 +273,8 @@ export function useFuncionarioFormStates({
             setDataAdmissao(data.data_admissao ?? '')
             setTipoSanguineo(data.tipo_sanguineo ?? 'Não informado')
             setCargo(data.cargo ?? '')
+            setCargoOrigem(data.cargo_origem ?? '')
+            setCargaHorariaEfetiva(data.carga_horaria_efetiva !== null && data.carga_horaria_efetiva !== undefined ? String(data.carga_horaria_efetiva) : '')
             setFuncaoEspec(data.funcao_especifica ?? '')
             setTipoVinculo(data.tipo_vinculo ?? 'Contratado')
             setTipoVinculoEspec(data.tipo_vinculo_especificacao ?? '')
@@ -421,7 +425,9 @@ export function useFuncionarioFormStates({
         setDataAdmissao('')
         setTipoSanguineo('Não informado')
         setCargo('')
+        setCargoOrigem('')
         setCargaHoraria('')
+        setCargaHorariaEfetiva('')
         setFuncaoEspec('')
         setTipoVinculo('Contratado')
         setTipoVinculoEspec('')
@@ -701,11 +707,16 @@ export function useFuncionarioFormStates({
 
       const cleanEmail = sanitizeEmail(email)
 
+      const parsedCargaEfetiva = cargaHorariaEfetiva ? parseInt(String(cargaHorariaEfetiva).replace(/\D/g, ''), 10) : null
+      const finalCargaEfetiva = isNaN(parsedCargaEfetiva as number) ? null : parsedCargaEfetiva
+
       const basePayload: any = {
         nome: nomeFormatado,
         email: cleanEmail,
         cpf: cpf || null,
         cargo: cargo || null,
+        cargo_origem: tipoVinculo === 'Efetivo' ? (cargoOrigem || null) : null,
+        carga_horaria_efetiva: tipoVinculo === 'Efetivo' ? finalCargaEfetiva : null,
         registro_profissional: registroProfissional || null,
         status,
         is_profissional_aee: isProfissionalAee,
@@ -1414,7 +1425,9 @@ export function useFuncionarioFormStates({
     consultarCep,
 
     cargo, setCargo,
+    cargoOrigem, setCargoOrigem,
     cargaHoraria, setCargaHoraria,
+    cargaHorariaEfetiva, setCargaHorariaEfetiva,
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,

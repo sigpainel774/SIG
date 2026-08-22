@@ -9,7 +9,9 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 export function EmpregoTab() {
   const {
     cargo, setCargo,
+    cargoOrigem, setCargoOrigem,
     cargaHoraria, setCargaHoraria,
+    cargaHorariaEfetiva, setCargaHorariaEfetiva,
     funcaoEspec, setFuncaoEspec,
     tipoVinculo, setTipoVinculo,
     tipoVinculoEspec, setTipoVinculoEspec,
@@ -32,6 +34,8 @@ export function EmpregoTab() {
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const isSaude = selectedSecretaria?.nome?.toLowerCase().includes('saúde') || false
   const isEmaee = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
+
+  const isEfetivo = tipoVinculo === 'Efetivo'
 
   return (
     <div className="space-y-5">
@@ -57,66 +61,29 @@ export function EmpregoTab() {
           </p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className={cargo === 'Outro' ? 'md:col-span-1' : 'md:col-span-2'}>
-          <Label>Função / Cargo Principal na Escola</Label>
-          <select
-            value={cargo}
-            onChange={(e) => setCargo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
-          >
-            <option value="">Selecione a função</option>
-            {cargos.map((c) => (
-              <option key={c.id || c.nome} value={c.nome}>
-                {c.nome}
-              </option>
-            ))}
-            {/* Fallback para cargos antigos não listados no banco */}
-            {!!cargo && !cargos.some(c => (c.nome ?? '').trim().toLowerCase() === (cargo ?? '').trim().toLowerCase()) && cargo !== 'Outro' && (
-              <option value={cargo}>{cargo}</option>
-            )}
-            <option value="Outro">Outro (especificar)</option>
-          </select>
-        </div>
 
-        <div>
-          <Label>Carga Horária (h/semana)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            value={cargaHoraria}
-            onChange={(e) => setCargaHoraria(e.target.value)}
-            placeholder="Ex: 20, 30, 40"
-            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
-          />
-        </div>
-
-        <div className={cargo === 'Outro' ? 'block' : 'hidden'}>
-          <Label>Especificar Função</Label>
-          <Input
-            value={funcaoEspec}
-            onChange={(e) => setFuncaoEspec(e.target.value)}
-            placeholder="Qual outra função?"
-            className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
-          />
-        </div>
-      </div>
-
+      {/* Tipo de Vínculo, Modalidade, Admissão e Status */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <Label>Tipo de Vínculo</Label>
+          <Label>Tipo de Vínculo *</Label>
           <select
             value={tipoVinculo}
-            onChange={(e) => setTipoVinculo(e.target.value)}
-            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
+            onChange={(e) => {
+              const val = e.target.value
+              setTipoVinculo(val)
+              if (val === 'Efetivo' && !cargoOrigem && cargo) {
+                setCargoOrigem(cargo)
+              }
+            }}
+            className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1 font-semibold text-[#3ea6ff]"
           >
             <option value="Contratado">Contratado</option>
-            <option value="Efetivo">Efetivo</option>
+            <option value="Efetivo">Efetivo (Concursado)</option>
             <option value="Nomeado">Nomeado</option>
             <option value="Outro">Outro (especificar)</option>
           </select>
         </div>
+
         <div className={tipoVinculo === 'Outro' ? 'block' : 'hidden'}>
           <Label>Especificar Vínculo</Label>
           <Input
@@ -126,6 +93,7 @@ export function EmpregoTab() {
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
+
         {!isSaude && (
           <div>
             <Label>Modalidade de Atuação</Label>
@@ -141,8 +109,9 @@ export function EmpregoTab() {
             </select>
           </div>
         )}
+
         <div>
-          <Label>Data de Admissão</Label>
+          <Label>Data de Admissão / Posse</Label>
           <Input
             type="date"
             value={dataAdmissao}
@@ -150,6 +119,7 @@ export function EmpregoTab() {
             className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
           />
         </div>
+
         <div>
           <Label>Status Funcional</Label>
           <select
@@ -179,6 +149,154 @@ export function EmpregoTab() {
           </label>
         </div>
       </div>
+
+      {/* BLOCO CONDICIONAL: SE FOR EFETIVO */}
+      {isEfetivo ? (
+        <div className="space-y-4 pt-2">
+          {/* 1. Cargo Efetivo / Concurso */}
+          <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+              1. Cargo Efetivo de Origem (Concurso Público)
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <Label>Cargo / Função do Concurso *</Label>
+                <select
+                  value={cargoOrigem}
+                  onChange={(e) => setCargoOrigem(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
+                >
+                  <option value="">Selecione o cargo efetivo</option>
+                  {cargos.map((c) => (
+                    <option key={c.id || c.nome} value={c.nome}>
+                      {c.nome}
+                    </option>
+                  ))}
+                  {!!cargoOrigem && !cargos.some(c => (c.nome ?? '').trim().toLowerCase() === (cargoOrigem ?? '').trim().toLowerCase()) && cargoOrigem !== 'Outro' && (
+                    <option value={cargoOrigem}>{cargoOrigem}</option>
+                  )}
+                  <option value="Outro">Outro (especificar)</option>
+                </select>
+              </div>
+
+              <div>
+                <Label>Carga Horária Efetiva (h/sem) *</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={cargaHorariaEfetiva}
+                  onChange={(e) => setCargaHorariaEfetiva(e.target.value)}
+                  placeholder="Ex: 20, 40"
+                  className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Lotação / Exercício Atual */}
+          <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              2. Função / Cargo Atual em Exercício (Lotação / CC / FG)
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={cargo === 'Outro' ? 'md:col-span-1' : 'md:col-span-2'}>
+                <Label>Função / Cargo Atual na Escola/Órgão *</Label>
+                <select
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
+                >
+                  <option value="">Selecione a função atual</option>
+                  {cargos.map((c) => (
+                    <option key={c.id || c.nome} value={c.nome}>
+                      {c.nome}
+                    </option>
+                  ))}
+                  {!!cargo && !cargos.some(c => (c.nome ?? '').trim().toLowerCase() === (cargo ?? '').trim().toLowerCase()) && cargo !== 'Outro' && (
+                    <option value={cargo}>{cargo}</option>
+                  )}
+                  <option value="Outro">Outro (especificar)</option>
+                </select>
+              </div>
+
+              <div>
+                <Label>Carga Horária em Exercício (h/sem) *</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={cargaHoraria}
+                  onChange={(e) => setCargaHoraria(e.target.value)}
+                  placeholder="Ex: 40"
+                  className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
+                />
+              </div>
+
+              <div className={cargo === 'Outro' ? 'block' : 'hidden'}>
+                <Label>Especificar Função Atual</Label>
+                <Input
+                  value={funcaoEspec}
+                  onChange={(e) => setFuncaoEspec(e.target.value)}
+                  placeholder="Qual outra função?"
+                  className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              * Para servidores concursados atuando em direção, coordenação ou cargos comissionados com ampliação temporária de jornada.
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* BLOCO PADRÃO: CONTRATADO / NOMEADO / OUTRO */
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div className={cargo === 'Outro' ? 'md:col-span-1' : 'md:col-span-2'}>
+            <Label>Função / Cargo Principal na Escola *</Label>
+            <select
+              value={cargo}
+              onChange={(e) => setCargo(e.target.value)}
+              className="w-full h-10 px-3 rounded-md bg-background dark:bg-[#181818] border border-input text-foreground text-sm outline-none mt-1"
+            >
+              <option value="">Selecione a função</option>
+              {cargos.map((c) => (
+                <option key={c.id || c.nome} value={c.nome}>
+                  {c.nome}
+                </option>
+              ))}
+              {!!cargo && !cargos.some(c => (c.nome ?? '').trim().toLowerCase() === (cargo ?? '').trim().toLowerCase()) && cargo !== 'Outro' && (
+                <option value={cargo}>{cargo}</option>
+              )}
+              <option value="Outro">Outro (especificar)</option>
+            </select>
+          </div>
+
+          <div>
+            <Label>Carga Horária (h/semana) *</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={cargaHoraria}
+              onChange={(e) => setCargaHoraria(e.target.value)}
+              placeholder="Ex: 20, 30, 40"
+              className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
+            />
+          </div>
+
+          <div className={cargo === 'Outro' ? 'block' : 'hidden'}>
+            <Label>Especificar Função</Label>
+            <Input
+              value={funcaoEspec}
+              onChange={(e) => setFuncaoEspec(e.target.value)}
+              placeholder="Qual outra função?"
+              className="bg-background dark:bg-[#181818] border-input text-foreground mt-1"
+            />
+          </div>
+        </div>
+      )}
 
 
       {/* Seção Condicional de Licença Médica quando Status for Afastado */}

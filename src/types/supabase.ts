@@ -2277,6 +2277,8 @@ export type Database = {
           auth_user_id: string | null
           bairro: string | null
           cargo: string | null
+          cargo_origem: string | null
+          carga_horaria_efetiva: number | null
           censo: string | null
           cep: string | null
           cidade: string | null
@@ -2371,6 +2373,8 @@ export type Database = {
           auth_user_id?: string | null
           bairro?: string | null
           cargo?: string | null
+          cargo_origem?: string | null
+          carga_horaria_efetiva?: number | null
           censo?: string | null
           cep?: string | null
           cidade?: string | null
@@ -2465,6 +2469,8 @@ export type Database = {
           auth_user_id?: string | null
           bairro?: string | null
           cargo?: string | null
+          cargo_origem?: string | null
+          carga_horaria_efetiva?: number | null
           censo?: string | null
           cep?: string | null
           cidade?: string | null

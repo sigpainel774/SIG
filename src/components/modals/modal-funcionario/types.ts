@@ -5,6 +5,8 @@ export interface FuncionarioBasico {
   email: string
   cpf?: string | null
   cargo?: string | null
+  cargo_origem?: string | null
+  carga_horaria_efetiva?: number | null
   status: string
   formacao?: string | null
   foto_url?: string | null
@@ -158,8 +160,12 @@ export interface FuncionarioFormContextType {
   // Emprego & Afastamento / Licença Médica
   cargo: string
   setCargo: (v: string) => void
+  cargoOrigem: string
+  setCargoOrigem: (v: string) => void
   cargaHoraria: string
   setCargaHoraria: (v: string) => void
+  cargaHorariaEfetiva: string
+  setCargaHorariaEfetiva: (v: string) => void
   funcaoEspec: string
   setFuncaoEspec: (v: string) => void
   tipoVinculo: string

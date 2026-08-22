@@ -375,7 +375,7 @@ export function gerarFichaFuncionarioHtml(
                   </div>
                   <div class="field">
                     <span class="field-label">Cargo / Função</span>
-                    <span class="field-value">${f.cargo ?? '—'}</span>
+                    <span class="field-value">${f.cargo ?? '—'}${f.cargo_origem ? ` <small style="font-size:7.5px; color:#555;">(Efetivo: ${f.cargo_origem}${f.carga_horaria_efetiva ? ` ${f.carga_horaria_efetiva}h` : ''})</small>` : ''}</span>
                   </div>
                   <div class="field">
                     <span class="field-label">Código INEP Escola</span>

@@ -5,6 +5,8 @@ export interface Funcionario {
   email: string
   cpf?: string | null
   cargo?: string | null
+  cargo_origem?: string | null
+  carga_horaria_efetiva?: number | null
   status: string
   orgao?: string | null
   data_nascimento?: string | null
