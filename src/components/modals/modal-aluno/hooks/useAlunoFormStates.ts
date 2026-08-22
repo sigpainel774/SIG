@@ -142,32 +142,6 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
   const [deficiencia, setDeficiencia] = useState('Não')
   const [deficienciasSelecionadas, setDeficienciasSelecionadas] = useState<string[]>([])
 
-  // Gestão de Profissionais AEE Vinculados
-  const [vinculosAEE, setVinculosAEE] = useState<any[]>([])
-  const [modalVincularAEEOpen, setModalVincularAEEOpen] = useState(false)
-
-  const adicionarVinculoAEE = (novoVinculo: any) => {
-    setVinculosAEE((prev) => [...prev, novoVinculo])
-  }
-
-  const removerVinculoAEE = (tempIdOrId: string) => {
-    setVinculosAEE((prev) =>
-      prev
-        .map((v) => {
-          if (v.id === tempIdOrId || v.tempId === tempIdOrId) {
-            if (v.id) {
-              // Já existe no banco: marcar para inativação
-              return { ...v, isRemovido: true }
-            }
-            // Ainda não existe no banco: remove do array
-            return null
-          }
-          return v
-        })
-        .filter(Boolean)
-    )
-  }
-
   // 12. Assinatura e Autorização de Imagem e Voz
   const [autorizaImagemVoz, setAutorizaImagemVoz] = useState('sim')
   
@@ -323,60 +297,8 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         setNewSignatureResponsavel(null)
         setNewSignatureFuncionario(null)
 
-        // Carregar vínculos AEE existentes no banco de dados para este aluno
-        const carregarVinculosAEE = async () => {
-          try {
-            const supabase = createClient()
-            // 1. Busca se aluno tem matricula EMAEE
-            const { data: matData } = await supabase
-              .from('emaee_matriculas')
-              .select('id')
-              .eq('aluno_id', alunoEditar.id)
-              .is('deleted_at', null)
-              .maybeSingle()
-
-            if (matData?.id) {
-              const { data: vincData } = await supabase
-                .from('emaee_especialidades_vinculadas')
-                .select(`
-                  id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo,
-                  funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
-                `)
-                .eq('emaee_matricula_id', matData.id)
-                .eq('ativo', true)
-
-              if (active && vincData) {
-                const mapeados = vincData.map((v: any) => {
-                  const func = v.funcionarios || {}
-                  const avatar = getAvatarUrl(func) || func.foto_url
-                  return {
-                    id: v.id,
-                    tempId: v.id,
-                    profissionalId: v.profissional_id,
-                    profissionalNome: func.nome ?? 'Profissional AEE',
-                    profissionalCargo: func.cargo ?? v.especialidade ?? 'Especialista AEE',
-                    profissionalFoto: avatar,
-                    frequencia: v.frequencia ?? 'SEMANAL',
-                    diaSemana: v.dia_semana ?? 1,
-                    horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
-                    horarioFim: (v.horario_fim || '09:00').substring(0, 5),
-                    isNovo: false,
-                    isRemovido: false
-                  }
-                })
-                setVinculosAEE(mapeados)
-              }
-            } else {
-              if (active) setVinculosAEE([])
-            }
-          } catch (err) {
-            console.error('Erro ao carregar vínculos AEE do aluno:', err)
-          }
-        }
-        carregarVinculosAEE()
       } else {
         // Reset completo para cadastrar aluno novo
-        setVinculosAEE([])
         pessoaForm.resetPessoais()
         setFotoUrl('')
         setFotoFile(null)
@@ -1051,94 +973,6 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
         }
       }
 
-      // --- PERSISTÊNCIA ATÔMICA DOS VÍNCULOS DE PROFISSIONAIS AEE ---
-      const vinculosAtivos = vinculosAEE.filter(v => !v.isRemovido)
-      const vinculosRemovidos = vinculosAEE.filter(v => v.isRemovido && v.id)
-
-      if (vinculosAtivos.length > 0 || vinculosRemovidos.length > 0) {
-        try {
-          // 1. Localiza ou cria a matrícula EMAEE para o aluno
-          let matriculaEmaeeId: string | null = null
-          const { data: matExistente } = await supabase
-            .from('emaee_matriculas')
-            .select('id')
-            .eq('aluno_id', savedAlunoId)
-            .is('deleted_at', null)
-            .maybeSingle()
-
-          if (matExistente?.id) {
-            matriculaEmaeeId = matExistente.id
-          } else if (vinculosAtivos.length > 0) {
-            // Cria prontuário/matrícula EMAEE automática
-            const targetEscolaId = escolaId || alunoEditar?.escola_id || escolaAtivaId
-            const anoAtual = new Date().getFullYear()
-            const seqMat = Math.floor(1000 + Math.random() * 9000)
-            const numeroMatriculaEmaee = `${anoAtual}16${seqMat}`
-
-            const { data: novaMat, error: errMat } = await supabase
-              .from('emaee_matriculas')
-              .insert({
-                aluno_id: savedAlunoId,
-                escola_atendimento_id: targetEscolaId,
-                escola_regular_id: targetEscolaId,
-                numero_matricula_emaee: numeroMatriculaEmaee,
-                status: 'ATIVO',
-                data_matricula: getHojeBrasilia()
-              } as any)
-              .select('id')
-              .single()
-
-            if (errMat) {
-              console.error('Erro ao gerar matrícula EMAEE:', errMat)
-            } else {
-              matriculaEmaeeId = novaMat.id
-              // Marca atendido_emaee = true no aluno
-              await (supabase
-                .from('alunos') as any)
-                .update({ atendido_emaee: true } as any)
-                .eq('id', savedAlunoId)
-            }
-          }
-
-          // 2. Inativa vínculos marcados como removidos
-          if (vinculosRemovidos.length > 0) {
-            const idsRemover = vinculosRemovidos.map(v => v.id)
-            await supabase
-              .from('emaee_especialidades_vinculadas')
-              .update({ ativo: false })
-              .in('id', idsRemover)
-          }
-
-          // 3. Insere novos vínculos AEE
-          if (matriculaEmaeeId) {
-            const novosParaInserir = vinculosAtivos
-              .filter(v => v.isNovo)
-              .map(v => ({
-                emaee_matricula_id: matriculaEmaeeId,
-                profissional_id: v.profissionalId,
-                especialidade: v.profissionalCargo || 'Especialista AEE',
-                frequencia: v.frequencia,
-                dia_semana: v.diaSemana,
-                horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
-                horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
-                ativo: true
-              }))
-
-            if (novosParaInserir.length > 0) {
-              const { error: errVinc } = await supabase
-                .from('emaee_especialidades_vinculadas')
-                .insert(novosParaInserir as any)
-
-              if (errVinc) {
-                console.error('Erro ao salvar especialidades vinculadas:', errVinc)
-              }
-            }
-          }
-        } catch (errAee) {
-          console.error('Erro ao persistir vínculos AEE do aluno:', errAee)
-        }
-      }
-
       // Se ambas as assinaturas estão presentes, acionar a geração do PDF e bloqueio
       if (dadosMatriculaObj.assinatura_responsavel_url && dadosMatriculaObj.assinatura_funcionario_url) {
         let clientIp = '127.0.0.1'
@@ -1284,12 +1118,6 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     setDeficiencia,
     deficienciasSelecionadas,
     setDeficienciasSelecionadas,
-    vinculosAEE,
-    setVinculosAEE,
-    adicionarVinculoAEE,
-    removerVinculoAEE,
-    modalVincularAEEOpen,
-    setModalVincularAEEOpen,
     autorizaImagemVoz,
     setAutorizaImagemVoz,
     assinaturaResponsavelUrl,

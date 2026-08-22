@@ -4,8 +4,9 @@ import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
-import { getVisualizacaoUrl } from '@/lib/photoHelper'
+import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { getHojeBrasilia } from '@/lib/dateUtils'
+import { VinculoAEEConfig } from '../components/ModalVincularProfissionalAlunoAEE'
 
 export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMatriculaEmaeeProps, isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const supabase = createBrowserClient()
@@ -221,6 +222,25 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     }
   }
 
+  // 6. Especialistas e Vínculos AEE
+  const [vinculosAEE, setVinculosAEE] = useState<VinculoAEEConfig[]>([])
+  const [vinculosRemovidos, setVinculosRemovidos] = useState<VinculoAEEConfig[]>([])
+  const [modalVincularAEEOpen, setModalVincularAEEOpen] = useState(false)
+
+  const adicionarVinculoAEE = (novoVinculo: VinculoAEEConfig) => {
+    setVinculosAEE((prev) => [...prev, novoVinculo])
+  }
+
+  const removerVinculoAEE = (idOuTempId: string) => {
+    setVinculosAEE((prev) => {
+      const item = prev.find((v) => (v.id || v.tempId) === idOuTempId)
+      if (item && item.id) {
+        setVinculosRemovidos((r) => [...r, item])
+      }
+      return prev.filter((v) => (v.id || v.tempId) !== idOuTempId)
+    })
+  }
+
   // Listas de apoio
   const [escolas, setEscolas] = useState<{id: string, nome: string}[]>([])
   const [unidadesEmaee, setUnidadesEmaee] = useState<{id: string, nome: string}[]>([])
@@ -355,6 +375,46 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       // Assinaturas
       setAssinaturaResponsavelUrl(mat.assinatura_responsavel_aluno_url ?? dm.assinatura_responsavel_url ?? null)
       setAssinaturaServidorUrl(mat.assinatura_responsavel_matricula_url ?? funcionario?.assinatura_url ?? null)
+
+      // Carregar Especialistas e Vínculos AEE existentes
+      if (mat.id) {
+        (async () => {
+          try {
+            const { data: vincData, error } = await supabase
+              .from('emaee_especialidades_vinculadas')
+              .select(`
+                id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo,
+                funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
+              `)
+              .eq('emaee_matricula_id', mat.id)
+              .eq('ativo', true)
+
+            if (!error && vincData) {
+              const mapeados: VinculoAEEConfig[] = vincData.map((v: any) => {
+                const func = v.funcionarios || {}
+                const avatar = getAvatarUrl(func) || func.foto_url
+                return {
+                  id: v.id,
+                  tempId: v.id,
+                  profissionalId: v.profissional_id,
+                  profissionalNome: func.nome ?? 'Profissional AEE',
+                  profissionalCargo: func.cargo ?? v.especialidade ?? 'Especialista AEE',
+                  profissionalFoto: avatar,
+                  frequencia: v.frequencia ?? 'SEMANAL',
+                  diaSemana: v.dia_semana ?? 1,
+                  horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
+                  horarioFim: (v.horario_fim || '09:00').substring(0, 5),
+                  isNovo: false
+                }
+              })
+              setVinculosAEE(mapeados)
+              setVinculosRemovidos([])
+            }
+          } catch (err) {
+            console.error('Erro ao carregar vínculos AEE do aluno:', err)
+          }
+        })()
+      }
     } else {
       // Reset limpo para Nova Matrícula (Abertura Padrão em Modo Manual)
       setAlunoSelecionado(null)
@@ -431,6 +491,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setAssinaturaResponsavelUrl(null)
       setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
       setCodigoColetaLocal(null)
+      setVinculosAEE([])
+      setVinculosRemovidos([])
     }
   }, [isOpen, props.matriculaEditar, props.escolaEmaeeId, funcionario?.assinatura_url])
 
@@ -546,6 +608,58 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     if (dadosMatricula.assinatura_responsavel_url) {
       setAssinaturaResponsavelUrl(dadosMatricula.assinatura_responsavel_url)
     }
+
+    // Carregar vínculos AEE se o aluno selecionado já possuir matrícula/prontuário no EMAEE
+    if (aluno.id && !props.matriculaEditar) {
+      (async () => {
+        try {
+          const { data: matExistente } = await supabase
+            .from('emaee_matriculas')
+            .select('id')
+            .eq('aluno_id', aluno.id)
+            .is('deleted_at', null)
+            .maybeSingle()
+
+          if (matExistente?.id) {
+            const { data: vincData, error } = await supabase
+              .from('emaee_especialidades_vinculadas')
+              .select(`
+                id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo,
+                funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
+              `)
+              .eq('emaee_matricula_id', matExistente.id)
+              .eq('ativo', true)
+
+            if (!error && vincData) {
+              const mapeados: VinculoAEEConfig[] = vincData.map((v: any) => {
+                const func = v.funcionarios || {}
+                const avatar = getAvatarUrl(func) || func.foto_url
+                return {
+                  id: v.id,
+                  tempId: v.id,
+                  profissionalId: v.profissional_id,
+                  profissionalNome: func.nome ?? 'Profissional AEE',
+                  profissionalCargo: func.cargo ?? v.especialidade ?? 'Especialista AEE',
+                  profissionalFoto: avatar,
+                  frequencia: v.frequencia ?? 'SEMANAL',
+                  diaSemana: v.dia_semana ?? 1,
+                  horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
+                  horarioFim: (v.horario_fim || '09:00').substring(0, 5),
+                  isNovo: false
+                }
+              })
+              setVinculosAEE(mapeados)
+              setVinculosRemovidos([])
+            }
+          } else {
+            setVinculosAEE([])
+            setVinculosRemovidos([])
+          }
+        } catch (err) {
+          console.error('Erro ao verificar vínculos do aluno selecionado:', err)
+        }
+      })()
+    }
   }
 
   // Ativar modo manual para novo aluno
@@ -577,6 +691,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setFotoUrl(null)
     setFotoFile(null)
     setAssinaturaResponsavelUrl(null)
+    setVinculosAEE([])
+    setVinculosRemovidos([])
   }
 
   // Busca de alunos com debounce e cancelamento
@@ -834,6 +950,44 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
         if (matriculaUpdateErr) throw matriculaUpdateErr
 
+        // 4. Inativar vínculos removidos
+        if (vinculosRemovidos.length > 0) {
+          const idsRemover: string[] = vinculosRemovidos
+            .map((v) => v.id)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+
+          if (idsRemover.length > 0) {
+            await supabase
+              .from('emaee_especialidades_vinculadas')
+              .update({ ativo: false })
+              .in('id', idsRemover)
+          }
+        }
+
+        // 5. Inserir novos vínculos adicionados
+        const novosParaInserir = vinculosAEE
+          .filter(v => v.isNovo)
+          .map(v => ({
+            emaee_matricula_id: matriculaId,
+            profissional_id: v.profissionalId,
+            especialidade: v.profissionalCargo || 'Especialista AEE',
+            frequencia: v.frequencia,
+            dia_semana: v.diaSemana,
+            horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
+            horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
+            ativo: true
+          }))
+
+        if (novosParaInserir.length > 0) {
+          const { error: errVinc } = await supabase
+            .from('emaee_especialidades_vinculadas')
+            .insert(novosParaInserir as any)
+
+          if (errVinc) {
+            console.error('Erro ao salvar especialidades vinculadas no EMAEE:', errVinc)
+          }
+        }
+
         toast.success('Ficha do aluno / Matrícula EMAEE atualizada com sucesso!')
         if (props.onSuccess) props.onSuccess()
         setIsOpen(false)
@@ -1027,11 +1181,35 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         status: 'FILA_ESPERA'
       }
 
-      const { error: matriculaError } = await (supabase
+      const { data: novaMatricula, error: matriculaError } = await (supabase
         .from('emaee_matriculas')
         .insert(insertPayload) as any)
+        .select('id')
+        .single()
 
       if (matriculaError) throw matriculaError
+
+      // 5. Inserir vínculos AEE se houver
+      if (novaMatricula?.id && vinculosAEE.length > 0) {
+        const novosParaInserir = vinculosAEE.map(v => ({
+          emaee_matricula_id: novaMatricula.id,
+          profissional_id: v.profissionalId,
+          especialidade: v.profissionalCargo || 'Especialista AEE',
+          frequencia: v.frequencia,
+          dia_semana: v.diaSemana,
+          horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
+          horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
+          ativo: true
+        }))
+
+        const { error: errVinc } = await supabase
+          .from('emaee_especialidades_vinculadas')
+          .insert(novosParaInserir as any)
+
+        if (errVinc) {
+          console.error('Erro ao salvar especialidades vinculadas na nova matrícula EMAEE:', errVinc)
+        }
+      }
 
       toast.success('Ficha de Inscrição / Matrícula AEE salva com sucesso!')
       if (props.onSuccess) props.onSuccess()
@@ -1066,6 +1244,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     localizacaoAtendimento, setLocalizacaoAtendimento,
     dataMatricula, setDataMatricula,
     unidadesEmaee,
+
+    // Especialistas e Vínculos AEE
+    vinculosAEE,
+    adicionarVinculoAEE,
+    removerVinculoAEE,
+    modalVincularAEEOpen,
+    setModalVincularAEEOpen,
 
     // Identificação do Aluno
     nomeCompleto, setNomeCompleto,

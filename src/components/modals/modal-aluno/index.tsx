@@ -45,25 +45,12 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
     cancelarAssinaturaCelular,
     handleSubmit,
     clearDatabaseCodes,
-    celularSigningField,
-    vinculosAEE
+    celularSigningField
   } = useAlunoForm()
 
   const isDocumentoBloqueado = alunoEditar?.dados_matricula?.documento_bloqueado === true
 
   const handleClose = async () => {
-    // 🛡️ Regra Anti-Órfãos / Proteção em Novos Cadastros:
-    // Se for cadastro novo (aluno ainda não salvo) e tiver atendimentos AEE preenchidos/ativos,
-    // bloquear cancelamento acidental com aviso explicativo.
-    const vinculosPendentesNovos = vinculosAEE.filter((v: any) => !v.isRemovido)
-    if (!alunoEditar?.id && vinculosPendentesNovos.length > 0) {
-      toast.error(
-        'Existem atendimentos AEE configurados. Salve a ficha do aluno para efetivar os atendimentos ou remova os vínculos antes de cancelar.',
-        { duration: 5000 }
-      )
-      return
-    }
-
     // Limpar códigos temporários no banco ao fechar o modal
     if (celularSigningField) {
       await clearDatabaseCodes(celularSigningField)

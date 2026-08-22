@@ -106,14 +106,6 @@ export interface AlunoFormContextType {
   deficienciasSelecionadas: string[]
   setDeficienciasSelecionadas: (val: string[]) => void
 
-  // Gestão de Profissionais AEE Vinculados
-  vinculosAEE: any[]
-  setVinculosAEE: React.Dispatch<React.SetStateAction<any[]>>
-  adicionarVinculoAEE: (vinculo: any) => void
-  removerVinculoAEE: (tempIdOrId: string) => void
-  modalVincularAEEOpen: boolean
-  setModalVincularAEEOpen: (val: boolean) => void
-
   // Imagem/Voz & Assinatura
   autorizaImagemVoz: string
   setAutorizaImagemVoz: (val: string) => void
