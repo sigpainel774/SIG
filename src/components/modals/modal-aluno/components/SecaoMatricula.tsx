@@ -5,6 +5,7 @@ import { useAlunoForm } from '../context/AlunoFormContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { GraduationCap, BookOpen, Layers } from 'lucide-react'
 
 export function SecaoMatricula() {
   const {
@@ -36,75 +37,48 @@ export function SecaoMatricula() {
   ]
 
   return (
-    <div className="space-y-4">
-      {/* 2. Turma Vinculada */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          2. Turma Vinculada
+    <div className="space-y-6 py-2">
+      {/* 1. Enturmação e Matrícula */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <GraduationCap className="w-4 h-4 text-highlight" />
+          Turma & Modalidade de Ensino
         </div>
-        <div>
-          <Label className="text-xs text-muted-foreground font-medium">Selecione a Turma no Sistema</Label>
-          <Select 
-            value={turmaId} 
-            onValueChange={(val) => {
-              setTurmaId(val || '')
-              if (val) {
-                const selectedTurma = turmas.find(t => t.id === val)
-                if (selectedTurma) {
-                  setSerie(selectedTurma.nome)
-                }
-              }
-            }}
-          >
-            <SelectTrigger className="mt-1 w-full">
-              <SelectValue placeholder="Selecione uma turma ativa">
-                {turmaId 
-                  ? (() => {
-                      const t = turmas.find((x) => x.id === turmaId);
-                      return t ? `${t.nome} (${t.ano_letivo})` : (turmas.length === 0 ? 'Carregando...' : turmaId);
-                    })()
-                  : undefined}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
-                <SelectItem key={t.id} value={t.id}>{t.nome} ({t.ano_letivo})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
-      {/* 5. Informações da Matrícula & Etapa */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          5. Ano / Etapa de Escolarização & Matrícula
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <Label className="text-xs text-muted-foreground font-medium">Tipo de Matrícula</Label>
-            <Select value={tipoMatricula} onValueChange={(val) => setTipoMatricula(val || 'Renovação')}>
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Turma Vinculada no Sistema</Label>
+            <Select 
+              value={turmaId} 
+              onValueChange={(val) => {
+                setTurmaId(val || '')
+                if (val) {
+                  const selectedTurma = turmas.find(t => t.id === val)
+                  if (selectedTurma) {
+                    setSerie(selectedTurma.nome)
+                  }
+                }
+              }}
+            >
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue placeholder="Selecione uma turma ativa">
+                  {turmaId 
+                    ? (() => {
+                        const t = turmas.find((x) => x.id === turmaId);
+                        return t ? `${t.nome} (${t.ano_letivo})` : (turmas.length === 0 ? 'Carregando...' : turmaId);
+                      })()
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Nova Matrícula">Nova Matrícula</SelectItem>
-                <SelectItem value="Renovação">Renovação</SelectItem>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.nome} ({t.ano_letivo})</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground font-medium">Data da Matrícula</Label>
-            <Input 
-              type="date" 
-              value={dataMatricula} 
-              onChange={(e) => setDataMatricula(e.target.value)} 
-              className="mt-1" 
-            />
-          </div>
-
-          <div>
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Ano / Série / Etapa</Label>
             <Select 
               value={serie} 
@@ -118,12 +92,12 @@ export function SecaoMatricula() {
                 }
               }}
             >
-              <SelectTrigger className="mt-1 w-full">
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
                 <SelectValue placeholder="Selecione o Ano / Série / Etapa">
                   {serie || undefined}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
                 {turmas.filter(t => (t.escola_id || t.school_id) === escolaId).map((t) => (
                   <SelectItem key={t.id} value={t.nome}>{t.nome} ({t.ano_letivo})</SelectItem>
                 ))}
@@ -133,14 +107,39 @@ export function SecaoMatricula() {
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground font-medium">Turno</Label>
-            <Select value={turno} onValueChange={(val) => setTurno(val || 'Matutino')}>
-              <SelectTrigger className="mt-1 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Tipo de Matrícula</Label>
+            <Select value={tipoMatricula} onValueChange={(val) => setTipoMatricula(val || 'Renovação')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectItem value="Nova Matrícula">Nova Matrícula</SelectItem>
+                <SelectItem value="Renovação">Renovação</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Data da Matrícula</Label>
+            <Input 
+              type="date"
+              value={dataMatricula} 
+              onChange={(e) => setDataMatricula(e.target.value)} 
+              className="h-8 bg-[#181818] border-borderCustom text-xs text-foreground" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-medium">Turno das Aulas</Label>
+            <Select value={turno} onValueChange={(val) => setTurno(val || 'Matutino')}>
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
                 <SelectItem value="Matutino">Matutino</SelectItem>
                 <SelectItem value="Vespertino">Vespertino</SelectItem>
                 <SelectItem value="Noturno">Noturno</SelectItem>
@@ -151,39 +150,41 @@ export function SecaoMatricula() {
         </div>
       </div>
 
-      {/* 8. Recursos SAEB (INEP) */}
-      <div className="student-edit-modal__section student-section-card p-5 rounded-xl bg-white border border-[#D1D5DB]">
-        <div className="student-edit-modal__section-title section-title text-[#0067C0] font-bold text-base tracking-[0.01em] pb-2.5 mb-3 border-b border-[#D1D5DB]">
-          8. Recursos para Uso em Sala de Aula e Avaliação INEP (SAEB)
+      {/* 2. Recursos SAEB (INEP) */}
+      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+          <BookOpen className="w-4 h-4 text-highlight" />
+          Recursos de Acessibilidade em Avaliações INEP (SAEB)
         </div>
+
         <div className="space-y-3">
-          <div className="w-48">
+          <div className="w-56 space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Necessita de Recursos Especiais?</Label>
             <Select value={recursosEspeciais} onValueChange={(val) => setRecursosEspeciais(val || 'Não')}>
-              <SelectTrigger className="mt-1 w-full">
+              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
-                <SelectItem value="Sim">Sim</SelectItem>
+                <SelectItem value="Sim">Sim, indicar quais</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {recursosEspeciais === 'Sim' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#D1D5DB]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#181818] rounded-xl border border-borderCustom">
               {OPCOES_RECURSOS.map((opcao) => (
                 <label 
                   key={opcao}
-                  className="flex items-center gap-2 p-2 bg-white border border-[#D1D5DB] rounded-lg text-xs cursor-pointer hover:border-[#0067C0] transition-colors text-[#374151]"
+                  className="flex items-center gap-2 p-2 bg-[#141416] border border-borderCustom rounded-lg text-xs cursor-pointer hover:border-highlight transition-colors text-zinc-300"
                 >
                   <input 
                     type="checkbox" 
                     checked={recursosSelecionados.includes(opcao)}
                     onChange={() => toggleArrayItem(recursosSelecionados, opcao, setRecursosSelecionados)}
-                    className="accent-[#0067C0]"
+                    className="accent-[#3ea6ff]"
                   />
-                  <span>{opcao}</span>
+                  <span className="truncate">{opcao}</span>
                 </label>
               ))}
             </div>
@@ -193,4 +194,3 @@ export function SecaoMatricula() {
     </div>
   )
 }
-
