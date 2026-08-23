@@ -54,7 +54,7 @@ export default function AlphaRotasEscolasPage() {
       try {
         const { data, error } = await supabase
           .from('escolas')
-          .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo')
+          .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo, is_teste')
           .is('deleted_at', null)
           .order('nome')
 
@@ -88,8 +88,23 @@ export default function AlphaRotasEscolasPage() {
     e.tipo === 'SECRETARIA' ||
     (e.nome || '').toUpperCase().includes('SEMED')
 
-  const unidadesEscolares = escolas.filter((e) => !isSemed(e))
+  const isSaude = (e: EscolaMapeada) =>
+    e.tipo === 'SAUDE' ||
+    e.tipo === 'POSTO' ||
+    e.tipo === 'USF' ||
+    (e.nome || '').toUpperCase().includes('POSTO DE SAÚDE') ||
+    (e.nome || '').toUpperCase().includes('POSTO DE SAUDE') ||
+    (e.nome || '').toUpperCase().includes('USF')
+
+  const isTeste = (e: EscolaMapeada) =>
+    e.is_teste === true || (e.nome || '').toLowerCase().startsWith('teste ')
+
+  const escolasReais = escolas.filter((e) => !isSemed(e) && !isSaude(e) && !isTeste(e))
+  const unidadesSaude = escolas.filter(isSaude)
+  const unidadesTeste = escolas.filter(isTeste)
   const semedUnidade = escolas.find(isSemed)
+
+  const unidadesEscolares = escolas.filter((e) => !isSemed(e))
 
   const escolasComCoords = unidadesEscolares.filter(
     (e) =>
@@ -192,13 +207,13 @@ export default function AlphaRotasEscolasPage() {
                 <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
                   Escolas Cadastradas
                 </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold text-white">{unidadesEscolares.length}</span>
-                  {semedUnidade && (
-                    <span className="text-[10px] font-semibold text-blue-400">
-                      + 1 Sede (INEP 01)
-                    </span>
-                  )}
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-lg font-bold text-white">{escolasReais.length}</span>
+                  <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-400">
+                    {semedUnidade && <span>+1 Sede</span>}
+                    {unidadesSaude.length > 0 && <span>• {unidadesSaude.length} Saúde/USF</span>}
+                    {unidadesTeste.length > 0 && <span>• {unidadesTeste.length} Teste</span>}
+                  </div>
                 </div>
               </div>
               <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">

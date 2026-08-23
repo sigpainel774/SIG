@@ -70,6 +70,7 @@ export interface EscolaMapeada {
   inep?: string | null;
   telefone?: string | null;
   ativo?: boolean | null;
+  is_teste?: boolean | null;
 }
 
 export interface EscolaComCoordenadas extends EscolaMapeada {

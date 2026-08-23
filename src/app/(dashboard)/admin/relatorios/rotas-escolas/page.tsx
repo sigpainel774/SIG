@@ -39,7 +39,7 @@ export default function RotasEscolasPage() {
     try {
       const { data, error } = await supabase
         .from('escolas')
-        .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo')
+        .select('id, nome, latitude, longitude, endereco, localizacao, tipo, inep, telefone, ativo, is_teste')
         .is('deleted_at', null)
         .order('nome');
 
@@ -68,8 +68,23 @@ export default function RotasEscolasPage() {
     e.tipo === 'SECRETARIA' ||
     (e.nome || '').toUpperCase().includes('SEMED');
 
-  const unidadesEscolares = escolas.filter((e) => !isSemed(e));
+  const isSaude = (e: EscolaMapeada) =>
+    e.tipo === 'SAUDE' ||
+    e.tipo === 'POSTO' ||
+    e.tipo === 'USF' ||
+    (e.nome || '').toUpperCase().includes('POSTO DE SAÚDE') ||
+    (e.nome || '').toUpperCase().includes('POSTO DE SAUDE') ||
+    (e.nome || '').toUpperCase().includes('USF');
+
+  const isTeste = (e: EscolaMapeada) =>
+    e.is_teste === true || (e.nome || '').toLowerCase().startsWith('teste ');
+
+  const escolasReais = escolas.filter((e) => !isSemed(e) && !isSaude(e) && !isTeste(e));
+  const unidadesSaude = escolas.filter(isSaude);
+  const unidadesTeste = escolas.filter(isTeste);
   const semedUnidade = escolas.find(isSemed);
+
+  const unidadesEscolares = escolas.filter((e) => !isSemed(e));
 
   const escolasComCoords = unidadesEscolares.filter(
     (e) =>
@@ -108,11 +123,10 @@ export default function RotasEscolasPage() {
                 Relatórios
               </Link>
               <span>/</span>
-              <span className="text-sky-600 dark:text-sky-400 font-semibold">
-                Geolocalização e Rotas
-              </span>
+              <span className="text-foreground font-semibold">Rotas e Geolocalização</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+              <Route className="w-6 h-6 text-sky-600 dark:text-sky-400" />
               Geolocalização e Rotas de Unidades Escolares
             </h1>
           </div>
@@ -126,7 +140,7 @@ export default function RotasEscolasPage() {
               onClick={() => setAbaAtiva('roteirizador')}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'roteirizador'
-                  ? 'bg-sky-600 text-white shadow-xs'
+                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -138,7 +152,7 @@ export default function RotasEscolasPage() {
               onClick={() => setAbaAtiva('historico')}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'historico'
-                  ? 'bg-sky-600 text-white shadow-xs'
+                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -168,13 +182,13 @@ export default function RotasEscolasPage() {
                 <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
                   Escolas Cadastradas
                 </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold text-foreground">{unidadesEscolares.length}</span>
-                  {semedUnidade && (
-                    <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
-                      + 1 Sede (INEP 01)
-                    </span>
-                  )}
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-lg font-bold text-foreground">{escolasReais.length}</span>
+                  <div className="flex items-center gap-1 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                    {semedUnidade && <span>+1 Sede</span>}
+                    {unidadesSaude.length > 0 && <span>• {unidadesSaude.length} Saúde/USF</span>}
+                    {unidadesTeste.length > 0 && <span>• {unidadesTeste.length} Teste</span>}
+                  </div>
                 </div>
               </div>
               <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">

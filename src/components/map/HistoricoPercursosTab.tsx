@@ -45,6 +45,7 @@ export default function HistoricoPercursosTab() {
 
 
   useEffect(() => {
+    carregarHistorico();
     return () => {
       isMounted.current = false;
     };
