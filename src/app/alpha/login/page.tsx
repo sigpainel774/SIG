@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import {
   FlaskConical,
   Lock,
-  Mail,
+  User,
   Loader2,
   Eye,
   EyeOff,
@@ -19,6 +19,66 @@ import {
 } from 'lucide-react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
+
+function AlphaLogoGraphic({ className = 'w-20 h-20' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      className={className}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="SIG Alpha Lab Logo"
+    >
+      <defs>
+        <linearGradient id="alphaGradA1" x1="25" y1="20" x2="60" y2="90" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2563EB" />
+          <stop offset="1" stopColor="#1D4ED8" />
+        </linearGradient>
+        <linearGradient id="alphaGradA2" x1="50" y1="20" x2="85" y2="90" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#3B82F6" />
+          <stop offset="1" stopColor="#1E40AF" />
+        </linearGradient>
+        <linearGradient id="alphaGradNode" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#60A5FA" />
+          <stop offset="1" stopColor="#1D4ED8" />
+        </linearGradient>
+        <filter id="alphaNodeGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#1D4ED8" floodOpacity="0.3" />
+        </filter>
+      </defs>
+
+      {/* Perna esquerda do 'A' */}
+      <path
+        d="M50 16 L22 88 H38 L47 64 H65 L57 44 H49 L55 28 Z"
+        fill="url(#alphaGradA1)"
+      />
+
+      {/* Perna direita do 'A' */}
+      <path
+        d="M57 16 L49 35 L67 78 H83 L57 16 Z"
+        fill="url(#alphaGradA2)"
+      />
+
+      {/* Linhas de Conexão Molecular */}
+      <line x1="58" y1="46" x2="82" y2="34" stroke="#2563EB" strokeWidth="4.5" strokeLinecap="round" />
+      <line x1="82" y1="34" x2="97" y2="52" stroke="#2563EB" strokeWidth="4.5" strokeLinecap="round" />
+      <line x1="82" y1="34" x2="94" y2="23" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" />
+      <line x1="58" y1="46" x2="70" y2="61" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" />
+
+      {/* Nós Moleculares com Anel Branco */}
+      {/* Nó Central */}
+      <circle cx="82" cy="34" r="9.5" fill="url(#alphaGradNode)" stroke="#FFFFFF" strokeWidth="3" filter="url(#alphaNodeGlow)" />
+      {/* Nó Superior Direito */}
+      <circle cx="94" cy="23" r="5.5" fill="url(#alphaGradNode)" stroke="#FFFFFF" strokeWidth="2" filter="url(#alphaNodeGlow)" />
+      {/* Nó Médio Direito */}
+      <circle cx="97" cy="52" r="6.5" fill="url(#alphaGradNode)" stroke="#FFFFFF" strokeWidth="2.5" filter="url(#alphaNodeGlow)" />
+      {/* Nó Interno do A */}
+      <circle cx="58" cy="46" r="6" fill="url(#alphaGradNode)" stroke="#FFFFFF" strokeWidth="2" filter="url(#alphaNodeGlow)" />
+      {/* Nó Inferior */}
+      <circle cx="70" cy="61" r="5" fill="url(#alphaGradNode)" stroke="#FFFFFF" strokeWidth="2" filter="url(#alphaNodeGlow)" />
+    </svg>
+  )
+}
 
 export default function AlphaLoginPage() {
   const router = useRouter()
@@ -154,91 +214,91 @@ export default function AlphaLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#0a0a0c] text-foreground font-sans relative overflow-hidden">
-      {/* ── Efeitos de Fundo (Glow / Gradientes Tecnológicos) ── */}
-      <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/15 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[400px] h-[300px] bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
+    <div className="min-h-screen flex flex-col justify-between bg-[#080d1b] text-foreground font-sans relative overflow-hidden select-none">
+      {/* ── Textura de Estrelas / Partículas de Fundo ── */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.25) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(37, 99, 235, 0.2) 0%, transparent 45%), radial-gradient(#60a5fa 1px, transparent 1px)',
+          backgroundSize: '100% 100%, 100% 100%, 32px 32px',
+        }}
+      />
 
-      {/* ── Topo: Aviso de Conectividade / Offline ── */}
-      <div className="w-full px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-400 text-xs font-bold tracking-wide">
-            <FlaskConical className="w-3.5 h-3.5 animate-pulse text-violet-400" />
-            <span>SIG ALPHA LAB</span>
-          </div>
+      {/* ── Topo: Badge de Identificação e Status Offline ── */}
+      <div className="w-full max-w-5xl mx-auto px-5 pt-5 flex items-center justify-between z-10">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-xs font-bold shadow-xs tracking-wide">
+          <FlaskConical className="w-4 h-4 text-blue-300 stroke-[2.2]" />
+          <span>SIG ALPHA LAB</span>
         </div>
 
         {isOffline && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-semibold">
             <WifiOff className="w-3.5 h-3.5" />
             <span>Modo Offline</span>
           </div>
         )}
       </div>
 
-      {/* ── Centro: Card de Login Alpha ── */}
-      <div className="flex-1 flex items-center justify-center p-4 z-10">
-        <div className="w-full max-w-[420px] bg-[#121217]/90 backdrop-blur-xl border border-violet-500/20 rounded-[28px] p-7 sm:p-9 shadow-2xl shadow-violet-950/40 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+      {/* ── Centro: Card Branco de Login Inspirado no Mockup ── */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 z-10 my-4">
+        <div className="w-full max-w-[430px] bg-white rounded-[28px] sm:rounded-[32px] p-7 sm:p-10 shadow-2xl shadow-black/60 border border-slate-100 space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {/* Cabeçalho do Card */}
-          <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/30 text-white">
-                <FlaskConical className="w-8 h-8 stroke-[2.2]" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#121217] flex items-center justify-center" title="Laboratório Ativo">
-                <Sparkles className="w-3 h-3 text-white" />
-              </div>
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-2">
+              <AlphaLogoGraphic className="w-20 h-20 drop-shadow-sm" />
             </div>
 
-            <div>
-              <h1 className="text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5">
-                SIG ALPHA
-                <span className="bg-linear-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent text-sm font-extrabold uppercase">
-                  LAB
-                </span>
-              </h1>
-              <p className="text-xs text-zinc-400 mt-1 font-medium">
-                Ambiente de Prototipagem &amp; Operação
-              </p>
-            </div>
+            <h1 className="text-[26px] font-black text-[#0f172a] tracking-tight flex items-center justify-center gap-1.5">
+              SIG ALPHA
+              <span className="text-[#2563eb] text-sm font-black tracking-wider uppercase">
+                LAB
+              </span>
+            </h1>
+
+            <p className="text-[11px] font-bold text-[#64748b] tracking-wider uppercase mt-1">
+              Ambiente de Prototipagem &amp; Operação
+            </p>
           </div>
 
           {/* Formulário de Login */}
-          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          <form onSubmit={handleLogin} className="space-y-4 pt-1" noValidate>
             {/* Campo E-mail */}
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-semibold text-zinc-300">
+            <div className="space-y-1.5 text-left">
+              <label htmlFor="email" className="text-[13px] font-semibold text-[#1e293b] block">
                 E-mail Institucional
               </label>
-              <div className="relative">
-                <Mail
-                  className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-violet-400 pointer-events-none"
-                  aria-hidden="true"
-                />
+              <div className="relative flex items-center bg-[#eef4ff] border border-[#d2e2fd] rounded-2xl focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/20 transition-all overflow-hidden">
+                <div className="pl-3.5 pr-1 text-[#475569] flex items-center justify-center pointer-events-none">
+                  <div className="w-7 h-7 rounded-lg bg-[#dbe8fd] flex items-center justify-center text-[#2563eb]">
+                    <User className="w-4 h-4" />
+                  </div>
+                </div>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="operador@sig.com"
+                  placeholder="adm@super.com"
                   required
                   autoComplete="email"
                   disabled={loading}
-                  className="w-full h-12 pl-10 pr-4 bg-[#1a1a22] border border-violet-500/20 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-500 font-medium outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 transition-all disabled:opacity-60"
+                  className="w-full h-12 pl-2.5 pr-4 bg-transparent text-sm text-[#0f172a] placeholder:text-[#94a3b8] font-medium outline-none disabled:opacity-60"
                 />
               </div>
             </div>
 
             {/* Campo Senha */}
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="text-xs font-semibold text-zinc-300">
+            <div className="space-y-1.5 text-left">
+              <label htmlFor="password" className="text-[13px] font-semibold text-[#1e293b] block">
                 Senha de Acesso
               </label>
-              <div className="relative">
-                <Lock
-                  className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-violet-400 pointer-events-none"
-                  aria-hidden="true"
-                />
+              <div className="relative flex items-center bg-[#eef4ff] border border-[#d2e2fd] rounded-2xl focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/20 transition-all overflow-hidden">
+                <div className="pl-3.5 pr-1 text-[#475569] flex items-center justify-center pointer-events-none">
+                  <div className="w-7 h-7 rounded-lg bg-[#dbe8fd] flex items-center justify-center text-[#2563eb]">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                </div>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -248,12 +308,12 @@ export default function AlphaLoginPage() {
                   required
                   autoComplete="current-password"
                   disabled={loading}
-                  className="w-full h-12 pl-10 pr-11 bg-[#1a1a22] border border-violet-500/20 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-500 font-medium outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 transition-all disabled:opacity-60"
+                  className="w-full h-12 pl-2.5 pr-10 bg-transparent text-sm text-[#0f172a] placeholder:text-[#94a3b8] font-medium outline-none disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors p-1 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#0f172a] transition-colors p-1 cursor-pointer"
                   tabIndex={-1}
                   title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                 >
@@ -270,36 +330,37 @@ export default function AlphaLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 mt-2 bg-linear-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-500 hover:to-indigo-600 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-violet-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-13 mt-3 bg-[#1d63d6] hover:bg-[#1652b8] active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm tracking-wide rounded-2xl shadow-lg shadow-[#1d63d6]/30 hover:shadow-[#1d63d6]/40 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed uppercase"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Acessando Laboratório...</span>
+                  <span>Acessando Sistema...</span>
                 </>
               ) : (
                 <>
                   <span>Entrar no Sistema Alpha</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Link Alternativo para Login Institucional Padrão */}
-          <div className="pt-2 border-t border-zinc-800/80 text-center">
+          {/* Link para o Login Institucional Padrão */}
+          <div className="pt-3 border-t border-slate-100 text-center">
             <Link
               href="/login"
-              className="text-xs text-zinc-400 hover:text-violet-400 font-medium transition-colors"
+              className="text-xs text-[#64748b] hover:text-[#1d63d6] font-semibold transition-colors inline-flex items-center gap-1.5 group"
             >
-              Ir para o Login Institucional Padrão &rarr;
+              <span>Ir para o Login Institucional Padrão</span>
+              <Sparkles className="w-3.5 h-3.5 text-[#2563eb] group-hover:rotate-12 transition-transform" />
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ── Rodapé: Informações da Rede ── */}
-      <div className="w-full py-4 text-center text-xs text-zinc-500 z-10">
+      {/* ── Rodapé: Informações Institucionais ── */}
+      <div className="w-full py-4 text-center text-xs text-slate-500 z-10">
         <p>Secretaria Municipal de Educação &bull; Sapeaçu / BA</p>
       </div>
 
