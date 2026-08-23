@@ -156,8 +156,9 @@ export async function limparRotaAtiva(): Promise<void> {
 export async function enfileirarVisitaOffline(visita: VisitaPonto): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  // Atualiza LocalStorage como cópia de segurança
+  // Atualiza LocalStorage como cópia de segurança (com limite de segurança MAX_ITEMS = 50)
   try {
+    const MAX_ITEMS = 50;
     const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
     const list: VisitaPonto[] = saved ? JSON.parse(saved) : [];
     const idx = list.findIndex((item) => item.id === visita.id);
@@ -166,7 +167,8 @@ export async function enfileirarVisitaOffline(visita: VisitaPonto): Promise<void
     } else {
       list.push(visita);
     }
-    localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(list));
+    const limitedList = list.slice(-MAX_ITEMS);
+    localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(limitedList));
   } catch {}
 
   try {

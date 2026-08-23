@@ -29,7 +29,7 @@ import { VisitaHistoricoItem } from './MapaReplayPercurso';
 import { SEDE_SEMED_SAPEACU } from '@/lib/routeOptimizer';
 import { StandardDialog } from '@/components/ui/standard-dialog';
 import { Button } from '@/components/ui/button';
-import { removerVisitaOffline } from '@/lib/offlineRouteStore';
+import { removerVisitaOffline, obterVisitasPendentes, marcarVisitasComoSincronizadas } from '@/lib/offlineRouteStore';
 
 export default function HistoricoPercursosTab() {
   const supabase = createClient();
@@ -51,10 +51,44 @@ export default function HistoricoPercursosTab() {
     };
   }, []);
 
-  // Carrega o histórico completo de visitas/check-ins do Supabase com relacionamentos
+  // Carrega o histórico completo de visitas/check-ins (Supabase + Offline IndexedDB)
   const carregarHistorico = async () => {
     setCarregando(true);
     try {
+      // 1. Se estiver online, tenta auto-sincronizar pendências do IndexedDB
+      if (typeof window !== 'undefined' && navigator.onLine) {
+        try {
+          const pendentes = await obterVisitasPendentes();
+          if (pendentes.length > 0) {
+            const payload = pendentes.map((v) => ({
+              id: v.id,
+              escola_id: v.escola_id,
+              funcionario_id: v.funcionario_id || null,
+              rota_nome: v.rota_nome || 'Roteiro de Visitas',
+              data_hora_chegada: v.data_hora_chegada,
+              latitude: v.latitude,
+              longitude: v.longitude,
+              distancia_ponto_metros: v.distancia_ponto_metros,
+              odometro_km: v.odometro_km,
+              observacoes: v.observacoes,
+              status: v.status,
+              sincronizado_em: new Date().toISOString(),
+            }));
+
+            const { error: syncErr } = await supabase
+              .from('registros_visitas_rotas')
+              .upsert(payload, { onConflict: 'id' });
+
+            if (!syncErr) {
+              await marcarVisitasComoSincronizadas(pendentes.map((p) => p.id));
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Falha ao auto-sincronizar pendências offline:', syncErr);
+        }
+      }
+
+      // 2. Busca o histórico gravado no Supabase
       const { data, error } = await supabase
         .from('registros_visitas_rotas')
         .select(`
@@ -120,8 +154,34 @@ export default function HistoricoPercursosTab() {
         };
       });
 
+      // 3. Busca visitas pendentes no armazenamento local (IndexedDB) para garantir exibição imediata
+      const pendentesLocais = await obterVisitasPendentes();
+      const idsServidor = new Set(formatados.map((item) => item.id));
+
+      const formatadosPendentes: VisitaHistoricoItem[] = pendentesLocais
+        .filter((p) => !idsServidor.has(p.id))
+        .map((p) => ({
+          id: p.id,
+          escola_id: p.escola_id,
+          escola_nome: p.escola_nome || 'Ponto de Parada',
+          data_hora_chegada: p.data_hora_chegada,
+          latitude: p.latitude ?? SEDE_SEMED_SAPEACU.latitude,
+          longitude: p.longitude ?? SEDE_SEMED_SAPEACU.longitude,
+          distancia_ponto_metros: p.distancia_ponto_metros,
+          odometro_km: p.odometro_km,
+          observacoes: p.observacoes ? `${p.observacoes} [Salvo no Aparelho]` : 'Salvo no Aparelho (Pendente de Sync)',
+          status: p.status ?? 'REALIZADA',
+          funcionario_nome: 'Servidor / Motorista',
+          escola_endereco: null,
+          escola_localizacao: 'URBANA',
+        }));
+
+      const listaCompleta = [...formatadosPendentes, ...formatados].sort((a, b) => 
+        new Date(b.data_hora_chegada).getTime() - new Date(a.data_hora_chegada).getTime()
+      );
+
       if (isMounted.current) {
-        setVisitas(formatados);
+        setVisitas(listaCompleta);
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico de visitas:', err);

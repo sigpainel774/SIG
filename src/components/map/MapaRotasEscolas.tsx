@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback } from 'react';
-import { MapContainer, TileLayer, LayersControl, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
   Search,
@@ -118,6 +118,111 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [paradasConcluidas, setParadasConcluidas] = useState<string[]>([]);
 
   const pontoSede = useMemo<PontoLocalizacao>(() => SEDE_SEMED_SAPEACU, []);
+
+  // Estados do Trajeto Estilo Google Maps
+  const [pontoInicio, setPontoInicio] = useState<PontoLocalizacao | null>(SEDE_SEMED_SAPEACU);
+  const [pontoFim, setPontoFim] = useState<PontoLocalizacao | null>(null);
+  const [paradasIntermediarias, setParadasIntermediarias] = useState<PontoLocalizacao[]>([]);
+  const [modoMarcacaoMapa, setModoMarcacaoMapa] = useState<'inicio' | 'fim' | number | null>(null);
+
+  const modoMarcacaoMapaRef = useRef(modoMarcacaoMapa);
+  useEffect(() => {
+    modoMarcacaoMapaRef.current = modoMarcacaoMapa;
+  }, [modoMarcacaoMapa]);
+
+  const definirPontoPorMarcacao = useCallback((ponto: PontoLocalizacao) => {
+    const modo = modoMarcacaoMapaRef.current;
+    if (modo === 'inicio') {
+      setPontoInicio(ponto);
+      toast.success(`Início definido: ${ponto.nome}`, { icon: '📍' });
+    } else if (modo === 'fim') {
+      setPontoFim(ponto);
+      toast.success(`Chegada definida: ${ponto.nome}`, { icon: '🏁' });
+    } else if (typeof modo === 'number') {
+      setParadasIntermediarias((prev) => {
+        const copy = [...prev];
+        copy[modo] = ponto;
+        return copy;
+      });
+      toast.success(`Parada ${modo + 1} definida: ${ponto.nome}`, { icon: '🔵' });
+    }
+    setModoMarcacaoMapa(null);
+  }, []);
+
+  const adicionarParadaIntermediaria = () => {
+    setParadasIntermediarias((prev) => [
+      ...prev,
+      {
+        id: `parada_placeholder_${Date.now()}`,
+        nome: `Parada ${prev.length + 1}`,
+        latitude: 0,
+        longitude: 0,
+        localizacao: 'URBANA',
+        tipo: 'MUNICIPAL',
+      },
+    ]);
+  };
+
+  const removerParadaIntermediaria = (index: number) => {
+    setParadasIntermediarias((prev) => prev.filter((_, i) => i !== index));
+    if (modoMarcacaoMapa === index) {
+      setModoMarcacaoMapa(null);
+    }
+  };
+
+  const inverterInicioEFim = () => {
+    const temp = pontoInicio;
+    setPontoInicio(pontoFim);
+    setPontoFim(temp);
+    toast.info('Ponto de início e término invertidos!');
+  };
+
+  const pontosDoTrajetoFormatados = useMemo(() => {
+    const lista: PontoLocalizacao[] = [];
+    if (pontoInicio && pontoInicio.latitude !== 0) lista.push(pontoInicio);
+    for (const p of paradasIntermediarias) {
+      if (p && p.latitude !== 0) lista.push(p);
+    }
+    if (pontoFim && pontoFim.latitude !== 0) lista.push(pontoFim);
+    return lista;
+  }, [pontoInicio, paradasIntermediarias, pontoFim]);
+
+  const calcularTrajetoGoogleMaps = async () => {
+    if (pontosDoTrajetoFormatados.length < 2) {
+      toast.error('Defina pelo menos o Ponto de Início e o Ponto de Fim!');
+      return;
+    }
+    setCalculandoRota(true);
+    try {
+      const consumoKmL = parseFloat(consumoKmLInput.replace(',', '.')) || 10.0;
+      const precoLitro = parseFloat(precoCombustivelInput.replace(',', '.')) || 6.29;
+
+      const resultado = await obterRotaViariaReal(pontosDoTrajetoFormatados, consumoKmL, precoLitro);
+      setResultadoRoteiro(resultado);
+
+      if (mapRef.current && resultado.pontosOrdenados.length > 0) {
+        const bounds = L.latLngBounds(
+          resultado.pontosOrdenados.map((p) => [p.latitude, p.longitude] as [number, number])
+        );
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      }
+      toast.success('Trajeto calculado com sucesso!', { icon: '🚗' });
+    } catch (err) {
+      console.error('Erro ao calcular trajeto Google Maps:', err);
+      toast.error('Erro ao calcular rota do trajeto.');
+    } finally {
+      setCalculandoRota(false);
+    }
+  };
+
+  const limparTrajetoGoogleMaps = () => {
+    setPontoInicio(SEDE_SEMED_SAPEACU);
+    setPontoFim(null);
+    setParadasIntermediarias([]);
+    setModoMarcacaoMapa(null);
+    setResultadoRoteiro(null);
+    toast.info('Trajeto limpo.');
+  };
 
   const escolasValidas = useMemo(() => {
     return escolas.filter(
@@ -307,8 +412,6 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         id: v.id,
         escola_id: v.escola_id,
         funcionario_id: v.funcionario_id || funcionario?.id || null,
-        rota_id: v.rota_id ?? null,
-        veiculo_id: v.veiculo_id ?? null,
         rota_nome: v.rota_nome || 'Roteiro de Visitas',
         data_hora_chegada: v.data_hora_chegada,
         latitude: v.latitude,
@@ -685,6 +788,27 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     }
   };
 
+  // Escutador de Cliques no Mapa Leaflet para Marcação de Pontos
+  function MapClickHandler() {
+    useMapEvents({
+      click(e) {
+        if (modoMarcacaoMapaRef.current === null) return;
+        const lat = Number(e.latlng.lat.toFixed(6));
+        const lng = Number(e.latlng.lng.toFixed(6));
+        const pontoLivre: PontoLocalizacao = {
+          id: `ponto_mapa_${Date.now()}`,
+          nome: `Ponto no Mapa (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+          latitude: lat,
+          longitude: lng,
+          localizacao: 'URBANA',
+          tipo: 'MUNICIPAL',
+        };
+        definirPontoPorMarcacao(pontoLivre);
+      },
+    });
+    return null;
+  }
+
   // Ícone Customizado do Carro com Rotação (Heading)
   const iconeCarro = useMemo(() => {
     if (!posicaoVeiculo) return null;
@@ -945,6 +1069,269 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
           </div>
         )}
 
+        {/* Painel de Planejamento de Trajeto (Estilo Google Maps) */}
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <Compass className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <span>Trajeto e Roteirização (Estilo Google Maps)</span>
+                  <span className="bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-400/30 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md">
+                    Google Maps UI
+                  </span>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Defina o ponto de início, paradas no meio (+) e o destino marcando no mapa ou selecionando os locais.
+                </p>
+              </div>
+            </div>
+
+            {pontoInicio && pontoFim && (
+              <button
+                type="button"
+                onClick={inverterInicioEFim}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-xl hover:bg-sky-500/20 transition-colors cursor-pointer"
+                title="Inverter Ponto de Início e Chegada"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Inverter Origem/Fim</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            {/* Campo 1: Ponto de Início (Origem - A) */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 flex justify-center shrink-0">
+                <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-xs" title="Ponto de Início (Origem)" />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <select
+                  value={pontoInicio?.id || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'semed') setPontoInicio(SEDE_SEMED_SAPEACU);
+                    else if (val === 'gps' && posicaoVeiculo) {
+                      setPontoInicio({
+                        id: 'gps_atual',
+                        nome: `Minha Localização GPS (${posicaoVeiculo.latitude.toFixed(4)}, ${posicaoVeiculo.longitude.toFixed(4)})`,
+                        latitude: posicaoVeiculo.latitude,
+                        longitude: posicaoVeiculo.longitude,
+                        localizacao: 'URBANA',
+                        tipo: 'GPS',
+                      });
+                    } else {
+                      const esc = escolasValidas.find((item) => item.id === val);
+                      if (esc) setPontoInicio({ id: esc.id, nome: esc.nome, latitude: esc.latitude, longitude: esc.longitude, inep: esc.inep ?? undefined, localizacao: esc.localizacao ?? 'URBANA' });
+                      else setPontoInicio(null);
+                    }
+                  }}
+                  className="flex-1 px-3.5 py-2 text-xs font-semibold bg-background border border-border rounded-xl text-foreground focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                >
+                  <option value="">Selecione o Ponto de Início...</option>
+                  <option value="semed">🏛️ Sede SEMED (Sapeaçu)</option>
+                  {posicaoVeiculo && <option value="gps">📡 Minha Localização GPS Atual</option>}
+                  <optgroup label="Escolas Municipais">
+                    {escolasValidas.map((esc) => (
+                      <option key={`inc_${esc.id}`} value={esc.id}>
+                        📍 {esc.nome}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setModoMarcacaoMapa(modoMarcacaoMapa === 'inicio' ? null : 'inicio')}
+                  className={cn(
+                    'inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap',
+                    modoMarcacaoMapa === 'inicio'
+                      ? 'bg-emerald-500 text-white border-emerald-600 shadow-md animate-pulse'
+                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                  )}
+                  title="Clique para ir ao mapa e selecionar o Ponto de Início"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{modoMarcacaoMapa === 'inicio' ? 'Aguardando Clique...' : 'Marcar no Mapa'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Paradas Intermediárias (Waypoints) */}
+            {paradasIntermediarias.map((parada, idx) => (
+              <div key={`parada_${idx}`} className="flex items-center gap-2.5 pl-0.5">
+                <div className="w-6 flex justify-center shrink-0">
+                  <div className="w-3 h-3 rounded-full bg-sky-500 border border-white shadow-xs" title={`Parada ${idx + 1}`} />
+                </div>
+
+                <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <select
+                    value={parada?.id || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const esc = escolasValidas.find((item) => item.id === val);
+                      if (esc) {
+                        const novoPonto = { id: esc.id, nome: esc.nome, latitude: esc.latitude, longitude: esc.longitude, inep: esc.inep ?? undefined, localizacao: esc.localizacao ?? 'URBANA' };
+                        setParadasIntermediarias((prev) => {
+                          const copy = [...prev];
+                          copy[idx] = novoPonto;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className="flex-1 px-3.5 py-2 text-xs font-semibold bg-background border border-border rounded-xl text-foreground focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  >
+                    <option value="">{parada && parada.latitude !== 0 ? `🔵 Parada ${idx + 1}: ${parada.nome}` : `Selecione a Parada ${idx + 1}...`}</option>
+                    <option value="semed">🏛️ Sede SEMED (Sapeaçu)</option>
+                    <optgroup label="Escolas Municipais">
+                      {escolasValidas.map((esc) => (
+                        <option key={`par_${idx}_${esc.id}`} value={esc.id}>
+                          📍 {esc.nome}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setModoMarcacaoMapa(modoMarcacaoMapa === idx ? null : idx)}
+                      className={cn(
+                        'inline-flex flex-1 items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap',
+                        modoMarcacaoMapa === idx
+                          ? 'bg-sky-500 text-white border-sky-600 shadow-md animate-pulse'
+                          : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20'
+                      )}
+                      title={`Clique no mapa para marcar a Parada ${idx + 1}`}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{modoMarcacaoMapa === idx ? 'Aguardando Clique...' : 'Marcar no Mapa'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => removerParadaIntermediaria(idx)}
+                      className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      title="Remover esta parada"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Botão "+" para Adicionar Parada no Meio */}
+            <div className="flex items-center gap-2.5 pl-0.5 pt-1">
+              <div className="w-6 flex justify-center shrink-0">
+                <button
+                  type="button"
+                  onClick={adicionarParadaIntermediaria}
+                  className="w-5 h-5 rounded-full bg-sky-500/15 hover:bg-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black text-xs transition-colors cursor-pointer border border-sky-500/30"
+                  title="Adicionar Parada no Meio do Trajeto (+ Google Maps)"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={adicionarParadaIntermediaria}
+                className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Adicionar trajeto/parada no meio (+ Google Maps)</span>
+              </button>
+            </div>
+
+            {/* Campo 2: Ponto de Fim (Destino - B) */}
+            <div className="flex items-center gap-2.5 pt-1">
+              <div className="w-6 flex justify-center shrink-0">
+                <div className="w-4 h-4 rounded-full bg-rose-500 border-2 border-white shadow-xs" title="Ponto de Fim (Destino)" />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <select
+                  value={pontoFim?.id || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'semed') setPontoFim(SEDE_SEMED_SAPEACU);
+                    else {
+                      const esc = escolasValidas.find((item) => item.id === val);
+                      if (esc) setPontoFim({ id: esc.id, nome: esc.nome, latitude: esc.latitude, longitude: esc.longitude, inep: esc.inep ?? undefined, localizacao: esc.localizacao ?? 'URBANA' });
+                      else setPontoFim(null);
+                    }
+                  }}
+                  className="flex-1 px-3.5 py-2 text-xs font-semibold bg-background border border-border rounded-xl text-foreground focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                >
+                  <option value="">Selecione o Ponto de Fim / Destino...</option>
+                  <option value="semed">🏛️ Sede SEMED (Sapeaçu)</option>
+                  <optgroup label="Escolas Municipais">
+                    {escolasValidas.map((esc) => (
+                      <option key={`fim_${esc.id}`} value={esc.id}>
+                        📍 {esc.nome}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setModoMarcacaoMapa(modoMarcacaoMapa === 'fim' ? null : 'fim')}
+                  className={cn(
+                    'inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap',
+                    modoMarcacaoMapa === 'fim'
+                      ? 'bg-rose-500 text-white border-rose-600 shadow-md animate-pulse'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                  )}
+                  title="Clique para ir ao mapa e selecionar o Ponto de Destino"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{modoMarcacaoMapa === 'fim' ? 'Aguardando Clique...' : 'Marcar no Mapa'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Rodapé com Resumo e Botão de Ação */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+            <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <span className="font-bold text-foreground">
+                {pontosDoTrajetoFormatados.length} ponto(s) definido(s)
+              </span>
+              {pontosDoTrajetoFormatados.length < 2 && (
+                <span className="text-amber-600 dark:text-amber-400 text-[11px]">
+                  (Defina Início e Fim para traçar a rota)
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={limparTrajetoGoogleMaps}
+                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                Limpar Trajeto
+              </button>
+
+              <button
+                type="button"
+                onClick={calcularTrajetoGoogleMaps}
+                disabled={calculandoRota || pontosDoTrajetoFormatados.length < 2}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-sky-600 hover:bg-sky-700 active:scale-95 text-white rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Route className={cn('w-4 h-4', calculandoRota && 'animate-spin')} />
+                <span>{calculandoRota ? 'Calculando Rota...' : 'Calcular Trajeto'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Barra de Pesquisa e Filtro de Zona */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border p-3.5 rounded-2xl shadow-2xs">
           <div className="flex flex-1 items-center gap-2.5 min-w-[220px] bg-surface-2 dark:bg-secondary/40 px-3.5 py-2 rounded-xl border border-border">
@@ -1026,6 +1413,27 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
 
         {/* Container do Mapa Leaflet */}
         <div className="w-full h-[580px] rounded-2xl overflow-hidden border border-border shadow-md relative z-0">
+          {modoMarcacaoMapa !== null && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-sky-600 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-white/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="w-3 h-3 rounded-full bg-white animate-ping shrink-0" />
+              <span className="text-xs font-bold">
+                Clique em qualquer lugar no mapa ou sobre uma escola para definir{' '}
+                {modoMarcacaoMapa === 'inicio'
+                  ? 'o PONTO DE INÍCIO 🟢'
+                  : modoMarcacaoMapa === 'fim'
+                  ? 'o PONTO DE FIM 🔴'
+                  : `a PARADA ${Number(modoMarcacaoMapa) + 1} 🔵`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setModoMarcacaoMapa(null)}
+                className="ml-2 px-2.5 py-1 text-[11px] font-extrabold bg-white/20 hover:bg-white/30 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+
           <MapContainer
             ref={mapRef}
             center={SAPEACU_CENTER}
@@ -1033,6 +1441,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
             scrollWheelZoom={true}
             style={{ width: '100%', height: '100%' }}
           >
+            <MapClickHandler />
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Mapa de Ruas (OpenStreetMap - Suporte Offline)">
                 <TileLayer
