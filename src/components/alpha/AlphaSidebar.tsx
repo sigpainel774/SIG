@@ -18,7 +18,7 @@ import {
   X,
   Menu,
 } from 'lucide-react'
-import { AlphaIcon } from './AlphaIcon'
+import { AlphaIcon, AlphaLogoGraphic } from './AlphaIcon'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -111,7 +111,7 @@ export function AlphaSidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-3 left-3 z-50 p-2.5 rounded-xl bg-card border border-border text-foreground shadow-lg"
+        className="lg:hidden fixed top-3 left-3 z-50 p-2.5 rounded-xl bg-[#0c1427] border border-blue-900/40 text-white shadow-lg cursor-pointer"
         aria-label="Abrir Menu Alpha"
       >
         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -121,37 +121,37 @@ export function AlphaSidebar() {
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-black/75 backdrop-blur-xs z-40 lg:hidden"
         />
       )}
 
       {/* Container Principal da Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-72 bg-card border-r border-border flex flex-col justify-between transition-transform duration-300 ease-in-out lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 bg-[#0c1427]/95 backdrop-blur-xl border-r border-blue-900/40 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:static lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* ── Topo: Marca Alpha Lab ── */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-blue-900/40 bg-[#080d1b]/40">
           <div className="flex items-center justify-between">
             <Link
               href="/alpha"
               className="flex items-center gap-3 group transition-transform hover:scale-[1.02]"
             >
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/20 text-white">
-                <FlaskConical className="w-5 h-5 stroke-[2.2] animate-pulse" />
+              <div className="relative flex items-center justify-center">
+                <AlphaLogoGraphic className="w-10 h-10 drop-shadow-sm" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-black text-lg tracking-tight text-foreground">
+                  <span className="font-black text-lg tracking-tight text-white">
                     SIG ALPHA
                   </span>
-                  <span className="bg-linear-to-r from-violet-500 to-cyan-500 text-[10px] font-extrabold text-white px-1.5 py-0.2 rounded-sm uppercase tracking-wider">
+                  <span className="bg-[#1d63d6] text-[10px] font-black text-white px-1.5 py-0.5 rounded-sm uppercase tracking-wider shadow-xs shadow-blue-500/30">
                     LAB
                   </span>
                 </div>
-                <span className="text-[11px] text-muted-foreground font-medium">
+                <span className="text-[11px] text-slate-400 font-medium">
                   Ambiente Experimental
                 </span>
               </div>
@@ -162,13 +162,13 @@ export function AlphaSidebar() {
           {isSuperAdmin && (
             <Link
               href="/admin/alpha"
-              className="mt-3 w-full flex items-center justify-between px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/15 text-violet-600 dark:text-violet-400 text-xs font-semibold transition-colors"
+              className="mt-3 w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/25 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold transition-colors"
             >
               <span className="flex items-center gap-1.5">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Painel de Controle Alpha
               </span>
-              <ShieldCheck className="w-3.5 h-3.5 text-violet-500" />
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
             </Link>
           )}
         </div>
@@ -177,7 +177,7 @@ export function AlphaSidebar() {
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           {/* Menu Principal */}
           <div>
-            <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 block mb-2">
+            <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 block mb-2">
               Principal
             </span>
             <Link
@@ -186,8 +186,8 @@ export function AlphaSidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group',
                 pathname === '/alpha'
-                  ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                  ? 'bg-[#1d63d6] text-white shadow-lg shadow-blue-600/30 font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-blue-950/40'
               )}
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -198,20 +198,20 @@ export function AlphaSidebar() {
           {/* Funções do Ecossistema Alpha */}
           <div>
             <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80">
                 Funções Ativas ({funcoes.length})
               </span>
-              <Sparkles className="w-3 h-3 text-violet-400" />
+              <Sparkles className="w-3 h-3 text-blue-400" />
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+              <div className="flex items-center justify-center py-6 text-xs text-slate-400 gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
                 Carregando funções...
               </div>
             ) : funcoes.length === 0 ? (
-              <div className="px-3 py-4 text-center border border-dashed border-border rounded-xl">
-                <p className="text-xs text-muted-foreground">
+              <div className="px-3 py-4 text-center border border-dashed border-blue-900/40 rounded-xl bg-blue-950/10">
+                <p className="text-xs text-slate-400">
                   Nenhuma função ativa no momento.
                 </p>
               </div>
@@ -227,8 +227,8 @@ export function AlphaSidebar() {
                       className={cn(
                         'flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group',
                         isActive
-                          ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/25'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                          ? 'bg-linear-to-r from-[#1d63d6] to-[#2563eb] text-white shadow-lg shadow-blue-600/30 font-bold'
+                          : 'text-slate-400 hover:text-white hover:bg-blue-950/40'
                       )}
                       title={fn.descricao ?? fn.nome}
                     >
@@ -237,7 +237,7 @@ export function AlphaSidebar() {
                           name={fn.icone}
                           className={cn(
                             'w-4 h-4 shrink-0 transition-colors',
-                            isActive ? 'text-white' : 'text-violet-500 group-hover:text-violet-400'
+                            isActive ? 'text-white' : 'text-blue-400 group-hover:text-blue-300'
                           )}
                         />
                         <span className="truncate text-xs font-medium">{fn.nome}</span>
@@ -257,18 +257,18 @@ export function AlphaSidebar() {
         </div>
 
         {/* ── Base: Perfil do Operador & Logout ── */}
-        <div className="p-3 border-t border-border bg-card/60">
-          <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-card border border-border mb-2.5">
+        <div className="p-3 border-t border-blue-900/40 bg-[#080d1b]/60">
+          <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#0d162a] border border-blue-900/50 mb-2.5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-foreground truncate block">
+                <span className="text-xs font-bold text-white truncate block">
                   {userNome}
                 </span>
-                <span className="bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/25 text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-sm shrink-0">
+                <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-sm shrink-0">
                   {isSuperAdmin ? 'ROOT' : 'ALPHA'}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground truncate">{userCargo}</p>
+              <p className="text-[11px] text-slate-400 truncate">{userCargo}</p>
             </div>
           </div>
 
@@ -276,7 +276,7 @@ export function AlphaSidebar() {
             type="button"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition-all duration-200 cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all duration-200 cursor-pointer disabled:opacity-50"
           >
             {isLoggingOut ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

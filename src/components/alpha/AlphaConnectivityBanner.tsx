@@ -80,10 +80,10 @@ export function AlphaConnectivityBanner() {
       {/* Indicador de Rede */}
       <div
         className={cn(
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors shadow-2xs select-none',
+          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors shadow-2xs select-none backdrop-blur-md',
           isOnline
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse'
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+            : 'bg-amber-500/20 text-amber-300 border-amber-400/40 animate-pulse'
         )}
         title={
           isOnline
@@ -93,13 +93,13 @@ export function AlphaConnectivityBanner() {
       >
         {isOnline ? (
           <>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
             <span className="hidden sm:inline">Online</span>
             <span className="sm:hidden">ON</span>
           </>
         ) : (
           <>
-            <CloudOff className="w-3 h-3 text-amber-500" />
+            <CloudOff className="w-3 h-3 text-amber-300" />
             <span className="hidden sm:inline">Modo Offline (Local)</span>
             <span className="sm:hidden">Offline</span>
           </>
@@ -113,10 +113,10 @@ export function AlphaConnectivityBanner() {
           onClick={handleSincronizarManual}
           disabled={sincronizando || !isOnline}
           className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs disabled:opacity-60 select-none',
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs disabled:opacity-60 select-none backdrop-blur-md',
             isOnline
-              ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/25'
-              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25'
+              ? 'bg-blue-500/20 text-blue-300 border-blue-400/30 hover:bg-blue-500/30'
+              : 'bg-amber-500/15 text-amber-300 border-amber-400/30'
           )}
           title="Clique para sincronizar os dados acumulados no aparelho com o banco de dados"
         >

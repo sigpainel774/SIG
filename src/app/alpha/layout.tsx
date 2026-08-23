@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { ReactNode } from 'react'
 
 export const viewport: Viewport = {
-  themeColor: '#7c3aed',
+  themeColor: '#080d1b',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -18,5 +18,9 @@ export const metadata: Metadata = {
 }
 
 export default function AlphaRootLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-background text-foreground font-sans">{children}</div>
+  return (
+    <div className="min-h-screen bg-[#080d1b] text-slate-100 font-sans selection:bg-blue-600/30 selection:text-white">
+      {children}
+    </div>
+  )
 }

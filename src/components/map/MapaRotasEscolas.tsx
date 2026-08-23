@@ -1255,10 +1255,10 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
           <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs flex flex-col gap-3">
             <div className="flex items-center justify-between border-b border-border pb-2.5">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-500" />
+                <Sparkles className="w-4 h-4 text-blue-500" />
                 <h4 className="text-xs font-bold text-foreground">Rotas Planejadas Alpha</h4>
               </div>
-              <span className="text-[10px] bg-violet-500/10 text-violet-600 dark:text-violet-400 font-extrabold px-2 py-0.5 rounded-md border border-violet-500/20">
+              <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold px-2 py-0.5 rounded-md border border-blue-500/20">
                 {rotasDesignadas.length} DISPONÍVEIS
               </span>
             </div>
@@ -1277,10 +1277,10 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                     className={cn(
                       'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5',
                       isAtiva
-                        ? 'bg-violet-600/15 border-violet-500 text-foreground shadow-xs'
+                        ? 'bg-blue-600/15 border-blue-500 text-foreground shadow-xs'
                         : isMinhaRota
                         ? 'bg-sky-500/10 border-sky-500/40 text-foreground hover:bg-sky-500/15'
-                        : 'bg-surface-2 dark:bg-secondary/40 border-border hover:border-violet-500/30'
+                        : 'bg-surface-2 dark:bg-secondary/40 border-border hover:border-blue-500/30'
                     )}
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -1299,7 +1299,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                       <span>
                         {r.veiculo ? `🚐 ${r.veiculo.modelo} (${r.veiculo.placa})` : '🚐 Veículo avulso'}
                       </span>
-                      <span className="font-bold text-violet-600 dark:text-violet-400">
+                      <span className="font-bold text-blue-600 dark:text-blue-400">
                         {qtdParadas} paradas • {r.turno}
                       </span>
                     </div>
@@ -1537,7 +1537,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                   <span className="text-[10px] text-muted-foreground block mb-0.5 font-medium">
                     Tempo em Trânsito
                   </span>
-                  <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">
+                  <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">
                     ~{resultadoRoteiro.tempoEstimadoMinutos} min
                   </span>
                 </div>
