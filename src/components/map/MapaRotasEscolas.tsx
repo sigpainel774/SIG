@@ -50,6 +50,7 @@ import {
   baixarMapaOfflineSapeacu,
   verificarStatusMapaOffline,
   DownloadProgress,
+  MapLayerType,
 } from '@/lib/mapTileDownloader';
 import {
   salvarCacheEntidadeAlpha,
@@ -270,6 +271,8 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [modalOfflineAberto, setModalOfflineAberto] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [baixandoMapa, setBaixandoMapa] = useState(false);
+  const [tipoCamadaOffline, setTipoCamadaOffline] = useState<MapLayerType>('google_hybrid');
+  const [maxZoomOffline, setMaxZoomOffline] = useState<number>(18);
   const [statusCache, setStatusCache] = useState<{ totalEmCache: number; tamanhoEstimadoMb: number }>({
     totalEmCache: 0,
     tamanhoEstimadoMb: 0,
@@ -645,9 +648,15 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     abortControllerRef.current = controller;
 
     try {
-      await baixarMapaOfflineSapeacu((prog) => {
-        setDownloadProgress(prog);
-      }, controller.signal);
+      await baixarMapaOfflineSapeacu(
+        (prog) => {
+          setDownloadProgress(prog);
+        },
+        controller.signal,
+        13,
+        maxZoomOffline,
+        tipoCamadaOffline
+      );
 
       const novoStatus = await verificarStatusMapaOffline();
       setStatusCache(novoStatus);
@@ -1614,12 +1623,46 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
               </button>
             </div>
 
-            <div className="bg-surface-2 dark:bg-secondary/40 border border-border rounded-xl p-3.5 text-xs text-muted-foreground flex flex-col gap-2">
+            <div className="bg-surface-2 dark:bg-secondary/40 border border-border rounded-xl p-3.5 text-xs text-muted-foreground flex flex-col gap-2.5">
               <p>
-                Ao baixar o mapa, todos os quadrantes de ruas, estradas vicinais e zona rural de Sapeaçu
-                serão salvos no armazenamento seguro do seu navegador.
+                Ao baixar o mapa, os quadrantes da zona urbana e rural de Sapeaçu serão salvos no armazenamento interno do seu navegador para uso sem internet.
               </p>
-              <div className="flex items-center justify-between pt-1 border-t border-border/60 text-foreground font-semibold">
+
+              {/* Opções de Configuração do Download */}
+              <div className="flex flex-col gap-2 pt-1 border-t border-border/60">
+                <div>
+                  <label className="text-[11px] font-bold text-foreground block mb-1">
+                    Tipo de Mapa a Baixar:
+                  </label>
+                  <select
+                    value={tipoCamadaOffline}
+                    onChange={(e: any) => setTipoCamadaOffline(e.target.value)}
+                    disabled={baixandoMapa}
+                    className="w-full bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-sky-500 font-semibold"
+                  >
+                    <option value="google_hybrid">Google Híbrido (Satélite + Ruas - Recomendado)</option>
+                    <option value="osm">OpenStreetMap (Mapa de Ruas Vetorial)</option>
+                    <option value="both">Ambos os Mapas (Completo)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-foreground block mb-1">
+                    Profundidade do Zoom:
+                  </label>
+                  <select
+                    value={maxZoomOffline}
+                    onChange={(e: any) => setMaxZoomOffline(Number(e.target.value))}
+                    disabled={baixandoMapa}
+                    className="w-full bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-sky-500 font-semibold"
+                  >
+                    <option value={18}>Zoom Detalhado Rumo Máximo (Zooms 13 ao 18 - Nível de Rua e Prédios)</option>
+                    <option value={16}>Zoom Médio (Zooms 13 ao 16 - Visão Geral)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1.5 border-t border-border/60 text-foreground font-semibold">
                 <span>Armazenamento em Cache:</span>
                 <span>
                   {statusCache.totalEmCache} blocos ({statusCache.tamanhoEstimadoMb} MB)
@@ -1667,7 +1710,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
                     className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
                     <DownloadCloud className="w-4 h-4" />
-                    Baixar / Atualizar Mapa (~25 MB)
+                    Baixar / Atualizar Mapa
                   </button>
                 </>
               )}

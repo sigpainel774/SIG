@@ -44,10 +44,17 @@ export function latLngToTile(lat: number, lng: number, zoom: number): { x: numbe
 /**
  * Gera todas as URLs de tiles para a região de Sapeaçu nos níveis de zoom desejados (13 ao 16)
  */
+export type MapLayerType = 'osm' | 'google_hybrid' | 'both';
+
+/**
+ * Gera todas as URLs de tiles para a região de Sapeaçu nos níveis de zoom desejados (13 ao 18)
+ * e para a camada selecionada (Google Híbrido, OSM ou Ambos)
+ */
 export function gerarListaTilesSapeacu(
   bounds: BoundingBox = SAPEACU_BOUNDS,
   minZoom = 13,
-  maxZoom = 16
+  maxZoom = 18,
+  layerType: MapLayerType = 'both'
 ): string[] {
   const urls: string[] = [];
 
@@ -62,8 +69,13 @@ export function gerarListaTilesSapeacu(
 
     for (let x = minX; x <= maxX; x++) {
       for (let y = minY; y <= maxY; y++) {
-        // OpenStreetMap Tile URL padrão
-        urls.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+        if (layerType === 'osm' || layerType === 'both') {
+          urls.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+        }
+        if (layerType === 'google_hybrid' || layerType === 'both') {
+          // Google Maps Híbrido (lyrs=y)
+          urls.push(`https://mt1.google.com/vt/lyrs=y&x=${x}&y=${y}&z=${z}`);
+        }
       }
     }
   }
@@ -76,20 +88,23 @@ export function gerarListaTilesSapeacu(
  */
 export async function baixarMapaOfflineSapeacu(
   onProgress: (progress: DownloadProgress) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  minZoom = 13,
+  maxZoom = 18,
+  layerType: MapLayerType = 'both'
 ): Promise<DownloadProgress> {
   if (typeof window === 'undefined' || !('caches' in window)) {
     throw new Error('Cache Storage não suportado neste navegador.');
   }
 
-  const urls = gerarListaTilesSapeacu(SAPEACU_BOUNDS, 13, 16);
+  const urls = gerarListaTilesSapeacu(SAPEACU_BOUNDS, minZoom, maxZoom, layerType);
   const totalTiles = urls.length;
   let baixados = 0;
   let falhas = 0;
 
   const cache = await caches.open(MAP_TILES_CACHE_NAME);
 
-  const CONCURRENCY_LIMIT = 3;
+  const CONCURRENCY_LIMIT = 5;
   let currentIndex = 0;
 
   const emitProgress = (msg?: string) => {
@@ -101,7 +116,7 @@ export async function baixarMapaOfflineSapeacu(
       porcentagem,
       concluido: baixados + falhas >= totalTiles,
       cancelado: abortSignal?.aborted ?? false,
-      mensagem: msg ?? `Baixando mapas: ${baixados}/${totalTiles} (${porcentagem}%)`,
+      mensagem: msg ?? `Baixando blocos do mapa: ${baixados}/${totalTiles} (${porcentagem}%)`,
     });
   };
 
@@ -125,15 +140,28 @@ export async function baixarMapaOfflineSapeacu(
           continue;
         }
 
-        // Delay suave de 25ms para respeitar a política de uso do servidor OSM
-        await new Promise((r) => setTimeout(r, 25));
+        const isGoogle = url.includes('google.com');
 
-        const res = await fetch(url, {
-          mode: 'cors',
-          signal: abortSignal,
-        });
+        // Delay suave para não sobrecarregar a rede
+        await new Promise((r) => setTimeout(r, isGoogle ? 10 : 20));
 
-        if (res.ok || res.type === 'opaque') {
+        let res: Response | null = null;
+
+        try {
+          res = await fetch(url, {
+            mode: isGoogle ? 'no-cors' : 'cors',
+            signal: abortSignal,
+          });
+        } catch (fetchErr: any) {
+          if (fetchErr.name === 'AbortError') throw fetchErr;
+          // Fallback para no-cors se o modo cors falhar
+          res = await fetch(url, {
+            mode: 'no-cors',
+            signal: abortSignal,
+          });
+        }
+
+        if (res && (res.ok || res.type === 'opaque')) {
           await cache.put(url, res.clone());
           baixados++;
         } else {
