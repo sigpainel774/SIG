@@ -138,7 +138,7 @@ export function SecaoDadosAluno() {
               <input
                 id="modalFotoEmaeeInput"
                 type="file"
-                accept="image/*"
+                accept="image/*,image/heic,image/heif"
                 onChange={handleFotoUpload}
                 className="hidden"
               />

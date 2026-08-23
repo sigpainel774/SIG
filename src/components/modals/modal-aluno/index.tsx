@@ -237,7 +237,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
               <input
                 id="modal-foto-aluno-header-input"
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 className="hidden"
                 disabled={isCompressingPhoto}
                 onChange={handleFotoUpload}
@@ -245,7 +245,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             </div>
             <div className="text-[11px] text-zinc-400">
               <p className="font-semibold text-zinc-300">Foto 3x4 do Aluno</p>
-              <p>PNG/JPG/WebP · até 20MB</p>
+              <p>PNG/JPG/WebP/HEIC · até 20MB</p>
             </div>
           </div>
 
