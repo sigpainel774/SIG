@@ -151,7 +151,7 @@ export default function AlphaRotasEscolasPage() {
               }`}
             >
               <Compass className="w-4 h-4" />
-              Roteirizador & Ao Vivo
+              Roteirizador &amp; Ao Vivo
             </button>
             <button
               type="button"
@@ -163,7 +163,7 @@ export default function AlphaRotasEscolasPage() {
               }`}
             >
               <History className="w-4 h-4" />
-              Histórico & Simulação
+              Histórico &amp; Simulação
             </button>
           </div>
 

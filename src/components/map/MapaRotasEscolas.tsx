@@ -108,11 +108,59 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
   const [loadingRotasDesignadas, setLoadingRotasDesignadas] = useState(false);
 
   // Estados de Navegação & Offline
+  const { ativo: gpsAtivo, posicao: posicaoVeiculo, iniciarGps, pararGps } = useGpsTracker();
   const [seguirCarro, setSeguirCarro] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [visitasPendentes, setVisitasPendentes] = useState<VisitaPonto[]>([]);
   const [sincronizando, setSincronizando] = useState(false);
   const [paradasConcluidas, setParadasConcluidas] = useState<string[]>([]);
+
+  const pontoSede = useMemo<PontoLocalizacao>(() => SEDE_SEMED_SAPEACU, []);
+
+  const escolasValidas = useMemo(() => {
+    return escolas.filter(
+      (e): e is EscolaComCoordenadas =>
+        e.latitude !== null &&
+        e.longitude !== null &&
+        Number(e.latitude) !== 0 &&
+        Number(e.longitude) !== 0
+    );
+  }, [escolas]);
+
+  const escolasFiltradas = useMemo(() => {
+    return escolasValidas.filter((esc) => {
+      const atendeBusca =
+        !buscaDebounced ||
+        esc.nome.toLowerCase().includes(buscaDebounced.toLowerCase()) ||
+        (esc.endereco && esc.endereco.toLowerCase().includes(buscaDebounced.toLowerCase())) ||
+        (esc.inep && esc.inep.includes(buscaDebounced));
+
+      const atendeZona =
+        filtroZona === 'todos' ||
+        (filtroZona === 'URBANA' && (esc.localizacao || '').toUpperCase().includes('URBANA')) ||
+        (filtroZona === 'RURAL' && (esc.localizacao || '').toUpperCase().includes('RURAL'));
+
+      return atendeBusca && atendeZona;
+    });
+  }, [escolasValidas, buscaDebounced, filtroZona]);
+
+  const proximaParada = useMemo(() => {
+    if (!resultadoRoteiro || !posicaoVeiculo) return null;
+    const pendentes = resultadoRoteiro.pontosOrdenados.filter(
+      (p) => !paradasConcluidas.includes(p.id)
+    );
+    if (pendentes.length === 0) return null;
+    const prox = pendentes[0];
+    const dist = Math.round(
+      calcularDistanciaHaversine(
+        posicaoVeiculo.latitude,
+        posicaoVeiculo.longitude,
+        prox.latitude,
+        prox.longitude
+      ) * 1000
+    );
+    return { ponto: prox, distanciaMetros: dist };
+  }, [resultadoRoteiro, posicaoVeiculo, paradasConcluidas]);
 
   // Carregar Rotas Designadas do Supabase com fallback offline
   const carregarRotasDesignadas = useCallback(async () => {
@@ -132,7 +180,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
     // 2. Se estiver online, atualiza do Supabase e salva no cache
     if (navigator.onLine) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('alpha_rotas')
           .select(`
             id,
@@ -251,7 +299,7 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
       // Renova a sessão antes de enviar para evitar 401 por JWT expirado
       await supabase.auth.getSession();
 
-      const payload = pendentes.map((v) => ({
+      const payload: any[] = pendentes.map((v) => ({
         id: v.id,
         escola_id: v.escola_id,
         funcionario_id: v.funcionario_id || funcionario?.id || null,
@@ -265,7 +313,6 @@ export default function MapaRotasEscolas({ escolas }: MapaRotasEscolasProps) {
         odometro_km: v.odometro_km,
         observacoes: v.observacoes,
         status: v.status,
-        is_alpha: true,
         sincronizado_em: new Date().toISOString(),
       }));
 

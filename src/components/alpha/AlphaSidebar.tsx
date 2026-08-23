@@ -98,7 +98,7 @@ export function AlphaSidebar() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     toast.success('Sessão encerrada com sucesso!')
-    await logout(supabase)
+    await logout(supabase, '/alpha/login')
   }
 
   const userNome = funcionario?.nome ?? 'Operador Alpha'

@@ -99,7 +99,7 @@ export default function AlphaDashboardPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-violet-500" />
-              Ferramentas & Módulos Disponíveis
+              Ferramentas &amp; Módulos Disponíveis
             </h2>
             <p className="text-xs text-muted-foreground">
               Selecione uma das funções ativas no menu lateral ou através dos cards abaixo.

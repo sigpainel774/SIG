@@ -176,7 +176,7 @@ export default function AdminAlphaFuncaoPage() {
   const carregarRotas = async () => {
     setLoadingRotas(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('alpha_rotas')
         .select(`
           id,
@@ -365,7 +365,7 @@ export default function AdminAlphaFuncaoPage() {
       }
 
       if (editingRotaId) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('alpha_rotas')
           .update(payload)
           .eq('id', editingRotaId)
@@ -373,7 +373,7 @@ export default function AdminAlphaFuncaoPage() {
         if (error) throw error
         toast.success(`Rota "${rotaNome}" atualizada com sucesso!`)
       } else {
-        const { error } = await supabase.from('alpha_rotas').insert(payload)
+        const { error } = await (supabase as any).from('alpha_rotas').insert(payload)
         if (error) throw error
         toast.success(`Nova rota "${rotaNome}" criada com sucesso!`)
       }
@@ -392,7 +392,7 @@ export default function AdminAlphaFuncaoPage() {
   const handleToggleStatusRota = async (rota: AlphaRota) => {
     const novoStatus = !rota.ativo
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('alpha_rotas')
         .update({ ativo: novoStatus, updated_at: new Date().toISOString() })
         .eq('id', rota.id)
@@ -416,7 +416,7 @@ export default function AdminAlphaFuncaoPage() {
     if (!rotaParaExcluir) return
     setExcluindoRota(true)
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('alpha_rotas')
         .delete()
         .eq('id', rotaParaExcluir.id)
@@ -441,7 +441,7 @@ export default function AdminAlphaFuncaoPage() {
 
     setSalvandoParametros(true)
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('alpha_funcoes')
         .update({
           nome: formNomeFuncao.trim(),

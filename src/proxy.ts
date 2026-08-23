@@ -74,7 +74,12 @@ export async function proxy(request: NextRequest) {
 
   // 3. Definição da categoria de limitação com base no caminho
   let routeType: 'login' | 'verify' | 'general' = 'general'
-  if (pathname.startsWith('/login') || pathname.startsWith('/portal-aluno/login') || pathname.startsWith('/api/auth')) {
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/portal-aluno/login') ||
+    pathname.startsWith('/alpha/login') ||
+    pathname.startsWith('/api/auth')
+  ) {
     routeType = 'login'
   } else if (pathname.startsWith('/verificar') || pathname.startsWith('/assinar')) {
     routeType = 'verify'
@@ -142,6 +147,7 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute = 
     pathname.startsWith('/login') || 
     pathname.startsWith('/portal-aluno/login') ||
+    pathname.startsWith('/alpha/login') ||
     pathname.startsWith('/assinar') || 
     pathname.startsWith('/verificar') || 
     pathname.startsWith('/api/')
@@ -151,6 +157,8 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     if (pathname.startsWith('/portal-aluno')) {
       url.pathname = '/portal-aluno/login'
+    } else if (pathname.startsWith('/alpha')) {
+      url.pathname = '/alpha/login'
     } else {
       url.pathname = '/login'
     }
@@ -158,7 +166,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Se logado MAS com parâmetro de órfão, permite chegar ao login para limpeza
-  if (user && pathname.startsWith('/login') && request.nextUrl.searchParams.get('error') === 'orphan') {
+  if (user && (pathname.startsWith('/login') || pathname.startsWith('/alpha/login')) && request.nextUrl.searchParams.get('error') === 'orphan') {
     const res = NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -197,6 +205,13 @@ export async function proxy(request: NextRequest) {
     } else {
       // ─── BLOQUEIO DE STAFF / CONTAS ALPHA ──────────────────────────────
       const isAlphaAccount = user.user_metadata?.is_alpha === true
+
+      // Se já autenticado e na tela de login do Alpha, envia direto para /alpha
+      if (pathname === '/alpha/login') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/alpha'
+        return applySecurityHeaders(NextResponse.redirect(url))
+      }
 
       // Servidores não acessam a área de pais
       if (pathname.startsWith('/portal-aluno') && !pathname.startsWith('/portal-aluno/login')) {

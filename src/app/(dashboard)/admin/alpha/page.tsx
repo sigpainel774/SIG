@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import {
   FlaskConical,
   ArrowLeft,
+  ArrowRight,
   Sparkles,
   Plus,
   Trash2,

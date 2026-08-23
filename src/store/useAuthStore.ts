@@ -29,7 +29,7 @@ interface AuthState {
   desativarSimulacao: () => void;
   setEscolaAtivaId: (id: string | null) => void;
   limparSessao: () => void;
-  logout: (supabase: any) => Promise<void>;
+  logout: (supabase: any, redirectUrl?: string) => Promise<void>;
   getFuncionarioAtivo: () => Funcionario | Partial<Funcionario> | null;
   getAcessosAtivos: () => AcessoUsuario[];
   getVinculosAtivos: () => VinculoFuncionario[];
@@ -102,7 +102,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   limparSessao: () => set({ funcionario: null, acessos: [], vinculos: [], realFuncionario: null, realAcessos: [], realVinculos: [], escolaAtivaId: null }),
 
-  logout: async (supabase: any) => {
+  logout: async (supabase: any, redirectUrl: string = '/login') => {
     // Encerrar simulação de permissões se estivesse ativa
     usePermissionSimulationStore.getState().encerrarSimulacao();
 
@@ -129,7 +129,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       supabase.auth.signOut().catch((err: any) => console.warn('Erro ao encerrar sessão Supabase:', err));
     }
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = redirectUrl;
     }
   },
 
