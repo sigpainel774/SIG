@@ -1,11 +1,17 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Save, Printer, RotateCcw } from 'lucide-react'
 import { ModalMatriculaEmaeeProps } from './types'
 import { MatriculaEmaeeProvider, useMatriculaEmaeeContext } from './context/MatriculaEmaeeContext'
+
+const ModalScannerFoto3x4 = dynamic(
+  () => import('@/components/modals/scanner-foto-3x4/ModalScannerFoto3x4').then((mod) => mod.ModalScannerFoto3x4),
+  { ssr: false }
+)
 
 // Subseções
 import { SecaoDadosAluno } from './components/SecaoDadosAluno'
@@ -14,7 +20,16 @@ import { SecaoDadosClinicos } from './components/SecaoDadosClinicos'
 import { SecaoAssinaturasComprovante } from './components/SecaoAssinaturasComprovante'
 
 function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOpen: boolean, handleOpenChange: (open: boolean) => void }) {
-  const { loading, handleSubmit, alunoSelecionado, nomeCompleto, isEditMode } = useMatriculaEmaeeContext()
+  const { 
+    loading, 
+    handleSubmit, 
+    alunoSelecionado, 
+    nomeCompleto, 
+    isEditMode,
+    scannerOpen,
+    setScannerOpen,
+    handleFotoCapturada
+  } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -151,6 +166,17 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           </div>
         </form>
       </div>
+
+      {/* Sub-modal Scanner Foto 3x4 (Carregado Sob Demanda) */}
+      {scannerOpen && (
+        <ModalScannerFoto3x4
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onFotoCapturada={handleFotoCapturada}
+          titulo="Escanear Foto 3x4 do Estudante (EMAEE)"
+          subtitulo="Enquadre a foto 3x4 da ficha física do estudante para recortar e aplicar"
+        />
+      )}
     </StandardDialog>
   )
 }

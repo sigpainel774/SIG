@@ -101,20 +101,35 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
   const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
 
-  // Foto 3x4 do Aluno
+  // Foto 3x4 do Aluno e Scanner
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoRemovidaManualmente, setFotoRemovidaManualmente] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   const handleFotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setFotoFile(file)
+    setFotoRemovidaManualmente(false)
     const reader = new FileReader()
     reader.onload = () => {
       setFotoUrl(reader.result as string)
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleFotoCapturada = (file: File, dataUrl: string) => {
+    setFotoFile(file)
+    setFotoUrl(dataUrl)
+    setFotoRemovidaManualmente(false)
+  }
+
+  const handleRemoverFoto = () => {
+    setFotoFile(null)
+    setFotoUrl(null)
+    setFotoRemovidaManualmente(true)
   }
 
   // 3. Escola Regular
@@ -837,6 +852,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             updateAlunoPayload.codigo_temp_resp_criado_em = new Date().toISOString()
           }
 
+          if (fotoRemovidaManualmente && !fotoFile) {
+            updateAlunoPayload.foto_url = null
+            updateAlunoPayload.foto_avatar_path = null
+            updateAlunoPayload.foto_visualizacao_path = null
+            updateAlunoPayload.foto_original_path = null
+            updateAlunoPayload.foto_updated_at = new Date().toISOString()
+          }
+
           const { error: alunoUpdateError } = await (supabase
             .from('alunos')
             .update(updateAlunoPayload) as any)
@@ -1235,9 +1258,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     searchTerm,
     setSearchTerm,
 
-    // Foto 3x4
+    // Foto 3x4 & Scanner
     fotoUrl,
     handleFotoUpload,
+    handleFotoCapturada,
+    handleRemoverFoto,
+    scannerOpen,
+    setScannerOpen,
+    fotoRemovidaManualmente,
     
     // Atendimento
     escolaAtendimentoId, setEscolaAtendimentoId,

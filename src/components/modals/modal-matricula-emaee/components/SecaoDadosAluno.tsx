@@ -5,13 +5,15 @@ import { useMatriculaEmaeeContext } from '../context/MatriculaEmaeeContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, User, Loader2, Camera, MapPin, Search } from 'lucide-react'
+import { CheckCircle2, User, Loader2, Camera, MapPin, Search, ScanFace, Trash2 } from 'lucide-react'
 import { MiniMapa } from '@/components/map/MapWrapper'
 
 export function SecaoDadosAluno() {
   const {
     fotoUrl,
     handleFotoUpload,
+    handleRemoverFoto,
+    setScannerOpen,
 
     nomeCompleto, setNomeCompleto,
     dataNascimento, setDataNascimento,
@@ -105,40 +107,73 @@ export function SecaoDadosAluno() {
           </div>
         )}
 
-        {/* Upload / Captura de Foto 3x4 do Aluno */}
-        <div className="flex items-center gap-4 p-3.5 rounded-xl bg-muted/50 dark:bg-[#121621] border border-border">
-          <div 
-            onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
-            className="w-20 h-20 rounded-full bg-card dark:bg-[#0b0e14] border-2 border-primary flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
-          >
-            {fotoUrl ? (
-              <img src={fotoUrl} alt="Foto 3x4 do Aluno" className="w-full h-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-muted-foreground text-center p-1">
-                <Camera className="w-6 h-6 mb-1 text-primary" />
-                <span className="text-[9px] font-bold">FOTO 3x4</span>
+        {/* Upload / Captura / Escaner de Foto 3x4 do Aluno */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl bg-muted/50 dark:bg-[#121621] border border-border">
+          <div className="flex items-center gap-3">
+            <div className="relative flex flex-col items-center">
+              <div 
+                onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
+                className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl bg-card dark:bg-[#0b0e14] border-2 border-primary flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-85 transition-opacity flex-shrink-0 relative shadow-sm"
+                title="Clique para escolher foto ou alterar"
+              >
+                {fotoUrl ? (
+                  <img src={fotoUrl} alt="Foto 3x4 do Aluno" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-muted-foreground text-center p-1">
+                    <Camera className="w-6 h-6 mb-1 text-primary" />
+                    <span className="text-[9px] font-bold">FOTO 3x4</span>
+                  </div>
+                )}
               </div>
-            )}
+
+              {fotoUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoverFoto()
+                  }}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors z-10"
+                  title="Remover foto"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
           </div>
+
           <div className="flex-1">
             <h4 className="text-xs font-bold text-foreground">Foto 3x4 do Estudante</h4>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               Utilizada na Ficha Oficial, Comprovante de Matrícula e Prontuário Clínico.
             </p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2.5">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => document.getElementById('modalFotoEmaeeInput')?.click()}
-                className="text-xs h-7 rounded-lg border-border text-foreground hover:bg-muted font-semibold"
+                className="text-xs h-7 rounded-lg border-border text-foreground hover:bg-muted font-semibold gap-1.5"
               >
+                <Camera className="w-3.5 h-3.5 text-primary" />
                 Selecionar Foto
               </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setScannerOpen(true)}
+                className="text-xs h-7 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 shadow-xs"
+                title="Escanear ou fotografar foto 3x4 com a câmera"
+              >
+                <ScanFace className="w-3.5 h-3.5" />
+                Escanear Foto 3x4
+              </Button>
+
               <input
                 id="modalFotoEmaeeInput"
                 type="file"
-                accept="image/*,image/heic,image/heif"
+                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 onChange={handleFotoUpload}
                 className="hidden"
               />
