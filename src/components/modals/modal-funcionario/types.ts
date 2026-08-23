@@ -267,6 +267,7 @@ export interface FuncionarioFormContextType {
   setFotoPreview: (v: string | null) => void
   isCompressingPhoto?: boolean
   handleFotoChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void> | void
+  handleFotoCapturada: (file: File, dataUrl: string) => void
   handleRemoverFoto: () => void
 
   // Lotações Sub-modal

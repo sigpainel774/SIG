@@ -143,6 +143,7 @@ export interface AlunoFormContextType {
   clearDatabaseCodes: (fieldToClear?: 'resp' | 'func' | null) => Promise<void>
   isCompressingPhoto: boolean
   handleFotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleFotoCapturada: (file: File, dataUrl: string) => void
   handleRemoverFoto: () => void
   toggleArrayItem: (list: string[], item: string, setter: (val: string[]) => void) => void
   handleSubmit: (e: React.FormEvent) => Promise<void>

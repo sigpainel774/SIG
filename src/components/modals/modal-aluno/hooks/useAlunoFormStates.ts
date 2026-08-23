@@ -418,6 +418,12 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     setFotoRemovidaManualmente(true)
   }
 
+  const handleFotoCapturada = (file: File, dataUrl: string) => {
+    setFotoFile(file)
+    setFotoUrl(dataUrl)
+    setFotoRemovidaManualmente(false)
+  }
+
   const handleEnviarSolicitacaoEdicao = async () => {
     if (!justificativaSolicitacao.trim()) {
       toast.error('Por favor, descreva a justificativa para a liberação da ficha.')
@@ -1148,6 +1154,7 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
     clearDatabaseCodes,
     isCompressingPhoto,
     handleFotoUpload,
+    handleFotoCapturada,
     handleRemoverFoto,
     toggleArrayItem,
     handleSubmit,

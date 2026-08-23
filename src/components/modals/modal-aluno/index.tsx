@@ -5,10 +5,16 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { UserPlus, Save, Lock, Unlock, Loader2, Send, Smartphone, Camera, Trash2, AlertTriangle } from 'lucide-react'
+import { UserPlus, Save, Lock, Unlock, Loader2, Send, Smartphone, Camera, Trash2, AlertTriangle, ScanFace } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { AlunoFormProvider, useAlunoForm } from './context/AlunoFormContext'
 import { ModalAlunoProps } from './types'
 import { toast } from 'sonner'
+
+const ModalScannerFoto3x4 = dynamic(
+  () => import('@/components/modals/scanner-foto-3x4/ModalScannerFoto3x4').then((mod) => mod.ModalScannerFoto3x4),
+  { ssr: false }
+)
 
 // Sub-abas do Aluno
 import { SecaoIdentificacao } from './components/SecaoIdentificacao'
@@ -19,6 +25,7 @@ import { SecaoAssinaturas } from './components/SecaoAssinaturas'
 
 function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boolean, handleOpenChange: (open: boolean) => void }) {
   const [activeTab, setActiveTab] = useState<'identificacao' | 'matricula' | 'endereco' | 'saude' | 'aee_assinaturas'>('identificacao')
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   const {
     alunoEditar,
@@ -35,6 +42,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
     isCompressingPhoto,
     fotoUrl,
     handleFotoUpload,
+    handleFotoCapturada,
     handleRemoverFoto,
     escolas,
     escolaId,
@@ -198,51 +206,66 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-background p-4 rounded-xl border border-borderCustom">
           {/* Foto 3x4 do Aluno */}
           <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-highlight/40 overflow-hidden flex items-center justify-center relative">
-                {isCompressingPhoto ? (
-                  <div className="flex flex-col items-center justify-center p-1 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-highlight" />
-                    <span className="text-[9px] text-highlight mt-1 font-semibold">Otimizando</span>
-                  </div>
-                ) : fotoUrl ? (
-                  <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs text-center text-zinc-500 font-bold">
-                    FOTO 3x4
-                  </span>
-                )}
-              </div>
-              {!isCompressingPhoto && (
-                <>
-                  <label
-                    htmlFor="modal-foto-aluno-header-input"
-                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-highlight flex items-center justify-center cursor-pointer hover:bg-highlight/80 transition-colors shadow-sm"
-                    title="Alterar foto do aluno"
-                  >
-                    <Camera className="w-3 h-3 text-background" />
-                  </label>
-                  {fotoUrl && (
-                    <button
-                      type="button"
-                      onClick={handleRemoverFoto}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors"
-                      title="Remover foto"
-                    >
-                      <Trash2 className="w-2.5 h-2.5" />
-                    </button>
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              <div className="relative">
+                <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-highlight/40 overflow-hidden flex items-center justify-center relative">
+                  {isCompressingPhoto ? (
+                    <div className="flex flex-col items-center justify-center p-1 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-highlight" />
+                      <span className="text-[9px] text-highlight mt-1 font-semibold">Otimizando</span>
+                    </div>
+                  ) : fotoUrl ? (
+                    <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-center text-zinc-500 font-bold">
+                      FOTO 3x4
+                    </span>
                   )}
-                </>
-              )}
-              <input
-                id="modal-foto-aluno-header-input"
-                type="file"
-                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                className="hidden"
-                disabled={isCompressingPhoto}
-                onChange={handleFotoUpload}
-              />
+                </div>
+                {!isCompressingPhoto && !isFichaBloqueada && (
+                  <>
+                    <label
+                      htmlFor="modal-foto-aluno-header-input"
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-highlight flex items-center justify-center cursor-pointer hover:bg-highlight/80 transition-colors shadow-sm"
+                      title="Alterar foto do aluno (upload tradicional)"
+                    >
+                      <Camera className="w-3 h-3 text-background" />
+                    </label>
+                    {fotoUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoverFoto}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors"
+                        title="Remover foto"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </>
+                )}
+                <input
+                  id="modal-foto-aluno-header-input"
+                  type="file"
+                  accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  className="hidden"
+                  disabled={isCompressingPhoto || isFichaBloqueada}
+                  onChange={handleFotoUpload}
+                />
+              </div>
+
+              {/* Botão Escanear Foto 3x4 */}
+              <button
+                type="button"
+                disabled={isCompressingPhoto || isFichaBloqueada}
+                onClick={() => setScannerOpen(true)}
+                className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-md bg-[#1f1f23] hover:bg-highlight hover:text-background text-zinc-300 text-[10px] font-bold border border-borderCustom hover:border-highlight transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed w-full"
+                title="Escanear foto 3x4 com a câmera do dispositivo"
+              >
+                <ScanFace className="w-3 h-3" />
+                <span>Escanear</span>
+              </button>
             </div>
+
             <div className="text-[11px] text-zinc-400">
               <p className="font-semibold text-zinc-300">Foto 3x4 do Aluno</p>
               <p>PNG/JPG/WebP/HEIC · até 20MB</p>
@@ -341,6 +364,17 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
           )}
         </fieldset>
       </form>
+
+      {/* Modal Scanner Foto 3x4 (Carregado Sob Demanda) */}
+      {scannerOpen && (
+        <ModalScannerFoto3x4
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onFotoCapturada={handleFotoCapturada}
+          titulo="Escanear Foto 3x4 do Aluno"
+          subtitulo="Enquadre a foto 3x4 da ficha física do aluno para recortar e aplicar"
+        />
+      )}
     </StandardDialog>
   )
 }

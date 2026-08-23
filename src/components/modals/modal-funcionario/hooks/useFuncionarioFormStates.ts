@@ -589,6 +589,12 @@ export function useFuncionarioFormStates({
     setFotoRemovidaManualmente(true)
   }
 
+  const handleFotoCapturada = (file: File, dataUrl: string) => {
+    setFotoFile(file)
+    setFotoPreview(dataUrl)
+    setFotoRemovidaManualmente(false)
+  }
+
   // Upload handler for documents
   const handleDocUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -1476,6 +1482,7 @@ export function useFuncionarioFormStates({
     fotoPreview, setFotoPreview,
     isCompressingPhoto,
     handleFotoChange,
+    handleFotoCapturada,
     handleRemoverFoto,
     lotacoesModalOpen,
     setLotacoesModalOpen,

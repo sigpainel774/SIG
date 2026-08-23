@@ -3,13 +3,18 @@
 import React, { useState } from 'react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2, Save, UserPlus, Camera, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Save, UserPlus, Camera, Plus, Trash2, ScanFace } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { ModalFuncionarioProps } from './types'
 import { FuncionarioFormProvider, useFuncionarioForm } from './context/FuncionarioFormContext'
 
 const ModalGestaoLotacoes = dynamic(
   () => import('@/components/modals/modal-gestao-lotacoes').then((m) => m.ModalGestaoLotacoes),
+  { ssr: false }
+)
+
+const ModalScannerFoto3x4 = dynamic(
+  () => import('@/components/modals/scanner-foto-3x4/ModalScannerFoto3x4').then((m) => m.ModalScannerFoto3x4),
   { ssr: false }
 )
 
@@ -25,6 +30,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 
 function ModalFuncionarioContent() {
   const [activeTab, setActiveTab] = useState<'pessoais' | 'documentos' | 'emprego' | 'saude' | 'escolaridade' | 'anexos'>('pessoais')
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   const {
     isEditing,
@@ -38,6 +44,7 @@ function ModalFuncionarioContent() {
     handleEscolaChange,
     fotoPreview,
     handleFotoChange,
+    handleFotoCapturada,
     handleRemoverFoto,
     isCompressingPhoto,
     handleSubmit,
@@ -86,51 +93,66 @@ function ModalFuncionarioContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-background p-4 rounded-xl border border-borderCustom">
         {/* Foto 3x4 */}
         <div className="flex items-center gap-4">
-          <div className="relative shrink-0">
-            <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-[#3ea6ff]/40 overflow-hidden flex items-center justify-center relative">
-              {isCompressingPhoto ? (
-                <div className="flex flex-col items-center justify-center p-1 text-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-[#3ea6ff]" />
-                  <span className="text-[9px] text-[#3ea6ff] mt-1 font-semibold">Otimizando</span>
-                </div>
-              ) : fotoPreview ? (
-                <img src={getFotoSrc()!} alt="Foto 3x4" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs text-center text-zinc-500 font-bold">
-                  FOTO 3x4
-                </span>
-              )}
-            </div>
-            {!isCompressingPhoto && (
-              <>
-                <label
-                  htmlFor="foto-input"
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#3ea6ff] flex items-center justify-center cursor-pointer hover:bg-[#0090ff] transition-colors shadow-sm"
-                  title="Alterar foto"
-                >
-                  <Camera className="w-3 h-3 text-white" />
-                </label>
-                {fotoPreview && (
-                  <button
-                    type="button"
-                    onClick={handleRemoverFoto}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors"
-                    title="Remover foto"
-                  >
-                    <Trash2 className="w-2.5 h-2.5" />
-                  </button>
+          <div className="flex flex-col items-center gap-1.5 shrink-0">
+            <div className="relative">
+              <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-[#3ea6ff]/40 overflow-hidden flex items-center justify-center relative">
+                {isCompressingPhoto ? (
+                  <div className="flex flex-col items-center justify-center p-1 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#3ea6ff]" />
+                    <span className="text-[9px] text-[#3ea6ff] mt-1 font-semibold">Otimizando</span>
+                  </div>
+                ) : fotoPreview ? (
+                  <img src={getFotoSrc()!} alt="Foto 3x4" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs text-center text-zinc-500 font-bold">
+                    FOTO 3x4
+                  </span>
                 )}
-              </>
-            )}
-            <input
-              id="foto-input"
-              type="file"
-              accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
-              className="hidden"
+              </div>
+              {!isCompressingPhoto && (
+                <>
+                  <label
+                    htmlFor="foto-input"
+                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#3ea6ff] flex items-center justify-center cursor-pointer hover:bg-[#0090ff] transition-colors shadow-sm"
+                    title="Alterar foto (upload tradicional)"
+                  >
+                    <Camera className="w-3 h-3 text-white" />
+                  </label>
+                  {fotoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoverFoto}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center cursor-pointer text-white shadow-sm transition-colors"
+                      title="Remover foto"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </>
+              )}
+              <input
+                id="foto-input"
+                type="file"
+                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
+                className="hidden"
+                disabled={isCompressingPhoto}
+                onChange={handleFotoChange}
+              />
+            </div>
+
+            {/* Botão Escanear Foto 3x4 */}
+            <button
+              type="button"
               disabled={isCompressingPhoto}
-              onChange={handleFotoChange}
-            />
+              onClick={() => setScannerOpen(true)}
+              className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-md bg-[#1f1f23] hover:bg-[#3ea6ff] hover:text-[#0f0f0f] text-zinc-300 text-[10px] font-bold border border-borderCustom hover:border-[#3ea6ff] transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed w-full"
+              title="Escanear foto 3x4 com a câmera do dispositivo"
+            >
+              <ScanFace className="w-3 h-3" />
+              <span>Escanear</span>
+            </button>
           </div>
+
           <div className="text-[11px] text-zinc-400">
             <p className="font-semibold text-zinc-300">Foto 3x4 do Servidor</p>
             <p>PNG/JPG/WebP/HEIC · até 20MB</p>
@@ -220,6 +242,17 @@ function ModalFuncionarioContent() {
           open={lotacoesModalOpen}
           onOpenChange={setLotacoesModalOpen}
           funcionarioInicial={{ id: empId }}
+        />
+      )}
+
+      {/* Sub-modal Scanner Foto 3x4 (Carregado Sob Demanda) */}
+      {scannerOpen && (
+        <ModalScannerFoto3x4
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onFotoCapturada={handleFotoCapturada}
+          titulo="Escanear Foto 3x4 do Servidor"
+          subtitulo="Enquadre a foto 3x4 da ficha física do funcionário para recortar e aplicar"
         />
       )}
     </form>
