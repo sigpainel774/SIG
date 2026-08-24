@@ -22,7 +22,7 @@ export async function convertPdfToImages(
 ): Promise<{ url: string; blob: Blob; pageNumber: number }[]> {
   
   const arrayBuffer = await pdfFile.arrayBuffer()
-  const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise
+  const pdfDoc = await pdfjsLib.getDocument(arrayBuffer as any).promise
   
   const totalPages = pdfDoc.numPages
   const results: { url: string; blob: Blob; pageNumber: number }[] = []
@@ -42,7 +42,7 @@ export async function convertPdfToImages(
     canvas.height = viewport.height
     
     // Renderiza a página do PDF no Canvas
-    const renderContext = {
+    const renderContext: any = {
       canvasContext: ctx,
       viewport: viewport,
     }
