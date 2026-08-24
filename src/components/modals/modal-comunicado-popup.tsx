@@ -36,7 +36,7 @@ export function ModalComunicadoPopup() {
 
   const isTargetForUser = useMemo(() => {
     return (target: string): boolean => {
-      if (!target || target === 'Geral / Toda a Rede') return true
+      if (!target || target === 'Geral / Toda a Rede' || target === 'Selecione o Público Alvo') return true
 
       const cargoUser = (funcionario?.cargo || '').toLowerCase()
       const isProf = cargoUser.includes('professor') || vinculos.some((v) => (v.cargo || '').toLowerCase().includes('professor'))

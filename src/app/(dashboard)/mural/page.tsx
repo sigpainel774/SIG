@@ -35,7 +35,7 @@ export default function MuralPage() {
   }, [isNivel1OuSuperadmin, acessos])
 
   // Lista de Escolas para mapeamento e seleção
-  const [listaEscolas, setListaEscolas] = useState<{ id: string; nome: string }[]>([])
+  const [listaEscolas, setListaEscolas] = useState<{ id: string; nome: string; is_teste?: boolean }[]>([])
   const mapaEscolas = useMemo(() => {
     return new Map(listaEscolas.map((e) => [e.id, e.nome]))
   }, [listaEscolas])
@@ -43,7 +43,7 @@ export default function MuralPage() {
   // Form states
   const [titulo, setTitulo] = useState('')
   const [mensagem, setMensagem] = useState('')
-  const [alvo, setAlvo] = useState('Geral / Toda a Rede')
+  const [alvo, setAlvo] = useState('Selecione o Público Alvo')
   const [isPopup, setIsPopup] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
@@ -155,9 +155,11 @@ export default function MuralPage() {
 
         let escolasQuery = supabase
           .from('escolas')
-          .select('id, nome')
+          .select('id, nome, is_teste')
           .eq('ativo', true)
           .is('deleted_at', null)
+          .neq('is_teste', true)
+          .not('nome', 'ilike', '%teste%')
           .order('nome')
 
         if (selectedSecretaria?.id) {
@@ -189,7 +191,7 @@ export default function MuralPage() {
         }
 
         if (escolasRes.data) {
-          setListaEscolas(escolasRes.data)
+          setListaEscolas(escolasRes.data.filter((e: any) => !e.is_teste && !e.nome.toLowerCase().includes('teste')))
         }
       } catch (err: any) {
         console.error('Erro ao carregar mural:', err)
@@ -298,11 +300,13 @@ export default function MuralPage() {
       }
     }
 
+    const targetPayload = alvo === 'Selecione o Público Alvo' ? 'Geral / Toda a Rede' : alvo
+
     const { error } = await (supabase.from as any)('comunicados').insert({
       title: titulo.trim(),
       body: mensagem.trim(),
       date: hojeStr,
-      target: alvo,
+      target: targetPayload,
       is_popup: isPopup,
       escola_ids: escolaIdsPayload,
       criado_por: funcionario?.id ?? null,
@@ -330,7 +334,7 @@ export default function MuralPage() {
 
       setTitulo('')
       setMensagem('')
-      setAlvo('Geral / Toda a Rede')
+      setAlvo('Selecione o Público Alvo')
       setIsPopup(false)
       setTodaARede(true)
       setUnidadesSelecionadas([])
@@ -425,8 +429,8 @@ export default function MuralPage() {
                         }}
                         className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                           todaARede
-                            ? 'bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-sm'
-                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground'
+                            ? 'bg-highlight/15 border-highlight text-highlight shadow-sm ring-1 ring-highlight/30'
+                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
                         }`}
                       >
                         <Globe className="w-3.5 h-3.5 shrink-0" />
@@ -438,8 +442,8 @@ export default function MuralPage() {
                         onClick={() => setTodaARede(false)}
                         className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                           !todaARede
-                            ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm'
-                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground'
+                            ? 'bg-highlight/15 border-highlight text-highlight shadow-sm ring-1 ring-highlight/30'
+                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
                         }`}
                       >
                         <School className="w-3.5 h-3.5 shrink-0" />
@@ -457,7 +461,7 @@ export default function MuralPage() {
                               placeholder="Buscar unidade escolar..."
                               value={buscaUnidade}
                               onChange={(e) => setBuscaUnidade(e.target.value)}
-                              className="h-8 pl-8 text-xs bg-input border-borderCustom text-foreground"
+                              className="h-8 pl-8 text-xs bg-input border-borderCustom text-foreground placeholder:text-muted-foreground"
                             />
                           </div>
                           <Button
@@ -471,13 +475,13 @@ export default function MuralPage() {
                                 setUnidadesSelecionadas(listaEscolas.map((e) => e.id))
                               }
                             }}
-                            className="h-8 text-xs border-borderCustom bg-surface-2 hover:bg-hoverCustom shrink-0 cursor-pointer"
+                            className="h-8 text-xs border-borderCustom bg-surface-2 hover:bg-hoverCustom text-foreground shrink-0 cursor-pointer font-medium"
                           >
                             {unidadesSelecionadas.length === listaEscolas.length ? 'Desmarcar Todas' : 'Marcar Todas'}
                           </Button>
                         </div>
 
-                        <div className="max-h-40 overflow-y-auto space-y-1 p-2 bg-surface-2/60 border border-borderCustom rounded-lg pr-1">
+                        <div className="max-h-48 overflow-y-auto space-y-1 p-2 bg-input/40 border border-borderCustom rounded-lg pr-1">
                           {listaEscolas
                             .filter((esc) => esc.nome.toLowerCase().includes(buscaUnidade.toLowerCase()))
                             .map((esc) => {
@@ -495,15 +499,15 @@ export default function MuralPage() {
                                   }}
                                   className={`w-full flex items-center justify-between p-2 rounded-md text-xs transition-colors text-left cursor-pointer ${
                                     isSelected
-                                      ? 'bg-purple-500/15 text-purple-200 border border-purple-500/30'
-                                      : 'hover:bg-hoverCustom text-muted-foreground hover:text-foreground'
+                                      ? 'bg-highlight/10 text-foreground border border-highlight/30 font-medium'
+                                      : 'hover:bg-hoverCustom text-muted-foreground hover:text-foreground border border-transparent'
                                   }`}
                                 >
-                                  <span className="font-medium truncate pr-2">{esc.nome}</span>
+                                  <span className="truncate pr-2">{esc.nome}</span>
                                   {isSelected ? (
-                                    <CheckSquare className="w-4 h-4 text-purple-400 shrink-0" />
+                                    <CheckSquare className="w-4 h-4 text-highlight shrink-0" />
                                   ) : (
-                                    <Square className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                                    <Square className="w-4 h-4 text-muted-foreground/50 shrink-0" />
                                   )}
                                 </button>
                               )
@@ -538,7 +542,7 @@ export default function MuralPage() {
                     onChange={(e) => setAlvo(e.target.value)}
                     className="w-full bg-input border border-borderCustom text-foreground h-10 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
                   >
-                    <option value="Geral / Toda a Rede">Geral / Toda a Rede</option>
+                    <option value="Selecione o Público Alvo">Selecione o Público Alvo</option>
                     <option value="Professores">Professores</option>
                     <option value="Alunos e Pais">Alunos e Pais</option>
                     <option value="Equipe Administrativa">Equipe Administrativa</option>
@@ -736,10 +740,10 @@ export default function MuralPage() {
                         </span>
                       ) : (
                         <span 
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/30"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30"
                           title={notice.escola_ids.map((id: string) => mapaEscolas.get(id) || id).join(', ')}
                         >
-                          <Building className="w-3 h-3 text-purple-400" />
+                          <Building className="w-3 h-3 text-amber-300" />
                           {notice.escola_ids.length} Unidades
                         </span>
                       )}
