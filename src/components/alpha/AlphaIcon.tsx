@@ -27,6 +27,13 @@ import {
   ImageDown,
   FileArchive,
   Image,
+  FileCheck,
+  Files,
+  Stamp,
+  Table,
+  CheckSquare,
+  QrCode,
+  FileDiff,
   LucideIcon,
 } from 'lucide-react'
 
@@ -57,6 +64,13 @@ export const AlphaIconMap: Record<string, LucideIcon> = {
   ImageDown,
   FileArchive,
   Image,
+  FileCheck,
+  Files,
+  Stamp,
+  Table,
+  CheckSquare,
+  QrCode,
+  FileDiff,
 }
 
 interface AlphaIconProps {
