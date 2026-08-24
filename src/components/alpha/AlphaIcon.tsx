@@ -21,6 +21,12 @@ import {
   Navigation,
   Map,
   Boxes,
+  FileImage,
+  ArrowLeftRight,
+  Minimize2,
+  ImageDown,
+  FileArchive,
+  Image,
   LucideIcon,
 } from 'lucide-react'
 
@@ -45,6 +51,12 @@ export const AlphaIconMap: Record<string, LucideIcon> = {
   Navigation,
   Map,
   Boxes,
+  FileImage,
+  ArrowLeftRight,
+  Minimize2,
+  ImageDown,
+  FileArchive,
+  Image,
 }
 
 interface AlphaIconProps {
