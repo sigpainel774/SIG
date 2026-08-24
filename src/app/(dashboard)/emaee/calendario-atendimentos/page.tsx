@@ -226,14 +226,26 @@ export default function CalendarioAtendimentosPage() {
     return h.slice(0, 5)
   }
 
-  // Lista de especialidades únicas para o filtro
+  // Lista de especialidades / profissões únicas dos profissionais AEE ativos e atendimentos
   const listaEspecialidades = useMemo(() => {
     const setEsp = new Set<string>()
-    vinculos.forEach((v) => {
-      if (v.especialidade) setEsp.add(v.especialidade)
+    // 1. Profissões / cargos dos profissionais AEE ativos na unidade EMAEE
+    profissionais.forEach((p) => {
+      if (p.cargo && typeof p.cargo === 'string' && p.cargo.trim()) {
+        setEsp.add(p.cargo.trim())
+      }
     })
-    return Array.from(setEsp).sort()
-  }, [vinculos])
+    // 2. Especialidades ou cargos dos atendimentos já cadastrados
+    vinculos.forEach((v) => {
+      if (v.especialidade && typeof v.especialidade === 'string' && v.especialidade.trim()) {
+        setEsp.add(v.especialidade.trim())
+      }
+      if (v.funcionarios?.cargo && typeof v.funcionarios.cargo === 'string' && v.funcionarios.cargo.trim()) {
+        setEsp.add(v.funcionarios.cargo.trim())
+      }
+    })
+    return Array.from(setEsp).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
+  }, [profissionais, vinculos])
 
   // Filtragem dos atendimentos
   const atendimentosFiltrados = useMemo(() => {
@@ -261,9 +273,14 @@ export default function CalendarioAtendimentosPage() {
         return false
       }
 
-      // Filtro Especialidade
-      if (filtroEspecialidade !== 'todos' && v.especialidade !== filtroEspecialidade) {
-        return false
+      // Filtro Especialidade / Profissão
+      if (filtroEspecialidade !== 'todos') {
+        const filtroNorm = normalizar(filtroEspecialidade)
+        const espNorm = normalizar(v.especialidade || '')
+        const profCargoNorm = normalizar(prof?.cargo || '')
+        if (espNorm !== filtroNorm && profCargoNorm !== filtroNorm) {
+          return false
+        }
       }
 
       // Filtro Dia da Semana

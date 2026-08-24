@@ -28,6 +28,7 @@ import {
   Heart,
   UserPlus,
   FileSpreadsheet,
+  Calendar,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { StandardDialog } from '@/components/ui/standard-dialog'
@@ -99,7 +100,7 @@ const ACESSO_RAPIDO_EMAEE_ITEMS = [
   { label: 'Pastas de Alunos', icon: Heart, href: '/emaee/pacientes' },
   { label: 'Fila de Espera', icon: Clock, href: '/emaee/fila-espera' },
   { label: 'Profissionais AEE', icon: UserPlus, href: '/emaee/vincular-profissionais' },
-  { label: 'Calendário de Aulas', icon: BookOpen, href: '/emaee/calendario-atendimentos' },
+  { label: 'Calendário de Atendimentos', icon: Calendar, href: '/emaee/calendario-atendimentos' },
   { label: 'Relatórios Escolas', icon: FileSpreadsheet, href: '/emaee/solicitacoes-escola' },
   { label: 'Servidores', icon: Users, href: '/funcionarios' },
   { label: 'Mural de Avisos', icon: Pin, href: '/mural' },
