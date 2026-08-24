@@ -24,6 +24,35 @@ export interface VisitaPonto {
   tentativas_sync?: number;
 }
 
+export interface PontoGpsTrack {
+  latitude: number;
+  longitude: number;
+  timestamp: number;
+  speedKmh: number;
+  heading: number;
+  accuracy: number;
+  distanceM: number;
+}
+
+export interface NavegacaoLivreRegistro {
+  id: string;
+  funcionario_id: string | null;
+  funcionario_nome?: string | null;
+  veiculo_id?: string | null;
+  titulo: string;
+  data_inicio: string;
+  data_fim: string | null;
+  duracao_segundos: number;
+  distancia_metros: number;
+  velocidade_media_kmh: number;
+  velocidade_max_kmh: number;
+  pontos_gps: PontoGpsTrack[];
+  status: 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA';
+  observacoes?: string | null;
+  sincronizado: boolean;
+  created_at?: string;
+}
+
 export interface RotaAtivaState {
   id: string;
   rota_id?: string | null;
@@ -37,12 +66,14 @@ export interface RotaAtivaState {
 }
 
 const DB_NAME = 'sig_rotas_offline_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_ROTAS = 'rota_ativa';
 const STORE_VISITAS = 'visitas_queue';
+const STORE_NAVEGACOES = 'navegacoes_livres';
 
 const LS_FALLBACK_ROTA = 'sig_offline_rota_ativa';
 const LS_FALLBACK_VISITAS = 'sig_offline_visitas_queue';
+const LS_FALLBACK_NAVEGACOES = 'sig_offline_navegacoes_livres';
 
 /**
  * Abre a conexão com o banco IndexedDB local
@@ -64,6 +95,11 @@ function openDB(): Promise<IDBDatabase> {
         const visitasStore = db.createObjectStore(STORE_VISITAS, { keyPath: 'id' });
         visitasStore.createIndex('sincronizado', 'sincronizado', { unique: false });
         visitasStore.createIndex('data_hora_chegada', 'data_hora_chegada', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(STORE_NAVEGACOES)) {
+        const navStore = db.createObjectStore(STORE_NAVEGACOES, { keyPath: 'id' });
+        navStore.createIndex('sincronizado', 'sincronizado', { unique: false });
+        navStore.createIndex('data_inicio', 'data_inicio', { unique: false });
       }
     };
 
@@ -114,7 +150,6 @@ export async function obterRotaAtiva(): Promise<RotaAtivaState | null> {
         if (list && list.length > 0) {
           resolve(list[0]);
         } else {
-          // Tenta ler do localStorage
           const cached = localStorage.getItem(LS_FALLBACK_ROTA);
           resolve(cached ? JSON.parse(cached) : null);
         }
@@ -156,7 +191,6 @@ export async function limparRotaAtiva(): Promise<void> {
 export async function enfileirarVisitaOffline(visita: VisitaPonto): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  // Atualiza LocalStorage como cópia de segurança (com limite de segurança MAX_ITEMS = 50)
   try {
     const MAX_ITEMS = 50;
     const saved = localStorage.getItem(LS_FALLBACK_VISITAS);
@@ -275,4 +309,137 @@ export async function removerVisitaOffline(id: string): Promise<void> {
   }
 }
 
+// ==============================================================================
+// GESTÃO OFFLINE DE NAVEGAÇÕES LIVRES (GRAVAÇÃO DE TRILHAS GPS)
+// ==============================================================================
 
+/**
+ * Salva ou atualiza uma navegação livre localmente no IndexedDB e LocalStorage
+ */
+export async function salvarNavegacaoLivreOffline(nav: NavegacaoLivreRegistro): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const MAX_ITEMS = 30;
+    const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+    const list: NavegacaoLivreRegistro[] = saved ? JSON.parse(saved) : [];
+    const idx = list.findIndex((item) => item.id === nav.id);
+    if (idx >= 0) {
+      list[idx] = nav;
+    } else {
+      list.unshift(nav);
+    }
+    const limitedList = list.slice(0, MAX_ITEMS);
+    localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(limitedList));
+  } catch {}
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAVEGACOES, 'readwrite');
+      const store = tx.objectStore(STORE_NAVEGACOES);
+      const req = store.put(nav);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('Erro ao salvar navegação no IndexedDB, mantido no localStorage:', err);
+  }
+}
+
+/**
+ * Obtém todas as navegações livres locais
+ */
+export async function obterNavegacoesLivresOffline(): Promise<NavegacaoLivreRegistro[]> {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAVEGACOES, 'readonly');
+      const store = tx.objectStore(STORE_NAVEGACOES);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const list = (req.result as NavegacaoLivreRegistro[]) || [];
+        if (list.length > 0) {
+          resolve(list.sort((a, b) => new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime()));
+        } else {
+          const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+          resolve(saved ? JSON.parse(saved) : []);
+        }
+      };
+      req.onerror = () => {
+        const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+        resolve(saved ? JSON.parse(saved) : []);
+      };
+    });
+  } catch {
+    const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+    return saved ? JSON.parse(saved) : [];
+  }
+}
+
+/**
+ * Retorna navegações livres pendentes de sincronização
+ */
+export async function obterNavegacoesPendentes(): Promise<NavegacaoLivreRegistro[]> {
+  const todas = await obterNavegacoesLivresOffline();
+  return todas.filter((n) => !n.sincronizado && n.status === 'FINALIZADA');
+}
+
+/**
+ * Marca uma navegação como sincronizada
+ */
+export async function marcarNavegacaoComoSincronizada(id: string): Promise<void> {
+  if (typeof window === 'undefined' || !id) return;
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+    if (saved) {
+      const list: NavegacaoLivreRegistro[] = JSON.parse(saved);
+      const updated = list.map((item) => (item.id === id ? { ...item, sincronizado: true } : item));
+      localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(updated));
+    }
+  } catch {}
+
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAVEGACOES, 'readwrite');
+    const store = tx.objectStore(STORE_NAVEGACOES);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const rec = getReq.result as NavegacaoLivreRegistro;
+      if (rec) {
+        rec.sincronizado = true;
+        store.put(rec);
+      }
+    };
+  } catch (err) {
+    console.error('Erro ao marcar navegação como sincronizada no IndexedDB:', err);
+  }
+}
+
+/**
+ * Remove uma navegação do armazenamento local
+ */
+export async function removerNavegacaoOffline(id: string): Promise<void> {
+  if (typeof window === 'undefined' || !id) return;
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_NAVEGACOES);
+    if (saved) {
+      const list: NavegacaoLivreRegistro[] = JSON.parse(saved);
+      const filtered = list.filter((item) => item.id !== id);
+      localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(filtered));
+    }
+  } catch {}
+
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAVEGACOES, 'readwrite');
+    const store = tx.objectStore(STORE_NAVEGACOES);
+    store.delete(id);
+  } catch (err) {
+    console.error('Erro ao remover navegação do IndexedDB:', err);
+  }
+}

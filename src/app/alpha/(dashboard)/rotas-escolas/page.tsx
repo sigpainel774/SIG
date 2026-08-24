@@ -14,9 +14,10 @@ import {
   RefreshCw,
   Compass,
   History,
+  Navigation,
   FlaskConical,
 } from 'lucide-react'
-import { MapaRotasEscolas } from '@/components/map/MapWrapper'
+import { MapaRotasEscolas, NavegacaoLivreTab } from '@/components/map/MapWrapper'
 import { EscolaMapeada } from '@/components/map/MapaRotasEscolas'
 import HistoricoPercursosTab from '@/components/map/HistoricoPercursosTab'
 import { toast } from 'sonner'
@@ -30,7 +31,7 @@ export default function AlphaRotasEscolasPage() {
   const supabase = createClient()
   const [escolas, setEscolas] = useState<EscolaMapeada[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [abaAtiva, setAbaAtiva] = useState<'roteirizador' | 'historico'>('roteirizador')
+  const [abaAtiva, setAbaAtiva] = useState<'roteirizador' | 'navegacao_livre' | 'historico'>('roteirizador')
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -153,32 +154,44 @@ export default function AlphaRotasEscolasPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Navegação entre Abas */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Navegação entre 3 Abas */}
           <div className="flex items-center bg-[#0c1427] border border-blue-900/50 p-1 rounded-xl shadow-xs">
             <button
               type="button"
               onClick={() => setAbaAtiva('roteirizador')}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'roteirizador'
                   ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Compass className="w-4 h-4" />
-              Roteirizador &amp; Ao Vivo
+              Roteirizador
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('navegacao_livre')}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                abaAtiva === 'navegacao_livre'
+                  ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Navigation className="w-4 h-4 text-sky-400" />
+              Navegação Livre
             </button>
             <button
               type="button"
               onClick={() => setAbaAtiva('historico')}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'historico'
                   ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <History className="w-4 h-4" />
-              Histórico &amp; Simulação
+              Histórico &amp; Replay
             </button>
           </div>
 
@@ -276,6 +289,11 @@ export default function AlphaRotasEscolasPage() {
             <MapaRotasEscolas escolas={escolas} />
           )}
         </>
+      ) : abaAtiva === 'navegacao_livre' ? (
+        <NavegacaoLivreTab
+          escolas={escolas}
+          onNavegacaoSalva={() => setAbaAtiva('historico')}
+        />
       ) : (
         <HistoricoPercursosTab />
       )}

@@ -18,9 +18,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   FastForward,
+  Navigation,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { obterRotaViariaReal, PontoLocalizacao } from '@/lib/routeOptimizer';
+import { toast } from 'sonner';
+import { obterRotaViariaReal, PontoLocalizacao, calcularDistanciaHaversine } from '@/lib/routeOptimizer';
+import { NavegacaoLivreRegistro, PontoGpsTrack } from '@/lib/offlineRouteStore';
 
 export interface VisitaHistoricoItem {
   id: string;
@@ -39,7 +42,8 @@ export interface VisitaHistoricoItem {
 }
 
 interface MapaReplayPercursoProps {
-  visitas: VisitaHistoricoItem[];
+  visitas?: VisitaHistoricoItem[];
+  navegacaoLivre?: NavegacaoLivreRegistro | null;
   tituloPercurso?: string;
 }
 
@@ -112,13 +116,20 @@ function FitBoundsToRoute({ bounds }: { bounds: L.LatLngBoundsExpression | null 
   return null;
 }
 
-export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaReplayPercursoProps) {
-  // Ordena visitas cronologicamente
+export default function MapaReplayPercurso({
+  visitas = [],
+  navegacaoLivre = null,
+  tituloPercurso,
+}: MapaReplayPercursoProps) {
+  // Ordena visitas cronologicamente caso seja modo de visitas
   const visitasOrdenadas = useMemo(() => {
     return [...visitas].sort(
       (a, b) => new Date(a.data_hora_chegada).getTime() - new Date(b.data_hora_chegada).getTime()
     );
   }, [visitas]);
+
+  // Modo de operação: 'NAVEGACAO_LIVRE' ou 'VISITAS_ESCOLAS'
+  const isModoNavegacaoLivre = Boolean(navegacaoLivre && (navegacaoLivre.pontos_gps || []).length > 0);
 
   // Estados de Rota Viária (Polyline)
   const [polylineCoords, setPolylineCoords] = useState<[number, number][]>([]);
@@ -132,21 +143,44 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
 
   // Timestamps extremos
   const { timeInicio, timeFim, duracaoTotalMs } = useMemo(() => {
+    if (isModoNavegacaoLivre && navegacaoLivre) {
+      const pontos = navegacaoLivre.pontos_gps || [];
+      if (pontos.length > 0) {
+        const tIni = pontos[0].timestamp || new Date(navegacaoLivre.data_inicio).getTime();
+        const tFim =
+          pontos[pontos.length - 1].timestamp ||
+          (navegacaoLivre.data_fim ? new Date(navegacaoLivre.data_fim).getTime() : tIni + navegacaoLivre.duracao_segundos * 1000);
+        const duracao = Math.max(tFim - tIni, 1000);
+        return { timeInicio: tIni, timeFim: tFim, duracaoTotalMs: duracao };
+      }
+    }
+
     if (visitasOrdenadas.length === 0) return { timeInicio: 0, timeFim: 0, duracaoTotalMs: 0 };
     const tIni = new Date(visitasOrdenadas[0].data_hora_chegada).getTime();
     const tFim = new Date(visitasOrdenadas[visitasOrdenadas.length - 1].data_hora_chegada).getTime();
     const duracao = Math.max(tFim - tIni, 1000);
     return { timeInicio: tIni, timeFim: tFim, duracaoTotalMs: duracao };
-  }, [visitasOrdenadas]);
+  }, [isModoNavegacaoLivre, navegacaoLivre, visitasOrdenadas]);
 
-  // Carrega a malha viária real via OSRM ao montar/mudar visitas
+  // Carrega coordenadas e traçado
   useEffect(() => {
+    // 1. Se for Navegação Livre gravada: usa a densa trilha de GPS diretamente
+    if (isModoNavegacaoLivre && navegacaoLivre) {
+      const pts = navegacaoLivre.pontos_gps || [];
+      const coords: [number, number][] = pts.map((p) => [p.latitude, p.longitude]);
+      setPolylineCoords(coords);
+      setDistanciaTotalKm(Number((navegacaoLivre.distancia_metros / 1000).toFixed(2)));
+      return;
+    }
+
+    // 2. Se for Roteiro de Visitas a Escolas:
     if (visitasOrdenadas.length < 2) {
       if (visitasOrdenadas.length === 1) {
         setPolylineCoords([[visitasOrdenadas[0].latitude, visitasOrdenadas[0].longitude]]);
       } else {
         setPolylineCoords([]);
       }
+      setDistanciaTotalKm(0);
       return;
     }
 
@@ -187,7 +221,7 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
     return () => {
       isMounted = false;
     };
-  }, [visitasOrdenadas]);
+  }, [isModoNavegacaoLivre, navegacaoLivre, visitasOrdenadas]);
 
   // Calcula a posição do carro e ângulo com base no progresso atual (0 a 1)
   const telemetriaAtual = useMemo(() => {
@@ -196,6 +230,7 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
         lat: -12.7299932,
         lng: -39.1858195,
         bearing: 0,
+        speedKmh: 0,
         dataHoraSimulada: new Date(),
         paradaAtualIdx: 0,
         paradaAtual: null,
@@ -208,6 +243,7 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
         lat: polylineCoords[0][0],
         lng: polylineCoords[0][1],
         bearing: 0,
+        speedKmh: 0,
         dataHoraSimulada: new Date(timeInicio),
         paradaAtualIdx: 0,
         paradaAtual: visitasOrdenadas[0] || null,
@@ -232,7 +268,16 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
     const timestampAtual = timeInicio + progresso * duracaoTotalMs;
     const dataHoraSimulada = new Date(timestampAtual);
 
-    // Identifica qual parada o veículo já passou e qual é a próxima
+    let speedKmh = 0;
+
+    if (isModoNavegacaoLivre && navegacaoLivre && (navegacaoLivre.pontos_gps || []).length > 0) {
+      const pts = navegacaoLivre.pontos_gps;
+      const pt1 = pts[indexAtual] || pts[0];
+      const pt2 = pts[indexAtual + 1] || pt1;
+      speedKmh = Number((pt1.speedKmh + (pt2.speedKmh - pt1.speedKmh) * fraction).toFixed(1));
+    }
+
+    // Identifica qual parada o veículo já passou e qual é a próxima (em modo de visitas)
     let paradaAtualIdx = 0;
     for (let i = 0; i < visitasOrdenadas.length; i++) {
       const tParada = new Date(visitasOrdenadas[i].data_hora_chegada).getTime();
@@ -245,14 +290,23 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
       lat,
       lng,
       bearing,
+      speedKmh,
       dataHoraSimulada,
       paradaAtualIdx,
       paradaAtual: visitasOrdenadas[paradaAtualIdx] || null,
       proximaParada: visitasOrdenadas[paradaAtualIdx + 1] || null,
     };
-  }, [polylineCoords, progresso, timeInicio, duracaoTotalMs, visitasOrdenadas]);
+  }, [
+    polylineCoords,
+    progresso,
+    timeInicio,
+    duracaoTotalMs,
+    isModoNavegacaoLivre,
+    navegacaoLivre,
+    visitasOrdenadas,
+  ]);
 
-  // Loop de Animação com requestAnimationFrame (Blindado contra vazamentos de memória)
+  // Loop de Animação com requestAnimationFrame
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
 
@@ -305,7 +359,15 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
     return L.latLngBounds(polylineCoords.map((c) => [c[0], c[1]]));
   }, [polylineCoords]);
 
+  const temDeslocamentoReal = polylineCoords.length >= 2 && distanciaTotalKm > 0;
+
   const togglePlay = () => {
+    if (!temDeslocamentoReal) {
+      toast.warning('Este percurso não possui deslocamento registrado para animação.', {
+        description: 'Selecione uma navegação livre com waypoints ou um roteiro com 2 ou mais escolas distintas.',
+      });
+      return;
+    }
     if (progresso >= 1) {
       setProgresso(0);
     }
@@ -335,15 +397,15 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
     });
   };
 
-  if (visitasOrdenadas.length === 0) {
+  if (!isModoNavegacaoLivre && visitasOrdenadas.length === 0) {
     return (
       <div className="w-full h-[450px] rounded-2xl bg-card border border-border flex flex-col items-center justify-center p-6 text-center text-muted-foreground shadow-2xs">
         <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground mb-3">
           <MapPin className="w-6 h-6" />
         </div>
-        <h4 className="font-bold text-base text-foreground mb-1">Nenhuma parada selecionada</h4>
+        <h4 className="font-bold text-base text-foreground mb-1">Nenhum percurso selecionado</h4>
         <p className="text-xs text-muted-foreground max-w-sm">
-          Selecione uma data ou viagem no painel para visualizar o mapa e reproduzir o percurso simulado com o carrinho.
+          Selecione uma navegação livre gravada ou uma viagem com paradas no painel para reproduzir o percurso no mapa.
         </p>
       </div>
     );
@@ -355,13 +417,13 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
       <div className="bg-card border border-border p-4 rounded-2xl shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Relógio Digital do Momento */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
             <Clock className="w-6 h-6 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
-                Relógio de Telemetria
+              <span className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">
+                {isModoNavegacaoLivre ? 'Replay de Navegação Livre' : 'Relógio de Telemetria'}
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted font-semibold text-muted-foreground">
                 {formatarData(telemetriaAtual.dataHoraSimulada)}
@@ -375,46 +437,84 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
 
         {/* Informações da Etapa / Status da Parada */}
         <div className="flex-1 max-w-md bg-muted/40 border border-border p-3 rounded-xl flex flex-col justify-center">
-          <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 mb-1">
-            <Car className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span>Posição no Percurso:</span>
-            <span className="font-bold text-foreground">
-              Parada {telemetriaAtual.paradaAtualIdx + 1} de {visitasOrdenadas.length}
-            </span>
-          </div>
-          <div className="text-xs font-bold text-foreground truncate">
-            {telemetriaAtual.paradaAtual ? telemetriaAtual.paradaAtual.escola_nome : 'Partida da SEMED'}
-          </div>
-          {telemetriaAtual.proximaParada && (
-            <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-              Próximo destino:{' '}
-              <span className="font-semibold text-foreground">
-                {telemetriaAtual.proximaParada.escola_nome}
-              </span>
-            </div>
+          {isModoNavegacaoLivre && navegacaoLivre ? (
+            <>
+              <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 mb-0.5">
+                <Navigation className="w-3.5 h-3.5 text-sky-400" />
+                <span className="font-bold text-foreground truncate">{navegacaoLivre.titulo}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>
+                  Velocidade no ponto:{' '}
+                  <strong className="text-foreground">{telemetriaAtual.speedKmh} km/h</strong>
+                </span>
+                <span>•</span>
+                <span>
+                  Max: <strong className="text-emerald-400">{navegacaoLivre.velocidade_max_kmh} km/h</strong>
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 mb-1">
+                <Car className="w-3.5 h-3.5 text-sky-400" />
+                <span>Posição no Percurso:</span>
+                <span className="font-bold text-foreground">
+                  Parada {telemetriaAtual.paradaAtualIdx + 1} de {visitasOrdenadas.length}
+                </span>
+              </div>
+              <div className="text-xs font-bold text-foreground truncate">
+                {telemetriaAtual.paradaAtual ? telemetriaAtual.paradaAtual.escola_nome : 'Partida da SEMED'}
+              </div>
+            </>
           )}
         </div>
 
         {/* Estatísticas Rápidas da Viagem */}
         <div className="flex items-center gap-4 text-xs shrink-0">
           <div className="flex flex-col">
-            <span className="text-[10px] text-muted-foreground font-semibold">Total Paradas</span>
-            <span className="text-sm font-bold text-foreground">{visitasOrdenadas.length} locais</span>
+            <span className="text-[10px] text-muted-foreground font-semibold">
+              {isModoNavegacaoLivre ? 'Pontos GPS' : 'Total Paradas'}
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {isModoNavegacaoLivre && navegacaoLivre
+                ? `${(navegacaoLivre.pontos_gps || []).length} waypoints`
+                : `${visitasOrdenadas.length} locais`}
+            </span>
           </div>
           <div className="w-px h-8 bg-border"></div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-muted-foreground font-semibold">Distância Rota</span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-              {distanciaTotalKm > 0 ? `${distanciaTotalKm} km` : 'Calculando...'}
+            <span className="text-[10px] text-muted-foreground font-semibold">Distância Percorrida</span>
+            <span className="text-sm font-bold text-emerald-400">
+              {distanciaTotalKm > 0 ? `${distanciaTotalKm} km` : '0.00 km'}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Aviso de Percurso Estático (se aplicável) */}
+      {!temDeslocamentoReal && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5 text-xs text-amber-300">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold text-amber-200 block">
+              Percurso Estático ou com Pouco Deslocamento
+            </span>
+            <span>
+              Os pontos registrados nesta sessão possuem a mesma coordenada (distância zero). Para assistir ao carrinho se movimentando no mapa, grave uma nova <strong>Navegação Livre</strong> na aba dedicada ou selecione um roteiro com escolas distintas.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Container do Mapa Leaflet */}
       <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-border shadow-lg bg-zinc-950">
         <MapContainer
-          center={[visitasOrdenadas[0].latitude, visitasOrdenadas[0].longitude]}
+          center={
+            polylineCoords.length > 0
+              ? [polylineCoords[0][0], polylineCoords[0][1]]
+              : [-12.7299932, -39.1858195]
+          }
           zoom={14}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
@@ -444,65 +544,61 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
                 color="#38bdf8"
                 weight={4}
                 opacity={0.9}
-                dashArray="6, 6"
+                dashArray={isModoNavegacaoLivre ? undefined : '6, 6'}
                 lineCap="round"
               />
             </>
           )}
 
-          {/* Marcadores de Todas as Paradas */}
-          {visitasOrdenadas.map((visita, idx) => {
-            const isAtiva = telemetriaAtual.paradaAtualIdx === idx;
-            const horaStr = new Date(visita.data_hora_chegada).toLocaleTimeString('pt-BR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: 'America/Bahia',
-            });
+          {/* Marcadores de Todas as Paradas (Modo Visitas) */}
+          {!isModoNavegacaoLivre &&
+            visitasOrdenadas.map((visita, idx) => {
+              const isAtiva = telemetriaAtual.paradaAtualIdx === idx;
+              const horaStr = new Date(visita.data_hora_chegada).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'America/Bahia',
+              });
 
-            return (
-              <Marker
-                key={visita.id}
-                position={[visita.latitude, visita.longitude]}
-                icon={criarIconeParada(idx + 1, horaStr, isAtiva)}
-              >
-                <Popup className="custom-leaflet-popup">
-                  <div className="p-2 min-w-[200px] text-xs">
-                    <div className="font-bold text-foreground text-sm border-b border-border pb-1 mb-1">
-                      {idx + 1}. {visita.escola_nome}
-                    </div>
-                    <div className="flex flex-col gap-1 text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-sky-500" />
-                        <span>Chegada:</span>
-                        <strong className="text-foreground">{horaStr}</strong>
+              return (
+                <Marker
+                  key={visita.id}
+                  position={[visita.latitude, visita.longitude]}
+                  icon={criarIconeParada(idx + 1, horaStr, isAtiva)}
+                >
+                  <Popup className="custom-leaflet-popup">
+                    <div className="p-2 min-w-[200px] text-xs">
+                      <div className="font-bold text-foreground text-sm border-b border-border pb-1 mb-1">
+                        {idx + 1}. {visita.escola_nome}
                       </div>
-                      {visita.distancia_ponto_metros !== null && (
+                      <div className="flex flex-col gap-1 text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <Gauge className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Distância GPS:</span>
-                          <strong className="text-foreground">
-                            {visita.distancia_ponto_metros}m do ponto
-                          </strong>
+                          <Clock className="w-3.5 h-3.5 text-sky-500" />
+                          <span>Chegada:</span>
+                          <strong className="text-foreground">{horaStr}</strong>
                         </div>
-                      )}
-                      {visita.funcionario_nome && (
-                        <div className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Responsável:</span>
-                          <strong className="text-foreground">{visita.funcionario_nome}</strong>
-                        </div>
-                      )}
-                      {visita.observacoes && (
-                        <div className="mt-1 p-1.5 rounded-md bg-muted text-[11px] text-foreground">
-                          {visita.observacoes}
-                        </div>
-                      )}
+                        {visita.distancia_ponto_metros !== null && (
+                          <div className="flex items-center gap-1">
+                            <Gauge className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Distância GPS:</span>
+                            <strong className="text-foreground">
+                              {visita.distancia_ponto_metros}m do ponto
+                            </strong>
+                          </div>
+                        )}
+                        {visita.funcionario_nome && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Responsável:</span>
+                            <strong className="text-foreground">{visita.funcionario_nome}</strong>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
 
           {/* Marcador Animado do Carrinho com Rotação */}
           {polylineCoords.length > 0 && (
@@ -518,7 +614,7 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
         <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-card/95 backdrop-blur-md border border-border p-3.5 rounded-2xl shadow-2xl flex flex-col gap-3">
           {/* Barra de Progresso / Linha do Tempo (Scrubber) */}
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-mono font-bold text-muted-foreground w-12 shrink-0">
+            <span className="text-[11px] font-mono font-bold text-muted-foreground w-14 shrink-0">
               {formatarHora(new Date(timeInicio))}
             </span>
             <div className="relative flex-1 flex items-center">
@@ -528,14 +624,15 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
                 max="1"
                 step="0.001"
                 value={progresso}
+                disabled={!temDeslocamentoReal}
                 onChange={(e) => {
                   setEstaTocando(false);
                   setProgresso(parseFloat(e.target.value));
                 }}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-sky-500"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50"
               />
             </div>
-            <span className="text-[11px] font-mono font-bold text-muted-foreground w-12 shrink-0 text-right">
+            <span className="text-[11px] font-mono font-bold text-muted-foreground w-14 shrink-0 text-right">
               {formatarHora(new Date(timeFim))}
             </span>
           </div>
@@ -546,13 +643,13 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
               <button
                 type="button"
                 onClick={togglePlay}
-                disabled={visitasOrdenadas.length < 2}
+                disabled={!temDeslocamentoReal}
                 className={cn(
                   'px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-sm',
                   estaTocando
                     ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-400/40'
                     : 'bg-sky-600 hover:bg-sky-700 text-white ring-2 ring-sky-400/40',
-                  visitasOrdenadas.length < 2 && 'opacity-50 cursor-not-allowed'
+                  !temDeslocamentoReal && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 {estaTocando ? (
@@ -571,7 +668,8 @@ export default function MapaReplayPercurso({ visitas, tituloPercurso }: MapaRepl
               <button
                 type="button"
                 onClick={handleReset}
-                className="p-2 rounded-xl bg-muted border border-border text-foreground hover:bg-hoverCustom transition-colors cursor-pointer"
+                disabled={!temDeslocamentoReal}
+                className="p-2 rounded-xl bg-muted border border-border text-foreground hover:bg-hoverCustom transition-colors cursor-pointer disabled:opacity-50"
                 title="Reiniciar Percurso"
               >
                 <RotateCcw className="w-4 h-4" />

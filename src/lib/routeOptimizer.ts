@@ -247,7 +247,7 @@ export async function obterRotaViariaReal(
     const url = `https://router.project-osrm.org/route/v1/driving/${coordsQuery}?overview=full&geometries=geojson&steps=false`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
