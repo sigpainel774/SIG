@@ -13,6 +13,7 @@ interface ComunicadoPopup {
   body: string
   date: string
   target: string
+  escola_ids?: string[] | null
   anexo_url?: string | null
   anexo_nome?: string | null
   created_at: string
@@ -82,21 +83,13 @@ export function ModalComunicadoPopup() {
         const dismissedIds = readData ? readData.map((r: any) => r.comunicado_id) : []
 
         let query = (supabase.from as any)('comunicados')
-          .select('id, title, body, target, date, anexo_url, anexo_nome, created_at, criado_por:funcionarios(nome)')
+          .select('id, title, body, target, date, anexo_url, anexo_nome, escola_ids, created_at, criado_por:funcionarios(nome)')
           .eq('is_popup', true)
           .order('created_at', { ascending: false })
           .limit(10)
           
         if (selectedSecretaria?.id) {
           query = query.eq('secretaria_id', selectedSecretaria.id)
-        }
-
-        if (selectedEscola?.created_at) {
-          query = query.gte('created_at', selectedEscola.created_at)
-        }
-
-        if (funcionario?.created_at) {
-          query = query.gte('created_at', funcionario.created_at)
         }
 
         const { data, error } = await query
@@ -109,10 +102,28 @@ export function ModalComunicadoPopup() {
         }
 
         if (data && data.length > 0) {
+          const userEscolaIds = new Set<string>()
+          if (selectedEscola?.id) userEscolaIds.add(selectedEscola.id)
+          if (vinculos && Array.isArray(vinculos)) {
+            vinculos.forEach((v) => {
+              if (v.escola_id) userEscolaIds.add(v.escola_id)
+            })
+          }
+
+          const isSuperOuNivel1 = funcionario?.is_superadmin || acessos.some((a) => a.nivel === 1 && a.ativo)
+
           const pending = data.filter((item: any) => {
             const isUnread = !dismissedIds.includes(item.id)
             const targeted = isTargetForUser(item.target)
-            return isUnread && targeted
+            
+            // Verificação de unidade escolar
+            let isUnidadeTarget = true
+            if (item.escola_ids && Array.isArray(item.escola_ids) && item.escola_ids.length > 0) {
+              const hasVinculoNaUnidade = item.escola_ids.some((id: string) => userEscolaIds.has(id))
+              isUnidadeTarget = isSuperOuNivel1 || hasVinculoNaUnidade
+            }
+
+            return isUnread && targeted && isUnidadeTarget
           })
 
           if (pending.length > 0) {
@@ -135,7 +146,7 @@ export function ModalComunicadoPopup() {
     return () => {
       active = false
     }
-  }, [authUserId, isTargetForUser, selectedSecretaria?.id, selectedEscola?.created_at, funcionario?.created_at])
+  }, [authUserId, isTargetForUser, selectedSecretaria?.id, selectedEscola?.id, vinculos, funcionario?.is_superadmin, acessos])
 
   // Scroll lock no body do celular/desktop quando o modal estiver aberto
   useEffect(() => {

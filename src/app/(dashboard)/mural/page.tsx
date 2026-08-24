@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles, Cake } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles, Cake, Globe, School, Building, Search, CheckSquare, Square } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -26,9 +26,19 @@ export default function MuralPage() {
   const [birthdays, setBirthdays] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const podePublicar = useMemo(() => {
-    return funcionario?.is_superadmin === true || acessos.some((a) => a.pode_mural === true)
+  const isNivel1OuSuperadmin = useMemo(() => {
+    return Boolean(funcionario?.is_superadmin === true || acessos?.some((a) => a.nivel === 1 && a.ativo))
   }, [funcionario, acessos])
+
+  const podePublicar = useMemo(() => {
+    return isNivel1OuSuperadmin || acessos.some((a) => a.pode_mural === true)
+  }, [isNivel1OuSuperadmin, acessos])
+
+  // Lista de Escolas para mapeamento e seleção
+  const [listaEscolas, setListaEscolas] = useState<{ id: string; nome: string }[]>([])
+  const mapaEscolas = useMemo(() => {
+    return new Map(listaEscolas.map((e) => [e.id, e.nome]))
+  }, [listaEscolas])
 
   // Form states
   const [titulo, setTitulo] = useState('')
@@ -38,6 +48,11 @@ export default function MuralPage() {
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Seleção de Unidades (Nível 1 e Superadmin)
+  const [todaARede, setTodaARede] = useState(true)
+  const [unidadesSelecionadas, setUnidadesSelecionadas] = useState<string[]>([])
+  const [buscaUnidade, setBuscaUnidade] = useState('')
 
   const [viewDate, setViewDate] = useState(() => new Date())
   const [loadingBirthdays, setLoadingBirthdays] = useState(false)
@@ -95,19 +110,16 @@ export default function MuralPage() {
   const fetchNotices = async () => {
     const supabase = createClient()
     let query = supabase.from('comunicados')
-      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
+      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, created_at, criado_por:funcionarios(nome)')
       .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
       
     if (selectedSecretaria?.id) {
       query = (query as any).eq('secretaria_id', selectedSecretaria.id)
     }
 
-    if (selectedEscola?.created_at) {
-      query = (query as any).gte('created_at', selectedEscola.created_at)
-    }
-
-    if (!podePublicar && funcionario?.created_at) {
-      query = (query as any).gte('created_at', funcionario.created_at)
+    if (selectedEscola?.id) {
+      query = (query as any).or(`escola_ids.is.null,escola_ids.cs.{"${selectedEscola.id}"}`)
     }
 
     const { data, error } = await query
@@ -120,6 +132,7 @@ export default function MuralPage() {
   }
 
   useEffect(() => {
+    let active = true
     const fetchData = async () => {
       const supabase = createClient()
       setLoading(true)
@@ -128,29 +141,40 @@ export default function MuralPage() {
         const currentMonth = viewDate.getMonth() + 1 // 1-based for PG
 
         let query = supabase.from('comunicados')
-          .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, created_at, criado_por:funcionarios(nome)')
+          .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, created_at, criado_por:funcionarios(nome)')
           .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
           
         if (selectedSecretaria?.id) {
           query = (query as any).eq('secretaria_id', selectedSecretaria.id)
         }
 
-        if (selectedEscola?.created_at) {
-          query = (query as any).gte('created_at', selectedEscola.created_at)
+        if (selectedEscola?.id) {
+          query = (query as any).or(`escola_ids.is.null,escola_ids.cs.{"${selectedEscola.id}"}`)
         }
 
-        if (!podePublicar && funcionario?.created_at) {
-          query = (query as any).gte('created_at', funcionario.created_at)
+        let escolasQuery = supabase
+          .from('escolas')
+          .select('id, nome')
+          .eq('ativo', true)
+          .is('deleted_at', null)
+          .order('nome')
+
+        if (selectedSecretaria?.id) {
+          escolasQuery = escolasQuery.eq('secretaria_id', selectedSecretaria.id)
         }
 
-        const [comunicadosRes, birthdayRes] = await Promise.all([
+        const [comunicadosRes, birthdayRes, escolasRes] = await Promise.all([
           query,
           (supabase as any).rpc('get_birthdays_of_month', { 
             month_num: currentMonth, 
             p_secretaria_id: selectedSecretaria?.id || null,
             p_escola_id: selectedEscola?.id || null
-          })
+          }),
+          escolasQuery
         ])
+
+        if (!active) return
 
         if (comunicadosRes.error) {
           toast.error('Erro ao carregar comunicados: ' + comunicadosRes.error.message)
@@ -163,16 +187,24 @@ export default function MuralPage() {
         } else if (birthdayRes.data) {
           setBirthdays(birthdayRes.data)
         }
+
+        if (escolasRes.data) {
+          setListaEscolas(escolasRes.data)
+        }
       } catch (err: any) {
         console.error('Erro ao carregar mural:', err)
         toast.error('Ocorreu uma falha ao obter os dados do mural.')
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
 
     fetchData()
-  }, [selectedSecretaria?.id, selectedEscola?.id, selectedEscola?.created_at, podePublicar, funcionario?.created_at])
+
+    return () => {
+      active = false
+    }
+  }, [selectedSecretaria?.id, selectedEscola?.id, podePublicar])
 
   const filteredNotices = useMemo(() => {
     if (!selectedDate) return notices
@@ -207,6 +239,27 @@ export default function MuralPage() {
     if (!mensagem.trim()) {
       toast.error('Escreva o conteúdo do comunicado.')
       return
+    }
+
+    // Validação de unidades
+    let escolaIdsPayload: string[] | null = null
+
+    if (isNivel1OuSuperadmin) {
+      if (todaARede) {
+        escolaIdsPayload = null
+      } else {
+        if (unidadesSelecionadas.length === 0) {
+          toast.error('Selecione ao menos uma unidade escolar de destino ou marque "Toda a Rede".')
+          return
+        }
+        escolaIdsPayload = unidadesSelecionadas
+      }
+    } else {
+      if (!selectedEscola?.id) {
+        toast.error('Nenhuma unidade escolar ativa selecionada para publicação.')
+        return
+      }
+      escolaIdsPayload = [selectedEscola.id]
     }
 
     setSalvando(true)
@@ -251,6 +304,7 @@ export default function MuralPage() {
       date: hojeStr,
       target: alvo,
       is_popup: isPopup,
+      escola_ids: escolaIdsPayload,
       criado_por: funcionario?.id ?? null,
       secretaria_id: selectedSecretaria?.id ?? null,
       anexo_url: anexoUrl,
@@ -262,9 +316,10 @@ export default function MuralPage() {
     } else {
       toast.success('Comunicado publicado com sucesso!')
 
-      // Disparo de Notificação Push Nativa em Broadcast (non-blocking)
+      // Disparo de Notificação Push Nativa
+      const isBroadcast = escolaIdsPayload === null || escolaIdsPayload.length === 0
       sendPushToUser({
-        isBroadcast: true,
+        isBroadcast: isBroadcast,
         title: `📢 Mural: ${titulo.trim()}`,
         message: mensagem.trim(),
         link: '/mural',
@@ -277,6 +332,9 @@ export default function MuralPage() {
       setMensagem('')
       setAlvo('Geral / Toda a Rede')
       setIsPopup(false)
+      setTodaARede(true)
+      setUnidadesSelecionadas([])
+      setBuscaUnidade('')
       setArquivo(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -344,6 +402,134 @@ export default function MuralPage() {
                     className="bg-input border-borderCustom text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
+
+                {/* Destino das Unidades */}
+                {isNivel1OuSuperadmin ? (
+                  <div className="space-y-2.5 p-3.5 bg-input/40 border border-borderCustom rounded-xl">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Building className="w-3.5 h-3.5 text-highlight" />
+                        Unidades Escolares de Destino
+                      </span>
+                      <span className="text-[11px] font-medium text-highlight">
+                        {todaARede ? 'Toda a rede municipal' : `${unidadesSelecionadas.length} unidade(s) selecionada(s)`}
+                      </span>
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTodaARede(true)
+                          setUnidadesSelecionadas([])
+                        }}
+                        className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          todaARede
+                            ? 'bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-sm'
+                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5 shrink-0" />
+                        <span>Toda a Rede</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTodaARede(false)}
+                        className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          !todaARede
+                            ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm'
+                            : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <School className="w-3.5 h-3.5 shrink-0" />
+                        <span>Selecionar Unidades</span>
+                      </button>
+                    </div>
+
+                    {!todaARede && (
+                      <div className="mt-3 space-y-2 pt-2 border-t border-borderCustom/60">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Buscar unidade escolar..."
+                              value={buscaUnidade}
+                              onChange={(e) => setBuscaUnidade(e.target.value)}
+                              className="h-8 pl-8 text-xs bg-input border-borderCustom text-foreground"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (unidadesSelecionadas.length === listaEscolas.length) {
+                                setUnidadesSelecionadas([])
+                              } else {
+                                setUnidadesSelecionadas(listaEscolas.map((e) => e.id))
+                              }
+                            }}
+                            className="h-8 text-xs border-borderCustom bg-surface-2 hover:bg-hoverCustom shrink-0 cursor-pointer"
+                          >
+                            {unidadesSelecionadas.length === listaEscolas.length ? 'Desmarcar Todas' : 'Marcar Todas'}
+                          </Button>
+                        </div>
+
+                        <div className="max-h-40 overflow-y-auto space-y-1 p-2 bg-surface-2/60 border border-borderCustom rounded-lg pr-1">
+                          {listaEscolas
+                            .filter((esc) => esc.nome.toLowerCase().includes(buscaUnidade.toLowerCase()))
+                            .map((esc) => {
+                              const isSelected = unidadesSelecionadas.includes(esc.id)
+                              return (
+                                <button
+                                  type="button"
+                                  key={esc.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setUnidadesSelecionadas((prev) => prev.filter((id) => id !== esc.id))
+                                    } else {
+                                      setUnidadesSelecionadas((prev) => [...prev, esc.id])
+                                    }
+                                  }}
+                                  className={`w-full flex items-center justify-between p-2 rounded-md text-xs transition-colors text-left cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-purple-500/15 text-purple-200 border border-purple-500/30'
+                                      : 'hover:bg-hoverCustom text-muted-foreground hover:text-foreground'
+                                  }`}
+                                >
+                                  <span className="font-medium truncate pr-2">{esc.nome}</span>
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-purple-400 shrink-0" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                                  )}
+                                </button>
+                              )
+                            })}
+                          {listaEscolas.filter((esc) => esc.nome.toLowerCase().includes(buscaUnidade.toLowerCase())).length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">Nenhuma escola encontrada.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-input/40 border border-borderCustom rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-highlight/10 text-highlight shrink-0">
+                      <School className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                        Mural de Destino
+                      </span>
+                      <span className="text-sm font-semibold text-foreground truncate block">
+                        {selectedEscola?.nome ?? 'Sua Unidade Escolar'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Público Alvo</label>
@@ -536,6 +722,28 @@ export default function MuralPage() {
                           Pop-up Prioritário
                         </span>
                       )}
+                      
+                      {/* Destino das Unidades */}
+                      {(!notice.escola_ids || notice.escola_ids.length === 0) ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/30">
+                          <Globe className="w-3 h-3 text-sky-400" />
+                          Toda a Rede
+                        </span>
+                      ) : notice.escola_ids.length === 1 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                          <School className="w-3 h-3 text-emerald-400" />
+                          {mapaEscolas.get(notice.escola_ids[0]) || 'Unidade Escolar'}
+                        </span>
+                      ) : (
+                        <span 
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/30"
+                          title={notice.escola_ids.map((id: string) => mapaEscolas.get(id) || id).join(', ')}
+                        >
+                          <Building className="w-3 h-3 text-purple-400" />
+                          {notice.escola_ids.length} Unidades
+                        </span>
+                      )}
+
                       {notice.target && (
                         <span className="text-xs font-semibold text-highlight bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
                           {notice.target}
