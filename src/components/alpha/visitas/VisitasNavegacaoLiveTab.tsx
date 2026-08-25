@@ -45,6 +45,11 @@ import {
 } from '@/types/visitas';
 import { RouteTrackerManager } from '@/lib/visitas/routeTrackerManager';
 import { calcularBearing } from '@/lib/visitas/areaCalculator';
+import {
+  obterVisitasConfig,
+  gerarIconeLeafletCursor,
+  VisitasConfig,
+} from '@/lib/visitas/visitasConfigService';
 
 interface VisitasNavegacaoLiveTabProps {
   areas?: VisitasArea[];
@@ -69,26 +74,6 @@ function MapFollower({
   }, [posicao, seguir, map]);
   return null;
 }
-
-// Ícone do veículo com bússola de rotação e pulso de radar
-const criarIconeCarroAoVivo = (heading: number) => {
-  return L.divIcon({
-    className: 'custom-car-live-marker',
-    html: `
-      <div class="relative flex items-center justify-center" style="transform: translate(-50%, -50%);">
-        <div class="absolute w-14 h-14 rounded-full bg-blue-500/30 animate-ping pointer-events-none"></div>
-        <div class="absolute w-10 h-10 rounded-full bg-blue-400/20 pointer-events-none"></div>
-        <div class="relative w-10 h-10 rounded-full bg-slate-950 border-2 border-blue-400 shadow-2xl flex items-center justify-center text-blue-400 transition-transform duration-200" style="transform: rotate(${heading}deg);">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
-          </svg>
-        </div>
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-};
 
 export default function VisitasNavegacaoLiveTab({
   areas = [],
@@ -117,6 +102,20 @@ export default function VisitasNavegacaoLiveTab({
   const [tempoParadas, setTempoParadas] = useState(0);
   const [pontosGps, setPontosGps] = useState<TrackWaypoint[]>([]);
   const [visitasDetectadas, setVisitasDetectadas] = useState<RouteVisit[]>([]);
+
+  const [visitasConfig, setVisitasConfig] = useState<VisitasConfig>(obterVisitasConfig);
+
+  useEffect(() => {
+    const handleConfigUpdate = (e: any) => {
+      if (e?.detail) {
+        setVisitasConfig(e.detail);
+      } else {
+        setVisitasConfig(obterVisitasConfig());
+      }
+    };
+    window.addEventListener('sig_visitas_config_updated', handleConfigUpdate);
+    return () => window.removeEventListener('sig_visitas_config_updated', handleConfigUpdate);
+  }, []);
 
   // Modal de salvamento e configurações
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false);
@@ -543,11 +542,15 @@ export default function VisitasNavegacaoLiveTab({
             </>
           )}
 
-          {/* Marcador do Veículo / Usuário */}
+          {/* Marcador do Veículo / Usuário com Ícone Customizado */}
           {posicaoAtual && (
             <Marker
               position={[posicaoAtual.lat, posicaoAtual.lng]}
-              icon={criarIconeCarroAoVivo(posicaoAtual.heading)}
+              icon={gerarIconeLeafletCursor(visitasConfig, posicaoAtual.heading, {
+                tamanho: 48,
+                mostrarRadar: true,
+                corPulso: 'bg-sky-500/30',
+              })}
               zIndexOffset={1000}
             >
               <Popup className="custom-leaflet-popup">

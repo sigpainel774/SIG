@@ -93,6 +93,8 @@ export class RouteTrackerManager {
       tempoMinimoSegundos: customConfig?.tempoMinimoSegundos ?? base.tempoMinimoSegundos,
       raioToleranciaMetros: customConfig?.raioToleranciaMetros ?? base.raioToleranciaMetros,
       fusaoMinutos: customConfig?.fusaoMinutos ?? base.fusaoMinutos,
+      iconeTipo: customConfig?.iconeTipo ?? base.iconeTipo,
+      iconeCustomUrl: customConfig?.iconeCustomUrl ?? base.iconeCustomUrl,
     };
   }
 

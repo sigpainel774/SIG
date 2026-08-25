@@ -79,6 +79,12 @@ export default function VisitasPage() {
   const [mapZoom, setMapZoom] = useState(14);
   const [drawMode, setDrawMode] = useState<MapInteractionMode>('select');
   const [draftVertices, setDraftVertices] = useState<CoordinateTuple[]>([]);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+    accuracy?: number;
+    heading?: number;
+  } | null>(null);
 
   // Modais
   const [modalAreaAberto, setModalAreaAberto] = useState(false);
@@ -166,11 +172,19 @@ export default function VisitasPage() {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setUserLocation({
+            lat,
+            lng,
+            accuracy: pos.coords.accuracy,
+            heading: pos.coords.heading ?? 0,
+          });
+          setMapCenter([lat, lng]);
           setMapZoom(15);
         },
         () => {},
-        { timeout: 5000 }
+        { timeout: 8000, enableHighAccuracy: true }
       );
     }
   }, []);
@@ -225,15 +239,20 @@ export default function VisitasPage() {
       toast.error('GPS indisponível no dispositivo.');
       return;
     }
-    toast.info('Buscando localização GPS...');
+    toast.info('Buscando localização GPS...', { icon: '🛰️' });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+        const heading = pos.coords.heading ?? 0;
+        setUserLocation({ lat, lng, accuracy, heading });
+        setMapCenter([lat, lng]);
         setMapZoom(17);
-        toast.success('Localização atual centralizada!');
+        toast.success(`Localização atual localizada! (~${Math.round(accuracy)}m)`, { icon: '📍' });
       },
-      () => toast.error('Não foi possível obter a posição GPS.'),
-      { enableHighAccuracy: true }
+      () => toast.error('Não foi possível obter a posição GPS. Verifique a permissão no navegador.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -906,6 +925,7 @@ export default function VisitasPage() {
                 areas={areas}
                 pontos={pontos}
                 activeGeoPdf={activeGeoPdf}
+                userLocation={userLocation}
                 onEditArea={(a) => {
                   setAreaEmEdicao(a);
                   setModalAreaAberto(true);

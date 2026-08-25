@@ -3,11 +3,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   MapContainer,
-  TileLayer,
   Polygon,
   Polyline,
   Marker,
   Popup,
+  Circle,
   ImageOverlay,
   useMapEvents,
   useMap,
@@ -27,9 +27,14 @@ import {
   calcularDistanciaMetros,
   calcularCentroide,
 } from '@/lib/visitas/areaCalculator';
+import {
+  obterVisitasConfig,
+  gerarIconeLeafletCursor,
+  VisitasConfig,
+} from '@/lib/visitas/visitasConfigService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Info, Edit3, Trash2, Maximize2 } from 'lucide-react';
+import { MapPin, Info, Edit3, Trash2, Maximize2, Compass } from 'lucide-react';
 
 // Fix dos ícones padrões do Leaflet para Next.js / Webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -66,6 +71,13 @@ const criarIconeCategoria = (categoria: string, status: string) => {
   });
 };
 
+export interface UserLocationState {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  heading?: number;
+}
+
 interface VisitasMapCoreProps {
   center: CoordinateTuple;
   zoom: number;
@@ -77,6 +89,7 @@ interface VisitasMapCoreProps {
   areas: VisitasArea[];
   pontos: VisitasPonto[];
   activeGeoPdf?: VisitasGeoPdfMap | null;
+  userLocation?: UserLocationState | null;
   onSelectArea?: (area: VisitasArea) => void;
   onSelectPonto?: (ponto: VisitasPonto) => void;
   onEditArea?: (area: VisitasArea) => void;
@@ -102,27 +115,15 @@ function MapEventsHandler({
       const { lat, lng } = e.latlng;
 
       if (mode === 'draw_polygon') {
-        // Snap inteligente de fechamento do polígono baseado em tolerância de pixels
+        // Se clicar próximo ao primeiro vértice, conclui o polígono (Snap to start)
         if (draftVertices.length >= 3) {
-          const firstVertex = draftVertices[0];
-          const firstPointPx = map.latLngToContainerPoint([
-            firstVertex[0],
-            firstVertex[1],
-          ]);
-          const currentPointPx = map.latLngToContainerPoint([lat, lng]);
-
-          const distancePx = Math.hypot(
-            currentPointPx.x - firstPointPx.x,
-            currentPointPx.y - firstPointPx.y
-          );
-
-          // Se clicou dentro de um raio de 22 pixels do ponto inicial, fecha o polígono
-          if (distancePx <= 22) {
+          const primeiro = draftVertices[0];
+          const distMetros = calcularDistanciaMetros(primeiro[0], primeiro[1], lat, lng);
+          if (distMetros < 15) {
             onFinishDraftPolygon();
             return;
           }
         }
-
         onAddDraftVertex([lat, lng]);
       } else if (mode === 'add_point') {
         onPointMapClick(lat, lng);
@@ -133,11 +134,11 @@ function MapEventsHandler({
   return null;
 }
 
-// Componente para auto-pan e animação da câmera
+// Componente para animar a câmera suavemente quando a posição central mudar
 function MapCameraController({ center, zoom }: { center: CoordinateTuple; zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom, { animate: true, duration: 0.8 });
+    map.flyTo(center, zoom, { duration: 1.2 });
   }, [center, zoom, map]);
   return null;
 }
@@ -153,15 +154,41 @@ export default function VisitasMapCore({
   areas = [],
   pontos = [],
   activeGeoPdf,
+  userLocation = null,
   onSelectArea,
   onSelectPonto,
   onEditArea,
   onDeleteArea,
 }: VisitasMapCoreProps) {
+  const [visitasConfig, setVisitasConfig] = useState<VisitasConfig>(obterVisitasConfig);
+
+  // Escuta alterações de configuração do cursor para reatividade imediata (ES-ICON-05)
+  useEffect(() => {
+    const handleConfigUpdate = (e: any) => {
+      if (e?.detail) {
+        setVisitasConfig(e.detail);
+      } else {
+        setVisitasConfig(obterVisitasConfig());
+      }
+    };
+    window.addEventListener('sig_visitas_config_updated', handleConfigUpdate);
+    return () => window.removeEventListener('sig_visitas_config_updated', handleConfigUpdate);
+  }, []);
+
   // Converte rascunho de polígono para formato de polyline
   const draftPolyline = useMemo(() => {
     return draftVertices.map((v) => [v[0], v[1]] as [number, number]);
   }, [draftVertices]);
+
+  // Ícone do usuário gerado a partir das preferências do sistema
+  const iconeUsuario = useMemo(() => {
+    const heading = userLocation?.heading ?? 0;
+    return gerarIconeLeafletCursor(visitasConfig, heading, {
+      tamanho: 48,
+      mostrarRadar: true,
+      corPulso: 'bg-blue-500/30',
+    });
+  }, [visitasConfig, userLocation?.heading]);
 
   return (
     <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-border shadow-2xl bg-zinc-950">
@@ -198,6 +225,49 @@ export default function VisitasMapCore({
               zIndex={500}
             />
           )}
+
+        {/* Marcador e Halo de Precisão da Posição do Usuário ("Onde Estou") */}
+        {userLocation && (
+          <React.Fragment key="user-location-marker-group">
+            {/* Halo de precisão em metros */}
+            <Circle
+              center={[userLocation.lat, userLocation.lng]}
+              radius={Math.max(10, userLocation.accuracy ?? 20)}
+              pathOptions={{
+                color: '#3b82f6',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.15,
+                weight: 1.5,
+              }}
+            />
+
+            {/* Marcador do Usuário com Ícone Customizado / Padrão e Radar */}
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={iconeUsuario}
+              zIndexOffset={1000}
+            >
+              <Popup className="custom-leaflet-popup">
+                <div className="p-2.5 text-xs space-y-1.5 min-w-[200px]">
+                  <div className="flex items-center gap-2 border-b border-border pb-1 text-blue-400 font-bold">
+                    <Compass className="w-4 h-4" />
+                    <span>Sua Localização GPS</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground font-mono">
+                    Lat: {userLocation.lat.toFixed(6)}
+                    <br />
+                    Lng: {userLocation.lng.toFixed(6)}
+                  </div>
+                  {userLocation.accuracy && (
+                    <div className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+                      Precisão: ~{Math.round(userLocation.accuracy)} metros
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          </React.Fragment>
+        )}
 
         {/* Polígonos das Áreas Delimitadas Salvas */}
         {areas
@@ -247,53 +317,63 @@ export default function VisitasMapCore({
                             {formatarArea(area.square_meters)}
                           </strong>
                         </div>
-                        <div>
-                          Vértices:{' '}
-                          <strong className="text-foreground">
-                            {area.vertices.length} pontos
-                          </strong>
-                        </div>
                         {area.descricao && (
-                          <div className="mt-1 text-slate-300 italic">
+                          <div className="text-slate-300 italic">
                             "{area.descricao}"
                           </div>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border">
-                        {onEditArea && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onEditArea(area)}
-                            className="h-6 px-2 text-[10px] gap-1"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            Editar
-                          </Button>
-                        )}
-                        {onDeleteArea && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => onDeleteArea(area.id)}
-                            className="h-6 px-2 text-[10px] gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Excluir
-                          </Button>
-                        )}
-                      </div>
+                      {mode === 'select' && (
+                        <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border">
+                          {onEditArea && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onEditArea(area)}
+                              className="h-7 text-xs gap-1"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              Editar
+                            </Button>
+                          )}
+                          {onDeleteArea && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onDeleteArea(area.id)}
+                              className="h-7 w-7 p-0"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Popup>
                 </Polygon>
+
+                {/* Marcador de Centroide da Área com Nome */}
+                <Marker
+                  position={centroide}
+                  icon={L.divIcon({
+                    className: 'area-label-marker',
+                    html: `
+                      <div class="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-700 text-white font-bold text-[10px] whitespace-nowrap shadow-lg backdrop-blur-xs" style="transform: translate(-50%, -50%);">
+                        ${area.nome}
+                      </div>
+                    `,
+                    iconSize: [80, 20],
+                    iconAnchor: [40, 10],
+                  })}
+                />
               </React.Fragment>
             );
           })}
 
-        {/* Pontos de Interesse (Pins) */}
+        {/* Marcadores de Pontos de Interesse Salvos */}
         {pontos
-          .filter((p) => !p.deleted_at)
+          .filter((ponto) => !ponto.deleted_at && ponto.latitude && ponto.longitude)
           .map((ponto) => (
             <Marker
               key={ponto.id}
