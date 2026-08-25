@@ -1,0 +1,148 @@
+'use client'
+
+import React from 'react'
+import Link from 'next/link'
+import {
+  MapPinned,
+  Route,
+  FileImage,
+  ArrowLeftRight,
+  Files,
+  CheckSquare,
+  RefreshCw,
+} from 'lucide-react'
+import { StandardDialog } from '@/components/ui/standard-dialog'
+import { createClient } from '@/lib/supabaseClient'
+import { sincronizarFilaAlphaGlobal } from '@/lib/alphaOfflineManager'
+import { toast } from 'sonner'
+
+interface AlphaQuickActionsModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsModalProps) {
+  const supabase = createClient()
+
+  const handleSyncNow = async () => {
+    onClose()
+    toast.info('Iniciando sincronização da fila offline...')
+    try {
+      const res = await sincronizarFilaAlphaGlobal(supabase)
+      if (res.sincronizados > 0) {
+        toast.success(`${res.sincronizados} registro(s) sincronizado(s) com sucesso!`)
+      } else {
+        toast.success('Fila offline já está 100% atualizada!')
+      }
+    } catch {
+      toast.error('Erro na sincronização de dados.')
+    }
+  }
+
+  const actions = [
+    {
+      title: 'Visitas.',
+      subtitle: 'Desenhar polígonos, pontos e rotas em campo',
+      href: '/alpha/visitas',
+      icon: MapPinned,
+      color: 'from-violet-600 to-indigo-600',
+      badge: 'GPS Ativo',
+    },
+    {
+      title: 'Rotas de Unidades Escolares',
+      subtitle: 'Visualizar itinerários e coordenadas',
+      href: '/alpha/rotas-escolas',
+      icon: Route,
+      color: 'from-blue-600 to-cyan-600',
+      badge: 'Rotas',
+    },
+    {
+      title: 'Comprimir Fotos & Imagens',
+      subtitle: 'Otimizar resolução sem perda visual',
+      href: '/alpha/compressor-imagens',
+      icon: FileImage,
+      color: 'from-emerald-600 to-teal-600',
+      badge: 'Wasm',
+    },
+    {
+      title: 'Converter Imagens (PNG/WebP/JPG)',
+      subtitle: 'Conversão em lote instantânea',
+      href: '/alpha/conversor-imagens',
+      icon: ArrowLeftRight,
+      color: 'from-amber-600 to-orange-600',
+      badge: 'Zero SaaS',
+    },
+    {
+      title: 'Mesclar & Dividir PDFs',
+      subtitle: 'Reorganizar páginas e documentos',
+      href: '/alpha/manipulador-pdf',
+      icon: Files,
+      color: 'from-rose-600 to-pink-600',
+      badge: 'PDF',
+    },
+    {
+      title: 'Validador de Listas & CPFs',
+      subtitle: 'Checar dígitos e remover duplicados',
+      href: '/alpha/validador-dados',
+      icon: CheckSquare,
+      color: 'from-purple-600 to-violet-600',
+      badge: 'Auditoria',
+    },
+  ]
+
+  return (
+    <StandardDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title="Ações Rápidas do Laboratório Alpha"
+      description="Acesso direto às operações de campo e ferramentas 100% offline."
+      maxWidth="sm:max-w-lg"
+    >
+      <div className="space-y-3 py-1">
+        <div className="grid grid-cols-1 gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
+          {actions.map((act, index) => {
+            const Icon = act.icon
+            return (
+              <Link
+                key={index}
+                href={act.href}
+                onClick={onClose}
+                className="group flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-violet-500/40 transition-all duration-200 active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div
+                    className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${act.color} flex items-center justify-center text-white shrink-0 shadow-sm shadow-black/40 group-hover:scale-105 transition-transform`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <h4 className="text-sm font-semibold text-white truncate group-hover:text-violet-300 transition-colors">
+                      {act.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 truncate">{act.subtitle}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-violet-300 bg-violet-950/60 px-2 py-0.5 rounded-md border border-violet-700/40 shrink-0 ml-2">
+                  {act.badge}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+
+        <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={handleSyncNow}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Forçar Sincronização da Fila</span>
+          </button>
+        </div>
+      </div>
+    </StandardDialog>
+  )
+}

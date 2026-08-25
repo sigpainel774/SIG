@@ -136,10 +136,15 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set('x-user-email', user.email || '')
   }
 
-  // 0. Redirecionamento de compatibilidade /portal-pais -> /portal-aluno
+  // 0. Redirecionamento de compatibilidade /portal-pais -> /portal-aluno e /visitas -> /alpha/visitas
   if (pathname.startsWith('/portal-pais')) {
     const url = request.nextUrl.clone()
     url.pathname = pathname.replace('/portal-pais', '/portal-aluno')
+    return applySecurityHeaders(NextResponse.redirect(url))
+  }
+  if (pathname === '/visitas' || pathname.startsWith('/visitas/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace('/visitas', '/alpha/visitas')
     return applySecurityHeaders(NextResponse.redirect(url))
   }
 

@@ -7,6 +7,7 @@ import { AuthInitializer } from '@/components/AuthInitializer'
 import { AlphaSidebar } from '@/components/alpha/AlphaSidebar'
 import { FlaskConical } from 'lucide-react'
 import { AlphaConnectivityBanner } from '@/components/alpha/AlphaConnectivityBanner'
+import { AlphaBottomNav } from '@/components/alpha/AlphaBottomNav'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,8 +75,11 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
           </div>
         </div>
 
-        {/* Corpo da página */}
-        <div className="flex-1 p-4 md:p-8">{children}</div>
+        {/* Corpo da página com padding de compensação para barra inferior no mobile */}
+        <div className="flex-1 p-4 md:p-8 pb-28 md:pb-8">{children}</div>
+
+        {/* Barra de Navegação Inferior Móvel */}
+        <AlphaBottomNav />
       </main>
     </div>
   )

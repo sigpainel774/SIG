@@ -51,7 +51,9 @@ import {
   Download,
   Sparkles,
   Loader2,
+  Sliders,
 } from 'lucide-react';
+import { VisitasConfigModal } from '@/components/alpha/visitas/VisitasConfigModal';
 import { toast } from 'sonner';
 
 export default function VisitasPage() {
@@ -82,6 +84,8 @@ export default function VisitasPage() {
 
   const [modalPontoAberto, setModalPontoAberto] = useState(false);
   const [pontoEmEdicao, setPontoEmEdicao] = useState<Partial<VisitasPonto> | null>(null);
+
+  const [modalConfigAberto, setModalConfigAberto] = useState(false);
 
   const [roteiroParaRastrear, setRoteiroParaRastrear] = useState<VisitasRoteiro | null>(null);
 
@@ -678,7 +682,7 @@ export default function VisitasPage() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-                Visitas &amp; Inteligência Geográfica
+                Visitas.
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
                   <Sparkles className="w-3 h-3" />
                   Alpha
@@ -691,8 +695,18 @@ export default function VisitasPage() {
           </div>
         </div>
 
-        {/* Indicadores rápidos de topo */}
-        <div className="flex items-center gap-2 text-xs">
+        {/* Indicadores rápidos de topo e Ação de Calibração */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setModalConfigAberto(true)}
+            className="px-3 py-1.5 rounded-xl bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 text-violet-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            title="Configurar tempo de parada e tolerância anti-duplicação de visitas"
+          >
+            <Sliders className="w-3.5 h-3.5 text-violet-400" />
+            <span>Calibrar Visitas</span>
+          </button>
+
           <div className="px-3 py-1.5 rounded-xl bg-card border border-border flex items-center gap-2">
             <Pentagon className="w-4 h-4 text-blue-400" />
             <span className="text-muted-foreground">Áreas:</span>
@@ -996,6 +1010,12 @@ export default function VisitasPage() {
         ponto={pontoEmEdicao}
         areas={areas}
         onSave={handleSavePonto}
+      />
+
+      {/* Modal de Calibração de Sensibilidade & Anti-Duplicação */}
+      <VisitasConfigModal
+        open={modalConfigAberto}
+        onOpenChange={setModalConfigAberto}
       />
     </div>
   );

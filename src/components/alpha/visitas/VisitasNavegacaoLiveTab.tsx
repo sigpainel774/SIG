@@ -23,7 +23,9 @@ import {
   Footprints,
   Save,
   Radio,
+  Sliders,
 } from 'lucide-react';
+import { VisitasConfigModal } from './VisitasConfigModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -114,8 +116,9 @@ export default function VisitasNavegacaoLiveTab({
   const [pontosGps, setPontosGps] = useState<TrackWaypoint[]>([]);
   const [visitasDetectadas, setVisitasDetectadas] = useState<RouteVisit[]>([]);
 
-  // Modal de salvamento
+  // Modal de salvamento e configurações
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [tituloTrajeto, setTituloTrajeto] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -469,8 +472,20 @@ export default function VisitasNavegacaoLiveTab({
           </div>
         </div>
 
-        {/* Controles de Seguir e Modo */}
+        {/* Controles de Seguir, Modo e Configurações */}
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setIsConfigOpen(true)}
+            className="h-9 text-xs font-bold gap-1.5 rounded-xl border border-border hover:border-violet-500/40 text-muted-foreground hover:text-violet-400 cursor-pointer"
+            title="Configurar Sensibilidade e Anti-Duplicação de Visitas"
+          >
+            <Sliders className="w-4 h-4 text-violet-400" />
+            <span className="hidden sm:inline">Calibrar Visitas</span>
+          </Button>
+
           <Button
             type="button"
             size="sm"
@@ -700,6 +715,13 @@ export default function VisitasNavegacaoLiveTab({
           </div>
         </div>
       </StandardDialog>
+
+      {/* Modal de Configuração de Telemetria e Anti-Duplicação */}
+      <VisitasConfigModal
+        open={isConfigOpen}
+        onOpenChange={setIsConfigOpen}
+        onSalvo={(cfg) => trackerRef.current?.updateConfig(cfg)}
+      />
     </div>
   );
 }

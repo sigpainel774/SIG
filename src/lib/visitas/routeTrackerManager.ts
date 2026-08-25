@@ -7,6 +7,7 @@ import {
   VisitasVeiculo,
 } from '@/types/visitas';
 import { calcularDistanciaMetros, pontoDentroDoPoligono } from './areaCalculator';
+import { obterVisitasConfig, VisitasConfig } from './visitasConfigService';
 
 export interface TrackingConfig {
   visitMinimumSeconds: number;
@@ -19,6 +20,7 @@ export interface TrackingConfig {
   minimumMovementMeters: number;
   strongMovementMeters: number;
   movementSamples: number;
+  fusionMinutes: number;
 }
 
 export const TRACKING_CONFIGS: Record<TravelMode, TrackingConfig> = {
@@ -33,6 +35,7 @@ export const TRACKING_CONFIGS: Record<TravelMode, TrackingConfig> = {
     minimumMovementMeters: 4,
     strongMovementMeters: 12,
     movementSamples: 2,
+    fusionMinutes: 15,
   },
   driving: {
     visitMinimumSeconds: 90,
@@ -45,6 +48,7 @@ export const TRACKING_CONFIGS: Record<TravelMode, TrackingConfig> = {
     minimumMovementMeters: 8,
     strongMovementMeters: 30,
     movementSamples: 2,
+    fusionMinutes: 15,
   },
 };
 
@@ -68,21 +72,50 @@ export class RouteTrackerManager {
   private candidateDistanceMeters = 0;
   private movementCandidateSince: number | null = null;
 
+  private userConfig: VisitasConfig;
+
   constructor(
     id: string,
     modo: TravelMode = 'driving',
     veiculo?: VisitasVeiculo | null,
-    areas: VisitasArea[] = []
+    areas: VisitasArea[] = [],
+    customConfig?: Partial<VisitasConfig>
   ) {
     this.id = id;
     this.modo = modo;
     this.startedAt = Date.now();
     this.veiculo = veiculo;
     this.areas = areas;
+    
+    // Carrega configuração de persistência e mescla com customConfig
+    const base = obterVisitasConfig();
+    this.userConfig = {
+      tempoMinimoSegundos: customConfig?.tempoMinimoSegundos ?? base.tempoMinimoSegundos,
+      raioToleranciaMetros: customConfig?.raioToleranciaMetros ?? base.raioToleranciaMetros,
+      fusaoMinutos: customConfig?.fusaoMinutos ?? base.fusaoMinutos,
+    };
   }
 
   public get config(): TrackingConfig {
-    return TRACKING_CONFIGS[this.modo];
+    const base = TRACKING_CONFIGS[this.modo];
+    return {
+      ...base,
+      visitMinimumSeconds: this.userConfig.tempoMinimoSegundos,
+      visitRadiusMeters: this.userConfig.raioToleranciaMetros,
+      fusionMinutes: this.userConfig.fusaoMinutos,
+    };
+  }
+
+  public updateConfig(newConfig: Partial<VisitasConfig>) {
+    if (newConfig.tempoMinimoSegundos !== undefined) {
+      this.userConfig.tempoMinimoSegundos = newConfig.tempoMinimoSegundos;
+    }
+    if (newConfig.raioToleranciaMetros !== undefined) {
+      this.userConfig.raioToleranciaMetros = newConfig.raioToleranciaMetros;
+    }
+    if (newConfig.fusaoMinutos !== undefined) {
+      this.userConfig.fusaoMinutos = newConfig.fusaoMinutos;
+    }
   }
 
   public getPositions(): TrackWaypoint[] {
@@ -98,94 +131,95 @@ export class RouteTrackerManager {
   }
 
   public getDistanceMeters(): number {
-    return this.totalDistanceMeters;
+    return Math.round(this.totalDistanceMeters);
   }
 
-  public getMovingSeconds(now: number = Date.now()): number {
-    const last = this.positions[this.positions.length - 1];
-    const active =
-      this.state === 'moving' && last
-        ? Math.min(
-            Math.max(0, Math.floor((now - last.timestamp) / 1000)),
-            this.config.maximumSampleGapSeconds
-          )
-        : 0;
-    return this.movingSeconds + active;
+  public getMovingSeconds(): number {
+    return this.movingSeconds;
   }
 
-  public getVisitSeconds(now: number = Date.now()): number {
-    const closed = this.visits.reduce((acc, v) => acc + v.durationSeconds, 0);
-    const active =
-      this.state === 'visit' && this.stationarySince
-        ? Math.max(0, Math.floor((now - this.stationarySince) / 1000))
-        : 0;
-    return closed + active;
+  public getVisitSeconds(): number {
+    return this.visits.reduce((acc, v) => acc + v.durationSeconds, 0);
   }
 
-  /**
-   * Adiciona um novo waypoint GPS e recalcula os estados de movimento/parada
-   */
+  public getEstimatedLiters(): number {
+    if (!this.veiculo || this.modo === 'walking') return 0;
+    const consumo = Number(this.veiculo.consumo_km_l) || 10;
+    const km = this.totalDistanceMeters / 1000;
+    return Number((km / consumo).toFixed(2));
+  }
+
+  public getEstimatedCost(): number {
+    if (!this.veiculo || this.modo === 'walking') return 0;
+    const litros = this.getEstimatedLiters();
+    const preco = Number(this.veiculo.preco_litro) || 5.89;
+    return Number((litros * preco).toFixed(2));
+  }
+
   public addPosition(
     lat: number,
     lng: number,
     accuracy: number,
-    rawSpeedMps: number | null,
+    speedMps: number | null,
     heading: number,
     timestamp: number = Date.now()
   ): boolean {
-    if (isNaN(lat) || isNaN(lng) || accuracy > this.config.maximumAccuracyMeters) {
+    return this.processPosition(lat, lng, accuracy, speedMps, heading, timestamp);
+  }
+
+  public processPosition(
+    lat: number,
+    lng: number,
+    accuracy: number,
+    speedMps: number | null,
+    heading: number,
+    timestamp: number = Date.now()
+  ): boolean {
+    // 1. Filtro de precisão do GPS (ignora ruídos acima do limite)
+    if (accuracy > this.config.maximumAccuracyMeters) {
       return false;
     }
 
-    const previous = this.positions[this.positions.length - 1] || null;
+    const previous = this.positions.length > 0 ? this.positions[this.positions.length - 1] : null;
 
-    if (previous && timestamp <= previous.timestamp) {
-      return false;
-    }
-
-    const step = previous
-      ? calcularDistanciaMetros(previous.latitude, previous.longitude, lat, lng)
-      : 0;
-
+    let step = 0;
     let elapsedSeconds = 0;
+    let inferredSpeedMps = 0;
     let discontinuity = false;
 
     if (previous) {
+      step = calcularDistanciaMetros(previous.latitude, previous.longitude, lat, lng);
       elapsedSeconds = (timestamp - previous.timestamp) / 1000;
-      if (elapsedSeconds > this.config.maximumSampleGapSeconds) {
-        discontinuity = true;
-        this.stationarySince = null;
-        this.stationaryAnchor = null;
-        this.state = 'stopped';
-        this.resetMovementEvidence();
+
+      if (elapsedSeconds <= 0) return false;
+
+      inferredSpeedMps = step / elapsedSeconds;
+
+      // Ignora saltos impossíveis de telemetria
+      if (inferredSpeedMps > this.config.maximumPlausibleSpeedMps) {
+        return false;
       }
 
-      if (
-        elapsedSeconds > 0 &&
-        step / elapsedSeconds > this.config.maximumPlausibleSpeedMps
-      ) {
-        return false;
+      if (elapsedSeconds > this.config.maximumSampleGapSeconds) {
+        discontinuity = true;
       }
     }
 
-    const speedMps = rawSpeedMps && rawSpeedMps > 0 ? rawSpeedMps : 0;
-    const inferredSpeedMps = elapsedSeconds > 0 ? step / elapsedSeconds : 0;
-    const speedKmh = Number((Math.max(speedMps, inferredSpeedMps) * 3.6).toFixed(1));
+    const speedKmh = speedMps !== null && speedMps >= 0 ? speedMps * 3.6 : inferredSpeedMps * 3.6;
 
-    const noiseThreshold = previous
-      ? (accuracy + previous.accuracy) * 0.6
-      : this.config.minimumMovementMeters;
-
+    const noiseThreshold = (accuracy + (previous ? previous.accuracy : accuracy)) * 0.4;
     const requiredStep = Math.min(
       Math.max(noiseThreshold, this.config.minimumMovementMeters),
       this.config.strongMovementMeters
     );
 
+    const isMovingBySpeed = speedMps !== null && speedMps >= this.config.movingSpeedMps;
+    const isMovingByInferred = inferredSpeedMps >= this.config.movingSpeedMps;
+
     const movementEvidence =
       previous !== null &&
       step >= requiredStep &&
-      (speedMps >= this.config.movingSpeedMps ||
-        inferredSpeedMps >= this.config.movingSpeedMps);
+      (isMovingBySpeed || isMovingByInferred);
 
     const strongMovement =
       movementEvidence &&
@@ -205,6 +239,9 @@ export class RouteTrackerManager {
       const anchor = this.stationaryAnchor || [lat, lng];
       const distFromAnchor = calcularDistanciaMetros(anchor[0], anchor[1], lat, lng);
 
+      // TOLERÂNCIA DE QUINTAL / MOVIMENTO NO MESMO IMÓVEL:
+      // Se a movimentação estiver dentro do raio de tolerância (ex: 20 metros),
+      // mantém o mesmo anchor e continua acumulando tempo na mesma visita!
       if (distFromAnchor > this.config.visitRadiusMeters) {
         this.stationarySince = timestamp;
         this.stationaryAnchor = [lat, lng];
@@ -257,7 +294,7 @@ export class RouteTrackerManager {
       longitude: lng,
       timestamp,
       speedKmh,
-      speedMps: speedMps || inferredSpeedMps,
+      speedMps: speedMps !== null && speedMps >= 0 ? speedMps : inferredSpeedMps,
       heading: isNaN(heading) ? 0 : heading,
       accuracy: Math.round(accuracy),
       state: this.state,
@@ -281,6 +318,23 @@ export class RouteTrackerManager {
     if (start && anchor && endedAt > start) {
       const durationSeconds = Math.floor((endedAt - start) / 1000);
 
+      // ── FUSÃO ANTI-DUPLICAÇÃO DE VISITAS NO MESMO IMÓVEL (QUINTAL / RE-ENTRADA) ──
+      // Se a última visita registrada foi dentro do raio de tolerância (ex: até 20m)
+      // e ocorreu em um intervalo recente (ex: até 15 minutos), acumula o tempo na mesma visita!
+      const lastVisit = this.visits[this.visits.length - 1];
+      if (lastVisit) {
+        const distToLast = calcularDistanciaMetros(lastVisit.latitude, lastVisit.longitude, anchor[0], anchor[1]);
+        const lastEnded = new Date(lastVisit.endedAt).getTime();
+        const timeSinceLastSec = (start - lastEnded) / 1000;
+        const maxFusionSec = this.config.fusionMinutes * 60;
+
+        if (distToLast <= this.config.visitRadiusMeters && timeSinceLastSec <= maxFusionSec) {
+          lastVisit.endedAt = new Date(endedAt).toISOString();
+          lastVisit.durationSeconds += durationSeconds;
+          return;
+        }
+      }
+
       // Localiza se o anchor estava dentro de alguma das áreas cadastradas
       const matchedArea = this.areas.find((area) =>
         pontoDentroDoPoligono([anchor[0], anchor[1]], area.vertices)
@@ -298,51 +352,16 @@ export class RouteTrackerManager {
         durationSeconds,
       });
     }
-
-    this.stationarySince = null;
-    this.stationaryAnchor = null;
   }
 
-  /**
-   * Finaliza o trajeto e calcula os resumos finais de telemetria e combustível
-   */
   public finish(endedAt: number = Date.now()) {
+    return this.finalize(endedAt);
+  }
+
+  public finalize(endedAt: number = Date.now()) {
     if (this.state === 'visit') {
       this.closeVisit(endedAt);
     }
-
-    const totalSeconds = Math.max(0, Math.floor((endedAt - this.startedAt) / 1000));
-    const moving = Math.min(this.getMovingSeconds(endedAt), totalSeconds);
-    const visitSecs = this.getVisitSeconds(endedAt);
-
-    let estimatedLiters: number | null = null;
-    let estimatedCost: number | null = null;
-
-    if (this.modo === 'driving' && this.veiculo && this.veiculo.consumo_km_l > 0) {
-      const distKm = this.totalDistanceMeters / 1000;
-      estimatedLiters = Number((distKm / this.veiculo.consumo_km_l).toFixed(2));
-      estimatedCost = Number((estimatedLiters * this.veiculo.preco_litro).toFixed(2));
-    }
-
-    const firstPos = this.positions[0] || null;
-    const lastPos = this.positions[this.positions.length - 1] || null;
-
-    return {
-      id: this.id,
-      modo: this.modo,
-      started_at: new Date(this.startedAt).toISOString(),
-      ended_at: new Date(endedAt).toISOString(),
-      origin_lat: firstPos?.latitude ?? null,
-      origin_lng: firstPos?.longitude ?? null,
-      destination_lat: lastPos?.latitude ?? null,
-      destination_lng: lastPos?.longitude ?? null,
-      distance_meters: Math.round(this.totalDistanceMeters),
-      moving_seconds: moving,
-      visit_seconds: visitSecs,
-      estimated_liters: estimatedLiters,
-      estimated_cost: estimatedCost,
-      posicoes: this.positions,
-      visitas_registradas: this.visits,
-    };
+    this.state = 'stopped';
   }
 }
