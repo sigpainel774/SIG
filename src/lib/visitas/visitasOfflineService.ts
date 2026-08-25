@@ -25,6 +25,8 @@ const CACHE_KEYS = {
   ROTEIROS: 'roteiros',
   VEICULOS: 'veiculos',
   TRAJETOS: 'trajetos',
+  TRAJETOS_DETALHADOS: 'trajetos_detalhados_map',
+  SESSAO_ATIVA: 'sessao_rastreamento_ativa',
   GEOPDF: 'geopdf',
 };
 
@@ -61,12 +63,61 @@ export const visitasOfflineService = {
     await salvarCacheEntidadeAlpha(MODULO, CACHE_KEYS.VEICULOS, data);
   },
 
-  // --- Trajetos ---
+  // --- Trajetos (Lista Resumo) ---
   async getTrajetos(): Promise<VisitasTrajetoResumo[]> {
     return (await obterCacheEntidadeAlpha<VisitasTrajetoResumo[]>(MODULO, CACHE_KEYS.TRAJETOS)) ?? [];
   },
   async setTrajetos(data: VisitasTrajetoResumo[]): Promise<void> {
     await salvarCacheEntidadeAlpha(MODULO, CACHE_KEYS.TRAJETOS, data);
+  },
+
+  // --- Trajetos Completos Detalhados (com Waypoints e Visitas para Replay Offline) ---
+  async salvarTrajetoCompletoLocal(trajeto: VisitasTrajeto): Promise<void> {
+    try {
+      const mapa =
+        (await obterCacheEntidadeAlpha<Record<string, VisitasTrajeto>>(
+          MODULO,
+          CACHE_KEYS.TRAJETOS_DETALHADOS
+        )) ?? {};
+      mapa[trajeto.id] = trajeto;
+      await salvarCacheEntidadeAlpha(MODULO, CACHE_KEYS.TRAJETOS_DETALHADOS, mapa);
+    } catch (err) {
+      console.warn('Erro ao salvar trajeto detalhado localmente:', err);
+    }
+  },
+
+  async obterTrajetoCompletoLocal(trajetoId: string): Promise<VisitasTrajeto | null> {
+    try {
+      const mapa =
+        (await obterCacheEntidadeAlpha<Record<string, VisitasTrajeto>>(
+          MODULO,
+          CACHE_KEYS.TRAJETOS_DETALHADOS
+        )) ?? {};
+      return mapa[trajetoId] ?? null;
+    } catch {
+      return null;
+    }
+  },
+
+  // --- Auto-Save de Sessão em Progresso (Blindagem contra F5 / crash acidental) ---
+  async salvarSessaoAtiva(dados: any): Promise<void> {
+    try {
+      await salvarCacheEntidadeAlpha(MODULO, CACHE_KEYS.SESSAO_ATIVA, dados);
+    } catch {}
+  },
+
+  async obterSessaoAtiva(): Promise<any | null> {
+    try {
+      return await obterCacheEntidadeAlpha<any>(MODULO, CACHE_KEYS.SESSAO_ATIVA);
+    } catch {
+      return null;
+    }
+  },
+
+  async limparSessaoAtiva(): Promise<void> {
+    try {
+      await salvarCacheEntidadeAlpha(MODULO, CACHE_KEYS.SESSAO_ATIVA, null);
+    } catch {}
   },
 
   // --- Mapas GeoPDF ---

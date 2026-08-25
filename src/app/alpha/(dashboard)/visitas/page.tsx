@@ -52,8 +52,10 @@ import {
   Sparkles,
   Loader2,
   Sliders,
+  HardDrive,
 } from 'lucide-react';
 import { VisitasConfigModal } from '@/components/alpha/visitas/VisitasConfigModal';
+import { VisitasDownloadMapaModal } from '@/components/alpha/visitas/VisitasDownloadMapaModal';
 import { toast } from 'sonner';
 
 export default function VisitasPage() {
@@ -86,6 +88,7 @@ export default function VisitasPage() {
   const [pontoEmEdicao, setPontoEmEdicao] = useState<Partial<VisitasPonto> | null>(null);
 
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
+  const [modalDownloadMapaAberto, setModalDownloadMapaAberto] = useState(false);
 
   const [roteiroParaRastrear, setRoteiroParaRastrear] = useState<VisitasRoteiro | null>(null);
 
@@ -530,7 +533,7 @@ export default function VisitasPage() {
     }
   };
 
-  // --- Salvar Trajeto GPS Gravado ---
+  // --- Salvar Trajeto GPS Gravado (100% Offline-First) ---
   const handleSaveTrajeto = async (trajetoPayload: any) => {
     const novoId = trajetoPayload.id ?? crypto.randomUUID();
     const payloadCompleto: VisitasTrajeto = {
@@ -541,11 +544,16 @@ export default function VisitasPage() {
       deleted_at: null,
     };
 
-    // Na lista mantemos o resumo
+    // 1. Grava o trajeto detalhado completo (com todos os waypoints e paradas) no IndexedDB local
+    await visitasOfflineService.salvarTrajetoCompletoLocal(payloadCompleto);
+
+    // 2. Atualiza a lista de resumos na tela e no cache local
     const { posicoes, ...resumo } = payloadCompleto;
     const novos = [resumo as VisitasTrajetoResumo, ...trajetos];
     setTrajetos(novos);
+    await visitasOfflineService.setTrajetos(novos);
 
+    // 3. Tenta sincronizar com Supabase se online; se offline/erro, enfileira na fila de sync
     if (navigator.onLine) {
       try {
         const { error } = await (supabase as any)
@@ -576,6 +584,7 @@ export default function VisitasPage() {
 
     const novos = trajetos.filter((t) => t.id !== trajetoId);
     setTrajetos(novos);
+    await visitasOfflineService.setTrajetos(novos);
 
     if (navigator.onLine) {
       await (supabase as any)
@@ -588,18 +597,33 @@ export default function VisitasPage() {
   };
 
   const handleVerDetalhesTrajeto = async (trajetoId: string): Promise<VisitasTrajeto | null> => {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('visitas_trajetos')
-        .select('*')
-        .eq('id', trajetoId)
-        .single();
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      toast.error('Não foi possível carregar o traçado detalhado do servidor.');
-      return null;
+    // 1. Busca primeiro no IndexedDB local do dispositivo (funciona 100% offline!)
+    const trajetoLocal = await visitasOfflineService.obterTrajetoCompletoLocal(trajetoId);
+    if (trajetoLocal) {
+      return trajetoLocal;
     }
+
+    // 2. Se não estiver no cache local e houver internet, busca do servidor e salva local
+    if (navigator.onLine) {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('visitas_trajetos')
+          .select('*')
+          .eq('id', trajetoId)
+          .single();
+        if (error) throw error;
+        if (data) {
+          await visitasOfflineService.salvarTrajetoCompletoLocal(data);
+          return data;
+        }
+      } catch (err) {
+        toast.error('Não foi possível carregar o traçado do servidor.');
+      }
+    } else {
+      toast.warning('Traçado detalhado indisponível offline para este registro antigo.');
+    }
+
+    return null;
   };
 
   // --- Salvar / Deletar Mapa GeoPDF ---
@@ -695,8 +719,18 @@ export default function VisitasPage() {
           </div>
         </div>
 
-        {/* Indicadores rápidos de topo e Ação de Calibração */}
+        {/* Indicadores rápidos de topo e Ações Offline */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setModalDownloadMapaAberto(true)}
+            className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            title="Baixar quadrículas do mapa para navegar sem internet em campo"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-400" />
+            <span>Baixar Mapa Offline</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setModalConfigAberto(true)}
@@ -1016,6 +1050,13 @@ export default function VisitasPage() {
       <VisitasConfigModal
         open={modalConfigAberto}
         onOpenChange={setModalConfigAberto}
+      />
+
+      {/* Modal de Download de Mapas Offline */}
+      <VisitasDownloadMapaModal
+        open={modalDownloadMapaAberto}
+        onOpenChange={setModalDownloadMapaAberto}
+        currentMapCenter={mapCenter}
       />
     </div>
   );

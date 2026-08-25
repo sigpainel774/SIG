@@ -9,6 +9,8 @@ import {
   Polyline,
   useMap,
 } from 'react-leaflet';
+import { OfflineTileLayer } from '@/components/map/OfflineTileLayer';
+import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
 import L from 'leaflet';
 import {
   Play,
@@ -512,10 +514,7 @@ export default function VisitasNavegacaoLiveTab({
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <OfflineTileLayer />
 
           <MapFollower
             posicao={posicaoAtual ? { lat: posicaoAtual.lat, lng: posicaoAtual.lng } : null}
