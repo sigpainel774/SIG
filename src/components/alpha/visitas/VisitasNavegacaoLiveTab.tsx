@@ -480,10 +480,10 @@ export default function VisitasNavegacaoLiveTab({
             size="sm"
             variant="outline"
             onClick={() => setIsConfigOpen(true)}
-            className="h-9 text-xs font-bold gap-1.5 rounded-xl border border-border hover:border-violet-500/40 text-muted-foreground hover:text-violet-400 cursor-pointer"
+            className="h-9 text-xs font-semibold gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white cursor-pointer"
             title="Configurar Sensibilidade e Anti-Duplicação de Visitas"
           >
-            <Sliders className="w-4 h-4 text-violet-400" />
+            <Sliders className="w-4 h-4 text-white" />
             <span className="hidden sm:inline">Calibrar Visitas</span>
           </Button>
 

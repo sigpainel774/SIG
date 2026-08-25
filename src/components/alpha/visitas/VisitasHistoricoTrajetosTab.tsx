@@ -25,11 +25,14 @@ import {
   Map as MapIcon,
   HardDrive,
   CheckCircle2,
+  Play,
 } from 'lucide-react';
 import { MapContainer, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { OfflineTileLayer } from '@/components/map/OfflineTileLayer';
+import { MapaReplayPercurso } from '@/components/map/MapWrapper';
+import { NavegacaoLivreRegistro } from '@/lib/offlineRouteStore';
 
 // Ícones dos Marcadores do Percurso
 const iconeInicio = L.divIcon({
@@ -81,7 +84,7 @@ export function VisitasHistoricoTrajetosTab({
   const [modalDetalheAberto, setModalDetalheAberto] = useState(false);
   const [trajetoDetalhado, setTrajetoDetalhado] = useState<VisitasTrajeto | null>(null);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
-  const [abaDetalhe, setAbaDetalhe] = useState<'mapa' | 'metricas'>('mapa');
+  const [abaDetalhe, setAbaDetalhe] = useState<'replay' | 'mapa' | 'metricas'>('replay');
 
   const veicMap = new Map(veiculos.map((v) => [v.id, v.nome]));
 
@@ -93,10 +96,10 @@ export function VisitasHistoricoTrajetosTab({
     return `${m}min ${s}s`;
   };
 
-  const handleAbrirDetalhes = async (trajetoId: string) => {
+  const handleAbrirDetalhes = async (trajetoId: string, abaInicial: 'replay' | 'mapa' | 'metricas' = 'mapa') => {
     setCarregandoDetalhe(true);
     setModalDetalheAberto(true);
-    setAbaDetalhe('mapa');
+    setAbaDetalhe(abaInicial);
     try {
       const detalhe = await onVerDetalhesTrajeto(trajetoId);
       setTrajetoDetalhado(detalhe);
@@ -111,6 +114,37 @@ export function VisitasHistoricoTrajetosTab({
   const polylineCoords = useMemo(() => {
     if (!trajetoDetalhado?.posicoes || trajetoDetalhado.posicoes.length === 0) return [];
     return trajetoDetalhado.posicoes.map((p) => [p.latitude, p.longitude] as [number, number]);
+  }, [trajetoDetalhado]);
+
+  // Objeto de Navegação Livre mapeado para o Replay Animado com Carrinho, Velocímetro e Relógio
+  const navegacaoReplay = useMemo<NavegacaoLivreRegistro | null>(() => {
+    if (!trajetoDetalhado) return null;
+    const rawPontos = trajetoDetalhado.posicoes || [];
+    return {
+      id: trajetoDetalhado.id,
+      funcionario_id: trajetoDetalhado.usuario_id || null,
+      funcionario_nome: 'Agente / Servidor (Visitas)',
+      veiculo_id: trajetoDetalhado.veiculo_id || null,
+      titulo: (trajetoDetalhado as any).nome || `Trajeto - ${new Date(trajetoDetalhado.started_at).toLocaleDateString('pt-BR')}`,
+      data_inicio: trajetoDetalhado.started_at,
+      data_fim: trajetoDetalhado.ended_at || null,
+      duracao_segundos: (trajetoDetalhado.moving_seconds || 0) + (trajetoDetalhado.visit_seconds || 0),
+      distancia_metros: Number(trajetoDetalhado.distance_meters) || 0,
+      velocidade_media_kmh: 0,
+      velocidade_max_kmh: 0,
+      pontos_gps: rawPontos.map((p: any) => ({
+        latitude: Number(p.latitude) || 0,
+        longitude: Number(p.longitude) || 0,
+        timestamp: p.timestamp || new Date(trajetoDetalhado.started_at).getTime(),
+        speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+        heading: Number(p.heading) || 0,
+        accuracy: Number(p.accuracy) || 10,
+        distanceM: Number(p.distanceM) || 0,
+      })),
+      status: 'FINALIZADA',
+      observacoes: (trajetoDetalhado as any).observacoes || null,
+      sincronizado: true,
+    };
   }, [trajetoDetalhado]);
 
   // Centro do Mapa do Percurso
@@ -243,21 +277,34 @@ export function VisitasHistoricoTrajetosTab({
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAbrirDetalhes(t.id)}
-                  className="h-8 text-xs font-semibold gap-1.5 text-blue-300 hover:bg-blue-950/30 border-blue-500/40"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  Ver no Mapa
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAbrirDetalhes(t.id, 'replay')}
+                    className="h-8 text-xs font-bold gap-1.5 bg-white/10 hover:bg-white/20 text-white border-white/20 cursor-pointer shadow-xs"
+                    title="Simular percurso animado com carrinho, velocímetro e relógio"
+                  >
+                    <Play className="w-3.5 h-3.5 text-white" />
+                    <span>Replay Animado</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleAbrirDetalhes(t.id, 'mapa')}
+                    className="h-8 text-xs font-semibold gap-1.5 text-slate-300 hover:text-white cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Mapa</span>
+                  </Button>
+                </div>
 
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={() => onDeleteTrajeto(t.id)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 cursor-pointer"
                   title="Excluir Trajeto"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -268,17 +315,17 @@ export function VisitasHistoricoTrajetosTab({
         </div>
       )}
 
-      {/* ── Modal de Detalhes e Traçado no Mapa Offline ── */}
+      {/* ── Modal de Detalhes e Replay no Mapa Offline ── */}
       <StandardDialog
         open={modalDetalheAberto}
         onOpenChange={setModalDetalheAberto}
-        title="Auditoria e Traçado do Percurso (Offline)"
-        description="Visualize a rota percorrida pelo GPS, paradas e telemetria registrada."
-        className="sm:max-w-[720px]"
+        title="Auditoria e Replay do Percurso (Offline)"
+        description="Visualize a rota percorrida pelo GPS, reproduza o carrinho animado com velocímetro e analise paradas."
+        maxWidth="sm:max-w-4xl"
       >
         {carregandoDetalhe ? (
           <div className="py-16 text-center text-xs text-muted-foreground">
-            Carregando waypoints e mapa offline...
+            Carregando waypoints e dados do percurso...
           </div>
         ) : trajetoDetalhado ? (
           <div className="space-y-4 pt-2">
@@ -286,32 +333,51 @@ export function VisitasHistoricoTrajetosTab({
             <div className="flex rounded-xl bg-muted/60 p-1 border border-border">
               <button
                 type="button"
+                onClick={() => setAbaDetalhe('replay')}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  abaDetalhe === 'replay'
+                    ? 'bg-white text-black shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Play className="w-3.5 h-3.5" />
+                Replay Animado (Carrinho &amp; Velocímetro)
+              </button>
+              <button
+                type="button"
                 onClick={() => setAbaDetalhe('mapa')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   abaDetalhe === 'mapa'
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-white text-black shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <MapIcon className="w-3.5 h-3.5" />
-                Traçado no Mapa ({polylineCoords.length} pontos)
+                Traçado Geral ({polylineCoords.length} pts)
               </button>
               <button
                 type="button"
                 onClick={() => setAbaDetalhe('metricas')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   abaDetalhe === 'metricas'
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-white text-black shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Telemetria e Paradas ({trajetoDetalhado.visitas_registradas?.length ?? 0})
+                Telemetria ({trajetoDetalhado.visitas_registradas?.length ?? 0} paradas)
               </button>
             </div>
 
-            {abaDetalhe === 'mapa' ? (
-              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border shadow-inner bg-zinc-950">
+            {abaDetalhe === 'replay' ? (
+              <div className="w-full">
+                <MapaReplayPercurso
+                  navegacaoLivre={navegacaoReplay}
+                  tituloPercurso={(trajetoDetalhado as any).nome || 'Replay da Rota'}
+                />
+              </div>
+            ) : abaDetalhe === 'mapa' ? (
+              <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-border shadow-inner bg-zinc-950">
                 {polylineCoords.length === 0 ? (
                   <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                     Sem waypoints georreferenciados para este percurso.

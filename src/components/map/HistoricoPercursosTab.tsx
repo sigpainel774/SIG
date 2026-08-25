@@ -41,6 +41,8 @@ import {
   marcarNavegacaoComoSincronizada,
   removerNavegacaoOffline,
 } from '@/lib/offlineRouteStore';
+import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
+import { VisitasTrajeto, VisitasTrajetoResumo } from '@/types/visitas';
 
 export default function HistoricoPercursosTab() {
   const supabase = createClient();
@@ -82,7 +84,7 @@ export default function HistoricoPercursosTab() {
     }
   };
 
-  // 1. Carrega Navegações Livres (Supabase + IndexedDB)
+  // 1. Carrega Navegações Livres (Supabase + IndexedDB + Trajetos de Visitas)
   const carregarNavegacoesLivres = async () => {
     try {
       // Sincroniza pendências se online
@@ -122,61 +124,170 @@ export default function HistoricoPercursosTab() {
         }
       }
 
-      // Busca do Supabase
-      const { data, error } = await (supabase as any)
-        .from('registros_navegacoes_livres')
-        .select(`
-          id,
-          funcionario_id,
-          veiculo_id,
-          titulo,
-          data_inicio,
-          data_fim,
-          duracao_segundos,
-          distancia_metros,
-          velocidade_media_kmh,
-          velocidade_max_kmh,
-          pontos_gps,
-          status,
-          observacoes,
-          sincronizado_em,
-          created_at,
-          funcionarios:funcionario_id (id, nome)
-        `)
-        .order('data_inicio', { ascending: false });
+      // Busca do Supabase: registros_navegacoes_livres
+      let listaServidor: NavegacaoLivreRegistro[] = [];
+      try {
+        const { data, error } = await (supabase as any)
+          .from('registros_navegacoes_livres')
+          .select(`
+            id,
+            funcionario_id,
+            veiculo_id,
+            titulo,
+            data_inicio,
+            data_fim,
+            duracao_segundos,
+            distancia_metros,
+            velocidade_media_kmh,
+            velocidade_max_kmh,
+            pontos_gps,
+            status,
+            observacoes,
+            sincronizado_em,
+            created_at,
+            funcionarios:funcionario_id (id, nome)
+          `)
+          .order('data_inicio', { ascending: false });
 
-      const listaServidor: NavegacaoLivreRegistro[] = (data || []).map((row: any) => ({
-        id: row.id,
-        funcionario_id: row.funcionario_id,
-        funcionario_nome: row.funcionarios?.nome ?? 'Servidor / Motorista',
-        veiculo_id: row.veiculo_id,
-        titulo: row.titulo,
-        data_inicio: row.data_inicio,
-        data_fim: row.data_fim,
-        duracao_segundos: row.duracao_segundos || 0,
-        distancia_metros: Number(row.distancia_metros) || 0,
-        velocidade_media_kmh: Number(row.velocidade_media_kmh) || 0,
-        velocidade_max_kmh: Number(row.velocidade_max_kmh) || 0,
-        pontos_gps: Array.isArray(row.pontos_gps) ? row.pontos_gps : [],
-        status: row.status ?? 'FINALIZADA',
-        observacoes: row.observacoes ?? null,
-        sincronizado: true,
-        created_at: row.created_at,
-      }));
+        if (!error && data) {
+          listaServidor = data.map((row: any) => ({
+            id: row.id,
+            funcionario_id: row.funcionario_id,
+            funcionario_nome: row.funcionarios?.nome ?? 'Servidor / Motorista',
+            veiculo_id: row.veiculo_id,
+            titulo: row.titulo,
+            data_inicio: row.data_inicio,
+            data_fim: row.data_fim,
+            duracao_segundos: row.duracao_segundos || 0,
+            distancia_metros: Number(row.distancia_metros) || 0,
+            velocidade_media_kmh: Number(row.velocidade_media_kmh) || 0,
+            velocidade_max_kmh: Number(row.velocidade_max_kmh) || 0,
+            pontos_gps: Array.isArray(row.pontos_gps) ? row.pontos_gps : [],
+            status: row.status ?? 'FINALIZADA',
+            observacoes: row.observacoes ?? null,
+            sincronizado: true,
+            created_at: row.created_at,
+          }));
+        }
+      } catch (err) {
+        console.warn('Falha ao buscar registros_navegacoes_livres:', err);
+      }
 
-      // Une com os locais pendentes do IndexedDB
-      const locais = await obterNavegacoesLivresOffline();
-      const idsServidor = new Set(listaServidor.map((item) => item.id));
-      const pendentesLocais = locais.filter((l) => !idsServidor.has(l.id));
+      // Busca do Supabase: visitas_trajetos (Trajetos gravados no módulo Alpha Visitas)
+      let listaTrajetosVisitasServidor: NavegacaoLivreRegistro[] = [];
+      try {
+        const { data: dataTrajetos, error: errTrajetos } = await (supabase as any)
+          .from('visitas_trajetos')
+          .select('*')
+          .is('deleted_at', null)
+          .order('started_at', { ascending: false });
 
-      const consolidadas = [...pendentesLocais, ...listaServidor].sort(
+        if (!errTrajetos && dataTrajetos) {
+          listaTrajetosVisitasServidor = dataTrajetos.map((row: any) => {
+            const rawPontos = Array.isArray(row.posicoes) ? row.posicoes : [];
+            const pontosGpsFormatados = rawPontos.map((p: any) => ({
+              latitude: Number(p.latitude) || 0,
+              longitude: Number(p.longitude) || 0,
+              timestamp: p.timestamp || (row.started_at ? new Date(row.started_at).getTime() : Date.now()),
+              speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+              heading: Number(p.heading) || 0,
+              accuracy: Number(p.accuracy) || 10,
+              distanceM: Number(p.distanceM) || 0,
+            }));
+
+            return {
+              id: row.id,
+              funcionario_id: row.usuario_id || null,
+              funcionario_nome: 'Agente / Servidor (Visitas)',
+              veiculo_id: row.veiculo_id || null,
+              titulo: row.nome || `Trajeto Visitas - ${new Date(row.started_at).toLocaleDateString('pt-BR')}`,
+              data_inicio: row.started_at,
+              data_fim: row.ended_at || null,
+              duracao_segundos: (row.moving_seconds || 0) + (row.visit_seconds || 0),
+              distancia_metros: Number(row.distance_meters) || 0,
+              velocidade_media_kmh: 0,
+              velocidade_max_kmh: 0,
+              pontos_gps: pontosGpsFormatados,
+              status: 'FINALIZADA' as const,
+              observacoes: row.observacoes || null,
+              sincronizado: true,
+              created_at: row.created_at || row.started_at,
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('Falha ao buscar visitas_trajetos do Supabase:', err);
+      }
+
+      // Busca do IndexedDB: offlineRouteStore (navegações livres locais)
+      const locaisOfflineRoute = await obterNavegacoesLivresOffline();
+
+      // Busca do IndexedDB: visitasOfflineService (trajetos locais gravados 100% offline)
+      let locaisVisitasAlpha: NavegacaoLivreRegistro[] = [];
+      try {
+        const trajetosAlpha = await visitasOfflineService.getTrajetos();
+        const trajetosCompletosPromessas = (trajetosAlpha || []).map(async (t) => {
+          const detalhe = await visitasOfflineService.obterTrajetoCompletoLocal(t.id);
+          const rawPontos = detalhe?.posicoes || (t as any).posicoes || [];
+          const pontosGpsFormatados = rawPontos.map((p: any) => ({
+            latitude: Number(p.latitude) || 0,
+            longitude: Number(p.longitude) || 0,
+            timestamp: p.timestamp || (t.started_at ? new Date(t.started_at).getTime() : Date.now()),
+            speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+            heading: Number(p.heading) || 0,
+            accuracy: Number(p.accuracy) || 10,
+            distanceM: Number(p.distanceM) || 0,
+          }));
+
+          return {
+            id: t.id,
+            funcionario_id: t.usuario_id || null,
+            funcionario_nome: 'Agente / Servidor (Offline)',
+            veiculo_id: t.veiculo_id || null,
+            titulo: (t as any).nome || `Trajeto Offline - ${new Date(t.started_at).toLocaleDateString('pt-BR')}`,
+            data_inicio: t.started_at,
+            data_fim: t.ended_at || null,
+            duracao_segundos: (t.moving_seconds || 0) + (t.visit_seconds || 0),
+            distancia_metros: Number(t.distance_meters) || 0,
+            velocidade_media_kmh: 0,
+            velocidade_max_kmh: 0,
+            pontos_gps: pontosGpsFormatados,
+            status: 'FINALIZADA' as const,
+            observacoes: (t as any).observacoes || null,
+            sincronizado: false,
+            created_at: t.created_at || t.started_at,
+          };
+        });
+
+        locaisVisitasAlpha = await Promise.all(trajetosCompletosPromessas);
+      } catch (err) {
+        console.warn('Falha ao obter trajetos offline do visitasOfflineService:', err);
+      }
+
+      // Consolidação de todas as fontes com deduplicação por ID (priorizando as versões com mais waypoints se disponíveis)
+      const mapaConsolidado = new Map<string, NavegacaoLivreRegistro>();
+
+      // 1. Injeta servidor primeiro
+      for (const item of [...listaServidor, ...listaTrajetosVisitasServidor]) {
+        mapaConsolidado.set(item.id, item);
+      }
+
+      // 2. Injeta/sobrescreve com locais offline caso possuam waypoints ou sejam mais recentes
+      for (const item of [...locaisOfflineRoute, ...locaisVisitasAlpha]) {
+        const existente = mapaConsolidado.get(item.id);
+        if (!existente || (item.pontos_gps && item.pontos_gps.length >= (existente.pontos_gps?.length || 0))) {
+          mapaConsolidado.set(item.id, item);
+        }
+      }
+
+      const consolidadas = Array.from(mapaConsolidado.values()).sort(
         (a, b) => new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime()
       );
 
       if (isMounted.current) {
         setNavegacoes(consolidadas);
-        if (consolidadas.length > 0 && !navSelecionadaId) {
-          setNavSelecionadaId(consolidadas[0].id);
+        if (consolidadas.length > 0) {
+          setNavSelecionadaId((prev) => (prev && consolidadas.some((c) => c.id === prev) ? prev : consolidadas[0].id));
         }
       }
     } catch (err) {
@@ -327,16 +438,28 @@ export default function HistoricoPercursosTab() {
     if (!navParaExcluir) return;
     setExcluindo(true);
     try {
-      // 1. Remove do Supabase
-      const { error } = await (supabase as any)
-        .from('registros_navegacoes_livres')
-        .delete()
-        .eq('id', navParaExcluir.id);
+      // 1. Tenta remover do Supabase (registros_navegacoes_livres ou visitas_trajetos)
+      try {
+        await (supabase as any)
+          .from('registros_navegacoes_livres')
+          .delete()
+          .eq('id', navParaExcluir.id);
+      } catch {}
 
-      if (error) throw error;
+      try {
+        await (supabase as any)
+          .from('visitas_trajetos')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', navParaExcluir.id);
+      } catch {}
 
-      // 2. Remove do IndexedDB
+      // 2. Remove do IndexedDB (offlineRouteStore e visitasOfflineService)
       await removerNavegacaoOffline(navParaExcluir.id);
+      try {
+        const trajetosAlpha = await visitasOfflineService.getTrajetos();
+        const filtrados = (trajetosAlpha || []).filter((t) => t.id !== navParaExcluir.id);
+        await visitasOfflineService.setTrajetos(filtrados);
+      } catch {}
 
       // 3. Atualiza estado
       setNavegacoes((prev) => prev.filter((n) => n.id !== navParaExcluir.id));

@@ -19,6 +19,7 @@ import {
   metrosQuadradosParaHectares,
 } from '@/lib/visitas/areaCalculator';
 import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
+import { salvarNavegacaoLivreOffline } from '@/lib/offlineRouteStore';
 
 // Componentes
 import { VisitasOfflineSyncBanner } from '@/components/alpha/visitas/VisitasOfflineSyncBanner';
@@ -566,6 +567,36 @@ export default function VisitasPage() {
     // 1. Grava o trajeto detalhado completo (com todos os waypoints e paradas) no IndexedDB local
     await visitasOfflineService.salvarTrajetoCompletoLocal(payloadCompleto);
 
+    // 1.1 Salva também no store de navegações livres para disponibilidade instantânea no Replay com Carrinho
+    try {
+      await salvarNavegacaoLivreOffline({
+        id: novoId,
+        funcionario_id: funcionario?.id ?? null,
+        funcionario_nome: funcionario?.nome ?? 'Agente / Servidor (Visitas)',
+        veiculo_id: payloadCompleto.veiculo_id ?? null,
+        titulo: (payloadCompleto as any).nome || `Trajeto Visitas - ${new Date(payloadCompleto.started_at).toLocaleDateString('pt-BR')}`,
+        data_inicio: payloadCompleto.started_at,
+        data_fim: payloadCompleto.ended_at ?? null,
+        duracao_segundos: (payloadCompleto.moving_seconds || 0) + (payloadCompleto.visit_seconds || 0),
+        distancia_metros: Number(payloadCompleto.distance_meters) || 0,
+        velocidade_media_kmh: 0,
+        velocidade_max_kmh: 0,
+        pontos_gps: (payloadCompleto.posicoes || []).map((p: any) => ({
+          latitude: Number(p.latitude) || 0,
+          longitude: Number(p.longitude) || 0,
+          timestamp: p.timestamp || (payloadCompleto.started_at ? new Date(payloadCompleto.started_at).getTime() : Date.now()),
+          speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+          heading: Number(p.heading) || 0,
+          accuracy: Number(p.accuracy) || 10,
+          distanceM: Number(p.distanceM) || 0,
+        })),
+        status: 'FINALIZADA',
+        observacoes: (payloadCompleto as any).observacoes ?? null,
+      });
+    } catch (storeErr) {
+      console.warn('Falha ao salvar no store de rotas offline:', storeErr);
+    }
+
     // 2. Atualiza a lista de resumos na tela e no cache local
     const { posicoes, ...resumo } = payloadCompleto;
     const novos = [resumo as VisitasTrajetoResumo, ...trajetos];
@@ -753,10 +784,10 @@ export default function VisitasPage() {
           <button
             type="button"
             onClick={() => setModalConfigAberto(true)}
-            className="px-3 py-1.5 rounded-xl bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 text-violet-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
             title="Configurar tempo de parada e tolerância anti-duplicação de visitas"
           >
-            <Sliders className="w-3.5 h-3.5 text-violet-400" />
+            <Sliders className="w-3.5 h-3.5 text-white" />
             <span>Calibrar Visitas</span>
           </button>
 
