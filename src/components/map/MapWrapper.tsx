@@ -44,6 +44,11 @@ const NavegacaoLivreTabReal = dynamic(() => import('./NavegacaoLivreTab'), {
   loading: () => <MapLoadingSkeleton height="540px" /> 
 });
 
+const VisitasMapCoreReal = dynamic(() => import('@/components/alpha/visitas/VisitasMapCore'), {
+  ssr: false,
+  loading: () => <MapLoadingSkeleton height="600px" />
+});
+
 function MapLoadingSkeleton({ height }: { height: string }) {
   return (
     <div 
@@ -63,5 +68,6 @@ export {
   MapaCalorAcessosReal as MapaCalorAcessos,
   MapaRotasEscolasReal as MapaRotasEscolas,
   MapaReplayPercursoReal as MapaReplayPercurso,
-  NavegacaoLivreTabReal as NavegacaoLivreTab
+  NavegacaoLivreTabReal as NavegacaoLivreTab,
+  VisitasMapCoreReal as VisitasMapCore
 };

@@ -34,6 +34,7 @@ import {
   CheckSquare,
   QrCode,
   FileDiff,
+  MapPinned,
   LucideIcon,
 } from 'lucide-react'
 
@@ -71,6 +72,7 @@ export const AlphaIconMap: Record<string, LucideIcon> = {
   CheckSquare,
   QrCode,
   FileDiff,
+  MapPinned,
 }
 
 interface AlphaIconProps {
