@@ -155,7 +155,7 @@ export default function AlphaLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#f3f4f7] text-[#1a1a1a] font-sans relative overflow-hidden select-none">
+    <div className="light min-h-screen flex flex-col justify-between bg-[#f3f4f7] text-[#1a1a1a] font-sans relative overflow-hidden select-none">
       {/* ── Topo: Badge de Identificação e Status Offline ── */}
       <div className="w-full max-w-5xl mx-auto px-5 pt-5 flex items-center justify-between z-10">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-bold shadow-xs tracking-wide">

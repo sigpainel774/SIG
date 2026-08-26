@@ -83,7 +83,7 @@
   --color-warning-foreground: var(--warning-foreground);
 }
 
-:root {
+:root, .light {
   --student-light-bg: #F3F4F6;
   --student-light-surface: #FFFFFF;
   --student-light-section: #FFFFFF;

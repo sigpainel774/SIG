@@ -207,7 +207,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
             variant="outline"
             size="sm"
             onClick={handleRestaurarPadroes}
-            className="rounded-xl text-xs gap-1.5 cursor-pointer border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            className="rounded-xl text-xs gap-1.5 cursor-pointer border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Padrão</span>
@@ -219,7 +219,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl text-xs cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
+              className="rounded-xl text-xs cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             >
               Cancelar
             </Button>
@@ -227,7 +227,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
               type="button"
               size="sm"
               onClick={handleSalvar}
-              className="rounded-xl text-xs bg-white hover:bg-white/90 text-black font-bold gap-1.5 shadow-md shadow-white/10 cursor-pointer"
+              className="rounded-xl text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 shadow-xs cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Salvar Parâmetros</span>
@@ -236,21 +236,21 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
         </div>
       }
     >
-      <div className="space-y-4 py-1 text-slate-200 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="space-y-4 py-1 text-slate-800 max-h-[70vh] overflow-y-auto pr-1">
         
         {/* ── 0. Personalização do Ícone do Cursor no Mapa ── */}
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-white flex items-center gap-2">
-              <Navigation className="w-4 h-4 text-white" />
+            <label className="text-xs font-bold text-slate-900 flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-blue-600" />
               Ícone do Cursor no Mapa (Você / Veículo)
             </label>
-            <span className="text-[10px] font-semibold text-white bg-white/10 border border-white/20 px-2 py-0.5 rounded-lg">
+            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg">
               {iconeTipo === 'custom' ? 'Imagem Própria' : 'Ícone Integrado'}
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-slate-600 leading-relaxed">
             Selecione o símbolo visual que se moverá na tela ao navegar em tempo real ou ao clicar no botão "Onde estou".
           </p>
 
@@ -264,14 +264,14 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                 className={cn(
                   'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5',
                   iconeTipo === item.tipo
-                    ? 'border-white bg-white/15 text-white ring-1 ring-white/30 font-bold shadow-xs'
-                    : 'border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-white'
+                    ? 'border-blue-600 bg-blue-50 text-blue-900 ring-1 ring-blue-500 font-bold shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
                 )}
               >
                 <div className="text-xl shrink-0">{item.icone}</div>
                 <div className="overflow-hidden">
-                  <div className="text-xs text-white truncate font-semibold">{item.nome}</div>
-                  <div className="text-[10px] text-slate-400 truncate">{item.descricao}</div>
+                  <div className="text-xs text-slate-900 truncate font-semibold">{item.nome}</div>
+                  <div className="text-[10px] text-slate-500 truncate">{item.descricao}</div>
                 </div>
               </button>
             ))}
@@ -289,8 +289,8 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
               className={cn(
                 'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5',
                 iconeTipo === 'custom'
-                  ? 'border-white bg-white/15 text-white ring-1 ring-white/30 font-bold shadow-xs'
-                  : 'border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-white'
+                  ? 'border-blue-600 bg-blue-50 text-blue-900 ring-1 ring-blue-500 font-bold shadow-xs'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
               )}
             >
               <div className="text-xl shrink-0">
@@ -298,15 +298,15 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                   <img
                     src={iconeCustomUrl}
                     alt="Custom"
-                    className="w-6 h-6 object-contain rounded-full border border-white/40"
+                    className="w-6 h-6 object-contain rounded-full border border-blue-400"
                   />
                 ) : (
                   '🖼️'
                 )}
               </div>
               <div className="overflow-hidden">
-                <div className="text-xs text-white truncate font-semibold">Foto / Logo</div>
-                <div className="text-[10px] text-slate-400 truncate">
+                <div className="text-xs text-slate-900 truncate font-semibold">Foto / Logo</div>
+                <div className="text-[10px] text-slate-500 truncate">
                   {iconeCustomUrl ? 'Personalizado' : 'Fazer Upload'}
                 </div>
               </div>
@@ -314,13 +314,13 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
           </div>
 
           {/* Área de Upload e Preview */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-black/40 border border-white/10 p-3 rounded-xl">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 p-3 rounded-xl">
             <div className="flex items-center gap-3">
               {/* Preview com animação de radar */}
               <div className="relative w-12 h-12 flex items-center justify-center">
-                <div className="absolute w-12 h-12 rounded-full bg-white/15 animate-ping pointer-events-none"></div>
+                <div className="absolute w-12 h-12 rounded-full bg-blue-500/20 animate-ping pointer-events-none"></div>
                 <div
-                  className="relative w-9 h-9 rounded-full bg-slate-950 border-2 border-white shadow-xl flex items-center justify-center text-white transition-transform duration-500"
+                  className="relative w-9 h-9 rounded-full bg-blue-600 border-2 border-white shadow-md flex items-center justify-center text-white transition-transform duration-500"
                   style={{ transform: `rotate(${previewAngulo}deg)` }}
                 >
                   {iconeTipo === 'custom' && iconeCustomUrl ? (
@@ -342,11 +342,11 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
               </div>
 
               <div>
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-white" />
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 text-blue-600" />
                   Pré-visualização do Cursor
                 </div>
-                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                   Gira conforme a bússola/direção GPS
                 </div>
               </div>
@@ -369,9 +369,9 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                 size="sm"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 text-xs font-semibold gap-1.5 border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+                className="h-8 text-xs font-semibold gap-1.5 border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
               >
-                <Upload className="w-3.5 h-3.5 text-white" />
+                <Upload className="w-3.5 h-3.5 text-slate-700" />
                 <span>Trocar Imagem</span>
               </Button>
 
@@ -385,7 +385,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                     setIconeTipo('padrao_carro')
                     toast.info('Imagem personalizada removida.')
                   }}
-                  className="h-8 w-8 p-0 text-rose-400 hover:bg-rose-950/30"
+                  className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50"
                   title="Remover imagem personalizada"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -396,18 +396,18 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
         </div>
 
         {/* ── 1. Tempo Mínimo de Parada ── */}
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-white" />
+            <label className="text-xs font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
               Tempo Parado para Contabilizar Visita
             </label>
-            <span className="text-xs font-extrabold text-white font-mono bg-white/10 border border-white/20 px-2 py-0.5 rounded-lg">
+            <span className="text-xs font-extrabold text-blue-700 font-mono bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg">
               {formatarTempo(tempoMinimo)}
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-slate-600 leading-relaxed">
             Tempo contínuo que o profissional deve permanecer no local para o sistema registrar automaticamente uma visita no itinerário.
           </p>
 
@@ -418,7 +418,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
             step={15}
             value={tempoMinimo}
             onChange={(e) => setTempoMinimo(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-white"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
 
           {/* Atalhos Rápidos de Tempo */}
@@ -431,8 +431,8 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer whitespace-nowrap',
                   tempoMinimo === t
-                    ? 'bg-white text-black shadow-xs font-bold'
-                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                 )}
               >
                 {formatarTempo(t)}
@@ -442,18 +442,18 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
         </div>
 
         {/* ── 2. Raio de Tolerância (Imóvel / Quintal) ── */}
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-white flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-white" />
+            <label className="text-xs font-bold text-slate-900 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-blue-600" />
               Raio de Movimentação no Imóvel
             </label>
-            <span className="text-xs font-extrabold text-white font-mono bg-white/10 border border-white/20 px-2 py-0.5 rounded-lg">
+            <span className="text-xs font-extrabold text-blue-700 font-mono bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg">
               {raioTolerancia} metros
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-slate-600 leading-relaxed">
             Área de tolerância ao redor do ponto de parada para permitir que o profissional ande pela residência, quintal ou anexo sem quebrar a visita em vários registros.
           </p>
 
@@ -464,7 +464,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
             step={5}
             value={raioTolerancia}
             onChange={(e) => setRaioTolerancia(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-white"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
@@ -476,8 +476,8 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer whitespace-nowrap',
                   raioTolerancia === r
-                    ? 'bg-white text-black shadow-xs font-bold'
-                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                 )}
               >
                 {r}m
@@ -487,18 +487,18 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
         </div>
 
         {/* ── 3. Janela de Fusão Anti-Duplicação ── */}
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-white" />
+            <label className="text-xs font-bold text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
               Fusão Anti-Duplicação de Visitas
             </label>
-            <span className="text-xs font-extrabold text-white font-mono bg-white/10 border border-white/20 px-2 py-0.5 rounded-lg">
+            <span className="text-xs font-extrabold text-blue-700 font-mono bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg">
               {fusaoMinutos} minutos
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-slate-600 leading-relaxed">
             Se o profissional sair brevemente e retornar ao mesmo imóvel dentro deste intervalo, os tempos serão unificados em uma única visita.
           </p>
 
@@ -509,7 +509,7 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
             step={1}
             value={fusaoMinutos}
             onChange={(e) => setFusaoMinutos(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-white"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
@@ -521,8 +521,8 @@ export function VisitasConfigModal({ open, onOpenChange, onSalvo }: VisitasConfi
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer whitespace-nowrap',
                   fusaoMinutos === m
-                    ? 'bg-white text-black shadow-xs font-bold'
-                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                 )}
               >
                 {m} min

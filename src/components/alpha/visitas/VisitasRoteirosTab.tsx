@@ -232,7 +232,7 @@ export function VisitasRoteirosTab({
                         {areasDoRoteiro.map((a) => (
                           <span
                             key={a.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-semibold"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold"
                           >
                             <Pentagon className="w-3 h-3" />
                             {a.nome}
@@ -375,8 +375,8 @@ export function VisitasRoteirosTab({
                       onClick={() => toggleAreaSelection(a.id)}
                       className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
                         isSelected
-                          ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300 font-bold'
-                          : 'hover:bg-muted/60 text-slate-300'
+                          ? 'bg-blue-50 border border-blue-200 text-blue-700 font-bold'
+                          : 'hover:bg-slate-100 text-slate-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">

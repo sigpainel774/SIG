@@ -180,9 +180,9 @@ export function VisitasPontosTab({
                 </div>
 
                 {ponto.area_id && (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/60 text-[11px] text-slate-300 font-medium">
-                    <span className="text-muted-foreground">Área:</span>
-                    <span className="font-semibold text-blue-400">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] text-slate-700 font-medium border border-slate-200">
+                    <span className="text-slate-500">Área:</span>
+                    <span className="font-semibold text-blue-700">
                       {areaMap.get(ponto.area_id) ?? 'Área vinculada'}
                     </span>
                   </div>
@@ -200,7 +200,7 @@ export function VisitasPontosTab({
                   size="sm"
                   variant="ghost"
                   onClick={() => onSelectPontoOnMap(ponto)}
-                  className="h-8 text-xs font-semibold gap-1 text-blue-400 hover:text-blue-300 hover:bg-blue-950/30 px-2"
+                  className="h-8 text-xs font-semibold gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
                 >
                   <MapPin className="w-3.5 h-3.5" />
                   Ver no Mapa

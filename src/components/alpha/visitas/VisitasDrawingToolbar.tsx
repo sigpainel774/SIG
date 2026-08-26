@@ -44,7 +44,7 @@ export function VisitasDrawingToolbar({
       : 0;
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/95 backdrop-blur-md border border-border p-2.5 rounded-2xl shadow-xl">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-200 p-2.5 rounded-2xl shadow-sm">
       {/* Modos Principais */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <Button
@@ -54,7 +54,9 @@ export function VisitasDrawingToolbar({
           onClick={() => setMode('select')}
           className={cn(
             'h-8 text-xs font-semibold gap-1.5 rounded-xl',
-            mode === 'select' && 'bg-blue-600 text-white shadow-xs'
+            mode === 'select'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           )}
         >
           <MousePointer className="w-3.5 h-3.5" />
@@ -68,7 +70,9 @@ export function VisitasDrawingToolbar({
           onClick={() => setMode('draw_polygon')}
           className={cn(
             'h-8 text-xs font-semibold gap-1.5 rounded-xl',
-            mode === 'draw_polygon' && 'bg-blue-600 text-white shadow-xs'
+            mode === 'draw_polygon'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           )}
         >
           <Pentagon className="w-3.5 h-3.5" />
@@ -82,7 +86,9 @@ export function VisitasDrawingToolbar({
           onClick={() => setMode('add_point')}
           className={cn(
             'h-8 text-xs font-semibold gap-1.5 rounded-xl',
-            mode === 'add_point' && 'bg-blue-600 text-white shadow-xs'
+            mode === 'add_point'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           )}
         >
           <MapPin className="w-3.5 h-3.5" />
@@ -96,7 +102,9 @@ export function VisitasDrawingToolbar({
           onClick={() => setMode('measure')}
           className={cn(
             'h-8 text-xs font-semibold gap-1.5 rounded-xl',
-            mode === 'measure' && 'bg-blue-600 text-white shadow-xs'
+            mode === 'measure'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           )}
         >
           <Ruler className="w-3.5 h-3.5" />
@@ -106,12 +114,12 @@ export function VisitasDrawingToolbar({
 
       {/* Controles de Desenho de Polígono Ativo */}
       {mode === 'draw_polygon' && draftVertices.length > 0 && (
-        <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-border pt-2 sm:pt-0 sm:pl-3">
-          <div className="flex flex-col text-[11px] font-mono leading-tight text-slate-300">
-            <span className="font-bold text-blue-400">
+        <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3">
+          <div className="flex flex-col text-[11px] font-mono leading-tight text-slate-700">
+            <span className="font-bold text-blue-600">
               {draftVertices.length} vértice(s)
             </span>
-            {areaAtualM2 > 0 && <span>{formatarArea(areaAtualM2)}</span>}
+            {areaAtualM2 > 0 && <span className="text-slate-600">{formatarArea(areaAtualM2)}</span>}
           </div>
 
           <Button
@@ -120,7 +128,7 @@ export function VisitasDrawingToolbar({
             variant="outline"
             onClick={onUndoVertex}
             disabled={draftVertices.length === 0}
-            className="h-7 px-2 text-xs text-slate-300"
+            className="h-7 px-2 text-xs text-slate-700 border-slate-200 hover:bg-slate-100"
             title="Desfazer último vértice"
           >
             <Undo2 className="w-3.5 h-3.5" />
@@ -131,7 +139,7 @@ export function VisitasDrawingToolbar({
             size="sm"
             variant="outline"
             onClick={onClearDraft}
-            className="h-7 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30 border-red-500/30"
+            className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
             title="Limpar rascunho"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -157,10 +165,10 @@ export function VisitasDrawingToolbar({
           size="sm"
           variant="outline"
           onClick={onLocateMe}
-          className="h-8 text-xs font-semibold gap-1.5 rounded-xl border-border text-slate-300"
+          className="h-8 text-xs font-semibold gap-1.5 rounded-xl border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
           title="Centralizar em minha localização GPS"
         >
-          <Crosshair className="w-3.5 h-3.5 text-blue-400" />
+          <Crosshair className="w-3.5 h-3.5 text-blue-600" />
           <span className="hidden md:inline">Onde estou</span>
         </Button>
       </div>

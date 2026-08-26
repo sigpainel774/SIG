@@ -223,7 +223,7 @@ export default function AlphaDashboardPage() {
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground group-hover:text-sidebar-accent-foreground mt-2 truncate w-full">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-800 group-hover:text-sidebar-primary mt-2 truncate w-full transition-colors">
                   {item.label}
                 </span>
               </Link>

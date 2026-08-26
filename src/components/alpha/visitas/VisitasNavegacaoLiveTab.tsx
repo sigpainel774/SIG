@@ -480,10 +480,10 @@ export default function VisitasNavegacaoLiveTab({
             size="sm"
             variant="outline"
             onClick={() => setIsConfigOpen(true)}
-            className="h-9 text-xs font-semibold gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white cursor-pointer"
+            className="h-9 text-xs font-semibold gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 cursor-pointer shadow-xs"
             title="Configurar Sensibilidade e Anti-Duplicação de Visitas"
           >
-            <Sliders className="w-4 h-4 text-white" />
+            <Sliders className="w-4 h-4 text-blue-600" />
             <span className="hidden sm:inline">Calibrar Visitas</span>
           </Button>
 
@@ -493,13 +493,13 @@ export default function VisitasNavegacaoLiveTab({
             variant="outline"
             onClick={() => setSeguirCarro(!seguirCarro)}
             className={cn(
-              'h-9 text-xs font-bold gap-1.5 rounded-xl border',
+              'h-9 text-xs font-bold gap-1.5 rounded-xl border cursor-pointer',
               seguirCarro
-                ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                : 'text-muted-foreground'
+                ? 'bg-blue-50 border-blue-200 text-blue-700'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
             )}
           >
-            <Crosshair className={cn('w-4 h-4', seguirCarro && 'animate-spin')} />
+            <Crosshair className={cn('w-4 h-4', seguirCarro ? 'text-blue-600 animate-spin' : 'text-slate-500')} />
             {seguirCarro ? 'Seguindo GPS' : 'Câmera Livre'}
           </Button>
         </div>

@@ -123,10 +123,10 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0 text-left">
-                    <h4 className="text-sm font-semibold text-sidebar-foreground truncate group-hover:text-sidebar-accent-foreground transition-colors">
+                    <h4 className="text-sm font-semibold text-slate-800 truncate group-hover:text-sidebar-primary transition-colors">
                       {act.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground truncate">{act.subtitle}</p>
+                    <p className="text-xs text-slate-500 truncate">{act.subtitle}</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold text-sidebar-accent-foreground bg-sidebar-accent px-2 py-0.5 rounded-md border border-sidebar-border shrink-0 ml-2">

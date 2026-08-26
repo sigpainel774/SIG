@@ -56,12 +56,12 @@ export function VisitasOfflineSyncBanner() {
       await checarFila();
       
       if (res.sincronizados > 0) {
-        toast.success(`${res.sincronizados} rota(s)/registro(s) sincronizado(s) com sucesso com o servidor!`);
+        toast.success(`${res.sincronizados} registro(s) sincronizado(s) com o servidor com sucesso!`);
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('sig_visitas_dados_atualizados'));
         }
       } else if (res.erros > 0) {
-        toast.error(`Falha ao sincronizar ${res.erros} item(ns). Verifique sua conexão e tente novamente.`);
+        toast.error(`Falha ao sincronizar ${res.erros} item(ns). Verifique se os dados estão completos e tente novamente.`);
       } else {
         toast.info('Tudo atualizado! Nenhuma alteração pendente para sincronizar.');
       }
@@ -77,23 +77,23 @@ export function VisitasOfflineSyncBanner() {
   }
 
   return (
-    <div className="bg-card/90 backdrop-blur-md border border-border px-4 py-2.5 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+    <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
       <div className="flex items-center gap-2.5 text-xs">
         {isOnline ? (
-          <span className="flex items-center gap-1.5 font-semibold text-emerald-400">
-            <Wifi className="w-4 h-4 text-emerald-400" />
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+            <Wifi className="w-4 h-4 text-emerald-600" />
             Online
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 font-semibold text-amber-400">
-            <WifiOff className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span className="flex items-center gap-1.5 font-semibold text-amber-600">
+            <WifiOff className="w-4 h-4 text-amber-600 animate-pulse" />
             Modo Offline Ativo (Operando localmente)
           </span>
         )}
 
         {itensPendentes > 0 && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-bold text-[11px]">
-            <AlertCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[11px]">
+            <AlertCircle className="w-3 h-3 text-blue-600" />
             {itensPendentes} item(ns) pendente(s) de envio
           </span>
         )}
@@ -102,10 +102,9 @@ export function VisitasOfflineSyncBanner() {
       {isOnline && itensPendentes > 0 && (
         <Button
           size="sm"
-          variant="outline"
           onClick={handleSincronizar}
           disabled={sincronizando}
-          className="h-7 text-xs gap-1.5 border-blue-500/40 text-blue-300 hover:bg-blue-950/40"
+          className="h-7 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs"
         >
           <RefreshCw className={`w-3 h-3 ${sincronizando ? 'animate-spin' : ''}`} />
           Sincronizar Agora

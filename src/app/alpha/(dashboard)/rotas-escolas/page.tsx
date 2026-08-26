@@ -163,7 +163,7 @@ export default function AlphaRotasEscolasPage() {
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'roteirizador'
                   ? 'bg-sidebar-primary text-white shadow-xs'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
               }`}
             >
               <Compass className="w-4 h-4" />
@@ -175,7 +175,7 @@ export default function AlphaRotasEscolasPage() {
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'navegacao_livre'
                   ? 'bg-sidebar-primary text-white shadow-xs'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
               }`}
             >
               <Navigation className="w-4 h-4" />
@@ -187,7 +187,7 @@ export default function AlphaRotasEscolasPage() {
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'historico'
                   ? 'bg-sidebar-primary text-white shadow-xs'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
               }`}
             >
               <History className="w-4 h-4" />
@@ -199,11 +199,11 @@ export default function AlphaRotasEscolasPage() {
             type="button"
             onClick={carregarEscolas}
             disabled={carregando}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-sidebar-foreground bg-white border border-sidebar-border rounded-xl hover:bg-sidebar-accent transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
-                carregando ? 'animate-spin text-sidebar-primary' : ''
+                carregando ? 'animate-spin text-sidebar-primary' : 'text-slate-600'
               }`}
             />
             Atualizar

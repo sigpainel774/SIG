@@ -817,144 +817,57 @@ export default function VisitasPage() {
           <button
             type="button"
             onClick={() => setModalConfigAberto(true)}
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
             title="Configurar tempo de parada e tolerância anti-duplicação de visitas"
           >
             <Sliders className="w-3.5 h-3.5 text-sidebar-primary" />
             <span>Calibrar Visitas</span>
           </button>
 
-          <div className="px-3 py-1.5 rounded-xl bg-white border border-sidebar-border flex items-center gap-2 shadow-xs">
+          <div className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 flex items-center gap-2 shadow-xs text-slate-800">
             <Pentagon className="w-4 h-4 text-sidebar-primary" />
-            <span className="text-muted-foreground">Áreas:</span>
-            <strong className="text-sidebar-foreground font-mono">{areas.filter((a) => !a.deleted_at).length}</strong>
+            <span className="text-slate-500">Áreas:</span>
+            <strong className="text-slate-900 font-mono">{areas.filter((a) => !a.deleted_at).length}</strong>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-white border border-sidebar-border flex items-center gap-2 shadow-xs">
+          <div className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 flex items-center gap-2 shadow-xs text-slate-800">
             <MapPin className="w-4 h-4 text-rose-500" />
-            <span className="text-muted-foreground">Pins:</span>
-            <strong className="text-sidebar-foreground font-mono">{pontos.filter((p) => !p.deleted_at).length}</strong>
+            <span className="text-slate-500">Pins:</span>
+            <strong className="text-slate-900 font-mono">{pontos.filter((p) => !p.deleted_at).length}</strong>
           </div>
         </div>
       </div>
 
       {/* ── Navegação por Abas Modernas ── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-sidebar-border scrollbar-none">
-        <button
-          type="button"
-          onClick={() => setActiveTab('mapa')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'mapa'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <MapIcon className="w-4 h-4" />
-          Mapa Interativo
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('areas')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'areas'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Pentagon className="w-4 h-4" />
-          Áreas Delimitadas ({areas.filter((a) => !a.deleted_at).length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('pontos')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'pontos'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <MapPin className="w-4 h-4" />
-          Pontos / Pins ({pontos.filter((p) => !p.deleted_at).length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('roteiros')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'roteiros'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          Day Planner ({roteiros.filter((r) => !r.deleted_at).length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('rastreamento')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'rastreamento'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Navigation className="w-4 h-4" />
-          Rastreamento GPS
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('historico')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'historico'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Histórico ({trajetos.length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('veiculos')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'veiculos'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Car className="w-4 h-4" />
-          Veículos ({veiculos.filter((v) => !v.deleted_at).length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('geopdf')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'geopdf'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          GeoPDF ({mapasGeoPdf.filter((m) => !m.deleted_at).length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('exportar')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'exportar'
-              ? 'bg-sidebar-primary text-white shadow-xs'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent'
-          }`}
-        >
-          <Download className="w-4 h-4" />
-          Exportar
-        </button>
+        {[
+          { id: 'mapa', label: 'Mapa Interativo', icon: MapIcon },
+          { id: 'areas', label: `Áreas Delimitadas (${areas.filter((a) => !a.deleted_at).length})`, icon: Pentagon },
+          { id: 'pontos', label: `Pontos / Pins (${pontos.filter((p) => !p.deleted_at).length})`, icon: MapPin },
+          { id: 'roteiros', label: `Day Planner (${roteiros.filter((r) => !r.deleted_at).length})`, icon: Calendar },
+          { id: 'rastreamento', label: 'Rastreamento GPS', icon: Navigation },
+          { id: 'historico', label: `Histórico (${trajetos.length})`, icon: Clock },
+          { id: 'veiculos', label: `Veículos (${veiculos.filter((v) => !v.deleted_at).length})`, icon: Car },
+          { id: 'geopdf', label: `GeoPDF (${mapasGeoPdf.filter((m) => !m.deleted_at).length})`, icon: FileText },
+          { id: 'exportar', label: 'Exportar', icon: Download },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isSelected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                isSelected
+                  ? 'bg-sidebar-primary text-white shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Conteúdo das Abas ── */}

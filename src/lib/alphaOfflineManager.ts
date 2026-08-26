@@ -70,10 +70,11 @@ function openAlphaDB(): Promise<IDBDatabase> {
 /**
  * Sanitiza recursivamente strings vazias ("") em null para evitar erros de tipagem UUID no Postgres
  */
-function sanitizarPayload(payload: Record<string, any>): Record<string, any> {
+export function sanitizarPayload(payload: Record<string, any>): Record<string, any> {
+  if (!payload || typeof payload !== 'object') return payload
   const result: Record<string, any> = {}
   for (const [key, value] of Object.entries(payload)) {
-    if (value === '') {
+    if (value === '' || value === undefined) {
       result[key] = null
     } else if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
       result[key] = sanitizarPayload(value)
@@ -82,6 +83,51 @@ function sanitizarPayload(payload: Record<string, any>): Record<string, any> {
     }
   }
   return result
+}
+
+/**
+ * Limpa campos virtuais do frontend e valida tipos obrigatórios antes de persistir no Supabase
+ */
+export function limparPayloadParaTabela(tabela: string, rawPayload: Record<string, any>): Record<string, any> {
+  const p = sanitizarPayload(rawPayload || {})
+
+  if (tabela === 'visitas_pontos') {
+    delete p.fotos // Fotos são persistidas em visitas_fotos
+    if (p.area_id === 'nenhuma' || p.area_id === '') p.area_id = null
+    if (p.latitude !== undefined && p.latitude !== null) p.latitude = Number(p.latitude)
+    if (p.longitude !== undefined && p.longitude !== null) p.longitude = Number(p.longitude)
+    if (!p.status) p.status = 'pendente'
+  } else if (tabela === 'visitas_areas') {
+    if (p.escola_id === 'nenhuma' || p.escola_id === '') p.escola_id = null
+    if (p.square_meters !== undefined && p.square_meters !== null) p.square_meters = Number(p.square_meters)
+    if (p.hectares !== undefined && p.hectares !== null) p.hectares = Number(p.hectares)
+  } else if (tabela === 'visitas_roteiros') {
+    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '') p.veiculo_id = null
+    if (Array.isArray(p.area_ids)) {
+      p.area_ids = p.area_ids.filter((id: any) => id && typeof id === 'string' && id.trim() !== '' && id !== 'nenhuma')
+    } else {
+      p.area_ids = []
+    }
+  } else if (tabela === 'visitas_trajetos') {
+    if (p.area_id === 'nenhuma' || p.area_id === '') p.area_id = null
+    if (p.roteiro_id === 'nenhum' || p.roteiro_id === '') p.roteiro_id = null
+    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '') p.veiculo_id = null
+    if (!p.modo) p.modo = 'driving'
+    if (p.distance_meters !== undefined && p.distance_meters !== null) p.distance_meters = Number(p.distance_meters)
+    if (p.moving_seconds !== undefined && p.moving_seconds !== null) p.moving_seconds = Number(p.moving_seconds)
+    if (p.visit_seconds !== undefined && p.visit_seconds !== null) p.visit_seconds = Number(p.visit_seconds)
+    if (!p.posicoes) p.posicoes = []
+    if (!p.visitas_registradas) p.visitas_registradas = []
+  } else if (tabela === 'visitas_veiculos') {
+    if (p.placa === '') p.placa = null
+    if (p.motor === '') p.motor = null
+    if (p.consumo_km_l !== undefined && p.consumo_km_l !== null) p.consumo_km_l = Number(p.consumo_km_l) || 10
+    if (p.preco_litro !== undefined && p.preco_litro !== null) p.preco_litro = Number(p.preco_litro) || 6
+    if (p.ativo === undefined || p.ativo === null) p.ativo = true
+    if (!p.tipo_combustivel) p.tipo_combustivel = 'gasolina'
+  }
+
+  return p
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -302,25 +348,35 @@ export async function sincronizarFilaAlphaGlobal(
 
       try {
         let opError = null
+        const payloadLimpo = limparPayloadParaTabela(item.tabela, item.payload)
 
         if (item.acao === 'INSERT' || item.acao === 'UPSERT') {
           // Preferir upsert com onConflict no ID para evitar erros de duplicidade
           const { error } = await supabase
             .from(item.tabela)
-            .upsert(item.payload, { onConflict: 'id' })
+            .upsert(payloadLimpo, { onConflict: 'id' })
           opError = error
         } else if (item.acao === 'UPDATE') {
           const { error } = await supabase
             .from(item.tabela)
-            .update(item.payload)
+            .update(payloadLimpo)
             .eq('id', item.id)
           opError = error
         } else if (item.acao === 'DELETE') {
-          const { error } = await supabase
+          // Tenta soft-delete primeiro se tabela tiver deleted_at
+          const { error: softError } = await supabase
             .from(item.tabela)
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .eq('id', item.id)
-          opError = error
+          
+          if (softError) {
+            // Fallback para hard delete
+            const { error: hardError } = await supabase
+              .from(item.tabela)
+              .delete()
+              .eq('id', item.id)
+            opError = hardError
+          }
         }
 
         if (opError) {

@@ -41,7 +41,7 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
   const vinculos = perfil.vinculos
 
   return (
-    <div className="flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
+    <div className="light flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
       <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
 
       {/* Sidebar Dedicada do Alpha */}

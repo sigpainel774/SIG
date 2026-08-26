@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function AlphaRootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f3f4f7] text-[#1a1a1a] font-sans selection:bg-[#0067c0]/20 selection:text-[#0067c0]">
+    <div className="light min-h-screen bg-[#f3f4f7] text-[#1a1a1a] font-sans selection:bg-[#0067c0]/20 selection:text-[#0067c0]">
       {children}
     </div>
   )

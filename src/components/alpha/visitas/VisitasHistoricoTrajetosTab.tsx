@@ -336,8 +336,8 @@ export function VisitasHistoricoTrajetosTab({
                 </div>
 
                 {t.veiculo_id && (
-                  <div className="text-xs text-slate-300 flex items-center gap-1.5">
-                    <Car className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="text-xs text-slate-600 flex items-center gap-1.5">
+                    <Car className="w-3.5 h-3.5 text-blue-600" />
                     <span>{veicMap.get(t.veiculo_id) ?? 'Veículo de Campo'}</span>
                   </div>
                 )}
@@ -347,9 +347,8 @@ export function VisitasHistoricoTrajetosTab({
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => handleAbrirDetalhes(t.id, 'replay')}
-                    className="h-8 text-xs font-bold gap-1.5 bg-white/10 hover:bg-white/20 text-white border-white/20 cursor-pointer shadow-xs"
+                    className="h-8 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
                     title="Simular percurso animado com carrinho, velocímetro e relógio"
                   >
                     <Play className="w-3.5 h-3.5 text-white" />
@@ -358,11 +357,11 @@ export function VisitasHistoricoTrajetosTab({
 
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => handleAbrirDetalhes(t.id, 'mapa')}
-                    className="h-8 text-xs font-semibold gap-1.5 text-slate-300 hover:text-white cursor-pointer"
+                    className="h-8 text-xs font-semibold gap-1.5 border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5 text-slate-600" />
                     <span>Mapa</span>
                   </Button>
                 </div>
@@ -398,14 +397,14 @@ export function VisitasHistoricoTrajetosTab({
         ) : trajetoDetalhado ? (
           <div className="space-y-4 pt-2">
             {/* Seletor de visualização */}
-            <div className="flex rounded-xl bg-muted/60 p-1 border border-border">
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
               <button
                 type="button"
                 onClick={() => setAbaDetalhe('replay')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   abaDetalhe === 'replay'
-                    ? 'bg-white text-black shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Play className="w-3.5 h-3.5" />
@@ -416,8 +415,8 @@ export function VisitasHistoricoTrajetosTab({
                 onClick={() => setAbaDetalhe('mapa')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   abaDetalhe === 'mapa'
-                    ? 'bg-white text-black shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <MapIcon className="w-3.5 h-3.5" />
@@ -428,8 +427,8 @@ export function VisitasHistoricoTrajetosTab({
                 onClick={() => setAbaDetalhe('metricas')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   abaDetalhe === 'metricas'
-                    ? 'bg-white text-black shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
