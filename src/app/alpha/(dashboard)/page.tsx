@@ -128,34 +128,34 @@ export default function AlphaDashboardPage() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl md:text-2xl font-black text-sidebar-foreground tracking-tight">
               SIG Alpha Lab
             </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-400 text-[10px] font-bold uppercase tracking-wider">
-              <Zap className="w-3 h-3 fill-violet-400" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-[10px] font-bold uppercase tracking-wider">
+              <Zap className="w-3 h-3 fill-sidebar-primary" />
               Mobile Ready
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Suíte de ferramentas experimentais 100% no navegador (Offline-First)
           </p>
         </div>
 
         {/* Input de Busca com Design de Pílula */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar ferramenta ou módulo..."
-            className="w-full pl-9 pr-9 py-2 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] focus:bg-[#0d162a] border border-white/10 focus:border-violet-500/50 text-xs text-white placeholder:text-slate-400 outline-none transition-all duration-200"
+            className="w-full pl-9 pr-9 py-2 rounded-2xl bg-white focus:bg-white border border-sidebar-border focus:border-sidebar-primary text-xs text-sidebar-foreground placeholder:text-muted-foreground outline-none transition-all duration-200 shadow-xs"
           />
           {busca && (
             <button
               type="button"
               onClick={() => setBusca('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-sidebar-foreground p-0.5"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -163,22 +163,22 @@ export default function AlphaDashboardPage() {
         </div>
       </div>
 
-      {/* ── 2. Hero Banner Dinâmico (Inspirado no Mockup Eventify) ── */}
-      <div className="relative overflow-hidden rounded-[28px] md:rounded-3xl bg-gradient-to-br from-violet-950 via-[#0c152c] to-[#080d1b] border border-violet-700/30 p-6 md:p-8 shadow-2xl shadow-black/60">
-        {/* Efeitos de Iluminação Cósmica */}
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+      {/* ── 2. Hero Banner Dinâmico ── */}
+      <div className="relative overflow-hidden rounded-[28px] md:rounded-3xl bg-gradient-to-br from-white via-sidebar-accent/30 to-white border border-sidebar-border p-6 md:p-8 shadow-xs">
+        {/* Efeitos de Iluminação Suave */}
+        <div className="absolute -right-12 -top-12 w-64 h-64 bg-sidebar-accent/60 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-blue-50/60 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2.5 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-200 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-semibold backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-sidebar-primary" />
               Laboratório de Campo &amp; Inteligência Geográfica
             </div>
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-white leading-tight">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-sidebar-foreground leading-tight">
               Mapeamento Poligonal &amp; Telemetria GPS em Tempo Real
             </h2>
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
               Desenhe perímetros de atendimento, capture pontos georreferenciados com fotos, calibre mapas GeoPDF e navegue mesmo sem sinal de internet.
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function AlphaDashboardPage() {
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <Link
               href="/alpha/visitas"
-              className="px-5 py-3 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs md:text-sm font-bold shadow-lg shadow-violet-600/40 hover:shadow-violet-600/60 transition-all duration-200 flex items-center gap-2 active:scale-95"
+              className="px-5 py-3 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 text-white text-xs md:text-sm font-bold shadow-md shadow-sidebar-primary/30 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer"
             >
               <MapPinned className="w-4 h-4" />
               <span>Iniciar Visitas.</span>
@@ -199,11 +199,11 @@ export default function AlphaDashboardPage() {
       {/* ── 3. Grade de Ações Rápidas (Squircle Grid 4 Colunas no Mobile) ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Flame className="w-3.5 h-3.5 text-violet-400" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Flame className="w-3.5 h-3.5 text-sidebar-primary" />
             Acesso Rápido às Ferramentas
           </h3>
-          <span className="text-[11px] text-slate-500">1 Toque</span>
+          <span className="text-[11px] text-muted-foreground">1 Toque</span>
         </div>
 
         <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-2.5 sm:gap-3">
@@ -213,17 +213,17 @@ export default function AlphaDashboardPage() {
               <Link
                 key={idx}
                 href={item.href}
-                className="group flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-2xl bg-[#0e172e]/80 hover:bg-[#152347] border border-blue-900/30 hover:border-violet-500/40 transition-all duration-200 text-center active:scale-95 shadow-md shadow-black/20 hover:shadow-violet-900/20"
+                className="group flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-sidebar-accent/50 border border-sidebar-border hover:border-sidebar-primary/40 transition-all duration-200 text-center active:scale-95 shadow-xs"
               >
                 <div
                   className={cn(
-                    'w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr flex items-center justify-center text-white shadow-sm shadow-black/40 group-hover:scale-110 transition-transform duration-200',
+                    'w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr flex items-center justify-center text-white shadow-xs group-hover:scale-110 transition-transform duration-200',
                     item.color
                   )}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] sm:text-xs font-semibold text-slate-300 group-hover:text-white mt-2 truncate w-full">
+                <span className="text-[11px] sm:text-xs font-semibold text-sidebar-foreground group-hover:text-sidebar-accent-foreground mt-2 truncate w-full">
                   {item.label}
                 </span>
               </Link>
@@ -234,17 +234,17 @@ export default function AlphaDashboardPage() {
 
       {/* ── 4. Filtro por Abas em Pílula (Segmented Control) ── */}
       <div className="space-y-4" id="catalogo">
-        <div className="flex items-center justify-between border-b border-blue-900/30 pb-3">
+        <div className="flex items-center justify-between border-b border-sidebar-border pb-3">
           <div>
-            <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-violet-400" />
+            <h3 className="text-base md:text-lg font-bold text-sidebar-foreground flex items-center gap-2">
+              <Layers className="w-4 h-4 text-sidebar-primary" />
               Catálogo Completo do Ecossistema
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Navegue pelas suítes modulares disponíveis no laboratório.
             </p>
           </div>
-          <span className="text-xs font-semibold text-violet-300 bg-violet-950/60 px-2.5 py-1 rounded-lg border border-violet-800/40 shrink-0">
+          <span className="text-xs font-semibold text-sidebar-accent-foreground bg-sidebar-accent px-2.5 py-1 rounded-lg border border-sidebar-border shrink-0">
             {funcoesFiltradas.length} ativa(s)
           </span>
         </div>
@@ -265,10 +265,10 @@ export default function AlphaDashboardPage() {
                 type="button"
                 onClick={() => setCategoriaAtiva(tab.id as CategoriaFiltro)}
                 className={cn(
-                  'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5',
+                  'px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5',
                   isSelected
-                    ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30 scale-105'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/5'
+                    ? 'bg-sidebar-primary text-white shadow-xs'
+                    : 'bg-white hover:bg-sidebar-accent/60 text-sidebar-foreground border border-sidebar-border'
                 )}
               >
                 <span>{tab.label}</span>
@@ -276,7 +276,7 @@ export default function AlphaDashboardPage() {
                   <span
                     className={cn(
                       'text-[10px] px-1.5 py-0.2 rounded-full',
-                      isSelected ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
+                      isSelected ? 'bg-white/20 text-white' : 'bg-sidebar-accent text-sidebar-accent-foreground'
                     )}
                   >
                     {tab.count}
@@ -289,15 +289,15 @@ export default function AlphaDashboardPage() {
 
         {/* ── 5. Listagem de Cards de Módulos (Design Horizontal Moderno) ── */}
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-sm text-slate-400 gap-2.5">
-            <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground gap-2.5">
+            <Loader2 className="w-5 h-5 animate-spin text-sidebar-primary" />
             Carregando suíte modular do Alpha...
           </div>
         ) : funcoesFiltradas.length === 0 ? (
-          <div className="p-10 text-center border border-dashed border-blue-900/40 rounded-3xl bg-blue-950/10 space-y-3">
-            <Layers className="w-10 h-10 text-slate-500 mx-auto" />
-            <p className="text-sm font-semibold text-white">Nenhum módulo encontrado</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <div className="p-10 text-center border border-dashed border-sidebar-border rounded-3xl bg-white space-y-3">
+            <Layers className="w-10 h-10 text-muted-foreground mx-auto" />
+            <p className="text-sm font-semibold text-sidebar-foreground">Nenhum módulo encontrado</p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               Tente buscar por outro termo ou selecione uma categoria diferente no menu acima.
             </p>
             {busca && (
@@ -307,7 +307,7 @@ export default function AlphaDashboardPage() {
                   setBusca('')
                   setCategoriaAtiva('todos')
                 }}
-                className="px-4 py-1.5 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 text-xs font-bold hover:bg-violet-600/30 transition-colors"
+                className="px-4 py-1.5 rounded-xl bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border text-xs font-bold hover:bg-sidebar-accent/80 transition-colors"
               >
                 Limpar Filtros
               </button>
@@ -319,34 +319,34 @@ export default function AlphaDashboardPage() {
               <Link
                 key={fn.id}
                 href={fn.rota}
-                className="group relative overflow-hidden rounded-[22px] bg-[#0c152c]/90 hover:bg-[#111e3f] border border-blue-900/30 hover:border-violet-500/50 p-5 transition-all duration-200 flex flex-col justify-between gap-4 shadow-lg shadow-black/30 hover:shadow-violet-900/20 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-[22px] bg-white hover:bg-sidebar-accent/30 border border-sidebar-border hover:border-sidebar-primary/50 p-5 transition-all duration-200 flex flex-col justify-between gap-4 shadow-xs hover:shadow-sm active:scale-[0.99]"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-violet-500/20 transition-all">
-                      <AlphaIcon name={fn.icone} className="w-5 h-5" />
+                    <div className="w-11 h-11 rounded-xl bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground flex items-center justify-center group-hover:scale-105 transition-all">
+                      <AlphaIcon name={fn.icone} className="w-5 h-5 text-sidebar-primary" />
                     </div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-300 bg-violet-950/60 border border-violet-700/40 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-sidebar-accent-foreground bg-sidebar-accent border border-sidebar-border px-2 py-0.5 rounded-md">
                       #{fn.ordem}
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-sm md:text-base text-white group-hover:text-violet-300 transition-colors leading-snug">
+                    <h4 className="font-bold text-sm md:text-base text-sidebar-foreground group-hover:text-sidebar-accent-foreground transition-colors leading-snug">
                       {fn.nome}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                       {fn.descricao || 'Função experimental ativa no ecossistema SIG Alpha.'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-blue-900/30 text-xs font-semibold text-violet-400">
-                  <span className="flex items-center gap-1.5 text-emerald-400 text-[11px]">
+                <div className="flex items-center justify-between pt-3 border-t border-sidebar-border text-xs font-semibold text-sidebar-accent-foreground">
+                  <span className="flex items-center gap-1.5 text-emerald-600 text-[11px]">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     100% Offline
                   </span>
-                  <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-bold">
+                  <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-bold text-sidebar-primary">
                     Abrir Módulo
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>

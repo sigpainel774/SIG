@@ -402,30 +402,30 @@ export default function AlphaImageConverterPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* ── Topo com Navegação & Identificação ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-blue-900/40 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-sidebar-border pb-4">
         <div className="flex items-center gap-3">
           <Link
             href="/alpha"
-            className="p-2 rounded-xl bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-blue-300 transition-colors"
+            className="p-2 rounded-xl bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground transition-colors shadow-xs"
             title="Voltar para a Central Alpha"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2.5">
-              <span className="p-1.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <h1 className="text-xl font-bold text-sidebar-foreground flex items-center gap-2.5">
+              <span className="p-1.5 rounded-xl bg-sidebar-accent text-sidebar-primary border border-sidebar-border">
                 <ArrowLeftRight className="w-5 h-5" />
               </span>
               Conversor de Imagens
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Converta imagens instantaneamente entre WebP, JPG, PNG, AVIF, GIF, BMP, TIFF e ICO.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/40 text-blue-300 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-semibold">
             <Layers className="w-3.5 h-3.5" />
             Matriz Universal de Formatos
           </span>
@@ -433,13 +433,13 @@ export default function AlphaImageConverterPage() {
       </div>
 
       {/* ── Barra de Escolha do Formato Alvo Global ── */}
-      <div className="bg-[#0c1427]/90 rounded-2xl border border-blue-900/40 p-5 shadow-xl space-y-3">
+      <div className="bg-white rounded-2xl border border-sidebar-border p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-300">
-            <Sparkles className="w-4 h-4 text-blue-400" />
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sidebar-foreground">
+            <Sparkles className="w-4 h-4 text-sidebar-primary" />
             Converter Todas as Imagens Para:
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-muted-foreground">
             {items.length > 0 ? `${items.length} imagem(ns) na fila` : 'Selecione o formato desejado'}
           </span>
         </div>
@@ -452,8 +452,8 @@ export default function AlphaImageConverterPage() {
               onClick={() => handleGlobalFormatChange(fmt)}
               className={`py-2 px-3 text-xs font-bold rounded-xl uppercase transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                 globalTargetFormat === fmt
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400 scale-[1.02]'
-                  : 'bg-[#080d1b] text-slate-400 hover:text-white hover:bg-blue-950/50 border border-blue-950'
+                  ? 'bg-sidebar-primary text-white shadow-xs border border-sidebar-primary scale-[1.02]'
+                  : 'bg-sidebar-accent/40 text-sidebar-foreground hover:bg-sidebar-accent border border-sidebar-border'
               }`}
             >
               <span>{fmt === 'jpeg' ? 'JPG' : fmt.toUpperCase()}</span>
@@ -482,8 +482,8 @@ export default function AlphaImageConverterPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
           isDragging
-            ? 'border-blue-400 bg-blue-950/40 scale-[1.01]'
-            : 'border-blue-900/50 hover:border-blue-500/60 bg-[#0c1427]/60 hover:bg-[#0c1427]/90'
+            ? 'border-sidebar-primary bg-sidebar-accent/50 scale-[1.01]'
+            : 'border-sidebar-border hover:border-sidebar-primary/60 bg-white hover:bg-sidebar-accent/20'
         }`}
       >
         <input
@@ -499,15 +499,15 @@ export default function AlphaImageConverterPage() {
           }}
         />
 
-        <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shadow-lg shadow-blue-950">
+        <div className="w-14 h-14 rounded-2xl bg-sidebar-accent border border-sidebar-border text-sidebar-primary flex items-center justify-center shadow-xs">
           <UploadCloud className="w-7 h-7" />
         </div>
 
         <div>
-          <h3 className="text-base font-bold text-white">
+          <h3 className="text-base font-bold text-sidebar-foreground">
             Arraste suas fotos para conversão ou clique para selecionar
           </h3>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Suporta conversão cruzada entre JPG, PNG, WEBP, AVIF, GIF, BMP, TIFF e ICO em lote.
           </p>
         </div>
@@ -515,16 +515,16 @@ export default function AlphaImageConverterPage() {
 
       {/* ── Barra de Ações & Resumo ── */}
       {items.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0c1427] p-4 rounded-2xl border border-blue-900/40">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-sidebar-border shadow-xs">
           <div className="flex items-center gap-4">
             <div>
-              <span className="text-xs text-slate-400 block">Total</span>
-              <span className="text-sm font-bold text-white">{items.length} arquivo(s)</span>
+              <span className="text-xs text-muted-foreground block">Total</span>
+              <span className="text-sm font-bold text-sidebar-foreground">{items.length} arquivo(s)</span>
             </div>
-            <div className="h-7 w-px bg-blue-900/40" />
+            <div className="h-7 w-px bg-sidebar-border" />
             <div>
-              <span className="text-xs text-slate-400 block">Concluídos</span>
-              <span className="text-sm font-bold text-emerald-400">
+              <span className="text-xs text-muted-foreground block">Concluídos</span>
+              <span className="text-sm font-bold text-emerald-600">
                 {doneItems.length} de {items.length}
               </span>
             </div>
@@ -534,7 +534,7 @@ export default function AlphaImageConverterPage() {
             <button
               type="button"
               onClick={handleClearAll}
-              className="px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-white border border-sidebar-border hover:bg-sidebar-accent text-sidebar-foreground text-xs font-semibold transition-colors cursor-pointer shadow-xs"
             >
               Limpar Tudo
             </button>
@@ -542,7 +542,7 @@ export default function AlphaImageConverterPage() {
               type="button"
               disabled={isProcessingAll || items.every((i) => i.status === 'done')}
               onClick={handleProcessAll}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-blue-600/30 cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               {isProcessingAll ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -556,7 +556,7 @@ export default function AlphaImageConverterPage() {
                 type="button"
                 disabled={isZipping}
                 onClick={handleDownloadZip}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
               >
                 {isZipping ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -576,38 +576,38 @@ export default function AlphaImageConverterPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0c1427]/90 rounded-2xl border border-blue-900/40 p-4 transition-all hover:border-blue-700/50 flex flex-col md:flex-row items-center justify-between gap-4"
+              className="bg-white rounded-2xl border border-sidebar-border p-4 transition-all hover:border-sidebar-primary/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4"
             >
               {/* Thumbnail & Nomes */}
               <div className="flex items-center gap-3.5 min-w-0 w-full md:w-auto">
-                <div className="w-16 h-16 rounded-xl bg-[#080d1b] border border-blue-950 overflow-hidden shrink-0 relative flex items-center justify-center">
+                <div className="w-16 h-16 rounded-xl bg-sidebar-accent/40 border border-sidebar-border overflow-hidden shrink-0 relative flex items-center justify-center">
                   <img
                     src={item.convertedUrl || item.originalUrl}
                     alt={item.file.name}
                     className="w-full h-full object-cover"
                   />
                   {item.status === 'done' && (
-                    <span className="absolute bottom-1 right-1 bg-emerald-500 text-black p-0.5 rounded-full shadow-xs">
+                    <span className="absolute bottom-1 right-1 bg-emerald-500 text-white p-0.5 rounded-full shadow-xs">
                       <CheckCircle2 className="w-3 h-3 stroke-[3]" />
                     </span>
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-bold text-white truncate" title={item.file.name}>
+                  <h4 className="text-sm font-bold text-sidebar-foreground truncate" title={item.file.name}>
                     {item.file.name}
                   </h4>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 flex-wrap">
-                    <span className="px-1.5 py-0.5 rounded-sm bg-slate-800 text-slate-300 font-mono text-[10px] uppercase">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                    <span className="px-1.5 py-0.5 rounded-sm bg-sidebar-accent text-sidebar-accent-foreground font-mono text-[10px] uppercase font-bold">
                       {item.originalExt}
                     </span>
-                    <ArrowRight className="w-3 h-3 text-blue-400" />
-                    <span className="px-1.5 py-0.5 rounded-sm bg-blue-600/30 border border-blue-500/40 text-blue-300 font-mono text-[10px] uppercase font-bold">
+                    <ArrowRight className="w-3 h-3 text-sidebar-primary" />
+                    <span className="px-1.5 py-0.5 rounded-sm bg-sidebar-accent border border-sidebar-border text-sidebar-primary font-mono text-[10px] uppercase font-bold">
                       {item.targetFormat}
                     </span>
                     <span>• {formatBytes(item.originalSize)}</span>
                     {item.status === 'done' && item.convertedSize && (
-                      <span className="text-emerald-400 font-bold">
+                      <span className="text-emerald-600 font-bold">
                         ➔ {formatBytes(item.convertedSize)}
                       </span>
                     )}
@@ -630,7 +630,7 @@ export default function AlphaImageConverterPage() {
                         )
                       )
                     }}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#080d1b] border border-blue-900/60 text-xs text-white uppercase font-bold cursor-pointer focus:outline-hidden focus:border-blue-500"
+                    className="px-2.5 py-1.5 rounded-xl bg-white border border-sidebar-border text-xs text-sidebar-foreground uppercase font-bold cursor-pointer focus:outline-hidden focus:border-sidebar-primary"
                   >
                     {(['webp', 'jpeg', 'png', 'avif', 'gif', 'bmp', 'tiff', 'ico'] as const).map((fmt) => (
                       <option key={fmt} value={fmt}>
@@ -644,7 +644,7 @@ export default function AlphaImageConverterPage() {
                   <button
                     type="button"
                     onClick={() => processItem(item.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/80 border border-sidebar-border text-sidebar-accent-foreground text-xs font-bold transition-colors cursor-pointer"
                   >
                     <Zap className="w-3 h-3" />
                     Converter
@@ -652,14 +652,14 @@ export default function AlphaImageConverterPage() {
                 )}
 
                 {item.status === 'processing' && (
-                  <span className="flex items-center gap-1.5 text-xs text-blue-400 font-semibold px-3 py-1.5 rounded-xl bg-blue-950/60 border border-blue-900/40">
+                  <span className="flex items-center gap-1.5 text-xs text-sidebar-primary font-semibold px-3 py-1.5 rounded-xl bg-sidebar-accent border border-sidebar-border">
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Convertendo...
                   </span>
                 )}
 
                 {item.status === 'error' && (
-                  <span className="flex items-center gap-1.5 text-xs text-rose-400 font-semibold px-2.5 py-1 rounded-xl bg-rose-950/40 border border-rose-900/40">
+                  <span className="flex items-center gap-1.5 text-xs text-destructive font-semibold px-2.5 py-1 rounded-xl bg-red-50 border border-red-200">
                     <AlertCircle className="w-3 h-3" />
                     {item.errorMsg || 'Erro'}
                   </span>
@@ -669,7 +669,7 @@ export default function AlphaImageConverterPage() {
                   <button
                     type="button"
                     onClick={() => downloadSingle(item)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-700/30 cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Baixar
@@ -679,7 +679,7 @@ export default function AlphaImageConverterPage() {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem(item.id)}
-                  className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                   title="Remover"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -691,16 +691,16 @@ export default function AlphaImageConverterPage() {
       )}
 
       {/* ── ESPAÇO PARA BANNER DE ANÚNCIO / ÁREA DE TESTES PUBLICITÁRIOS ── */}
-      <div className="mt-8 pt-6 border-t border-blue-900/30">
-        <div className="relative overflow-hidden rounded-2xl border border-dashed border-blue-900/60 bg-linear-to-r from-blue-950/20 via-slate-900/40 to-blue-950/20 p-5 text-center flex flex-col items-center justify-center gap-2 group hover:border-blue-700/60 transition-colors">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-900/40 border border-blue-800/40 text-[10px] font-extrabold uppercase tracking-widest text-blue-300">
+      <div className="mt-8 pt-6 border-t border-sidebar-border">
+        <div className="relative overflow-hidden rounded-2xl border border-dashed border-sidebar-border bg-sidebar-accent/20 p-5 text-center flex flex-col items-center justify-center gap-2 group hover:border-sidebar-primary/60 transition-colors">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sidebar-accent border border-sidebar-border text-[10px] font-extrabold uppercase tracking-widest text-sidebar-accent-foreground">
             <Info className="w-3 h-3" />
             Espaço Publicitário &amp; Área de Testes
           </div>
-          <p className="text-xs text-slate-400 max-w-lg">
+          <p className="text-xs text-muted-foreground max-w-lg">
             Área reservada para inserção de banners promocionais, comunicados institucionais ou campanhas parceiras (Dimensões flexíveis: 728×90, 300×250 ou responsivo).
           </p>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
             <span>[SIG_ALPHA_AD_SLOT_CONVERTER]</span>
           </div>
         </div>

@@ -129,25 +129,25 @@ export default function AlphaRotasEscolasPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/alpha"
-            className="p-2.5 rounded-xl bg-[#0c1427] border border-blue-900/40 text-slate-300 hover:text-white hover:bg-blue-950/40 transition-colors"
+            className="p-2.5 rounded-xl bg-white border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent transition-colors shadow-xs"
             title="Voltar ao Painel Alpha"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-              <Link href="/alpha" className="hover:text-white transition-colors">
+            <div className="flex items-center gap-2 text-xs text-sidebar-primary mb-1">
+              <Link href="/alpha" className="hover:underline font-semibold transition-colors">
                 Alpha Lab
               </Link>
               <span>/</span>
-              <span className="text-blue-400 font-semibold">
+              <span className="text-muted-foreground font-semibold">
                 Geolocalização e Rotas
               </span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <Route className="w-6 h-6 text-blue-400" />
+            <h1 className="text-2xl font-bold tracking-tight text-sidebar-foreground flex items-center gap-2.5">
+              <Route className="w-6 h-6 text-sidebar-primary" />
               Geolocalização e Rotas de Unidades Escolares
-              <span className="bg-blue-500/15 text-blue-300 border border-blue-400/30 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md">
+              <span className="bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md">
                 ALPHA #1
               </span>
             </h1>
@@ -156,14 +156,14 @@ export default function AlphaRotasEscolasPage() {
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Navegação entre 3 Abas */}
-          <div className="flex items-center bg-[#0c1427] border border-blue-900/50 p-1 rounded-xl shadow-xs">
+          <div className="flex items-center bg-white border border-sidebar-border p-1 rounded-xl shadow-xs">
             <button
               type="button"
               onClick={() => setAbaAtiva('roteirizador')}
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'roteirizador'
-                  ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sidebar-primary text-white shadow-xs'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
               }`}
             >
               <Compass className="w-4 h-4" />
@@ -174,11 +174,11 @@ export default function AlphaRotasEscolasPage() {
               onClick={() => setAbaAtiva('navegacao_livre')}
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'navegacao_livre'
-                  ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sidebar-primary text-white shadow-xs'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
               }`}
             >
-              <Navigation className="w-4 h-4 text-sky-400" />
+              <Navigation className="w-4 h-4" />
               Navegação Livre
             </button>
             <button
@@ -186,8 +186,8 @@ export default function AlphaRotasEscolasPage() {
               onClick={() => setAbaAtiva('historico')}
               className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 abaAtiva === 'historico'
-                  ? 'bg-[#1d63d6] text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sidebar-primary text-white shadow-xs'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
               }`}
             >
               <History className="w-4 h-4" />
@@ -199,11 +199,11 @@ export default function AlphaRotasEscolasPage() {
             type="button"
             onClick={carregarEscolas}
             disabled={carregando}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-[#0c1427] border border-blue-900/50 rounded-xl hover:bg-blue-950/40 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-sidebar-foreground bg-white border border-sidebar-border rounded-xl hover:bg-sidebar-accent transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
-                carregando ? 'animate-spin text-blue-400' : ''
+                carregando ? 'animate-spin text-sidebar-primary' : ''
               }`}
             />
             Atualizar
@@ -215,63 +215,63 @@ export default function AlphaRotasEscolasPage() {
         <>
           {/* Cards de Resumo & Estatísticas Rápidas */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-[#0d162a]/90 border border-blue-900/40 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+            <div className="bg-white border border-sidebar-border p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
                   Escolas Cadastradas
                 </span>
                 <div className="flex items-baseline gap-1.5 flex-wrap">
-                  <span className="text-lg font-bold text-white">{escolasReais.length}</span>
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-400">
+                  <span className="text-lg font-bold text-sidebar-foreground">{escolasReais.length}</span>
+                  <div className="flex items-center gap-1 text-[10px] font-semibold text-sidebar-primary">
                     {semedUnidade && <span>+1 Sede</span>}
                     {unidadesSaude.length > 0 && <span>• {unidadesSaude.length} Saúde/USF</span>}
                     {unidadesTeste.length > 0 && <span>• {unidadesTeste.length} Teste</span>}
                   </div>
                 </div>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <div className="w-9 h-9 rounded-xl bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-primary">
                 <School className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-[#0d162a]/90 border border-blue-900/40 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+            <div className="bg-white border border-sidebar-border p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
                   Com Geolocalização
                 </span>
-                <span className="text-lg font-bold text-emerald-400">
+                <span className="text-lg font-bold text-emerald-600">
                   {escolasComCoords.length}
                 </span>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
                 <MapPin className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-[#0d162a]/90 border border-blue-900/40 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+            <div className="bg-white border border-sidebar-border p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
                   Zona Urbana
                 </span>
-                <span className="text-lg font-bold text-sky-400">
+                <span className="text-lg font-bold text-sidebar-primary">
                   {escolasUrbanas.length}
                 </span>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <div className="w-9 h-9 rounded-xl bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-primary">
                 <Building2 className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-[#0d162a]/90 border border-blue-900/40 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+            <div className="bg-white border border-sidebar-border p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
                   Zona Rural
                 </span>
-                <span className="text-lg font-bold text-amber-400">
+                <span className="text-lg font-bold text-amber-600">
                   {escolasRurais.length}
                 </span>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
                 <Route className="w-4 h-4" />
               </div>
             </div>
@@ -279,9 +279,9 @@ export default function AlphaRotasEscolasPage() {
 
           {/* Componente do Mapa e Otimizador de Rotas */}
           {carregando ? (
-            <div className="w-full h-[580px] rounded-2xl bg-[#0d162a]/80 border border-blue-900/40 flex flex-col items-center justify-center gap-3 text-slate-400 animate-pulse">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-              <span className="text-sm font-semibold text-slate-300">
+            <div className="w-full h-[580px] rounded-2xl bg-white border border-sidebar-border flex flex-col items-center justify-center gap-3 text-muted-foreground animate-pulse shadow-xs">
+              <Loader2 className="w-8 h-8 animate-spin text-sidebar-primary" />
+              <span className="text-sm font-semibold text-sidebar-foreground">
                 Carregando mapa e unidades escolares de Sapeaçu...
               </span>
             </div>

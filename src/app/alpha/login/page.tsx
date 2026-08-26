@@ -155,26 +155,16 @@ export default function AlphaLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#080d1b] text-foreground font-sans relative overflow-hidden select-none">
-      {/* ── Textura de Estrelas / Partículas de Fundo ── */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-40"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.25) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(37, 99, 235, 0.2) 0%, transparent 45%), radial-gradient(#60a5fa 1px, transparent 1px)',
-          backgroundSize: '100% 100%, 100% 100%, 32px 32px',
-        }}
-      />
-
+    <div className="min-h-screen flex flex-col justify-between bg-[#f3f4f7] text-[#1a1a1a] font-sans relative overflow-hidden select-none">
       {/* ── Topo: Badge de Identificação e Status Offline ── */}
       <div className="w-full max-w-5xl mx-auto px-5 pt-5 flex items-center justify-between z-10">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-xs font-bold shadow-xs tracking-wide">
-          <FlaskConical className="w-4 h-4 text-blue-300 stroke-[2.2]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-bold shadow-xs tracking-wide">
+          <FlaskConical className="w-4 h-4 text-sidebar-primary stroke-[2.2]" />
           <span>SIG ALPHA LAB</span>
         </div>
 
         {isOffline && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-800 text-xs font-semibold">
             <WifiOff className="w-3.5 h-3.5" />
             <span>Modo Offline</span>
           </div>
@@ -183,21 +173,21 @@ export default function AlphaLoginPage() {
 
       {/* ── Centro: Card Branco de Login Inspirado no Mockup ── */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 z-10 my-4">
-        <div className="w-full max-w-[430px] bg-white rounded-[28px] sm:rounded-[32px] p-7 sm:p-10 shadow-2xl shadow-black/60 border border-slate-100 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-full max-w-[430px] bg-white rounded-[28px] sm:rounded-[32px] p-7 sm:p-10 shadow-xl border border-sidebar-border space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {/* Cabeçalho do Card */}
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-2">
-              <AlphaLogoGraphic className="w-20 h-20 drop-shadow-sm" />
+              <AlphaLogoGraphic className="w-20 h-20 drop-shadow-xs" />
             </div>
 
-            <h1 className="text-[26px] font-black text-[#0f172a] tracking-tight flex items-center justify-center gap-1.5">
+            <h1 className="text-[26px] font-black text-[#1a1a1a] tracking-tight flex items-center justify-center gap-1.5">
               SIG ALPHA
-              <span className="text-[#2563eb] text-sm font-black tracking-wider uppercase">
+              <span className="text-sidebar-primary text-sm font-black tracking-wider uppercase">
                 LAB
               </span>
             </h1>
 
-            <p className="text-[11px] font-bold text-[#64748b] tracking-wider uppercase mt-1">
+            <p className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase mt-1">
               Ambiente de Prototipagem &amp; Operação
             </p>
           </div>
@@ -206,12 +196,12 @@ export default function AlphaLoginPage() {
           <form onSubmit={handleLogin} className="space-y-4 pt-1" noValidate>
             {/* Campo E-mail */}
             <div className="space-y-1.5 text-left">
-              <label htmlFor="email" className="text-[13px] font-semibold text-[#1e293b] block">
+              <label htmlFor="email" className="text-[13px] font-semibold text-[#1a1a1a] block">
                 E-mail Institucional
               </label>
-              <div className="relative flex items-center bg-[#eef4ff] border border-[#d2e2fd] rounded-2xl focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/20 transition-all overflow-hidden">
-                <div className="pl-3.5 pr-1 text-[#475569] flex items-center justify-center pointer-events-none">
-                  <div className="w-7 h-7 rounded-lg bg-[#dbe8fd] flex items-center justify-center text-[#2563eb]">
+              <div className="relative flex items-center bg-sidebar-accent/40 border border-sidebar-border rounded-2xl focus-within:border-sidebar-primary focus-within:ring-2 focus-within:ring-sidebar-primary/20 transition-all overflow-hidden">
+                <div className="pl-3.5 pr-1 text-sidebar-accent-foreground flex items-center justify-center pointer-events-none">
+                  <div className="w-7 h-7 rounded-lg bg-sidebar-accent flex items-center justify-center text-sidebar-primary">
                     <User className="w-4 h-4" />
                   </div>
                 </div>
@@ -224,19 +214,19 @@ export default function AlphaLoginPage() {
                   required
                   autoComplete="email"
                   disabled={loading}
-                  className="w-full h-12 pl-2.5 pr-4 bg-transparent text-sm text-[#0f172a] placeholder:text-[#94a3b8] font-medium outline-none disabled:opacity-60"
+                  className="w-full h-12 pl-2.5 pr-4 bg-transparent text-sm text-[#1a1a1a] placeholder:text-muted-foreground font-medium outline-none disabled:opacity-60"
                 />
               </div>
             </div>
 
             {/* Campo Senha */}
             <div className="space-y-1.5 text-left">
-              <label htmlFor="password" className="text-[13px] font-semibold text-[#1e293b] block">
+              <label htmlFor="password" className="text-[13px] font-semibold text-[#1a1a1a] block">
                 Senha de Acesso
               </label>
-              <div className="relative flex items-center bg-[#eef4ff] border border-[#d2e2fd] rounded-2xl focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/20 transition-all overflow-hidden">
-                <div className="pl-3.5 pr-1 text-[#475569] flex items-center justify-center pointer-events-none">
-                  <div className="w-7 h-7 rounded-lg bg-[#dbe8fd] flex items-center justify-center text-[#2563eb]">
+              <div className="relative flex items-center bg-sidebar-accent/40 border border-sidebar-border rounded-2xl focus-within:border-sidebar-primary focus-within:ring-2 focus-within:ring-sidebar-primary/20 transition-all overflow-hidden">
+                <div className="pl-3.5 pr-1 text-sidebar-accent-foreground flex items-center justify-center pointer-events-none">
+                  <div className="w-7 h-7 rounded-lg bg-sidebar-accent flex items-center justify-center text-sidebar-primary">
                     <Lock className="w-4 h-4" />
                   </div>
                 </div>
@@ -249,12 +239,12 @@ export default function AlphaLoginPage() {
                   required
                   autoComplete="current-password"
                   disabled={loading}
-                  className="w-full h-12 pl-2.5 pr-10 bg-transparent text-sm text-[#0f172a] placeholder:text-[#94a3b8] font-medium outline-none disabled:opacity-60"
+                  className="w-full h-12 pl-2.5 pr-10 bg-transparent text-sm text-[#1a1a1a] placeholder:text-muted-foreground font-medium outline-none disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#0f172a] transition-colors p-1 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-[#1a1a1a] transition-colors p-1 cursor-pointer"
                   tabIndex={-1}
                   title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                 >
@@ -271,7 +261,7 @@ export default function AlphaLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-13 mt-3 bg-[#1d63d6] hover:bg-[#1652b8] active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm tracking-wide rounded-2xl shadow-lg shadow-[#1d63d6]/30 hover:shadow-[#1d63d6]/40 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed uppercase"
+              className="w-full h-13 mt-3 bg-sidebar-primary hover:bg-sidebar-primary/90 active:scale-[0.99] text-white font-bold text-xs sm:text-sm tracking-wide rounded-2xl shadow-md shadow-sidebar-primary/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed uppercase"
             >
               {loading ? (
                 <>
@@ -288,20 +278,20 @@ export default function AlphaLoginPage() {
           </form>
 
           {/* Link para o Login Institucional Padrão */}
-          <div className="pt-3 border-t border-slate-100 text-center">
+          <div className="pt-3 border-t border-sidebar-border text-center">
             <Link
               href="/login"
-              className="text-xs text-[#64748b] hover:text-[#1d63d6] font-semibold transition-colors inline-flex items-center gap-1.5 group"
+              className="text-xs text-muted-foreground hover:text-sidebar-primary font-semibold transition-colors inline-flex items-center gap-1.5 group"
             >
               <span>Ir para o Login Institucional Padrão</span>
-              <Sparkles className="w-3.5 h-3.5 text-[#2563eb] group-hover:rotate-12 transition-transform" />
+              <Sparkles className="w-3.5 h-3.5 text-sidebar-primary group-hover:rotate-12 transition-transform" />
             </Link>
           </div>
         </div>
       </div>
 
       {/* ── Rodapé: Informações Institucionais ── */}
-      <div className="w-full py-4 text-center text-xs text-slate-500 z-10">
+      <div className="w-full py-4 text-center text-xs text-muted-foreground z-10">
         <p>Secretaria Municipal de Educação &bull; Sapeaçu / BA</p>
       </div>
 

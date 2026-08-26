@@ -114,22 +114,22 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
                 key={index}
                 href={act.href}
                 onClick={onClose}
-                className="group flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-violet-500/40 transition-all duration-200 active:scale-[0.98]"
+                className="group flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-sidebar-accent/50 border border-sidebar-border hover:border-sidebar-primary/40 transition-all duration-200 active:scale-[0.98] shadow-xs"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div
-                    className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${act.color} flex items-center justify-center text-white shrink-0 shadow-sm shadow-black/40 group-hover:scale-105 transition-transform`}
+                    className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${act.color} flex items-center justify-center text-white shrink-0 shadow-xs group-hover:scale-105 transition-transform`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0 text-left">
-                    <h4 className="text-sm font-semibold text-white truncate group-hover:text-violet-300 transition-colors">
+                    <h4 className="text-sm font-semibold text-sidebar-foreground truncate group-hover:text-sidebar-accent-foreground transition-colors">
                       {act.title}
                     </h4>
-                    <p className="text-xs text-slate-400 truncate">{act.subtitle}</p>
+                    <p className="text-xs text-muted-foreground truncate">{act.subtitle}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-violet-300 bg-violet-950/60 px-2 py-0.5 rounded-md border border-violet-700/40 shrink-0 ml-2">
+                <span className="text-[10px] font-bold text-sidebar-accent-foreground bg-sidebar-accent px-2 py-0.5 rounded-md border border-sidebar-border shrink-0 ml-2">
                   {act.badge}
                 </span>
               </Link>
@@ -137,11 +137,11 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
           })}
         </div>
 
-        <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+        <div className="pt-3 border-t border-sidebar-border flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={handleSyncNow}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs font-semibold transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground border border-sidebar-border text-xs font-semibold transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Forçar Sincronização da Fila</span>

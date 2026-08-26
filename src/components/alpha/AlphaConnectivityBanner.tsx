@@ -85,8 +85,8 @@ export function AlphaConnectivityBanner() {
         className={cn(
           'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors shadow-2xs select-none backdrop-blur-md',
           isOnline
-            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-            : 'bg-amber-500/20 text-amber-300 border-amber-400/40 animate-pulse'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : 'bg-amber-50 text-amber-800 border-amber-300 animate-pulse'
         )}
         title={
           isOnline
@@ -96,13 +96,13 @@ export function AlphaConnectivityBanner() {
       >
         {isOnline ? (
           <>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-xs shadow-emerald-500/40" />
             <span className="hidden sm:inline">Online</span>
             <span className="sm:hidden">ON</span>
           </>
         ) : (
           <>
-            <CloudOff className="w-3 h-3 text-amber-300" />
+            <CloudOff className="w-3 h-3 text-amber-700" />
             <span className="hidden sm:inline">Modo Offline (Local)</span>
             <span className="sm:hidden">Offline</span>
           </>
@@ -118,8 +118,8 @@ export function AlphaConnectivityBanner() {
           className={cn(
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs disabled:opacity-60 select-none backdrop-blur-md',
             isOnline
-              ? 'bg-blue-500/20 text-blue-300 border-blue-400/30 hover:bg-blue-500/30'
-              : 'bg-amber-500/15 text-amber-300 border-amber-400/30'
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border hover:bg-sidebar-accent/80'
+              : 'bg-amber-100 text-amber-900 border-amber-300'
           )}
           title="Clique para sincronizar os dados acumulados no aparelho com o banco de dados"
         >

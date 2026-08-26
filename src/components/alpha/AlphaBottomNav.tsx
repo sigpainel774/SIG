@@ -64,7 +64,7 @@ export function AlphaBottomNav() {
         aria-label="Navegação Mobile Alpha"
         className="fixed bottom-3 inset-x-3 z-40 md:hidden pointer-events-auto"
       >
-        <div className="max-w-md mx-auto bg-[#0d162a]/95 backdrop-blur-2xl border border-white/10 rounded-[28px] px-3 py-2 shadow-2xl shadow-black/80 flex items-center justify-between relative">
+        <div className="max-w-md mx-auto bg-white/95 backdrop-blur-2xl border border-sidebar-border rounded-[28px] px-3 py-2 shadow-xl shadow-black/10 flex items-center justify-between relative">
           {/* Lado Esquerdo */}
           <div className="flex items-center gap-1 flex-1 justify-around">
             {navItems.map((item, idx) => {
@@ -76,14 +76,14 @@ export function AlphaBottomNav() {
                   className={cn(
                     'flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 relative group',
                     item.isActive
-                      ? 'text-violet-400 font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'text-sidebar-accent-foreground font-bold'
+                      : 'text-sidebar-foreground/70 hover:text-sidebar-foreground'
                   )}
                 >
-                  <Icon className={cn('w-5 h-5 transition-transform group-active:scale-90', item.isActive && 'scale-110')} />
+                  <Icon className={cn('w-5 h-5 transition-transform group-active:scale-90', item.isActive && 'scale-110 text-sidebar-primary')} />
                   <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
                   {item.isActive && (
-                    <span className="w-4 h-1 bg-violet-500 rounded-full absolute -bottom-1 shadow-xs shadow-violet-400" />
+                    <span className="w-4 h-1 bg-sidebar-primary rounded-full absolute -bottom-1 shadow-xs" />
                   )}
                 </Link>
               )
@@ -96,7 +96,7 @@ export function AlphaBottomNav() {
               type="button"
               onClick={() => setIsQuickActionsOpen(true)}
               aria-label="Ações Rápidas"
-              className="w-13 h-13 rounded-full bg-gradient-to-tr from-violet-600 via-violet-500 to-indigo-500 text-white flex items-center justify-center shadow-lg shadow-violet-600/50 border-4 border-[#080d1b] hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+              className="w-13 h-13 rounded-full bg-sidebar-primary hover:bg-sidebar-primary/90 text-white flex items-center justify-center shadow-lg shadow-sidebar-primary/30 border-4 border-[#f3f4f7] hover:scale-105 active:scale-95 transition-transform cursor-pointer"
             >
               <Plus className="w-6 h-6 stroke-[2.5]" />
             </button>
@@ -112,7 +112,7 @@ export function AlphaBottomNav() {
                     key={idx}
                     type="button"
                     onClick={item.onClick}
-                    className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-rose-400 transition-all duration-200 relative group active:scale-90 cursor-pointer"
+                    className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-sidebar-foreground/70 hover:text-destructive transition-all duration-200 relative group active:scale-90 cursor-pointer"
                   >
                     <Icon className="w-5 h-5" />
                     <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
@@ -123,7 +123,7 @@ export function AlphaBottomNav() {
                 <Link
                   key={idx}
                   href={item.href}
-                  className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-200 relative group active:scale-90"
+                  className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-sidebar-foreground/70 hover:text-sidebar-foreground transition-all duration-200 relative group active:scale-90"
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>

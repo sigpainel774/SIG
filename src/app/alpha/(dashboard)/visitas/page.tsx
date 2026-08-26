@@ -781,17 +781,17 @@ export default function VisitasPage() {
       <VisitasOfflineSyncBanner />
 
       {/* ── Cabeçalho do Módulo ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-sidebar-border pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-sidebar-accent border border-sidebar-border text-sidebar-primary flex items-center justify-center shadow-xs">
               <MapPin className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-sidebar-foreground flex items-center gap-2">
                 Visitas.
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                  <Sparkles className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border">
+                  <Sparkles className="w-3 h-3 text-sidebar-primary" />
                   Alpha
                 </span>
               </h1>
@@ -807,45 +807,45 @@ export default function VisitasPage() {
           <button
             type="button"
             onClick={() => setModalDownloadMapaAberto(true)}
-            className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 text-white font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
             title="Baixar quadrículas do mapa para navegar sem internet em campo"
           >
-            <Download className="w-3.5 h-3.5 text-blue-400" />
+            <Download className="w-3.5 h-3.5" />
             <span>Baixar Mapa Offline</span>
           </button>
 
           <button
             type="button"
             onClick={() => setModalConfigAberto(true)}
-            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
             title="Configurar tempo de parada e tolerância anti-duplicação de visitas"
           >
-            <Sliders className="w-3.5 h-3.5 text-white" />
+            <Sliders className="w-3.5 h-3.5 text-sidebar-primary" />
             <span>Calibrar Visitas</span>
           </button>
 
-          <div className="px-3 py-1.5 rounded-xl bg-card border border-border flex items-center gap-2">
-            <Pentagon className="w-4 h-4 text-blue-400" />
+          <div className="px-3 py-1.5 rounded-xl bg-white border border-sidebar-border flex items-center gap-2 shadow-xs">
+            <Pentagon className="w-4 h-4 text-sidebar-primary" />
             <span className="text-muted-foreground">Áreas:</span>
-            <strong className="text-foreground font-mono">{areas.filter((a) => !a.deleted_at).length}</strong>
+            <strong className="text-sidebar-foreground font-mono">{areas.filter((a) => !a.deleted_at).length}</strong>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-card border border-border flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-rose-400" />
+          <div className="px-3 py-1.5 rounded-xl bg-white border border-sidebar-border flex items-center gap-2 shadow-xs">
+            <MapPin className="w-4 h-4 text-rose-500" />
             <span className="text-muted-foreground">Pins:</span>
-            <strong className="text-foreground font-mono">{pontos.filter((p) => !p.deleted_at).length}</strong>
+            <strong className="text-sidebar-foreground font-mono">{pontos.filter((p) => !p.deleted_at).length}</strong>
           </div>
         </div>
       </div>
 
       {/* ── Navegação por Abas Modernas ── */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border scrollbar-none">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-sidebar-border scrollbar-none">
         <button
           type="button"
           onClick={() => setActiveTab('mapa')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'mapa'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <MapIcon className="w-4 h-4" />
@@ -857,8 +857,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('areas')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'areas'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Pentagon className="w-4 h-4" />
@@ -870,8 +870,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('pontos')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'pontos'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <MapPin className="w-4 h-4" />
@@ -883,8 +883,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('roteiros')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'roteiros'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -896,8 +896,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('rastreamento')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'rastreamento'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Navigation className="w-4 h-4" />
@@ -909,8 +909,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('historico')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'historico'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -922,8 +922,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('veiculos')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'veiculos'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Car className="w-4 h-4" />
@@ -935,8 +935,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('geopdf')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'geopdf'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -948,8 +948,8 @@ export default function VisitasPage() {
           onClick={() => setActiveTab('exportar')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'exportar'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              ? 'bg-sidebar-primary text-white shadow-xs'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
           }`}
         >
           <Download className="w-4 h-4" />

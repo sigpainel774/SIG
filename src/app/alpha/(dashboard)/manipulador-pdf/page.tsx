@@ -103,34 +103,34 @@ export default function ManipuladorPdfPage() {
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
+          <h1 className="text-2xl font-bold text-sidebar-foreground flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sidebar-accent flex items-center justify-center border border-sidebar-border text-sidebar-primary shadow-xs">
               <Files className="w-5 h-5" />
             </div>
             Mesclador de PDFs
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Junte múltiplos arquivos PDF em um único documento contínuo de forma instantânea.
           </p>
         </div>
       </div>
 
-      <div className="bg-[#0f172a]/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-white border border-sidebar-border rounded-2xl p-6 shadow-xs">
         <div className="space-y-6">
           {pdfFiles.length === 0 ? (
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-800/30 hover:bg-slate-800/60 hover:border-indigo-500/50 transition-colors">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-slate-400">
-                <UploadCloud className="w-10 h-10 mb-3 text-indigo-400" />
-                <p className="mb-2 text-sm font-semibold">Selecione 2 ou mais arquivos PDF</p>
+            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-sidebar-border border-dashed rounded-xl cursor-pointer bg-sidebar-accent/20 hover:bg-sidebar-accent/40 hover:border-sidebar-primary/50 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
+                <UploadCloud className="w-10 h-10 mb-3 text-sidebar-primary" />
+                <p className="mb-2 text-sm font-semibold text-sidebar-foreground">Selecione 2 ou mais arquivos PDF</p>
                 <p className="text-xs">O processamento é feito localmente no seu computador</p>
               </div>
               <input type="file" multiple className="hidden" accept="application/pdf" onChange={handlePdfsUpload} />
             </label>
           ) : (
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-4 items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <label className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg cursor-pointer flex items-center gap-2 transition-colors">
-                  <Plus className="w-4 h-4" />
+              <div className="flex flex-wrap gap-4 items-center justify-between bg-sidebar-accent/20 p-4 rounded-xl border border-sidebar-border">
+                <label className="px-4 py-2 bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground text-sm font-medium rounded-xl cursor-pointer flex items-center gap-2 transition-colors shadow-xs">
+                  <Plus className="w-4 h-4 text-sidebar-primary" />
                   Adicionar mais PDFs
                   <input type="file" multiple className="hidden" accept="application/pdf" onChange={handlePdfsUpload} />
                 </label>
@@ -139,7 +139,7 @@ export default function ManipuladorPdfPage() {
                   <a
                     href={mergedPdf.url}
                     download="documentos_mesclados.pdf"
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl flex items-center gap-2 transition-colors shadow-xs"
                   >
                     <Download className="w-4 h-4" />
                     Baixar PDF Mesclado
@@ -148,7 +148,7 @@ export default function ManipuladorPdfPage() {
                   <button
                     onClick={handleMergePdfs}
                     disabled={isProcessing || pdfFiles.length < 2}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    className="px-5 py-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white text-sm font-medium rounded-xl flex items-center gap-2 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
                   >
                     {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Files className="w-4 h-4" />}
                     {isProcessing ? 'Mesclando...' : 'Mesclar Arquivos'}
@@ -158,34 +158,34 @@ export default function ManipuladorPdfPage() {
 
               {isProcessing && (
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-slate-400 font-medium">
+                  <div className="flex justify-between text-xs text-muted-foreground font-medium">
                     <span>Processando {pdfFiles.length} arquivos...</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+                  <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-sidebar-primary transition-all duration-300" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               )}
 
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {pdfFiles.map((file, i) => (
-                  <div key={`${file.name}-${i}`} className="flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded-xl group hover:border-indigo-500/30 transition-colors">
+                  <div key={`${file.name}-${i}`} className="flex items-center justify-between p-3 bg-white border border-sidebar-border rounded-xl group hover:border-sidebar-primary/40 transition-colors shadow-xs">
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-500/20">
+                      <div className="w-8 h-8 rounded-lg bg-sidebar-accent text-sidebar-primary flex items-center justify-center font-bold text-xs border border-sidebar-border">
                         {i + 1}
                       </div>
                       <div className="max-w-[200px] sm:max-w-md truncate">
-                        <p className="text-sm font-semibold text-white truncate" title={file.name}>{file.name}</p>
-                        <p className="text-xs text-slate-400">{formatBytes(file.size)}</p>
+                        <p className="text-sm font-semibold text-sidebar-foreground truncate" title={file.name}>{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-1 opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => movePdf(i, 'up')} 
                         disabled={i === 0 || isProcessing}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md disabled:opacity-30 transition-colors"
+                        className="p-1.5 text-sidebar-foreground hover:bg-sidebar-accent rounded-md disabled:opacity-30 transition-colors cursor-pointer"
                         title="Mover para Cima"
                       >
                         <ArrowDownUp className="w-4 h-4 rotate-180" />
@@ -193,16 +193,16 @@ export default function ManipuladorPdfPage() {
                       <button 
                         onClick={() => movePdf(i, 'down')} 
                         disabled={i === pdfFiles.length - 1 || isProcessing}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md disabled:opacity-30 transition-colors"
+                        className="p-1.5 text-sidebar-foreground hover:bg-sidebar-accent rounded-md disabled:opacity-30 transition-colors cursor-pointer"
                         title="Mover para Baixo"
                       >
                         <ArrowDownUp className="w-4 h-4" />
                       </button>
-                      <div className="w-px h-6 bg-slate-700 mx-1"></div>
+                      <div className="w-px h-6 bg-sidebar-border mx-1"></div>
                       <button 
                         onClick={() => removePdf(i)} 
                         disabled={isProcessing}
-                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md disabled:opacity-30 transition-colors"
+                        className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md disabled:opacity-30 transition-colors cursor-pointer"
                         title="Remover arquivo"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function ManipuladorPdfPage() {
                 ))}
               </div>
               
-              <div className="text-xs text-center text-slate-500 pt-4">
+              <div className="text-xs text-center text-muted-foreground pt-4">
                 Dica: A ordem dos arquivos na lista será a ordem exata das páginas no PDF gerado.
               </div>
             </div>

@@ -452,44 +452,44 @@ export default function AlphaImageCompressorPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* ── Topo com Navegação & Identificação ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-blue-900/40 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-sidebar-border pb-4">
         <div className="flex items-center gap-3">
           <Link
             href="/alpha"
-            className="p-2 rounded-xl bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/50 text-blue-300 transition-colors"
+            className="p-2 rounded-xl bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground transition-colors shadow-xs"
             title="Voltar para a Central Alpha"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2.5">
-              <span className="p-1.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <h1 className="text-xl font-bold text-sidebar-foreground flex items-center gap-2.5">
+              <span className="p-1.5 rounded-xl bg-sidebar-accent text-sidebar-primary border border-sidebar-border">
                 <FileImage className="w-5 h-5" />
               </span>
               Compressor de Imagens
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Otimize JPG, PNG, WebP e AVIF com prévia imediata e controle granular de qualidade.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-xs font-semibold">
-            <Zap className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+            <Zap className="w-3.5 h-3.5 text-emerald-600" />
             Híbrido: Client &amp; Sharp Engine
           </span>
         </div>
       </div>
 
       {/* ── Painel de Configurações Globais de Compressão ── */}
-      <div className="bg-[#0c1427]/90 rounded-2xl border border-blue-900/40 p-5 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-blue-900/30 pb-3">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-300">
-            <Sliders className="w-4 h-4 text-blue-400" />
+      <div className="bg-white rounded-2xl border border-sidebar-border p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-sidebar-border pb-3">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sidebar-foreground">
+            <Sliders className="w-4 h-4 text-sidebar-primary" />
             Parâmetros Globais de Otimização
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-muted-foreground">
             Aplicar automaticamente a novas imagens adicionadas
           </span>
         </div>
@@ -497,10 +497,10 @@ export default function AlphaImageCompressorPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Seletor de Formato */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">
+            <label className="text-xs font-semibold text-sidebar-foreground block">
               Formato de Saída
             </label>
-            <div className="grid grid-cols-4 gap-1.5 bg-[#080d1b] p-1 rounded-xl border border-blue-950">
+            <div className="grid grid-cols-4 gap-1.5 bg-sidebar-accent/50 p-1 rounded-xl border border-sidebar-border">
               {(['webp', 'jpeg', 'png', 'avif'] as const).map((fmt) => (
                 <button
                   key={fmt}
@@ -508,15 +508,15 @@ export default function AlphaImageCompressorPage() {
                   onClick={() => setGlobalFormat(fmt)}
                   className={`py-1.5 text-xs font-bold rounded-lg uppercase transition-all cursor-pointer ${
                     globalFormat === fmt
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-700/30'
-                      : 'text-slate-400 hover:text-white hover:bg-blue-950/50'
+                      ? 'bg-sidebar-primary text-white shadow-xs'
+                      : 'text-sidebar-foreground hover:bg-white'
                   }`}
                 >
                   {fmt}
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[10px] text-muted-foreground">
               {globalFormat === 'webp'
                 ? '⭐ Recomendado: Máxima compatibilidade e alta taxa de compressão.'
                 : globalFormat === 'avif'
@@ -530,10 +530,10 @@ export default function AlphaImageCompressorPage() {
           {/* Slider de Qualidade */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-sidebar-foreground">
                 Nível de Qualidade
               </label>
-              <span className="text-xs font-bold text-blue-400 bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-900/50">
+              <span className="text-xs font-bold text-sidebar-accent-foreground bg-sidebar-accent px-2 py-0.5 rounded-md border border-sidebar-border">
                 {globalQuality}%
               </span>
             </div>
@@ -544,18 +544,18 @@ export default function AlphaImageCompressorPage() {
               step="1"
               value={globalQuality}
               onChange={(e) => setGlobalQuality(Number(e.target.value))}
-              className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
+              className="w-full accent-[#0067c0] cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none"
             />
-            <div className="flex justify-between text-[10px] text-slate-400">
+            <div className="flex justify-between text-[10px] text-muted-foreground">
               <span>Mais Leve (10%)</span>
-              <span className="text-emerald-400 font-semibold">Equilibrado (80%)</span>
+              <span className="text-emerald-600 font-semibold">Equilibrado (80%)</span>
               <span>Visual Perfeito (100%)</span>
             </div>
           </div>
 
           {/* Dimensões Opcionais */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">
+            <label className="text-xs font-semibold text-sidebar-foreground block">
               Redimensionamento Máximo (Opcional)
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -565,7 +565,7 @@ export default function AlphaImageCompressorPage() {
                   placeholder="Largura px"
                   value={maxWidth}
                   onChange={(e) => setMaxWidth(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-[#080d1b] border border-blue-900/50 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-sidebar-border text-xs text-sidebar-foreground placeholder-slate-400 focus:outline-hidden focus:border-sidebar-primary"
                 />
               </div>
               <div>
@@ -574,11 +574,11 @@ export default function AlphaImageCompressorPage() {
                   placeholder="Altura px"
                   value={maxHeight}
                   onChange={(e) => setMaxHeight(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-[#080d1b] border border-blue-900/50 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-sidebar-border text-xs text-sidebar-foreground placeholder-slate-400 focus:outline-hidden focus:border-sidebar-primary"
                 />
               </div>
             </div>
-            <p className="text-[10px] text-slate-400">Mantém o aspect ratio original automaticamente.</p>
+            <p className="text-[10px] text-muted-foreground">Mantém o aspect ratio original automaticamente.</p>
           </div>
         </div>
       </div>
@@ -600,8 +600,8 @@ export default function AlphaImageCompressorPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
           isDragging
-            ? 'border-blue-400 bg-blue-950/40 scale-[1.01]'
-            : 'border-blue-900/50 hover:border-blue-500/60 bg-[#0c1427]/60 hover:bg-[#0c1427]/90'
+            ? 'border-sidebar-primary bg-sidebar-accent/50 scale-[1.01]'
+            : 'border-sidebar-border hover:border-sidebar-primary/60 bg-white hover:bg-sidebar-accent/20'
         }`}
       >
         <input
@@ -617,15 +617,15 @@ export default function AlphaImageCompressorPage() {
           }}
         />
 
-        <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shadow-lg shadow-blue-950">
+        <div className="w-14 h-14 rounded-2xl bg-sidebar-accent border border-sidebar-border text-sidebar-primary flex items-center justify-center shadow-xs">
           <UploadCloud className="w-7 h-7" />
         </div>
 
         <div>
-          <h3 className="text-base font-bold text-white">
+          <h3 className="text-base font-bold text-sidebar-foreground">
             Arraste suas fotos e imagens aqui ou clique para navegar
           </h3>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Suporta múltiplos arquivos simultaneamente: JPG, PNG, WEBP, AVIF, BMP, GIF e TIFF (até 25 MB por arquivo).
           </p>
         </div>
@@ -633,23 +633,23 @@ export default function AlphaImageCompressorPage() {
 
       {/* ── Barra de Ações & Estatísticas de Ganho ── */}
       {items.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0c1427] p-4 rounded-2xl border border-blue-900/40">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-sidebar-border shadow-xs">
           <div className="flex items-center gap-4">
             <div>
-              <span className="text-xs text-slate-400 block">Total de Arquivos</span>
-              <span className="text-sm font-bold text-white">{items.length} imagem(ns)</span>
+              <span className="text-xs text-muted-foreground block">Total de Arquivos</span>
+              <span className="text-sm font-bold text-sidebar-foreground">{items.length} imagem(ns)</span>
             </div>
-            <div className="h-7 w-px bg-blue-900/40" />
+            <div className="h-7 w-px bg-sidebar-border" />
             <div>
-              <span className="text-xs text-slate-400 block">Tamanho Original</span>
-              <span className="text-sm font-bold text-slate-300">{formatBytes(totalOriginalSize)}</span>
+              <span className="text-xs text-muted-foreground block">Tamanho Original</span>
+              <span className="text-sm font-bold text-sidebar-foreground">{formatBytes(totalOriginalSize)}</span>
             </div>
             {doneItems.length > 0 && (
               <>
-                <div className="h-7 w-px bg-blue-900/40" />
+                <div className="h-7 w-px bg-sidebar-border" />
                 <div>
-                  <span className="text-xs text-slate-400 block">Tamanho Otimizado</span>
-                  <span className="text-sm font-bold text-emerald-400">
+                  <span className="text-xs text-muted-foreground block">Tamanho Otimizado</span>
+                  <span className="text-sm font-bold text-emerald-600">
                     {formatBytes(totalCompressedSize)} (-{totalSavings}%)
                   </span>
                 </div>
@@ -661,7 +661,7 @@ export default function AlphaImageCompressorPage() {
             <button
               type="button"
               onClick={handleClearAll}
-              className="px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-white border border-sidebar-border hover:bg-sidebar-accent text-sidebar-foreground text-xs font-semibold transition-colors cursor-pointer shadow-xs"
             >
               Limpar Lista
             </button>
@@ -669,7 +669,7 @@ export default function AlphaImageCompressorPage() {
               type="button"
               disabled={isProcessingAll || items.every((i) => i.status === 'done')}
               onClick={handleProcessAll}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-blue-600/30 cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               {isProcessingAll ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -683,7 +683,7 @@ export default function AlphaImageCompressorPage() {
                 type="button"
                 disabled={isZipping}
                 onClick={handleDownloadZip}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
               >
                 {isZipping ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -703,28 +703,28 @@ export default function AlphaImageCompressorPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0c1427]/90 rounded-2xl border border-blue-900/40 p-4 transition-all hover:border-blue-700/50 flex flex-col md:flex-row items-center justify-between gap-4"
+              className="bg-white rounded-2xl border border-sidebar-border p-4 transition-all hover:border-sidebar-primary/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4"
             >
               {/* Thumbnail & Dados */}
               <div className="flex items-center gap-3.5 min-w-0 w-full md:w-auto">
-                <div className="w-16 h-16 rounded-xl bg-[#080d1b] border border-blue-950 overflow-hidden shrink-0 relative flex items-center justify-center">
+                <div className="w-16 h-16 rounded-xl bg-sidebar-accent/40 border border-sidebar-border overflow-hidden shrink-0 relative flex items-center justify-center">
                   <img
                     src={item.compressedUrl || item.originalUrl}
                     alt={item.file.name}
                     className="w-full h-full object-cover"
                   />
                   {item.status === 'done' && (
-                    <span className="absolute bottom-1 right-1 bg-emerald-500 text-black p-0.5 rounded-full shadow-xs">
+                    <span className="absolute bottom-1 right-1 bg-emerald-500 text-white p-0.5 rounded-full shadow-xs">
                       <CheckCircle2 className="w-3 h-3 stroke-[3]" />
                     </span>
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-bold text-white truncate" title={item.file.name}>
+                  <h4 className="text-sm font-bold text-sidebar-foreground truncate" title={item.file.name}>
                     {item.file.name}
                   </h4>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                     <span>Original: {formatBytes(item.originalSize)}</span>
                     {item.width && item.height && (
                       <span>
@@ -733,10 +733,10 @@ export default function AlphaImageCompressorPage() {
                     )}
                     {item.status === 'done' && item.compressedSize && (
                       <>
-                        <span className="text-emerald-400 font-bold">
+                        <span className="text-emerald-600 font-bold">
                           ➔ {formatBytes(item.compressedSize)}
                         </span>
-                        <span className="px-1.5 py-0.2 rounded-sm bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-extrabold text-[10px]">
+                        <span className="px-1.5 py-0.2 rounded-sm bg-emerald-50 border border-emerald-200 text-emerald-700 font-extrabold text-[10px]">
                           -{item.savingsPercent}%
                         </span>
                       </>
@@ -751,7 +751,7 @@ export default function AlphaImageCompressorPage() {
                   <button
                     type="button"
                     onClick={() => processItem(item.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/80 border border-sidebar-border text-sidebar-accent-foreground text-xs font-bold transition-colors cursor-pointer"
                   >
                     <Zap className="w-3 h-3" />
                     Comprimir
@@ -759,14 +759,14 @@ export default function AlphaImageCompressorPage() {
                 )}
 
                 {item.status === 'processing' && (
-                  <span className="flex items-center gap-1.5 text-xs text-blue-400 font-semibold px-3 py-1.5 rounded-xl bg-blue-950/60 border border-blue-900/40">
+                  <span className="flex items-center gap-1.5 text-xs text-sidebar-primary font-semibold px-3 py-1.5 rounded-xl bg-sidebar-accent border border-sidebar-border">
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Otimizando...
                   </span>
                 )}
 
                 {item.status === 'error' && (
-                  <span className="flex items-center gap-1.5 text-xs text-rose-400 font-semibold px-2.5 py-1 rounded-xl bg-rose-950/40 border border-rose-900/40">
+                  <span className="flex items-center gap-1.5 text-xs text-destructive font-semibold px-2.5 py-1 rounded-xl bg-red-50 border border-red-200">
                     <AlertCircle className="w-3 h-3" />
                     {item.errorMsg || 'Erro'}
                   </span>
@@ -777,7 +777,7 @@ export default function AlphaImageCompressorPage() {
                     <button
                       type="button"
                       onClick={() => setComparingItem(item)}
-                      className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer"
+                      className="p-2 rounded-xl bg-white hover:bg-sidebar-accent border border-sidebar-border text-sidebar-foreground text-xs transition-colors cursor-pointer shadow-xs"
                       title="Comparar Lado a Lado"
                     >
                       <Eye className="w-4 h-4" />
@@ -785,7 +785,7 @@ export default function AlphaImageCompressorPage() {
                     <button
                       type="button"
                       onClick={() => downloadSingle(item)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-700/30 cursor-pointer"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Baixar
@@ -796,7 +796,7 @@ export default function AlphaImageCompressorPage() {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem(item.id)}
-                  className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                   title="Remover"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -809,20 +809,20 @@ export default function AlphaImageCompressorPage() {
 
       {/* ── Modal de Comparação Lado a Lado ── */}
       {comparingItem && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c1427] border border-blue-900/60 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl space-y-4 p-6">
-            <div className="flex items-center justify-between border-b border-blue-900/40 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-sidebar-border rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl space-y-4 p-6">
+            <div className="flex items-center justify-between border-b border-sidebar-border pb-3">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-blue-400" />
+                <h3 className="text-base font-bold text-sidebar-foreground flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-sidebar-primary" />
                   Comparação Visual: Original vs. Otimizado
                 </h3>
-                <p className="text-xs text-slate-400">{comparingItem.file.name}</p>
+                <p className="text-xs text-muted-foreground">{comparingItem.file.name}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setComparingItem(null)}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+                className="p-1.5 rounded-xl bg-sidebar-accent/50 hover:bg-sidebar-accent text-sidebar-foreground cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -830,12 +830,12 @@ export default function AlphaImageCompressorPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Original */}
-              <div className="space-y-2 bg-[#080d1b] p-3 rounded-2xl border border-blue-950">
+              <div className="space-y-2 bg-sidebar-accent/20 p-3 rounded-2xl border border-sidebar-border">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-300">Original</span>
-                  <span className="text-slate-400">{formatBytes(comparingItem.originalSize)}</span>
+                  <span className="font-bold text-sidebar-foreground">Original</span>
+                  <span className="text-muted-foreground">{formatBytes(comparingItem.originalSize)}</span>
                 </div>
-                <div className="h-64 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center">
+                <div className="h-64 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
                   <img
                     src={comparingItem.originalUrl}
                     alt="Original"
@@ -845,16 +845,16 @@ export default function AlphaImageCompressorPage() {
               </div>
 
               {/* Comprimido */}
-              <div className="space-y-2 bg-[#080d1b] p-3 rounded-2xl border border-emerald-950/60">
+              <div className="space-y-2 bg-sidebar-accent/20 p-3 rounded-2xl border border-emerald-200">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-emerald-400">
+                  <span className="font-bold text-emerald-700">
                     Otimizado ({comparingItem.format.toUpperCase()})
                   </span>
-                  <span className="text-emerald-400 font-bold">
+                  <span className="text-emerald-700 font-bold">
                     {formatBytes(comparingItem.compressedSize || 0)} (-{comparingItem.savingsPercent}%)
                   </span>
                 </div>
-                <div className="h-64 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center">
+                <div className="h-64 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
                   <img
                     src={comparingItem.compressedUrl}
                     alt="Otimizado"
@@ -864,11 +864,11 @@ export default function AlphaImageCompressorPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-blue-900/30">
+            <div className="flex justify-end gap-2 pt-2 border-t border-sidebar-border">
               <button
                 type="button"
                 onClick={() => setComparingItem(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-white border border-sidebar-border text-xs font-semibold text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
               >
                 Fechar
               </button>
@@ -878,7 +878,7 @@ export default function AlphaImageCompressorPage() {
                   downloadSingle(comparingItem)
                   setComparingItem(null)
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 text-white text-xs font-bold cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 Baixar Versão Otimizada
@@ -889,16 +889,16 @@ export default function AlphaImageCompressorPage() {
       )}
 
       {/* ── ESPAÇO PARA BANNER DE ANÚNCIO / ÁREA DE TESTES PUBLICITÁRIOS ── */}
-      <div className="mt-8 pt-6 border-t border-blue-900/30">
-        <div className="relative overflow-hidden rounded-2xl border border-dashed border-blue-900/60 bg-linear-to-r from-blue-950/20 via-slate-900/40 to-blue-950/20 p-5 text-center flex flex-col items-center justify-center gap-2 group hover:border-blue-700/60 transition-colors">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-900/40 border border-blue-800/40 text-[10px] font-extrabold uppercase tracking-widest text-blue-300">
+      <div className="mt-8 pt-6 border-t border-sidebar-border">
+        <div className="relative overflow-hidden rounded-2xl border border-dashed border-sidebar-border bg-sidebar-accent/20 p-5 text-center flex flex-col items-center justify-center gap-2 group hover:border-sidebar-primary/60 transition-colors">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sidebar-accent border border-sidebar-border text-[10px] font-extrabold uppercase tracking-widest text-sidebar-accent-foreground">
             <Info className="w-3 h-3" />
             Espaço Publicitário &amp; Área de Testes
           </div>
-          <p className="text-xs text-slate-400 max-w-lg">
+          <p className="text-xs text-muted-foreground max-w-lg">
             Área reservada para inserção de banners promocionais, comunicados institucionais ou campanhas parceiras (Dimensões flexíveis: 728×90, 300×250 ou responsivo).
           </p>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
             <span>[SIG_ALPHA_AD_SLOT_COMPRESSOR]</span>
           </div>
         </div>

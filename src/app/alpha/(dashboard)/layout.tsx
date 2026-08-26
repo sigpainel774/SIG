@@ -41,18 +41,8 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
   const vinculos = perfil.vinculos
 
   return (
-    <div className="flex min-h-screen bg-[#080d1b] text-slate-100 relative overflow-x-hidden">
+    <div className="flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
       <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
-
-      {/* ── Textura de Estrelas / Partículas de Fundo ── */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-40 z-0"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.22) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(37, 99, 235, 0.18) 0%, transparent 45%), radial-gradient(#60a5fa 1px, transparent 1px)',
-          backgroundSize: '100% 100%, 100% 100%, 32px 32px',
-        }}
-      />
 
       {/* Sidebar Dedicada do Alpha */}
       <AlphaSidebar />
@@ -60,13 +50,13 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
       {/* Conteúdo Principal da Rota Alpha */}
       <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden overflow-y-auto relative z-10">
         {/* Faixa superior com identificação do ambiente e conectividade */}
-        <div className="bg-[#0c1427]/80 backdrop-blur-md border-b border-blue-900/40 px-4 py-2.5 text-xs flex items-center justify-between gap-2 z-20 sticky top-0">
+        <div className="bg-white/90 backdrop-blur-md border-b border-sidebar-border px-4 py-2.5 text-xs flex items-center justify-between gap-2 z-20 sticky top-0 shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-[11px] font-bold shadow-xs tracking-wide">
-              <FlaskConical className="w-3.5 h-3.5 text-blue-400 stroke-[2.2]" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-[11px] font-bold shadow-xs tracking-wide">
+              <FlaskConical className="w-3.5 h-3.5 text-sidebar-primary stroke-[2.2]" />
               <span>SIG ALPHA LAB</span>
             </div>
-            <span className="text-[11px] text-slate-400 hidden md:inline font-medium">
+            <span className="text-[11px] text-muted-foreground hidden md:inline font-medium">
               Ambiente de Prototipagem &amp; Operação 100% Offline-First
             </span>
           </div>

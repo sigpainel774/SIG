@@ -26,76 +26,74 @@ export function AlphaLabToolPlaceholder({
 }: AlphaLabToolPlaceholderProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200">
-      <div className="flex items-center gap-3 border-b border-blue-900/40 pb-4">
+      <div className="flex items-center gap-3 border-b border-sidebar-border pb-4">
         <Link
           href="/alpha"
-          className="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/40 text-slate-300 hover:text-white hover:bg-blue-900/50 transition-colors"
+          className="p-2.5 rounded-xl bg-white border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent transition-colors shadow-xs"
           title="Voltar ao Dashboard Alpha"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <div className="flex items-center gap-2 text-xs text-blue-400 mb-1">
-            <Link href="/alpha" className="hover:text-blue-300 transition-colors">
+          <div className="flex items-center gap-2 text-xs text-sidebar-primary mb-1">
+            <Link href="/alpha" className="hover:underline font-semibold transition-colors">
               SIG Alpha Lab
             </Link>
             <span>/</span>
-            <span className="text-slate-400">Ferramentas Experimentais</span>
+            <span className="text-muted-foreground">Ferramentas Experimentais</span>
           </div>
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <AlphaIcon name={icone} className="w-6 h-6 text-blue-400 stroke-[2.2]" />
+          <h1 className="text-xl md:text-2xl font-bold text-sidebar-foreground tracking-tight flex items-center gap-2.5">
+            <AlphaIcon name={icone} className="w-6 h-6 text-sidebar-primary stroke-[2.2]" />
             {titulo}
           </h1>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-[#0d162a]/90 border border-blue-900/50 p-6 md:p-8 space-y-6 shadow-xl relative overflow-hidden">
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-        
+      <div className="rounded-3xl bg-white border border-sidebar-border p-6 md:p-8 space-y-6 shadow-xs relative overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-950/60 border border-violet-700/50 text-violet-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-sidebar-primary" />
             {status}
           </span>
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="w-3.5 h-3.5 text-sidebar-primary" />
             Disponibilização Contínua
           </span>
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-lg font-bold text-white">Sobre este Módulo</h2>
-          <p className="text-sm text-slate-300 leading-relaxed">
+          <h2 className="text-lg font-bold text-sidebar-foreground">Sobre este Módulo</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {descricao}
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-blue-950/30 border border-blue-800/30 space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-blue-300 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-400" />
+        <div className="p-5 rounded-2xl bg-sidebar-accent/40 border border-sidebar-border space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-sidebar-foreground flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-sidebar-primary" />
             Padrões do Laboratório Alpha Ativos
           </h3>
           <ul className="space-y-2">
             {etapas.map((etapa, idx) => (
-              <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+              <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sidebar-primary mt-1.5 shrink-0" />
                 <span>{etapa}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="pt-4 flex items-center justify-between border-t border-blue-900/40">
+        <div className="pt-4 flex items-center justify-between border-t border-sidebar-border">
           <Link
             href="/alpha"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-sidebar-primary hover:underline transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar para o Catálogo Alpha
           </Link>
           <Link
             href="/alpha/visitas"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all shadow-md shadow-violet-900/30"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sidebar-primary hover:bg-sidebar-primary/90 text-white text-xs font-bold transition-all shadow-xs"
           >
             <span>Ir para Visitas &amp; GPS</span>
             <ArrowRight className="w-4 h-4" />
