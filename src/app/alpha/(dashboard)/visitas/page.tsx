@@ -20,6 +20,7 @@ import {
 } from '@/lib/visitas/areaCalculator';
 import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
 import { salvarNavegacaoLivreOffline } from '@/lib/offlineRouteStore';
+import { limparPayloadParaTabela } from '@/lib/alphaOfflineManager';
 
 // Componentes
 import { VisitasOfflineSyncBanner } from '@/components/alpha/visitas/VisitasOfflineSyncBanner';
@@ -324,9 +325,10 @@ export default function VisitasPage() {
     // Persiste no Supabase ou enfileira offline
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_areas', payload);
         const { error } = await (supabase as any)
           .from('visitas_areas')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
         if (error) throw error;
         toast.success('Área salva no servidor com sucesso!');
       } catch (err) {
@@ -401,9 +403,10 @@ export default function VisitasPage() {
 
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_pontos', payload);
         const { error } = await (supabase as any)
           .from('visitas_pontos')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
         if (error) throw error;
         toast.success('Ponto salvo no servidor!');
       } catch (err) {
@@ -438,7 +441,7 @@ export default function VisitasPage() {
           .from('visitas_pontos')
           .update({ deleted_at: new Date().toISOString() })
           .eq('id', pontoId);
-        toast.success('Ponto excluído com sucesso!');
+        toast.success('Ponto removido com sucesso!');
       } catch (err) {
         await visitasOfflineService.enfileirarOperacao('visitas_pontos', 'DELETE', {}, pontoId);
       }
@@ -454,7 +457,7 @@ export default function VisitasPage() {
 
     const payload: VisitasRoteiro = {
       id: novoId,
-      nome: roteiroData.nome ?? 'Roteiro de Visitas',
+      nome: roteiroData.nome ?? 'Roteiro Sem Nome',
       area_ids: roteiroData.area_ids ?? [],
       veiculo_id: roteiroData.veiculo_id ?? null,
       data_planejada: roteiroData.data_planejada ?? new Date().toISOString().split('T')[0],
@@ -475,9 +478,10 @@ export default function VisitasPage() {
 
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_roteiros', payload);
         await (supabase as any)
           .from('visitas_roteiros')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
       } catch (err) {
         await visitasOfflineService.enfileirarOperacao(
           'visitas_roteiros',
@@ -543,9 +547,10 @@ export default function VisitasPage() {
 
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_veiculos', payload);
         await (supabase as any)
           .from('visitas_veiculos')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
       } catch (err) {
         await visitasOfflineService.enfileirarOperacao(
           'visitas_veiculos',
@@ -636,9 +641,10 @@ export default function VisitasPage() {
     // 3. Tenta sincronizar com Supabase se online; se offline/erro, enfileira na fila de sync
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_trajetos', payloadCompleto);
         const { error } = await (supabase as any)
           .from('visitas_trajetos')
-          .upsert(payloadCompleto, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
         if (error) throw error;
         toast.success('Trajeto salvo e sincronizado com a nuvem!');
       } catch (err) {
@@ -735,9 +741,10 @@ export default function VisitasPage() {
 
     if (navigator.onLine) {
       try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_mapas_geopdf', payload);
         await (supabase as any)
           .from('visitas_mapas_geopdf')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payloadLimpo, { onConflict: 'id' });
       } catch (err) {}
     }
   };

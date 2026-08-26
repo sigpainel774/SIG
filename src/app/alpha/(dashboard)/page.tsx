@@ -200,7 +200,7 @@ export default function AlphaDashboardPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Flame className="w-3.5 h-3.5 text-sidebar-primary" />
+            <Flame className="w-3.5 h-3.5 text-primary" />
             Acesso Rápido às Ferramentas
           </h3>
           <span className="text-[11px] text-muted-foreground">1 Toque</span>
@@ -213,7 +213,7 @@ export default function AlphaDashboardPage() {
               <Link
                 key={idx}
                 href={item.href}
-                className="group flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-sidebar-accent/50 border border-sidebar-border hover:border-sidebar-primary/40 transition-all duration-200 text-center active:scale-95 shadow-xs"
+                className="group flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-2xl bg-card dark:bg-[#141416] hover:bg-accent/40 dark:hover:bg-[#1c2230] border border-border dark:border-[#26262a] hover:border-primary/40 transition-all duration-200 text-center active:scale-95 shadow-xs"
               >
                 <div
                   className={cn(
@@ -223,7 +223,7 @@ export default function AlphaDashboardPage() {
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] sm:text-xs font-semibold text-slate-800 group-hover:text-sidebar-primary mt-2 truncate w-full transition-colors">
+                <span className="text-[11px] sm:text-xs font-semibold text-foreground dark:text-slate-200 group-hover:text-primary mt-2 truncate w-full transition-colors">
                   {item.label}
                 </span>
               </Link>
@@ -232,24 +232,22 @@ export default function AlphaDashboardPage() {
         </div>
       </div>
 
-      {/* ── 4. Filtro por Abas em Pílula (Segmented Control) ── */}
       <div className="space-y-4" id="catalogo">
-        <div className="flex items-center justify-between border-b border-sidebar-border pb-3">
+        <div className="flex items-center justify-between border-b border-border dark:border-[#26262a] pb-3">
           <div>
-            <h3 className="text-base md:text-lg font-bold text-sidebar-foreground flex items-center gap-2">
-              <Layers className="w-4 h-4 text-sidebar-primary" />
+            <h3 className="text-base md:text-lg font-bold text-foreground flex items-center gap-2">
+              <Layers className="w-4 h-4 text-primary" />
               Catálogo Completo do Ecossistema
             </h3>
             <p className="text-xs text-muted-foreground">
               Navegue pelas suítes modulares disponíveis no laboratório.
             </p>
           </div>
-          <span className="text-xs font-semibold text-sidebar-accent-foreground bg-sidebar-accent px-2.5 py-1 rounded-lg border border-sidebar-border shrink-0">
+          <span className="text-xs font-semibold text-accent-foreground dark:text-slate-200 bg-accent dark:bg-[#1c2230] px-2.5 py-1 rounded-lg border border-border dark:border-[#26262a] shrink-0">
             {funcoesFiltradas.length} ativa(s)
           </span>
         </div>
 
-        {/* Barra de Abas Pílula Rolável Horizontalmente */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: 'todos', label: 'Todas as Funções', count: funcoes.length },
@@ -265,10 +263,10 @@ export default function AlphaDashboardPage() {
                 type="button"
                 onClick={() => setCategoriaAtiva(tab.id as CategoriaFiltro)}
                 className={cn(
-                  'px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5',
+                  'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer',
                   isSelected
-                    ? 'bg-sidebar-primary text-white shadow-xs'
-                    : 'bg-white hover:bg-sidebar-accent/60 text-sidebar-foreground border border-sidebar-border'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'bg-card dark:bg-[#141416] hover:bg-accent/60 dark:hover:bg-[#1c2230] text-muted-foreground dark:text-slate-300 border border-border dark:border-[#26262a]'
                 )}
               >
                 <span>{tab.label}</span>
@@ -276,7 +274,7 @@ export default function AlphaDashboardPage() {
                   <span
                     className={cn(
                       'text-[10px] px-1.5 py-0.2 rounded-full',
-                      isSelected ? 'bg-white/20 text-white' : 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      isSelected ? 'bg-white/20 text-white' : 'bg-accent dark:bg-[#1c2230] text-accent-foreground dark:text-slate-200'
                     )}
                   >
                     {tab.count}
@@ -287,16 +285,15 @@ export default function AlphaDashboardPage() {
           })}
         </div>
 
-        {/* ── 5. Listagem de Cards de Módulos (Design Horizontal Moderno) ── */}
         {loading ? (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground gap-2.5">
-            <Loader2 className="w-5 h-5 animate-spin text-sidebar-primary" />
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
             Carregando suíte modular do Alpha...
           </div>
         ) : funcoesFiltradas.length === 0 ? (
-          <div className="p-10 text-center border border-dashed border-sidebar-border rounded-3xl bg-white space-y-3">
+          <div className="p-10 text-center border border-dashed border-border dark:border-[#26262a] rounded-3xl bg-card dark:bg-[#141416] space-y-3">
             <Layers className="w-10 h-10 text-muted-foreground mx-auto" />
-            <p className="text-sm font-semibold text-sidebar-foreground">Nenhum módulo encontrado</p>
+            <p className="text-sm font-semibold text-foreground">Nenhum módulo encontrado</p>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               Tente buscar por outro termo ou selecione uma categoria diferente no menu acima.
             </p>
@@ -307,7 +304,7 @@ export default function AlphaDashboardPage() {
                   setBusca('')
                   setCategoriaAtiva('todos')
                 }}
-                className="px-4 py-1.5 rounded-xl bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border text-xs font-bold hover:bg-sidebar-accent/80 transition-colors"
+                className="px-4 py-1.5 rounded-xl bg-accent text-accent-foreground border border-border dark:border-[#26262a] text-xs font-bold hover:bg-accent/80 transition-colors"
               >
                 Limpar Filtros
               </button>
@@ -319,20 +316,20 @@ export default function AlphaDashboardPage() {
               <Link
                 key={fn.id}
                 href={fn.rota}
-                className="group relative overflow-hidden rounded-[22px] bg-white hover:bg-sidebar-accent/30 border border-sidebar-border hover:border-sidebar-primary/50 p-5 transition-all duration-200 flex flex-col justify-between gap-4 shadow-xs hover:shadow-sm active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-[22px] bg-card dark:bg-[#141416] hover:bg-accent/30 dark:hover:bg-[#181d28] border border-border dark:border-[#26262a] hover:border-primary/50 p-5 transition-all duration-200 flex flex-col justify-between gap-4 shadow-xs hover:shadow-sm active:scale-[0.99]"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-xl bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground flex items-center justify-center group-hover:scale-105 transition-all">
-                      <AlphaIcon name={fn.icone} className="w-5 h-5 text-sidebar-primary" />
+                    <div className="w-11 h-11 rounded-xl bg-accent dark:bg-[#1c2230] border border-border dark:border-[#26262a] text-accent-foreground flex items-center justify-center group-hover:scale-105 transition-all">
+                      <AlphaIcon name={fn.icone} className="w-5 h-5 text-primary" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-sidebar-accent-foreground bg-sidebar-accent border border-sidebar-border px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-300 bg-accent dark:bg-[#1c2230] border border-border dark:border-[#26262a] px-2 py-0.5 rounded-md">
                       #{fn.ordem}
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-sm md:text-base text-sidebar-foreground group-hover:text-sidebar-accent-foreground transition-colors leading-snug">
+                    <h4 className="font-bold text-sm md:text-base text-foreground group-hover:text-primary transition-colors leading-snug">
                       {fn.nome}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
@@ -341,12 +338,12 @@ export default function AlphaDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-sidebar-border text-xs font-semibold text-sidebar-accent-foreground">
-                  <span className="flex items-center gap-1.5 text-emerald-600 text-[11px]">
+                <div className="flex items-center justify-between pt-3 border-t border-border dark:border-[#26262a] text-xs font-semibold">
+                  <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px]">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     100% Offline
                   </span>
-                  <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-bold text-sidebar-primary">
+                  <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-bold text-primary">
                     Abrir Módulo
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>

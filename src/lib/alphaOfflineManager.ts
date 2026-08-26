@@ -93,38 +93,58 @@ export function limparPayloadParaTabela(tabela: string, rawPayload: Record<strin
 
   if (tabela === 'visitas_pontos') {
     delete p.fotos // Fotos são persistidas em visitas_fotos
-    if (p.area_id === 'nenhuma' || p.area_id === '') p.area_id = null
+    if (p.area_id === 'nenhuma' || p.area_id === '' || p.area_id === 'nenhum') p.area_id = null
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
     if (p.latitude !== undefined && p.latitude !== null) p.latitude = Number(p.latitude)
     if (p.longitude !== undefined && p.longitude !== null) p.longitude = Number(p.longitude)
     if (!p.status) p.status = 'pendente'
   } else if (tabela === 'visitas_areas') {
-    if (p.escola_id === 'nenhuma' || p.escola_id === '') p.escola_id = null
+    delete p.hectares // Coluna gerada automaticamente pelo Postgres (GENERATED ALWAYS AS (square_meters / 10000.0) STORED)
+    if (p.escola_id === 'nenhuma' || p.escola_id === '' || p.escola_id === 'nenhum') p.escola_id = null
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
     if (p.square_meters !== undefined && p.square_meters !== null) p.square_meters = Number(p.square_meters)
-    if (p.hectares !== undefined && p.hectares !== null) p.hectares = Number(p.hectares)
   } else if (tabela === 'visitas_roteiros') {
-    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '') p.veiculo_id = null
+    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '' || p.veiculo_id === 'nenhuma') p.veiculo_id = null
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
     if (Array.isArray(p.area_ids)) {
-      p.area_ids = p.area_ids.filter((id: any) => id && typeof id === 'string' && id.trim() !== '' && id !== 'nenhuma')
+      p.area_ids = p.area_ids.filter((id: any) => id && typeof id === 'string' && id.trim() !== '' && id !== 'nenhuma' && id !== 'nenhum')
     } else {
       p.area_ids = []
     }
   } else if (tabela === 'visitas_trajetos') {
-    if (p.area_id === 'nenhuma' || p.area_id === '') p.area_id = null
-    if (p.roteiro_id === 'nenhum' || p.roteiro_id === '') p.roteiro_id = null
-    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '') p.veiculo_id = null
+    if (p.area_id === 'nenhuma' || p.area_id === '' || p.area_id === 'nenhum') p.area_id = null
+    if (p.roteiro_id === 'nenhum' || p.roteiro_id === '' || p.roteiro_id === 'nenhuma') p.roteiro_id = null
+    if (p.veiculo_id === 'nenhum' || p.veiculo_id === '' || p.veiculo_id === 'nenhuma') p.veiculo_id = null
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
     if (!p.modo) p.modo = 'driving'
     if (p.distance_meters !== undefined && p.distance_meters !== null) p.distance_meters = Number(p.distance_meters)
     if (p.moving_seconds !== undefined && p.moving_seconds !== null) p.moving_seconds = Number(p.moving_seconds)
     if (p.visit_seconds !== undefined && p.visit_seconds !== null) p.visit_seconds = Number(p.visit_seconds)
+    if (p.origin_lat != null) p.origin_lat = Number(p.origin_lat)
+    if (p.origin_lng != null) p.origin_lng = Number(p.origin_lng)
+    if (p.destination_lat != null) p.destination_lat = Number(p.destination_lat)
+    if (p.destination_lng != null) p.destination_lng = Number(p.destination_lng)
+    if (p.estimated_liters != null) p.estimated_liters = Number(p.estimated_liters)
+    if (p.estimated_cost != null) p.estimated_cost = Number(p.estimated_cost)
     if (!p.posicoes) p.posicoes = []
     if (!p.visitas_registradas) p.visitas_registradas = []
   } else if (tabela === 'visitas_veiculos') {
     if (p.placa === '') p.placa = null
     if (p.motor === '') p.motor = null
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
     if (p.consumo_km_l !== undefined && p.consumo_km_l !== null) p.consumo_km_l = Number(p.consumo_km_l) || 10
     if (p.preco_litro !== undefined && p.preco_litro !== null) p.preco_litro = Number(p.preco_litro) || 6
     if (p.ativo === undefined || p.ativo === null) p.ativo = true
     if (!p.tipo_combustivel) p.tipo_combustivel = 'gasolina'
+  } else if (tabela === 'visitas_mapas_geopdf') {
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
+    if (p.opacidade !== undefined && p.opacidade !== null) p.opacidade = Number(p.opacidade)
+    if (p.rotacao !== undefined && p.rotacao !== null) p.rotacao = Number(p.rotacao)
+    if (p.numero_pagina !== undefined && p.numero_pagina !== null) p.numero_pagina = Number(p.numero_pagina)
+  } else if (tabela === 'visitas_fotos') {
+    if (p.usuario_id === 'nenhum' || p.usuario_id === '') p.usuario_id = null
+    if (p.latitude != null) p.latitude = Number(p.latitude)
+    if (p.longitude != null) p.longitude = Number(p.longitude)
   }
 
   return p
@@ -426,6 +446,71 @@ export async function sincronizarFilaAlphaGlobal(
     return { sincronizados, erros, total: pendentes.length }
   } finally {
     isSyncingLock = false
+  }
+}
+
+/**
+ * Exclui um item específico da fila de sincronização (IndexedDB e LocalStorage)
+ */
+export async function removerItemFilaSyncAlpha(id: string): Promise<void> {
+  if (typeof window === 'undefined') return
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_QUEUE)
+    if (saved) {
+      const list: AlphaItemFilaSync[] = JSON.parse(saved)
+      const filtrados = list.filter((x) => x.id !== id)
+      localStorage.setItem(LS_FALLBACK_QUEUE, JSON.stringify(filtrados))
+    }
+  } catch {}
+
+  try {
+    const db = await openAlphaDB()
+    const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite')
+    const store = tx.objectStore(STORE_SYNC_QUEUE)
+    store.delete(id)
+  } catch (err) {
+    console.warn('Erro ao remover item da fila no IndexedDB:', err)
+  }
+}
+
+/**
+ * Limpa todos os itens pendentes da fila de sincronização de um módulo (ou global se não especificado)
+ */
+export async function limparFilaSyncAlpha(modulo?: string): Promise<void> {
+  if (typeof window === 'undefined') return
+
+  try {
+    const saved = localStorage.getItem(LS_FALLBACK_QUEUE)
+    if (saved) {
+      const list: AlphaItemFilaSync[] = JSON.parse(saved)
+      const mantidos = modulo ? list.filter((x) => x.modulo !== modulo) : []
+      localStorage.setItem(LS_FALLBACK_QUEUE, JSON.stringify(mantidos))
+    }
+  } catch {}
+
+  try {
+    const db = await openAlphaDB()
+    const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite')
+    const store = tx.objectStore(STORE_SYNC_QUEUE)
+
+    if (!modulo) {
+      store.clear()
+    } else {
+      const req = store.getAll()
+      req.onsuccess = () => {
+        const list = (req.result as AlphaItemFilaSync[]) || []
+        const txDelete = db.transaction(STORE_SYNC_QUEUE, 'readwrite')
+        const storeDelete = txDelete.objectStore(STORE_SYNC_QUEUE)
+        for (const item of list) {
+          if (item.modulo === modulo) {
+            storeDelete.delete(item.id)
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao limpar fila no IndexedDB:', err)
   }
 }
 

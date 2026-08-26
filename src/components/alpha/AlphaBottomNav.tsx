@@ -64,7 +64,7 @@ export function AlphaBottomNav() {
         aria-label="Navegação Mobile Alpha"
         className="fixed bottom-3 inset-x-3 z-40 md:hidden pointer-events-auto"
       >
-        <div className="max-w-md mx-auto bg-white/95 backdrop-blur-2xl border border-sidebar-border rounded-[28px] px-3 py-2 shadow-xl shadow-black/10 flex items-center justify-between relative">
+        <div className="max-w-md mx-auto bg-card/95 dark:bg-[#141416]/95 backdrop-blur-2xl border border-border dark:border-[#26262a] rounded-[28px] px-3 py-2 shadow-xl shadow-black/15 flex items-center justify-between relative">
           {/* Lado Esquerdo */}
           <div className="flex items-center gap-1 flex-1 justify-around">
             {navItems.map((item, idx) => {
@@ -76,14 +76,14 @@ export function AlphaBottomNav() {
                   className={cn(
                     'flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 relative group',
                     item.isActive
-                      ? 'text-sidebar-accent-foreground font-bold'
-                      : 'text-sidebar-foreground/70 hover:text-sidebar-foreground'
+                      ? 'text-primary font-bold'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
                   )}
                 >
-                  <Icon className={cn('w-5 h-5 transition-transform group-active:scale-90', item.isActive && 'scale-110 text-sidebar-primary')} />
+                  <Icon className={cn('w-5 h-5 transition-transform group-active:scale-90', item.isActive ? 'scale-110 text-primary' : 'text-slate-500 dark:text-slate-400')} />
                   <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
                   {item.isActive && (
-                    <span className="w-4 h-1 bg-sidebar-primary rounded-full absolute -bottom-1 shadow-xs" />
+                    <span className="w-4 h-1 bg-primary rounded-full absolute -bottom-1 shadow-xs" />
                   )}
                 </Link>
               )
@@ -96,7 +96,7 @@ export function AlphaBottomNav() {
               type="button"
               onClick={() => setIsQuickActionsOpen(true)}
               aria-label="Ações Rápidas"
-              className="w-13 h-13 rounded-full bg-sidebar-primary hover:bg-sidebar-primary/90 text-white flex items-center justify-center shadow-lg shadow-sidebar-primary/30 border-4 border-[#f3f4f7] hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+              className="w-13 h-13 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-background dark:border-[#0B0E14] hover:scale-105 active:scale-95 transition-transform cursor-pointer"
             >
               <Plus className="w-6 h-6 stroke-[2.5]" />
             </button>
@@ -112,9 +112,9 @@ export function AlphaBottomNav() {
                     key={idx}
                     type="button"
                     onClick={item.onClick}
-                    className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-sidebar-foreground/70 hover:text-destructive transition-all duration-200 relative group active:scale-90 cursor-pointer"
+                    className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-600 hover:text-destructive dark:text-slate-400 dark:hover:text-destructive transition-all duration-200 relative group active:scale-90 cursor-pointer"
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-destructive transition-colors" />
                     <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
                   </button>
                 )
@@ -123,9 +123,9 @@ export function AlphaBottomNav() {
                 <Link
                   key={idx}
                   href={item.href}
-                  className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-sidebar-foreground/70 hover:text-sidebar-foreground transition-all duration-200 relative group active:scale-90"
+                  className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-all duration-200 relative group active:scale-90"
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-foreground transition-colors" />
                   <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
                 </Link>
               )

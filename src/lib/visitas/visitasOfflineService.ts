@@ -4,6 +4,9 @@ import {
   enfileirarAcaoSyncAlpha,
   sincronizarFilaAlphaGlobal,
   obterFilaPendenteAlpha,
+  removerItemFilaSyncAlpha,
+  limparFilaSyncAlpha,
+  AlphaItemFilaSync,
 } from '@/lib/alphaOfflineManager';
 import { createClient } from '@/lib/supabaseClient';
 import {
@@ -214,6 +217,19 @@ export const visitasOfflineService = {
     } catch {
       return new Set<string>();
     }
+  },
+
+  // --- Gerenciamento e Exclusão da Fila Pendente ---
+  async obterItensFilaPendentes(): Promise<AlphaItemFilaSync[]> {
+    return await obterFilaPendenteAlpha(MODULO);
+  },
+
+  async removerItemPendente(id: string): Promise<void> {
+    await removerItemFilaSyncAlpha(id);
+  },
+
+  async limparFilaPendentes(): Promise<void> {
+    await limparFilaSyncAlpha(MODULO);
   },
 
   // --- Sincronização Manual ---
