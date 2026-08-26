@@ -125,7 +125,29 @@ export class RouteTrackerManager {
   }
 
   public getVisits(): RouteVisit[] {
-    return [...this.visits];
+    const list = [...this.visits];
+    // Se há uma visita ocorrendo agora, inclui na visualização em tempo real
+    if (this.state === 'visit' && this.stationarySince && this.stationaryAnchor) {
+      const now = this.positions.length > 0 ? this.positions[this.positions.length - 1].timestamp : Date.now();
+      const durationSeconds = Math.max(0, Math.floor((now - this.stationarySince) / 1000));
+      const anchor = this.stationaryAnchor;
+      const matchedArea = this.areas.find((area) =>
+        pontoDentroDoPoligono([anchor[0], anchor[1]], area.vertices)
+      );
+
+      list.push({
+        id: `visita_em_andamento_${this.id}`,
+        trackId: this.id,
+        startedAt: new Date(this.stationarySince).toISOString(),
+        endedAt: new Date(now).toISOString(),
+        latitude: anchor[0],
+        longitude: anchor[1],
+        areaId: matchedArea?.id ?? null,
+        areaNome: matchedArea?.nome ?? 'Parada Detectada',
+        durationSeconds,
+      });
+    }
+    return list;
   }
 
   public getState(): MovementState {
@@ -141,7 +163,7 @@ export class RouteTrackerManager {
   }
 
   public getVisitSeconds(): number {
-    return this.visits.reduce((acc, v) => acc + v.durationSeconds, 0);
+    return this.getVisits().reduce((acc, v) => acc + v.durationSeconds, 0);
   }
 
   public getEstimatedLiters(): number {
@@ -321,8 +343,6 @@ export class RouteTrackerManager {
       const durationSeconds = Math.floor((endedAt - start) / 1000);
 
       // ── FUSÃO ANTI-DUPLICAÇÃO DE VISITAS NO MESMO IMÓVEL (QUINTAL / RE-ENTRADA) ──
-      // Se a última visita registrada foi dentro do raio de tolerância (ex: até 20m)
-      // e ocorreu em um intervalo recente (ex: até 15 minutos), acumula o tempo na mesma visita!
       const lastVisit = this.visits[this.visits.length - 1];
       if (lastVisit) {
         const distToLast = calcularDistanciaMetros(lastVisit.latitude, lastVisit.longitude, anchor[0], anchor[1]);
@@ -350,14 +370,27 @@ export class RouteTrackerManager {
         latitude: anchor[0],
         longitude: anchor[1],
         areaId: matchedArea?.id ?? null,
-        areaNome: matchedArea?.nome ?? null,
+        areaNome: matchedArea?.nome ?? 'Parada Detectada',
         durationSeconds,
       });
     }
   }
 
-  public finish(endedAt: number = Date.now()) {
-    return this.finalize(endedAt);
+  public finish(endedAt: number = Date.now()): any {
+    this.finalize(endedAt);
+    return {
+      id: this.id,
+      modo: this.modo,
+      started_at: new Date(this.startedAt).toISOString(),
+      ended_at: new Date(endedAt).toISOString(),
+      distance_meters: this.getDistanceMeters(),
+      moving_seconds: this.getMovingSeconds(),
+      visit_seconds: this.getVisitSeconds(),
+      estimated_liters: this.getEstimatedLiters(),
+      estimated_cost: this.getEstimatedCost(),
+      posicoes: this.getPositions(),
+      visitas_registradas: this.getVisits(),
+    };
   }
 
   public finalize(endedAt: number = Date.now()) {
