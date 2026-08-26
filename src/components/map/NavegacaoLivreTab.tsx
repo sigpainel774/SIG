@@ -41,6 +41,7 @@ import {
   marcarNavegacaoComoSincronizada,
   obterNavegacoesPendentes,
 } from '@/lib/offlineRouteStore';
+import { OfflineTileLayer } from '@/components/map/OfflineTileLayer';
 import { EscolaMapeada } from './MapaRotasEscolas';
 
 interface NavegacaoLivreTabProps {
@@ -145,14 +146,15 @@ export default function NavegacaoLivreTab({
   const [observacoesNavegacao, setObservacoesNavegacao] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  // Refs de controle
+  // Refs de controle (blindadas contra closure stale do GPS)
+  const statusRef = useRef<'INATIVO' | 'EM_ANDAMENTO' | 'PAUSADO'>('INATIVO');
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pontosGpsRef = useRef<PontoGpsTrack[]>([]);
+  const distanciaTotalMetrosRef = useRef<number>(0);
+  const velocidadeMaxRef = useRef<number>(0);
   const isMounted = useRef(true);
-
-  pontosGpsRef.current = pontosGps;
 
   // Centro padrão de Sapeaçu
   const defaultCenter = useMemo<[number, number]>(() => {
@@ -197,7 +199,7 @@ export default function NavegacaoLivreTab({
   // Re-solicita WakeLock ao voltar para a aba
   useEffect(() => {
     const handleVisChange = () => {
-      if (document.visibilityState === 'visible' && status === 'EM_ANDAMENTO') {
+      if (document.visibilityState === 'visible' && statusRef.current === 'EM_ANDAMENTO') {
         solicitarWakeLock();
       }
     };
@@ -205,7 +207,7 @@ export default function NavegacaoLivreTab({
     return () => {
       document.removeEventListener('visibilitychange', handleVisChange);
     };
-  }, [status, solicitarWakeLock]);
+  }, [solicitarWakeLock]);
 
   // Cronômetro da Navegação
   useEffect(() => {
@@ -224,15 +226,16 @@ export default function NavegacaoLivreTab({
     };
   }, [status]);
 
-  // Handler de Leitura de Posição GPS com Filtro Deadband
+  // Handler de Leitura de Posição GPS com Deadband e Blindagem de Closure
   const handlePosition = useCallback(
     (pos: GeolocationPosition) => {
       const { latitude, longitude, accuracy, heading: rawHeading, speed } = pos.coords;
-      const speedKmh = speed !== null && speed > 0 ? Number((speed * 3.6).toFixed(1)) : 0;
+      const speedMps = speed !== null && speed >= 0 ? speed : null;
+      const speedKmh = speedMps !== null ? Number((speedMps * 3.6).toFixed(1)) : 0;
       const timestamp = pos.timestamp;
 
-      // Ignora leituras com precisão excessivamente baixa (> 50 metros)
-      if (accuracy > 50) return;
+      // Filtra apenas anomalias de IP com erro grosseiro (> 150m)
+      if (accuracy > 150) return;
 
       const pontosAnteriores = pontosGpsRef.current;
       const ultimoPonto = pontosAnteriores.length > 0 ? pontosAnteriores[pontosAnteriores.length - 1] : null;
@@ -250,7 +253,7 @@ export default function NavegacaoLivreTab({
           ) * 1000
         );
 
-        if (distDesdeUltimoMetros >= 3) {
+        if (distDesdeUltimoMetros >= 2) {
           calculatedHeading = Math.round(
             calcularBearing(
               ultimoPonto.latitude,
@@ -269,7 +272,7 @@ export default function NavegacaoLivreTab({
           ? Math.round(rawHeading)
           : calculatedHeading;
 
-      // Atualiza posição em tempo real
+      // Atualiza posição em tempo real (cursor no mapa)
       setPosicaoAtual({
         lat: latitude,
         lng: longitude,
@@ -280,16 +283,16 @@ export default function NavegacaoLivreTab({
       });
 
       // Atualiza velocidade máxima
-      if (speedKmh > velocidadeMax) {
+      if (speedKmh > velocidadeMaxRef.current) {
+        velocidadeMaxRef.current = speedKmh;
         setVelocidadeMax(speedKmh);
       }
 
-      // Se a navegação estiver gravando (EM_ANDAMENTO):
-      // Filtro Deadband: Só grava ponto se for o primeiro, ou se deslocou >= 3m, ou se passou >= 10s
-      if (status === 'EM_ANDAMENTO') {
+      // Se a ronda/navegação estiver gravando (statusRef === 'EM_ANDAMENTO'):
+      if (statusRef.current === 'EM_ANDAMENTO') {
         const tempoDesdeUltimo = ultimoPonto ? timestamp - ultimoPonto.timestamp : Infinity;
 
-        if (!ultimoPonto || distDesdeUltimoMetros >= 3 || tempoDesdeUltimo >= 10000) {
+        if (!ultimoPonto || distDesdeUltimoMetros >= 2 || tempoDesdeUltimo >= 4000) {
           const novoPonto: PontoGpsTrack = {
             latitude,
             longitude,
@@ -300,24 +303,52 @@ export default function NavegacaoLivreTab({
             distanceM: distDesdeUltimoMetros,
           };
 
-          setPontosGps((prev) => [...prev, novoPonto]);
+          pontosGpsRef.current = [...pontosGpsRef.current, novoPonto];
+          setPontosGps([...pontosGpsRef.current]);
+
           if (distDesdeUltimoMetros > 0) {
-            setDistanciaTotalMetros((prev) => prev + distDesdeUltimoMetros);
+            distanciaTotalMetrosRef.current += distDesdeUltimoMetros;
+            setDistanciaTotalMetros(distanciaTotalMetrosRef.current);
           }
         }
       }
     },
-    [status, velocidadeMax]
+    []
   );
 
   const handleError = useCallback((err: GeolocationPositionError) => {
     if (err.code === err.PERMISSION_DENIED) {
       toast.error('Permissão de GPS negada. Ative a localização no navegador para gravar percursos.');
+      statusRef.current = 'INATIVO';
       setStatus('INATIVO');
     } else if (err.code === err.POSITION_UNAVAILABLE) {
       toast.warning('Aguardando sinal estável do satélite GPS...');
     }
   }, []);
+
+  // Inicializa a escuta de GPS assim que a aba é aberta para já exibir posição ao vivo
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(handlePosition, handleError, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+
+    watchIdRef.current = navigator.geolocation.watchPosition(handlePosition, handleError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    });
+
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      liberarWakeLock();
+    };
+  }, [handlePosition, handleError, liberarWakeLock]);
 
   // Iniciar Navegação
   const iniciarNavegacao = () => {
@@ -327,26 +358,41 @@ export default function NavegacaoLivreTab({
     }
 
     solicitarWakeLock();
+    statusRef.current = 'EM_ANDAMENTO';
     setStatus('EM_ANDAMENTO');
     setSeguirCarro(true);
+
+    pontosGpsRef.current = [];
     setPontosGps([]);
+    distanciaTotalMetrosRef.current = 0;
     setDistanciaTotalMetros(0);
     setDuracaoSegundos(0);
+    velocidadeMaxRef.current = 0;
     setVelocidadeMax(0);
 
-    watchIdRef.current = navigator.geolocation.watchPosition(handlePosition, handleError, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 1000,
-    });
+    // Se já temos a posição atual captada, insere como primeiro ponto de partida
+    if (posicaoAtual) {
+      const pontoInicial: PontoGpsTrack = {
+        latitude: posicaoAtual.lat,
+        longitude: posicaoAtual.lng,
+        timestamp: posicaoAtual.timestamp || Date.now(),
+        speedKmh: posicaoAtual.speedKmh || 0,
+        heading: posicaoAtual.heading || 0,
+        accuracy: posicaoAtual.accuracy || 10,
+        distanceM: 0,
+      };
+      pontosGpsRef.current = [pontoInicial];
+      setPontosGps([pontoInicial]);
+    }
 
-    toast.success('Navegação Livre iniciada! Gravando traçado em tempo real.', {
+    toast.success('Ronda escolar iniciada! Gravando traçado em tempo real.', {
       icon: '🚗',
     });
   };
 
   // Pausar Navegação
   const pausarNavegacao = () => {
+    statusRef.current = 'PAUSADO';
     setStatus('PAUSADO');
     toast.info('Gravação de percurso pausada.');
   };
@@ -354,6 +400,7 @@ export default function NavegacaoLivreTab({
   // Retomar Navegação
   const retomarNavegacao = () => {
     solicitarWakeLock();
+    statusRef.current = 'EM_ANDAMENTO';
     setStatus('EM_ANDAMENTO');
     setSeguirCarro(true);
     toast.success('Gravação retomada!', { icon: '▶️' });
@@ -361,22 +408,23 @@ export default function NavegacaoLivreTab({
 
   // Cancelar Navegação
   const cancelarNavegacao = () => {
-    if (watchIdRef.current !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
     liberarWakeLock();
+    statusRef.current = 'INATIVO';
     setStatus('INATIVO');
+    pontosGpsRef.current = [];
     setPontosGps([]);
+    distanciaTotalMetrosRef.current = 0;
     setDistanciaTotalMetros(0);
     setDuracaoSegundos(0);
+    velocidadeMaxRef.current = 0;
     setVelocidadeMax(0);
     toast.info('Navegação descartada.');
   };
 
   // Abrir Modal de Salvamento
   const abrirModalSalvar = () => {
-    if (pontosGps.length < 2 && distanciaTotalMetros < 10) {
+    const pontosGravados = pontosGpsRef.current;
+    if (pontosGravados.length < 2 && distanciaTotalMetrosRef.current < 10) {
       toast.warning('Poucos pontos registrados. Desloque-se mais alguns metros antes de salvar.');
     }
     const agora = new Date();
@@ -392,8 +440,9 @@ export default function NavegacaoLivreTab({
       timeZone: 'America/Bahia',
     });
 
-    setTituloNavegacao(`Navegação Livre - ${dataFormatada} ${horaFormatada}`);
+    setTituloNavegacao(`Ronda Escolar - ${dataFormatada} ${horaFormatada}`);
     setObservacoesNavegacao('');
+    statusRef.current = 'PAUSADO';
     setStatus('PAUSADO');
     setModalSalvarAberto(true);
   };
@@ -405,18 +454,21 @@ export default function NavegacaoLivreTab({
       return;
     }
 
+    const pontosParaSalvar = pontosGpsRef.current.length > 0 ? pontosGpsRef.current : pontosGps;
+    const distanciaFinal = distanciaTotalMetrosRef.current || distanciaTotalMetros;
+
     setSalvando(true);
     try {
       const dataInicioStr =
-        pontosGps.length > 0
-          ? new Date(pontosGps[0].timestamp).toISOString()
+        pontosParaSalvar.length > 0
+          ? new Date(pontosParaSalvar[0].timestamp).toISOString()
           : new Date(Date.now() - duracaoSegundos * 1000).toISOString();
 
       const dataFimStr = new Date().toISOString();
 
       // Cálculo de velocidade média (km/h)
       const horas = duracaoSegundos / 3600;
-      const distKm = distanciaTotalMetros / 1000;
+      const distKm = distanciaFinal / 1000;
       const velocidadeMedia = horas > 0 ? Number((distKm / horas).toFixed(1)) : 0;
 
       const novoRegistro: NavegacaoLivreRegistro = {
@@ -428,10 +480,10 @@ export default function NavegacaoLivreTab({
         data_inicio: dataInicioStr,
         data_fim: dataFimStr,
         duracao_segundos: duracaoSegundos,
-        distancia_metros: distanciaTotalMetros,
+        distancia_metros: distanciaFinal,
         velocidade_media_kmh: velocidadeMedia,
-        velocidade_max_kmh: velocidadeMax,
-        pontos_gps: pontosGps,
+        velocidade_max_kmh: velocidadeMaxRef.current || velocidadeMax,
+        pontos_gps: pontosParaSalvar,
         status: 'FINALIZADA',
         observacoes: observacoesNavegacao.trim() || null,
         sincronizado: false,
@@ -460,34 +512,34 @@ export default function NavegacaoLivreTab({
             sincronizado_em: new Date().toISOString(),
           };
 
-          const { error } = await (supabase as any)
+          const { error: insertErr } = await (supabase as any)
             .from('registros_navegacoes_livres')
             .upsert(payload, { onConflict: 'id' });
 
-          if (!error) {
+          if (!insertErr) {
             await marcarNavegacaoComoSincronizada(novoRegistro.id);
+            novoRegistro.sincronizado = true;
           }
-        } catch (syncErr) {
-          console.warn('Erro ao sincronizar com o Supabase no salvamento:', syncErr);
+        } catch (supabaseErr) {
+          console.warn('Falha ao enviar navegação ao Supabase, mantida offline:', supabaseErr);
         }
       }
 
-      // Limpeza de watchers
-      if (watchIdRef.current !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
       liberarWakeLock();
 
+      statusRef.current = 'INATIVO';
       setStatus('INATIVO');
+      pontosGpsRef.current = [];
       setPontosGps([]);
+      distanciaTotalMetrosRef.current = 0;
       setDistanciaTotalMetros(0);
       setDuracaoSegundos(0);
+      velocidadeMaxRef.current = 0;
       setVelocidadeMax(0);
       setModalSalvarAberto(false);
 
       toast.success(`Percurso "${novoRegistro.titulo}" salvo com sucesso!`, {
-        description: `${(distanciaTotalMetros / 1000).toFixed(2)} km gravados com ${pontosGps.length} pontos.`,
+        description: `${(distanciaFinal / 1000).toFixed(2)} km gravados com ${pontosParaSalvar.length} pontos.`,
         icon: '✅',
       });
 
@@ -649,10 +701,7 @@ export default function NavegacaoLivreTab({
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <OfflineTileLayer />
 
           <MapFollower
             posicao={posicaoAtual ? { lat: posicaoAtual.lat, lng: posicaoAtual.lng } : null}

@@ -592,6 +592,7 @@ export default function VisitasPage() {
         })),
         status: 'FINALIZADA',
         observacoes: (payloadCompleto as any).observacoes ?? null,
+        sincronizado: false,
       });
     } catch (storeErr) {
       console.warn('Falha ao salvar no store de rotas offline:', storeErr);
