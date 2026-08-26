@@ -26,6 +26,8 @@ import {
   Save,
   Radio,
   Sliders,
+  Timer,
+  CheckCircle2,
 } from 'lucide-react';
 import { VisitasConfigModal } from './VisitasConfigModal';
 import { cn } from '@/lib/utils';
@@ -102,6 +104,8 @@ export default function VisitasNavegacaoLiveTab({
   const [tempoParadas, setTempoParadas] = useState(0);
   const [pontosGps, setPontosGps] = useState<TrackWaypoint[]>([]);
   const [visitasDetectadas, setVisitasDetectadas] = useState<RouteVisit[]>([]);
+  const [tempoParadaAtual, setTempoParadaAtual] = useState(0);
+  const [estadoMovimento, setEstadoMovimento] = useState<'moving' | 'stopped' | 'visit'>('moving');
 
   const [visitasConfig, setVisitasConfig] = useState<VisitasConfig>(obterVisitasConfig);
 
@@ -243,17 +247,26 @@ export default function VisitasNavegacaoLiveTab({
     toast.success('Rastreamento de campo iniciado!', { icon: '🛰️' });
   };
 
-  // Cronômetro da sessão
+  // Cronômetro da sessão e monitoramento de parada ao vivo
   useEffect(() => {
     if (status === 'EM_ANDAMENTO') {
       timerIntervalRef.current = setInterval(() => {
         setDuracaoSegundos((prev) => prev + 1);
+
+        if (trackerRef.current) {
+          const elapsedParada = trackerRef.current.getStationaryElapsedSeconds();
+          setTempoParadaAtual(elapsedParada);
+          setEstadoMovimento(trackerRef.current.getState());
+          setVisitasDetectadas(trackerRef.current.getVisits());
+          setTempoParadas(trackerRef.current.getVisitSeconds());
+        }
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
+      setTempoParadaAtual(0);
     }
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -532,6 +545,91 @@ export default function VisitasNavegacaoLiveTab({
           </Button>
         </div>
       </div>
+
+      {/* ── Widget Visual de Cronômetro de Visita em Tempo Real ── */}
+      {status === 'EM_ANDAMENTO' && tempoParadaAtual > 0 && (
+        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs',
+                  tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
+                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                    : 'bg-amber-500/15 border border-amber-500/30 text-amber-400 animate-pulse'
+                )}
+              >
+                {tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60) ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                ) : (
+                  <Timer className="w-5 h-5 text-amber-500" />
+                )}
+              </div>
+
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-foreground">
+                    {tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
+                      ? '✓ Visita Confirmada no Percurso'
+                      : '⏱️ Cronômetro de Parada Ativo'}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[10px] font-mono px-2 py-0.5 rounded-md font-bold',
+                      tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    )}
+                  >
+                    {tempoParadaAtual}s / {visitasConfig.tempoMinimoSegundos || 60}s
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  {tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
+                    ? `Tempo total de permanência nesta parada: ${formatarTempo(tempoParadaAtual)}.`
+                    : `Permanecendo parado por mais ${Math.max(
+                        0,
+                        (visitasConfig.tempoMinimoSegundos || 60) - tempoParadaAtual
+                      )}s a visita será validada automaticamente.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleMarcarVisitaImediata}
+                className="h-8 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5 fill-current" />
+                Confirmar Visita Agora
+              </Button>
+            </div>
+          </div>
+
+          {/* Barra de Progresso Visual do Cronômetro */}
+          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-3 border border-border/50">
+            <div
+              className={cn(
+                'h-full transition-all duration-300 rounded-full',
+                tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
+                  ? 'bg-emerald-500'
+                  : 'bg-amber-500'
+              )}
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.round(
+                    (tempoParadaAtual / (visitasConfig.tempoMinimoSegundos || 60)) * 100
+                  )
+                )}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Mapa Interativo Leaflet ao Vivo ── */}
       <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-border shadow-2xl bg-zinc-950">

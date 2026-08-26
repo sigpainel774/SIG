@@ -154,6 +154,18 @@ export class RouteTrackerManager {
     return this.state;
   }
 
+  public getStationarySince(): number | null {
+    return this.stationarySince;
+  }
+
+  public getStationaryElapsedSeconds(): number {
+    return this.stationarySince ? Math.max(0, Math.floor((Date.now() - this.stationarySince) / 1000)) : 0;
+  }
+
+  public getMinVisitSeconds(): number {
+    return this.config.visitMinimumSeconds || 60;
+  }
+
   public getDistanceMeters(): number {
     return Math.round(this.totalDistanceMeters);
   }
