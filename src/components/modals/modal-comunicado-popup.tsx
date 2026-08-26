@@ -85,6 +85,7 @@ export function ModalComunicadoPopup() {
         let query = (supabase.from as any)('comunicados')
           .select('id, title, body, target, date, anexo_url, anexo_nome, escola_ids, created_at, criado_por:funcionarios(nome)')
           .eq('is_popup', true)
+          .or('status.eq.publicado,status.is.null')
           .order('created_at', { ascending: false })
           .limit(10)
           

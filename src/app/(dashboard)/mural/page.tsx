@@ -2,24 +2,55 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Paperclip, Pin, Send, X, Loader2, ArrowLeft, Trash2, Sparkles, Cake, Globe, School, Building, Search, CheckSquare, Square } from 'lucide-react'
+import {
+  Bell,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Paperclip,
+  Pin,
+  Send,
+  X,
+  Loader2,
+  ArrowLeft,
+  Trash2,
+  Sparkles,
+  Globe,
+  School,
+  Building,
+  Search,
+  CheckSquare,
+  Square,
+  Clock,
+  BarChart3,
+  Play,
+  CheckCircle2,
+  Smartphone,
+  AlertCircle,
+  Eye,
+} from 'lucide-react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
-import { StandardDialog } from '@/components/ui/standard-dialog'
-import { CachedImage } from '@/components/ui/cached-image'
-import { getAvatarUrl } from '@/lib/photoHelper'
-
 import { sendPushToUser } from '@/lib/push/sendPushToUser'
 import { getHojeBrasilia } from '@/lib/dateUtils'
+
+const ModalTelemetriaComunicado = dynamic(
+  () => import('@/components/modals/modal-telemetria-comunicado').then((mod) => mod.ModalTelemetriaComunicado),
+  { ssr: false }
+)
 
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
   const { selectedSecretaria, selectedEscola } = useSchoolStore()
+  const searchParams = useSearchParams()
+
   const [selectedDate, setSelectedDate] = useState('')
   const [showComposer, setShowComposer] = useState(false)
   const [notices, setNotices] = useState<any[]>([])
@@ -48,6 +79,25 @@ export default function MuralPage() {
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Agendamento Prévio (Scheduled Broadcast)
+  const [isAgendado, setIsAgendado] = useState(false)
+  const [dataAgendamento, setDataAgendamento] = useState(() => getHojeBrasilia())
+  const [horaAgendamento, setHoraAgendamento] = useState('07:00')
+
+  // Filtro de Status para Gestores
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'publicados' | 'agendados'>('todos')
+
+  // Modal de Telemetria
+  const [telemetriaModal, setTelemetriaModal] = useState<{
+    open: boolean
+    comunicadoId: string | null
+    comunicadoTitulo: string
+  }>({
+    open: false,
+    comunicadoId: null,
+    comunicadoTitulo: '',
+  })
 
   // Seleção de Unidades (Nível 1 e Superadmin)
   const [todaARede, setTodaARede] = useState(true)
@@ -109,8 +159,11 @@ export default function MuralPage() {
 
   const fetchNotices = async () => {
     const supabase = createClient()
-    let query = supabase.from('comunicados')
-      .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, created_at, criado_por:funcionarios(nome)')
+    let query = supabase
+      .from('comunicados')
+      .select(
+        'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+      )
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       
@@ -122,6 +175,11 @@ export default function MuralPage() {
       query = (query as any).or(`escola_ids.is.null,escola_ids.cs.{"${selectedEscola.id}"}`)
     }
 
+    // Servidores comuns só enxergam comunicados já publicados
+    if (!podePublicar) {
+      query = (query as any).or('status.eq.publicado,status.is.null')
+    }
+
     const { data, error } = await query
 
     if (error) {
@@ -131,8 +189,25 @@ export default function MuralPage() {
     }
   }
 
+  // Processa agendamentos vencidos de forma resiliente e busca dados iniciais
   useEffect(() => {
     let active = true
+
+    // Disparo Lazy para processar agendados cujo horário já chegou
+    fetch('/api/comunicados/process-scheduled', { method: 'POST' }).catch(() => {})
+
+    // Rastreia leitura via push se query params estiverem presentes
+    const comunicadoIdParam = searchParams.get('comunicado_id')
+    if (comunicadoIdParam && funcionario?.auth_user_id) {
+      const supabase = createClient()
+      ;(supabase.from('comunicados_lidos') as any)
+        .upsert(
+          { user_id: funcionario.auth_user_id, comunicado_id: comunicadoIdParam },
+          { onConflict: 'comunicado_id,user_id' }
+        )
+        .then(() => {})
+    }
+
     const fetchData = async () => {
       const supabase = createClient()
       setLoading(true)
@@ -140,8 +215,11 @@ export default function MuralPage() {
       try {
         const currentMonth = viewDate.getMonth() + 1 // 1-based for PG
 
-        let query = supabase.from('comunicados')
-          .select('id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, created_at, criado_por:funcionarios(nome)')
+        let query = supabase
+          .from('comunicados')
+          .select(
+            'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+          )
           .order('date', { ascending: false })
           .order('created_at', { ascending: false })
           
@@ -151,6 +229,10 @@ export default function MuralPage() {
 
         if (selectedEscola?.id) {
           query = (query as any).or(`escola_ids.is.null,escola_ids.cs.{"${selectedEscola.id}"}`)
+        }
+
+        if (!podePublicar) {
+          query = (query as any).or('status.eq.publicado,status.is.null')
         }
 
         let escolasQuery = supabase
@@ -206,12 +288,27 @@ export default function MuralPage() {
     return () => {
       active = false
     }
-  }, [selectedSecretaria?.id, selectedEscola?.id, podePublicar])
+  }, [selectedSecretaria?.id, selectedEscola?.id, podePublicar, searchParams, funcionario?.auth_user_id])
 
   const filteredNotices = useMemo(() => {
-    if (!selectedDate) return notices
-    return notices.filter((notice) => notice.date === selectedDate)
-  }, [selectedDate, notices])
+    return notices.filter((notice) => {
+      // Filtro por data
+      if (selectedDate && notice.date !== selectedDate) return false
+
+      // Filtro por status
+      if (filtroStatus === 'publicados') {
+        if (notice.status === 'agendado') return false
+      } else if (filtroStatus === 'agendados') {
+        if (notice.status !== 'agendado') return false
+      }
+
+      return true
+    })
+  }, [selectedDate, notices, filtroStatus])
+
+  const totalAgendados = useMemo(() => {
+    return notices.filter((n) => n.status === 'agendado').length
+  }, [notices])
 
   const calendarData = useMemo(() => {
     const currentYear = viewDate.getFullYear()
@@ -264,9 +361,36 @@ export default function MuralPage() {
       escolaIdsPayload = [selectedEscola.id]
     }
 
+    // Validação de Agendamento
+    let scheduledForIso: string | null = null
+    let statusPayload = 'publicado'
+    let dataReferencia = getHojeBrasilia()
+
+    if (isAgendado) {
+      if (!dataAgendamento || !horaAgendamento) {
+        toast.error('Informe a data e o horário desejados para o agendamento.')
+        return
+      }
+
+      // Constrói timestamp no fuso de Brasília (-03:00)
+      const scheduledTimestamp = new Date(`${dataAgendamento}T${horaAgendamento}:00-03:00`).getTime()
+      if (isNaN(scheduledTimestamp)) {
+        toast.error('Data ou horário de agendamento inválidos.')
+        return
+      }
+
+      if (scheduledTimestamp <= Date.now()) {
+        toast.error('O horário de agendamento deve ser futuro.')
+        return
+      }
+
+      scheduledForIso = new Date(scheduledTimestamp).toISOString()
+      statusPayload = 'agendado'
+      dataReferencia = dataAgendamento
+    }
+
     setSalvando(true)
     const supabase = createClient()
-    const hojeStr = getHojeBrasilia()
 
     let anexoUrl = null
     let anexoNome = null
@@ -302,40 +426,54 @@ export default function MuralPage() {
 
     const targetPayload = alvo === 'Selecione o Público Alvo' ? 'Geral / Toda a Rede' : alvo
 
-    const { error } = await (supabase.from as any)('comunicados').insert({
+    const { data: insertResult, error } = await (supabase.from as any)('comunicados').insert({
       title: titulo.trim(),
       body: mensagem.trim(),
-      date: hojeStr,
+      date: dataReferencia,
       target: targetPayload,
       is_popup: isPopup,
       escola_ids: escolaIdsPayload,
+      status: statusPayload,
+      scheduled_for: scheduledForIso,
+      disparado_em: statusPayload === 'publicado' ? new Date().toISOString() : null,
       criado_por: funcionario?.id ?? null,
       secretaria_id: selectedSecretaria?.id ?? null,
       anexo_url: anexoUrl,
       anexo_nome: anexoNome
-    })
+    }).select('id').maybeSingle()
 
     if (error) {
-      toast.error('Erro ao publicar comunicado: ' + error.message)
+      toast.error('Erro ao salvar comunicado: ' + error.message)
     } else {
-      toast.success('Comunicado publicado com sucesso!')
+      if (isAgendado) {
+        toast.success(
+          `Comunicado agendado com sucesso para ${new Date(`${dataAgendamento}T${horaAgendamento}:00`).toLocaleDateString('pt-BR')} às ${horaAgendamento}!`
+        )
+      } else {
+        toast.success('Comunicado publicado com sucesso!')
 
-      // Disparo de Notificação Push Nativa
-      const isBroadcast = escolaIdsPayload === null || escolaIdsPayload.length === 0
-      sendPushToUser({
-        isBroadcast: isBroadcast,
-        title: `📢 Mural: ${titulo.trim()}`,
-        message: mensagem.trim(),
-        link: '/mural',
-        tag: 'comunicado-mural',
-      }).catch((pushErr) => {
-        console.warn('Falha silenciosa ao disparar push do mural:', pushErr)
-      })
+        // Disparo de Notificação Push Nativa Imediata com telemetria vinculada
+        const isBroadcast = escolaIdsPayload === null || escolaIdsPayload.length === 0
+        sendPushToUser({
+          isBroadcast,
+          escolaIds: escolaIdsPayload,
+          title: `📢 Mural: ${titulo.trim()}`,
+          message: mensagem.trim(),
+          link: `/mural?comunicado_id=${insertResult?.id ?? ''}`,
+          tag: 'comunicado-mural',
+          comunicadoId: insertResult?.id ?? null,
+        }).catch((pushErr) => {
+          console.warn('Falha silenciosa ao disparar push do mural:', pushErr)
+        })
+      }
 
       setTitulo('')
       setMensagem('')
       setAlvo('Selecione o Público Alvo')
       setIsPopup(false)
+      setIsAgendado(false)
+      setDataAgendamento(getHojeBrasilia())
+      setHoraAgendamento('07:00')
       setTodaARede(true)
       setUnidadesSelecionadas([])
       setBuscaUnidade('')
@@ -347,6 +485,42 @@ export default function MuralPage() {
       fetchNotices()
     }
     setSalvando(false)
+  }
+
+  const handleDispararAgora = async (notice: any) => {
+    if (!confirm(`Deseja transmitir o comunicado "${notice.title}" agora para toda a rede/unidades?`)) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await (supabase.from('comunicados') as any)
+        .update({
+          status: 'publicado',
+          disparado_em: new Date().toISOString(),
+        })
+        .eq('id', notice.id)
+
+      if (error) {
+        toast.error('Erro ao disparar comunicado: ' + error.message)
+        return
+      }
+
+      toast.success('Comunicado publicado com sucesso!')
+
+      const isBroadcast = !notice.escola_ids || notice.escola_ids.length === 0
+      sendPushToUser({
+        isBroadcast,
+        escolaIds: notice.escola_ids ?? null,
+        title: `📢 Mural: ${notice.title}`,
+        message: notice.body,
+        link: `/mural?comunicado_id=${notice.id}`,
+        tag: 'comunicado-mural',
+        comunicadoId: notice.id,
+      }).catch(() => {})
+
+      fetchNotices()
+    } catch (err: any) {
+      toast.error('Falha ao acionar disparo imediato.')
+    }
   }
 
   const handleExcluirComunicado = async (id: string) => {
@@ -370,6 +544,7 @@ export default function MuralPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header da Página */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -380,10 +555,15 @@ export default function MuralPage() {
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Mural</h1>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">Comunicados, avisos e aniversariantes da rede.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Comunicados, avisos, agendamentos e aniversariantes da rede.
+          </p>
         </div>
         {podePublicar && (
-          <Button onClick={() => setShowComposer((value) => !value)} className="bg-highlight text-background hover:bg-highlight/90 font-semibold cursor-pointer">
+          <Button
+            onClick={() => setShowComposer((value) => !value)}
+            className="bg-highlight text-background hover:bg-highlight/90 font-semibold cursor-pointer"
+          >
             <Pin className="mr-2 h-4 w-4" />
             {showComposer ? 'Cancelar' : 'Novo Comunicado'}
           </Button>
@@ -392,6 +572,7 @@ export default function MuralPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-4">
+          {/* Formulário de Criação / Agendamento */}
           {showComposer && podePublicar && (
             <Card className="border-borderCustom bg-card p-5 shadow-lg">
               <h2 className="mb-4 text-lg font-semibold text-foreground">Criar Novo Comunicado</h2>
@@ -405,6 +586,76 @@ export default function MuralPage() {
                     onChange={(e) => setTitulo(e.target.value)}
                     className="bg-input border-borderCustom text-foreground placeholder:text-muted-foreground"
                   />
+                </div>
+
+                {/* Programação de Transmissão (Imediato vs Agendado) */}
+                <div className="space-y-2 p-3.5 bg-input/40 border border-borderCustom rounded-xl">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-highlight" />
+                      Programação da Transmissão
+                    </span>
+                    <span className="text-[11px] font-medium text-highlight">
+                      {isAgendado ? 'Transmissão Agendada' : 'Disparo Imediato'}
+                    </span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAgendado(false)}
+                      className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                        !isAgendado
+                          ? 'bg-highlight/15 border-highlight text-highlight shadow-sm ring-1 ring-highlight/30'
+                          : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                      }`}
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Publicar Agora</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAgendado(true)}
+                      className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                        isAgendado
+                          ? 'bg-amber-500/15 border-amber-500 text-amber-300 shadow-sm ring-1 ring-amber-500/30'
+                          : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                      }`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Agendar Transmissão</span>
+                    </button>
+                  </div>
+
+                  {isAgendado && (
+                    <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2.5 animate-in fade-in duration-200">
+                      <span className="text-xs text-amber-300 font-bold flex items-center gap-1.5">
+                        <Clock className="w-4 h-4" />
+                        Defina a data e o horário (Fuso de Brasília):
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[11px] text-muted-foreground block mb-1">Data da Transmissão</label>
+                          <Input
+                            type="date"
+                            value={dataAgendamento}
+                            onChange={(e) => setDataAgendamento(e.target.value)}
+                            className="h-9 text-xs bg-input border-borderCustom text-foreground"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-muted-foreground block mb-1">Horário de Disparo</label>
+                          <Input
+                            type="time"
+                            value={horaAgendamento}
+                            onChange={(e) => setHoraAgendamento(e.target.value)}
+                            className="h-9 text-xs bg-input border-borderCustom text-foreground"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Destino das Unidades */}
@@ -600,7 +851,7 @@ export default function MuralPage() {
                   />
                 </div>
 
-                 <div className="flex flex-col gap-3 pt-2 border-t border-borderCustom">
+                <div className="flex flex-col gap-3 pt-2 border-t border-borderCustom">
                   {/* Input de arquivo invisível */}
                   <input
                     type="file"
@@ -652,12 +903,12 @@ export default function MuralPage() {
                       {salvando ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Publicando...
+                          {isAgendado ? 'Agendando...' : 'Publicando...'}
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
-                          <Send className="mr-1 h-4 w-4" />
-                          Publicar Comunicado
+                          {isAgendado ? <Clock className="mr-1 h-4 w-4" /> : <Send className="mr-1 h-4 w-4" />}
+                          {isAgendado ? 'Agendar Comunicado' : 'Publicar Comunicado'}
                         </span>
                       )}
                     </Button>
@@ -667,6 +918,47 @@ export default function MuralPage() {
             </Card>
           )}
 
+          {/* Filtros de Status (Apenas para Gestores) */}
+          {podePublicar && totalAgendados > 0 && (
+            <div className="flex items-center gap-2 p-1 bg-surface-2 border border-borderCustom rounded-xl w-fit">
+              <button
+                type="button"
+                onClick={() => setFiltroStatus('todos')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  filtroStatus === 'todos'
+                    ? 'bg-highlight/20 text-highlight border border-highlight/30'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Todos ({notices.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatus('publicados')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  filtroStatus === 'publicados'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Publicados ({notices.filter((n) => n.status !== 'agendado').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroStatus('agendados')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filtroStatus === 'agendados'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'text-amber-400/80 hover:text-amber-300'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Agendados ({totalAgendados})</span>
+              </button>
+            </div>
+          )}
+
+          {/* Feed de Comunicados */}
           {loading ? (
             <Card className="border-borderCustom bg-card p-8 text-center text-muted-foreground flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin text-highlight" />
@@ -677,95 +969,181 @@ export default function MuralPage() {
               Nenhum comunicado encontrado {selectedDate ? `para a data ${new Date(`${selectedDate}T00:00:00`).toLocaleDateString('pt-BR')}` : 'registrado no sistema'}.
             </Card>
           ) : (
-            filteredNotices.map((notice) => (
-              <Card key={notice.id} className="border-borderCustom bg-card p-5 hover:border-highlight/30 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-highlight/10 p-2 text-highlight shrink-0">
-                    <Bell className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
-                          {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
-                        </span>
-                        {podePublicar && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleExcluirComunicado(notice.id)}
-                            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
-                            title="Excluir comunicado"
+            filteredNotices.map((notice) => {
+              const isNoticeAgendado = notice.status === 'agendado'
+
+              return (
+                <Card
+                  key={notice.id}
+                  className={`border-borderCustom bg-card p-5 transition-all ${
+                    isNoticeAgendado
+                      ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-card'
+                      : 'hover:border-highlight/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`rounded-lg p-2 shrink-0 ${isNoticeAgendado ? 'bg-amber-500/15 text-amber-400' : 'bg-highlight/10 text-highlight'}`}>
+                      {isNoticeAgendado ? <Clock className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
+                          {isNoticeAgendado ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30 animate-pulse">
+                              <Clock className="w-3 h-3" />
+                              Agendado para {notice.scheduled_for ? new Date(notice.scheduled_for).toLocaleString('pt-BR') : 'Horário futuro'}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Publicado
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
+                            {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                          </span>
+                          {podePublicar && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleExcluirComunicado(notice.id)}
+                              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                              title="Excluir comunicado"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground whitespace-pre-line">{notice.body}</p>
+                      
+                      {notice.anexo_url && (
+                        <div className="mt-3">
+                          <a
+                            href={notice.anexo_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs font-medium text-highlight hover:underline bg-highlight/5 border border-highlight/10 px-3 py-1.5 rounded-lg"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <Paperclip className="h-3.5 w-3.5" />
+                            <span>Anexo: {notice.anexo_nome || 'Visualizar arquivo'}</span>
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {notice.is_popup && (
+                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                            Pop-up Prioritário
+                          </span>
+                        )}
+                        
+                        {/* Destino das Unidades */}
+                        {(!notice.escola_ids || notice.escola_ids.length === 0) ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/30">
+                            <Globe className="w-3 h-3 text-sky-400" />
+                            Toda a Rede
+                          </span>
+                        ) : notice.escola_ids.length === 1 ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                            <School className="w-3 h-3 text-emerald-400" />
+                            {mapaEscolas.get(notice.escola_ids[0]) || 'Unidade Escolar'}
+                          </span>
+                        ) : (
+                          <span 
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30"
+                            title={notice.escola_ids.map((id: string) => mapaEscolas.get(id) || id).join(', ')}
+                          >
+                            <Building className="w-3 h-3 text-amber-300" />
+                            {notice.escola_ids.length} Unidades
+                          </span>
+                        )}
+
+                        {notice.target && (
+                          <span className="text-xs font-semibold text-highlight bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
+                            {notice.target}
+                          </span>
+                        )}
+                        {notice.criado_por?.nome && (
+                          <span className="text-xs text-muted-foreground">
+                            Publicado por: {notice.criado_por.nome}
+                          </span>
                         )}
                       </div>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground whitespace-pre-line">{notice.body}</p>
-                    
-                    {notice.anexo_url && (
-                      <div className="mt-3">
-                        <a
-                          href={notice.anexo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs font-medium text-highlight hover:underline bg-highlight/5 border border-highlight/10 px-3 py-1.5 rounded-lg"
-                        >
-                          <Paperclip className="h-3.5 w-3.5" />
-                          <span>Anexo: {notice.anexo_nome || 'Visualizar arquivo'}</span>
-                        </a>
-                      </div>
-                    )}
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {notice.is_popup && (
-                        <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                          <Sparkles className="w-3 h-3 text-amber-400" />
-                          Pop-up Prioritário
-                        </span>
-                      )}
-                      
-                      {/* Destino das Unidades */}
-                      {(!notice.escola_ids || notice.escola_ids.length === 0) ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/30">
-                          <Globe className="w-3 h-3 text-sky-400" />
-                          Toda a Rede
-                        </span>
-                      ) : notice.escola_ids.length === 1 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                          <School className="w-3 h-3 text-emerald-400" />
-                          {mapaEscolas.get(notice.escola_ids[0]) || 'Unidade Escolar'}
-                        </span>
-                      ) : (
-                        <span 
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30"
-                          title={notice.escola_ids.map((id: string) => mapaEscolas.get(id) || id).join(', ')}
-                        >
-                          <Building className="w-3 h-3 text-amber-300" />
-                          {notice.escola_ids.length} Unidades
-                        </span>
+                      {/* Barra de Telemetria e Ações para Gestores */}
+                      {podePublicar && !isNoticeAgendado && (
+                        <div className="mt-3.5 pt-3 border-t border-borderCustom/60 flex flex-wrap items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                            <span className="inline-flex items-center gap-1 bg-input/60 px-2.5 py-1 rounded-lg border border-borderCustom text-xs">
+                              <Send className="w-3 h-3 text-highlight shrink-0" />
+                              <span>Disparos:</span>
+                              <strong className="text-foreground font-bold">{notice.total_disparos ?? 0}</strong>
+                            </span>
+                            <span className="inline-flex items-center gap-1 bg-input/60 px-2.5 py-1 rounded-lg border border-borderCustom text-xs">
+                              <Smartphone className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <span>Entrega Push:</span>
+                              <strong className="text-emerald-400 font-bold">
+                                {notice.total_disparos > 0
+                                  ? `${Math.round(((notice.total_entregues ?? 0) / notice.total_disparos) * 100)}%`
+                                  : '100%'}
+                              </strong>
+                            </span>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setTelemetriaModal({
+                                open: true,
+                                comunicadoId: notice.id,
+                                comunicadoTitulo: notice.title,
+                              })
+                            }
+                            className="h-8 text-xs border-highlight/30 bg-highlight/5 text-highlight hover:bg-highlight/15 cursor-pointer gap-1.5 font-semibold"
+                          >
+                            <BarChart3 className="w-3.5 h-3.5" />
+                            <span>Telemetria & Leituras</span>
+                          </Button>
+                        </div>
                       )}
 
-                      {notice.target && (
-                        <span className="text-xs font-semibold text-highlight bg-highlight/10 px-2.5 py-0.5 rounded-full border border-highlight/20">
-                          {notice.target}
-                        </span>
-                      )}
-                      {notice.criado_por?.nome && (
-                        <span className="text-xs text-muted-foreground">
-                          Publicado por: {notice.criado_por.nome}
-                        </span>
+                      {podePublicar && isNoticeAgendado && (
+                        <div className="mt-3.5 pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-2.5">
+                          <span className="text-xs text-amber-300/90 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            Aguardando momento de transmissão automática
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleDispararAgora(notice)}
+                              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer gap-1.5 shadow-sm"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <span>Disparar Agora</span>
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))
+                </Card>
+              )
+            })
           )}
         </div>
 
+        {/* Barra Lateral com Filtro por Data e Aniversariantes */}
         <aside className="space-y-4">
           <Card className="border-borderCustom bg-card p-5">
             <h2 className="mb-4 text-lg font-semibold text-foreground">Filtrar por Data</h2>
@@ -811,110 +1189,67 @@ export default function MuralPage() {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground">
-              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => (
-                <span key={idx}>{day}</span>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-7 gap-2 text-center text-sm">
-              {calendarData.blanks.map((_, idx) => (
-                <span key={`blank-${idx}`} className="py-1" />
-              ))}
-              {calendarData.days.map((day) => {
-                const hasBirthday = birthdays.some((birthday) => birthday.day === day)
-                return (
-                  <span
-                    key={day}
-                    onClick={() => handleDayClick(day, hasBirthday)}
-                    className={
-                      hasBirthday
-                        ? 'rounded-md bg-highlight py-1 font-semibold text-background shadow-sm cursor-pointer hover:brightness-110 transition-all select-none'
-                        : 'rounded-md bg-input py-1 text-muted-foreground'
-                    }
-                  >
-                    {day}
-                  </span>
-                )
-              })}
-            </div>
-            <div className="mt-5 space-y-2 border-t border-borderCustom pt-4">
-              {loading || loadingBirthdays ? (
-                <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-highlight" />
-                  <span>Carregando...</span>
+
+            {loadingBirthdays ? (
+              <div className="flex items-center justify-center p-6 text-xs text-muted-foreground gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-highlight" />
+                <span>Carregando aniversariantes...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
+                  <span>D</span>
+                  <span>S</span>
+                  <span>T</span>
+                  <span>Q</span>
+                  <span>Q</span>
+                  <span>S</span>
+                  <span>S</span>
                 </div>
-              ) : birthdays.length === 0 ? (
-                <p className="text-center text-xs text-muted-foreground py-2">Nenhum aniversariante neste mês.</p>
-              ) : (
-                birthdays.map((birthday, idx) => (
-                  <div key={idx} className="rounded-lg bg-input p-3 text-sm border border-borderCustom/50">
-                    <p className="font-semibold text-foreground">{birthday.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Dia {birthday.day} - {birthday.role}</p>
-                  </div>
-                ))
-              )}
-            </div>
+
+                <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                  {calendarData.blanks.map((_, index) => (
+                    <div key={`blank-${index}`} className="p-2" />
+                  ))}
+                  {calendarData.days.map((day) => {
+                    const hasBirthday = birthdays.some((b) => b.day === day)
+                    const isSelected = birthdayModal.day === day && birthdayModal.open
+
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => handleDayClick(day, hasBirthday)}
+                        disabled={!hasBirthday}
+                        className={`relative p-2 rounded-lg font-medium transition-all ${
+                          isSelected
+                            ? 'bg-highlight text-background font-bold shadow-md'
+                            : hasBirthday
+                            ? 'bg-highlight/15 text-highlight hover:bg-highlight/25 font-bold cursor-pointer ring-1 ring-highlight/30'
+                            : 'text-muted-foreground/60 hover:bg-hoverCustom/40 cursor-default'
+                        }`}
+                      >
+                        {day}
+                        {hasBirthday && (
+                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-highlight" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </Card>
         </aside>
       </div>
 
-      {/* Modal de Aniversariantes do Dia */}
-      <StandardDialog
-        open={birthdayModal.open}
-        onOpenChange={(open) => setBirthdayModal((prev) => ({ ...prev, open }))}
-        title={`Aniversariantes — Dia ${birthdayModal.day}`}
-        description={`${MONTH_NAMES[viewDate.getMonth()]} de ${viewDate.getFullYear()}`}
-        maxWidth="sm:max-w-[420px]"
-      >
-        <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-          {birthdaysOfSelectedDay.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground py-4">Nenhum aniversariante registrado neste dia.</p>
-          ) : (
-            birthdaysOfSelectedDay.map((b, idx) => {
-              const fullPhotoUrl = getAvatarUrl(b)
-              const initials = b.name
-                .trim()
-                .split(' ')
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((w: string) => w[0])
-                .join('')
-                .toUpperCase()
-
-              return (
-                <div key={idx} className="flex items-center gap-3.5 rounded-xl bg-input/80 border border-borderCustom/60 p-2.5 hover:border-highlight/30 transition-colors">
-                  {/* Moldura de Foto 3x4 */}
-                  <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 border border-borderCustom bg-surface-2 flex items-center justify-center shadow-sm">
-                    <CachedImage
-                      src={fullPhotoUrl}
-                      alt={b.name}
-                      className="w-full h-full object-cover object-top"
-                      fallback={
-                        <div className="w-full h-full bg-highlight/10 text-highlight font-extrabold text-sm flex items-center justify-center border border-highlight/20">
-                          {initials}
-                        </div>
-                      }
-                    />
-                  </div>
-
-                  {/* Nome + Cargo */}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-foreground text-sm truncate leading-snug">{b.name}</p>
-                    <span className="inline-block text-[11px] font-medium text-muted-foreground bg-surface-2 px-2 py-0.5 rounded-md border border-borderCustom/40 mt-1">
-                      {b.role}
-                    </span>
-                  </div>
-
-                  {/* Ícone comemorativo */}
-                  <div className="p-2 rounded-lg bg-highlight/10 text-highlight shrink-0">
-                    <Cake className="w-4 h-4" />
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </StandardDialog>
+      {/* Modal de Telemetria & CTR Nominal */}
+      <ModalTelemetriaComunicado
+        open={telemetriaModal.open}
+        onOpenChange={(open) => setTelemetriaModal((prev) => ({ ...prev, open }))}
+        comunicadoId={telemetriaModal.comunicadoId}
+        comunicadoTitulo={telemetriaModal.comunicadoTitulo}
+      />
     </div>
   )
 }

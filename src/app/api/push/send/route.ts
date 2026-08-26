@@ -27,6 +27,8 @@ export async function POST(req: Request) {
       tag,
       isBroadcast,
       escolaId,
+      escolaIds,
+      comunicadoId,
     } = body || {}
 
     if (!title || !message) {
@@ -36,18 +38,29 @@ export async function POST(req: Request) {
     let targetUserIds: string[] = []
 
     if (isBroadcast) {
-      // Broadcast para todos os usuários inscritos (ou filtrado por escola/unidade)
-      if (escolaId) {
-        // Busca auth_user_id dos funcionários vinculados à escola
+      // Broadcast para todos os usuários inscritos (ou filtrado por escola/unidades)
+      const targetEscolaIds: string[] = []
+      if (Array.isArray(escolaIds) && escolaIds.length > 0) {
+        targetEscolaIds.push(...escolaIds)
+      } else if (escolaId) {
+        targetEscolaIds.push(escolaId)
+      }
+
+      if (targetEscolaIds.length > 0) {
+        // Busca auth_user_id dos funcionários vinculados às escolas selecionadas
         const { data: vinculos } = await supabaseAdmin
           .from('vinculos_funcionarios')
           .select('funcionario:funcionarios!funcionario_id(auth_user_id)')
-          .eq('escola_id', escolaId)
+          .in('escola_id', targetEscolaIds)
           .eq('ativo', true)
 
-        targetUserIds = (vinculos ?? [])
-          .map((v: any) => v.funcionario?.auth_user_id)
-          .filter(Boolean)
+        targetUserIds = Array.from(
+          new Set(
+            (vinculos ?? [])
+              .map((v: any) => v.funcionario?.auth_user_id)
+              .filter(Boolean)
+          )
+        )
       } else {
         // Broadcast geral — busca todas as inscrições distintas
         const { data: subs } = await (supabaseAdmin as any)
@@ -76,6 +89,15 @@ export async function POST(req: Request) {
     }
 
     if (targetUserIds.length === 0) {
+      if (comunicadoId) {
+        await (supabaseAdmin.from('comunicados') as any)
+          .update({
+            total_disparos: 0,
+            total_entregues: 0,
+            disparado_em: new Date().toISOString(),
+          })
+          .eq('id', comunicadoId)
+      }
       return NextResponse.json({ ok: true, sent: 0, message: 'Nenhum usuário destinatário encontrado para push' })
     }
 
@@ -86,6 +108,15 @@ export async function POST(req: Request) {
       .in('user_id', targetUserIds)
 
     if (subsErr || !subscriptions || subscriptions.length === 0) {
+      if (comunicadoId) {
+        await (supabaseAdmin.from('comunicados') as any)
+          .update({
+            total_disparos: targetUserIds.length,
+            total_entregues: 0,
+            disparado_em: new Date().toISOString(),
+          })
+          .eq('id', comunicadoId)
+      }
       return NextResponse.json({ ok: true, sent: 0, message: 'Nenhuma inscrição push encontrada' })
     }
 
@@ -94,35 +125,59 @@ export async function POST(req: Request) {
       body: message,
       link: link || '/home',
       tag: tag || 'sig-push',
+      comunicado_id: comunicadoId || null,
     })
 
-    const sendPromises = (subscriptions as any[]).map(async (sub) => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth_key,
-        },
-      }
+    // Micro-loteamento (chunking) de 50 requisições simultâneas para evitar esgotamento de sockets
+    const CHUNK_SIZE = 50
+    const results: PromiseSettledResult<{ success: boolean; endpoint: string; error?: string }>[] = []
 
-      try {
-        await webpush.sendNotification(pushSubscription, payload)
-        return { success: true, endpoint: sub.endpoint }
-      } catch (err: any) {
-        // Se a inscrição expirou no Google/Apple (410 Gone / 404 Not Found), deleta do banco
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          console.log(`[Push] Inscrição expirada (${err.statusCode}). Removendo endpoint: ${sub.endpoint}`)
-          await (supabaseAdmin as any).from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
-        } else {
-          console.error('[Push] Erro ao enviar notificação para endpoint:', sub.endpoint, err.message || err)
+    for (let i = 0; i < subscriptions.length; i += CHUNK_SIZE) {
+      const chunk = subscriptions.slice(i, i + CHUNK_SIZE)
+      const chunkPromises = chunk.map(async (sub: any) => {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth_key,
+          },
         }
-        return { success: false, endpoint: sub.endpoint, error: err.message }
-      }
-    })
 
-    // Executa em paralelo de forma resiliente
-    const results = await Promise.allSettled(sendPromises)
+        try {
+          await webpush.sendNotification(pushSubscription, payload)
+          return { success: true, endpoint: sub.endpoint }
+        } catch (err: any) {
+          // Se a inscrição expirou no Google/Apple (410 Gone / 404 Not Found), deleta do banco
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            console.log(`[Push] Inscrição expirada (${err.statusCode}). Removendo endpoint: ${sub.endpoint}`)
+            await (supabaseAdmin as any).from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+          } else {
+            console.error('[Push] Erro ao enviar notificação para endpoint:', sub.endpoint, err.message || err)
+          }
+          return { success: false, endpoint: sub.endpoint, error: err.message }
+        }
+      })
+
+      const chunkResults = await Promise.allSettled(chunkPromises)
+      results.push(...chunkResults)
+
+      if (i + CHUNK_SIZE < subscriptions.length) {
+        await new Promise((resolve) => setTimeout(resolve, 40)) // 40ms de alívio
+      }
+    }
+
     const successCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length
+
+    // Atualiza contadores de telemetria no comunicado, se aplicável
+    if (comunicadoId) {
+      await (supabaseAdmin.from('comunicados') as any)
+        .update({
+          total_disparos: subscriptions.length,
+          total_entregues: successCount,
+          disparado_em: new Date().toISOString(),
+        })
+        .eq('id', comunicadoId)
+    }
 
     return NextResponse.json({
       ok: true,
