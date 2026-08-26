@@ -150,24 +150,45 @@ export default function HistoricoPercursosTab() {
           .order('data_inicio', { ascending: false });
 
         if (!error && data) {
-          listaServidor = data.map((row: any) => ({
-            id: row.id,
-            funcionario_id: row.funcionario_id,
-            funcionario_nome: row.funcionarios?.nome ?? 'Servidor / Motorista',
-            veiculo_id: row.veiculo_id,
-            titulo: row.titulo,
-            data_inicio: row.data_inicio,
-            data_fim: row.data_fim,
-            duracao_segundos: row.duracao_segundos || 0,
-            distancia_metros: Number(row.distancia_metros) || 0,
-            velocidade_media_kmh: Number(row.velocidade_media_kmh) || 0,
-            velocidade_max_kmh: Number(row.velocidade_max_kmh) || 0,
-            pontos_gps: Array.isArray(row.pontos_gps) ? row.pontos_gps : [],
-            status: row.status ?? 'FINALIZADA',
-            observacoes: row.observacoes ?? null,
-            sincronizado: true,
-            created_at: row.created_at,
-          }));
+          listaServidor = data.map((row: any) => {
+            let pts = row.pontos_gps;
+            if (typeof pts === 'string') {
+              try {
+                pts = JSON.parse(pts);
+              } catch {
+                pts = [];
+              }
+            }
+            const ptsArray = Array.isArray(pts) ? pts : [];
+            const dataInicioTimestamp = new Date(row.data_inicio).getTime() || Date.now();
+
+            return {
+              id: row.id,
+              funcionario_id: row.funcionario_id,
+              funcionario_nome: row.funcionarios?.nome ?? 'Servidor / Motorista',
+              veiculo_id: row.veiculo_id,
+              titulo: row.titulo,
+              data_inicio: row.data_inicio,
+              data_fim: row.data_fim,
+              duracao_segundos: row.duracao_segundos || 0,
+              distancia_metros: Number(row.distancia_metros) || 0,
+              velocidade_media_kmh: Number(row.velocidade_media_kmh) || 0,
+              velocidade_max_kmh: Number(row.velocidade_max_kmh) || 0,
+              pontos_gps: ptsArray.map((p: any) => ({
+                latitude: Number(p.latitude) || 0,
+                longitude: Number(p.longitude) || 0,
+                timestamp: Number(p.timestamp) || dataInicioTimestamp,
+                speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+                heading: Number(p.heading) || 0,
+                accuracy: Number(p.accuracy) || 10,
+                distanceM: Number(p.distanceM) || 0,
+              })),
+              status: row.status ?? 'FINALIZADA',
+              observacoes: row.observacoes ?? null,
+              sincronizado: true,
+              created_at: row.created_at,
+            };
+          });
         }
       } catch (err) {
         console.warn('Falha ao buscar registros_navegacoes_livres:', err);
@@ -184,26 +205,40 @@ export default function HistoricoPercursosTab() {
 
         if (!errTrajetos && dataTrajetos) {
           listaTrajetosVisitasServidor = dataTrajetos.map((row: any) => {
-            const rawPontos = Array.isArray(row.posicoes) ? row.posicoes : [];
-            const pontosGpsFormatados = rawPontos.map((p: any) => ({
+            let rawPontos = row.posicoes;
+            if (typeof rawPontos === 'string') {
+              try {
+                rawPontos = JSON.parse(rawPontos);
+              } catch {
+                rawPontos = [];
+              }
+            }
+            const ptsArray = Array.isArray(rawPontos) ? rawPontos : [];
+            const dataInicioTimestamp = (row.started_at ? new Date(row.started_at).getTime() : Date.now()) || Date.now();
+
+            const pontosGpsFormatados = ptsArray.map((p: any) => ({
               latitude: Number(p.latitude) || 0,
               longitude: Number(p.longitude) || 0,
-              timestamp: p.timestamp || (row.started_at ? new Date(row.started_at).getTime() : Date.now()),
+              timestamp: Number(p.timestamp) || dataInicioTimestamp,
               speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
               heading: Number(p.heading) || 0,
               accuracy: Number(p.accuracy) || 10,
               distanceM: Number(p.distanceM) || 0,
             }));
 
+            const dataInicioStr = row.started_at || new Date().toISOString();
+            const dataObj = new Date(dataInicioStr);
+            const dataFormatada = !isNaN(dataObj.getTime()) ? dataObj.toLocaleDateString('pt-BR') : '';
+
             return {
               id: row.id,
               funcionario_id: row.usuario_id || null,
               funcionario_nome: 'Agente / Servidor (Visitas)',
               veiculo_id: row.veiculo_id || null,
-              titulo: row.nome || `Trajeto Visitas - ${new Date(row.started_at).toLocaleDateString('pt-BR')}`,
-              data_inicio: row.started_at,
+              titulo: row.nome || `Trajeto Visitas - ${dataFormatada}`,
+              data_inicio: dataInicioStr,
               data_fim: row.ended_at || null,
-              duracao_segundos: (row.moving_seconds || 0) + (row.visit_seconds || 0),
+              duracao_segundos: (Number(row.moving_seconds) || 0) + (Number(row.visit_seconds) || 0),
               distancia_metros: Number(row.distance_meters) || 0,
               velocidade_media_kmh: 0,
               velocidade_max_kmh: 0,
@@ -228,26 +263,40 @@ export default function HistoricoPercursosTab() {
         const trajetosAlpha = await visitasOfflineService.getTrajetos();
         const trajetosCompletosPromessas = (trajetosAlpha || []).map(async (t) => {
           const detalhe = await visitasOfflineService.obterTrajetoCompletoLocal(t.id);
-          const rawPontos = detalhe?.posicoes || (t as any).posicoes || [];
-          const pontosGpsFormatados = rawPontos.map((p: any) => ({
+          let rawPontos = detalhe?.posicoes || (t as any).posicoes || [];
+          if (typeof rawPontos === 'string') {
+            try {
+              rawPontos = JSON.parse(rawPontos);
+            } catch {
+              rawPontos = [];
+            }
+          }
+          const ptsArray = Array.isArray(rawPontos) ? rawPontos : [];
+          const dataInicioTimestamp = (t.started_at ? new Date(t.started_at).getTime() : Date.now()) || Date.now();
+
+          const pontosGpsFormatados = ptsArray.map((p: any) => ({
             latitude: Number(p.latitude) || 0,
             longitude: Number(p.longitude) || 0,
-            timestamp: p.timestamp || (t.started_at ? new Date(t.started_at).getTime() : Date.now()),
+            timestamp: Number(p.timestamp) || dataInicioTimestamp,
             speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
             heading: Number(p.heading) || 0,
             accuracy: Number(p.accuracy) || 10,
             distanceM: Number(p.distanceM) || 0,
           }));
 
+          const dataInicioStr = t.started_at || new Date().toISOString();
+          const dataObj = new Date(dataInicioStr);
+          const dataFormatada = !isNaN(dataObj.getTime()) ? dataObj.toLocaleDateString('pt-BR') : '';
+
           return {
             id: t.id,
             funcionario_id: t.usuario_id || null,
             funcionario_nome: 'Agente / Servidor (Offline)',
             veiculo_id: t.veiculo_id || null,
-            titulo: (t as any).nome || `Trajeto Offline - ${new Date(t.started_at).toLocaleDateString('pt-BR')}`,
-            data_inicio: t.started_at,
+            titulo: (t as any).nome || `Trajeto Offline - ${dataFormatada}`,
+            data_inicio: dataInicioStr,
             data_fim: t.ended_at || null,
-            duracao_segundos: (t.moving_seconds || 0) + (t.visit_seconds || 0),
+            duracao_segundos: (Number(t.moving_seconds) || 0) + (Number(t.visit_seconds) || 0),
             distancia_metros: Number(t.distance_meters) || 0,
             velocidade_media_kmh: 0,
             velocidade_max_kmh: 0,

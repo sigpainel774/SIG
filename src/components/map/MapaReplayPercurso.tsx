@@ -109,9 +109,16 @@ const criarIconeCarro = (bearing: number) => {
 function FitBoundsToRoute({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
   const map = useMap();
   useEffect(() => {
-    if (bounds) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-    }
+    if (!bounds || !map) return;
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      } catch (err) {
+        console.warn('Ajuste suave de limites do mapa ignorado:', err);
+      }
+    }, 150);
+    return () => clearTimeout(timer);
   }, [bounds, map]);
   return null;
 }
@@ -123,9 +130,13 @@ export default function MapaReplayPercurso({
 }: MapaReplayPercursoProps) {
   // Ordena visitas cronologicamente caso seja modo de visitas
   const visitasOrdenadas = useMemo(() => {
-    return [...visitas].sort(
-      (a, b) => new Date(a.data_hora_chegada).getTime() - new Date(b.data_hora_chegada).getTime()
-    );
+    return [...visitas]
+      .filter((v) => Number.isFinite(Number(v.latitude)) && Number.isFinite(Number(v.longitude)))
+      .sort((a, b) => {
+        const tA = new Date(a.data_hora_chegada).getTime() || 0;
+        const tB = new Date(b.data_hora_chegada).getTime() || 0;
+        return tA - tB;
+      });
   }, [visitas]);
 
   // Modo de operação: 'NAVEGACAO_LIVRE' ou 'VISITAS_ESCOLAS'
@@ -141,42 +152,75 @@ export default function MapaReplayPercurso({
   const [progresso, setProgresso] = useState<number>(0); // 0.0 a 1.0 (0% a 100%)
   const [velocidade, setVelocidade] = useState<number>(2); // 1x, 2x, 5x, 10x
 
-  // Timestamps extremos
+  // Timestamps extremos blindados contra NaN
   const { timeInicio, timeFim, duracaoTotalMs } = useMemo(() => {
     if (isModoNavegacaoLivre && navegacaoLivre) {
       const pontos = navegacaoLivre.pontos_gps || [];
       if (pontos.length > 0) {
-        const tIni = pontos[0].timestamp || new Date(navegacaoLivre.data_inicio).getTime();
-        const tFim =
-          pontos[pontos.length - 1].timestamp ||
-          (navegacaoLivre.data_fim ? new Date(navegacaoLivre.data_fim).getTime() : tIni + navegacaoLivre.duracao_segundos * 1000);
+        const rawTIni =
+          Number(pontos[0].timestamp) ||
+          (navegacaoLivre.data_inicio ? new Date(navegacaoLivre.data_inicio).getTime() : Date.now());
+        const tIni = Number.isFinite(rawTIni) ? rawTIni : Date.now();
+
+        const ultimoPonto = pontos[pontos.length - 1];
+        const rawTFim =
+          Number(ultimoPonto?.timestamp) ||
+          (navegacaoLivre.data_fim
+            ? new Date(navegacaoLivre.data_fim).getTime()
+            : tIni + (Number(navegacaoLivre.duracao_segundos) || 0) * 1000);
+        const tFim = Number.isFinite(rawTFim) && rawTFim >= tIni ? rawTFim : tIni + 1000;
+
         const duracao = Math.max(tFim - tIni, 1000);
-        return { timeInicio: tIni, timeFim: tFim, duracaoTotalMs: duracao };
+        return {
+          timeInicio: tIni,
+          timeFim: tFim,
+          duracaoTotalMs: Number.isFinite(duracao) ? duracao : 1000,
+        };
       }
     }
 
-    if (visitasOrdenadas.length === 0) return { timeInicio: 0, timeFim: 0, duracaoTotalMs: 0 };
-    const tIni = new Date(visitasOrdenadas[0].data_hora_chegada).getTime();
-    const tFim = new Date(visitasOrdenadas[visitasOrdenadas.length - 1].data_hora_chegada).getTime();
+    if (visitasOrdenadas.length === 0) {
+      const agora = Date.now();
+      return { timeInicio: agora, timeFim: agora + 1000, duracaoTotalMs: 1000 };
+    }
+
+    const rawIni = new Date(visitasOrdenadas[0].data_hora_chegada).getTime();
+    const tIni = Number.isFinite(rawIni) ? rawIni : Date.now();
+
+    const rawFim = new Date(visitasOrdenadas[visitasOrdenadas.length - 1].data_hora_chegada).getTime();
+    const tFim = Number.isFinite(rawFim) && rawFim >= tIni ? rawFim : tIni + 1000;
+
     const duracao = Math.max(tFim - tIni, 1000);
-    return { timeInicio: tIni, timeFim: tFim, duracaoTotalMs: duracao };
+    return {
+      timeInicio: tIni,
+      timeFim: tFim,
+      duracaoTotalMs: Number.isFinite(duracao) ? duracao : 1000,
+    };
   }, [isModoNavegacaoLivre, navegacaoLivre, visitasOrdenadas]);
 
   // Carrega coordenadas e traçado
   useEffect(() => {
     // 1. Se for Navegação Livre gravada: usa a densa trilha de GPS diretamente
     if (isModoNavegacaoLivre && navegacaoLivre) {
-      const pts = navegacaoLivre.pontos_gps || [];
-      const coords: [number, number][] = pts.map((p) => [p.latitude, p.longitude]);
+      const pts = Array.isArray(navegacaoLivre.pontos_gps) ? navegacaoLivre.pontos_gps : [];
+      const coords: [number, number][] = pts
+        .map((p) => [Number(p.latitude), Number(p.longitude)] as [number, number])
+        .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0);
+
       setPolylineCoords(coords);
-      setDistanciaTotalKm(Number((navegacaoLivre.distancia_metros / 1000).toFixed(2)));
+      setDistanciaTotalKm(Number(((Number(navegacaoLivre.distancia_metros) || 0) / 1000).toFixed(2)));
       return;
     }
 
     // 2. Se for Roteiro de Visitas a Escolas:
     if (visitasOrdenadas.length < 2) {
       if (visitasOrdenadas.length === 1) {
-        setPolylineCoords([[visitasOrdenadas[0].latitude, visitasOrdenadas[0].longitude]]);
+        const v = visitasOrdenadas[0];
+        if (Number.isFinite(Number(v.latitude)) && Number.isFinite(Number(v.longitude))) {
+          setPolylineCoords([[Number(v.latitude), Number(v.longitude)]]);
+        } else {
+          setPolylineCoords([]);
+        }
       } else {
         setPolylineCoords([]);
       }
@@ -190,8 +234,8 @@ export default function MapaReplayPercurso({
     const pontos: PontoLocalizacao[] = visitasOrdenadas.map((v, i) => ({
       id: v.id,
       nome: v.escola_nome,
-      latitude: v.latitude,
-      longitude: v.longitude,
+      latitude: Number(v.latitude) || -12.7299932,
+      longitude: Number(v.longitude) || -39.1858195,
       ordem: i + 1,
     }));
 
@@ -199,8 +243,11 @@ export default function MapaReplayPercurso({
       .then((res) => {
         if (isMounted) {
           if (res.coordenadasPolyline && res.coordenadasPolyline.length > 0) {
-            setPolylineCoords(res.coordenadasPolyline);
-            setDistanciaTotalKm(res.distanciaTotalKm);
+            const limpas = res.coordenadasPolyline.filter(
+              ([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng)
+            );
+            setPolylineCoords(limpas);
+            setDistanciaTotalKm(Number(res.distanciaTotalKm) || 0);
           } else {
             const fallback: [number, number][] = pontos.map((p) => [p.latitude, p.longitude]);
             setPolylineCoords(fallback);
@@ -225,63 +272,78 @@ export default function MapaReplayPercurso({
 
   // Calcula a posição do carro e ângulo com base no progresso atual (0 a 1)
   const telemetriaAtual = useMemo(() => {
-    if (polylineCoords.length === 0) {
-      return {
-        lat: -12.7299932,
-        lng: -39.1858195,
-        bearing: 0,
-        speedKmh: 0,
-        dataHoraSimulada: new Date(),
-        paradaAtualIdx: 0,
-        paradaAtual: null,
-        proximaParada: null,
-      };
+    const defaultCoords = {
+      lat: -12.7299932,
+      lng: -39.1858195,
+      bearing: 0,
+      speedKmh: 0,
+      dataHoraSimulada: new Date(Number.isFinite(timeInicio) ? timeInicio : Date.now()),
+      paradaAtualIdx: 0,
+      paradaAtual: null as VisitaHistoricoItem | null,
+      proximaParada: null as VisitaHistoricoItem | null,
+    };
+
+    if (!polylineCoords || polylineCoords.length === 0) {
+      return defaultCoords;
     }
 
     if (polylineCoords.length === 1) {
+      const latVal = Number(polylineCoords[0][0]) || -12.7299932;
+      const lngVal = Number(polylineCoords[0][1]) || -39.1858195;
       return {
-        lat: polylineCoords[0][0],
-        lng: polylineCoords[0][1],
-        bearing: 0,
-        speedKmh: 0,
-        dataHoraSimulada: new Date(timeInicio),
-        paradaAtualIdx: 0,
+        ...defaultCoords,
+        lat: latVal,
+        lng: lngVal,
         paradaAtual: visitasOrdenadas[0] || null,
-        proximaParada: null,
       };
     }
 
-    const totalSegs = polylineCoords.length - 1;
-    const pontoFracionario = progresso * totalSegs;
+    const totalSegs = Math.max(1, polylineCoords.length - 1);
+    const progressoNormalizado = Math.max(0, Math.min(progresso, 1));
+    const pontoFracionario = progressoNormalizado * totalSegs;
     const indexAtual = Math.min(Math.floor(pontoFracionario), totalSegs - 1);
     const fraction = pontoFracionario - indexAtual;
 
-    const p1 = polylineCoords[indexAtual];
+    const p1 = polylineCoords[indexAtual] || polylineCoords[0] || [-12.7299932, -39.1858195];
     const p2 = polylineCoords[indexAtual + 1] || p1;
 
+    const p1Lat = Number(p1[0]) || -12.7299932;
+    const p1Lng = Number(p1[1]) || -39.1858195;
+    const p2Lat = Number(p2[0]) || p1Lat;
+    const p2Lng = Number(p2[1]) || p1Lng;
+
     // Interpolação Linear entre p1 e p2
-    const lat = p1[0] + (p2[0] - p1[0]) * fraction;
-    const lng = p1[1] + (p2[1] - p1[1]) * fraction;
-    const bearing = calcularBearing(p1[0], p1[1], p2[0], p2[1]);
+    const lat = Number.isFinite(p1Lat + (p2Lat - p1Lat) * fraction)
+      ? p1Lat + (p2Lat - p1Lat) * fraction
+      : p1Lat;
+    const lng = Number.isFinite(p1Lng + (p2Lng - p1Lng) * fraction)
+      ? p1Lng + (p2Lng - p1Lng) * fraction
+      : p1Lng;
+    const bearing = Number.isFinite(calcularBearing(p1Lat, p1Lng, p2Lat, p2Lng))
+      ? calcularBearing(p1Lat, p1Lng, p2Lat, p2Lng)
+      : 0;
 
     // Cálculo do Timestamp Simulado
-    const timestampAtual = timeInicio + progresso * duracaoTotalMs;
-    const dataHoraSimulada = new Date(timestampAtual);
+    const timestampAtual = timeInicio + progressoNormalizado * (duracaoTotalMs || 1000);
+    const dataHoraSimulada = new Date(Number.isFinite(timestampAtual) ? timestampAtual : Date.now());
 
     let speedKmh = 0;
 
     if (isModoNavegacaoLivre && navegacaoLivre && (navegacaoLivre.pontos_gps || []).length > 0) {
       const pts = navegacaoLivre.pontos_gps;
-      const pt1 = pts[indexAtual] || pts[0];
+      const pt1 = pts[indexAtual] || pts[0] || { speedKmh: 0 };
       const pt2 = pts[indexAtual + 1] || pt1;
-      speedKmh = Number((pt1.speedKmh + (pt2.speedKmh - pt1.speedKmh) * fraction).toFixed(1));
+      const sp1 = Number(pt1.speedKmh ?? (pt1 as any).speed ?? 0) || 0;
+      const sp2 = Number(pt2.speedKmh ?? (pt2 as any).speed ?? 0) || 0;
+      const calcSpeed = sp1 + (sp2 - sp1) * fraction;
+      speedKmh = Number.isFinite(calcSpeed) ? Number(calcSpeed.toFixed(1)) : 0;
     }
 
     // Identifica qual parada o veículo já passou e qual é a próxima (em modo de visitas)
     let paradaAtualIdx = 0;
     for (let i = 0; i < visitasOrdenadas.length; i++) {
       const tParada = new Date(visitasOrdenadas[i].data_hora_chegada).getTime();
-      if (timestampAtual >= tParada) {
+      if (Number.isFinite(tParada) && timestampAtual >= tParada) {
         paradaAtualIdx = i;
       }
     }
@@ -355,8 +417,16 @@ export default function MapaReplayPercurso({
 
   // Bounds para auto-enquadramento
   const bounds = useMemo<L.LatLngBoundsExpression | null>(() => {
-    if (polylineCoords.length === 0) return null;
-    return L.latLngBounds(polylineCoords.map((c) => [c[0], c[1]]));
+    if (!polylineCoords || polylineCoords.length === 0) return null;
+    try {
+      const validCoords = polylineCoords.filter(
+        ([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng)
+      );
+      if (validCoords.length === 0) return null;
+      return L.latLngBounds(validCoords.map((c) => [c[0], c[1]]));
+    } catch {
+      return null;
+    }
   }, [polylineCoords]);
 
   const temDeslocamentoReal = polylineCoords.length >= 2 && distanciaTotalKm > 0;
@@ -379,22 +449,32 @@ export default function MapaReplayPercurso({
     setProgresso(0);
   };
 
-  const formatarHora = (date: Date) => {
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      timeZone: 'America/Bahia',
-    });
+  const formatarHora = (date: Date | null | undefined) => {
+    if (!date || isNaN(date.getTime())) return '--:--:--';
+    try {
+      return date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'America/Bahia',
+      });
+    } catch {
+      return '--:--:--';
+    }
   };
 
-  const formatarData = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      timeZone: 'America/Bahia',
-    });
+  const formatarData = (date: Date | null | undefined) => {
+    if (!date || isNaN(date.getTime())) return '--/--/----';
+    try {
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        timeZone: 'America/Bahia',
+      });
+    } catch {
+      return '--/--/----';
+    }
   };
 
   if (!isModoNavegacaoLivre && visitasOrdenadas.length === 0) {
@@ -553,17 +633,17 @@ export default function MapaReplayPercurso({
           {/* Marcadores de Todas as Paradas (Modo Visitas) */}
           {!isModoNavegacaoLivre &&
             visitasOrdenadas.map((visita, idx) => {
+              const lat = Number(visita.latitude);
+              const lng = Number(visita.longitude);
+              if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
               const isAtiva = telemetriaAtual.paradaAtualIdx === idx;
-              const horaStr = new Date(visita.data_hora_chegada).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'America/Bahia',
-              });
+              const horaStr = formatarHora(new Date(visita.data_hora_chegada));
 
               return (
                 <Marker
                   key={visita.id}
-                  position={[visita.latitude, visita.longitude]}
+                  position={[lat, lng]}
                   icon={criarIconeParada(idx + 1, horaStr, isAtiva)}
                 >
                   <Popup className="custom-leaflet-popup">
@@ -600,14 +680,16 @@ export default function MapaReplayPercurso({
               );
             })}
 
-          {/* Marcador Animado do Carrinho com Rotação */}
-          {polylineCoords.length > 0 && (
-            <Marker
-              position={[telemetriaAtual.lat, telemetriaAtual.lng]}
-              icon={criarIconeCarro(telemetriaAtual.bearing)}
-              zIndexOffset={1000}
-            />
-          )}
+          {/* Marcador Animado do Carrinho com Rotação (Blindado contra coordenadas NaN) */}
+          {polylineCoords.length > 0 &&
+            Number.isFinite(telemetriaAtual.lat) &&
+            Number.isFinite(telemetriaAtual.lng) && (
+              <Marker
+                position={[telemetriaAtual.lat, telemetriaAtual.lng]}
+                icon={criarIconeCarro(telemetriaAtual.bearing)}
+                zIndexOffset={1000}
+              />
+            )}
         </MapContainer>
 
         {/* Overlay com Controles do Player Flutuante */}

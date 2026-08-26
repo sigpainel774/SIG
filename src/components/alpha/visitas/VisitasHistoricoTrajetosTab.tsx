@@ -110,49 +110,72 @@ export function VisitasHistoricoTrajetosTab({
 
   const trajetosAtivos = trajetos.filter((t) => !t.deleted_at);
 
+  // Normaliza lista de posições do trajeto (aceita array ou string JSON)
+  const posicoesNormalizadas = useMemo<any[]>(() => {
+    if (!trajetoDetalhado?.posicoes) return [];
+    let raw: any = trajetoDetalhado.posicoes;
+    if (typeof raw === 'string') {
+      try {
+        raw = JSON.parse(raw);
+      } catch {
+        raw = [];
+      }
+    }
+    return Array.isArray(raw) ? raw : [];
+  }, [trajetoDetalhado]);
+
   // Coordenadas da Polyline
   const polylineCoords = useMemo(() => {
-    if (!trajetoDetalhado?.posicoes || trajetoDetalhado.posicoes.length === 0) return [];
-    return trajetoDetalhado.posicoes.map((p) => [p.latitude, p.longitude] as [number, number]);
-  }, [trajetoDetalhado]);
+    return posicoesNormalizadas
+      .map((p) => [Number(p.latitude), Number(p.longitude)] as [number, number])
+      .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0);
+  }, [posicoesNormalizadas]);
 
   // Objeto de Navegação Livre mapeado para o Replay Animado com Carrinho, Velocímetro e Relógio
   const navegacaoReplay = useMemo<NavegacaoLivreRegistro | null>(() => {
     if (!trajetoDetalhado) return null;
-    const rawPontos = trajetoDetalhado.posicoes || [];
+
+    const dataInicioStr = trajetoDetalhado.started_at || new Date().toISOString();
+    const dataInicioObj = new Date(dataInicioStr);
+    const dataValida = !isNaN(dataInicioObj.getTime());
+    const dataInicioTimestamp = dataValida ? dataInicioObj.getTime() : Date.now();
+    const dataFormatada = dataValida ? dataInicioObj.toLocaleDateString('pt-BR') : 'Data não informada';
+
     return {
       id: trajetoDetalhado.id,
       funcionario_id: trajetoDetalhado.usuario_id || null,
       funcionario_nome: 'Agente / Servidor (Visitas)',
       veiculo_id: trajetoDetalhado.veiculo_id || null,
-      titulo: (trajetoDetalhado as any).nome || `Trajeto - ${new Date(trajetoDetalhado.started_at).toLocaleDateString('pt-BR')}`,
-      data_inicio: trajetoDetalhado.started_at,
+      titulo: (trajetoDetalhado as any).nome || `Trajeto - ${dataFormatada}`,
+      data_inicio: dataInicioStr,
       data_fim: trajetoDetalhado.ended_at || null,
-      duracao_segundos: (trajetoDetalhado.moving_seconds || 0) + (trajetoDetalhado.visit_seconds || 0),
+      duracao_segundos: (Number(trajetoDetalhado.moving_seconds) || 0) + (Number(trajetoDetalhado.visit_seconds) || 0),
       distancia_metros: Number(trajetoDetalhado.distance_meters) || 0,
       velocidade_media_kmh: 0,
       velocidade_max_kmh: 0,
-      pontos_gps: rawPontos.map((p: any) => ({
-        latitude: Number(p.latitude) || 0,
-        longitude: Number(p.longitude) || 0,
-        timestamp: p.timestamp || new Date(trajetoDetalhado.started_at).getTime(),
-        speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
-        heading: Number(p.heading) || 0,
-        accuracy: Number(p.accuracy) || 10,
-        distanceM: Number(p.distanceM) || 0,
-      })),
+      pontos_gps: posicoesNormalizadas
+        .map((p: any) => ({
+          latitude: Number(p.latitude) || 0,
+          longitude: Number(p.longitude) || 0,
+          timestamp: Number(p.timestamp) || dataInicioTimestamp,
+          speedKmh: Number(p.speedKmh ?? (p.speed ? p.speed * 3.6 : 0)) || 0,
+          heading: Number(p.heading) || 0,
+          accuracy: Number(p.accuracy) || 10,
+          distanceM: Number(p.distanceM) || 0,
+        }))
+        .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude) && p.latitude !== 0),
       status: 'FINALIZADA',
       observacoes: (trajetoDetalhado as any).observacoes || null,
       sincronizado: true,
     };
-  }, [trajetoDetalhado]);
+  }, [trajetoDetalhado, posicoesNormalizadas]);
 
   // Centro do Mapa do Percurso
-  const centerMap = useMemo(() => {
-    if (polylineCoords.length > 0) {
+  const centerMap = useMemo<[number, number]>(() => {
+    if (polylineCoords.length > 0 && Number.isFinite(polylineCoords[0][0]) && Number.isFinite(polylineCoords[0][1])) {
       return polylineCoords[0];
     }
-    return [-12.7214, -39.1989] as [number, number];
+    return [-12.7214, -39.1989];
   }, [polylineCoords]);
 
   return (
