@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   MapPinned,
@@ -10,10 +10,12 @@ import {
   Files,
   CheckSquare,
   RefreshCw,
+  Stamp,
+  Table,
 } from 'lucide-react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { createClient } from '@/lib/supabaseClient'
-import { sincronizarFilaAlphaGlobal } from '@/lib/alphaOfflineManager'
+import { sincronizarFilaAlphaGlobal, obterCacheModulosAlpha } from '@/lib/alphaOfflineManager'
 import { toast } from 'sonner'
 
 interface AlphaQuickActionsModalProps {
@@ -23,6 +25,42 @@ interface AlphaQuickActionsModalProps {
 
 export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsModalProps) {
   const supabase = createClient()
+  const [funcoesAtivas, setFuncoesAtivas] = useState<any[]>([])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadActive() {
+      try {
+        const cached = await obterCacheModulosAlpha()
+        if (isMounted && cached && cached.length > 0) {
+          setFuncoesAtivas(cached.filter((f) => f.ativo !== false))
+        }
+      } catch {}
+
+      if (navigator.onLine) {
+        try {
+          const { data } = await supabase
+            .from('alpha_funcoes')
+            .select('*')
+            .eq('ativo', true)
+            .order('ordem', { ascending: true })
+
+          if (isMounted && data) {
+            setFuncoesAtivas(data)
+          }
+        } catch {}
+      }
+    }
+
+    if (isOpen) {
+      loadActive()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [isOpen])
 
   const handleSyncNow = async () => {
     onClose()
@@ -44,7 +82,7 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
     }
   }
 
-  const actions = [
+  const allActions = [
     {
       title: 'Visitas.',
       subtitle: 'Desenhar polígonos, pontos e rotas em campo',
@@ -52,6 +90,7 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: MapPinned,
       color: 'from-violet-600 to-indigo-600',
       badge: 'GPS Ativo',
+      code: 'visitas',
     },
     {
       title: 'Rotas de Unidades Escolares',
@@ -60,6 +99,7 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: Route,
       color: 'from-blue-600 to-cyan-600',
       badge: 'Rotas',
+      code: 'rotas-escolas',
     },
     {
       title: 'Comprimir Fotos & Imagens',
@@ -68,6 +108,7 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: FileImage,
       color: 'from-emerald-600 to-teal-600',
       badge: 'Wasm',
+      code: 'compressor-imagens',
     },
     {
       title: 'Converter Imagens (PNG/WebP/JPG)',
@@ -76,6 +117,7 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: ArrowLeftRight,
       color: 'from-amber-600 to-orange-600',
       badge: 'Zero SaaS',
+      code: 'conversor-imagens',
     },
     {
       title: 'Mesclar & Dividir PDFs',
@@ -84,6 +126,25 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: Files,
       color: 'from-rose-600 to-pink-600',
       badge: 'PDF',
+      code: 'manipulador_pdf',
+    },
+    {
+      title: 'Carimbador de Documentos',
+      subtitle: 'Inserir carimbos e assinaturas em PDFs',
+      href: '/alpha/carimbador-pdf',
+      icon: Stamp,
+      color: 'from-fuchsia-600 to-purple-600',
+      badge: 'Assinatura',
+      code: 'carimbador_pdf',
+    },
+    {
+      title: 'Conversor de Planilhas',
+      subtitle: 'Exportação e conversão de CSV/XLSX',
+      href: '/alpha/conversor-planilhas',
+      icon: Table,
+      color: 'from-lime-600 to-emerald-600',
+      badge: 'Planilhas',
+      code: 'conversor_planilhas',
     },
     {
       title: 'Validador de Listas & CPFs',
@@ -92,8 +153,23 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
       icon: CheckSquare,
       color: 'from-purple-600 to-violet-600',
       badge: 'Auditoria',
+      code: 'validador_dados',
     },
   ]
+
+  const actions = useMemo(() => {
+    if (funcoesAtivas.length === 0) {
+      return allActions
+    }
+    return allActions.filter((act) =>
+      funcoesAtivas.some(
+        (fn) =>
+          fn.ativo !== false &&
+          (fn.rota === act.href ||
+            fn.codigo.toLowerCase().replace(/[-_]/g, '') === act.code.toLowerCase().replace(/[-_]/g, ''))
+      )
+    )
+  }, [funcoesAtivas])
 
   return (
     <StandardDialog
