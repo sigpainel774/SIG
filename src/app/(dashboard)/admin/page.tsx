@@ -718,7 +718,7 @@ export default function AdminHubPage() {
             Carregando controles globais...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Toggle 1: Chat Interno */}
             <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3">
               <div className="space-y-1">
@@ -890,101 +890,7 @@ export default function AdminHubPage() {
               </div>
             </div>
 
-            {/* Controle 3: Simulador de Permissões (Impersonation) */}
-            <div className="bg-card border border-purple-500/30 dark:border-purple-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 bg-purple-500/5 dark:bg-purple-950/20">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <ShieldAlert className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    Simulador de Permissões
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 uppercase">
-                    ABAC
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-tight">
-                  Simule a experiência, menus e visibilidade de qualquer servidor da rede sem exigir a senha dele.
-                </p>
-              </div>
-
-              {isSimulating ? (
-                <div className="pt-2 border-t border-purple-500/20 space-y-2">
-                  <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 p-2 rounded-lg text-xs font-semibold text-purple-300">
-                    <UserCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="truncate">
-                      Simulando: <strong>{simulatedFuncionario?.nome}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleStopSimulation}
-                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
-                  >
-                    <StopCircle className="w-3.5 h-3.5" />
-                    Encerrar Simulação
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-2 border-t border-purple-500/20 space-y-2">
-                  {/* Campo de Busca por Contas */}
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Buscar conta por nome, cargo ou e-mail..."
-                      value={searchFuncionarioTerm}
-                      onChange={(e) => setSearchFuncionarioTerm(e.target.value)}
-                      className="w-full bg-background border border-borderCustom text-foreground text-xs rounded-lg pl-8 pr-7 py-1.5 focus:ring-purple-500 focus:border-purple-500 font-medium placeholder:text-muted-foreground/70"
-                    />
-                    {searchFuncionarioTerm && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchFuncionarioTerm('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
-                        title="Limpar busca"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-
-                  <select
-                    value={selectedFuncId}
-                    onChange={(e) => setSelectedFuncId(e.target.value)}
-                    disabled={loadingFuncionariosList || isLoadingSimulation}
-                    className="w-full bg-background border border-borderCustom text-foreground text-xs rounded-lg p-2 focus:ring-purple-500 focus:border-purple-500 font-medium truncate"
-                  >
-                    {loadingFuncionariosList ? (
-                      <option value="">Carregando funcionários...</option>
-                    ) : funcionariosFiltrados.length === 0 ? (
-                      <option value="">Nenhum funcionário encontrado</option>
-                    ) : (
-                      funcionariosFiltrados.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.nome} ({f.cargo || 'Sem cargo'}) — {f.email}
-                        </option>
-                      ))
-                    )}
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={handleStartSimulation}
-                    disabled={!selectedFuncId || isLoadingSimulation || funcionariosFiltrados.length === 0}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
-                  >
-                    {isLoadingSimulation ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                    )}
-                    <span>{isLoadingSimulation ? 'Iniciando...' : 'Iniciar Simulação'}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Controle 4: Tempo de Sessões (Logoff por Horário) */}
+            {/* Controle 3: Tempo de Sessões (Logoff por Horário) */}
             <div className="bg-card border border-amber-500/30 dark:border-amber-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 bg-amber-500/5 dark:bg-amber-950/20">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
@@ -1032,187 +938,303 @@ export default function AdminHubPage() {
         )}
       </div>
 
-      {/* ── Seção Ambiente de Simulação Isolado (Escolas de Teste) ── */}
-      <div className="bg-card border border-amber-500/30 dark:border-amber-500/40 rounded-2xl p-5 shadow-sm relative overflow-hidden bg-amber-500/5 dark:bg-amber-950/20">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-amber-500/20 pb-3">
+      {/* ── Seção Testes e Simulações ── */}
+      <div className="bg-card border border-purple-500/30 dark:border-purple-500/40 rounded-2xl p-5 shadow-sm relative overflow-hidden bg-purple-500/5 dark:bg-purple-950/20">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-purple-500/20 pb-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/15 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400">
+            <div className="p-2 rounded-xl bg-purple-500/15 text-purple-600 dark:bg-purple-500/25 dark:text-purple-400">
               <FlaskConical className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                Ambiente de Simulação Isolado (Escolas de Teste)
-                <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md">
-                  ISOLADO DA REDE
+                Testes e Simulações
+                <span className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md">
+                  AMBIENTE DE TESTES
                 </span>
               </h2>
               <p className="text-xs text-muted-foreground font-normal">
-                As unidades "Teste 1" e "Teste 2" estão isoladas das listas e relatórios oficiais. Simule contas nestas unidades para realizar lançamentos e testes com segurança.
+                Simule a experiência e permissões reais de servidores da rede municipal (ABAC) ou utilize o ambiente com escolas de teste isoladas para validações com segurança.
               </p>
             </div>
           </div>
         </div>
 
-        {loadingTestEnv ? (
-          <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-            Carregando ambiente de teste...
-          </div>
-        ) : testEscolas.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic py-2">Nenhuma escola de teste encontrada.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {testEscolas.map((escola) => {
-              const usersOfEscola = testUsers.filter((u) => u.escola_id === escola.id)
-              const searchTerm = (searchTestUserPerSchool[escola.id] || '').toLowerCase().trim()
-              const filteredUsers = usersOfEscola.filter((u) => {
-                if (!searchTerm) return true
-                return (
-                  u.nome?.toLowerCase().includes(searchTerm) ||
-                  u.cargo?.toLowerCase().includes(searchTerm) ||
-                  u.email?.toLowerCase().includes(searchTerm)
-                )
-              })
-              const selectedTestUserId =
-                selectedTestUserPerSchool[escola.id] &&
-                filteredUsers.some((u) => u.id === selectedTestUserPerSchool[escola.id])
-                  ? selectedTestUserPerSchool[escola.id]
-                  : filteredUsers[0]?.id || ''
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Subcard 1: Simulador de Permissões (ABAC) */}
+          <div className="lg:col-span-4 bg-background border border-purple-500/30 dark:border-purple-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 shadow-sm">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  Simulador de Permissões
+                </span>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 uppercase">
+                  ABAC
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Simule a experiência, menus e visibilidade de qualquer servidor da rede sem exigir a senha dele.
+              </p>
+            </div>
 
-              return (
-                <div key={escola.id} className="bg-background border border-borderCustom p-4 rounded-xl space-y-3 shadow-sm flex flex-col justify-between">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
-                      <span className="font-bold text-sm text-foreground">{escola.nome}</span>
-                      <span className="text-[10px] font-extrabold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">
-                        CÓD: {escola.codigo || '-'}
-                      </span>
-                    </div>
-
+            {isSimulating ? (
+              <div className="pt-2 border-t border-purple-500/20 space-y-2">
+                <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 p-2 rounded-lg text-xs font-semibold text-purple-300">
+                  <UserCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="truncate">
+                    Simulando: <strong>{simulatedFuncionario?.nome}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStopSimulation}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                >
+                  <StopCircle className="w-3.5 h-3.5" />
+                  Encerrar Simulação
+                </button>
+              </div>
+            ) : (
+              <div className="pt-2 border-t border-purple-500/20 space-y-2">
+                {/* Campo de Busca por Contas */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Buscar conta por nome, cargo ou e-mail..."
+                    value={searchFuncionarioTerm}
+                    onChange={(e) => setSearchFuncionarioTerm(e.target.value)}
+                    className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg pl-8 pr-7 py-1.5 focus:ring-purple-500 focus:border-purple-500 font-medium placeholder:text-muted-foreground/70"
+                  />
+                  {searchFuncionarioTerm && (
                     <button
                       type="button"
-                      onClick={() => handleEntrarEscolaComoSuper(escola)}
-                      disabled={isLoadingSimulation}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-95 border border-emerald-500/50"
-                      title={`Entrar na ${escola.nome} com sua conta Superadmin / Nível 1`}
+                      onClick={() => setSearchFuncionarioTerm('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                      title="Limpar busca"
                     >
-                      <LogIn className="w-3.5 h-3.5" />
-                      <span>Entrar</span>
+                      <X className="w-3 h-3" />
                     </button>
-                  </div>
+                  )}
+                </div>
 
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                        Simular Contas da Unidade
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-borderCustom">
-                        {usersOfEscola.length} {usersOfEscola.length === 1 ? 'conta' : 'contas'}
-                      </span>
-                    </div>
+                <select
+                  value={selectedFuncId}
+                  onChange={(e) => setSelectedFuncId(e.target.value)}
+                  disabled={loadingFuncionariosList || isLoadingSimulation}
+                  className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg p-2 focus:ring-purple-500 focus:border-purple-500 font-medium truncate"
+                >
+                  {loadingFuncionariosList ? (
+                    <option value="">Carregando funcionários...</option>
+                  ) : funcionariosFiltrados.length === 0 ? (
+                    <option value="">Nenhum funcionário encontrado</option>
+                  ) : (
+                    funcionariosFiltrados.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.nome} ({f.cargo || 'Sem cargo'}) — {f.email}
+                      </option>
+                    ))
+                  )}
+                </select>
 
-                    {usersOfEscola.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic py-1">Sem contas de teste diretamente vinculadas a esta unidade.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {/* Campo de Busca por Contas da Unidade de Teste */}
-                        <div className="relative">
-                          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                          <input
-                            type="text"
-                            placeholder="Buscar conta por nome, cargo ou e-mail..."
-                            value={searchTestUserPerSchool[escola.id] || ''}
-                            onChange={(e) =>
-                              setSearchTestUserPerSchool((prev) => ({
-                                ...prev,
-                                [escola.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg pl-8 pr-7 py-1.5 focus:ring-amber-500 focus:border-amber-500 font-medium placeholder:text-muted-foreground/70"
-                          />
-                          {searchTestUserPerSchool[escola.id] && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSearchTestUserPerSchool((prev) => ({
-                                  ...prev,
-                                  [escola.id]: '',
-                                }))
-                              }
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
-                              title="Limpar busca"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
+                <button
+                  type="button"
+                  onClick={handleStartSimulation}
+                  disabled={!selectedFuncId || isLoadingSimulation || funcionariosFiltrados.length === 0}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isLoadingSimulation ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                  )}
+                  <span>{isLoadingSimulation ? 'Iniciando...' : 'Iniciar Simulação'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Subcard 2: Ambiente de Simulação Isolado (Escolas de Teste) */}
+          <div className="lg:col-span-8 bg-background border border-amber-500/30 dark:border-amber-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 shadow-sm">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  Ambiente de Simulação Isolado
+                </span>
+                <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md">
+                  ISOLADO DA REDE
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                As unidades "Teste 1" e "Teste 2" estão isoladas das listas e relatórios oficiais. Simule contas nestas unidades para realizar lançamentos e testes com segurança.
+              </p>
+            </div>
+
+            <div className="pt-1">
+              {loadingTestEnv ? (
+                <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                  Carregando ambiente de teste...
+                </div>
+              ) : testEscolas.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-2">Nenhuma escola de teste encontrada.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {testEscolas.map((escola) => {
+                    const usersOfEscola = testUsers.filter((u) => u.escola_id === escola.id)
+                    const searchTerm = (searchTestUserPerSchool[escola.id] || '').toLowerCase().trim()
+                    const filteredUsers = usersOfEscola.filter((u) => {
+                      if (!searchTerm) return true
+                      return (
+                        u.nome?.toLowerCase().includes(searchTerm) ||
+                        u.cargo?.toLowerCase().includes(searchTerm) ||
+                        u.email?.toLowerCase().includes(searchTerm)
+                      )
+                    })
+                    const selectedTestUserId =
+                      selectedTestUserPerSchool[escola.id] &&
+                      filteredUsers.some((u) => u.id === selectedTestUserPerSchool[escola.id])
+                        ? selectedTestUserPerSchool[escola.id]
+                        : filteredUsers[0]?.id || ''
+
+                    return (
+                      <div key={escola.id} className="bg-card border border-borderCustom p-3 rounded-lg space-y-2.5 shadow-sm flex flex-col justify-between">
+                        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                            <span className="font-bold text-xs sm:text-sm text-foreground">{escola.nome}</span>
+                            <span className="text-[9px] font-extrabold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">
+                              CÓD: {escola.codigo || '-'}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleEntrarEscolaComoSuper(escola)}
+                            disabled={isLoadingSimulation}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-95 border border-emerald-500/50"
+                            title={`Entrar na ${escola.nome} com sua conta Superadmin / Nível 1`}
+                          >
+                            <LogIn className="w-3 h-3" />
+                            <span>Entrar</span>
+                          </button>
                         </div>
 
-                        {/* Select com Contas Filtradas */}
-                        <select
-                          value={selectedTestUserId}
-                          onChange={(e) =>
-                            setSelectedTestUserPerSchool((prev) => ({
-                              ...prev,
-                              [escola.id]: e.target.value,
-                            }))
-                          }
-                          disabled={isLoadingSimulation}
-                          className="w-full bg-card border border-borderCustom text-foreground text-xs rounded-lg p-2 focus:ring-amber-500 focus:border-amber-500 font-medium truncate"
-                        >
-                          {filteredUsers.length === 0 ? (
-                            <option value="">Nenhuma conta encontrada com o termo</option>
-                          ) : (
-                            filteredUsers.map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {u.nome} ({u.cargo || 'Servidor'}) — {u.email}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                              Simular Contas da Unidade
+                            </span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-borderCustom">
+                              {usersOfEscola.length} {usersOfEscola.length === 1 ? 'conta' : 'contas'}
+                            </span>
+                          </div>
 
-                        {/* Botão de Simular */}
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!selectedTestUserId) {
-                              toast.error('Selecione uma conta para simular.')
-                              return
-                            }
-                            const target = usersOfEscola.find((u) => u.id === selectedTestUserId)
-                            const success = await iniciarSimulacao(selectedTestUserId, supabase)
-                            if (success) {
-                              toast.success(
-                                `Modo simulação ativado para "${target?.nome ?? 'Servidor'}" na escola ${escola.nome}!`
-                              )
-                              window.location.href = '/home'
-                            } else {
-                              toast.error('Falha ao iniciar simulação para esta conta.')
-                            }
-                          }}
-                          disabled={isLoadingSimulation || filteredUsers.length === 0 || !selectedTestUserId}
-                          className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
-                          title={
-                            selectedTestUserId
-                              ? `Simular conta selecionada na ${escola.nome}`
-                              : 'Selecione uma conta para simular'
-                          }
-                        >
-                          {isLoadingSimulation ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          {usersOfEscola.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground italic py-1">Sem contas de teste diretamente vinculadas a esta unidade.</p>
                           ) : (
-                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <div className="space-y-1.5">
+                              {/* Campo de Busca por Contas da Unidade de Teste */}
+                              <div className="relative">
+                                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                                <input
+                                  type="text"
+                                  placeholder="Buscar conta..."
+                                  value={searchTestUserPerSchool[escola.id] || ''}
+                                  onChange={(e) =>
+                                    setSearchTestUserPerSchool((prev) => ({
+                                      ...prev,
+                                      [escola.id]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full bg-background border border-borderCustom text-foreground text-[11px] rounded-md pl-7 pr-6 py-1 focus:ring-amber-500 focus:border-amber-500 font-medium placeholder:text-muted-foreground/70"
+                                />
+                                {searchTestUserPerSchool[escola.id] && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSearchTestUserPerSchool((prev) => ({
+                                        ...prev,
+                                        [escola.id]: '',
+                                      }))
+                                    }
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                                    title="Limpar busca"
+                                  >
+                                    <X className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Select com Contas Filtradas */}
+                              <select
+                                value={selectedTestUserId}
+                                onChange={(e) =>
+                                  setSelectedTestUserPerSchool((prev) => ({
+                                    ...prev,
+                                    [escola.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={isLoadingSimulation}
+                                className="w-full bg-background border border-borderCustom text-foreground text-[11px] rounded-md p-1.5 focus:ring-amber-500 focus:border-amber-500 font-medium truncate"
+                              >
+                                {filteredUsers.length === 0 ? (
+                                  <option value="">Nenhuma conta encontrada</option>
+                                ) : (
+                                  filteredUsers.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                      {u.nome} ({u.cargo || 'Servidor'}) — {u.email}
+                                    </option>
+                                  ))
+                                )}
+                              </select>
+
+                              {/* Botão de Simular */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!selectedTestUserId) {
+                                    toast.error('Selecione uma conta para simular.')
+                                    return
+                                  }
+                                  const target = usersOfEscola.find((u) => u.id === selectedTestUserId)
+                                  const success = await iniciarSimulacao(selectedTestUserId, supabase)
+                                  if (success) {
+                                    toast.success(
+                                      `Modo simulação ativado para "${target?.nome ?? 'Servidor'}" na escola ${escola.nome}!`
+                                    )
+                                    window.location.href = '/home'
+                                  } else {
+                                    toast.error('Falha ao iniciar simulação para esta conta.')
+                                  }
+                                }}
+                                disabled={isLoadingSimulation || filteredUsers.length === 0 || !selectedTestUserId}
+                                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-1.5 rounded-md flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                                title={
+                                  selectedTestUserId
+                                    ? `Simular conta selecionada na ${escola.nome}`
+                                    : 'Selecione uma conta para simular'
+                                }
+                              >
+                                {isLoadingSimulation ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Play className="w-3 h-3 fill-current" />
+                                )}
+                                <span>{isLoadingSimulation ? 'Iniciando...' : 'Simular Conta'}</span>
+                              </button>
+                            </div>
                           )}
-                          <span>{isLoadingSimulation ? 'Iniciando...' : 'Simular Conta Selecionada'}</span>
-                        </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
 

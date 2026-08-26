@@ -274,47 +274,60 @@ export function ModalDetalhesSecretaria({
       >
         <div className="space-y-5 py-2">
           {/* ══ Header Card da Secretaria ══ */}
-          <div className="bg-gradient-to-r from-sky-500/10 via-sky-500/5 to-transparent border border-sky-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Identidade */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-white border border-sky-500/30 flex items-center justify-center shrink-0 overflow-hidden">
-                {secretaria.logo_url ? (
-                  <img
-                    src={`${secretaria.logo_url}?t=${sessionTimestamp}`}
-                    alt={secretaria.nome}
-                    className="w-full h-full object-contain p-1"
-                  />
-                ) : isSaude ? (
-                  <Stethoscope className="w-6 h-6 text-rose-400" />
-                ) : (
-                  <Building2 className="w-6 h-6 text-sky-400" />
-                )}
+          <div className="bg-gradient-to-r from-sky-500/10 via-sky-500/5 to-transparent border border-sky-500/20 rounded-2xl p-4 sm:p-5 space-y-3.5">
+            {/* Linha Superior: Identidade da Secretaria + Botão Nova Unidade */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Identidade */}
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="w-12 h-12 rounded-xl bg-white dark:bg-card border border-sky-500/30 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                  {secretaria.logo_url ? (
+                    <img
+                      src={`${secretaria.logo_url}?t=${sessionTimestamp}`}
+                      alt={secretaria.nome}
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : isSaude ? (
+                    <Stethoscope className="w-6 h-6 text-rose-500" />
+                  ) : (
+                    <Building2 className="w-6 h-6 text-sky-500" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight flex items-center gap-2 flex-wrap">
+                    <span className="truncate">{secretaria.nome}</span>
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 text-[10px] shrink-0 font-semibold"
+                    >
+                      Ativa
+                    </Badge>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Órgão Mantenedor oficial da Rede Municipal
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
-                  {secretaria.nome}
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 text-[10px]"
-                  >
-                    Ativa
-                  </Badge>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Órgão Mantenedor oficial da Rede Municipal
-                </p>
-              </div>
+
+              {/* Botão Nova Unidade (Ação Principal) */}
+              <Button
+                type="button"
+                onClick={handleNovaUnidade}
+                className="bg-[#0090ff] text-white hover:bg-[#0077d4] text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-9 shadow-sm w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Nova Unidade</span>
+              </Button>
             </div>
 
-            {/* Ações do Header */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
+            {/* Linha Inferior: Ações e Ferramentas da Secretaria */}
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-sky-500/15 w-full">
               {/* Titular / Secretário (exclusivo Educação) */}
               {isEducacao && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setModalTitularOpen(true)}
-                  className="bg-card border-border text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5 h-9"
+                  className="bg-card border-border text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5 h-8.5 shadow-sm"
                   title="Configurar Titular da Secretaria de Educação"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
@@ -328,7 +341,7 @@ export function ModalDetalhesSecretaria({
                   type="button"
                   variant="outline"
                   onClick={() => setModalFilaImpressaoOpen(true)}
-                  className="bg-card border-border text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5 h-9"
+                  className="bg-card border-border text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5 h-8.5 shadow-sm"
                   title="Gerenciar Fila de Impressão das Escolas"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -341,10 +354,10 @@ export function ModalDetalhesSecretaria({
                 <Button
                   type="button"
                   onClick={() => setModalCalendarioOpen(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-9 shadow-sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-8.5 shadow-sm"
                   title="Gerenciar Calendário Acadêmico e Trimestres da Rede"
                 >
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>Calendário Acadêmico</span>
                 </Button>
               )}
@@ -354,16 +367,6 @@ export function ModalDetalhesSecretaria({
                 secretariaIdFilter={secretaria.id}
                 onSuccess={loadUnidades}
               />
-
-              {/* Nova Unidade */}
-              <Button
-                type="button"
-                onClick={handleNovaUnidade}
-                className="bg-[#0090ff] text-white hover:bg-[#0077d4] text-xs font-semibold rounded-xl gap-1.5 shrink-0 cursor-pointer h-9"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Nova Unidade</span>
-              </Button>
             </div>
           </div>
 
