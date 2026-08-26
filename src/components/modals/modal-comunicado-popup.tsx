@@ -191,31 +191,31 @@ export function ModalComunicadoPopup() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      {/* Fundo desfoque (backdrop blur) com alta opacidade para leituras em celular */}
+      {/* Fundo desfoque (backdrop blur) */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity" 
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
         onClick={handleDismiss}
       />
 
       {/* Caixa Central do Modal */}
-      <div className="relative w-[94vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl bg-background border border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.25)] p-5 sm:p-7 z-10 overflow-hidden text-foregroundCustom">
+      <div className="relative w-[94vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl bg-card border border-amber-500/30 dark:border-amber-500/40 shadow-2xl p-5 sm:p-7 z-10 overflow-hidden text-foreground">
         
         {/* Glow ornamental no topo */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-36 bg-amber-500/15 blur-3xl pointer-events-none rounded-full" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-36 bg-amber-500/10 blur-3xl pointer-events-none rounded-full" />
 
         {/* Header do Comunicado Pop-up */}
-        <div className="flex items-start justify-between gap-4 shrink-0 pb-3 border-b border-borderCustom/60">
+        <div className="flex items-start justify-between gap-4 shrink-0 pb-3.5 border-b border-borderCustom/60">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0 shadow-inner">
-              <BellRing className="w-6 h-6 animate-bounce" />
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 shrink-0">
+              <BellRing className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Comunicado Importante
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Comunicado Importante
                 </span>
                 {activeNotice.target && (
-                  <span className="text-[11px] font-semibold text-muted-foreground bg-surface-2 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-muted-foreground bg-input border border-borderCustom px-2.5 py-0.5 rounded-full">
                     {activeNotice.target}
                   </span>
                 )}
@@ -230,16 +230,16 @@ export function ModalComunicadoPopup() {
           <button
             type="button"
             onClick={handleDismiss}
-            className="p-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer shrink-0 touch-manipulation flex items-center justify-center min-w-[44px] min-h-[44px]"
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-hoverCustom active:bg-hoverCustom/80 transition-colors cursor-pointer shrink-0 touch-manipulation flex items-center justify-center min-w-[38px] min-h-[38px] border border-borderCustom/40"
             title="Fechar Comunicado"
             aria-label="Fechar Comunicado"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Conteúdo do Comunicado (com rolagem interna para celulares) */}
-        <div className="flex-1 overflow-y-auto my-4 pr-1 text-sm sm:text-base leading-relaxed text-foregroundCustom/90 whitespace-pre-line space-y-4 font-normal">
+        <div className="flex-1 overflow-y-auto my-4 pr-1 text-sm sm:text-base leading-relaxed text-foreground/90 whitespace-pre-line space-y-4 font-normal">
           {activeNotice.body}
 
           {/* Anexo se houver */}
@@ -249,7 +249,7 @@ export function ModalComunicadoPopup() {
                 href={activeNotice.anexo_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3.5 py-2 rounded-xl transition-all"
+                className="inline-flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3.5 py-2 rounded-xl transition-all"
               >
                 <Paperclip className="h-4 w-4 shrink-0" />
                 <span className="truncate">Anexo: {activeNotice.anexo_nome || 'Visualizar documento'}</span>
@@ -259,7 +259,7 @@ export function ModalComunicadoPopup() {
         </div>
 
         {/* Footer com Metadados e Ação */}
-        <div className="pt-3 border-t border-borderCustom/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+        <div className="pt-3.5 border-t border-borderCustom/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
             <span>Data: {activeNotice.date ? new Date(`${activeNotice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Hoje'}</span>
             {activeNotice.criado_por?.nome && (
@@ -270,10 +270,10 @@ export function ModalComunicadoPopup() {
           <Button
             type="button"
             onClick={handleDismiss}
-            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-extrabold h-11 sm:h-12 px-6 rounded-xl shadow-lg shadow-amber-500/20 text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-amber-500/20 text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
           >
             <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span>Lido</span>
+            <span>Confirmar Leitura</span>
           </Button>
         </div>
       </div>

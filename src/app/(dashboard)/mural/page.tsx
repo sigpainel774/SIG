@@ -619,7 +619,7 @@ export default function MuralPage() {
                       onClick={() => setIsAgendado(true)}
                       className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                         isAgendado
-                          ? 'bg-amber-500/15 border-amber-500 text-amber-300 shadow-sm ring-1 ring-amber-500/30'
+                          ? 'bg-amber-500/15 border-amber-500/50 text-amber-700 dark:text-amber-300 shadow-sm ring-1 ring-amber-500/30 font-bold'
                           : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
                       }`}
                     >
@@ -629,28 +629,33 @@ export default function MuralPage() {
                   </div>
 
                   {isAgendado && (
-                    <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2.5 animate-in fade-in duration-200">
-                      <span className="text-xs text-amber-300 font-bold flex items-center gap-1.5">
-                        <Clock className="w-4 h-4" />
-                        Defina a data e o horário (Fuso de Brasília):
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="mt-3 p-3.5 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 rounded-xl space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-amber-700 dark:text-amber-300 font-bold flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          Defina a data e o horário da transmissão:
+                        </span>
+                        <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400/80 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/20">
+                          Horário de Brasília
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] text-muted-foreground block mb-1">Data da Transmissão</label>
+                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">Data da Transmissão</label>
                           <Input
                             type="date"
                             value={dataAgendamento}
                             onChange={(e) => setDataAgendamento(e.target.value)}
-                            className="h-9 text-xs bg-input border-borderCustom text-foreground"
+                            className="h-9 text-xs bg-input border-borderCustom text-foreground focus-visible:ring-amber-500/40"
                           />
                         </div>
                         <div>
-                          <label className="text-[11px] text-muted-foreground block mb-1">Horário de Disparo</label>
+                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">Horário de Disparo</label>
                           <Input
                             type="time"
                             value={horaAgendamento}
                             onChange={(e) => setHoraAgendamento(e.target.value)}
-                            className="h-9 text-xs bg-input border-borderCustom text-foreground"
+                            className="h-9 text-xs bg-input border-borderCustom text-foreground focus-visible:ring-amber-500/40"
                           />
                         </div>
                       </div>
@@ -806,26 +811,26 @@ export default function MuralPage() {
                   <button
                     type="button"
                     onClick={() => setIsPopup((prev) => !prev)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all duration-300 cursor-pointer ${
+                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
                       isPopup
-                        ? 'border-amber-500/70 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.25)] ring-1 ring-amber-500/50'
+                        ? 'border-amber-500/40 bg-amber-500/5 dark:bg-amber-950/25 text-foreground shadow-sm ring-1 ring-amber-500/20'
                         : 'border-borderCustom bg-input/60 text-muted-foreground hover:bg-hoverCustom hover:text-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg transition-colors ${isPopup ? 'bg-amber-500/20 text-amber-400' : 'bg-surface-2 text-muted-foreground'}`}>
+                      <div className={`p-2 rounded-lg transition-colors ${isPopup ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-surface-2 text-muted-foreground'}`}>
                         <Sparkles className="w-5 h-5" />
                       </div>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm tracking-wide">Exibir como Pop-up</span>
+                          <span className="font-semibold text-sm tracking-wide text-foreground">Exibir como Pop-up</span>
                           {isPopup && (
-                            <span className="text-[10px] uppercase font-extrabold bg-amber-500 text-black px-2 py-0.5 rounded-full tracking-wider animate-pulse">
+                            <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full tracking-wider">
                               Efeito Ativo
                             </span>
                           )}
                         </div>
-                        <p className="text-xs opacity-80 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {isPopup
                             ? 'O comunicado aparecerá no centro da tela dos funcionários ao fazer login.'
                             : 'O comunicado será exibido normalmente no Mural e no sino de notificações.'}
@@ -833,7 +838,7 @@ export default function MuralPage() {
                       </div>
                     </div>
                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-                      isPopup ? 'border-amber-400 bg-amber-500 text-black font-bold text-xs shadow-sm' : 'border-borderCustom bg-surface-3'
+                      isPopup ? 'border-amber-500 bg-amber-500 text-neutral-950 font-bold text-xs shadow-sm' : 'border-borderCustom bg-surface-3'
                     }`}>
                       {isPopup ? '✓' : ''}
                     </div>
@@ -948,11 +953,11 @@ export default function MuralPage() {
                 onClick={() => setFiltroStatus('agendados')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filtroStatus === 'agendados'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    : 'text-amber-400/80 hover:text-amber-300'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5" />
+                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Agendados ({totalAgendados})</span>
               </button>
             </div>
@@ -982,7 +987,7 @@ export default function MuralPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`rounded-lg p-2 shrink-0 ${isNoticeAgendado ? 'bg-amber-500/15 text-amber-400' : 'bg-highlight/10 text-highlight'}`}>
+                    <div className={`rounded-lg p-2 shrink-0 ${isNoticeAgendado ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' : 'bg-highlight/10 text-highlight'}`}>
                       {isNoticeAgendado ? <Clock className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -990,8 +995,8 @@ export default function MuralPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
                           {isNoticeAgendado ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30 animate-pulse">
-                              <Clock className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                               Agendado para {notice.scheduled_for ? new Date(notice.scheduled_for).toLocaleString('pt-BR') : 'Horário futuro'}
                             </span>
                           ) : (
@@ -1118,8 +1123,8 @@ export default function MuralPage() {
 
                       {podePublicar && isNoticeAgendado && (
                         <div className="mt-3.5 pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-2.5">
-                          <span className="text-xs text-amber-300/90 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
+                          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                             Aguardando momento de transmissão automática
                           </span>
                           <div className="flex items-center gap-2">
