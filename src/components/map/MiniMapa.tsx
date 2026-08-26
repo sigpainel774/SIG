@@ -138,6 +138,30 @@ export default function MiniMapa({
   const abortControllerRef = useRef<AbortController | null>(null);
   const geocodeCacheRef = useRef<Map<string, { lat: number; lng: number }>>(new Map());
 
+  // Ícone Customizado do Pino de Endereço (L.divIcon seguro, nunca quebra em bundlers)
+  const iconePinoEndereco = useMemo(() => {
+    return L.divIcon({
+      className: 'custom-minimapa-marker',
+      html: `
+        <div style="position: relative; width: 38px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; cursor: grab;">
+          <!-- Pulso de radar na base -->
+          <div style="position: absolute; bottom: 0px; width: 22px; height: 11px; border-radius: 50%; background: rgba(56, 189, 248, 0.4); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          
+          <!-- Pino estilizado azul ciano com sombra -->
+          <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
+            <div style="width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: linear-gradient(135deg, #0284c7, #0369a1); border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.5);">
+              <svg style="transform: rotate(45deg);" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: #0f172a; border: 1.5px solid #ffffff; margin-top: -2px; z-index: 5;"></div>
+          </div>
+        </div>
+      `,
+      iconSize: [38, 44],
+      iconAnchor: [19, 42],
+      popupAnchor: [0, -42],
+    });
+  }, []);
+
   // Geocodificação Nominatim com AbortController e cache
   const handleGeocode = async (silent = false) => {
     const termoOriginal = localAddress.trim().toLowerCase();
@@ -291,6 +315,7 @@ export default function MiniMapa({
           </LayersControl>
           <Marker
             position={[lat, lng]}
+            icon={iconePinoEndereco}
             draggable={true}
             eventHandlers={eventHandlers}
             ref={markerRef}

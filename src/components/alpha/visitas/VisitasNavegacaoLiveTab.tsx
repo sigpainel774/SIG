@@ -4,12 +4,12 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   MapContainer,
   TileLayer,
+  LayersControl,
   Marker,
   Popup,
   Polyline,
   useMap,
 } from 'react-leaflet';
-import { OfflineTileLayer } from '@/components/map/OfflineTileLayer';
 import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
 import L from 'leaflet';
 import {
@@ -639,7 +639,44 @@ export default function VisitasNavegacaoLiveTab({
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
         >
-          <OfflineTileLayer />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Google Satélite (Híbrido)">
+            <TileLayer
+              attribution="&copy; Google Maps"
+              url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+              maxZoom={20}
+              keepBuffer={6}
+              updateWhenIdle={true}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Google Ruas">
+            <TileLayer
+              attribution="&copy; Google Maps"
+              url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+              maxZoom={20}
+              keepBuffer={6}
+              updateWhenIdle={true}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Google Terreno">
+            <TileLayer
+              attribution="&copy; Google Maps"
+              url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+              maxZoom={20}
+              keepBuffer={6}
+              updateWhenIdle={true}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Mapa de Ruas (OpenStreetMap)">
+            <TileLayer
+              attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+              keepBuffer={8}
+              updateWhenIdle={true}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
           <MapFollower
             posicao={posicaoAtual ? { lat: posicaoAtual.lat, lng: posicaoAtual.lng } : null}

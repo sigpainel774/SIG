@@ -355,6 +355,47 @@
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Estilização Moderna do Seletor de Camadas (LayersControl) do Leaflet */
+.leaflet-control-layers {
+  border-radius: 0.85rem !important;
+  border: 1px solid #26262a !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  background-color: #141416 !important;
+  color: #f1f5f9 !important;
+  padding: 8px 12px !important;
+  font-size: 0.78rem !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.leaflet-control-layers-toggle {
+  background-color: #182030 !important;
+  border-radius: 0.65rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid #26262a !important;
+}
+
+.leaflet-control-layers label {
+  margin-bottom: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e2e8f0 !important;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.leaflet-control-layers label:hover {
+  color: #38bdf8 !important;
+}
+
+.leaflet-control-layers-base input[type='radio'] {
+  accent-color: #3b82f6;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
 /* Classes para padronizar e ajustar o tamanho dos logos nos cabeçalhos de documentos oficiais */
 .doc-header-logo-prefeitura {
   height: 5.4rem !important; /* Aumentado para dar destaque ao nome da prefeitura */

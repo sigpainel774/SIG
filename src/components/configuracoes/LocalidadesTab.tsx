@@ -177,6 +177,33 @@ export default function LocalidadesTab() {
 
   const markerRef = useRef<L.Marker>(null);
 
+  // Ícone Customizado do Marcador de Edição / Criação (L.divIcon SVG moderno, previne imagem quebrada)
+  const iconeMarcadorEdicao = useMemo(() => {
+    const iconeEmoji = ICONES_TIPO_LOCALIDADE[formData.tipo] || '📍';
+    return L.divIcon({
+      className: 'custom-localidade-edit-marker',
+      html: `
+        <div style="position: relative; width: 44px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; cursor: grab;">
+          <!-- Pulso de radar / precisão na base do ponto -->
+          <div style="position: absolute; bottom: 0px; width: 24px; height: 12px; border-radius: 50%; background: rgba(245, 158, 11, 0.45); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          
+          <!-- Pino estilizado com gradiente moderno e sombra -->
+          <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));">
+            <div style="width: 36px; height: 36px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: linear-gradient(135deg, #f59e0b, #d97706); border: 2.5px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.6);">
+              <div style="transform: rotate(45deg); font-size: 16px; display: flex; align-items: center; justify-content: center;">
+                ${iconeEmoji}
+              </div>
+            </div>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #0f172a; border: 2px solid #ffffff; margin-top: -2px; z-index: 5;"></div>
+          </div>
+        </div>
+      `,
+      iconSize: [44, 48],
+      iconAnchor: [22, 46], // Ancoragem exata na ponta do pino
+      popupAnchor: [0, -46],
+    });
+  }, [formData.tipo]);
+
   // Manipulador de arraste do marcador de edição
   const dragMarkerHandlers = useMemo(
     () => ({
@@ -605,6 +632,7 @@ export default function LocalidadesTab() {
               {isEditing && (
                 <Marker
                   position={[formData.latitude, formData.longitude]}
+                  icon={iconeMarcadorEdicao}
                   draggable={true}
                   eventHandlers={dragMarkerHandlers}
                   ref={markerRef}
