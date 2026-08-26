@@ -19,32 +19,38 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
   let userEmail = headersList.get('x-user-email')
 
   if (!userId || !userEmail) {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    userId = user?.id || null
-    userEmail = user?.email || null
+    try {
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      userId = user?.id || null
+      userEmail = user?.email || null
+    } catch {
+      userId = null
+      userEmail = null
+    }
   }
 
-  if (!userId || !userEmail) {
-    redirect('/alpha/login')
+  let perfil = null
+  if (userId && userEmail) {
+    try {
+      perfil = await getPerfilUsuario(userId, userEmail)
+    } catch {
+      perfil = null
+    }
   }
 
-  const perfil = await getPerfilUsuario(userId, userEmail)
-
-  if (!perfil) {
-    redirect('/alpha/login?error=orphan')
-  }
-
-  const funcionario = perfil.funcionario
-  const acessos = perfil.acessos
-  const vinculos = perfil.vinculos
+  const funcionario = perfil?.funcionario || null
+  const acessos = perfil?.acessos || []
+  const vinculos = perfil?.vinculos || []
 
   return (
     <AlphaAuthClientGuard initialFuncionarioId={funcionario?.id}>
       <div className="light flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
-        <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+        {funcionario && (
+          <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+        )}
 
       {/* Sidebar Dedicada do Alpha */}
       <AlphaSidebar />
