@@ -12,17 +12,23 @@ import {
   Clock, 
   AlertCircle, 
   RefreshCw, 
-  User,
-  School,
-  Calendar,
-  ShieldCheck,
-  Check,
-  X,
-  Eye,
-  Loader2,
-  Terminal,
-  Info,
-  AlertTriangle
+  User, 
+  School, 
+  Calendar, 
+  ShieldCheck, 
+  Check, 
+  X, 
+  Eye, 
+  Loader2, 
+  Terminal, 
+  Info, 
+  AlertTriangle,
+  Compass,
+  Footprints,
+  Activity,
+  Layers,
+  FileCode2,
+  Tag
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,11 +64,11 @@ export interface SystemLog {
 export default function AdminReportsPage() {
   const supabase = createClient()
 
-  const [activeTab, setActiveTab] = useState<'chamados' | 'logs'>('chamados')
+  const [activeTab, setActiveTab] = useState<'chamados' | 'logs'>('logs')
 
   // Estados dos Chamados (Bug Reports)
   const [reports, setReports] = useState<BugReport[]>([])
-  const [loadingReports, setLoadingReports] = useState(true)
+  const [loadingReports, setLoadingReports] = useState(false)
   const [buscando, setBuscando] = useState(false)
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS')
@@ -75,9 +81,12 @@ export default function AdminReportsPage() {
 
   // Estados dos Logs do Sistema
   const [logs, setLogs] = useState<SystemLog[]>([])
-  const [loadingLogs, setLoadingLogs] = useState(false)
+  const [loadingLogs, setLoadingLogs] = useState(true)
+  const [buscaLogs, setBuscaLogs] = useState('')
+  const [filtroStatusLogs, setFiltroStatusLogs] = useState<string>('TODOS')
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null)
   const [modalLogOpen, setModalLogOpen] = useState(false)
+  const [logDetailTab, setLogDetailTab] = useState<'resumo' | 'trilha' | 'raw'>('resumo')
 
   const loadData = async () => {
     setBuscando(true)
@@ -100,7 +109,7 @@ export default function AdminReportsPage() {
         const { data, error } = await (supabase.from as any)('system_logs')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(100) // Trazemos os últimos 100 por performance
+          .limit(100)
 
         if (data && !error) setLogs(data as SystemLog[])
       } catch (err) {
@@ -137,8 +146,8 @@ export default function AdminReportsPage() {
       if (error) throw error
 
       setReports(prev => prev.map(r => r.id === id ? { ...r, status: novoStatus, resposta_root: resposta !== undefined ? resposta : r.resposta_root } : r))
-      if (novoStatus === 'resolvido') toast.success('Reporte resolvido!')
-      else toast.info(`Reporte alterado para ${novoStatus}`)
+      if (novoStatus === 'resolvido') toast.success('Não conformidade marcada como resolvida!')
+      else toast.info(`Status alterado para ${novoStatus}`)
 
       if (modalReportOpen && selectedReport?.id === id) setModalReportOpen(false)
     } catch (err: any) {
@@ -176,28 +185,47 @@ export default function AdminReportsPage() {
     }
   }
 
+  const logsFiltrados = logs.filter(log => {
+    const termo = buscaLogs.toLowerCase()
+    const msg = (log.message || '').toLowerCase()
+    const ctx = (log.context || '').toLowerCase()
+    const usr = (log.metadata?.usuario?.nome || '').toLowerCase()
+    const car = (log.metadata?.usuario?.cargo || '').toLowerCase()
+    const act = (log.metadata?.acao_usuario || '').toLowerCase()
+    const sess = (log.metadata?.session_id || '').toLowerCase()
+
+    const matchBusca = !termo || msg.includes(termo) || ctx.includes(termo) || usr.includes(termo) || car.includes(termo) || act.includes(termo) || sess.includes(termo)
+    const matchStatus = 
+      filtroStatusLogs === 'TODOS' ? true :
+      filtroStatusLogs === 'RESOLVIDOS' ? log.resolved :
+      !log.resolved
+
+    return matchBusca && matchStatus
+  })
+
   const getLogIcon = (severity: string) => {
     switch (severity) {
-      case 'critical': return <AlertTriangle className="w-5 h-5 text-rose-500" />
-      case 'error': return <XCircle className="w-5 h-5 text-red-400" />
-      case 'warning': return <AlertCircle className="w-5 h-5 text-amber-400" />
-      default: return <Info className="w-5 h-5 text-sky-400" />
+      case 'critical': return <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+      case 'error': return <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+      case 'warning': return <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+      default: return <Info className="w-5 h-5 text-sky-500 shrink-0" />
     }
   }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* Header da Página */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderCustom">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-indigo-500" />
-            Central de Saúde do Sistema
-            <span className="bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/50 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
-              ROOT
+            <ShieldCheck className="w-8 h-8 text-rose-500 dark:text-rose-400" />
+            Não Conformidades & Saúde do Sistema
+            <span className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold tracking-wider uppercase">
+              AUDITORIA
             </span>
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gerencie chamados de usuários e monitore erros automáticos (logs) do sistema.
+            Monitoramento de erros automáticos, falhas em tarefas de usuários e relatos de não conformidades por sessão.
           </p>
         </div>
 
@@ -214,43 +242,199 @@ export default function AdminReportsPage() {
       {/* Tabs Customizadas */}
       <div className="flex gap-2 border-b border-borderCustom">
         <button
-          onClick={() => setActiveTab('chamados')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
-            activeTab === 'chamados' 
-            ? 'border-indigo-500 text-indigo-400' 
-            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
-          }`}
-        >
-          <Bug className="w-4 h-4" /> Chamados e Sugestões
-        </button>
-        <button
           onClick={() => setActiveTab('logs')}
           className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === 'logs' 
-            ? 'border-rose-500 text-rose-400' 
+            ? 'border-rose-500 text-rose-600 dark:text-rose-400' 
             : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
           }`}
         >
-          <Terminal className="w-4 h-4" /> Logs Automáticos (Erros)
+          <Terminal className="w-4 h-4" /> Logs Automáticos (Sessão & Erros)
+        </button>
+        <button
+          onClick={() => setActiveTab('chamados')}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'chamados' 
+            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
+            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-borderCustom'
+          }`}
+        >
+          <Bug className="w-4 h-4" /> Relatos Manuais & Sugestões
         </button>
       </div>
 
+      {/* ========================================================================= */}
+      {/* ABA 1: LOGS AUTOMÁTICOS (ERROS POR SESSÃO)                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'logs' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Barra de Filtros */}
+          <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
+              <Input
+                placeholder="Buscar por mensagem, rota, usuário, cargo ou ID de sessão..."
+                value={buscaLogs}
+                onChange={e => setBuscaLogs(e.target.value)}
+                className="bg-input border-borderCustom pl-9 h-11 rounded-xl text-xs"
+              />
+            </div>
+            <select
+              value={filtroStatusLogs}
+              onChange={e => setFiltroStatusLogs(e.target.value)}
+              className="bg-input border border-borderCustom h-11 rounded-xl px-3 text-xs focus:outline-none text-foreground"
+            >
+              <option value="TODOS">Todos os Logs</option>
+              <option value="PENDENTES">Pendentes (Não Resolvidos)</option>
+              <option value="RESOLVIDOS">Resolvidos</option>
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            {loadingLogs ? (
+              <div className="p-12 text-center text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-500 mb-2" />
+                <p className="text-xs">Carregando logs automáticos de não conformidade...</p>
+              </div>
+            ) : logsFiltrados.length === 0 ? (
+              <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground space-y-2">
+                <ShieldCheck className="w-10 h-10 mx-auto text-emerald-500" />
+                <h3 className="font-bold text-foreground">Nenhuma não conformidade encontrada</h3>
+                <p className="text-xs">Todos os fluxos e tarefas de usuários estão operando perfeitamente.</p>
+              </div>
+            ) : (
+              logsFiltrados.map(log => {
+                const usuario = log.metadata?.usuario
+                const trilha = log.metadata?.trilha_navegacao_recente ?? []
+                const acao = log.metadata?.acao_usuario || log.context || 'Tarefa no sistema'
+                const sessionId = log.metadata?.session_id
+
+                return (
+                  <div 
+                    key={log.id} 
+                    className={`bg-card border ${log.resolved ? 'border-borderCustom/50 opacity-70' : 'border-rose-500/30'} rounded-2xl p-5 shadow-sm space-y-3 transition-all hover:border-rose-500/50`}
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="mt-1">{getLogIcon(log.severity)}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-bold">
+                              {log.context || 'app'}
+                            </span>
+                            {log.error_code && (
+                              <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30 font-mono text-[10px]">
+                                Erro {log.error_code}
+                              </Badge>
+                            )}
+                            {sessionId && (
+                              <span className="font-mono text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded border border-borderCustom">
+                                Sessão: {sessionId}
+                              </span>
+                            )}
+                            {log.resolved ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-bold">
+                                RESOLVIDO
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/30 font-bold animate-pulse">
+                                NÃO CONFORMIDADE ATIVA
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="font-bold text-sm md:text-base mt-2 text-foreground break-words">
+                            {log.message}
+                          </h3>
+
+                          {/* O que o usuário estava tentando fazer */}
+                          <div className="mt-2 text-xs bg-muted/60 p-2.5 rounded-xl border border-borderCustom space-y-1">
+                            <div className="flex items-center gap-1.5 text-foreground/80 font-medium">
+                              <Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              <span className="text-muted-foreground">Tentativa de ação:</span>
+                              <span className="font-semibold text-foreground">{acao}</span>
+                            </div>
+                            {usuario && (
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap pt-1 border-t border-borderCustom/40">
+                                <span className="flex items-center gap-1 font-medium text-foreground">
+                                  <User className="w-3 h-3 text-primary" /> {usuario.nome}
+                                </span>
+                                {usuario.cargo && <span>• {usuario.cargo}</span>}
+                                {usuario.escola && <span>• {usuario.escola}</span>}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Mini Trilha de Navegação Recente */}
+                          {trilha.length > 0 && (
+                            <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground flex-wrap">
+                              <Footprints className="w-3 h-3 text-amber-500 shrink-0" />
+                              <span className="font-medium">Trilha da sessão:</span>
+                              {trilha.slice(-3).map((t: any, idx: number) => (
+                                <span key={idx} className="font-mono bg-background border border-borderCustom px-1.5 py-0.5 rounded text-[10px]">
+                                  {t.pathname}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground sm:text-right shrink-0">
+                        <div>{new Date(log.created_at).toLocaleDateString('pt-BR')}</div>
+                        <div className="font-mono">{new Date(log.created_at).toLocaleTimeString('pt-BR')}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end gap-2 pt-2 border-t border-borderCustom">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-muted border-borderCustom gap-1.5 text-xs h-8 rounded-xl"
+                        onClick={() => {
+                          setSelectedLog(log)
+                          setLogDetailTab('resumo')
+                          setModalLogOpen(true)
+                        }}
+                      >
+                        <Eye className="w-3.5 h-3.5 text-sky-500" /> Ver Trilha & Metadados
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`text-xs h-8 rounded-xl ${log.resolved ? "border-borderCustom text-muted-foreground" : "bg-emerald-600/20 text-emerald-500 border-emerald-500/40 hover:bg-emerald-600/30"}`}
+                        onClick={() => handleResolveLog(log.id, log.resolved)}
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1" /> {log.resolved ? 'Reabrir' : 'Marcar Resolvido'}
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ABA 2: RELATOS MANUAIS & SUGESTÕES                                        */}
+      {/* ========================================================================= */}
       {activeTab === 'chamados' && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
               <Input
-                placeholder="Buscar chamados..."
+                placeholder="Buscar relatos e não conformidades manuais..."
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
-                className="bg-input border-borderCustom pl-9 h-11 rounded-xl"
+                className="bg-input border-borderCustom pl-9 h-11 rounded-xl text-xs"
               />
             </div>
             <select
               value={filtroStatus}
               onChange={e => setFiltroStatus(e.target.value)}
-              className="bg-input border border-borderCustom h-11 rounded-xl px-3 text-sm focus:outline-none"
+              className="bg-input border border-borderCustom h-11 rounded-xl px-3 text-xs focus:outline-none text-foreground"
             >
               <option value="TODOS">Todos os Status</option>
               <option value="pendente">Pendentes</option>
@@ -263,7 +447,7 @@ export default function AdminReportsPage() {
               <div className="p-12 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-500" /></div>
             ) : reportsFiltrados.length === 0 ? (
               <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
-                Nenhum chamado encontrado.
+                Nenhum relato manual registrado.
               </div>
             ) : (
               reportsFiltrados.map(report => (
@@ -292,14 +476,14 @@ export default function AdminReportsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="bg-muted border-borderCustom gap-1.5"
+                      className="bg-muted border-borderCustom gap-1.5 text-xs h-8 rounded-xl"
                       onClick={() => {
                         setSelectedReport(report)
                         setRespostaInput(report.resposta_root || '')
                         setModalReportOpen(true)
                       }}
                     >
-                      <Eye className="w-4 h-4" /> Detalhes / Responder
+                      <Eye className="w-3.5 h-3.5" /> Detalhes / Responder
                     </Button>
                   </div>
                 </div>
@@ -309,82 +493,24 @@ export default function AdminReportsPage() {
         </div>
       )}
 
-      {activeTab === 'logs' && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="space-y-3">
-            {loadingLogs ? (
-              <div className="p-12 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-500" /></div>
-            ) : logs.length === 0 ? (
-              <div className="bg-card border border-dashed border-borderCustom rounded-2xl p-12 text-center text-muted-foreground">
-                Nenhum log automático registrado ainda. Ótimo sinal!
-              </div>
-            ) : (
-              logs.map(log => (
-                <div key={log.id} className={`bg-card border ${log.resolved ? 'border-borderCustom/50 opacity-70' : 'border-rose-500/30'} rounded-2xl p-5 shadow-sm space-y-3 transition-opacity`}>
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">{getLogIcon(log.severity)}</div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="border-borderCustom text-muted-foreground font-mono">{log.context}</Badge>
-                          {log.error_code && <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30 font-mono">Erro {log.error_code}</Badge>}
-                          {log.resolved && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">RESOLVIDO</Badge>}
-                        </div>
-                        <h3 className="font-bold text-sm md:text-base mt-2 text-foreground/90">{log.message}</h3>
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground text-right shrink-0">
-                      <div>{new Date(log.created_at).toLocaleDateString('pt-BR')}</div>
-                      <div>{new Date(log.created_at).toLocaleTimeString('pt-BR')}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 pt-2 border-t border-borderCustom">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="bg-muted border-borderCustom gap-1.5"
-                      onClick={() => {
-                        setSelectedLog(log)
-                        setModalLogOpen(true)
-                      }}
-                    >
-                      <Terminal className="w-4 h-4" /> Ver Metadata
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className={log.resolved ? "border-borderCustom text-muted-foreground" : "bg-emerald-600/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-600/30"}
-                      onClick={() => handleResolveLog(log.id, log.resolved)}
-                    >
-                      <Check className="w-4 h-4 mr-1.5" /> {log.resolved ? 'Reabrir Log' : 'Marcar Resolvido'}
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal Reporte Original */}
+      {/* Modal Reporte Manual */}
       {selectedReport && modalReportOpen && (
         <StandardDialog
           open={modalReportOpen}
           onOpenChange={setModalReportOpen}
-          title={`Chamado — ${selectedReport.titulo}`}
+          title={`Não Conformidade Manual — ${selectedReport.titulo}`}
           maxWidth="sm:max-w-xl"
           footer={
             <div className="pt-2 flex flex-wrap gap-2 justify-end w-full border-t border-borderCustom">
-              <Button type="button" variant="outline" onClick={() => setModalReportOpen(false)}>Fechar</Button>
-              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'em_analise', respostaInput)} className="bg-sky-600 hover:bg-sky-700 text-white">Em Análise</Button>
-              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'resolvido', respostaInput)} className="bg-emerald-600 hover:bg-emerald-700 text-white">Resolver</Button>
+              <Button type="button" variant="outline" onClick={() => setModalReportOpen(false)} className="rounded-xl text-xs h-9">Fechar</Button>
+              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'em_analise', respostaInput)} className="bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs h-9">Em Análise</Button>
+              <Button disabled={salvandoStatus} onClick={() => handleUpdateReportStatus(selectedReport.id, 'resolvido', respostaInput)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs h-9">Resolver</Button>
             </div>
           }
         >
           <div className="space-y-4 py-2">
-            <div className="bg-muted/60 p-3 rounded-xl border border-borderCustom text-sm">
-              <p><strong>Por:</strong> {selectedReport.autor_nome}</p>
+            <div className="bg-muted/60 p-3 rounded-xl border border-borderCustom text-xs space-y-1">
+              <p><strong>Autor:</strong> {selectedReport.autor_nome} ({selectedReport.autor_email})</p>
               <p><strong>Descrição:</strong> {selectedReport.descricao}</p>
             </div>
             <div>
@@ -392,37 +518,162 @@ export default function AdminReportsPage() {
               <Textarea
                 value={respostaInput}
                 onChange={e => setRespostaInput(e.target.value)}
-                placeholder="Resposta..."
-                className="bg-input border-borderCustom min-h-[90px]"
+                placeholder="Descreva a solução ou orientação..."
+                className="bg-input border-borderCustom min-h-[90px] text-xs"
               />
             </div>
           </div>
         </StandardDialog>
       )}
 
-      {/* Modal Log Automático */}
+      {/* Modal Detalhado de Não Conformidade / Log Automático */}
       {selectedLog && modalLogOpen && (
         <StandardDialog
           open={modalLogOpen}
           onOpenChange={setModalLogOpen}
-          title="Detalhes do Log de Sistema"
+          title="Detalhes da Não Conformidade"
           maxWidth="sm:max-w-3xl"
+          footer={
+            <div className="flex justify-end gap-2 w-full pt-2 border-t border-borderCustom">
+              <Button 
+                variant="outline" 
+                onClick={() => setModalLogOpen(false)}
+                className="text-xs rounded-xl h-9"
+              >
+                Fechar
+              </Button>
+              <Button 
+                className={`text-xs rounded-xl h-9 ${selectedLog.resolved ? "bg-muted text-muted-foreground" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
+                onClick={() => {
+                  handleResolveLog(selectedLog.id, selectedLog.resolved)
+                  setModalLogOpen(false)
+                }}
+              >
+                <Check className="w-3.5 h-3.5 mr-1" />
+                {selectedLog.resolved ? 'Reabrir Não Conformidade' : 'Marcar como Resolvido'}
+              </Button>
+            </div>
+          }
         >
-          <div className="space-y-4 py-2">
-            <div className="bg-muted/60 p-4 rounded-xl border border-borderCustom text-sm font-mono overflow-auto max-h-[60vh]">
-              <div className="mb-4 space-y-1">
-                <p><span className="text-muted-foreground">ID:</span> {selectedLog.id}</p>
-                <p><span className="text-muted-foreground">Contexto:</span> {selectedLog.context}</p>
-                <p><span className="text-muted-foreground">Mensagem:</span> {selectedLog.message}</p>
-                <p><span className="text-muted-foreground">User ID:</span> {selectedLog.user_id || 'Não Autenticado'}</p>
+          <div className="space-y-4 py-1">
+            {/* Sub-abas do Modal */}
+            <div className="flex gap-2 border-b border-borderCustom pb-1">
+              <button
+                type="button"
+                onClick={() => setLogDetailTab('resumo')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  logDetailTab === 'resumo' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Resumo da Ação
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogDetailTab('trilha')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  logDetailTab === 'trilha' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Trilha de Navegação ({selectedLog.metadata?.trilha_navegacao_recente?.length ?? 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogDetailTab('raw')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  logDetailTab === 'raw' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                JSON Raw
+              </button>
+            </div>
+
+            {/* ABA 1: RESUMO DA AÇÃO */}
+            {logDetailTab === 'resumo' && (
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-rose-500">Mensagem de Erro do Toast</span>
+                  <p className="font-bold text-foreground text-sm">{selectedLog.message}</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-muted/50 border border-borderCustom rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">O que tentava fazer</span>
+                    <p className="font-semibold text-foreground">
+                      {selectedLog.metadata?.acao_usuario || selectedLog.context || 'Operação no sistema'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-muted/50 border border-borderCustom rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Rota / Contexto</span>
+                    <p className="font-mono text-foreground">{selectedLog.context || '/'}</p>
+                  </div>
+
+                  <div className="p-3 bg-muted/50 border border-borderCustom rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Usuário Responsável</span>
+                    <p className="font-semibold text-foreground">
+                      {selectedLog.metadata?.usuario?.nome || 'Não autenticado'}
+                    </p>
+                    {selectedLog.metadata?.usuario?.cargo && (
+                      <p className="text-[11px] text-muted-foreground">{selectedLog.metadata.usuario.cargo}</p>
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-muted/50 border border-borderCustom rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Sessão & Dispositivo</span>
+                    <p className="font-mono text-[11px] text-foreground">
+                      Sessão: {selectedLog.metadata?.session_id || 'N/A'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {selectedLog.metadata?.user_agent || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="pt-3 border-t border-borderCustom/50">
-                <p className="text-muted-foreground mb-2">METADATA (JSON):</p>
-                <pre className="text-xs text-sky-300 whitespace-pre-wrap break-words">
-                  {JSON.stringify(selectedLog.metadata, null, 2)}
+            )}
+
+            {/* ABA 2: TRILHA DE NAVEGAÇÃO */}
+            {logDetailTab === 'trilha' && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Páginas acessadas pelo usuário antes da ocorrência do erro:
+                </p>
+                {(!selectedLog.metadata?.trilha_navegacao_recente || selectedLog.metadata.trilha_navegacao_recente.length === 0) ? (
+                  <div className="p-6 text-center text-xs text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-borderCustom">
+                    Nenhuma trilha prévia gravada nesta sessão.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {selectedLog.metadata.trilha_navegacao_recente.map((item: any, idx: number) => (
+                      <div key={idx} className="p-2.5 bg-muted/50 border border-borderCustom rounded-xl flex items-center justify-between text-xs gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="font-mono font-bold text-foreground">{item.pathname}</span>
+                            {item.title && <span className="text-[11px] text-muted-foreground block truncate">{item.title}</span>}
+                          </div>
+                        </div>
+                        {item.timestamp && (
+                          <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                            {new Date(item.timestamp).toLocaleTimeString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ABA 3: JSON COMPLETO */}
+            {logDetailTab === 'raw' && (
+              <div className="bg-muted/60 p-3 rounded-xl border border-borderCustom font-mono text-[11px] overflow-auto max-h-[50vh]">
+                <pre className="text-sky-400 whitespace-pre-wrap break-words">
+                  {JSON.stringify(selectedLog, null, 2)}
                 </pre>
               </div>
-            </div>
+            )}
           </div>
         </StandardDialog>
       )}

@@ -9,6 +9,7 @@ import { Analytics } from '@vercel/analytics/next'
 import NextTopLoader from 'nextjs-toploader'
 import { PwaUpdateModal } from '@/components/PwaUpdateModal'
 import { GlobalErrorListener } from '@/components/providers/GlobalErrorListener'
+import { ErrorLoggerInitializer } from '@/components/ErrorLoggerInitializer'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -94,6 +95,7 @@ export default function RootLayout({
           {children}
           <PwaUpdateModal />
           <GlobalErrorListener />
+          <ErrorLoggerInitializer />
           <Toaster />
           <SpeedInsights />
           <Analytics />
