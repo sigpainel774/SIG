@@ -13,6 +13,7 @@ import {
   CalendarClock,
   Bell,
   Building2,
+  MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -86,6 +87,15 @@ const GradeCurricularTab = dynamic(() => import('./GradeCurricularTab'), {
   ),
 })
 
+const LocalidadesTab = dynamic(() => import('@/components/configuracoes/LocalidadesTab'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-48">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
+
 // Fix #8: Tipo explícito derivado do schema Supabase — sem any
 type FuncionarioRow = Database['public']['Tables']['funcionarios']['Row']
 type FuncionarioLocal = Pick<
@@ -93,8 +103,8 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades'
-type Category = 'pessoal' | 'escola'
+type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades'
+type Category = 'pessoal' | 'escola' | 'rede'
 
 export function ConfiguracoesClient() {
   const [category, setCategory] = useState<Category>('pessoal')
@@ -328,6 +338,9 @@ export function ConfiguracoesClient() {
   const isEscolaTab = (tab: ActiveTab) =>
     ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades'].includes(tab)
 
+  const isRedeTab = (tab: ActiveTab) =>
+    ['localidades'].includes(tab)
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -341,7 +354,7 @@ export function ConfiguracoesClient() {
         </p>
       </div>
 
-      {/* Alternância Principal: Preferências Pessoais vs Configurações da Escola */}
+      {/* Alternância Principal: Preferências Pessoais vs Configurações da Escola vs Localidades da Rede */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borderCustom pb-4">
         <button
           type="button"
@@ -380,6 +393,25 @@ export function ConfiguracoesClient() {
           >
             <Building2 className="h-4 w-4" />
             Configurações da Escola (Administrativo)
+          </button>
+        )}
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => {
+              setCategory('rede')
+              setActiveTab('localidades')
+            }}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
+              category === 'rede'
+                ? 'bg-[#185FA5] text-white dark:bg-[#3ea6ff] dark:text-zinc-950 font-bold ring-2 ring-[#185FA5]/30'
+                : 'bg-card border border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+            )}
+          >
+            <MapPin className="h-4 w-4" />
+            Localidades &amp; Território (Rede)
           </button>
         )}
       </div>
@@ -768,6 +800,12 @@ export function ConfiguracoesClient() {
       {category === 'escola' && activeTab === 'prazo-atividades' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <PrazoAtividadesTab />
+        </div>
+      )}
+
+      {category === 'rede' && activeTab === 'localidades' && isAdmin && (
+        <div className="animate-in fade-in-50 duration-200">
+          <LocalidadesTab />
         </div>
       )}
     </div>

@@ -60,6 +60,10 @@ function MapLoadingSkeleton({ height }: { height: string }) {
   );
 }
 
+const LocalidadesLayerReal = dynamic(() => import('./LocalidadesLayer'), {
+  ssr: false,
+});
+
 export { 
   MiniMapaReal as MiniMapa, 
   MapaGlobalReal as MapaGlobal, 
@@ -69,5 +73,6 @@ export {
   MapaRotasEscolasReal as MapaRotasEscolas,
   MapaReplayPercursoReal as MapaReplayPercurso,
   NavegacaoLivreTabReal as NavegacaoLivreTab,
-  VisitasMapCoreReal as VisitasMapCore
+  VisitasMapCoreReal as VisitasMapCore,
+  LocalidadesLayerReal as LocalidadesLayer,
 };

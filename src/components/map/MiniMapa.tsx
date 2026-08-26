@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, LayersControl, Marker, useMapEvents } from 're
 import L from 'leaflet';
 import { Search, ExternalLink, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import LocalidadesLayer from './LocalidadesLayer';
 
 // Corrige os ícones padrão do Leaflet no ambiente de empacotamento (Next.js)
 // @ts-ignore
@@ -294,6 +295,7 @@ export default function MiniMapa({
             eventHandlers={eventHandlers}
             ref={markerRef}
           />
+          <LocalidadesLayer />
           <MapClickHandler onClick={handleMapClick} />
         </MapContainer>
       </div>

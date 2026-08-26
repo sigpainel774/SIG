@@ -10,6 +10,7 @@ import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSchoolStore } from '@/store/useSchoolStore';
 import { preloadFotos, prewarmSapeacuTiles, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
+import LocalidadesLayer from './LocalidadesLayer';
 
 // Criador estático de ícone de agrupamento (evita re-render / memory leaks - ES-3)
 const criarIconeCluster = (cluster: any) => {
@@ -495,6 +496,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
+          <LocalidadesLayer />
           <MarkerClusterGroup
             iconCreateFunction={criarIconeCluster}
             chunkedLoading

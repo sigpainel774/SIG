@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      localidades: {
+        Row: {
+          ativo: boolean
+          cep: string | null
+          cor_fundo: string
+          cor_texto: string
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          latitude: number
+          longitude: number
+          min_zoom: number
+          nome: string
+          peso_fonte: string
+          prioridade: number
+          tamanho_fonte: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cep?: string | null
+          cor_fundo?: string
+          cor_texto?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          min_zoom?: number
+          nome: string
+          peso_fonte?: string
+          prioridade?: number
+          tamanho_fonte?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cep?: string | null
+          cor_fundo?: string
+          cor_texto?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          min_zoom?: number
+          nome?: string
+          peso_fonte?: string
+          prioridade?: number
+          tamanho_fonte?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "localidades_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       abastecimentos_veiculos: {
         Row: {
           created_at: string | null

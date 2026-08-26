@@ -44,6 +44,7 @@ import {
   FlaskConical,
   LogIn,
   Clock,
+  MapPin,
 } from 'lucide-react'
 
 import { ModalSessionTimeout } from '@/components/modals/modal-session-timeout'
@@ -93,6 +94,13 @@ const adminGroups: AdminGroup[] = [
         icon: Building2,
         iconColor: 'text-sky-600 dark:text-sky-300',
         path: '/admin/secretarias',
+      },
+      {
+        title: 'Localidades & Território',
+        subtitle: 'Mapeamento rural e rótulos do mapa',
+        icon: MapPin,
+        iconColor: 'text-amber-500 dark:text-amber-400',
+        path: '/configuracoes',
       },
     ],
   },
@@ -311,6 +319,9 @@ export default function AdminHubPage() {
     active: 0,
   })
 
+  // Estado de Localidades Mapeadas
+  const [totalLocalidades, setTotalLocalidades] = useState<number>(0)
+
   // Estados do Ambiente de Simulação Isolado (Escolas de Teste)
   const [testEscolas, setTestEscolas] = useState<any[]>([])
   const [testUsers, setTestUsers] = useState<any[]>([])
@@ -463,6 +474,15 @@ export default function AdminHubPage() {
           const total = sRules.length
           const active = sRules.filter((r) => r.ativo).length
           setSessionRulesSummary({ total, active })
+        }
+
+        // 6. Carrega total de localidades mapeadas
+        const { data: locsData } = await supabase
+          .from('localidades')
+          .select('id, ativo')
+
+        if (locsData) {
+          setTotalLocalidades(locsData.filter((l) => l.ativo !== false).length)
         }
       } catch (err) {
         console.error('Erro ao carregar controles globais:', err)
@@ -711,7 +731,7 @@ export default function AdminHubPage() {
             Carregando controles globais...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Toggle 1: Chat Interno */}
             <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3">
               <div className="space-y-1">
@@ -924,6 +944,42 @@ export default function AdminHubPage() {
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>Gerenciar Regras</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 4: Localidades & Território Rural */}
+            <div className="bg-card border border-amber-500/30 dark:border-amber-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 bg-amber-500/5 dark:bg-amber-950/20">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Localidades &amp; Território
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 uppercase">
+                    MAPA &amp; RÓTULOS
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Mapeie povoados, comunidades rurais e assentamentos com rótulos visuais e anticolisão dinâmica no mapa.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-amber-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-muted-foreground">Comunidades Ativas:</span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400 uppercase tracking-wider">
+                    {totalLocalidades} {totalLocalidades === 1 ? 'localidade' : 'localidades'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => router.push('/configuracoes')}
+                  className="w-full bg-[#0067c0] hover:bg-[#005aab] dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>Gerenciar Localidades</span>
                 </button>
               </div>
             </div>

@@ -10,6 +10,7 @@ import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { prewarmSapeacuTiles, preloadFotos, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
+import LocalidadesLayer from './LocalidadesLayer';
 
 // Criador estático de ícone de agrupamento para Servidores/Funcionários (ES-3)
 const criarIconeCluster = (cluster: any) => {
@@ -444,6 +445,7 @@ export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
+          <LocalidadesLayer />
           <MarkerClusterGroup
             iconCreateFunction={criarIconeCluster}
             chunkedLoading
