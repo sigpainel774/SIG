@@ -28,9 +28,14 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
     onClose()
     toast.info('Iniciando sincronização da fila offline...')
     try {
-      const res = await sincronizarFilaAlphaGlobal(supabase)
+      const res = await sincronizarFilaAlphaGlobal(supabase, undefined, { forcar: true })
       if (res.sincronizados > 0) {
         toast.success(`${res.sincronizados} registro(s) sincronizado(s) com sucesso!`)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sig_visitas_dados_atualizados'))
+        }
+      } else if (res.erros > 0) {
+        toast.error(`Falha ao sincronizar ${res.erros} item(ns).`)
       } else {
         toast.success('Fila offline já está 100% atualizada!')
       }

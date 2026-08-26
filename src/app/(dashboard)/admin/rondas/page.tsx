@@ -40,11 +40,35 @@ export default function AdminRondasPage() {
     }
   }, [supabase])
 
+  const [registros, setRegistros] = useState<any[]>([])
+  const [loadingRegistros, setLoadingRegistros] = useState(false)
+
+  const loadRegistros = useCallback(async () => {
+    setLoadingRegistros(true)
+    try {
+      const { data, error } = await supabase
+        .from('registros_ronda')
+        .select('*, rotas_ronda(nome), funcionarios(nome)')
+        .order('registrado_em', { ascending: false })
+        .limit(100)
+
+      if (error) throw error
+      if (isMounted.current && data) setRegistros(data)
+    } catch (err: any) {
+      console.error('Erro ao carregar registros de ronda:', err)
+      if (isMounted.current) toast.error('Erro ao carregar registros de ronda.')
+    } finally {
+      if (isMounted.current) setLoadingRegistros(false)
+    }
+  }, [supabase])
+
   useEffect(() => {
     if (activeTab === 'rotas') {
       loadRotas()
+    } else if (activeTab === 'registros') {
+      loadRegistros()
     }
-  }, [activeTab, loadRotas])
+  }, [activeTab, loadRotas, loadRegistros])
 
   return (
     <div className="space-y-6">
@@ -60,13 +84,13 @@ export default function AdminRondasPage() {
           <div className="bg-muted p-1 rounded-lg border border-borderCustom flex">
             <button 
               onClick={() => setActiveTab('rotas')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'rotas' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${activeTab === 'rotas' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Rotas
             </button>
             <button 
               onClick={() => setActiveTab('registros')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'registros' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${activeTab === 'registros' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Registros
             </button>
@@ -127,10 +151,65 @@ export default function AdminRondasPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 border border-dashed border-borderCustom rounded-xl bg-surface-2">
-          <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
-          <h3 className="text-xl font-bold text-foreground mb-2">Registros de Ronda</h3>
-          <p className="text-muted-foreground text-center max-w-md">Os logs de check-in de ronda por GPS aparecerão aqui após iniciadas as atividades.</p>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-borderCustom bg-card overflow-hidden">
+            <Table>
+              <TableHeader className="bg-surface-2 border-b border-borderCustom">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="text-muted-foreground font-semibold">Data/Hora</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Rota de Ronda</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Ponto / Local</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Vigia / Servidor</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Coordenadas</TableHead>
+                  <TableHead className="text-muted-foreground font-semibold">Observação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {registros.map((reg) => (
+                  <TableRow key={reg.id} className="border-b border-borderCustom hover:bg-hoverCustom">
+                    <TableCell className="text-sm font-mono text-foreground">
+                      {reg.registrado_em ? new Date(reg.registrado_em).toLocaleString('pt-BR') : 'Data não informada'}
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {reg.rotas_ronda?.nome ?? 'Rota Avulsa'}
+                    </TableCell>
+                    <TableCell className="text-foreground">
+                      {reg.ponto_nome ?? 'Ponto de Controle'}
+                    </TableCell>
+                    <TableCell className="text-foreground text-sm">
+                      {reg.funcionarios?.nome ?? 'Servidor de Campo'}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-cyan-400">
+                      {reg.latitude && reg.longitude ? (
+                        <a
+                          href={`https://www.google.com/maps?q=${reg.latitude},${reg.longitude}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline flex items-center gap-1"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          {Number(reg.latitude).toFixed(4)}, {Number(reg.longitude).toFixed(4)}
+                        </a>
+                      ) : (
+                        'Sem GPS'
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {reg.observacao ?? 'Nenhuma'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {registros.length === 0 && !loadingRegistros && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                      <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                      Nenhum registro de check-in de ronda gravado até o momento.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>

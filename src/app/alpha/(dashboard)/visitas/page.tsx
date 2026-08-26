@@ -128,7 +128,7 @@ export default function VisitasPage() {
             (supabase as any).from('visitas_pontos').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
             (supabase as any).from('visitas_roteiros').select('*').is('deleted_at', null).order('data_planejada', { ascending: false }),
             (supabase as any).from('visitas_veiculos').select('*').is('deleted_at', null).order('nome', { ascending: true }),
-            (supabase as any).from('visitas_trajetos').select('id, area_id, roteiro_id, veiculo_id, modo, started_at, ended_at, distance_meters, moving_seconds, visit_seconds, estimated_liters, estimated_cost, usuario_id, created_at, deleted_at').is('deleted_at', null).order('started_at', { ascending: false }),
+            (supabase as any).from('visitas_trajetos').select('id, area_id, roteiro_id, veiculo_id, modo, nome, observacoes, started_at, ended_at, distance_meters, moving_seconds, visit_seconds, estimated_liters, estimated_cost, usuario_id, created_at, deleted_at').is('deleted_at', null).order('started_at', { ascending: false }),
             (supabase as any).from('visitas_mapas_geopdf').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
           ]);
 
@@ -149,8 +149,28 @@ export default function VisitasPage() {
           await visitasOfflineService.setVeiculos(resVeiculos.data);
         }
         if (resTrajetos.data) {
-          setTrajetos(resTrajetos.data);
-          await visitasOfflineService.setTrajetos(resTrajetos.data);
+          // Fusão inteligente: mantém rotas locais pendentes e mescla com as do servidor
+          const locaisTrajetos = await visitasOfflineService.getTrajetos();
+          const mapaMerged = new Map<string, VisitasTrajetoResumo>();
+
+          // 1. Insere registros do servidor
+          for (const s of resTrajetos.data) {
+            if (s && s.id) mapaMerged.set(s.id, s);
+          }
+
+          // 2. Preserva registros locais (especialmente pendentes de sincronização)
+          for (const l of locaisTrajetos) {
+            if (l && l.id && !mapaMerged.has(l.id)) {
+              mapaMerged.set(l.id, l);
+            }
+          }
+
+          const listaFinal = Array.from(mapaMerged.values()).sort((a, b) => 
+            new Date(b.started_at || b.created_at || 0).getTime() - new Date(a.started_at || a.created_at || 0).getTime()
+          );
+
+          setTrajetos(listaFinal);
+          await visitasOfflineService.setTrajetos(listaFinal);
         }
         if (resGeoPdf.data) {
           setMapasGeoPdf(resGeoPdf.data);
@@ -166,6 +186,15 @@ export default function VisitasPage() {
 
   useEffect(() => {
     carregarDados();
+
+    const handleAtualizar = () => {
+      carregarDados();
+    };
+
+    window.addEventListener('sig_visitas_dados_atualizados', handleAtualizar);
+    return () => {
+      window.removeEventListener('sig_visitas_dados_atualizados', handleAtualizar);
+    };
   }, [carregarDados]);
 
   // Geolocalização inicial do usuário
@@ -598,9 +627,9 @@ export default function VisitasPage() {
       console.warn('Falha ao salvar no store de rotas offline:', storeErr);
     }
 
-    // 2. Atualiza a lista de resumos na tela e no cache local
+    // 2. Atualiza a lista de resumos na tela e no cache local imediatamente (Optimistic UI)
     const { posicoes, ...resumo } = payloadCompleto;
-    const novos = [resumo as VisitasTrajetoResumo, ...trajetos];
+    const novos = [resumo as VisitasTrajetoResumo, ...trajetos.filter((t) => t.id !== novoId)];
     setTrajetos(novos);
     await visitasOfflineService.setTrajetos(novos);
 
@@ -611,6 +640,7 @@ export default function VisitasPage() {
           .from('visitas_trajetos')
           .upsert(payloadCompleto, { onConflict: 'id' });
         if (error) throw error;
+        toast.success('Trajeto salvo e sincronizado com a nuvem!');
       } catch (err) {
         await visitasOfflineService.enfileirarOperacao(
           'visitas_trajetos',
@@ -618,6 +648,7 @@ export default function VisitasPage() {
           payloadCompleto,
           novoId
         );
+        toast.info('Trajeto salvo no aparelho (aguardando envio para o servidor).');
       }
     } else {
       await visitasOfflineService.enfileirarOperacao(
@@ -626,6 +657,7 @@ export default function VisitasPage() {
         payloadCompleto,
         novoId
       );
+      toast.info('Trajeto gravado no aparelho (modo offline).');
     }
   };
 

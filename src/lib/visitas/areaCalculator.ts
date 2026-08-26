@@ -73,7 +73,7 @@ export function calcularAreaPoligonoMetrosQuadrados(vertices: CoordinateTuple[])
     totalArea += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
   }
 
-  totalArea = (Math.abs(totalArea) * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS) / 4.0;
+  totalArea = (Math.abs(totalArea) * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS) / 2.0;
   return Number(totalArea.toFixed(2));
 }
 

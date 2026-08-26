@@ -271,10 +271,11 @@ export async function obterFilaPendenteAlpha(modulo?: string): Promise<AlphaItem
  */
 export async function sincronizarFilaAlphaGlobal(
   supabase: SupabaseClient,
-  modulo?: string
-): Promise<{ sincronizados: number; erros: number }> {
+  modulo?: string,
+  options?: { forcar?: boolean }
+): Promise<{ sincronizados: number; erros: number; total: number }> {
   if (isSyncingLock || typeof window === 'undefined' || !navigator.onLine) {
-    return { sincronizados: 0, erros: 0 }
+    return { sincronizados: 0, erros: 0, total: 0 }
   }
 
   isSyncingLock = true
@@ -283,7 +284,7 @@ export async function sincronizarFilaAlphaGlobal(
 
   try {
     const pendentes = await obterFilaPendenteAlpha(modulo)
-    if (pendentes.length === 0) return { sincronizados: 0, erros: 0 }
+    if (pendentes.length === 0) return { sincronizados: 0, erros: 0, total: 0 }
 
     // Renova a sessão antes de enviar para garantir JWT válido
     try {
@@ -293,8 +294,8 @@ export async function sincronizarFilaAlphaGlobal(
     const db = await openAlphaDB().catch(() => null)
 
     for (const item of pendentes) {
-      // Pula itens que já falharam mais de 5 vezes para não travar a fila
-      if (item.tentativas >= 5) {
+      // Se não for sincronização forçada manual, pula itens que falharam mais de 10 vezes
+      if (!options?.forcar && item.tentativas >= 10) {
         erros++
         continue
       }
@@ -302,10 +303,8 @@ export async function sincronizarFilaAlphaGlobal(
       try {
         let opError = null
 
-        if (item.acao === 'INSERT') {
-          const { error } = await supabase.from(item.tabela).insert(item.payload)
-          opError = error
-        } else if (item.acao === 'UPSERT') {
+        if (item.acao === 'INSERT' || item.acao === 'UPSERT') {
+          // Preferir upsert com onConflict no ID para evitar erros de duplicidade
           const { error } = await supabase
             .from(item.tabela)
             .upsert(item.payload, { onConflict: 'id' })
@@ -331,12 +330,27 @@ export async function sincronizarFilaAlphaGlobal(
         // Sucesso na sincronização do item
         item.sincronizado = true
         item.ultimo_erro = null
+        item.tentativas = 0
         sincronizados++
 
         if (db) {
           const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite')
           tx.objectStore(STORE_SYNC_QUEUE).put(item)
         }
+
+        // Atualiza também no localStorage fallback
+        try {
+          const saved = localStorage.getItem(LS_FALLBACK_QUEUE)
+          if (saved) {
+            const list: AlphaItemFilaSync[] = JSON.parse(saved)
+            const idx = list.findIndex((x) => x.id === item.id)
+            if (idx >= 0) {
+              list[idx].sincronizado = true
+              list[idx].ultimo_erro = null
+              localStorage.setItem(LS_FALLBACK_QUEUE, JSON.stringify(list))
+            }
+          }
+        } catch {}
       } catch (err: any) {
         item.tentativas = (item.tentativas || 0) + 1
         item.ultimo_erro = err.message || 'Falha de comunicação com o servidor'
@@ -352,11 +366,11 @@ export async function sincronizarFilaAlphaGlobal(
 
     // Auto-limpeza de itens antigos já sincronizados (> 3 dias)
     limparItensAntigosSincronizados().catch(() => {})
+
+    return { sincronizados, erros, total: pendentes.length }
   } finally {
     isSyncingLock = false
   }
-
-  return { sincronizados, erros }
 }
 
 /**

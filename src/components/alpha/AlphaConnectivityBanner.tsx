@@ -28,11 +28,14 @@ export function AlphaConnectivityBanner() {
 
     setSincronizando(true)
     try {
-      const res = await sincronizarFilaAlphaGlobal(supabase)
+      const res = await sincronizarFilaAlphaGlobal(supabase, undefined, { forcar: true })
       await carregarPendentes()
 
       if (res.sincronizados > 0) {
         toast.success(`${res.sincronizados} registro(s) sincronizado(s) com o servidor!`)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sig_visitas_dados_atualizados'))
+        }
       } else if (res.erros > 0) {
         toast.error('Alguns itens não puderam ser enviados. Tentaremos novamente em breve.')
       } else {

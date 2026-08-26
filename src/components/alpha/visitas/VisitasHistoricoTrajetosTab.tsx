@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
   VisitasTrajeto,
   VisitasTrajetoResumo,
   VisitasVeiculo,
 } from '@/types/visitas';
+import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StandardDialog } from '@/components/ui/standard-dialog';
@@ -85,8 +86,21 @@ export function VisitasHistoricoTrajetosTab({
   const [trajetoDetalhado, setTrajetoDetalhado] = useState<VisitasTrajeto | null>(null);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
   const [abaDetalhe, setAbaDetalhe] = useState<'replay' | 'mapa' | 'metricas'>('replay');
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const veicMap = new Map(veiculos.map((v) => [v.id, v.nome]));
+
+  useEffect(() => {
+    const checkPendentes = async () => {
+      try {
+        const ids = await visitasOfflineService.obterIdsPendentes();
+        setPendingIds(ids);
+      } catch {}
+    };
+    checkPendentes();
+    const interval = setInterval(checkPendentes, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const formatarTempo = (totalSecs: number) => {
     const h = Math.floor(totalSecs / 3600);
@@ -180,20 +194,28 @@ export function VisitasHistoricoTrajetosTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      <div className="flex items-center justify-between bg-card border border-border p-4 rounded-2xl">
+      <div className="flex items-center justify-between bg-card border border-border p-4 rounded-2xl flex-wrap gap-3">
         <div>
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <Navigation className="w-5 h-5 text-blue-400" />
             Histórico de Percursos e Auditoria de Campo
           </h2>
           <p className="text-xs text-muted-foreground">
-            Visualize o itinerário percorrido, telemetria e combustível gasto, mesmo offline.
+            Visualize o itinerário percorrido, telemetria e combustível gasto, mesmo offline no celular.
           </p>
         </div>
 
-        <span className="text-xs font-semibold text-blue-300 bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-800/40">
-          {trajetosAtivos.length} trajeto(s)
-        </span>
+        <div className="flex items-center gap-2">
+          {pendingIds.size > 0 && (
+            <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 flex items-center gap-1.5 animate-pulse">
+              <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+              {pendingIds.size} rota(s) local(is)
+            </span>
+          )}
+          <span className="text-xs font-semibold text-blue-300 bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-800/40">
+            {trajetosAtivos.length} trajeto(s) no total
+          </span>
+        </div>
       </div>
 
       {trajetosAtivos.length === 0 ? (
@@ -208,46 +230,68 @@ export function VisitasHistoricoTrajetosTab({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {trajetosAtivos.map((t) => (
-            <div
-              key={t.id}
-              className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs text-blue-400 font-bold">
-                      {t.modo === 'driving' ? (
-                        <>
-                          <Car className="w-3.5 h-3.5" />
-                          <span>Veículo</span>
-                        </>
+          {trajetosAtivos.map((t) => {
+            const isPendente = pendingIds.has(t.id);
+            const titulo = (t as any).nome || `Trajeto - ${new Date(t.started_at).toLocaleDateString('pt-BR')}`;
+            return (
+              <div
+                key={t.id}
+                className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-foreground truncate" title={titulo}>
+                        {titulo}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-[11px] text-blue-400 font-semibold">
+                          {t.modo === 'driving' ? (
+                            <>
+                              <Car className="w-3 h-3" />
+                              <span>Veículo</span>
+                            </>
+                          ) : (
+                            <>
+                              <Footprints className="w-3 h-3" />
+                              <span>A pé</span>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-slate-600 text-xs">•</span>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(t.started_at).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] uppercase font-bold border-blue-500/30 text-blue-400 bg-blue-500/10"
+                      >
+                        {(t.distance_meters / 1000).toFixed(2)} km
+                      </Badge>
+                      {isPendente ? (
+                        <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          <HardDrive className="w-2.5 h-2.5" />
+                          No Aparelho
+                        </span>
                       ) : (
-                        <>
-                          <Footprints className="w-3.5 h-3.5" />
-                          <span>A pé</span>
-                        </>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          Nuvem
+                        </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(t.started_at).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
                   </div>
-
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] uppercase font-bold border-blue-500/30 text-blue-400 bg-blue-500/10"
-                  >
-                    {(t.distance_meters / 1000).toFixed(2)} km
-                  </Badge>
-                </div>
 
                 {/* Métricas do Card */}
                 <div className="grid grid-cols-2 gap-2 bg-muted/40 p-2.5 rounded-xl text-xs font-mono">
@@ -334,7 +378,8 @@ export function VisitasHistoricoTrajetosTab({
                 </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

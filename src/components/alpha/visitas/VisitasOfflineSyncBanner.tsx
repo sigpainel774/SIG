@@ -52,12 +52,18 @@ export function VisitasOfflineSyncBanner() {
 
     setSincronizando(true);
     try {
-      const processados = await visitasOfflineService.sincronizarTudo();
+      const res = await visitasOfflineService.sincronizarTudo({ forcar: true });
       await checarFila();
-      if (processados > 0) {
-        toast.success(`${processados} alteração(ões) sincronizada(s) com o servidor!`);
+      
+      if (res.sincronizados > 0) {
+        toast.success(`${res.sincronizados} rota(s)/registro(s) sincronizado(s) com sucesso com o servidor!`);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sig_visitas_dados_atualizados'));
+        }
+      } else if (res.erros > 0) {
+        toast.error(`Falha ao sincronizar ${res.erros} item(ns). Verifique sua conexão e tente novamente.`);
       } else {
-        toast.info('Nenhuma alteração pendente para sincronizar.');
+        toast.info('Tudo atualizado! Nenhuma alteração pendente para sincronizar.');
       }
     } catch (err) {
       toast.error('Erro ao sincronizar dados com o servidor.');
