@@ -13,10 +13,12 @@ import {
   VisitasTrajetoResumo,
   VisitasGeoPdfMap,
   ActiveVisitasTab,
+  AreaStatus,
 } from '@/types/visitas';
 import {
   calcularAreaPoligonoMetrosQuadrados,
   metrosQuadradosParaHectares,
+  pontoDentroDoPoligono,
 } from '@/lib/visitas/areaCalculator';
 import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService';
 import { salvarNavegacaoLivreOffline } from '@/lib/offlineRouteStore';
@@ -87,6 +89,7 @@ export default function VisitasPage() {
     accuracy?: number;
     heading?: number;
   } | null>(null);
+  const [selectedAreaOnToolbar, setSelectedAreaOnToolbar] = useState<VisitasArea | null>(null);
 
   // Modais
   const [modalAreaAberto, setModalAreaAberto] = useState(false);
@@ -348,6 +351,127 @@ export default function VisitasPage() {
         novoId
       );
       toast.info('Área gravada offline com sucesso!');
+    }
+  };
+
+  const handleUpdateAreaStatus = async (areaId: string, newStatus: AreaStatus) => {
+    const areaAlvo = areas.find((a) => a.id === areaId);
+    if (!areaAlvo) return;
+
+    const areaAtualizada: VisitasArea = {
+      ...areaAlvo,
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    const novasAreas = areas.map((a) => (a.id === areaId ? areaAtualizada : a));
+    setAreas(novasAreas);
+    await visitasOfflineService.setAreas(novasAreas);
+
+    if (selectedAreaOnToolbar?.id === areaId) {
+      setSelectedAreaOnToolbar(areaAtualizada);
+    }
+
+    const labelStatus =
+      newStatus === 'concluido'
+        ? 'Concluído'
+        : newStatus === 'em_andamento'
+        ? 'Em Curso'
+        : 'Não Iniciado';
+
+    // Persiste no Supabase ou enfileira offline
+    if (navigator.onLine) {
+      try {
+        const payloadLimpo = limparPayloadParaTabela('visitas_areas', areaAtualizada);
+        const { error } = await (supabase as any)
+          .from('visitas_areas')
+          .update(payloadLimpo)
+          .eq('id', areaId);
+        if (error) throw error;
+        toast.success(`Status da área "${areaAtualizada.nome}" alterado para ${labelStatus}!`);
+      } catch (err) {
+        await visitasOfflineService.enfileirarOperacao(
+          'visitas_areas',
+          'UPDATE',
+          areaAtualizada,
+          areaId
+        );
+        toast.info(`Status alterado para ${labelStatus} (salvo offline).`);
+      }
+    } else {
+      await visitasOfflineService.enfileirarOperacao(
+        'visitas_areas',
+        'UPDATE',
+        areaAtualizada,
+        areaId
+      );
+      toast.info(`Status alterado para ${labelStatus} (modo offline).`);
+    }
+  };
+
+  const handleMarcarVisitaImediataNoGps = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      toast.error('Geolocalização não suportada pelo seu navegador.');
+      return;
+    }
+
+    const salvarPontoNaPosicao = (lat: number, lng: number) => {
+      // Verifica se a coordenada está dentro de alguma área delimitada cadastrada
+      const matchedArea = areas.find(
+        (area) =>
+          area.vertices &&
+          area.vertices.length >= 3 &&
+          pontoDentroDoPoligono([lat, lng], area.vertices)
+      );
+
+      const horaAtual = new Date().toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const novoPonto: VisitasPonto = {
+        id: crypto.randomUUID(),
+        nome: `Visita Imediata (${horaAtual})`,
+        categoria: 'Visita',
+        status: 'visitado',
+        latitude: lat,
+        longitude: lng,
+        area_id: matchedArea?.id ?? null,
+        descricao: matchedArea
+          ? `Visita manual registrada na área "${matchedArea.nome}".`
+          : 'Visita manual registrada na posição GPS atual.',
+        usuario_id: funcionario?.id ?? null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      handleSavePonto(novoPonto);
+      setMapCenter([lat, lng]);
+      setMapZoom(16);
+      toast.success(
+        `Visita imediata registrada com sucesso ${
+          matchedArea ? `na área "${matchedArea.nome}"` : 'nas suas coordenadas'
+        }!`
+      );
+    };
+
+    if (userLocation) {
+      salvarPontoNaPosicao(userLocation.lat, userLocation.lng);
+    } else {
+      toast.loading('Obtendo sinal GPS para marcar visita...', { id: 'gps-visita' });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          toast.dismiss('gps-visita');
+          const { latitude, longitude, accuracy } = pos.coords;
+          setUserLocation({ lat: latitude, lng: longitude, accuracy });
+          salvarPontoNaPosicao(latitude, longitude);
+        },
+        (err) => {
+          toast.dismiss('gps-visita');
+          toast.error('Não foi possível obter sua localização GPS. Ative a permissão de localização.');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
     }
   };
 
@@ -896,6 +1020,10 @@ export default function VisitasPage() {
                 onClearDraft={handleClearDraft}
                 onFinishPolygon={handleFinishDraftPolygon}
                 onLocateMe={handleLocateMe}
+                selectedArea={selectedAreaOnToolbar}
+                onUpdateAreaStatus={handleUpdateAreaStatus}
+                onClearSelectedArea={() => setSelectedAreaOnToolbar(null)}
+                onMarcarVisitaImediata={handleMarcarVisitaImediataNoGps}
               />
 
               <VisitasMapCore
@@ -910,6 +1038,8 @@ export default function VisitasPage() {
                 pontos={pontos}
                 activeGeoPdf={activeGeoPdf}
                 userLocation={userLocation}
+                onSelectArea={(a) => setSelectedAreaOnToolbar(a)}
+                onUpdateAreaStatus={handleUpdateAreaStatus}
                 onEditArea={(a) => {
                   setAreaEmEdicao(a);
                   setModalAreaAberto(true);

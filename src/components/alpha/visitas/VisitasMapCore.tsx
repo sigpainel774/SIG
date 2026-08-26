@@ -20,7 +20,9 @@ import {
   VisitasArea,
   VisitasPonto,
   VisitasGeoPdfMap,
+  AreaStatus,
 } from '@/types/visitas';
+import { cn } from '@/lib/utils';
 import { MapInteractionMode } from './VisitasDrawingToolbar';
 import {
   formatarArea,
@@ -94,6 +96,7 @@ interface VisitasMapCoreProps {
   onSelectPonto?: (ponto: VisitasPonto) => void;
   onEditArea?: (area: VisitasArea) => void;
   onDeleteArea?: (areaId: string) => void;
+  onUpdateAreaStatus?: (areaId: string, status: AreaStatus) => void;
 }
 
 // Componente interno para gerenciar eventos de clique e snap no Canvas
@@ -159,6 +162,7 @@ export default function VisitasMapCore({
   onSelectPonto,
   onEditArea,
   onDeleteArea,
+  onUpdateAreaStatus,
 }: VisitasMapCoreProps) {
   const [visitasConfig, setVisitasConfig] = useState<VisitasConfig>(obterVisitasConfig);
 
@@ -290,23 +294,34 @@ export default function VisitasMapCore({
                   }}
                   eventHandlers={{
                     click: () => {
-                      if (mode === 'select' && onSelectArea) {
+                      if (onSelectArea) {
                         onSelectArea(area);
                       }
                     },
                   }}
                 >
                   <Popup className="custom-leaflet-popup">
-                    <div className="p-3 text-xs space-y-2 min-w-[200px]">
+                    <div className="p-3 text-xs space-y-2.5 min-w-[220px]">
                       <div className="flex items-center justify-between gap-2 border-b border-border pb-1.5">
                         <span className="font-bold text-sm text-foreground">
                           {area.nome}
                         </span>
                         <Badge
                           variant="outline"
-                          className="text-[10px] uppercase font-bold"
+                          className={cn(
+                            'text-[10px] uppercase font-bold',
+                            area.status === 'concluido'
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                              : area.status === 'em_andamento'
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                          )}
                         >
-                          {area.status}
+                          {area.status === 'concluido'
+                            ? 'Concluído'
+                            : area.status === 'em_andamento'
+                            ? 'Em Curso'
+                            : 'Não Iniciado'}
                         </Badge>
                       </div>
 
@@ -324,6 +339,53 @@ export default function VisitasMapCore({
                         )}
                       </div>
 
+                      {/* Seletor Rápido de Status no Popup */}
+                      {onUpdateAreaStatus && (
+                        <div className="pt-1.5 border-t border-border">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                            Alterar Status:
+                          </span>
+                          <div className="grid grid-cols-3 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onUpdateAreaStatus(area.id, 'pendente')}
+                              className={cn(
+                                'px-1.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer text-center',
+                                area.status === 'pendente'
+                                  ? 'bg-amber-500 text-white shadow-xs'
+                                  : 'bg-accent/60 hover:bg-accent text-muted-foreground'
+                              )}
+                            >
+                              Pendente
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onUpdateAreaStatus(area.id, 'em_andamento')}
+                              className={cn(
+                                'px-1.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer text-center',
+                                area.status === 'em_andamento'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-accent/60 hover:bg-accent text-muted-foreground'
+                              )}
+                            >
+                              Em Curso
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onUpdateAreaStatus(area.id, 'concluido')}
+                              className={cn(
+                                'px-1.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer text-center',
+                                area.status === 'concluido'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'bg-accent/60 hover:bg-accent text-muted-foreground'
+                              )}
+                            >
+                              Concluído
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {mode === 'select' && (
                         <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border">
                           {onEditArea && (
@@ -331,7 +393,7 @@ export default function VisitasMapCore({
                               size="sm"
                               variant="outline"
                               onClick={() => onEditArea(area)}
-                              className="h-7 text-xs gap-1"
+                              className="h-7 text-xs gap-1 cursor-pointer"
                             >
                               <Edit3 className="w-3 h-3" />
                               Editar
@@ -342,7 +404,7 @@ export default function VisitasMapCore({
                               size="sm"
                               variant="destructive"
                               onClick={() => onDeleteArea(area.id)}
-                              className="h-7 w-7 p-0"
+                              className="h-7 w-7 p-0 cursor-pointer"
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>

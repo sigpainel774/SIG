@@ -377,6 +377,21 @@ export default function VisitasNavegacaoLiveTab({
     return [-12.7214, -39.1989]; // Sapeaçu-BA
   }, [posicaoAtual]);
 
+  const handleMarcarVisitaImediata = useCallback(() => {
+    if (!trackerRef.current) {
+      toast.warning('Inicie o rastreamento GPS para computar visitas no percurso.');
+      return;
+    }
+
+    const visit = trackerRef.current.markImmediateVisit(
+      posicaoAtual?.lat,
+      posicaoAtual?.lng
+    );
+    setVisitasDetectadas(trackerRef.current.getVisits());
+    setTempoParadas(trackerRef.current.getVisitSeconds());
+    toast.success(`Visita imediata registrada em "${visit.areaNome}"!`);
+  }, [posicaoAtual]);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* ── Painel HUD de Instrumentos de Campo ── */}
@@ -475,6 +490,19 @@ export default function VisitasNavegacaoLiveTab({
 
         {/* Controles de Seguir, Modo e Configurações */}
         <div className="flex items-center gap-2 shrink-0">
+          {status === 'EM_ANDAMENTO' && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleMarcarVisitaImediata}
+              className="h-9 text-xs font-bold gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+              title="Marcar visita imediatamente"
+            >
+              <MapPin className="w-4 h-4 fill-current" />
+              <span className="hidden sm:inline">Visita Agora</span>
+            </Button>
+          )}
+
           <Button
             type="button"
             size="sm"
@@ -484,7 +512,7 @@ export default function VisitasNavegacaoLiveTab({
             title="Configurar Sensibilidade e Anti-Duplicação de Visitas"
           >
             <Sliders className="w-4 h-4 text-blue-600" />
-            <span className="hidden sm:inline">Calibrar Visitas</span>
+            <span className="hidden sm:inline">Calibrar</span>
           </Button>
 
           <Button
@@ -500,7 +528,7 @@ export default function VisitasNavegacaoLiveTab({
             )}
           >
             <Crosshair className={cn('w-4 h-4', seguirCarro ? 'text-blue-600 animate-spin' : 'text-slate-500')} />
-            {seguirCarro ? 'Seguindo GPS' : 'Câmera Livre'}
+            {seguirCarro ? 'Seguindo' : 'Câmera'}
           </Button>
         </div>
       </div>
@@ -542,6 +570,20 @@ export default function VisitasNavegacaoLiveTab({
             </>
           )}
 
+          {/* Marcadores de Visitas Registradas */}
+          {visitasDetectadas.map((visita, idx) => (
+            <Marker
+              key={visita.id || idx}
+              position={[visita.latitude, visita.longitude]}
+              icon={L.divIcon({
+                className: 'custom-visit-marker',
+                html: `<div class="w-6 h-6 bg-emerald-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-[10px] text-white font-bold">✓</div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
+              })}
+            />
+          ))}
+
           {/* Marcador do Veículo / Usuário com Ícone Customizado */}
           {posicaoAtual && (
             <Marker
@@ -571,19 +613,19 @@ export default function VisitasNavegacaoLiveTab({
             {status === 'INATIVO' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Radio className="w-4 h-4 text-blue-400" />
-                <span>Pronto para iniciar gravação de percurso com telemetria GPS.</span>
+                <span>Pronto para iniciar gravação.</span>
               </div>
             )}
             {status === 'EM_ANDAMENTO' && (
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>Gravando percurso ({pontosGps.length} waypoints)</span>
+                <span>Gravando ({pontosGps.length} pts | {visitasDetectadas.length} visitas)</span>
               </div>
             )}
             {status === 'PAUSADO' && (
               <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
                 <Pause className="w-4 h-4" />
-                <span>Gravação pausada. Retome ou finalize o trajeto.</span>
+                <span>Pausado.</span>
               </div>
             )}
           </div>
@@ -593,7 +635,7 @@ export default function VisitasNavegacaoLiveTab({
               <Button
                 onClick={iniciarNavegacao}
                 size="sm"
-                className="h-9 px-5 text-xs font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl"
+                className="h-9 px-5 text-xs font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
                 Iniciar Rastreamento
@@ -603,10 +645,18 @@ export default function VisitasNavegacaoLiveTab({
             {status === 'EM_ANDAMENTO' && (
               <>
                 <Button
+                  onClick={handleMarcarVisitaImediata}
+                  size="sm"
+                  className="h-9 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-xl cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 fill-current" />
+                  Visita Agora
+                </Button>
+                <Button
                   onClick={pausarNavegacao}
                   size="sm"
                   variant="outline"
-                  className="h-9 text-xs font-bold gap-1.5 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xl"
+                  className="h-9 text-xs font-bold gap-1.5 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xl cursor-pointer"
                 >
                   <Pause className="w-3.5 h-3.5" />
                   Pausar
@@ -614,10 +664,10 @@ export default function VisitasNavegacaoLiveTab({
                 <Button
                   onClick={abrirModalSalvar}
                   size="sm"
-                  className="h-9 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-xl"
+                  className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  Finalizar &amp; Salvar
+                  Finalizar
                 </Button>
               </>
             )}
@@ -625,9 +675,17 @@ export default function VisitasNavegacaoLiveTab({
             {status === 'PAUSADO' && (
               <>
                 <Button
+                  onClick={handleMarcarVisitaImediata}
+                  size="sm"
+                  className="h-9 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 fill-current" />
+                  Visita Agora
+                </Button>
+                <Button
                   onClick={retomarNavegacao}
                   size="sm"
-                  className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                  className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   Retomar
@@ -635,10 +693,10 @@ export default function VisitasNavegacaoLiveTab({
                 <Button
                   onClick={abrirModalSalvar}
                   size="sm"
-                  className="h-9 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+                  className="h-9 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  Salvar Percurso
+                  Salvar
                 </Button>
               </>
             )}

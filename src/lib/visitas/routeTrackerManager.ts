@@ -376,6 +376,44 @@ export class RouteTrackerManager {
     }
   }
 
+  /**
+   * Força o registro imediato de uma visita no ponto atual, sem precisar aguardar o temporizador de parada.
+   */
+  public markImmediateVisit(
+    lat?: number,
+    lng?: number,
+    customAreaNome?: string,
+    customAreaId?: string
+  ): RouteVisit {
+    const lastPos = this.positions.length > 0 ? this.positions[this.positions.length - 1] : null;
+    const targetLat = lat ?? (lastPos ? lastPos.latitude : (this.stationaryAnchor ? this.stationaryAnchor[0] : 0));
+    const targetLng = lng ?? (lastPos ? lastPos.longitude : (this.stationaryAnchor ? this.stationaryAnchor[1] : 0));
+    const now = Date.now();
+    const start = this.stationarySince || (now - 1000);
+
+    const matchedArea = this.areas.find((area) =>
+      pontoDentroDoPoligono([targetLat, targetLng], area.vertices)
+    );
+
+    const visit: RouteVisit = {
+      id: crypto.randomUUID(),
+      trackId: this.id,
+      startedAt: new Date(start).toISOString(),
+      endedAt: new Date(now).toISOString(),
+      latitude: targetLat,
+      longitude: targetLng,
+      areaId: customAreaId ?? matchedArea?.id ?? null,
+      areaNome: customAreaNome ?? matchedArea?.nome ?? 'Visita Imediata (Manual)',
+      durationSeconds: Math.max(1, Math.floor((now - start) / 1000)),
+    };
+
+    this.stationarySince = now;
+    this.stationaryAnchor = [targetLat, targetLng];
+    this.visits.push(visit);
+
+    return visit;
+  }
+
   public finish(endedAt: number = Date.now()): any {
     this.finalize(endedAt);
     return {
