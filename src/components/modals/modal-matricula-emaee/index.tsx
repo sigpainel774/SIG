@@ -13,6 +13,8 @@ const ModalScannerFoto3x4 = dynamic(
   { ssr: false }
 )
 
+import { ModalVincularProfissionalAlunoAEE } from './components/ModalVincularProfissionalAlunoAEE'
+
 // Subseções
 import { SecaoDadosAluno } from './components/SecaoDadosAluno'
 import { SecaoEscolaRegular } from './components/SecaoEscolaRegular'
@@ -23,12 +25,18 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
   const { 
     loading, 
     handleSubmit, 
+    handleResetForm,
     alunoSelecionado, 
     nomeCompleto, 
     isEditMode,
     scannerOpen,
     setScannerOpen,
-    handleFotoCapturada
+    handleFotoCapturada,
+    modalVincularAEEOpen,
+    setModalVincularAEEOpen,
+    vinculosAEE,
+    adicionarVinculoAEE,
+    escolaAtendimentoId
   } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
   const formRef = useRef<HTMLFormElement>(null)
@@ -78,7 +86,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => formRef.current?.reset()}
+                onClick={handleResetForm}
                 className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl text-xs"
               >
                 <RotateCcw className="w-3.5 h-3.5 mr-1" />
@@ -175,6 +183,17 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           onFotoCapturada={handleFotoCapturada}
           titulo="Escanear Foto 3x4 do Estudante (EMAEE)"
           subtitulo="Enquadre a foto 3x4 da ficha física do estudante para recortar e aplicar"
+        />
+      )}
+
+      {/* Sub-modal de Seleção e Agendamento do Profissional AEE (Isolado fora do form) */}
+      {modalVincularAEEOpen && (
+        <ModalVincularProfissionalAlunoAEE
+          open={modalVincularAEEOpen}
+          onOpenChange={setModalVincularAEEOpen}
+          vinculosExistentes={vinculosAEE}
+          onAdicionarVinculo={adicionarVinculoAEE}
+          escolaEmaeeId={escolaAtendimentoId}
         />
       )}
     </StandardDialog>

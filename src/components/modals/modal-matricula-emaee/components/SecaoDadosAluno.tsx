@@ -313,7 +313,7 @@ export function SecaoDadosAluno() {
               <Input
                 value={cidadeNascimento}
                 onChange={(e) => setCidadeNascimento(e.target.value)}
-                placeholder="Sapeaçu"
+                placeholder=""
                 className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>

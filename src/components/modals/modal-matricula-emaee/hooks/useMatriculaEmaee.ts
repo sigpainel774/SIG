@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
@@ -14,6 +14,19 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [alunosEncontrados, setAlunosEncontrados] = useState<AlunoSearchData[]>([])
+
+  // Flags de controle de ciclo de vida para blindagem contra resets fantasmas e memory leaks
+  const prevOpenRef = useRef(false)
+  const prevMatriculaIdRef = useRef<string | null>(null)
+  const isMountedRef = useRef(true)
+  const searchReqIdRef = useRef(0)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
   
   // 1. Dados do Atendimento
   const [escolaAtendimentoId, setEscolaAtendimentoId] = useState(props.escolaEmaeeId || '')
@@ -34,7 +47,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [certidaoNascimento, setCertidaoNascimento] = useState('')
   const [corRaca, setCorRaca] = useState('')
   const [sexo, setSexo] = useState('')
-  const [cidadeNascimento, setCidadeNascimento] = useState('Sapeaçu')
+  const [cidadeNascimento, setCidadeNascimento] = useState('')
   const [estadoNascimento, setEstadoNascimento] = useState('BA')
   const [nomeMae, setNomeMae] = useState('')
   const [profissaoMae, setProfissaoMae] = useState('')
@@ -262,9 +275,105 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
   const isEditMode = Boolean(props.matriculaEditar?.id)
 
-  // Sincronizar dados quando props.matriculaEditar estiver presente e o modal for aberto
+  // Função controlada para resetar todos os estados do formulário
+  const handleResetForm = () => {
+    setAlunoSelecionado(null)
+    setIsManualAluno(true)
+    setSearchTerm('')
+    setNomeCompleto('')
+    setDataNascimento('')
+    setCpf('')
+    setIdentificacaoCenso('')
+    setRg('')
+    setNis('')
+    setCertidaoNascimento('')
+    setCorRaca('')
+    setSexo('')
+    setCidadeNascimento('')
+    setEstadoNascimento('BA')
+    setNomeMae('')
+    setProfissaoMae('')
+    setNomePai('')
+    setProfissaoPai('')
+    setCep('')
+    setRua('')
+    setNumero('')
+    setBairro('')
+    setCidadeEndereco('Sapeaçu')
+    setUfEndereco('BA')
+    setEndereco('')
+    setLatitude(-12.7299932)
+    setLongitude(-39.1858195)
+    setZonaResidencial('Urbana')
+    setContatoEmergencia('')
+    setTelefoneEmergencia('')
+    setFotoUrl(null)
+    setFotoFile(null)
+    setEscolaAtendimentoId(props.escolaEmaeeId ?? '')
+    setLocalizacaoAtendimento('Urbana')
+    setDataMatricula(getHojeBrasilia())
+    setTurnoAtendimento('Matutino')
+    setEscolaOrigemForaRede(false)
+    setEscolaOrigemNome('')
+    setEscolaOrigemMunicipio('')
+    setEscolaOrigemUf('BA')
+    setEscolaRegularId('')
+    setAnoEscolarizacao('')
+    setTurnoRegular('')
+    setTurmaRegular('')
+    setProfessorRegular('')
+    setGestorRegular('')
+    setCidCodigo('')
+    setOutrosTranstornos('')
+    setObservacoes('')
+    setDeficiencias({
+      def_baixa_visao: false,
+      def_cegueira: false,
+      def_auditiva: false,
+      def_fisica: false,
+      def_intelectual: false,
+      def_surdez: false,
+      def_surdocegueira: false,
+      def_multipla: false,
+      transtorno_tea: false,
+      transtorno_outros: false,
+    })
+    setCondicoesSaude({
+      transtorno_tea: { selecionado: false, cid: '' },
+      tdah: { selecionado: false, cid: '' },
+      deficiencia_intelectual: { selecionado: false, cid: '' },
+      dislexia: { selecionado: false, cid: '' },
+      disgrafia_disortografia: { selecionado: false, cid: '' },
+      tod: { selecionado: false, cid: '' },
+      ansiedade: { selecionado: false, cid: '' },
+      superdotacao: { selecionado: false, cid: '' },
+    })
+    setAssinaturaResponsavelUrl(null)
+    setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
+    setCodigoColetaLocal(null)
+    setVinculosAEE([])
+    setVinculosRemovidos([])
+  }
+
+  // Sincronizar dados quando o modal for ABERTO ou quando a matrícula a editar mudar
+  // Blindagem estrita: NÃO reseta enquanto o modal já estiver aberto e o usuário estiver digitando
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      prevOpenRef.current = false
+      return
+    }
+
+    const wasClosed = !prevOpenRef.current
+    const currentMatriculaId = props.matriculaEditar?.id ?? null
+    const matriculaIdChanged = currentMatriculaId !== prevMatriculaIdRef.current
+
+    // Se o modal já estava aberto e não mudou o ID da matrícula, não faz nada (preserva tudo o que foi digitado)
+    if (!wasClosed && !matriculaIdChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevMatriculaIdRef.current = currentMatriculaId
 
     if (props.matriculaEditar) {
       const mat = props.matriculaEditar
@@ -404,7 +513,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
               .eq('emaee_matricula_id', mat.id)
               .eq('ativo', true)
 
-            if (!error && vincData) {
+            if (!error && vincData && isMountedRef.current) {
               const mapeados: VinculoAEEConfig[] = vincData.map((v: any) => {
                 const func = v.funcionarios || {}
                 const avatar = getAvatarUrl(func) || func.foto_url
@@ -431,85 +540,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         })()
       }
     } else {
-      // Reset limpo para Nova Matrícula (Abertura Padrão em Modo Manual)
-      setAlunoSelecionado(null)
-      setIsManualAluno(true)
-      setSearchTerm('')
-      setNomeCompleto('')
-      setDataNascimento('')
-      setCpf('')
-      setIdentificacaoCenso('')
-      setRg('')
-      setNis('')
-      setCertidaoNascimento('')
-      setCorRaca('')
-      setSexo('')
-      setCidadeNascimento('Sapeaçu')
-      setEstadoNascimento('BA')
-      setNomeMae('')
-      setProfissaoMae('')
-      setNomePai('')
-      setProfissaoPai('')
-      setCep('')
-      setRua('')
-      setNumero('')
-      setBairro('')
-      setCidadeEndereco('Sapeaçu')
-      setUfEndereco('BA')
-      setEndereco('')
-      setLatitude(-12.7299932)
-      setLongitude(-39.1858195)
-      setZonaResidencial('Urbana')
-      setContatoEmergencia('')
-      setTelefoneEmergencia('')
-      setFotoUrl(null)
-      setFotoFile(null)
-      setEscolaAtendimentoId(props.escolaEmaeeId ?? '')
-      setLocalizacaoAtendimento('Urbana')
-      setDataMatricula(getHojeBrasilia())
-      setTurnoAtendimento('Matutino')
-      setEscolaOrigemForaRede(false)
-      setEscolaOrigemNome('')
-      setEscolaOrigemMunicipio('')
-      setEscolaOrigemUf('BA')
-      setEscolaRegularId('')
-      setAnoEscolarizacao('')
-      setTurnoRegular('')
-      setTurmaRegular('')
-      setProfessorRegular('')
-      setGestorRegular('')
-      setCidCodigo('')
-      setOutrosTranstornos('')
-      setObservacoes('')
-      setDeficiencias({
-        def_baixa_visao: false,
-        def_cegueira: false,
-        def_auditiva: false,
-        def_fisica: false,
-        def_intelectual: false,
-        def_surdez: false,
-        def_surdocegueira: false,
-        def_multipla: false,
-        transtorno_tea: false,
-        transtorno_outros: false,
-      })
-      setCondicoesSaude({
-        transtorno_tea: { selecionado: false, cid: '' },
-        tdah: { selecionado: false, cid: '' },
-        deficiencia_intelectual: { selecionado: false, cid: '' },
-        dislexia: { selecionado: false, cid: '' },
-        disgrafia_disortografia: { selecionado: false, cid: '' },
-        tod: { selecionado: false, cid: '' },
-        ansiedade: { selecionado: false, cid: '' },
-        superdotacao: { selecionado: false, cid: '' },
-      })
-      setAssinaturaResponsavelUrl(null)
-      setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
-      setCodigoColetaLocal(null)
-      setVinculosAEE([])
-      setVinculosRemovidos([])
+      // Reset limpo inicial para Nova Matrícula
+      handleResetForm()
     }
-  }, [isOpen, props.matriculaEditar, props.escolaEmaeeId, funcionario?.assinatura_url])
+  }, [isOpen, props.matriculaEditar?.id])
 
   // Sincroniza unidade EMAEE selecionada e assinatura padrão do funcionário logado
   useEffect(() => {
@@ -691,7 +725,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setCertidaoNascimento('')
     setCorRaca('')
     setSexo('')
-    setCidadeNascimento('SAPE AÇU')
+    setCidadeNascimento('')
     setEstadoNascimento('BA')
     setNomeMae('')
     setProfissaoMae('')
@@ -710,7 +744,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setVinculosRemovidos([])
   }
 
-  // Busca de alunos com debounce e cancelamento
+  // Busca de alunos com debounce e cancelamento (protegido contra race condition)
   const handleSearchAluno = async (term: string) => {
     setSearchTerm(term)
     if (!term || term.length < 3) {
@@ -718,6 +752,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       return
     }
     
+    const currentReqId = ++searchReqIdRef.current
     setSearchLoading(true)
     try {
       const { data, error } = await (supabase
@@ -775,12 +810,16 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         dados_matricula: a.dados_matricula
       }))
       
-      setAlunosEncontrados(mapped)
+      if (isMountedRef.current && currentReqId === searchReqIdRef.current) {
+        setAlunosEncontrados(mapped)
+      }
     } catch (err) {
       console.error('Erro na busca de alunos:', err)
-      toast.error('Erro ao pesquisar alunos no SIG')
+      if (isMountedRef.current) toast.error('Erro ao pesquisar alunos no SIG')
     } finally {
-      setSearchLoading(false)
+      if (isMountedRef.current && currentReqId === searchReqIdRef.current) {
+        setSearchLoading(false)
+      }
     }
   }
 
@@ -789,7 +828,12 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    if (e) {
+      e.preventDefault()
+      if (e.target && e.currentTarget && e.target !== e.currentTarget) {
+        return
+      }
+    }
     
     // Validação: ou selecionou aluno ou digitou nome manual
     if (!alunoSelecionado?.id && !nomeCompleto.trim()) {
@@ -833,7 +877,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             certidao_nascimento_novo_modelo: certidaoNascimento || null,
             sexo: sexo || null,
             uf_nascimento: estadoNascimento || null,
-            municipio_nascimento: cidadeNascimento || null,
+            municipio_nascimento: cidadeNascimento.trim() || null,
             nome_mae: nomeMae || null,
             profissao_mae: profissaoMae || null,
             nome_pai: nomePai || null,
@@ -977,7 +1021,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         if (vinculosRemovidos.length > 0) {
           const idsRemover: string[] = vinculosRemovidos
             .map((v) => v.id)
-            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            .filter((id): id is string => typeof id === 'string' && id.length > 10)
 
           if (idsRemover.length > 0) {
             await supabase
@@ -1008,6 +1052,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
           if (errVinc) {
             console.error('Erro ao salvar especialidades vinculadas no EMAEE:', errVinc)
+            toast.error('Aviso: Houve um problema ao salvar os horários de atendimento dos profissionais AEE.')
           }
         }
 
@@ -1045,7 +1090,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
           sexo: sexo || null,
           uf_nascimento: estadoNascimento || 'BA',
-          municipio_nascimento: cidadeNascimento || 'Sapeaçu',
+          municipio_nascimento: cidadeNascimento.trim() || null,
           nome_mae: nomeMae || null,
           profissao_mae: profissaoMae || null,
           nome_pai: nomePai || null,
@@ -1107,7 +1152,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
           sexo: sexo || null,
           uf_nascimento: estadoNascimento || 'BA',
-          municipio_nascimento: cidadeNascimento || 'Sapeaçu',
+          municipio_nascimento: cidadeNascimento.trim() || null,
           nome_mae: nomeMae || null,
           profissao_mae: profissaoMae || null,
           nome_pai: nomePai || null,
@@ -1231,6 +1276,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
         if (errVinc) {
           console.error('Erro ao salvar especialidades vinculadas na nova matrícula EMAEE:', errVinc)
+          toast.error('Aviso: Houve um problema ao salvar os horários de atendimento dos profissionais AEE.')
         }
       }
 
@@ -1254,6 +1300,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     isManualAluno,
     handleSelectAluno,
     handleAtivarManual,
+    handleResetForm,
     handleSearchAluno,
     searchTerm,
     setSearchTerm,

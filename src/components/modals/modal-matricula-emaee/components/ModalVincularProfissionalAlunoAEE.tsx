@@ -160,6 +160,7 @@ export function ModalVincularProfissionalAlunoAEE({
 
   const handleConfirmarVinculo = (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     if (!profSelecionado) return
 
     if (!horarioInicio || !horarioFim) {

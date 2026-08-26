@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { SignaturePad } from '@/components/ui/SignaturePad'
 import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check, UserPlus, CalendarDays, Clock, Trash2, User } from 'lucide-react'
 import { toast } from 'sonner'
-import { ModalVincularProfissionalAlunoAEE, VinculoAEEConfig } from './ModalVincularProfissionalAlunoAEE'
+import { VinculoAEEConfig } from './ModalVincularProfissionalAlunoAEE'
 
 const DIAS_SEMANA_MAP: Record<number, string> = {
   1: 'Segunda-feira',
@@ -354,17 +354,6 @@ export function SecaoAssinaturasComprovante() {
           <span>Dados pessoais e clínicos: aplicar permissões RLS e tratamento compatível com a LGPD.</span>
         </div>
       </div>
-
-      {/* Sub-Modal de Seleção e Agendamento do Profissional AEE */}
-      {modalVincularAEEOpen && (
-        <ModalVincularProfissionalAlunoAEE
-          open={modalVincularAEEOpen}
-          onOpenChange={setModalVincularAEEOpen}
-          vinculosExistentes={vinculosAEE}
-          onAdicionarVinculo={adicionarVinculoAEE}
-          escolaEmaeeId={escolaAtendimentoId}
-        />
-      )}
     </section>
   )
 }
