@@ -165,6 +165,8 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
   const isFichaBloqueada = isDocumentoBloqueado && !isEdicaoLiberada
 
   const signatureSectionRef = useRef<HTMLDivElement>(null)
+  const prevOpenRef = useRef(false)
+  const prevAlunoIdRef = useRef<string | null>(null)
 
   // Hook isolado para o polling da assinatura
   const {
@@ -183,6 +185,23 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
 
   // Preencher os dados quando o modal abre ou alunoEditar muda
   useEffect(() => {
+    if (!isOpen) {
+      prevOpenRef.current = false
+      return
+    }
+
+    const wasClosed = !prevOpenRef.current
+    const currentAlunoId = alunoEditar?.id ?? null
+    const alunoChanged = currentAlunoId !== prevAlunoIdRef.current
+
+    // Se o modal já estava aberto e não mudou o aluno sendo editado, não reseta (preserva tudo o que foi digitado)
+    if (!wasClosed && !alunoChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevAlunoIdRef.current = currentAlunoId
+
     let active = true // Evita race conditions em chamadas assíncronas
 
     const checarStatusLiberacao = async () => {
@@ -234,132 +253,130 @@ export function useAlunoFormStates({ props, isOpen, setIsOpen }: UseAlunoFormSta
       }
     }
 
-    if (isOpen) {
-      if (alunoEditar) {
-        const dm = alunoEditar.dados_matricula || {}
-        pessoaForm.populatePessoais({ ...alunoEditar, ...dm })
-        
-        const rawFotoUrl = getVisualizacaoUrl(alunoEditar) || getAvatarUrl(alunoEditar) || alunoEditar.foto_url || ''
-        const fotoComCacheBust = rawFotoUrl ? `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}` : ''
-        setFotoUrl(fotoComCacheBust)
-        setFotoRemovidaManualmente(false)
-        setFotoFile(null)
-        setIsCompressingPhoto(false)
+    if (alunoEditar) {
+      const dm = alunoEditar.dados_matricula || {}
+      pessoaForm.populatePessoais({ ...alunoEditar, ...dm })
+      
+      const rawFotoUrl = getVisualizacaoUrl(alunoEditar) || getAvatarUrl(alunoEditar) || alunoEditar.foto_url || ''
+      const fotoComCacheBust = rawFotoUrl ? `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}` : ''
+      setFotoUrl(fotoComCacheBust)
+      setFotoRemovidaManualmente(false)
+      setFotoFile(null)
+      setIsCompressingPhoto(false)
 
-        setEscolaId(alunoEditar.escola_id || '')
-        setTurmaId(alunoEditar.turma_id || '')
-        setSus(alunoEditar.cartao_sus || dm.susAluno || '')
-        setCertidao(alunoEditar.certidao_nascimento || dm.certidaoAluno || '')
-        setEndereco(alunoEditar.endereco || dm.enderecoAluno || '')
-        setSerie(alunoEditar.serie || dm.serieAluno || '')
+      setEscolaId(alunoEditar.escola_id || '')
+      setTurmaId(alunoEditar.turma_id || '')
+      setSus(alunoEditar.cartao_sus || dm.susAluno || '')
+      setCertidao(alunoEditar.certidao_nascimento || dm.certidaoAluno || '')
+      setEndereco(alunoEditar.endereco || dm.enderecoAluno || '')
+      setSerie(alunoEditar.serie || dm.serieAluno || '')
 
-        pessoaForm.setTelMae(dm.telMaeAluno || '')
-        pessoaForm.setTelPai(dm.telPaiAluno || '')
-        setTipoMatricula(dm.tipoMatricula || 'Renovação')
-        setDataMatricula(dm.dataMatricula || getHojeBrasilia())
-        setLocalizacao(dm.localizacaoAluno || 'Zona Urbana')
-        setTurno(dm.turnoAluno || 'Matutino')
-        setTurmaLetra(dm.turmaAluno || '')
-        setTransporte(!!dm.transporteAluno)
-        setRotaTransporte(dm.rotaTransporteAluno || '')
-        setRecursosEspeciais(dm.recursosEspeciaisAluno || 'Não')
-        setRecursosSelecionados(dm.recursosSelecionados || [])
-        setDiabete(dm.diabeteAluno || 'Não')
-        setConvulsoes(dm.convulsoesAluno || 'Não')
-        setAsma(dm.asmaAluno || 'Não')
-        setInfeccoes(dm.infeccoesAluno || 'Não')
-        setRestricaoExercicio(dm.restricaoExercicioAluno || 'Não')
-        setCovid(dm.covidAluno || 'Não')
-        setCovidQuando(dm.covidQuandoAluno || '')
-        setSituacaoVacinalCovid(dm.situacaoVacinalAluno || '')
-        setAlergiaMed(dm.alergiaMedAluno || 'Não')
-        setAlergiaMedQuais(dm.alergiaMedQuaisAluno || '')
-        setRestricaoAlimentar(dm.restricaoAlimentarAluno || 'Não')
-        setRestricaoAlimentarQuais(dm.restricaoAlimentarQuaisAluno || '')
-        setSituacaoVacinal(dm.situacaoVacinalGeral || 'Em dia')
-        setRestricoesSaude(dm.restricoesSaudeAluno || '')
-        setNee(dm.neeAluno || 'Não')
-        setNeeSelecionadas(dm.neeSelecionadas || [])
-        setDeficiencia(dm.deficienciaAluno || 'Não')
-        setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
-        setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
+      pessoaForm.setTelMae(dm.telMaeAluno || '')
+      pessoaForm.setTelPai(dm.telPaiAluno || '')
+      setTipoMatricula(dm.tipoMatricula || 'Renovação')
+      setDataMatricula(dm.dataMatricula || getHojeBrasilia())
+      setLocalizacao(dm.localizacaoAluno || 'Zona Urbana')
+      setTurno(dm.turnoAluno || 'Matutino')
+      setTurmaLetra(dm.turmaAluno || '')
+      setTransporte(!!dm.transporteAluno)
+      setRotaTransporte(dm.rotaTransporteAluno || '')
+      setRecursosEspeciais(dm.recursosEspeciaisAluno || 'Não')
+      setRecursosSelecionados(dm.recursosSelecionados || [])
+      setDiabete(dm.diabeteAluno || 'Não')
+      setConvulsoes(dm.convulsoesAluno || 'Não')
+      setAsma(dm.asmaAluno || 'Não')
+      setInfeccoes(dm.infeccoesAluno || 'Não')
+      setRestricaoExercicio(dm.restricaoExercicioAluno || 'Não')
+      setCovid(dm.covidAluno || 'Não')
+      setCovidQuando(dm.covidQuandoAluno || '')
+      setSituacaoVacinalCovid(dm.situacaoVacinalAluno || '')
+      setAlergiaMed(dm.alergiaMedAluno || 'Não')
+      setAlergiaMedQuais(dm.alergiaMedQuaisAluno || '')
+      setRestricaoAlimentar(dm.restricaoAlimentarAluno || 'Não')
+      setRestricaoAlimentarQuais(dm.restricaoAlimentarQuaisAluno || '')
+      setSituacaoVacinal(dm.situacaoVacinalGeral || 'Em dia')
+      setRestricoesSaude(dm.restricoesSaudeAluno || '')
+      setNee(dm.neeAluno || 'Não')
+      setNeeSelecionadas(dm.neeSelecionadas || [])
+      setDeficiencia(dm.deficienciaAluno || 'Não')
+      setDeficienciasSelecionadas(dm.deficienciasSelecionadas || [])
+      setAutorizaImagemVoz(dm.autoriza_imagem_voz || 'Não')
 
-        // Correção de concorrência nos motivos de não vacinação
-        setMotivoNaoVacinacaoGeral(dm.motivoNaoVacinacaoAluno || '')
-        setMotivoNaoVacinacaoCovid(dm.motivoNaoVacinacaoCovidAluno || (dm.situacaoVacinalAluno === 'Não foi vacinado' ? dm.motivoNaoVacinacaoAluno : '') || '')
+      // Correção de concorrência nos motivos de não vacinação
+      setMotivoNaoVacinacaoGeral(dm.motivoNaoVacinacaoAluno || '')
+      setMotivoNaoVacinacaoCovid(dm.motivoNaoVacinacaoCovidAluno || (dm.situacaoVacinalAluno === 'Não foi vacinado' ? dm.motivoNaoVacinacaoAluno : '') || '')
 
-        const cacheBust = (url: string | null) => {
-          if (!url) return null
-          return `${url}${url.includes('?') ? '&' : '?'}t=${sessionTimestamp}`
-        }
-        setAssinaturaResponsavelUrl(cacheBust(dm.assinatura_responsavel_url))
-        setAssinaturaFuncionarioUrl(cacheBust(dm.assinatura_funcionario_url))
-        setNewSignatureResponsavel(null)
-        setNewSignatureFuncionario(null)
-
-      } else {
-        // Reset completo para cadastrar aluno novo
-        pessoaForm.resetPessoais()
-        setFotoUrl('')
-        setFotoFile(null)
-        setFotoRemovidaManualmente(false)
-        setIsCompressingPhoto(false)
-        setEscolaId(escolaAtivaId || '')
-        setTurmaId('')
-        setSus('')
-        setCertidao('')
-        setEndereco('')
-        setSerie('')
-        pessoaForm.setTelMae('')
-        pessoaForm.setTelPai('')
-        setTipoMatricula('Renovação')
-        setDataMatricula(getHojeBrasilia())
-        setLocalizacao('Zona Urbana')
-        setTurno('Matutino')
-        setTurmaLetra('')
-        setTransporte(false)
-        setRotaTransporte('')
-        setRecursosEspeciais('Não')
-        setRecursosSelecionados([])
-        setDiabete('Não')
-        setConvulsoes('Não')
-        setAsma('Não')
-        setInfeccoes('Não')
-        setRestricaoExercicio('Não')
-        setCovid('Não')
-        setCovidQuando('')
-        setSituacaoVacinalCovid('')
-        setAlergiaMed('Não')
-        setAlergiaMedQuais('')
-        setMotivoNaoVacinacaoGeral('')
-        setMotivoNaoVacinacaoCovid('')
-        setRestricaoAlimentar('Não')
-        setRestricaoAlimentarQuais('')
-        setSituacaoVacinal('Em dia')
-        setRestricoesSaude('')
-        setNee('Não')
-        setNeeSelecionadas([])
-        setDeficiencia('Não')
-        setDeficienciasSelecionadas([])
-        setAutorizaImagemVoz('Não')
-        setAssinaturaResponsavelUrl(null)
-        setAssinaturaFuncionarioUrl(null)
-        setNewSignatureResponsavel(null)
-        setNewSignatureFuncionario(null)
+      const cacheBust = (url: string | null) => {
+        if (!url) return null
+        return `${url}${url.includes('?') ? '&' : '?'}t=${sessionTimestamp}`
       }
+      setAssinaturaResponsavelUrl(cacheBust(dm.assinatura_responsavel_url))
+      setAssinaturaFuncionarioUrl(cacheBust(dm.assinatura_funcionario_url))
+      setNewSignatureResponsavel(null)
+      setNewSignatureFuncionario(null)
 
-      setCelularSigningCode(null)
-      setCelularSigningField(null)
-      setSolicitandoLibere(false)
-      setJustificativaSolicitacao('')
-
-      checarStatusLiberacao()
+    } else {
+      // Reset completo para cadastrar aluno novo (Apenas na abertura inicial)
+      pessoaForm.resetPessoais()
+      setFotoUrl('')
+      setFotoFile(null)
+      setFotoRemovidaManualmente(false)
+      setIsCompressingPhoto(false)
+      setEscolaId(escolaAtivaId || '')
+      setTurmaId('')
+      setSus('')
+      setCertidao('')
+      setEndereco('')
+      setSerie('')
+      pessoaForm.setTelMae('')
+      pessoaForm.setTelPai('')
+      setTipoMatricula('Renovação')
+      setDataMatricula(getHojeBrasilia())
+      setLocalizacao('Zona Urbana')
+      setTurno('Matutino')
+      setTurmaLetra('')
+      setTransporte(false)
+      setRotaTransporte('')
+      setRecursosEspeciais('Não')
+      setRecursosSelecionados([])
+      setDiabete('Não')
+      setConvulsoes('Não')
+      setAsma('Não')
+      setInfeccoes('Não')
+      setRestricaoExercicio('Não')
+      setCovid('Não')
+      setCovidQuando('')
+      setSituacaoVacinalCovid('')
+      setAlergiaMed('Não')
+      setAlergiaMedQuais('')
+      setMotivoNaoVacinacaoGeral('')
+      setMotivoNaoVacinacaoCovid('')
+      setRestricaoAlimentar('Não')
+      setRestricaoAlimentarQuais('')
+      setSituacaoVacinal('Em dia')
+      setRestricoesSaude('')
+      setNee('Não')
+      setNeeSelecionadas([])
+      setDeficiencia('Não')
+      setDeficienciasSelecionadas([])
+      setAutorizaImagemVoz('Não')
+      setAssinaturaResponsavelUrl(null)
+      setAssinaturaFuncionarioUrl(null)
+      setNewSignatureResponsavel(null)
+      setNewSignatureFuncionario(null)
     }
+
+    setCelularSigningCode(null)
+    setCelularSigningField(null)
+    setSolicitandoLibere(false)
+    setJustificativaSolicitacao('')
+
+    checarStatusLiberacao()
 
     return () => {
-      active = false // Desativa se desmonatar ou re-executar
+      active = false // Desativa se desmontar ou re-executar
     }
-  }, [isOpen, alunoEditar, escolaAtivaId])
+  }, [isOpen, alunoEditar?.id])
 
   const toggleArrayItem = (list: string[], item: string, setter: (val: string[]) => void) => {
     if (list.includes(item)) {

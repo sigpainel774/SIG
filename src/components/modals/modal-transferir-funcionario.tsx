@@ -63,10 +63,17 @@ export function ModalTransferirFuncionario({
 
   // Trava contra duplo clique / concorrência
   const isSubmitting = useRef(false)
+  const prevOpenRef = useRef(false)
 
-  // Sincroniza estados quando o modal abre ou a escola selecionada muda
+  // Sincroniza estados apenas na ABERTURA do modal (blindado com prevOpenRef)
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      prevOpenRef.current = false
+      return
+    }
+
+    if (!prevOpenRef.current) {
+      prevOpenRef.current = true
       const activeId = authEscolaAtivaId || selectedEscola?.id || ''
       setEscolaOrigemId(activeId)
       setFuncionarioSelecionadoId('')
@@ -76,7 +83,7 @@ export function ModalTransferirFuncionario({
       setEfetivarDiretoSecretaria(false)
       isSubmitting.current = false
     }
-  }, [open, authEscolaAtivaId, selectedEscola])
+  }, [open])
 
   // 1. Carrega a lista completa de escolas da rede
   useEffect(() => {

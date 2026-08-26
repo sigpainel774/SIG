@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Input } from '@/components/ui/input'
@@ -47,19 +47,32 @@ export function ModalAbastecimento({
   const [tipoCombustivel, setTipoCombustivel] = useState('DIESEL')
   const [postoNota, setPostoNota] = useState('')
 
+  const prevOpenRef = useRef(false)
+
+  // Resetar campos na abertura (blindado com prevOpenRef)
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      prevOpenRef.current = false
+      return
+    }
+
+    if (!prevOpenRef.current) {
+      prevOpenRef.current = true
       setData(getHojeBrasilia())
       setOdometroKm('')
       setLitros('')
       setValorTotal('')
       setTipoCombustivel('DIESEL')
       setPostoNota('')
-      if (veiculos.length > 0 && !veiculoId) {
-        setVeiculoId(veiculos[0].id)
-      }
     }
-  }, [open, veiculos])
+  }, [open])
+
+  // Auto-selecionar primeiro veículo de forma desacoplada sem limpar dados
+  useEffect(() => {
+    if (open && veiculos.length > 0 && !veiculoId) {
+      setVeiculoId(veiculos[0].id)
+    }
+  }, [open, veiculos, veiculoId])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()

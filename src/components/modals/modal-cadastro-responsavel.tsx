@@ -170,9 +170,13 @@ export function ModalCadastroResponsavel({
     carregarAlunos()
   }, [open, escolaId, supabase])
 
-  // Inicializar formulário para edição ou novo
+  const prevOpenRef = useRef(false)
+  const prevRespIdRef = useRef<string | null>(null)
+
+  // Inicializar formulário para edição ou novo (blindado com prevOpenRef)
   useEffect(() => {
     if (!open) {
+      prevOpenRef.current = false
       setCredenciaisCriadas(null)
       setCopiado(false)
       setResponsavelExistente(null)
@@ -182,6 +186,18 @@ export function ModalCadastroResponsavel({
       if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
       return
     }
+
+    const wasClosed = !prevOpenRef.current
+    const currentRespId = responsavelEmEdicao?.id ?? null
+    const respChanged = currentRespId !== prevRespIdRef.current
+
+    // Se o modal já estava aberto e não mudou o responsável sendo editado, não reseta
+    if (!wasClosed && !respChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevRespIdRef.current = currentRespId
 
     if (responsavelEmEdicao) {
       setCpf(formatarCpf(responsavelEmEdicao.cpf || ''))
@@ -202,7 +218,7 @@ export function ModalCadastroResponsavel({
       setResponsavelExistente(null)
       setAlunosSelecionados([])
     }
-  }, [open, responsavelEmEdicao])
+  }, [open, responsavelEmEdicao?.id])
 
   // Buscar responsável existente por CPF via endpoint seguro
   const buscarResponsavelPorCpf = useCallback(async (cpfInput: string) => {

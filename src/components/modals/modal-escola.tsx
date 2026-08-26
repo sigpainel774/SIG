@@ -97,8 +97,28 @@ export function ModalEscola({
     }
   }, [open])
 
-  // 2. Preencher formulário
+  const prevOpenRef = useRef(false)
+  const prevEscolaIdRef = useRef<string | null>(null)
+
+  // 2. Preencher formulário (blindado com prevOpenRef)
   useEffect(() => {
+    if (!open) {
+      prevOpenRef.current = false
+      return
+    }
+
+    const wasClosed = !prevOpenRef.current
+    const currentId = escolaToEdit?.id ?? null
+    const escolaChanged = currentId !== prevEscolaIdRef.current
+
+    // Se o modal já estava aberto e não mudou o ID da escola, não reseta
+    if (!wasClosed && !escolaChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevEscolaIdRef.current = currentId
+
     if (escolaToEdit) {
       setNome(escolaToEdit.nome || '')
       setInep(escolaToEdit.inep || '')
@@ -124,7 +144,7 @@ export function ModalEscola({
       setDiretorId('')
       setSecretariaId(secretariaIdPreSelected || '')
     }
-  }, [escolaToEdit, open, secretariaIdPreSelected])
+  }, [escolaToEdit?.id, open])
 
   // Se não foi informada secretaria, descobre a secretaria padrão (Educação)
   useEffect(() => {

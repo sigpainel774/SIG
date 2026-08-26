@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Input } from '@/components/ui/input'
@@ -94,9 +94,17 @@ export function ModalAlocarAlunoTransporte({
     }
   }, [open, supabase])
 
-  // Resetar campos quando o modal abre
+  const prevOpenRef = useRef(false)
+
+  // Resetar campos quando o modal abre (blindado com prevOpenRef)
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      prevOpenRef.current = false
+      return
+    }
+
+    if (!prevOpenRef.current) {
+      prevOpenRef.current = true
       setBuscaAluno('')
       setAlunoSelecionadoId('')
       setAlunoDados(null)
@@ -106,11 +114,15 @@ export function ModalAlocarAlunoTransporte({
       setEmbarqueEndereco('')
       setPinoAjustado(false)
       setEscolaSelecionadaId('ALL')
-      if (rotas.length > 0 && !rotaId) {
-        setRotaId(rotas[0].id)
-      }
     }
-  }, [open, rotas])
+  }, [open])
+
+  // Auto-selecionar primeira rota de forma desacoplada sem resetar os dados
+  useEffect(() => {
+    if (open && rotas.length > 0 && !rotaId) {
+      setRotaId(rotas[0].id)
+    }
+  }, [open, rotas, rotaId])
 
   // Se alterar a rota selecionada e ela possuir uma escola associada, sugerir/filtrar pela escola da rota
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -236,8 +236,28 @@ export function useFuncionarioFormStates({
     }
   }, [])
 
-  // Load employee full details
+  const prevOpenRef = useRef(false)
+  const prevFuncionarioIdRef = useRef<string | null>(null)
+
+  // Load employee full details (blindado contra perda de dados durante digitação e troca de abas)
   useEffect(() => {
+    if (!activeOpen) {
+      prevOpenRef.current = false
+      return
+    }
+
+    const wasClosed = !prevOpenRef.current
+    const currentFuncId = funcionario?.id ?? null
+    const funcChanged = currentFuncId !== prevFuncionarioIdRef.current
+
+    // Se o modal já estava aberto e não mudou o ID do funcionário, não recarrega/reseta os campos locais
+    if (!wasClosed && !funcChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevFuncionarioIdRef.current = currentFuncId
+
     let active = true // Evita race conditions em cargas assíncronas concorrentes
 
     const fetchFuncionarioFull = async () => {
@@ -539,7 +559,7 @@ export function useFuncionarioFormStates({
     return () => {
       active = false
     }
-  }, [activeOpen, funcionario])
+  }, [activeOpen, funcionario?.id])
 
   // Foto handler com normalização client-side resiliente
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

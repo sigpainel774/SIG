@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { StandardDialog } from '@/components/ui/standard-dialog'
@@ -55,7 +55,27 @@ export function ModalRota({ open, onOpenChange, veiculos, escolas, motoristas, o
     horario_retorno: '',
   })
 
+  const prevOpenRef = useRef(false)
+  const prevRotaIdRef = useRef<string | null>(null)
+
   useEffect(() => {
+    if (!open) {
+      prevOpenRef.current = false
+      return
+    }
+
+    const wasClosed = !prevOpenRef.current
+    const currentRotaId = editando?.id ?? null
+    const rotaChanged = currentRotaId !== prevRotaIdRef.current
+
+    // Se o modal já estava aberto e não mudou o ID da rota, não reseta
+    if (!wasClosed && !rotaChanged) {
+      return
+    }
+
+    prevOpenRef.current = true
+    prevRotaIdRef.current = currentRotaId
+
     if (editando) {
       setForm({
         nome: editando.nome ?? '',
@@ -69,7 +89,7 @@ export function ModalRota({ open, onOpenChange, veiculos, escolas, motoristas, o
     } else {
       setForm({ nome: '', turno: 'MANHA', veiculo_id: '', escola_id: '', motorista_id: '', horario_partida: '', horario_retorno: '' })
     }
-  }, [editando, open])
+  }, [editando?.id, open])
 
   const handleSave = async () => {
     if (!form.nome.trim()) {
