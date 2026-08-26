@@ -1,30 +1,31 @@
-// SIG Sapeaçu — Service Worker v14 (Offline-First Alpha Engine)
+// SIG Sapeaçu — Service Worker v15 (Offline-First Alpha Engine)
 // Estratégia de Alta Performance, Blindagem Offline & PWA:
-// 1. Alpha App Shell: Pre-caching no install e Stale-While-Revalidate resiliente para rotas /alpha/*.
-// 2. Tiles de Mapa: Cache seguro compartilhado (Google, OSM, Esri, sig-offline-tiles-v1).
-// 3. Assets Estáticos (_next/static, fontes, logos): Cache-First com revalidação silenciosa.
-// 4. Fotos e Avatars (Supabase Storage): Cache-First / SWR.
-// 5. Preservação Total de Mapas Baixados (sig-offline-tiles-v1 nunca é expurgado).
+// 1. Alpha App Shell: Pre-caching no install e Stale-While-Revalidate resiliente para rotas /alpha/* e /visitas.
+// 2. Blindagem RSC (React Server Components): Suporte a requisições Next.js _rsc quando offline.
+// 3. Tiles de Mapa: Cache seguro compartilhado (Google, OSM, Esri, sig-offline-tiles-v1).
+// 4. Assets Estáticos (_next/static, fontes, logos): Cache-First com revalidação silenciosa.
+// 5. Fotos e Avatars (Supabase Storage): Cache-First / SWR.
+// 6. Preservação Total de Mapas Baixados (sig-offline-tiles-v1 nunca é expurgado).
 
-const CACHE_NAME = 'sig-sapeacu-v14';
-const STATIC_CACHE_NAME = 'sig-static-v14';
-const MAP_TILES_CACHE_NAME = 'sig-maptiles-v14';
+const CACHE_NAME = 'sig-sapeacu-v15';
+const STATIC_CACHE_NAME = 'sig-static-v15';
+const MAP_TILES_CACHE_NAME = 'sig-maptiles-v15';
 const OFFLINE_TILES_CACHE_NAME = 'sig-offline-tiles-v1'; // Mapas baixados para uso em campo
-const PHOTOS_CACHE_NAME = 'sig-photos-v14';
+const PHOTOS_CACHE_NAME = 'sig-photos-v15';
 const PHOTOS_CACHE_V1 = 'sig-photos-v1';
-const ALPHA_CACHE_NAME = 'sig-alpha-v14';
+const ALPHA_CACHE_NAME = 'sig-alpha-v15';
 
 // Assets estáticos essenciais do PWA
 const STATIC_ASSETS = [
-  '/manifest.json?v=14',
-  '/manifest-portal-pais.json?v=14',
-  '/icon-192.png?v=14',
-  '/icon-512.png?v=14',
-  '/icon.svg?v=14',
-  '/portal-pais/icon-192.png?v=14',
-  '/portal-pais/icon-512.png?v=14',
-  '/portal-pais/apple-touch-icon.png?v=14',
-  '/portal-pais/icon.svg?v=14',
+  '/manifest.json?v=15',
+  '/manifest-portal-pais.json?v=15',
+  '/icon-192.png?v=15',
+  '/icon-512.png?v=15',
+  '/icon.svg?v=15',
+  '/portal-pais/icon-192.png?v=15',
+  '/portal-pais/icon-512.png?v=15',
+  '/portal-pais/apple-touch-icon.png?v=15',
+  '/portal-pais/icon.svg?v=15',
   '/offline.html',
   '/img/logo-prefeitura.png',
   '/img/brasaoSapeaçu.png',
@@ -36,6 +37,7 @@ const STATIC_ASSETS = [
 const ALPHA_APP_SHELL_ASSETS = [
   '/alpha',
   '/alpha/visitas',
+  '/visitas',
   '/alpha/rotas-escolas',
   '/alpha/login',
   '/alpha/validador-dados',
@@ -163,29 +165,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. CACHE DEDICADO DO SISTEMA ALPHA (Rotas /alpha/*)
-  const isAlphaRoute = url.pathname.startsWith('/alpha');
+  // 3. CACHE DEDICADO DO SISTEMA ALPHA (Rotas /alpha/* e /visitas)
+  const isAlphaRoute = url.pathname.startsWith('/alpha') || url.pathname === '/visitas';
 
   if (isAlphaRoute && !url.pathname.startsWith('/api')) {
     event.respondWith(
       (async () => {
         const alphaCache = await caches.open(ALPHA_CACHE_NAME);
+        const isRscRequest = url.searchParams.has('_rsc') || event.request.headers.get('rsc') === '1';
 
         // Se offline, serve imediatamente do cache local
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          // 1. Tenta correspondência exata
           const cachedExact = await alphaCache.match(event.request);
           if (cachedExact) return cachedExact;
 
-          // Se for navegação de página HTML, serve o App Shell
-          if (
-            event.request.mode === 'navigate' ||
-            event.request.headers.get('accept')?.includes('text/html')
-          ) {
+          // 2. Tenta correspondência ignorando query parameters (?_rsc=...)
+          const cachedClean = await alphaCache.match(url.pathname, { ignoreSearch: true });
+          if (cachedClean) return cachedClean;
+
+          // 3. Fallbacks do App Shell
+          if (url.pathname.includes('visita')) {
             const visitasShell = await alphaCache.match('/alpha/visitas');
             if (visitasShell) return visitasShell;
-            const alphaShell = await alphaCache.match('/alpha');
-            if (alphaShell) return alphaShell;
           }
+
+          const alphaShell = await alphaCache.match('/alpha');
+          if (alphaShell) return alphaShell;
         }
 
         // Se online, tenta a rede e atualiza o cache
@@ -193,23 +199,27 @@ self.addEventListener('fetch', (event) => {
           const networkResponse = await fetch(event.request);
           if (networkResponse && networkResponse.status === 200) {
             alphaCache.put(event.request, networkResponse.clone());
+            // Se for requisição limpa sem _rsc, garante que o cache base também está atualizado
+            if (!isRscRequest) {
+              alphaCache.put(url.pathname, networkResponse.clone());
+            }
           }
           return networkResponse;
         } catch (networkError) {
-          const cachedResponse = await alphaCache.match(event.request);
+          const cachedResponse = (await alphaCache.match(event.request)) || 
+                                 (await alphaCache.match(url.pathname, { ignoreSearch: true }));
           if (cachedResponse) return cachedResponse;
 
-          if (
-            event.request.mode === 'navigate' ||
-            event.request.headers.get('accept')?.includes('text/html')
-          ) {
+          if (url.pathname.includes('visita')) {
             const visitasShell = await alphaCache.match('/alpha/visitas');
             if (visitasShell) return visitasShell;
-            const alphaShell = await alphaCache.match('/alpha');
-            if (alphaShell) return alphaShell;
-            const offlinePage = await caches.match('/offline.html');
-            if (offlinePage) return offlinePage;
           }
+
+          const alphaShell = await alphaCache.match('/alpha');
+          if (alphaShell) return alphaShell;
+
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) return offlinePage;
 
           return new Response('Offline', { status: 503, statusText: 'Offline' });
         }

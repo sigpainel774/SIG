@@ -346,6 +346,11 @@ export function Sidebar() {
         return
       }
       closeMobile()
+      // Se estiver offline e for rota do Alpha/Visitas, garante navegação imediata ao App Shell
+      if (typeof navigator !== 'undefined' && !navigator.onLine && item.href.startsWith('/alpha')) {
+        e.preventDefault()
+        window.location.assign(item.href)
+      }
     }
 
     return (

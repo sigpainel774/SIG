@@ -73,6 +73,13 @@ export function AlphaBottomNav() {
                 <Link
                   key={idx}
                   href={item.href}
+                  prefetch={true}
+                  onClick={(e) => {
+                    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                      e.preventDefault()
+                      window.location.assign(item.href)
+                    }
+                  }}
                   className={cn(
                     'flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 relative group',
                     item.isActive

@@ -63,6 +63,11 @@ export function AlphaAuthClientGuard({ children, initialFuncionarioId }: AlphaAu
       // 3. Pre-warming em segundo plano quando conectado
       if (isOnline) {
         try {
+          // Pre-carrega bundles JS/RSC das rotas do Alpha no cache do Next.js
+          router.prefetch('/alpha/visitas')
+          router.prefetch('/alpha/rotas-escolas')
+          router.prefetch('/alpha')
+
           // Pre-carrega módulos ativos da sidebar
           const { data: funcoes } = await supabase
             .from('alpha_funcoes')

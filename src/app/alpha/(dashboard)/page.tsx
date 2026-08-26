@@ -343,6 +343,13 @@ export default function AlphaDashboardPage() {
               <Link
                 key={fn.id}
                 href={fn.rota}
+                prefetch={true}
+                onClick={(e) => {
+                  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                    e.preventDefault()
+                    window.location.assign(fn.rota)
+                  }
+                }}
                 className="group relative overflow-hidden rounded-[22px] bg-card dark:bg-[#141416] hover:bg-accent/30 dark:hover:bg-[#181d28] border border-border dark:border-[#26262a] hover:border-primary/50 p-5 transition-all duration-200 flex flex-col justify-between gap-4 shadow-xs hover:shadow-sm active:scale-[0.99]"
               >
                 <div className="space-y-3">

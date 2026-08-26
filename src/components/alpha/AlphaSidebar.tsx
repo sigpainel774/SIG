@@ -223,7 +223,14 @@ export function AlphaSidebar() {
                     <Link
                       key={fn.id}
                       href={fn.rota}
-                      onClick={() => setMobileOpen(false)}
+                      prefetch={true}
+                      onClick={(e) => {
+                        setMobileOpen(false)
+                        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                          e.preventDefault()
+                          window.location.assign(fn.rota)
+                        }
+                      }}
                       className={cn(
                         'flex items-center justify-between px-4 py-2.5 font-medium transition-all duration-200 group text-sm',
                         isActive
