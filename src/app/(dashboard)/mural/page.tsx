@@ -46,6 +46,11 @@ const ModalTelemetriaComunicado = dynamic(
   { ssr: false }
 )
 
+const ModalAniversariante = dynamic(
+  () => import('@/components/modals/modal-aniversariante').then((mod) => mod.ModalAniversariante),
+  { ssr: false }
+)
+
 export default function MuralPage() {
   const { funcionario, acessos } = useAuthStore()
   const { selectedSecretaria, selectedEscola } = useSchoolStore()
@@ -1254,6 +1259,15 @@ export default function MuralPage() {
         onOpenChange={(open) => setTelemetriaModal((prev) => ({ ...prev, open }))}
         comunicadoId={telemetriaModal.comunicadoId}
         comunicadoTitulo={telemetriaModal.comunicadoTitulo}
+      />
+
+      {/* Modal de Aniversariantes do Dia */}
+      <ModalAniversariante
+        open={birthdayModal.open}
+        onOpenChange={(open) => setBirthdayModal((prev) => ({ ...prev, open }))}
+        aniversariantes={birthdaysOfSelectedDay}
+        dia={birthdayModal.day}
+        mes={MONTH_NAMES[viewDate.getMonth()]}
       />
     </div>
   )
