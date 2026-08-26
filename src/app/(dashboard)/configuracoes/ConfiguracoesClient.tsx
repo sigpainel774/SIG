@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import {
   Settings,
@@ -107,6 +108,9 @@ type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diret
 type Category = 'pessoal' | 'escola' | 'rede'
 
 export function ConfiguracoesClient() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   const [category, setCategory] = useState<Category>('pessoal')
   const [activeTab, setActiveTab] = useState<ActiveTab>('perfil')
   const [mounted, setMounted] = useState(false)
@@ -114,6 +118,18 @@ export function ConfiguracoesClient() {
   const { funcionario, vinculos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
   const isAdmin = isAdminGlobalOrRoot()
+
+  // Função centralizada para alternar categoria/aba e refletir na URL
+  const selectTab = useCallback((newCategory: Category, newTab: ActiveTab) => {
+    setCategory(newCategory)
+    setActiveTab(newTab)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('categoria', newCategory)
+      url.searchParams.set('tab', newTab)
+      window.history.replaceState(null, '', url.pathname + url.search)
+    }
+  }, [])
 
   // Fix #8: Tipagem explícita
   const [localFuncionario, setLocalFuncionario] = useState<FuncionarioLocal | null>(null)
@@ -131,6 +147,36 @@ export function ConfiguracoesClient() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Sincroniza estado com parâmetros da URL (ex: ?tab=localidades ou ?categoria=rede)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as ActiveTab | null
+    const catParam = searchParams.get('categoria') as Category | null
+
+    if (tabParam) {
+      if (tabParam === 'localidades') {
+        setCategory('rede')
+        setActiveTab('localidades')
+      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades'].includes(tabParam)) {
+        setCategory('escola')
+        setActiveTab(tabParam)
+      } else if (['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tabParam)) {
+        setCategory('pessoal')
+        setActiveTab(tabParam)
+      }
+    } else if (catParam) {
+      if (catParam === 'rede') {
+        setCategory('rede')
+        setActiveTab('localidades')
+      } else if (catParam === 'escola') {
+        setCategory('escola')
+        setActiveTab('assinatura-diretor')
+      } else if (catParam === 'pessoal') {
+        setCategory('pessoal')
+        setActiveTab('perfil')
+      }
+    }
+  }, [searchParams])
 
   // Fix #1: Race condition corrigida com flag `cancelled`
   // Fix #7: ilike → eq para e-mails; select apenas campos necessários
@@ -359,10 +405,7 @@ export function ConfiguracoesClient() {
         <button
           type="button"
           onClick={() => {
-            setCategory('pessoal')
-            if (!isPessoalTab(activeTab)) {
-              setActiveTab('perfil')
-            }
+            selectTab('pessoal', isPessoalTab(activeTab) ? activeTab : 'perfil')
           }}
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
@@ -379,10 +422,7 @@ export function ConfiguracoesClient() {
           <button
             type="button"
             onClick={() => {
-              setCategory('escola')
-              if (!isEscolaTab(activeTab)) {
-                setActiveTab(isDiretor || isAdmin ? 'assinatura-diretor' : 'materias')
-              }
+              selectTab('escola', isEscolaTab(activeTab) ? activeTab : (isDiretor || isAdmin ? 'assinatura-diretor' : 'materias'))
             }}
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
@@ -400,8 +440,7 @@ export function ConfiguracoesClient() {
           <button
             type="button"
             onClick={() => {
-              setCategory('rede')
-              setActiveTab('localidades')
+              selectTab('rede', 'localidades')
             }}
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
@@ -440,7 +479,7 @@ export function ConfiguracoesClient() {
       {category === 'pessoal' && (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in-50 duration-200">
           <button
-            onClick={() => setActiveTab('perfil')}
+            onClick={() => selectTab('pessoal', 'perfil')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'perfil'
@@ -463,7 +502,7 @@ export function ConfiguracoesClient() {
           </button>
 
           <button
-            onClick={() => setActiveTab('push-notifications')}
+            onClick={() => selectTab('pessoal', 'push-notifications')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'push-notifications'
@@ -488,7 +527,7 @@ export function ConfiguracoesClient() {
           </button>
 
           <button
-            onClick={() => setActiveTab('sessoes')}
+            onClick={() => selectTab('pessoal', 'sessoes')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'sessoes'
@@ -514,7 +553,7 @@ export function ConfiguracoesClient() {
 
           {!isDiretor && (
             <button
-              onClick={() => setActiveTab('assinatura-pessoal')}
+              onClick={() => selectTab('pessoal', 'assinatura-pessoal')}
               className={cn(
                 'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
                 activeTab === 'assinatura-pessoal'
@@ -545,7 +584,7 @@ export function ConfiguracoesClient() {
       {category === 'escola' && (isDiretor || isAdmin) && (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in-50 duration-200">
           <button
-            onClick={() => setActiveTab('assinatura-diretor')}
+            onClick={() => selectTab('escola', 'assinatura-diretor')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'assinatura-diretor'
@@ -570,7 +609,7 @@ export function ConfiguracoesClient() {
           </button>
 
           <button
-            onClick={() => setActiveTab('materias')}
+            onClick={() => selectTab('escola', 'materias')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'materias'
@@ -595,7 +634,7 @@ export function ConfiguracoesClient() {
           </button>
 
           <button
-            onClick={() => setActiveTab('prazo-frequencia')}
+            onClick={() => selectTab('escola', 'prazo-frequencia')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'prazo-frequencia'
@@ -620,7 +659,7 @@ export function ConfiguracoesClient() {
           </button>
 
           <button
-            onClick={() => setActiveTab('prazo-atividades')}
+            onClick={() => selectTab('escola', 'prazo-atividades')}
             className={cn(
               'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
               activeTab === 'prazo-atividades'

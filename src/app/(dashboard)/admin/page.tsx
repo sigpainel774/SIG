@@ -100,7 +100,7 @@ const adminGroups: AdminGroup[] = [
         subtitle: 'Mapeamento rural e rótulos do mapa',
         icon: MapPin,
         iconColor: 'text-amber-500 dark:text-amber-400',
-        path: '/configuracoes',
+        path: '/configuracoes?tab=localidades',
       },
     ],
   },
@@ -975,7 +975,7 @@ export default function AdminHubPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push('/configuracoes')}
+                  onClick={() => router.push('/configuracoes?tab=localidades')}
                   className="w-full bg-[#0067c0] hover:bg-[#005aab] dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
                 >
                   <MapPin className="w-3.5 h-3.5" />
