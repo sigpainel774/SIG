@@ -40,27 +40,65 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
- 
-# Documentacao local e planos de negocios / futuros
-PERMISSOES_ARQUITETURA.md
-PLANOS_FUTUROS.md
-PLANO_DE_ZERO_TRUST.md
-plano_de_zero_trust.md
-roadmap.dp
-
-# Relatorios locais e documentos de negocio em PDF
-/output/
-/output/pdf/
-
-# Backups locais de banco de dados
+# Backups locais e bancos de dados
 /backups/
 /backup_funcionarios/
 *.bak
 *.backup
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+check.json
 
-# Supabase
+# Supabase e Migrations
 supabase/.temp/
+supabase/migrations/
+/supabase/migrations/
+migrations/
+
+# Documentacao interna, auditorias, requisitos e arquitetura
+*db_map*
+*DB_MAP*
+dbmap*
+DBMAP*
+*migrations_map*
+*MIGRATIONS_MAP*
+PROJECT_MAP.md
+PERMISSOES_ARQUITETURA.md
+PLANOS_FUTUROS.md
+PLANO_DE_ZERO_TRUST.md
+plano_de_zero_trust.md
+roadmap*
+ROADMAP*
+roadmap.dp
+deep_scalability_audit.md
+project_performance_audit.md
+project_performance_audit_updated.md
+rls_verification_report.md
+relatorio_migracao_processamento.md
+REQUISITOS_CADASTRO.md
+aprimoramentos_funcoes.md
+acompanhamento_de_supressao_de_duplicacoes.md
+implementation_plan*.md
+/docs/
+
+# Relatorios locais e pastas temporarias de saida
+/output/
+/output/pdf/
+/tmp/
+
+# Scripts manuais e descartaveis
+/scripts/
+find_usages.js
+replace_foto_url.js
+replace_selects.js
+
+# Configuracoes de IA e Agentes locais
+.agents/
+.codex/
+.gemini/
+CLAUDE.md
 
 # QR Codes gerados (Portal dos Pais)
 /public/img/qrcode-portal-pais.png
