@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabaseServer'
 import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
+import { AlphaAuthClientGuard } from '@/components/alpha/AlphaAuthClientGuard'
 import { AlphaSidebar } from '@/components/alpha/AlphaSidebar'
 import { FlaskConical } from 'lucide-react'
 import { AlphaConnectivityBanner } from '@/components/alpha/AlphaConnectivityBanner'
@@ -41,8 +42,9 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
   const vinculos = perfil.vinculos
 
   return (
-    <div className="light flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
-      <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
+    <AlphaAuthClientGuard initialFuncionarioId={funcionario?.id}>
+      <div className="light flex min-h-screen bg-[#f3f4f7] text-[#1a1a1a] relative overflow-x-hidden">
+        <AuthInitializer funcionario={funcionario} acessos={acessos} vinculos={vinculos} />
 
       {/* Sidebar Dedicada do Alpha */}
       <AlphaSidebar />
@@ -72,5 +74,6 @@ export default async function AlphaDashboardLayout({ children }: { children: Rea
         <AlphaBottomNav />
       </main>
     </div>
+  </AlphaAuthClientGuard>
   )
 }

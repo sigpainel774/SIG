@@ -124,6 +124,15 @@ export default function VisitasPage() {
       if (cachedTrajetos.length > 0) setTrajetos(cachedTrajetos);
       if (cachedGeoPdf.length > 0) setMapasGeoPdf(cachedGeoPdf);
 
+      // Se temos cache ou estamos offline, desativa o loading inicial de imediato
+      if (
+        cachedAreas.length > 0 ||
+        cachedPontos.length > 0 ||
+        (typeof navigator !== 'undefined' && !navigator.onLine)
+      ) {
+        setLoading(false);
+      }
+
       // Se online, sincroniza do Supabase
       if (navigator.onLine) {
         const [resAreas, resPontos, resRoteiros, resVeiculos, resTrajetos, resGeoPdf] =

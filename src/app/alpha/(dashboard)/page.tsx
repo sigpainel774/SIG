@@ -28,6 +28,7 @@ import {
   salvarCacheModulosAlpha,
   obterCacheModulosAlpha,
 } from '@/lib/alphaOfflineManager'
+import { visitasOfflineService } from '@/lib/visitas/visitasOfflineService'
 import { cn } from '@/lib/utils'
 
 type CategoriaFiltro = 'todos' | 'geo' | 'pdf' | 'imagens' | 'produtividade'
@@ -67,6 +68,19 @@ export default function AlphaDashboardPage() {
             setFuncoes(data)
             await salvarCacheModulosAlpha(data)
           }
+
+          // Pre-warming em background dos dados do App de Visitas
+          Promise.all([
+            (supabase as any).from('visitas_areas').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
+            (supabase as any).from('visitas_pontos').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
+            (supabase as any).from('visitas_veiculos').select('*').is('deleted_at', null).order('nome', { ascending: true }),
+            (supabase as any).from('visitas_roteiros').select('*').is('deleted_at', null).order('data_planejada', { ascending: false }),
+          ]).then(([resAreas, resPontos, resVeiculos, resRoteiros]) => {
+            if (resAreas.data) visitasOfflineService.setAreas(resAreas.data)
+            if (resPontos.data) visitasOfflineService.setPontos(resPontos.data)
+            if (resVeiculos.data) visitasOfflineService.setVeiculos(resVeiculos.data)
+            if (resRoteiros.data) visitasOfflineService.setRoteiros(resRoteiros.data)
+          }).catch(() => {})
         } catch (err) {
           console.warn('Falha de rede ao carregar catálogo Alpha, mantendo cache:', err)
         } finally {

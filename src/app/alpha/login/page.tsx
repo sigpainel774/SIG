@@ -20,10 +20,12 @@ import {
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { AlphaLogoGraphic } from '@/components/alpha/AlphaIcon'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export default function AlphaLoginPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const { funcionario } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,6 +33,7 @@ export default function AlphaLoginPage() {
   const [loading, setLoading] = useState(false)
   const [suspendedModalOpen, setSuspendedModalOpen] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
+  const [hasSavedSession, setHasSavedSession] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -39,6 +42,12 @@ export default function AlphaLoginPage() {
       const handleOffline = () => setIsOffline(true)
       window.addEventListener('online', handleOnline)
       window.addEventListener('offline', handleOffline)
+
+      const func = useAuthStore.getState().funcionario
+      const hasSb = Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
+      if (func || hasSb) {
+        setHasSavedSession(true)
+      }
 
       const params = new URLSearchParams(window.location.search)
       if (params.get('error') === 'orphan') {
@@ -59,6 +68,16 @@ export default function AlphaLoginPage() {
     e.preventDefault()
     if (!email || !password) {
       toast.error('Preencha seu e-mail e senha para acessar o Alpha.')
+      return
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (hasSavedSession || funcionario) {
+        toast.success('Acessando Sistema Alpha em Modo Offline...')
+        window.location.href = '/alpha'
+        return
+      }
+      toast.warning('Você está sem conexão com a internet. Conecte-se para autenticar pela primeira vez.')
       return
     }
 
@@ -191,6 +210,30 @@ export default function AlphaLoginPage() {
               Ambiente de Prototipagem &amp; Operação
             </p>
           </div>
+
+          {/* Destaque de Sessão Offline Disponível */}
+          {isOffline && (hasSavedSession || funcionario) && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-xs space-y-2.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                <WifiOff className="w-4 h-4 shrink-0" />
+                <span>Sessão Salva no Dispositivo</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Você está sem internet, mas sua última sessão continua válida neste aparelho.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success('Entrando no Modo Offline...')
+                  window.location.href = '/alpha'
+                }}
+                className="w-full h-11 bg-amber-600 hover:bg-amber-700 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs uppercase tracking-wide"
+              >
+                <span>Acessar Modo Offline</span>
+                <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            </div>
+          )}
 
           {/* Formulário de Login */}
           <form onSubmit={handleLogin} className="space-y-4 pt-1" noValidate>

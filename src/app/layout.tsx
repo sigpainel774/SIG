@@ -39,16 +39,16 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
-  manifest: '/manifest.json?v=13',
+  manifest: '/manifest.json?v=14',
   icons: {
     icon: [
-      { url: '/icon.svg?v=13', type: 'image/svg+xml' },
-      { url: '/icon-192.png?v=13', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=13', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg?v=14', type: 'image/svg+xml' },
+      { url: '/icon-192.png?v=14', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=14', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon-192.png?v=13', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=13', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-192.png?v=14', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=14', sizes: '512x512', type: 'image/png' },
     ],
   },
   appleWebApp: {

@@ -1,58 +1,78 @@
-// SIG Sapeaçu — Service Worker v13
-// Estratégia de Alta Performance & Segurança PWA:
-// 1. Assets Estáticos Imutáveis (_next/static, fontes, logos): Cache-First / SWR.
-// 2. Fotos 3x4 / Avatars Públicos (Supabase Storage): Stale-While-Revalidate (sig-photos-v13).
-// 3. Tiles de Mapa (Google, OSM, Esri): Stale-While-Revalidate com suporte a opaque responses (sig-maptiles-v13).
-// 4. Navegação HTML e Transições RSC: Network-Only (garante isolamento total entre sessões).
-// 5. Fallback Offline: Redireciona para /offline.html somente quando houver falha real de rede.
+// SIG Sapeaçu — Service Worker v14 (Offline-First Alpha Engine)
+// Estratégia de Alta Performance, Blindagem Offline & PWA:
+// 1. Alpha App Shell: Pre-caching no install e Stale-While-Revalidate resiliente para rotas /alpha/*.
+// 2. Tiles de Mapa: Cache seguro compartilhado (Google, OSM, Esri, sig-offline-tiles-v1).
+// 3. Assets Estáticos (_next/static, fontes, logos): Cache-First com revalidação silenciosa.
+// 4. Fotos e Avatars (Supabase Storage): Cache-First / SWR.
+// 5. Preservação Total de Mapas Baixados (sig-offline-tiles-v1 nunca é expurgado).
 
-const CACHE_NAME = 'sig-sapeacu-v13';
-const STATIC_CACHE_NAME = 'sig-static-v13';
-const MAP_TILES_CACHE_NAME = 'sig-maptiles-v13';
-const PHOTOS_CACHE_NAME = 'sig-photos-v13';
-const ALPHA_CACHE_NAME = 'sig-alpha-v13';
+const CACHE_NAME = 'sig-sapeacu-v14';
+const STATIC_CACHE_NAME = 'sig-static-v14';
+const MAP_TILES_CACHE_NAME = 'sig-maptiles-v14';
+const OFFLINE_TILES_CACHE_NAME = 'sig-offline-tiles-v1'; // Mapas baixados para uso em campo
+const PHOTOS_CACHE_NAME = 'sig-photos-v14';
+const PHOTOS_CACHE_V1 = 'sig-photos-v1';
+const ALPHA_CACHE_NAME = 'sig-alpha-v14';
 
-// Assets estáticos essenciais do PWA (ícones, manifest e offline shell)
+// Assets estáticos essenciais do PWA
 const STATIC_ASSETS = [
-  '/manifest.json?v=13',
-  '/manifest-portal-pais.json?v=13',
-  '/icon-192.png?v=13',
-  '/icon-512.png?v=13',
-  '/icon.svg?v=13',
-  '/portal-pais/icon-192.png?v=13',
-  '/portal-pais/icon-512.png?v=13',
-  '/portal-pais/apple-touch-icon.png?v=13',
-  '/portal-pais/icon.svg?v=13',
+  '/manifest.json?v=14',
+  '/manifest-portal-pais.json?v=14',
+  '/icon-192.png?v=14',
+  '/icon-512.png?v=14',
+  '/icon.svg?v=14',
+  '/portal-pais/icon-192.png?v=14',
+  '/portal-pais/icon-512.png?v=14',
+  '/portal-pais/apple-touch-icon.png?v=14',
+  '/portal-pais/icon.svg?v=14',
   '/offline.html',
   '/img/logo-prefeitura.png',
   '/img/brasaoSapeaçu.png',
-  '/img/logo-sidebar-novo.png'
+  '/img/logo-sidebar-novo.png',
+  '/img/logo-login-novo.png',
+];
+
+// Rotas prioritárias do App Shell do Alpha para uso instantâneo offline
+const ALPHA_APP_SHELL_ASSETS = [
+  '/alpha',
+  '/alpha/visitas',
+  '/alpha/rotas-escolas',
+  '/alpha/login',
+  '/alpha/validador-dados',
+  '/alpha/compressor-imagens',
+  '/alpha/conversor-imagens',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      return Promise.allSettled(
-        STATIC_ASSETS.map((url) => cache.add(url).catch(() => {}))
-      );
-    })
+    Promise.allSettled([
+      caches.open(STATIC_CACHE_NAME).then((cache) => {
+        return Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url).catch(() => {})));
+      }),
+      caches.open(ALPHA_CACHE_NAME).then((cache) => {
+        return Promise.allSettled(ALPHA_APP_SHELL_ASSETS.map((url) => cache.add(url).catch(() => {})));
+      }),
+    ])
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  const ALLOWED_CACHES = new Set([
+    STATIC_CACHE_NAME,
+    CACHE_NAME,
+    MAP_TILES_CACHE_NAME,
+    OFFLINE_TILES_CACHE_NAME,
+    PHOTOS_CACHE_NAME,
+    PHOTOS_CACHE_V1,
+    ALPHA_CACHE_NAME,
+  ]);
+
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          // Mantém apenas as versões ativas do cache do sistema
-          if (
-            key !== STATIC_CACHE_NAME &&
-            key !== CACHE_NAME &&
-            key !== MAP_TILES_CACHE_NAME &&
-            key !== PHOTOS_CACHE_NAME &&
-            key !== ALPHA_CACHE_NAME
-          ) {
+          if (!ALLOWED_CACHES.has(key)) {
             return caches.delete(key);
           }
         })
@@ -70,12 +90,12 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignora chamadas que não utilizam o método GET (Server Actions, POSTs, etc.)
+  // Ignora requisições não-GET (Server Actions, POSTs, mutations)
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
-  // 1. CACHE DE FOTOS 3x4 / AVATARS DO SUPABASE STORAGE (Stale-While-Revalidate)
+  // 1. CACHE DE FOTOS DO SUPABASE STORAGE (Stale-While-Revalidate)
   const isSupabasePublicStorage =
     url.hostname.includes('supabase.co') &&
     url.pathname.includes('/storage/v1/object/public/');
@@ -112,62 +132,93 @@ self.addEventListener('fetch', (event) => {
 
   if (isMapTile) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        const fetchPromise = fetch(event.request)
-          .then((networkResponse) => {
-            // Aceita 200 OK ou resposta opaque (cross-origin sem CORS explícito)
-            if (
-              networkResponse &&
-              (networkResponse.status === 200 || networkResponse.type === 'opaque')
-            ) {
-              const responseToCache = networkResponse.clone();
-              caches.open(MAP_TILES_CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
+      (async () => {
+        // Primeiro busca nos caches de mapa
+        const match = await caches.match(event.request);
+        if (match) return match;
 
-        return cachedResponse || fetchPromise;
-      })
+        const offlineTilesCache = await caches.open(OFFLINE_TILES_CACHE_NAME).catch(() => null);
+        if (offlineTilesCache) {
+          const offlineMatch = await offlineTilesCache.match(event.request);
+          if (offlineMatch) return offlineMatch;
+        }
+
+        try {
+          const networkResponse = await fetch(event.request);
+          if (
+            networkResponse &&
+            (networkResponse.status === 200 || networkResponse.type === 'opaque')
+          ) {
+            const responseToCache = networkResponse.clone();
+            caches.open(MAP_TILES_CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        } catch (err) {
+          return match || new Response('', { status: 408, statusText: 'Tile Offline Indisponível' });
+        }
+      })()
     );
     return;
   }
 
-  // 3. CACHE DEDICADO DO SISTEMA ALPHA (Rotas /alpha/* - Stale-While-Revalidate para HTML e RSC Payloads)
+  // 3. CACHE DEDICADO DO SISTEMA ALPHA (Rotas /alpha/*)
   const isAlphaRoute = url.pathname.startsWith('/alpha');
-  const isRscRequest = event.request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
 
   if (isAlphaRoute && !url.pathname.startsWith('/api')) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        const fetchPromise = fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseToCache = networkResponse.clone();
-              caches.open(ALPHA_CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(async () => {
-            if (cachedResponse) return cachedResponse;
-            // Se não tiver cache exato da rota, tenta servir a raiz /alpha como fallback de App Shell
-            const alphaRootFallback = await caches.match('/alpha');
-            if (alphaRootFallback) return alphaRootFallback;
-            const offlinePage = await caches.match('/offline.html');
-            return offlinePage;
-          });
+      (async () => {
+        const alphaCache = await caches.open(ALPHA_CACHE_NAME);
 
-        return cachedResponse || fetchPromise;
-      })
+        // Se offline, serve imediatamente do cache local
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const cachedExact = await alphaCache.match(event.request);
+          if (cachedExact) return cachedExact;
+
+          // Se for navegação de página HTML, serve o App Shell
+          if (
+            event.request.mode === 'navigate' ||
+            event.request.headers.get('accept')?.includes('text/html')
+          ) {
+            const visitasShell = await alphaCache.match('/alpha/visitas');
+            if (visitasShell) return visitasShell;
+            const alphaShell = await alphaCache.match('/alpha');
+            if (alphaShell) return alphaShell;
+          }
+        }
+
+        // Se online, tenta a rede e atualiza o cache
+        try {
+          const networkResponse = await fetch(event.request);
+          if (networkResponse && networkResponse.status === 200) {
+            alphaCache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (networkError) {
+          const cachedResponse = await alphaCache.match(event.request);
+          if (cachedResponse) return cachedResponse;
+
+          if (
+            event.request.mode === 'navigate' ||
+            event.request.headers.get('accept')?.includes('text/html')
+          ) {
+            const visitasShell = await alphaCache.match('/alpha/visitas');
+            if (visitasShell) return visitasShell;
+            const alphaShell = await alphaCache.match('/alpha');
+            if (alphaShell) return alphaShell;
+            const offlinePage = await caches.match('/offline.html');
+            if (offlinePage) return offlinePage;
+          }
+
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        }
+      })()
     );
     return;
   }
 
-  // Ignora endpoints de API, Supabase genérico (Auth/DB), extensões do Chrome, dev HMR e Server Actions
+  // Ignora endpoints de API, chamadas de autenticação do Supabase, HMR e dev
   if (
     url.pathname.startsWith('/api') ||
     url.hostname.includes('supabase.co') ||
@@ -179,7 +230,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First / SWR
+  // 4. Assets estáticos versionados do Next.js, imagens institucionais e fontes -> Cache-First
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.endsWith('.png') ||
@@ -192,7 +243,21 @@ self.addEventListener('fetch', (event) => {
   ) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
-        const fetchPromise = fetch(event.request)
+        if (cachedResponse) {
+          // Revalida em background quando online
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            fetch(event.request)
+              .then((netRes) => {
+                if (netRes && netRes.status === 200) {
+                  caches.open(STATIC_CACHE_NAME).then((cache) => cache.put(event.request, netRes));
+                }
+              })
+              .catch(() => {});
+          }
+          return cachedResponse;
+        }
+
+        return fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
               const responseToCache = networkResponse.clone();
@@ -203,14 +268,12 @@ self.addEventListener('fetch', (event) => {
             return networkResponse;
           })
           .catch(() => cachedResponse);
-
-        return cachedResponse || fetchPromise;
       })
     );
     return;
   }
 
-  // 5. Navegação HTML em outras rotas normais -> Network-Only com fallback
+  // 5. Navegação HTML padrão em outras rotas normais -> Network com fallback offline
   const isHtmlNavigation =
     event.request.mode === 'navigate' &&
     event.request.headers.get('accept')?.includes('text/html');
@@ -231,7 +294,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// 5. LISTENER DE PUSH NATIVO (Celular / Tablet / Desktop)
+// 6. Push Notifications
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -243,7 +306,11 @@ self.addEventListener('push', (event) => {
   }
 
   const title = payload.title || 'SIG Sapeaçu';
-  const bodyText = payload.body ? (payload.body.length > 140 ? payload.body.slice(0, 140) + '...' : payload.body) : '';
+  const bodyText = payload.body
+    ? payload.body.length > 140
+      ? payload.body.slice(0, 140) + '...'
+      : payload.body
+    : '';
 
   const options = {
     body: bodyText,
@@ -251,7 +318,7 @@ self.addEventListener('push', (event) => {
     badge: '/icon-192.png',
     tag: payload.tag || 'sig-push-notification',
     data: {
-      url: payload.link || '/home',
+      url: payload.link || '/alpha',
     },
     vibrate: [100, 50, 100],
     requireInteraction: false,
@@ -260,14 +327,13 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// 6. LISTENER DE CLIQUE NA NOTIFICAÇÃO NATIVA
+// 7. Notification Click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/home';
+  const targetUrl = event.notification.data?.url || '/alpha';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Procura se o SIG já está aberto em alguma aba do navegador
       for (const client of clientList) {
         if (client.url && client.url.includes(self.location.origin) && 'focus' in client) {
           if ('navigate' in client) {
@@ -276,11 +342,9 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-      // Se não houver janela aberta, abre uma nova janela no link da notificação
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
     })
   );
 });
-

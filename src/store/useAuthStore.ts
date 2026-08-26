@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Database } from '@/types/supabase';
 import { useSchoolStore } from './useSchoolStore';
 import { usePermissionSimulationStore } from './usePermissionSimulationStore';
@@ -45,14 +46,16 @@ interface AuthState {
   isSecretarioEducacao: () => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  funcionario: null,
-  acessos: [],
-  vinculos: [],
-  realFuncionario: null,
-  realAcessos: [],
-  realVinculos: [],
-  escolaAtivaId: null,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      funcionario: null,
+      acessos: [],
+      vinculos: [],
+      realFuncionario: null,
+      realAcessos: [],
+      realVinculos: [],
+      escolaAtivaId: null,
 
   setAuth: (funcionario, acessos, vinculos = []) => {
     const simState = usePermissionSimulationStore.getState();
@@ -218,5 +221,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       normCargo.includes('secretario(a) municipal de educacao')
     );
   },
-}));
-
+}),
+  {
+    name: 'sig_auth_store',
+    storage: createJSONStorage(() => localStorage),
+    partialize: (state) => ({
+      funcionario: state.realFuncionario ?? state.funcionario,
+      acessos: state.realAcessos?.length ? state.realAcessos : state.acessos,
+      vinculos: state.realVinculos?.length ? state.realVinculos : state.vinculos,
+      realFuncionario: state.realFuncionario ?? state.funcionario,
+      realAcessos: state.realAcessos?.length ? state.realAcessos : state.acessos,
+      realVinculos: state.realVinculos?.length ? state.realVinculos : state.vinculos,
+      escolaAtivaId: state.escolaAtivaId,
+    }),
+  }
+)
+);
