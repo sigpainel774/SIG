@@ -31,8 +31,7 @@ import {
   UserPlus,
   FileSpreadsheet,
   MessageSquare,
-  Calendar,
-  MapPinned
+  Calendar
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -261,7 +260,6 @@ export function Sidebar() {
           items: [
             { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
             { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
-            { href: '/alpha/visitas', label: 'Visitas.', icon: MapPinned },
             { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
             { href: '/funcionarios', label: 'Funcionários', icon: Users },
           ]
