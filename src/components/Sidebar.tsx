@@ -207,6 +207,40 @@ export function Sidebar() {
           ]
         }
       ]
+    : isSecretario && isEducacao
+    ? [
+        {
+          label: null,
+          items: [
+            { href: '/home', label: 'Início', icon: Home },
+            { href: '/mural', label: 'Mural de Avisos', icon: Pin },
+          ]
+        },
+        {
+          label: 'REDE DE ENSINO',
+          items: [
+            { href: '/alunos', label: 'Alunos da Rede', icon: GraduationCap },
+            { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
+            { href: '/calendario-academico', label: 'Calendário Acadêmico', icon: Calendar },
+          ]
+        },
+        {
+          label: 'MONITORAMENTO',
+          items: [
+            { href: '/transferencias', label: 'Transferências', icon: ArrowLeftRight },
+            { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
+            { href: '/relatorios', label: 'Relatórios da Rede', icon: FileBarChart },
+          ]
+        },
+        {
+          label: 'GESTÃO ADMINISTRATIVA',
+          items: [
+            { href: '/funcionarios', label: 'Servidores da Educação', icon: Users },
+            { href: '/documentos', label: 'Documentos', icon: FileText },
+            { href: '/arquivos', label: 'Arquivo Geral', icon: Archive },
+          ]
+        },
+      ]
     : isEducacao
     ? [
         {
@@ -465,7 +499,7 @@ export function Sidebar() {
 
           if (filteredItems.length === 0) return null
 
-          const requerSelecaoEscolaParaDetalhes = isEducacao && isNivel1OrSuperior
+          const requerSelecaoEscolaParaDetalhes = isEducacao && isNivel1OrSuperior && !isSecretario
 
           if (requerSelecaoEscolaParaDetalhes) {
             if (group.label === 'GESTÃO ACADÊMICA') {

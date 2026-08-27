@@ -78,6 +78,17 @@ interface EmaeeKPIData {
   relatoriosPendentes: number
 }
 
+interface SemedKPIData {
+  totalAlunos: number
+  totalEscolas: number
+  totalTurmas: number
+  totalProfessores: number
+  transferenciasPendentes: number
+  ocorrenciasMes: number
+  calendarioPublicado: boolean
+  anoLetivo: number
+}
+
 const ACESSO_RAPIDO_ITEMS = [
   { label: 'Alunos', icon: GraduationCap, href: '/alunos' },
   { label: 'Turmas', icon: BookOpen, href: '/turmas' },
@@ -85,6 +96,16 @@ const ACESSO_RAPIDO_ITEMS = [
   { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias', warn: true },
   { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
   { label: 'Funcionários', icon: Users, href: '/funcionarios' },
+] as const
+
+const ACESSO_RAPIDO_SEMED_ITEMS = [
+  { label: 'Alunos da Rede', icon: GraduationCap, href: '/alunos' },
+  { label: 'Matrículas', icon: BookOpen, href: '/matriculas' },
+  { label: 'Calendário Acadêmico', icon: Calendar, href: '/calendario-academico' },
+  { label: 'Transferências', icon: ArrowLeftRight, href: '/transferencias' },
+  { label: 'Ocorrências', icon: AlertTriangle, href: '/ocorrencias', warn: true },
+  { label: 'Servidores da Educação', icon: Users, href: '/funcionarios' },
+  { label: 'Relatórios da Rede', icon: FileBarChart, href: '/relatorios' },
 ] as const
 
 const ACESSO_RAPIDO_SAUDE_ITEMS = [
@@ -115,7 +136,7 @@ interface SecretariaItem {
 export default function HomePage() {
   const router = useRouter()
   const { escolas, selectedEscola, setSelectedEscola, selectedSecretaria, setSelectedSecretaria, loadEscolas } = useSchoolStore()
-  const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot, isContaEja } = useAuthStore()
+  const { funcionario, acessos, vinculos, escolaAtivaId, isAdminGlobalOrRoot, isContaEja, isSecretarioEducacao } = useAuthStore()
 
   useEffect(() => {
     if (isContaEja()) {
@@ -257,6 +278,18 @@ export default function HomePage() {
     return Boolean(secNome && /sa[uú]de/i.test(secNome))
   }, [isEMAEE, selectedSecretaria, selectedEscola, secNome])
 
+  const isSecretario = useMemo(
+    () => isSecretarioEducacao?.() ?? false,
+    [isSecretarioEducacao, acessos, funcionario?.cargo, funcionario?.is_superadmin]
+  )
+
+  const isSemedContext = useMemo(
+    () => isSecretario && !isSaudeUnit && !isEMAEE,
+    [isSecretario, isSaudeUnit, isEMAEE]
+  )
+
+  const [semedKpi, setSemedKpi] = useState<SemedKPIData | null>(null)
+
   // Estados para Professor
   interface TeacherKPIData {
     totalTurmas: number
@@ -346,6 +379,21 @@ export default function HomePage() {
     }
   }, [])
 
+  const fetchSemedKpis = useCallback(async (secId: string, signal?: AbortSignal) => {
+    if (isMounted.current) setLoadingKpi(true)
+    try {
+      const res = await fetch(`/api/home/semed-kpis?secretariaId=${secId}`, { signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: SemedKPIData = await res.json()
+      if (isMounted.current) setSemedKpi(data)
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
+      console.error('[home] Erro ao carregar KPIs da SEMED:', err)
+    } finally {
+      if (isMounted.current) setLoadingKpi(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (selectedEscola?.id) {
       const controller = new AbortController()
@@ -365,6 +413,14 @@ export default function HomePage() {
       return () => controller.abort()
     }
   }, [selectedEscola?.id, isEMAEE, isSaudeUnit, fetchKpis, fetchSaudeKpis, fetchEmaeeKpis])
+
+  useEffect(() => {
+    if (selectedSecretaria?.id && isSemedContext && !selectedEscola) {
+      const controller = new AbortController()
+      fetchSemedKpis(selectedSecretaria.id, controller.signal)
+      return () => controller.abort()
+    }
+  }, [selectedSecretaria?.id, isSemedContext, selectedEscola, fetchSemedKpis])
 
   // Buscar estatísticas rápidas por escola para professores multi-lotados
   const fetchSchoolStats = useCallback(async (signal?: AbortSignal) => {
@@ -490,14 +546,14 @@ export default function HomePage() {
               <span>{selectedEscola.nome}</span>
             </div>
           </div>
-          {(isAdmin || isMultiLotadoDocente) && (
+          {(isAdmin || isMultiLotadoDocente || isSecretario) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedEscola(null)}
               className="text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
             >
-              <X className="w-4 h-4" /> {isSaudeUnit ? 'Trocar Unidade' : 'Trocar Escola'}
+              <X className="w-4 h-4" /> {isSecretario ? 'Voltar para a Rede' : isSaudeUnit ? 'Trocar Unidade' : 'Trocar Escola'}
             </Button>
           )}
         </div>
@@ -665,6 +721,194 @@ export default function HomePage() {
               tipoVinculoInicial={selectedTipoVinculoModal}
             />
           )}
+        </div>
+
+      ) : isNivel1 && isSemedContext && selectedSecretaria && !selectedEscola ? (
+        /* ── VISÃO 1B: SEMED — PAINEL E KPIS DA REDE MUNICIPAL ── */
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedSecretaria(null)}
+                className="text-muted-foreground hover:text-foreground gap-1.5 -ml-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Secretarias
+              </Button>
+              <span className="text-muted-foreground">/</span>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-surface-1 border-[0.5px] border-borderCustom shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                  {selectedSecretaria.logo_url ? (
+                    <img
+                      src={selectedSecretaria.logo_url}
+                      alt={selectedSecretaria.nome}
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <Building2 className="w-8 h-8 text-sky-400" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                      {selectedSecretaria.nome}
+                    </h1>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-0.5 rounded-full">
+                      Visão de Rede
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Painel Gerencial Consolidado da Rede Municipal de Ensino
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchSemedKpis(selectedSecretaria.id)}
+                disabled={loadingKpi}
+                className="text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className={cn('w-4 h-4', loadingKpi && 'animate-spin')} />
+                Atualizar
+              </Button>
+            </div>
+          </div>
+
+          {/* ── GRID DE KPIs DA REDE SEMED ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <KPICard
+              icon={GraduationCap}
+              label="Alunos da Rede"
+              value={semedKpi?.totalAlunos ?? 0}
+              loading={loadingKpi}
+              color="blue"
+              href="/alunos"
+            />
+            <KPICard
+              icon={Building2}
+              label="Escolas Ativas"
+              value={semedKpi?.totalEscolas ?? 0}
+              loading={loadingKpi}
+              color="emerald"
+            />
+            <KPICard
+              icon={BookOpen}
+              label="Turmas Ativas"
+              value={semedKpi?.totalTurmas ?? 0}
+              loading={loadingKpi}
+              color="violet"
+            />
+            <KPICard
+              icon={Users}
+              label="Docentes / Professores"
+              value={semedKpi?.totalProfessores ?? 0}
+              loading={loadingKpi}
+              color="blue"
+              href="/funcionarios"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <KPICard
+              icon={ArrowLeftRight}
+              label="Transferências Pendentes"
+              value={semedKpi?.transferenciasPendentes ?? 0}
+              loading={loadingKpi}
+              color="amber"
+              href="/transferencias"
+            />
+            <KPICard
+              icon={AlertTriangle}
+              label="Ocorrências da Rede (Mês)"
+              value={semedKpi?.ocorrenciasMes ?? 0}
+              loading={loadingKpi}
+              color="rose"
+              href="/ocorrencias"
+            />
+            <KPICard
+              icon={Calendar}
+              label={`Calendário ${semedKpi?.anoLetivo ?? new Date().getFullYear()}`}
+              value={semedKpi?.calendarioPublicado ? 'Publicado' : 'Em Elaboração'}
+              loading={loadingKpi}
+              color={semedKpi?.calendarioPublicado ? 'emerald' : 'amber'}
+              href="/calendario-academico"
+            />
+          </div>
+
+          {/* ── UNIDADES DA REDE (SELETOR DE ESCOLA DA SEMED) ── */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-sky-400" />
+                <h2 className="text-base font-bold text-foreground">Escolas da Rede ({escolasDaSecretaria.length})</h2>
+              </div>
+              <span className="text-xs text-muted-foreground">Clique para inspecionar uma escola individual</span>
+            </div>
+
+            {escolasDaSecretaria.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 bg-surface-1 border border-borderCustom rounded-2xl">
+                <Building2 className="w-8 h-8 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Nenhuma escola vinculada a esta secretaria.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-8 justify-items-center pt-2">
+                {escolasDaSecretaria.map((escola) => {
+                  const iconProps = getSchoolIconProps(escola)
+                  return (
+                    <div
+                      key={escola.id}
+                      onClick={() => setSelectedEscola(escola)}
+                      className="flex flex-col items-center cursor-pointer group w-32"
+                    >
+                      <div
+                        className="w-20 h-20 rounded-[20px] overflow-hidden flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg active:scale-95"
+                        style={iconProps.style}
+                      >
+                        {iconProps.content}
+                      </div>
+                      <span className="mt-2.5 text-xs font-semibold text-center text-foreground group-hover:text-highlight transition-colors line-clamp-2 max-w-[110px] leading-snug">
+                        {escola.nome}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── ACESSO RÁPIDO DA SEMED ── */}
+          <div className="pt-2">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+              Acesso Rápido — SEMED
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              {ACESSO_RAPIDO_SEMED_ITEMS.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Card className={cn(
+                      'bg-surface-1 hover:bg-surface-2 border-borderCustom hover:border-sky-500/40 transition-all duration-200 cursor-pointer p-3 flex flex-col items-center justify-center text-center gap-2 min-h-[80px] rounded-xl group shadow-sm',
+                    )}>
+                      <Icon className={cn(
+                        'w-5 h-5 transition-colors',
+                        'warn' in item && item.warn
+                          ? 'text-amber-400 group-hover:text-amber-300'
+                          : 'text-sky-400 group-hover:text-sky-300'
+                      )} />
+                      <span className="text-xs font-medium text-foreground/80 group-hover:text-foreground leading-tight">
+                        {item.label}
+                      </span>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
       ) : isNivel1 && selectedSecretaria && !selectedEscola ? (

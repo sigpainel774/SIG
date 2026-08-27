@@ -4,13 +4,15 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, GraduationCap, Users, ArrowLeft, Inbox, Printer } from 'lucide-react'
+import { Plus, Search, GraduationCap, Users, ArrowLeft, Inbox, Printer, Award, BookOpenCheck } from 'lucide-react'
 import Link from 'next/link'
 import { ModalTurma } from '@/components/ModalTurma'
 import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { ModalImprimirRelacaoTurma } from '@/components/modals/modal-imprimir-relacao-turma'
+import { ModalConselhoClasseAta } from '@/components/turmas/ModalConselhoClasseAta'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
 import { IconTile } from '@/components/ui/icon-tile'
 import {
@@ -31,11 +33,19 @@ export default function TurmasPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [isConselhoModalOpen, setIsConselhoModalOpen] = useState(false)
   const [selectedTurma, setSelectedTurma] = useState<any>(null)
 
   const supabase = createClient() as any
   const { escolaAtivaId, acessos, funcionario, isAdminGlobalOrRoot, isProfessor: checkProfessor, isCoordenador: checkCoordenador, isContaEja } = useAuthStore()
+  const { selectedEscola } = useSchoolStore()
   const { isEditMode: globalEditMode } = useEditModeStore()
+
+  const isEmaeeOuCursinhoEscola = useMemo(() => {
+    const nomeEscola = (selectedEscola?.nome || '').toLowerCase()
+    const tipoEscola = (selectedEscola?.tipo || '').toLowerCase()
+    return tipoEscola === 'emaee' || nomeEscola.includes('emaee') || nomeEscola.includes('cursinho') || nomeEscola.includes('pré universitário')
+  }, [selectedEscola])
 
   const ejaMode = isContaEja()
   const isProfessor = checkProfessor()
@@ -245,8 +255,25 @@ export default function TurmasPage() {
               }}
               className="bg-card border border-border hover:border-primary/40 rounded-xl p-5 flex flex-col space-y-4 relative cursor-pointer transition-all duration-200"
             >
-              {/* Ações no Card (Imprimir e Editar) */}
+              {/* Ações no Card (Conselho, Imprimir e Editar) */}
               <div className="absolute top-3.5 right-3.5 flex items-center gap-1">
+                {!isEmaeeOuCursinhoEscola && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Conselho de Classe & Ata Final"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedTurma(turma)
+                      setIsConselhoModalOpen(true)
+                    }}
+                    className="text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-700 h-8 px-2 rounded-lg gap-1 text-xs font-semibold"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Conselho</span>
+                  </Button>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -279,7 +306,7 @@ export default function TurmasPage() {
               </div>
 
               {/* Cabeçalho do Card */}
-              <div className="space-y-2 pr-28">
+              <div className="space-y-2 pr-40">
                 <h3 className="text-base font-semibold text-foreground tracking-tight">
                   {turma.nome} <span className="text-muted-foreground font-normal text-sm">({turma.ano_letivo})</span>
                 </h3>
@@ -346,6 +373,15 @@ export default function TurmasPage() {
         <ModalImprimirRelacaoTurma
           open={isPrintModalOpen}
           onOpenChange={setIsPrintModalOpen}
+          turma={selectedTurma}
+        />
+      )}
+
+      {/* Modal de Conselho de Classe & Ata Final */}
+      {isConselhoModalOpen && selectedTurma && (
+        <ModalConselhoClasseAta
+          open={isConselhoModalOpen}
+          onOpenChange={setIsConselhoModalOpen}
           turma={selectedTurma}
         />
       )}

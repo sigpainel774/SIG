@@ -1,12 +1,13 @@
 'use client'
 
-import { BookOpen, Users, CalendarDays, FileSpreadsheet, MessageSquare } from 'lucide-react'
+import { BookOpen, Users, CalendarDays, FileSpreadsheet, MessageSquare, BookOpenCheck } from 'lucide-react'
 import { ModalDetalhesAluno } from './ModalDetalhesAluno'
 import { TabMateriasTurma } from './turmas/TabMateriasTurma'
 import { TabAlunosTurma } from './turmas/TabAlunosTurma'
 import { TabFrequenciasTurma } from './turmas/TabFrequenciasTurma'
 import { TabNotasTurma } from './turmas/TabNotasTurma'
 import { TabComunicacoesTurma } from './turmas/TabComunicacoesTurma'
+import { TabDiarioConteudoTurma } from './turmas/TabDiarioConteudoTurma'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { useTurmaDetalhes } from '@/hooks/useTurmaDetalhes'
 import { useSchoolStore } from '@/store/useSchoolStore'
@@ -30,6 +31,12 @@ export function ModalDetalhesTurma({
 }: ModalDetalhesTurmaProps) {
   const selectedEscola = useSchoolStore((state) => state.selectedEscola)
   const portalComunicacoesAtivo = Boolean(selectedEscola?.portal_comunicacoes_ativo)
+
+  const isEmaeeOuCursinho = Boolean(
+    selectedEscola?.tipo === 'EMAEE' ||
+    /emaee|cursinho|pré universitário/i.test(selectedEscola?.nome || '') ||
+    /emaee|cursinho/i.test(turma?.nome || '')
+  )
 
   const {
     activeTab,
@@ -106,19 +113,15 @@ export function ModalDetalhesTurma({
         onOpenChange={onOpenChange}
         title={turma.nome}
         description={`${turma.turno} • Ano letivo ${turma.ano_letivo}`}
-        maxWidth={portalComunicacoesAtivo ? "sm:max-w-[780px]" : "sm:max-w-[700px]"}
+        maxWidth={portalComunicacoesAtivo ? "sm:max-w-[850px]" : "sm:max-w-[800px]"}
       >
         {/* Abas Nativas do SIG */}
         <div>
-          <div className={`bg-muted/80 border border-border p-1 rounded-xl w-full grid ${
-            isProfessor
-              ? (portalComunicacoesAtivo ? 'grid-cols-4' : 'grid-cols-3')
-              : (portalComunicacoesAtivo ? 'grid-cols-5' : 'grid-cols-4')
-          } h-11 text-muted-foreground`}>
+          <div className="bg-muted/80 border border-border p-1 rounded-xl w-full flex flex-wrap gap-1 text-muted-foreground">
             {!isProfessor && (
               <button
                 onClick={() => setActiveTab('materias')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`flex-1 min-w-[90px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'materias' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
                 }`}
               >
@@ -128,7 +131,7 @@ export function ModalDetalhesTurma({
             )}
             <button
               onClick={() => setActiveTab('alunos')}
-              className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[90px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'alunos' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
@@ -137,7 +140,7 @@ export function ModalDetalhesTurma({
             </button>
             <button
               onClick={() => setActiveTab('frequencia')}
-              className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[100px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'frequencia' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
@@ -146,17 +149,30 @@ export function ModalDetalhesTurma({
             </button>
             <button
               onClick={() => setActiveTab('notas')}
-              className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[80px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'notas' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               Notas
             </button>
+
+            {!isEmaeeOuCursinho && (
+              <button
+                onClick={() => setActiveTab('diario')}
+                className={`flex-1 min-w-[110px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'diario' ? 'bg-card text-sky-600 dark:text-sky-400 shadow-sm border border-border/80 font-bold' : 'hover:text-foreground hover:bg-background/60 text-sky-600/80 dark:text-sky-400/80'
+                }`}
+              >
+                <BookOpenCheck className="w-4 h-4 text-sky-500" />
+                Diário BNCC
+              </button>
+            )}
+
             {portalComunicacoesAtivo && (
               <button
                 onClick={() => setActiveTab('comunicacoes')}
-                className={`rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`flex-1 min-w-[110px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'comunicacoes' ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold text-indigo-500' : 'hover:text-foreground hover:bg-background/60 text-indigo-400/80'
                 }`}
               >
@@ -246,6 +262,18 @@ export function ModalDetalhesTurma({
                 handleSalvarNotas={handleSalvarNotas}
                 handleNotaChange={handleNotaChange}
                 handleRecuperacaoChange={handleRecuperacaoChange}
+              />
+            )}
+
+            {activeTab === 'diario' && !isEmaeeOuCursinho && (
+              <TabDiarioConteudoTurma
+                turma={turma}
+                materias={materias}
+                selectedMateriaId={selectedMateriaId}
+                setSelectedMateriaId={setSelectedMateriaId}
+                dataAula={dataFreq}
+                setDataAula={setDataFreq}
+                onNavigateToFrequencia={() => setActiveTab('frequencia')}
               />
             )}
 
