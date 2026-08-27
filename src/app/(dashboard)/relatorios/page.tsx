@@ -23,6 +23,15 @@ const RelatorioServidores = dynamic(() => import('@/components/relatorios/Relato
 const RelatorioEmaeeEstrategico = dynamic(() => import('@/components/relatorios/RelatorioEmaeeEstrategico'), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório estratégico do EMAEE...</div>
 })
+const RelatorioFrequenciaEvasao = dynamic(() => import('@/components/relatorios/RelatorioFrequenciaEvasao'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando controle de frequência & evasão...</div>
+})
+const RelatorioMatriculasVagas = dynamic(() => import('@/components/relatorios/RelatorioMatriculasVagas'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando censo de matrículas & vagas...</div>
+})
+const RelatorioDiariosClasse = dynamic(() => import('@/components/relatorios/RelatorioDiariosClasse'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando monitoramento de diários de classe...</div>
+})
 const PrintFicha = dynamic(() => import('@/components/print/print-ficha').then(m => ({ default: m.PrintFicha })), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ficha...</div>
 })
@@ -39,19 +48,42 @@ import {
   Map as MapIcon, 
   Scan,
   ArrowLeft, 
-  Users,
-  GraduationCap,
-  FileCheck,
-  Activity,
-  Heart
+  Users, 
+  GraduationCap, 
+  FileCheck, 
+  Activity, 
+  Heart,
+  TrendingDown,
+  BookOpenCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | 'frequencia_evasao' | 'matriculas_vagas' | 'diarios_classe' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
 const REPORT_CARDS = [
+  {
+    id: 'frequencia_evasao' as const,
+    title: 'Frequência & Controle de Evasão',
+    description: 'Acompanhamento nominal de assiduidade, alunos abaixo de 75% e alertas de evasão escolar.',
+    icon: TrendingDown,
+    variant: 'destructive' as const,
+  },
+  {
+    id: 'matriculas_vagas' as const,
+    title: 'Matrículas & Vagas (Censo)',
+    description: 'Diagnóstico em tempo real de ocupação de vagas por turma, capacidade instalada e modalidades.',
+    icon: GraduationCap,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'diarios_classe' as const,
+    title: 'Diários de Classe & BNCC',
+    description: 'Monitoramento docente de preenchimento de planos de aula, registros BNCC e chamadas.',
+    icon: BookOpenCheck,
+    variant: 'primary' as const,
+  },
   {
     id: 'servidores' as const,
     title: 'Relatório de Servidores',
@@ -177,6 +209,13 @@ export default function RelatoriosPage() {
   const [isLoadingMap, setIsLoadingMap] = useState(false)
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
+
+  // Redefine relatório ativo se a escola selecionada não for mais EMAEE
+  useEffect(() => {
+    if (activeReport === 'emaee_estrategico' && !isEMAEE) {
+      setActiveReport(null)
+    }
+  }, [isEMAEE, activeReport])
 
   // Fetch data for the Mapa Logístico de Funcionários (com cache em sessionStorage)
   useEffect(() => {
@@ -664,6 +703,12 @@ export default function RelatoriosPage() {
           </div>
         ) : activeReport === 'ocorrencias' ? (
           <RelatorioOcorrencias selectedEscola={selectedEscola} />
+        ) : activeReport === 'frequencia_evasao' ? (
+          <RelatorioFrequenciaEvasao selectedEscola={selectedEscola} />
+        ) : activeReport === 'matriculas_vagas' ? (
+          <RelatorioMatriculasVagas selectedEscola={selectedEscola} />
+        ) : activeReport === 'diarios_classe' ? (
+          <RelatorioDiariosClasse selectedEscola={selectedEscola} />
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-foreground mb-3">
@@ -725,6 +770,9 @@ export default function RelatoriosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
           const moduloPorReportCard: Record<string, string> = {
+            'frequencia_evasao': 'alunos',
+            'matriculas_vagas': 'alunos',
+            'diarios_classe': 'alunos',
             'servidores': 'funcionarios-basico',
             'desempenho': 'alunos',
             'censo': 'alunos',
@@ -744,18 +792,25 @@ export default function RelatoriosPage() {
           }
 
           if (isEMAEE) {
-            const permitidosEMAEE = ['emaee_estrategico', 'fila_espera', 'mapa']
-            return permitidosEMAEE.includes(card.id)
+            const permitidosEMAEE = ['emaee_estrategico', 'mapa']
+            if (!permitidosEMAEE.includes(card.id)) return false
+            if (card.id === 'emaee_estrategico') {
+              return isSuperAdminOrNivel1 || isDiretor || isEMAEE
+            }
+            return true
           }
+
+          // Relatório estratégico do EMAEE nunca aparece em outras unidades escolares
+          if (card.id === 'emaee_estrategico') {
+            return false
+          }
+
           if (isSaude) {
             const permitidosSaude = ['mapa', 'presenca', 'servidores']
             if (!permitidosSaude.includes(card.id)) return false
           }
           if (card.id === 'servidores') {
             return podeVerRelatorioServidores
-          }
-          if (card.id === 'emaee_estrategico') {
-            return isSuperAdminOrNivel1 || isDiretor || isEMAEE
           }
           return true
         }).map((card) => {

@@ -22,6 +22,9 @@ import {
   CheckCircle2,
   Clock,
   Filter,
+  GraduationCap,
+  TrendingDown,
+  BookOpenCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +32,54 @@ export default function RelatoriosAdministrativosPage() {
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'disponiveis' | 'construcao'>('todos');
 
   const relatoriosDisponiveis = [
+    {
+      id: 'frequencia-evasao',
+      title: 'Frequência, Assiduidade & Alerta de Evasão',
+      description:
+        'Monitoramento nominal da rede, identificação de alunos com frequência abaixo de 75%, alertas preventivos e controle de evasão escolar.',
+      icon: TrendingDown,
+      badge: 'Pedagógico & Evasão',
+      badgeColor: 'bg-rose-500/10 text-rose-700 border-rose-500/25 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30',
+      iconColor: 'text-rose-600 dark:text-rose-400',
+      iconBg: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/15 dark:border-rose-500/30',
+      bgGradient: 'from-rose-500/5 via-rose-500/0 to-transparent dark:from-rose-500/10 dark:via-rose-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-rose-500/40 dark:border-borderCustom dark:hover:border-rose-500/40',
+      path: '/relatorios',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
+    {
+      id: 'matriculas-vagas',
+      title: 'Censo de Matrículas & Ocupação de Vagas',
+      description:
+        'Diagnóstico em tempo real da capacidade física instalada, turmas lotadas, vagas livres e distribuição por etapa de ensino.',
+      icon: GraduationCap,
+      badge: 'Censo Escolar',
+      badgeColor: 'bg-sky-500/10 text-sky-700 border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30',
+      iconColor: 'text-sky-600 dark:text-sky-400',
+      iconBg: 'bg-sky-500/10 border-sky-500/20 dark:bg-sky-500/15 dark:border-sky-500/30',
+      bgGradient: 'from-sky-500/5 via-sky-500/0 to-transparent dark:from-sky-500/10 dark:via-sky-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-sky-500/40 dark:border-borderCustom dark:hover:border-sky-500/40',
+      path: '/relatorios',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
+    {
+      id: 'diarios-classe',
+      title: 'Diários de Classe & Cumprimento Curricular BNCC',
+      description:
+        'Auditoria do preenchimento de planos de aula, registros BNCC por docentes e acompanhamento de chamadas e pendências.',
+      icon: BookOpenCheck,
+      badge: 'Gestão Pedagógica',
+      badgeColor: 'bg-purple-500/10 text-purple-700 border-purple-500/25 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-500/10 border-purple-500/20 dark:bg-purple-500/15 dark:border-purple-500/30',
+      bgGradient: 'from-purple-500/5 via-purple-500/0 to-transparent dark:from-purple-500/10 dark:via-purple-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-purple-500/40 dark:border-borderCustom dark:hover:border-purple-500/40',
+      path: '/relatorios',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
     {
       id: 'rotas-escolas',
       title: 'Geolocalização e Rotas de Unidades Escolares',
