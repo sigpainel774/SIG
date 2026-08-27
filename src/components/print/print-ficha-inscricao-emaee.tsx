@@ -324,8 +324,13 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                   <span>{prontuario?.localizacao_atendimento ?? 'Urbana'}</span>
                 </td>
                 <td className="border border-black p-1.5 w-1/4">
-                  <span className="font-bold block text-[8px] uppercase text-gray-600">Status</span>
-                  <span className="font-bold uppercase text-purple-900">{prontuario?.status ?? 'FILA_ESPERA'}</span>
+                  <span className="font-bold block text-[8px] uppercase text-gray-600">Status no EMAEE</span>
+                  <span className="font-bold text-purple-900">
+                    {prontuario?.status === 'ATIVO' ? 'Em Atendimento' :
+                     prontuario?.status === 'EM_INVESTIGACAO' ? 'Em Investigação' :
+                     prontuario?.status === 'ALTA' ? 'Alta Médica' :
+                     prontuario?.status === 'INATIVO' ? 'Arquivado' : 'Fila de Espera'}
+                  </span>
                 </td>
               </tr>
               <tr>

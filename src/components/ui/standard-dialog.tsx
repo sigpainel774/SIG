@@ -27,7 +27,7 @@ export function StandardDialog({
 }: StandardDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden", maxWidth, className)}>
+      <DialogContent className={cn("bg-card text-card-foreground border border-border rounded-2xl p-4 sm:p-5 md:p-6 shadow-2xl max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden", maxWidth, className)}>
         <DialogHeader className="shrink-0 pb-2">
           <DialogTitle>{title}</DialogTitle>
           {description ? (

@@ -5,7 +5,7 @@ import { useMatriculaEmaeeContext } from '../context/MatriculaEmaeeContext'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, User, Loader2, Camera, MapPin, Search, ScanFace, Trash2 } from 'lucide-react'
+import { CheckCircle2, User, Loader2, Camera, MapPin, Search, ScanFace, Trash2, Activity } from 'lucide-react'
 import { MiniMapa } from '@/components/map/MapWrapper'
 
 export function SecaoDadosAluno() {
@@ -49,6 +49,7 @@ export function SecaoDadosAluno() {
     contatoEmergencia, setContatoEmergencia,
     telefoneEmergencia, setTelefoneEmergencia,
     turnoAtendimento, setTurnoAtendimento,
+    statusMatricula, setStatusMatricula,
     isEditMode,
     alunoSelecionado
   } = useMatriculaEmaeeContext()
@@ -430,6 +431,58 @@ export function SecaoDadosAluno() {
                       {t}
                     </label>
                   ))}
+                </div>
+              </fieldset>
+            </div>
+
+            {/* SITUAÇÃO / STATUS DE ATENDIMENTO NO EMAEE */}
+            <div className="col-span-12">
+              <fieldset className="p-3.5 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40 space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <legend className="px-1 text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-primary" />
+                    Situação / Status no EMAEE <span className="text-rose-500">*</span>
+                  </legend>
+                  <span className="text-[11px] text-muted-foreground">
+                    Selecione a fase clínica atual do aluno para organização dos prontuários e relatórios
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+                  {[
+                    { value: 'EM_INVESTIGACAO', label: 'Em Investigação', desc: 'Avaliação diagnóstica / Triagem', activeClass: 'border-amber-500/60 bg-amber-500/15 text-amber-900 dark:text-amber-300 ring-2 ring-amber-500/30 font-bold' },
+                    { value: 'ATIVO', label: 'Em Atendimento', desc: 'Sessões ativas no EMAEE', activeClass: 'border-emerald-500/60 bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 ring-2 ring-emerald-500/30 font-bold' },
+                    { value: 'FILA_ESPERA', label: 'Fila de Espera', desc: 'Aguardando vaga / profissional', activeClass: 'border-sky-500/60 bg-sky-500/15 text-sky-900 dark:text-sky-300 ring-2 ring-sky-500/30 font-bold' },
+                    { value: 'ALTA', label: 'Alta Médica / AEE', desc: 'Ciclo / Tratamento concluído', activeClass: 'border-purple-500/60 bg-purple-500/15 text-purple-900 dark:text-purple-300 ring-2 ring-purple-500/30 font-bold' },
+                    { value: 'INATIVO', label: 'Arquivado', desc: 'Prontuário inativo / encerrado', activeClass: 'border-rose-500/60 bg-rose-500/15 text-rose-900 dark:text-rose-300 ring-2 ring-rose-500/30 font-bold' },
+                  ].map((st) => {
+                    const isSelected = (statusMatricula ?? 'FILA_ESPERA') === st.value
+                    return (
+                      <label
+                        key={st.value}
+                        className={`flex flex-col justify-between p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                          isSelected
+                            ? st.activeClass
+                            : 'border-border bg-input text-foreground/80 hover:border-primary/40 hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="status_matricula_emaee"
+                            value={st.value}
+                            checked={isSelected}
+                            onChange={() => setStatusMatricula(st.value)}
+                            className="accent-primary w-4 h-4 cursor-pointer shrink-0"
+                          />
+                          <span className="font-semibold text-xs tracking-tight">{st.label}</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-2 pl-6 leading-snug block">
+                          {st.desc}
+                        </span>
+                      </label>
+                    )
+                  })}
                 </div>
               </fieldset>
             </div>

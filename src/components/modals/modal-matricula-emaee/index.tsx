@@ -65,8 +65,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
       open={activeOpen}
       onOpenChange={handleOpenChange}
       title={isEditMode ? "Editar Ficha de Matrícula AEE 2026 — SIG" : "Ficha de Matrícula AEE 2026 — SIG"}
-      maxWidth="sm:max-w-[1050px]"
-      className="w-[95vw]"
+      maxWidth="max-w-[96vw] sm:max-w-[92vw] md:max-w-4xl lg:max-w-[1050px]"
+      className="w-[96vw] sm:w-[92vw] md:w-full"
       footer={
         <div className="flex items-center justify-between gap-3 w-full">
           <div className="flex items-center gap-2">
@@ -129,8 +129,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           </span>
         </div>
 
-        {/* Stepper de 5 Passos */}
-        <nav className="grid grid-cols-2 sm:grid-cols-5 gap-2 no-print" aria-label="Etapas da ficha AEE">
+        {/* Stepper de 4 Passos */}
+        <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2 no-print" aria-label="Etapas da ficha AEE">
           {steps.map((step) => {
             const isActive = activeStep === step.id
             return (

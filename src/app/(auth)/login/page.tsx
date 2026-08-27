@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { Ban, PenTool, Loader2, Eye, EyeOff } from 'lucide-react'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { PwaInstallButton } from '@/components/PwaInstallButton'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -218,8 +217,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      {/* Botão para Instalação Direta do PWA no Tablet / Celular / Computador */}
-      <PwaInstallButton variant="login" />
+
 
       {/* Pop-up de Usuário Suspenso padronizado com StandardDialog (Montagem condicional) */}
       {suspendedModalOpen && (

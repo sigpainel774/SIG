@@ -113,6 +113,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [contatoEmergencia, setContatoEmergencia] = useState('')
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('')
   const [turnoAtendimento, setTurnoAtendimento] = useState('Matutino')
+  const [statusMatricula, setStatusMatricula] = useState<string>('FILA_ESPERA')
 
   // Foto 3x4 do Aluno e Scanner
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
@@ -313,6 +314,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setLocalizacaoAtendimento('Urbana')
     setDataMatricula(getHojeBrasilia())
     setTurnoAtendimento('Matutino')
+    setStatusMatricula('FILA_ESPERA')
     setEscolaOrigemForaRede(false)
     setEscolaOrigemNome('')
     setEscolaOrigemMunicipio('')
@@ -429,6 +431,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setLocalizacaoAtendimento(mat.localizacao_atendimento ?? 'Urbana')
       setDataMatricula(mat.data_matricula ? (mat.data_matricula.includes('T') ? mat.data_matricula.split('T')[0] : mat.data_matricula) : getHojeBrasilia())
       setTurnoAtendimento(mat.turno_atendimento ?? 'Matutino')
+      setStatusMatricula(mat.status || 'FILA_ESPERA')
 
       // Escola Regular
       const foraRede = Boolean(mat.escola_origem_fora_rede || (mat.escola_origem_nome && !mat.escola_regular_id))
@@ -1008,6 +1011,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
           def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
           condicoes_saude: condicoesSaude,
+          status: statusMatricula || 'FILA_ESPERA'
         }
 
         const { error: matriculaUpdateErr } = await (supabase
@@ -1246,7 +1250,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
         def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
         condicoes_saude: condicoesSaude,
-        status: 'FILA_ESPERA'
+        status: statusMatricula || 'FILA_ESPERA'
       }
 
       const { data: novaMatricula, error: matriculaError } = await (supabase
@@ -1362,6 +1366,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     contatoEmergencia, setContatoEmergencia,
     telefoneEmergencia, setTelefoneEmergencia,
     turnoAtendimento, setTurnoAtendimento,
+    statusMatricula, setStatusMatricula,
 
     // Escola Regular
     escolaOrigemForaRede, setEscolaOrigemForaRede,
