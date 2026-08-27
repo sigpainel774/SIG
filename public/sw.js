@@ -1,4 +1,4 @@
-// SIG Sapeaçu — Service Worker v15 (Offline-First Alpha Engine)
+// SIG Sapeaçu — Service Worker v16 (Offline-First Alpha Engine)
 // Estratégia de Alta Performance, Blindagem Offline & PWA:
 // 1. Alpha App Shell: Pre-caching no install e Stale-While-Revalidate resiliente para rotas /alpha/* e /visitas.
 // 2. Blindagem RSC (React Server Components): Suporte a requisições Next.js _rsc quando offline.
@@ -7,25 +7,25 @@
 // 5. Fotos e Avatars (Supabase Storage): Cache-First / SWR.
 // 6. Preservação Total de Mapas Baixados (sig-offline-tiles-v1 nunca é expurgado).
 
-const CACHE_NAME = 'sig-sapeacu-v15';
-const STATIC_CACHE_NAME = 'sig-static-v15';
-const MAP_TILES_CACHE_NAME = 'sig-maptiles-v15';
+const CACHE_NAME = 'sig-sapeacu-v16';
+const STATIC_CACHE_NAME = 'sig-static-v16';
+const MAP_TILES_CACHE_NAME = 'sig-maptiles-v16';
 const OFFLINE_TILES_CACHE_NAME = 'sig-offline-tiles-v1'; // Mapas baixados para uso em campo
-const PHOTOS_CACHE_NAME = 'sig-photos-v15';
+const PHOTOS_CACHE_NAME = 'sig-photos-v16';
 const PHOTOS_CACHE_V1 = 'sig-photos-v1';
-const ALPHA_CACHE_NAME = 'sig-alpha-v15';
+const ALPHA_CACHE_NAME = 'sig-alpha-v16';
 
 // Assets estáticos essenciais do PWA
 const STATIC_ASSETS = [
-  '/manifest.json?v=15',
-  '/manifest-portal-pais.json?v=15',
-  '/icon-192.png?v=15',
-  '/icon-512.png?v=15',
-  '/icon.svg?v=15',
-  '/portal-pais/icon-192.png?v=15',
-  '/portal-pais/icon-512.png?v=15',
-  '/portal-pais/apple-touch-icon.png?v=15',
-  '/portal-pais/icon.svg?v=15',
+  '/manifest.json',
+  '/manifest-portal-pais.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon.svg',
+  '/portal-pais/icon-192.png',
+  '/portal-pais/icon-512.png',
+  '/portal-pais/apple-touch-icon.png',
+  '/portal-pais/icon.svg',
   '/offline.html',
   '/img/logo-prefeitura.png',
   '/img/brasaoSapeaçu.png',

@@ -42,6 +42,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PwaInstallButton } from '@/components/PwaInstallButton'
 
 import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
 
@@ -617,6 +618,7 @@ export function Sidebar() {
 
       {/* Footer Nav */}
       <div className="p-3 border-t border-sidebar-border space-y-1">
+        <PwaInstallButton variant="sidebar" />
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}

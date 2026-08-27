@@ -39,16 +39,16 @@ export const metadata: Metadata = {
       noimageindex: true,
     },
   },
-  manifest: '/manifest.json?v=14',
+  manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.svg?v=14', type: 'image/svg+xml' },
-      { url: '/icon-192.png?v=14', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=14', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon-192.png?v=14', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png?v=14', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
   },
   appleWebApp: {
@@ -70,9 +70,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SIG Sapeaçu" />
-        <link rel="apple-touch-icon" href="/icon-192.png?v=13" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png?v=13" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png?v=13" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-512.png" />
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider
@@ -113,9 +113,14 @@ export default function RootLayout({
                       console.log('Falha ao registrar ServiceWorker: ', err);
                     });
                     
-                  // Reload automático quando um novo service worker assume o controle
+                  // Reload automático seguro: apenas quando um novo SW substitui um controller já ativo
                   let refreshing = false;
+                  let hadController = Boolean(navigator.serviceWorker.controller);
                   navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (!hadController) {
+                      hadController = true;
+                      return;
+                    }
                     if (refreshing) return;
                     refreshing = true;
                     window.location.reload();
