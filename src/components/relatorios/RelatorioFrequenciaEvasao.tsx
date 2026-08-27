@@ -76,7 +76,7 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
         // 1. Buscar Turmas
         let queryTurmas = supabase
           .from('turmas')
-          .select('id, nome, serie, turno, escola_id')
+          .select('id, nome, serie, turno, escola_id, escolas (id, nome, is_teste)')
           .order('nome', { ascending: true })
 
         if (selectedEscola) {
@@ -85,7 +85,25 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
 
         const { data: turmasData, error: turmasError } = await queryTurmas
         if (turmasError) throw turmasError
-        if (isMounted) setTurmas(turmasData || [])
+
+        const turmasBrutas = turmasData || []
+        const turmas = turmasBrutas.filter((t: any) => {
+          const escola = t.escolas as any
+          if (!escola) return false
+          if (escola.is_teste === true) return false
+          const nomeLower = (escola.nome || '').toLowerCase().trim()
+          if (
+            nomeLower.startsWith('teste ') ||
+            nomeLower === 'teste 1' ||
+            nomeLower === 'teste 2' ||
+            nomeLower === 'teste'
+          ) {
+            return false
+          }
+          return true
+        })
+
+        if (isMounted) setTurmas(turmas)
 
         // 2. Buscar Alunos
         let queryAlunos = supabase
@@ -98,7 +116,8 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
             serie,
             dados_matricula,
             deleted_at,
-            turmas (id, nome)
+            turmas (id, nome),
+            escolas (id, nome, is_teste)
           `)
           .is('deleted_at', null)
 
@@ -109,7 +128,27 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
         const { data: alunosData, error: alunosError } = await queryAlunos
         if (alunosError) throw alunosError
 
-        const alunos = alunosData || []
+        const alunosBrutos = alunosData || []
+        const validTurmaIds = new Set(turmas.map((t: any) => t.id))
+        const alunos = alunosBrutos.filter((a: any) => {
+          const escola = a.escolas as any
+          if (escola) {
+            if (escola.is_teste === true) return false
+            const nomeLower = (escola.nome || '').toLowerCase().trim()
+            if (
+              nomeLower.startsWith('teste ') ||
+              nomeLower === 'teste 1' ||
+              nomeLower === 'teste 2' ||
+              nomeLower === 'teste'
+            ) {
+              return false
+            }
+          }
+          if (a.turma_id && !validTurmaIds.has(a.turma_id)) {
+            return false
+          }
+          return true
+        })
         const alunoIds = alunos.map((a: any) => a.id)
 
         if (alunoIds.length === 0) {

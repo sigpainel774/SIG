@@ -32,6 +32,7 @@ interface ComunicadoPopup {
   anexo_url?: string | null
   anexo_nome?: string | null
   created_at: string
+  expira_em?: string | null
   criado_por?: {
     nome?: string
   } | null
@@ -111,7 +112,7 @@ export function ModalComunicadoPopup() {
 
         let query = (supabase.from as any)('comunicados')
           .select(
-            'id, title, body, target, categoria, leitura_obrigatoria, turma_ids, date, anexo_url, anexo_nome, escola_ids, created_at, criado_por:funcionarios(nome)'
+            'id, title, body, target, categoria, leitura_obrigatoria, turma_ids, date, anexo_url, anexo_nome, escola_ids, created_at, expira_em, criado_por:funcionarios(nome)'
           )
           .eq('is_popup', true)
           .or('status.eq.publicado,status.is.null')
@@ -142,9 +143,25 @@ export function ModalComunicadoPopup() {
 
           const isSuperOuNivel1 = funcionario?.is_superadmin || acessos.some((a) => a.nivel === 1 && a.ativo)
 
+          // Data de registro do usuário para isolar comunicados antigos anteriores ao seu cadastro (Opção 1)
+          const userRegistrationTime = funcionario?.created_at
+            ? new Date(funcionario.created_at).getTime()
+            : user?.created_at
+            ? new Date(user.created_at).getTime()
+            : null
+
+          const now = Date.now()
+
           const pending = data.filter((item: any) => {
             const isUnread = !dismissedIds.includes(item.id)
             const targeted = isTargetForUser(item.target)
+
+            // Regra 1 (Opção 1): Não disparar pop-ups criados antes da data de cadastro do usuário
+            const noticeCreatedAt = item.created_at ? new Date(item.created_at).getTime() : 0
+            const isCreatedAfterUser = !userRegistrationTime || noticeCreatedAt >= userRegistrationTime
+
+            // Regra 2 (Opção 2): Não disparar pop-ups cuja data de validade já expirou
+            const isNotExpired = !item.expira_em || new Date(item.expira_em).getTime() > now
 
             // Verificação de unidade escolar
             let isUnidadeTarget = true
@@ -153,7 +170,7 @@ export function ModalComunicadoPopup() {
               isUnidadeTarget = isSuperOuNivel1 || hasVinculoNaUnidade
             }
 
-            return isUnread && targeted && isUnidadeTarget
+            return isUnread && targeted && isUnidadeTarget && isCreatedAfterUser && isNotExpired
           })
 
           if (pending.length > 0) {
@@ -183,6 +200,7 @@ export function ModalComunicadoPopup() {
     selectedEscola?.id,
     vinculos,
     funcionario?.is_superadmin,
+    funcionario?.created_at,
     acessos,
   ])
 

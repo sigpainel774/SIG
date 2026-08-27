@@ -60,7 +60,7 @@ export default function RelatorioMatriculasVagas({ selectedEscola }: RelatorioMa
             turno,
             capacidade_maxima,
             escola_id,
-            escolas (id, nome)
+            escolas (id, nome, is_teste)
           `)
           .order('nome', { ascending: true })
 
@@ -81,7 +81,8 @@ export default function RelatorioMatriculasVagas({ selectedEscola }: RelatorioMa
             escola_id,
             serie,
             dados_matricula,
-            deleted_at
+            deleted_at,
+            escolas (id, nome, is_teste)
           `)
           .is('deleted_at', null)
 
@@ -92,8 +93,48 @@ export default function RelatorioMatriculasVagas({ selectedEscola }: RelatorioMa
         const { data: alunosData, error: alunosError } = await queryAlunos
         if (alunosError) throw alunosError
 
-        const alunos = alunosData || []
-        const turmas = turmasData || []
+        const turmasBrutas = turmasData || []
+        const alunosBrutos = alunosData || []
+
+        // Filtrar turmas de escolas de teste (ex: Teste 1, Teste 2, ou is_teste === true)
+        const turmas = turmasBrutas.filter((t: any) => {
+          const escola = t.escolas as any
+          if (!escola) return false
+          if (escola.is_teste === true) return false
+          const nomeLower = (escola.nome || '').toLowerCase().trim()
+          if (
+            nomeLower.startsWith('teste ') ||
+            nomeLower === 'teste 1' ||
+            nomeLower === 'teste 2' ||
+            nomeLower === 'teste'
+          ) {
+            return false
+          }
+          return true
+        })
+
+        const validTurmaIds = new Set(turmas.map((t: any) => t.id))
+
+        // Filtrar alunos de escolas de teste
+        const alunos = alunosBrutos.filter((a: any) => {
+          const escola = a.escolas as any
+          if (escola) {
+            if (escola.is_teste === true) return false
+            const nomeLower = (escola.nome || '').toLowerCase().trim()
+            if (
+              nomeLower.startsWith('teste ') ||
+              nomeLower === 'teste 1' ||
+              nomeLower === 'teste 2' ||
+              nomeLower === 'teste'
+            ) {
+              return false
+            }
+          }
+          if (a.turma_id && !validTurmaIds.has(a.turma_id)) {
+            return false
+          }
+          return true
+        })
 
         // Mapear contagem de alunos por turma
         const alunosPorTurma: Record<string, number> = {}

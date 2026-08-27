@@ -1630,6 +1630,7 @@ export type Database = {
           created_at: string
           criado_por: string | null
           date: string
+          expira_em: string | null
           id: string
           is_popup: boolean | null
           secretaria_id: string | null
@@ -1643,6 +1644,7 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           date: string
+          expira_em?: string | null
           id?: string
           is_popup?: boolean | null
           secretaria_id?: string | null
@@ -1656,6 +1658,7 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           date?: string
+          expira_em?: string | null
           id?: string
           is_popup?: boolean | null
           secretaria_id?: string | null

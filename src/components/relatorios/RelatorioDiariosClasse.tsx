@@ -75,7 +75,7 @@ export default function RelatorioDiariosClasse({ selectedEscola }: RelatorioDiar
               nome,
               deleted_at
             ),
-            escolas (id, nome)
+            escolas (id, nome, is_teste)
           `)
           .eq('ativo', true)
           .is('funcionarios.deleted_at', null)
@@ -88,7 +88,24 @@ export default function RelatorioDiariosClasse({ selectedEscola }: RelatorioDiar
         const { data: vinculosData, error: vinculosError } = await queryVinculos
         if (vinculosError) throw vinculosError
 
-        const vinculos = vinculosData || []
+        const vinculosBrutos = vinculosData || []
+        // Filtrar escolas de teste (ex: Teste 1, Teste 2, ou is_teste === true)
+        const vinculos = vinculosBrutos.filter((v: any) => {
+          const escola = v.escolas as any
+          if (!escola) return false
+          if (escola.is_teste === true) return false
+          const nomeLower = (escola.nome || '').toLowerCase().trim()
+          if (
+            nomeLower.startsWith('teste ') ||
+            nomeLower === 'teste 1' ||
+            nomeLower === 'teste 2' ||
+            nomeLower === 'teste'
+          ) {
+            return false
+          }
+          return true
+        })
+
         const professorIds = Array.from(new Set(vinculos.map((v: any) => (v.funcionarios as any)?.id).filter(Boolean)))
 
         if (professorIds.length === 0) {
@@ -98,6 +115,8 @@ export default function RelatorioDiariosClasse({ selectedEscola }: RelatorioDiar
           }
           return
         }
+
+        const validEscolaIds = new Set(vinculos.map((v: any) => v.escola_id).filter(Boolean))
 
         // 2. Buscar turmas e atribuições
         let queryTurmas = supabase
@@ -111,7 +130,7 @@ export default function RelatorioDiariosClasse({ selectedEscola }: RelatorioDiar
         // 3. Buscar registros de diários de conteúdo
         let queryDiarios = supabase
           .from('diario_conteudo')
-          .select('id, professor_id, turma_id, materia_id, data_aula')
+          .select('id, professor_id, turma_id, materia_id, data_aula, escola_id')
           .gte('data_aula', dataCorte)
 
         if (selectedEscola) {
@@ -131,6 +150,9 @@ export default function RelatorioDiariosClasse({ selectedEscola }: RelatorioDiar
         // Consolidar por professor
         const diariosPorProf: Record<string, { count: number; ultimaData: string | null }> = {}
         ;(diariosData || []).forEach((d: any) => {
+          if (d.escola_id && !validEscolaIds.has(d.escola_id) && !selectedEscola) {
+            return
+          }
           if (!diariosPorProf[d.professor_id]) {
             diariosPorProf[d.professor_id] = { count: 0, ultimaData: null }
           }

@@ -41,6 +41,7 @@ import {
   Megaphone,
   Layers,
   RefreshCw,
+  Timer,
 } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -125,10 +126,52 @@ export default function MuralPage() {
   const [alvo, setAlvo] = useState('Selecione o Público Alvo')
   const [isPopup, setIsPopup] = useState(false)
   const [leituraObrigatoria, setLeituraObrigatoria] = useState(false)
+  const [duracaoOpcao, setDuracaoOpcao] = useState<
+    '24h' | '48h' | '3d' | '7d' | '15d' | '30d' | 'fim_ano' | 'personalizado' | ''
+  >('')
+  const [dataExpiracaoPersonalizada, setDataExpiracaoPersonalizada] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Helper de cálculo de expiração com base na duração obrigatória escolhida
+  const calcularExpiraEm = (
+    baseDateIso: string,
+    opcao: string,
+    dataPersonalizada?: string
+  ): string | null => {
+    if (!opcao) return null
+    const baseTime = new Date(baseDateIso).getTime()
+    if (isNaN(baseTime)) return null
+
+    switch (opcao) {
+      case '24h':
+        return new Date(baseTime + 24 * 60 * 60 * 1000).toISOString()
+      case '48h':
+        return new Date(baseTime + 48 * 60 * 60 * 1000).toISOString()
+      case '3d':
+        return new Date(baseTime + 3 * 24 * 60 * 60 * 1000).toISOString()
+      case '7d':
+        return new Date(baseTime + 7 * 24 * 60 * 60 * 1000).toISOString()
+      case '15d':
+        return new Date(baseTime + 15 * 24 * 60 * 60 * 1000).toISOString()
+      case '30d':
+        return new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString()
+      case 'fim_ano': {
+        const ano = new Date(baseTime).getFullYear()
+        return new Date(Date.UTC(ano, 11, 31, 23, 59, 59)).toISOString()
+      }
+      case 'personalizado': {
+        if (!dataPersonalizada) return null
+        const customTime = new Date(`${dataPersonalizada}T23:59:59-03:00`).getTime()
+        if (isNaN(customTime)) return null
+        return new Date(customTime).toISOString()
+      }
+      default:
+        return null
+    }
+  }
 
   // Agendamento Prévio (Scheduled Broadcast)
   const [isAgendado, setIsAgendado] = useState(false)
@@ -251,7 +294,7 @@ export default function MuralPage() {
     let query = supabase
       .from('comunicados')
       .select(
-        'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+        'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, expira_em, criado_por:funcionarios(nome)'
       )
       .order('is_pinned', { ascending: false })
       .order('date', { ascending: false })
@@ -285,7 +328,9 @@ export default function MuralPage() {
     let active = true
 
     // Disparo Lazy para processar agendados cujo horário já chegou
-    fetch('/api/comunicados/process-scheduled', { method: 'POST' }).catch(() => {})
+    fetch('/api/comunicados/process-scheduled', { method: 'POST' }).catch((err) => {
+      console.warn('Falha no processamento agendado lazy:', err)
+    })
 
     // Rastreia leitura via push se query params estiverem presentes
     const comunicadoIdParam = searchParams.get('comunicado_id')
@@ -296,7 +341,9 @@ export default function MuralPage() {
           { user_id: funcionario.auth_user_id, comunicado_id: comunicadoIdParam },
           { onConflict: 'comunicado_id,user_id' }
         )
-        .then(() => {})
+        .catch((readErr: any) => {
+          console.warn('Falha ao registrar leitura via push:', readErr)
+        })
     }
 
     const fetchData = async () => {
@@ -309,7 +356,7 @@ export default function MuralPage() {
         let query = supabase
           .from('comunicados')
           .select(
-            'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+            'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, expira_em, criado_por:funcionarios(nome)'
           )
           .order('is_pinned', { ascending: false })
           .order('date', { ascending: false })
@@ -639,6 +686,17 @@ export default function MuralPage() {
       escolaIdsPayload = [selectedEscola.id]
     }
 
+    // Validação de Duração / Validade Obrigatória (Opção 2)
+    if (!duracaoOpcao) {
+      toast.error('É obrigatório selecionar o tempo de duração / validade do comunicado.')
+      return
+    }
+
+    if (duracaoOpcao === 'personalizado' && !dataExpiracaoPersonalizada) {
+      toast.error('Informe a data limite de expiração personalizada.')
+      return
+    }
+
     // Validação de Agendamento
     let scheduledForIso: string | null = null
     let statusPayload = 'publicado'
@@ -665,6 +723,15 @@ export default function MuralPage() {
       scheduledForIso = new Date(scheduledTimestamp).toISOString()
       statusPayload = 'agendado'
       dataReferencia = dataAgendamento
+    }
+
+    // Cálculo da data/hora de expiração final
+    const baseParaCalculo = scheduledForIso || new Date().toISOString()
+    const expiraEmIso = calcularExpiraEm(baseParaCalculo, duracaoOpcao, dataExpiracaoPersonalizada)
+
+    if (!expiraEmIso || new Date(expiraEmIso).getTime() <= Date.now()) {
+      toast.error('A data de expiração calculada é inválida ou já passou. Escolha um prazo futuro.')
+      return
     }
 
     setSalvando(true)
@@ -712,6 +779,7 @@ export default function MuralPage() {
       target: targetPayload,
       is_popup: isPopup,
       leitura_obrigatoria: leituraObrigatoria,
+      expira_em: expiraEmIso,
       escola_ids: escolaIdsPayload,
       turma_ids: turmasSelecionadas.length > 0 ? turmasSelecionadas : null,
       status: statusPayload,
@@ -755,6 +823,8 @@ export default function MuralPage() {
       setAlvo('Selecione o Público Alvo')
       setIsPopup(false)
       setLeituraObrigatoria(false)
+      setDuracaoOpcao('')
+      setDataExpiracaoPersonalizada('')
       setIsAgendado(false)
       setDataAgendamento(getHojeBrasilia())
       setHoraAgendamento('07:00')
@@ -1034,6 +1104,69 @@ export default function MuralPage() {
                           />
                         </div>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Duração / Validade Obrigatória do Comunicado (Opção 2) */}
+                <div className="space-y-3 p-3.5 bg-input/40 border border-amber-500/30 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Timer className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Tempo de Duração / Validade</span>
+                      <span className="text-amber-500 font-extrabold">*</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/25">
+                      Obrigatório
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Defina por quanto tempo este comunicado permanecerá ativo no sistema e na janela de pop-up:
+                  </p>
+
+                  {/* Grid de Opções Rápidas de Vigência */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: '24h', label: '24 Horas', sub: '1 dia' },
+                      { id: '48h', label: '48 Horas', sub: '2 dias' },
+                      { id: '3d', label: '3 Dias', sub: '72 horas' },
+                      { id: '7d', label: '7 Dias', sub: '1 semana' },
+                      { id: '15d', label: '15 Dias', sub: '2 semanas' },
+                      { id: '30d', label: '30 Dias', sub: '1 mês' },
+                      { id: 'fim_ano', label: 'Fim do Ano', sub: 'Até 31/12' },
+                      { id: 'personalizado', label: 'Personalizado', sub: 'Data limite' },
+                    ].map((opt) => {
+                      const isSelected = duracaoOpcao === opt.id
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setDuracaoOpcao(opt.id as any)}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-500/20 border-amber-500 text-amber-600 dark:text-amber-300 font-bold ring-1 ring-amber-500/40 shadow-sm'
+                              : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                          }`}
+                        >
+                          <span className="text-xs">{opt.label}</span>
+                          <span className="text-[10px] opacity-75">{opt.sub}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {duracaoOpcao === 'personalizado' && (
+                    <div className="mt-2.5 p-2.5 bg-background/60 border border-borderCustom rounded-lg animate-in fade-in duration-200">
+                      <label className="text-[11px] font-semibold text-foreground block mb-1">
+                        Data Limite de Expiração (Inclusive)
+                      </label>
+                      <Input
+                        type="date"
+                        min={getHojeBrasilia()}
+                        value={dataExpiracaoPersonalizada}
+                        onChange={(e) => setDataExpiracaoPersonalizada(e.target.value)}
+                        className="h-9 text-xs bg-input border-borderCustom text-foreground focus-visible:ring-amber-500/40"
+                      />
                     </div>
                   )}
                 </div>
@@ -1647,6 +1780,29 @@ export default function MuralPage() {
                             {notice.target}
                           </span>
                         )}
+
+                        {/* Status de Validade / Expiração */}
+                        {notice.expira_em && (
+                          (() => {
+                            const isExpirado = new Date(notice.expira_em).getTime() <= Date.now()
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
+                                  isExpirado
+                                    ? 'text-zinc-400 bg-zinc-500/10 border-zinc-500/30'
+                                    : 'text-amber-500/90 dark:text-amber-400 bg-amber-500/10 border-amber-500/30'
+                                }`}
+                                title={`Data limite de vigência: ${new Date(notice.expira_em).toLocaleString('pt-BR')}`}
+                              >
+                                <Timer className="w-3 h-3" />
+                                {isExpirado
+                                  ? 'Expirado'
+                                  : `Válido até ${new Date(notice.expira_em).toLocaleDateString('pt-BR')}`}
+                              </span>
+                            )
+                          })()
+                        )}
+
                         {notice.criado_por?.nome && (
                           <span className="text-xs text-muted-foreground">
                             Publicado por: {notice.criado_por.nome}
