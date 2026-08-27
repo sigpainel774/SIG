@@ -79,12 +79,14 @@ export function VisitasPontosTab({
               onClick={() => setCategoriaAtiva(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer border ${
                 categoriaAtiva === cat
-                  ? 'bg-blue-600 border-blue-500 text-white shadow-xs'
-                  : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                  ? 'bg-sidebar-primary border-sidebar-primary text-white shadow-xs'
+                  : 'bg-white border-sidebar-border text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/40'
               }`}
             >
               <span>{cat}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 font-mono">
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                categoriaAtiva === cat ? 'bg-white/20 text-white' : 'bg-sidebar-accent text-sidebar-accent-foreground'
+              }`}>
                 {count}
               </span>
             </button>
@@ -93,7 +95,7 @@ export function VisitasPontosTab({
       </div>
 
       {/* ── Filtros e Ação de Novo Ponto ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-3 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-sidebar-border p-3 rounded-2xl shadow-xs">
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
@@ -101,14 +103,14 @@ export function VisitasPontosTab({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar ponto por nome..."
-              className="h-9 pl-9 text-xs"
+              className="h-9 pl-9 text-xs bg-white border-sidebar-border text-sidebar-foreground"
             />
           </div>
 
           <select
             value={statusAtivo}
             onChange={(e) => setStatusAtivo(e.target.value)}
-            className="h-9 px-3 rounded-xl bg-muted/60 border border-border text-xs text-foreground font-semibold"
+            className="h-9 px-3 rounded-xl bg-white border border-sidebar-border text-xs text-sidebar-foreground font-semibold"
           >
             <option value="todos">Todos os Status</option>
             <option value="pendente">Pendente</option>
@@ -120,7 +122,7 @@ export function VisitasPontosTab({
         <Button
           onClick={onNewPonto}
           size="sm"
-          className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl"
+          className="h-9 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs rounded-xl cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Marcar Novo Ponto
@@ -129,9 +131,9 @@ export function VisitasPontosTab({
 
       {/* ── Listagem de Cards de Pontos ── */}
       {pontosFiltrados.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-card/40 space-y-3">
+        <div className="p-12 text-center border border-dashed border-sidebar-border rounded-2xl bg-white space-y-3">
           <MapPin className="w-10 h-10 text-muted-foreground mx-auto" />
-          <div className="text-sm font-semibold text-foreground">
+          <div className="text-sm font-semibold text-sidebar-foreground">
             Nenhum ponto encontrado
           </div>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -141,7 +143,7 @@ export function VisitasPontosTab({
             onClick={onNewPonto}
             size="sm"
             variant="outline"
-            className="text-xs font-semibold gap-1.5 mt-2"
+            className="text-xs font-semibold gap-1.5 mt-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50"
           >
             <Plus className="w-3.5 h-3.5" />
             Cadastrar Ponto
@@ -152,12 +154,12 @@ export function VisitasPontosTab({
           {pontosFiltrados.map((ponto) => (
             <div
               key={ponto.id}
-              className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
+              className="bg-white border border-sidebar-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-sidebar-primary/40 transition-all shadow-xs"
             >
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-sm text-foreground line-clamp-1">
+                    <h3 className="font-bold text-sm text-sidebar-foreground line-clamp-1">
                       {ponto.nome}
                     </h3>
                     <span className="text-[11px] text-muted-foreground font-mono">
@@ -169,10 +171,10 @@ export function VisitasPontosTab({
                     variant="outline"
                     className={`text-[10px] uppercase font-bold ${
                       ponto.categoria === 'Problema'
-                        ? 'border-rose-500/40 text-rose-400 bg-rose-500/10'
+                        ? 'border-rose-200 text-rose-700 bg-rose-50'
                         : ponto.categoria === 'Observacao'
-                        ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
-                        : 'border-blue-500/40 text-blue-400 bg-blue-500/10'
+                        ? 'border-amber-200 text-amber-700 bg-amber-50'
+                        : 'border-blue-200 text-blue-700 bg-blue-50'
                     }`}
                   >
                     {ponto.categoria}
@@ -180,9 +182,9 @@ export function VisitasPontosTab({
                 </div>
 
                 {ponto.area_id && (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] text-slate-700 font-medium border border-slate-200">
-                    <span className="text-slate-500">Área:</span>
-                    <span className="font-semibold text-blue-700">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-sidebar-accent text-[11px] text-sidebar-accent-foreground font-medium border border-sidebar-border">
+                    <span className="text-muted-foreground">Área:</span>
+                    <span className="font-semibold text-sidebar-primary">
                       {areaMap.get(ponto.area_id) ?? 'Área vinculada'}
                     </span>
                   </div>
@@ -195,12 +197,12 @@ export function VisitasPontosTab({
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
+              <div className="flex items-center justify-between pt-3 border-t border-sidebar-border gap-2">
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => onSelectPontoOnMap(ponto)}
-                  className="h-8 text-xs font-semibold gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                  className="h-8 text-xs font-semibold gap-1 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent/50 px-2 cursor-pointer"
                 >
                   <MapPin className="w-3.5 h-3.5" />
                   Ver no Mapa
@@ -211,7 +213,7 @@ export function VisitasPontosTab({
                     size="sm"
                     variant="outline"
                     onClick={() => onEditPonto(ponto)}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50 cursor-pointer"
                     title="Editar Ponto"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -220,7 +222,7 @@ export function VisitasPontosTab({
                     size="sm"
                     variant="destructive"
                     onClick={() => onDeletePonto(ponto.id)}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 cursor-pointer"
                     title="Excluir Ponto"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

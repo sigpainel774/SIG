@@ -110,9 +110,9 @@ export function VisitasExportPanel({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* ── Resumo Geral dos Dados ── */}
-      <div className="bg-card border border-border p-5 rounded-2xl">
-        <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-1">
-          <Download className="w-5 h-5 text-blue-400" />
+      <div className="bg-white border border-sidebar-border p-5 rounded-2xl shadow-xs">
+        <h2 className="text-base font-bold text-sidebar-foreground flex items-center gap-2 mb-1">
+          <Download className="w-5 h-5 text-sidebar-primary" />
           Central de Exportação &amp; Relatórios de Campo
         </h2>
         <p className="text-xs text-muted-foreground mb-4">
@@ -120,35 +120,35 @@ export function VisitasExportPanel({
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-muted/40 border border-border p-3 rounded-xl flex items-center gap-2.5">
-            <Layers className="w-4 h-4 text-blue-400 shrink-0" />
+          <div className="bg-sidebar-accent/30 border border-sidebar-border p-3 rounded-xl flex items-center gap-2.5">
+            <Layers className="w-4 h-4 text-sidebar-primary shrink-0" />
             <div>
-              <span className="text-[10px] text-muted-foreground block">Áreas</span>
-              <strong className="text-sm text-foreground">{areasAtivas.length} polígonos</strong>
+              <span className="text-[10px] text-muted-foreground block font-sans">Áreas</span>
+              <strong className="text-sm text-sidebar-foreground">{areasAtivas.length} polígonos</strong>
             </div>
           </div>
 
-          <div className="bg-muted/40 border border-border p-3 rounded-xl flex items-center gap-2.5">
-            <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="bg-sidebar-accent/30 border border-sidebar-border p-3 rounded-xl flex items-center gap-2.5">
+            <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
             <div>
-              <span className="text-[10px] text-muted-foreground block">Pontos de Visita</span>
-              <strong className="text-sm text-foreground">{pontosAtivos.length} pins</strong>
+              <span className="text-[10px] text-muted-foreground block font-sans">Pontos de Visita</span>
+              <strong className="text-sm text-sidebar-foreground">{pontosAtivos.length} pins</strong>
             </div>
           </div>
 
-          <div className="bg-muted/40 border border-border p-3 rounded-xl flex items-center gap-2.5">
-            <Navigation className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="bg-sidebar-accent/30 border border-sidebar-border p-3 rounded-xl flex items-center gap-2.5">
+            <Navigation className="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
-              <span className="text-[10px] text-muted-foreground block">Trajetos GPS</span>
-              <strong className="text-sm text-foreground">{trajetosAtivos.length} percursos</strong>
+              <span className="text-[10px] text-muted-foreground block font-sans">Trajetos GPS</span>
+              <strong className="text-sm text-sidebar-foreground">{trajetosAtivos.length} percursos</strong>
             </div>
           </div>
 
-          <div className="bg-muted/40 border border-border p-3 rounded-xl flex items-center gap-2.5">
-            <Car className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="bg-sidebar-accent/30 border border-sidebar-border p-3 rounded-xl flex items-center gap-2.5">
+            <Car className="w-4 h-4 text-amber-600 shrink-0" />
             <div>
-              <span className="text-[10px] text-muted-foreground block">Frota</span>
-              <strong className="text-sm text-foreground">{veiculosAtivos.length} veículos</strong>
+              <span className="text-[10px] text-muted-foreground block font-sans">Frota</span>
+              <strong className="text-sm text-sidebar-foreground">{veiculosAtivos.length} veículos</strong>
             </div>
           </div>
         </div>
@@ -157,12 +157,12 @@ export function VisitasExportPanel({
       {/* ── Cards de Formatos de Exportação ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* 1. Planilha Excel Multi-Abas */}
-        <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-emerald-500/40 transition-all shadow-xs">
+        <div className="bg-white border border-sidebar-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-emerald-500/40 transition-all shadow-xs">
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
+            <h3 className="font-bold text-base text-sidebar-foreground">
               Planilha Excel (.xlsx) Multi-Abas
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -174,7 +174,7 @@ export function VisitasExportPanel({
             onClick={handleExportarExcel}
             disabled={exportando === 'excel'}
             size="sm"
-            className="w-full h-9 text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
+            className="w-full h-9 text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs cursor-pointer"
           >
             <Download className="w-4 h-4" />
             {exportando === 'excel' ? 'Gerando...' : 'Baixar Planilha Excel (.xlsx)'}
@@ -182,12 +182,12 @@ export function VisitasExportPanel({
         </div>
 
         {/* 2. GeoJSON Padronizado */}
-        <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs">
+        <div className="bg-white border border-sidebar-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-sidebar-primary/40 transition-all shadow-xs">
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-sidebar-accent text-sidebar-primary border border-sidebar-border flex items-center justify-center">
               <FileCode2 className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
+            <h3 className="font-bold text-base text-sidebar-foreground">
               Camadas GeoJSON (.geojson)
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -199,7 +199,7 @@ export function VisitasExportPanel({
             onClick={handleExportarGeoJSON}
             disabled={exportando === 'geojson'}
             size="sm"
-            className="w-full h-9 text-xs font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
+            className="w-full h-9 text-xs font-bold gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white rounded-xl shadow-xs cursor-pointer"
           >
             <Download className="w-4 h-4" />
             {exportando === 'geojson' ? 'Gerando...' : 'Baixar Camadas GeoJSON'}
@@ -207,12 +207,12 @@ export function VisitasExportPanel({
         </div>
 
         {/* 3. Tabela CSV */}
-        <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-amber-500/40 transition-all shadow-xs">
+        <div className="bg-white border border-sidebar-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-amber-500/40 transition-all shadow-xs">
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
+            <h3 className="font-bold text-base text-sidebar-foreground">
               Tabela CSV (.csv)
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -225,7 +225,7 @@ export function VisitasExportPanel({
             disabled={exportando === 'csv'}
             size="sm"
             variant="outline"
-            className="w-full h-9 text-xs font-bold gap-2 border-border text-foreground hover:bg-muted/40 rounded-xl"
+            className="w-full h-9 text-xs font-bold gap-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl cursor-pointer"
           >
             <Download className="w-4 h-4" />
             {exportando === 'csv' ? 'Gerando...' : 'Baixar Arquivo CSV'}
@@ -233,12 +233,12 @@ export function VisitasExportPanel({
         </div>
 
         {/* 4. Relatório Oficial para Impressão */}
-        <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all shadow-xs">
+        <div className="bg-white border border-sidebar-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all shadow-xs">
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center">
               <FileText className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
+            <h3 className="font-bold text-base text-sidebar-foreground">
               Relatório Oficial para Impressão / PDF
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -250,7 +250,7 @@ export function VisitasExportPanel({
             onClick={handleImprimirRelatorio}
             size="sm"
             variant="outline"
-            className="w-full h-9 text-xs font-bold gap-2 border-border text-foreground hover:bg-muted/40 rounded-xl"
+            className="w-full h-9 text-xs font-bold gap-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl cursor-pointer"
           >
             <FileText className="w-4 h-4" />
             Imprimir / Salvar em PDF

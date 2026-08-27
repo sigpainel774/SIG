@@ -119,10 +119,10 @@ export function VisitasRoteirosTab({
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* ── Topo com Ação de Novo Roteiro ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-4 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-sidebar-border p-4 rounded-2xl shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
+          <h2 className="text-base font-bold text-sidebar-foreground flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-sidebar-primary" />
             Planejamento Diário de Rotas (Day Planner)
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -133,7 +133,7 @@ export function VisitasRoteirosTab({
         <Button
           onClick={abrirModalNovo}
           size="sm"
-          className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl"
+          className="h-9 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs rounded-xl cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Planejar Novo Dia
@@ -142,9 +142,9 @@ export function VisitasRoteirosTab({
 
       {/* ── Grid de Roteiros ── */}
       {roteirosAtivos.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-card/40 space-y-3">
+        <div className="p-12 text-center border border-dashed border-sidebar-border rounded-2xl bg-white space-y-3">
           <Calendar className="w-10 h-10 text-muted-foreground mx-auto" />
-          <div className="text-sm font-semibold text-foreground">
+          <div className="text-sm font-semibold text-sidebar-foreground">
             Nenhum roteiro planejado
           </div>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -154,7 +154,7 @@ export function VisitasRoteirosTab({
             onClick={abrirModalNovo}
             size="sm"
             variant="outline"
-            className="text-xs font-semibold gap-1.5 mt-2"
+            className="text-xs font-semibold gap-1.5 mt-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50"
           >
             <Plus className="w-3.5 h-3.5" />
             Criar Primeiro Roteiro
@@ -171,16 +171,16 @@ export function VisitasRoteirosTab({
             return (
               <div
                 key={rot.id}
-                className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
+                className="bg-white border border-sidebar-border rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-sidebar-primary/40 transition-all shadow-xs"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-base text-foreground">
+                      <h3 className="font-bold text-base text-sidebar-foreground">
                         {rot.nome}
                       </h3>
                       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                        <Calendar className="w-3.5 h-3.5 text-sidebar-primary" />
                         <span>
                           {new Date(rot.data_planejada + 'T12:00:00Z').toLocaleDateString(
                             'pt-BR'
@@ -193,10 +193,10 @@ export function VisitasRoteirosTab({
                       variant="outline"
                       className={`text-[10px] uppercase font-bold ${
                         rot.status === 'finalizado'
-                          ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
+                          ? 'border-emerald-200 text-emerald-700 bg-emerald-50'
                           : rot.status === 'em_execucao'
-                          ? 'border-sky-500/40 text-sky-400 bg-sky-500/10'
-                          : 'border-slate-500/40 text-slate-400 bg-slate-500/10'
+                          ? 'border-blue-200 text-blue-700 bg-blue-50'
+                          : 'border-slate-200 text-slate-700 bg-slate-50'
                       }`}
                     >
                       {rot.status}
@@ -205,10 +205,10 @@ export function VisitasRoteirosTab({
 
                   {/* Informações do Veículo */}
                   {veiculo && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border text-xs">
-                      <Car className="w-4 h-4 text-emerald-400" />
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar-accent/40 border border-sidebar-border text-xs">
+                      <Car className="w-4 h-4 text-emerald-600" />
                       <div>
-                        <span className="font-bold text-foreground">
+                        <span className="font-bold text-sidebar-foreground">
                           {veiculo.nome}
                         </span>
                         <span className="text-muted-foreground ml-1.5 font-mono">
@@ -220,7 +220,7 @@ export function VisitasRoteirosTab({
 
                   {/* Áreas do Roteiro */}
                   <div>
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5 font-sans">
                       Áreas Associadas ({areasDoRoteiro.length})
                     </span>
                     {areasDoRoteiro.length === 0 ? (
@@ -232,7 +232,7 @@ export function VisitasRoteirosTab({
                         {areasDoRoteiro.map((a) => (
                           <span
                             key={a.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-accent-foreground text-xs font-semibold"
                           >
                             <Pentagon className="w-3 h-3" />
                             {a.nome}
@@ -250,11 +250,11 @@ export function VisitasRoteirosTab({
                 </div>
 
                 {/* Ações do Card */}
-                <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
+                <div className="flex items-center justify-between pt-3 border-t border-sidebar-border gap-2">
                   <Button
                     size="sm"
                     onClick={() => onStartTrackingRoteiro(rot)}
-                    className="h-8 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                    className="h-8 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
                     Iniciar Rastreamento
@@ -265,7 +265,7 @@ export function VisitasRoteirosTab({
                       size="sm"
                       variant="outline"
                       onClick={() => abrirModalEditar(rot)}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50 cursor-pointer"
                       title="Editar Roteiro"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -274,7 +274,7 @@ export function VisitasRoteirosTab({
                       size="sm"
                       variant="destructive"
                       onClick={() => onDeleteRoteiro(rot.id)}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 cursor-pointer"
                       title="Excluir Roteiro"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

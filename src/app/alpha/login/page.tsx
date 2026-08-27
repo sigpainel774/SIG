@@ -213,12 +213,12 @@ export default function AlphaLoginPage() {
 
           {/* Destaque de Sessão Offline Disponível */}
           {isOffline && (hasSavedSession || funcionario) && (
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-xs space-y-2.5 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
-                <WifiOff className="w-4 h-4 shrink-0" />
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs space-y-2.5 animate-in fade-in duration-200 shadow-xs">
+              <div className="flex items-center gap-2 font-bold text-amber-900">
+                <WifiOff className="w-4 h-4 shrink-0 text-amber-700" />
                 <span>Sessão Salva no Dispositivo</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-[11px] text-amber-800 leading-relaxed">
                 Você está sem internet, mas sua última sessão continua válida neste aparelho.
               </p>
               <button

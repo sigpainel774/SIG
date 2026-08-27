@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     // 1. Busca comunicados agendados cujo horário já chegou
     const nowIso = new Date().toISOString()
     const { data: agendados, error: searchErr } = await (supabaseAdmin.from('comunicados') as any)
-      .select('id, title, body, escola_ids, target, scheduled_for')
+      .select('id, title, body, escola_ids, turma_ids, target, scheduled_for')
       .eq('status', 'agendado')
       .lte('scheduled_for', nowIso)
 
@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       sendPushToUser({
         isBroadcast,
         escolaIds: comunicado.escola_ids ?? null,
+        turmaIds: comunicado.turma_ids ?? null,
         title: `📢 Mural: ${comunicado.title}`,
         message: comunicado.body,
         link: `/mural?comunicado_id=${comunicado.id}`,

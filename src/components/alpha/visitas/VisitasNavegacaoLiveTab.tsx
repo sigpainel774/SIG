@@ -408,17 +408,17 @@ export default function VisitasNavegacaoLiveTab({
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* ── Painel HUD de Instrumentos de Campo ── */}
-      <div className="bg-card border border-border p-4 rounded-2xl shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-white border border-sidebar-border p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Velocímetro Digital */}
         <div className="flex items-center gap-3">
           <div
             className={cn(
               'w-14 h-14 rounded-2xl flex items-center justify-center border transition-all shrink-0',
               status === 'EM_ANDAMENTO'
-                ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 animate-pulse'
+                ? 'bg-sidebar-accent border-sidebar-primary/40 text-sidebar-primary animate-pulse'
                 : status === 'PAUSADO'
-                ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                : 'bg-muted border-border text-muted-foreground'
+                ? 'bg-amber-50 border-amber-200 text-amber-700'
+                : 'bg-sidebar-accent/50 border-sidebar-border text-muted-foreground'
             )}
           >
             <Gauge className="w-7 h-7" />
@@ -426,17 +426,17 @@ export default function VisitasNavegacaoLiveTab({
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-sidebar-primary uppercase tracking-wider">
                 Velocidade
               </span>
               <span
                 className={cn(
                   'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase',
                   status === 'EM_ANDAMENTO'
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : status === 'PAUSADO'
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-sidebar-accent text-sidebar-accent-foreground'
                 )}
               >
                 {status === 'EM_ANDAMENTO'
@@ -448,7 +448,7 @@ export default function VisitasNavegacaoLiveTab({
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl sm:text-4xl font-mono font-black text-foreground">
+              <span className="text-3xl sm:text-4xl font-mono font-black text-sidebar-foreground">
                 {posicaoAtual ? posicaoAtual.speedKmh.toFixed(0) : '0'}
               </span>
               <span className="text-xs font-bold text-muted-foreground uppercase">
@@ -459,43 +459,43 @@ export default function VisitasNavegacaoLiveTab({
         </div>
 
         {/* Métricas Acumuladas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-muted/40 border border-border p-3 rounded-xl flex-1 max-w-2xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-sidebar-accent/30 border border-sidebar-border p-3 rounded-xl flex-1 max-w-2xl">
           <div>
-            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3 text-blue-400" />
+            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1 font-sans">
+              <Clock className="w-3 h-3 text-sidebar-primary" />
               Tempo Total
             </span>
-            <span className="text-sm font-mono font-bold text-foreground">
+            <span className="text-sm font-mono font-bold text-sidebar-foreground">
               {formatarTempo(duracaoSegundos)}
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-              <Car className="w-3 h-3 text-emerald-400" />
+            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1 font-sans">
+              <Car className="w-3 h-3 text-emerald-600" />
               Distância
             </span>
-            <span className="text-sm font-mono font-bold text-foreground">
+            <span className="text-sm font-mono font-bold text-sidebar-foreground">
               {(distanciaMetros / 1000).toFixed(2)} km
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-              <Fuel className="w-3 h-3 text-amber-400" />
+            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1 font-sans">
+              <Fuel className="w-3 h-3 text-amber-600" />
               Combustível
             </span>
-            <span className="text-sm font-mono font-bold text-foreground">
+            <span className="text-sm font-mono font-bold text-sidebar-foreground">
               {litrosEstimados} L
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-              <DollarSign className="w-3 h-3 text-emerald-400" />
+            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1 font-sans">
+              <DollarSign className="w-3 h-3 text-emerald-600" />
               Custo Estimado
             </span>
-            <span className="text-sm font-mono font-bold text-foreground">
+            <span className="text-sm font-mono font-bold text-emerald-700">
               R$ {custoEstimado}
             </span>
           </div>
@@ -521,10 +521,10 @@ export default function VisitasNavegacaoLiveTab({
             size="sm"
             variant="outline"
             onClick={() => setIsConfigOpen(true)}
-            className="h-9 text-xs font-semibold gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 cursor-pointer shadow-xs"
+            className="h-9 text-xs font-semibold gap-1.5 rounded-xl border border-sidebar-border bg-white hover:bg-sidebar-accent/50 text-sidebar-foreground cursor-pointer shadow-xs"
             title="Configurar Sensibilidade e Anti-Duplicação de Visitas"
           >
-            <Sliders className="w-4 h-4 text-blue-600" />
+            <Sliders className="w-4 h-4 text-sidebar-primary" />
             <span className="hidden sm:inline">Calibrar</span>
           </Button>
 
@@ -536,11 +536,11 @@ export default function VisitasNavegacaoLiveTab({
             className={cn(
               'h-9 text-xs font-bold gap-1.5 rounded-xl border cursor-pointer',
               seguirCarro
-                ? 'bg-blue-50 border-blue-200 text-blue-700'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-sidebar-accent border-sidebar-border text-sidebar-accent-foreground font-bold'
+                : 'bg-white border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50'
             )}
           >
-            <Crosshair className={cn('w-4 h-4', seguirCarro ? 'text-blue-600 animate-spin' : 'text-slate-500')} />
+            <Crosshair className={cn('w-4 h-4', seguirCarro ? 'text-sidebar-primary' : 'text-muted-foreground')} />
             {seguirCarro ? 'Seguindo' : 'Câmera'}
           </Button>
         </div>
@@ -548,27 +548,27 @@ export default function VisitasNavegacaoLiveTab({
 
       {/* ── Widget Visual de Cronômetro de Visita em Tempo Real ── */}
       {status === 'EM_ANDAMENTO' && tempoParadaAtual > 0 && (
-        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="p-3.5 rounded-2xl bg-white border border-sidebar-border shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div
                 className={cn(
                   'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs',
                   tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
-                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                    : 'bg-amber-500/15 border border-amber-500/30 text-amber-400 animate-pulse'
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-600'
+                    : 'bg-amber-50 border border-amber-200 text-amber-600 animate-pulse'
                 )}
               >
                 {tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60) ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 ) : (
-                  <Timer className="w-5 h-5 text-amber-500" />
+                  <Timer className="w-5 h-5 text-amber-600" />
                 )}
               </div>
 
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-xs font-bold text-sidebar-foreground">
                     {tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
                       ? '✓ Visita Confirmada no Percurso'
                       : '⏱️ Cronômetro de Parada Ativo'}
@@ -577,8 +577,8 @@ export default function VisitasNavegacaoLiveTab({
                     className={cn(
                       'text-[10px] font-mono px-2 py-0.5 rounded-md font-bold',
                       tempoParadaAtual >= (visitasConfig.tempoMinimoSegundos || 60)
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
                     )}
                   >
                     {tempoParadaAtual}s / {visitasConfig.tempoMinimoSegundos || 60}s
@@ -610,7 +610,7 @@ export default function VisitasNavegacaoLiveTab({
           </div>
 
           {/* Barra de Progresso Visual do Cronômetro */}
-          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-3 border border-border/50">
+          <div className="w-full h-1.5 bg-sidebar-accent rounded-full overflow-hidden mt-3 border border-sidebar-border">
             <div
               className={cn(
                 'h-full transition-all duration-300 rounded-full',
@@ -743,22 +743,22 @@ export default function VisitasNavegacaoLiveTab({
         </MapContainer>
 
         {/* ── Barra de Controle de Gravação Flutuante ── */}
-        <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-card/95 backdrop-blur-md border border-border p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 flex-wrap">
+        <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md border border-sidebar-border p-3.5 rounded-2xl shadow-xl flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             {status === 'INATIVO' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Radio className="w-4 h-4 text-blue-400" />
+                <Radio className="w-4 h-4 text-sidebar-primary" />
                 <span>Pronto para iniciar gravação.</span>
               </div>
             )}
             {status === 'EM_ANDAMENTO' && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                 <span>Gravando ({pontosGps.length} pts | {visitasDetectadas.length} visitas)</span>
               </div>
             )}
             {status === 'PAUSADO' && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-700">
                 <Pause className="w-4 h-4" />
                 <span>Pausado.</span>
               </div>
@@ -770,7 +770,7 @@ export default function VisitasNavegacaoLiveTab({
               <Button
                 onClick={iniciarNavegacao}
                 size="sm"
-                className="h-9 px-5 text-xs font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl cursor-pointer"
+                className="h-9 px-5 text-xs font-bold gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs rounded-xl cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
                 Iniciar Rastreamento
@@ -791,7 +791,7 @@ export default function VisitasNavegacaoLiveTab({
                   onClick={pausarNavegacao}
                   size="sm"
                   variant="outline"
-                  className="h-9 text-xs font-bold gap-1.5 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xl cursor-pointer"
+                  className="h-9 text-xs font-bold gap-1.5 bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 rounded-xl cursor-pointer"
                 >
                   <Pause className="w-3.5 h-3.5" />
                   Pausar
@@ -799,7 +799,7 @@ export default function VisitasNavegacaoLiveTab({
                 <Button
                   onClick={abrirModalSalvar}
                   size="sm"
-                  className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl cursor-pointer"
+                  className="h-9 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs rounded-xl cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
                   Finalizar

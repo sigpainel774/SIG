@@ -56,7 +56,7 @@ export function VisitasDrawingToolbar({
       : 0;
 
   return (
-    <div className="flex flex-col gap-2.5 bg-card dark:bg-[#141416] border border-border dark:border-[#26262a] p-2.5 rounded-2xl shadow-sm">
+    <div className="flex flex-col gap-2.5 bg-white border border-sidebar-border p-2.5 rounded-2xl shadow-xs">
       {/* Linha Principal de Modos & Ações */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         {/* Modos Principais */}
@@ -69,8 +69,8 @@ export function VisitasDrawingToolbar({
             className={cn(
               'h-8 text-xs font-semibold gap-1.5 rounded-xl cursor-pointer',
               mode === 'select'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs'
+                : 'text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/60'
             )}
           >
             <MousePointer className="w-3.5 h-3.5" />
@@ -85,8 +85,8 @@ export function VisitasDrawingToolbar({
             className={cn(
               'h-8 text-xs font-semibold gap-1.5 rounded-xl cursor-pointer',
               mode === 'draw_polygon'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs'
+                : 'text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/60'
             )}
           >
             <Pentagon className="w-3.5 h-3.5" />
@@ -101,8 +101,8 @@ export function VisitasDrawingToolbar({
             className={cn(
               'h-8 text-xs font-semibold gap-1.5 rounded-xl cursor-pointer',
               mode === 'add_point'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs'
+                : 'text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/60'
             )}
           >
             <MapPin className="w-3.5 h-3.5" />
@@ -117,8 +117,8 @@ export function VisitasDrawingToolbar({
             className={cn(
               'h-8 text-xs font-semibold gap-1.5 rounded-xl cursor-pointer',
               mode === 'measure'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs'
+                : 'text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/60'
             )}
           >
             <Ruler className="w-3.5 h-3.5" />
@@ -148,10 +148,10 @@ export function VisitasDrawingToolbar({
             size="sm"
             variant="outline"
             onClick={onLocateMe}
-            className="h-8 text-xs font-semibold gap-1.5 rounded-xl border-border dark:border-[#26262a] text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer"
+            className="h-8 text-xs font-semibold gap-1.5 rounded-xl border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/60 cursor-pointer shadow-xs"
             title="Centralizar em minha localização GPS"
           >
-            <Crosshair className="w-3.5 h-3.5 text-blue-500" />
+            <Crosshair className="w-3.5 h-3.5 text-sidebar-primary" />
             <span className="hidden sm:inline">Onde estou</span>
           </Button>
         </div>
@@ -159,14 +159,14 @@ export function VisitasDrawingToolbar({
 
       {/* ── Painel Flutuante: Área Selecionada no Mapa com Select de Status ── */}
       {selectedArea && onUpdateAreaStatus && (
-        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 px-3 rounded-xl bg-accent/40 dark:bg-[#181d28] border border-border dark:border-[#2a3447] animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 px-3 rounded-xl bg-sidebar-accent/40 border border-sidebar-border animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2 min-w-0">
             <div
               className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
               style={{ backgroundColor: selectedArea.cor || '#3b82f6' }}
             />
             <div className="flex items-center gap-1.5 truncate">
-              <span className="text-xs font-bold text-foreground truncate">
+              <span className="text-xs font-bold text-sidebar-foreground truncate">
                 {selectedArea.nome}
               </span>
               <span className="text-[11px] text-muted-foreground hidden md:inline">
@@ -191,19 +191,19 @@ export function VisitasDrawingToolbar({
                 className={cn(
                   'h-7 text-xs font-bold px-2.5 pr-6 rounded-lg border appearance-none cursor-pointer transition-colors outline-hidden',
                   selectedArea.status === 'concluido'
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : selectedArea.status === 'em_andamento'
-                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
                 )}
               >
-                <option value="pendente" className="bg-popover text-popover-foreground">
+                <option value="pendente">
                   🟡 Não Iniciado
                 </option>
-                <option value="em_andamento" className="bg-popover text-popover-foreground">
+                <option value="em_andamento">
                   🔵 Em Curso
                 </option>
-                <option value="concluido" className="bg-popover text-popover-foreground">
+                <option value="concluido">
                   🟢 Concluído
                 </option>
               </select>
@@ -215,7 +215,7 @@ export function VisitasDrawingToolbar({
                 size="sm"
                 variant="ghost"
                 onClick={onClearSelectedArea}
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-sidebar-foreground cursor-pointer"
                 title="Desmarcar área"
               >
                 <X className="w-3.5 h-3.5" />
@@ -227,9 +227,9 @@ export function VisitasDrawingToolbar({
 
       {/* ── Controles de Desenho de Polígono Ativo ── */}
       {mode === 'draw_polygon' && draftVertices.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border dark:border-[#26262a] pt-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-sidebar-border pt-2">
           <div className="flex items-center gap-2 text-[11px] font-mono leading-tight">
-            <span className="font-bold text-blue-500">
+            <span className="font-bold text-sidebar-primary">
               {draftVertices.length} vértice(s) marcado(s)
             </span>
             {areaAtualM2 > 0 && (
@@ -244,7 +244,7 @@ export function VisitasDrawingToolbar({
               variant="outline"
               onClick={onUndoVertex}
               disabled={draftVertices.length === 0}
-              className="h-7 px-2 text-xs border-border hover:bg-accent/50 cursor-pointer"
+              className="h-7 px-2 text-xs border-sidebar-border hover:bg-sidebar-accent/60 cursor-pointer text-sidebar-foreground"
               title="Desfazer último vértice"
             >
               <Undo2 className="w-3.5 h-3.5 mr-1" />

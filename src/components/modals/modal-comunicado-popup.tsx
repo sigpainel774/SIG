@@ -4,8 +4,20 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
-import { BellRing, X, Paperclip, CheckCircle2, Sparkles } from 'lucide-react'
+import {
+  BellRing,
+  X,
+  Paperclip,
+  CheckCircle2,
+  Sparkles,
+  AlertCircle,
+  Users,
+  CalendarDays,
+  ClipboardList,
+  Megaphone,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ComunicadoCorpo } from '@/components/mural/comunicado-corpo'
 
 interface ComunicadoPopup {
   id: string
@@ -13,6 +25,9 @@ interface ComunicadoPopup {
   body: string
   date: string
   target: string
+  categoria?: string
+  leitura_obrigatoria?: boolean
+  turma_ids?: string[] | null
   escola_ids?: string[] | null
   anexo_url?: string | null
   anexo_nome?: string | null
@@ -21,8 +36,6 @@ interface ComunicadoPopup {
     nome?: string
   } | null
 }
-
-// Funções removidas: agora o status de lido fica na tabela comunicados_lidos
 
 export function ModalComunicadoPopup() {
   const { funcionario, acessos, vinculos } = useAuthStore()
@@ -39,19 +52,31 @@ export function ModalComunicadoPopup() {
       if (!target || target === 'Geral / Toda a Rede' || target === 'Selecione o Público Alvo') return true
 
       const cargoUser = (funcionario?.cargo || '').toLowerCase()
-      const isProf = cargoUser.includes('professor') || vinculos.some((v) => (v.cargo || '').toLowerCase().includes('professor'))
+      const isProf =
+        cargoUser.includes('professor') || vinculos.some((v) => (v.cargo || '').toLowerCase().includes('professor'))
 
       if (target === 'Professores' && isProf) return true
 
       if (target === 'Equipe Administrativa') {
-        const isAdmin = funcionario?.is_superadmin || acessos.some((a) => a.pode_mural || a.pode_alunos || a.pode_funcionarios)
-        if (isAdmin || cargoUser.includes('secretar') || cargoUser.includes('diretor') || cargoUser.includes('coordenad')) {
+        const isAdmin =
+          funcionario?.is_superadmin || acessos.some((a) => a.pode_mural || a.pode_alunos || a.pode_funcionarios)
+        if (
+          isAdmin ||
+          cargoUser.includes('secretar') ||
+          cargoUser.includes('diretor') ||
+          cargoUser.includes('coordenad')
+        ) {
           return true
         }
       }
 
       if (target === 'Equipe de Cozinha / Limpeza') {
-        if (cargoUser.includes('cozin') || cargoUser.includes('merend') || cargoUser.includes('limpez') || cargoUser.includes('serviços gerais')) {
+        if (
+          cargoUser.includes('cozin') ||
+          cargoUser.includes('merend') ||
+          cargoUser.includes('limpez') ||
+          cargoUser.includes('serviços gerais')
+        ) {
           return true
         }
       }
@@ -67,7 +92,9 @@ export function ModalComunicadoPopup() {
     const fetchPopups = async () => {
       try {
         const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
         const currentAuthUserId = user?.id || authUserId
 
         if (!currentAuthUserId) return
@@ -83,12 +110,14 @@ export function ModalComunicadoPopup() {
         const dismissedIds = readData ? readData.map((r: any) => r.comunicado_id) : []
 
         let query = (supabase.from as any)('comunicados')
-          .select('id, title, body, target, date, anexo_url, anexo_nome, escola_ids, created_at, criado_por:funcionarios(nome)')
+          .select(
+            'id, title, body, target, categoria, leitura_obrigatoria, turma_ids, date, anexo_url, anexo_nome, escola_ids, created_at, criado_por:funcionarios(nome)'
+          )
           .eq('is_popup', true)
           .or('status.eq.publicado,status.is.null')
           .order('created_at', { ascending: false })
           .limit(10)
-          
+
         if (selectedSecretaria?.id) {
           query = query.eq('secretaria_id', selectedSecretaria.id)
         }
@@ -116,7 +145,7 @@ export function ModalComunicadoPopup() {
           const pending = data.filter((item: any) => {
             const isUnread = !dismissedIds.includes(item.id)
             const targeted = isTargetForUser(item.target)
-            
+
             // Verificação de unidade escolar
             let isUnidadeTarget = true
             if (item.escola_ids && Array.isArray(item.escola_ids) && item.escola_ids.length > 0) {
@@ -147,9 +176,17 @@ export function ModalComunicadoPopup() {
     return () => {
       active = false
     }
-  }, [authUserId, isTargetForUser, selectedSecretaria?.id, selectedEscola?.id, vinculos, funcionario?.is_superadmin, acessos])
+  }, [
+    authUserId,
+    isTargetForUser,
+    selectedSecretaria?.id,
+    selectedEscola?.id,
+    vinculos,
+    funcionario?.is_superadmin,
+    acessos,
+  ])
 
-  // Scroll lock no body do celular/desktop quando o modal estiver aberto
+  // Scroll lock no body quando o modal estiver aberto
   useEffect(() => {
     if (open) {
       const originalOverflow = document.body.style.overflow
@@ -167,7 +204,9 @@ export function ModalComunicadoPopup() {
 
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       const currentAuthUserId = user?.id || authUserId
 
       if (currentAuthUserId) {
@@ -187,19 +226,63 @@ export function ModalComunicadoPopup() {
     }
   }
 
+  const handleCloseByX = () => {
+    // Se a leitura for obrigatória, o usuário deve clicar formalmente no botão "Confirmar Leitura"
+    if (activeNotice?.leitura_obrigatoria) return
+    handleDismiss()
+  }
+
   if (!open || !activeNotice) return null
+
+  const getCategoriaBadge = (cat?: string) => {
+    switch (cat) {
+      case 'urgente':
+        return {
+          icon: <AlertCircle className="w-3 h-3 text-red-400" />,
+          label: 'Urgente',
+          className: 'text-red-400 bg-red-500/10 border-red-500/30',
+        }
+      case 'reuniao':
+        return {
+          icon: <Users className="w-3 h-3 text-blue-400" />,
+          label: 'Reunião',
+          className: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+        }
+      case 'calendario':
+        return {
+          icon: <CalendarDays className="w-3 h-3 text-purple-400" />,
+          label: 'Calendário',
+          className: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+        }
+      case 'administrativo':
+        return {
+          icon: <ClipboardList className="w-3 h-3 text-amber-400" />,
+          label: 'Administrativo',
+          className: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+        }
+      default:
+        return {
+          icon: <Megaphone className="w-3 h-3 text-highlight" />,
+          label: 'Geral',
+          className: 'text-highlight bg-highlight/10 border-highlight/20',
+        }
+    }
+  }
+
+  const catBadge = getCategoriaBadge(activeNotice.categoria)
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
       {/* Fundo desfoque (backdrop blur) */}
-      <div 
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
-        onClick={handleDismiss}
+      <div
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        onClick={() => {
+          if (!activeNotice.leitura_obrigatoria) handleDismiss()
+        }}
       />
 
       {/* Caixa Central do Modal */}
       <div className="relative w-[94vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl bg-card border border-amber-500/30 dark:border-amber-500/40 shadow-2xl p-5 sm:p-7 z-10 overflow-hidden text-foreground">
-        
         {/* Glow ornamental no topo */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-36 bg-amber-500/10 blur-3xl pointer-events-none rounded-full" />
 
@@ -214,6 +297,20 @@ export function ModalComunicadoPopup() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
                   <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Comunicado Importante
                 </span>
+
+                <span
+                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${catBadge.className}`}
+                >
+                  {catBadge.icon}
+                  {catBadge.label}
+                </span>
+
+                {activeNotice.leitura_obrigatoria && (
+                  <span className="text-[11px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Leitura Obrigatória
+                  </span>
+                )}
+
                 {activeNotice.target && (
                   <span className="text-[11px] font-semibold text-muted-foreground bg-input border border-borderCustom px-2.5 py-0.5 rounded-full">
                     {activeNotice.target}
@@ -226,21 +323,23 @@ export function ModalComunicadoPopup() {
             </div>
           </div>
 
-          {/* Botão X adaptado com alta sensibilidade tátil para celular */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-hoverCustom active:bg-hoverCustom/80 transition-colors cursor-pointer shrink-0 touch-manipulation flex items-center justify-center min-w-[38px] min-h-[38px] border border-borderCustom/40"
-            title="Fechar Comunicado"
-            aria-label="Fechar Comunicado"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* Botão Fechar X (visível apenas se não for leitura obrigatória) */}
+          {!activeNotice.leitura_obrigatoria && (
+            <button
+              type="button"
+              onClick={handleCloseByX}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-hoverCustom active:bg-hoverCustom/80 transition-colors cursor-pointer shrink-0 touch-manipulation flex items-center justify-center min-w-[38px] min-h-[38px] border border-borderCustom/40"
+              title="Fechar Comunicado"
+              aria-label="Fechar Comunicado"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Conteúdo do Comunicado (com rolagem interna para celulares) */}
-        <div className="flex-1 overflow-y-auto my-4 pr-1 text-sm sm:text-base leading-relaxed text-foreground/90 whitespace-pre-line space-y-4 font-normal">
-          {activeNotice.body}
+        {/* Conteúdo do Comunicado com Suporte a Formatação / Markdown */}
+        <div className="flex-1 overflow-y-auto my-4 pr-1 text-sm sm:text-base leading-relaxed text-foreground/90 space-y-4 font-normal">
+          <ComunicadoCorpo texto={activeNotice.body} />
 
           {/* Anexo se houver */}
           {activeNotice.anexo_url && (
@@ -258,10 +357,13 @@ export function ModalComunicadoPopup() {
           )}
         </div>
 
-        {/* Footer com Metadados e Ação */}
+        {/* Footer com Metadados e Ação de Confirmação */}
         <div className="pt-3.5 border-t border-borderCustom/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-            <span>Data: {activeNotice.date ? new Date(`${activeNotice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Hoje'}</span>
+            <span>
+              Data:{' '}
+              {activeNotice.date ? new Date(`${activeNotice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Hoje'}
+            </span>
             {activeNotice.criado_por?.nome && (
               <span className="hidden sm:inline">• Publicado por: {activeNotice.criado_por.nome}</span>
             )}

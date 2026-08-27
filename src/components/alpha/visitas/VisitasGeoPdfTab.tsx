@@ -101,10 +101,10 @@ export function VisitasGeoPdfTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-4 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-sidebar-border p-4 rounded-2xl shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-400" />
+          <h2 className="text-base font-bold text-sidebar-foreground flex items-center gap-2">
+            <FileText className="w-5 h-5 text-sidebar-primary" />
             Mapas &amp; Plantas Cartográficas GeoPDF
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -115,7 +115,7 @@ export function VisitasGeoPdfTab({
         <Button
           onClick={() => setModalImportarAberto(true)}
           size="sm"
-          className="h-9 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl"
+          className="h-9 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white shadow-xs rounded-xl cursor-pointer"
         >
           <Upload className="w-4 h-4" />
           Importar Planta PDF
@@ -123,9 +123,9 @@ export function VisitasGeoPdfTab({
       </div>
 
       {mapasAtivos.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-card/40 space-y-3">
+        <div className="p-12 text-center border border-dashed border-sidebar-border rounded-2xl bg-white space-y-3">
           <FileText className="w-10 h-10 text-muted-foreground mx-auto" />
-          <div className="text-sm font-semibold text-foreground">
+          <div className="text-sm font-semibold text-sidebar-foreground">
             Nenhum mapa GeoPDF importado
           </div>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -135,7 +135,7 @@ export function VisitasGeoPdfTab({
             onClick={() => setModalImportarAberto(true)}
             size="sm"
             variant="outline"
-            className="text-xs font-semibold gap-1.5 mt-2"
+            className="text-xs font-semibold gap-1.5 mt-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50"
           >
             <Upload className="w-3.5 h-3.5" />
             Importar Primeiro PDF
@@ -146,12 +146,12 @@ export function VisitasGeoPdfTab({
           {mapasAtivos.map((mapa) => (
             <div
               key={mapa.id}
-              className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
+              className="bg-white border border-sidebar-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-sidebar-primary/40 transition-all shadow-xs"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-sm text-foreground">
+                    <h3 className="font-bold text-sm text-sidebar-foreground">
                       {mapa.nome}
                     </h3>
                     <span className="text-[11px] text-muted-foreground">
@@ -163,8 +163,8 @@ export function VisitasGeoPdfTab({
                     variant="outline"
                     className={`text-[10px] uppercase font-bold ${
                       mapa.is_visible
-                        ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
-                        : 'border-slate-500/40 text-slate-400 bg-slate-500/10'
+                        ? 'border-emerald-200 text-emerald-700 bg-emerald-50'
+                        : 'border-slate-200 text-slate-700 bg-slate-50'
                     }`}
                   >
                     {mapa.is_visible ? 'Visível no Mapa' : 'Oculto'}
@@ -172,23 +172,23 @@ export function VisitasGeoPdfTab({
                 </div>
 
                 {mapa.imagem_renderizada_url && (
-                  <div className="relative h-28 rounded-xl overflow-hidden border border-border bg-black/40">
+                  <div className="relative h-28 rounded-xl overflow-hidden border border-sidebar-border bg-slate-100">
                     <img
                       src={mapa.imagem_renderizada_url}
                       alt={mapa.nome}
-                      className="w-full h-full object-cover opacity-80"
+                      className="w-full h-full object-cover opacity-90"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
+              <div className="flex items-center justify-between pt-3 border-t border-sidebar-border gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => onToggleVisibilidade(mapa)}
-                  className={`h-8 text-xs font-semibold gap-1.5 ${
-                    mapa.is_visible ? 'text-emerald-400' : 'text-slate-400'
+                  className={`h-8 text-xs font-semibold gap-1.5 border-sidebar-border ${
+                    mapa.is_visible ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-700 hover:bg-sidebar-accent/50'
                   }`}
                 >
                   <Eye className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export function VisitasGeoPdfTab({
                   size="sm"
                   variant="destructive"
                   onClick={() => onDeleteMapa(mapa.id)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 cursor-pointer"
                   title="Excluir Mapa"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

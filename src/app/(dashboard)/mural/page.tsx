@@ -9,11 +9,14 @@ import {
   ChevronRight,
   Paperclip,
   Pin,
+  PinOff,
   Send,
   X,
   Loader2,
   ArrowLeft,
   Trash2,
+  Pencil,
+  Copy,
   Sparkles,
   Globe,
   School,
@@ -28,6 +31,16 @@ import {
   Smartphone,
   AlertCircle,
   Eye,
+  ThumbsUp,
+  Bold,
+  Italic,
+  List,
+  Link2,
+  Users,
+  ClipboardList,
+  Megaphone,
+  Layers,
+  RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -40,6 +53,7 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
 import { sendPushToUser } from '@/lib/push/sendPushToUser'
 import { getHojeBrasilia } from '@/lib/dateUtils'
+import { ComunicadoCorpo } from '@/components/mural/comunicado-corpo'
 
 const ModalTelemetriaComunicado = dynamic(
   () => import('@/components/modals/modal-telemetria-comunicado').then((mod) => mod.ModalTelemetriaComunicado),
@@ -48,6 +62,21 @@ const ModalTelemetriaComunicado = dynamic(
 
 const ModalAniversariante = dynamic(
   () => import('@/components/modals/modal-aniversariante').then((mod) => mod.ModalAniversariante),
+  { ssr: false }
+)
+
+const ModalEditarComunicado = dynamic(
+  () => import('@/components/modals/modal-editar-comunicado').then((mod) => mod.ModalEditarComunicado),
+  { ssr: false }
+)
+
+const ModalReagendarComunicado = dynamic(
+  () => import('@/components/modals/modal-reagendar-comunicado').then((mod) => mod.ModalReagendarComunicado),
+  { ssr: false }
+)
+
+const ModalPreviewComunicado = dynamic(
+  () => import('@/components/modals/modal-preview-comunicado').then((mod) => mod.ModalPreviewComunicado),
   { ssr: false }
 )
 
@@ -61,6 +90,15 @@ export default function MuralPage() {
   const [notices, setNotices] = useState<any[]>([])
   const [birthdays, setBirthdays] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Busca e Filtros
+  const [termoBusca, setTermoBusca] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('todas')
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'publicados' | 'agendados'>('todos')
+  const [limiteExibicao, setLimiteExibicao] = useState(20)
+
+  // Reações (Mapeamento de comunicadoId -> { count: number, userReagiu: boolean })
+  const [reacoesMap, setReacoesMap] = useState<Record<string, { count: number; userReagiu: boolean }>>({})
 
   const isNivel1OuSuperadmin = useMemo(() => {
     return Boolean(funcionario?.is_superadmin === true || acessos?.some((a) => a.nivel === 1 && a.ativo))
@@ -76,24 +114,33 @@ export default function MuralPage() {
     return new Map(listaEscolas.map((e) => [e.id, e.nome]))
   }, [listaEscolas])
 
+  // Lista de Turmas (se houver escola selecionada)
+  const [listaTurmas, setListaTurmas] = useState<{ id: string; nome: string }[]>([])
+  const [turmasSelecionadas, setTurmasSelecionadas] = useState<string[]>([])
+
   // Form states
   const [titulo, setTitulo] = useState('')
   const [mensagem, setMensagem] = useState('')
+  const [categoria, setCategoria] = useState('geral')
   const [alvo, setAlvo] = useState('Selecione o Público Alvo')
   const [isPopup, setIsPopup] = useState(false)
+  const [leituraObrigatoria, setLeituraObrigatoria] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Agendamento Prévio (Scheduled Broadcast)
   const [isAgendado, setIsAgendado] = useState(false)
   const [dataAgendamento, setDataAgendamento] = useState(() => getHojeBrasilia())
   const [horaAgendamento, setHoraAgendamento] = useState('07:00')
 
-  // Filtro de Status para Gestores
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'publicados' | 'agendados'>('todos')
+  // Seleção de Unidades (Nível 1 e Superadmin)
+  const [todaARede, setTodaARede] = useState(true)
+  const [unidadesSelecionadas, setUnidadesSelecionadas] = useState<string[]>([])
+  const [buscaUnidade, setBuscaUnidade] = useState('')
 
-  // Modal de Telemetria
+  // Modais
   const [telemetriaModal, setTelemetriaModal] = useState<{
     open: boolean
     comunicadoId: string | null
@@ -104,11 +151,19 @@ export default function MuralPage() {
     comunicadoTitulo: '',
   })
 
-  // Seleção de Unidades (Nível 1 e Superadmin)
-  const [todaARede, setTodaARede] = useState(true)
-  const [unidadesSelecionadas, setUnidadesSelecionadas] = useState<string[]>([])
-  const [buscaUnidade, setBuscaUnidade] = useState('')
+  const [editModal, setEditModal] = useState<{ open: boolean; comunicado: any | null }>({
+    open: false,
+    comunicado: null,
+  })
 
+  const [reagendarModal, setReagendarModal] = useState<{ open: boolean; comunicado: any | null }>({
+    open: false,
+    comunicado: null,
+  })
+
+  const [previewModal, setPreviewModal] = useState(false)
+
+  // Aniversariantes
   const [viewDate, setViewDate] = useState(() => new Date())
   const [loadingBirthdays, setLoadingBirthdays] = useState(false)
   const [birthdayModal, setBirthdayModal] = useState<{ day: number; open: boolean }>({ day: 0, open: false })
@@ -162,13 +217,43 @@ export default function MuralPage() {
     fetchBirthdaysForMonth(next.getMonth() + 1)
   }
 
+  const fetchReacoes = async (comunicadoIds: string[]) => {
+    if (!comunicadoIds || comunicadoIds.length === 0) return
+    try {
+      const supabase = createClient()
+      const { data, error } = await (supabase as any)
+        .from('comunicados_reacoes')
+        .select('comunicado_id, user_id, tipo')
+        .in('comunicado_id', comunicadoIds)
+
+      if (!error && data) {
+        const mapa: Record<string, { count: number; userReagiu: boolean }> = {}
+        const currentUserId = funcionario?.auth_user_id
+
+        data.forEach((r: any) => {
+          if (!mapa[r.comunicado_id]) {
+            mapa[r.comunicado_id] = { count: 0, userReagiu: false }
+          }
+          mapa[r.comunicado_id].count += 1
+          if (currentUserId && r.user_id === currentUserId) {
+            mapa[r.comunicado_id].userReagiu = true
+          }
+        })
+        setReacoesMap(mapa)
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar reações:', err)
+    }
+  }
+
   const fetchNotices = async () => {
     const supabase = createClient()
     let query = supabase
       .from('comunicados')
       .select(
-        'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+        'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
       )
+      .order('is_pinned', { ascending: false })
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       
@@ -191,6 +276,7 @@ export default function MuralPage() {
       toast.error('Erro ao recarregar comunicados: ' + error.message)
     } else if (data) {
       setNotices(data)
+      fetchReacoes(data.map((n: any) => n.id))
     }
   }
 
@@ -223,8 +309,9 @@ export default function MuralPage() {
         let query = supabase
           .from('comunicados')
           .select(
-            'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
+            'id, title, body, target, date, criado_por, anexo_url, anexo_nome, is_popup, is_pinned, leitura_obrigatoria, categoria, turma_ids, escola_ids, status, scheduled_for, disparado_em, total_disparos, total_entregues, created_at, criado_por:funcionarios(nome)'
           )
+          .order('is_pinned', { ascending: false })
           .order('date', { ascending: false })
           .order('created_at', { ascending: false })
           
@@ -253,14 +340,25 @@ export default function MuralPage() {
           escolasQuery = escolasQuery.eq('secretaria_id', selectedSecretaria.id)
         }
 
-        const [comunicadosRes, birthdayRes, escolasRes] = await Promise.all([
+        // Turmas da escola
+        let turmasQuery = null
+        if (selectedEscola?.id) {
+          turmasQuery = supabase
+            .from('turmas')
+            .select('id, nome')
+            .eq('escola_id', selectedEscola.id)
+            .order('nome')
+        }
+
+        const [comunicadosRes, birthdayRes, escolasRes, turmasRes] = await Promise.all([
           query,
           (supabase as any).rpc('get_birthdays_of_month', { 
             month_num: currentMonth, 
             p_secretaria_id: selectedSecretaria?.id || null,
             p_escola_id: selectedEscola?.id || null
           }),
-          escolasQuery
+          escolasQuery,
+          turmasQuery ? turmasQuery : Promise.resolve({ data: [] })
         ])
 
         if (!active) return
@@ -269,6 +367,7 @@ export default function MuralPage() {
           toast.error('Erro ao carregar comunicados: ' + comunicadosRes.error.message)
         } else if (comunicadosRes.data) {
           setNotices(comunicadosRes.data)
+          fetchReacoes(comunicadosRes.data.map((n: any) => n.id))
         }
 
         if (birthdayRes.error) {
@@ -279,6 +378,10 @@ export default function MuralPage() {
 
         if (escolasRes.data) {
           setListaEscolas(escolasRes.data.filter((e: any) => !e.is_teste && !e.nome.toLowerCase().includes('teste')))
+        }
+
+        if (turmasRes && (turmasRes as any).data) {
+          setListaTurmas((turmasRes as any).data)
         }
       } catch (err: any) {
         console.error('Erro ao carregar mural:', err)
@@ -295,21 +398,44 @@ export default function MuralPage() {
     }
   }, [selectedSecretaria?.id, selectedEscola?.id, podePublicar, searchParams, funcionario?.auth_user_id])
 
+  // Filtro avançado e Ordenação (Pinados primeiro, depois por busca, status e categoria)
   const filteredNotices = useMemo(() => {
-    return notices.filter((notice) => {
-      // Filtro por data
-      if (selectedDate && notice.date !== selectedDate) return false
+    return notices
+      .filter((notice) => {
+        // Filtro por data
+        if (selectedDate && notice.date !== selectedDate) return false
 
-      // Filtro por status
-      if (filtroStatus === 'publicados') {
-        if (notice.status === 'agendado') return false
-      } else if (filtroStatus === 'agendados') {
-        if (notice.status !== 'agendado') return false
-      }
+        // Filtro por status
+        if (filtroStatus === 'publicados') {
+          if (notice.status === 'agendado') return false
+        } else if (filtroStatus === 'agendados') {
+          if (notice.status !== 'agendado') return false
+        }
 
-      return true
-    })
-  }, [selectedDate, notices, filtroStatus])
+        // Filtro por categoria
+        if (filtroCategoria !== 'todas') {
+          const catNotice = notice.categoria || 'geral'
+          if (catNotice !== filtroCategoria) return false
+        }
+
+        // Filtro por busca de texto (título ou mensagem)
+        if (termoBusca.trim()) {
+          const term = termoBusca.toLowerCase()
+          const matchTitulo = (notice.title || '').toLowerCase().includes(term)
+          const matchCorpo = (notice.body || '').toLowerCase().includes(term)
+          const matchAutor = (notice.criado_por?.nome || '').toLowerCase().includes(term)
+          if (!matchTitulo && !matchCorpo && !matchAutor) return false
+        }
+
+        return true
+      })
+      .sort((a, b) => {
+        // Prioridade 1: Pinados no topo
+        if (a.is_pinned && !b.is_pinned) return -1
+        if (!a.is_pinned && b.is_pinned) return 1
+        return 0
+      })
+  }, [selectedDate, notices, filtroStatus, filtroCategoria, termoBusca])
 
   const totalAgendados = useMemo(() => {
     return notices.filter((n) => n.status === 'agendado').length
@@ -329,6 +455,153 @@ export default function MuralPage() {
 
     return { blanks, days }
   }, [viewDate])
+
+  // Helper de formatação rápida no textarea do composer
+  const aplicarFormatacao = (tipo: 'bold' | 'italic' | 'list' | 'link') => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const textoSel = mensagem.substring(start, end)
+
+    let novoTexto = ''
+    let cursorOffset = 0
+
+    switch (tipo) {
+      case 'bold':
+        novoTexto = `**${textoSel || 'texto em negrito'}**`
+        cursorOffset = textoSel ? novoTexto.length : 2
+        break
+      case 'italic':
+        novoTexto = `*${textoSel || 'texto em itálico'}*`
+        cursorOffset = textoSel ? novoTexto.length : 1
+        break
+      case 'list':
+        novoTexto = `\n• ${textoSel || 'item da lista'}`
+        cursorOffset = novoTexto.length
+        break
+      case 'link':
+        novoTexto = `[${textoSel || 'link'}](https://)`
+        cursorOffset = novoTexto.length - 1
+        break
+    }
+
+    const mensagemAtualizada = mensagem.substring(0, start) + novoTexto + mensagem.substring(end)
+    setMensagem(mensagemAtualizada)
+
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(start + cursorOffset, start + cursorOffset)
+    }, 0)
+  }
+
+  // Toggle de Fixar no Topo
+  const handlePinarComunicado = async (notice: any) => {
+    const novoStatusPin = !notice.is_pinned
+    // Atualização otimista
+    setNotices((prev) =>
+      prev.map((n) => (n.id === notice.id ? { ...n, is_pinned: novoStatusPin } : n))
+    )
+
+    try {
+      const supabase = createClient()
+      const { error } = await (supabase.from('comunicados') as any)
+        .update({ is_pinned: novoStatusPin })
+        .eq('id', notice.id)
+
+      if (error) {
+        toast.error('Erro ao atualizar destaque do comunicado.')
+        fetchNotices()
+      } else {
+        toast.success(novoStatusPin ? 'Comunicado fixado no topo!' : 'Comunicado desafixado.')
+      }
+    } catch {
+      toast.error('Falha ao fixar comunicado.')
+      fetchNotices()
+    }
+  }
+
+  // Reação rápida (Ciente 👍)
+  const handleReagir = async (comunicadoId: string) => {
+    if (!funcionario?.auth_user_id) {
+      toast.error('É necessário estar autenticado para reagir.')
+      return
+    }
+
+    const estadoAtual = reacoesMap[comunicadoId] || { count: 0, userReagiu: false }
+    const novoUserReagiu = !estadoAtual.userReagiu
+    const novoCount = Math.max(0, estadoAtual.count + (novoUserReagiu ? 1 : -1))
+
+    // Atualização otimista
+    setReacoesMap((prev) => ({
+      ...prev,
+      [comunicadoId]: { count: novoCount, userReagiu: novoUserReagiu },
+    }))
+
+    try {
+      const res = await fetch('/api/comunicados/reagir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          comunicadoId,
+          userId: funcionario.auth_user_id,
+          tipo: 'ciente',
+        }),
+      })
+      const json = await res.json()
+      if (!json.ok) {
+        toast.error('Erro ao registrar reação.')
+        fetchReacoes([comunicadoId])
+      }
+    } catch {
+      toast.error('Falha ao processar reação.')
+      fetchReacoes([comunicadoId])
+    }
+  }
+
+  // Duplicar comunicado
+  const handleDuplicar = (notice: any) => {
+    setTitulo(`(Cópia) ${notice.title}`)
+    setMensagem(notice.body)
+    setCategoria(notice.categoria || 'geral')
+    setAlvo(notice.target || 'Selecione o Público Alvo')
+    setIsPopup(Boolean(notice.is_popup))
+    setLeituraObrigatoria(Boolean(notice.leitura_obrigatoria))
+    setIsAgendado(false)
+    if (!notice.escola_ids || notice.escola_ids.length === 0) {
+      setTodaARede(true)
+      setUnidadesSelecionadas([])
+    } else {
+      setTodaARede(false)
+      setUnidadesSelecionadas(notice.escola_ids)
+    }
+    setShowComposer(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    toast.info('Dados do comunicado copiados para o formulário.')
+  }
+
+  // Reenviar Push para todos/pendentes
+  const handleReenviarPush = async (notice: any) => {
+    if (!confirm(`Deseja disparar novamente a notificação push para "${notice.title}"?`)) return
+    try {
+      const isBroadcast = !notice.escola_ids || notice.escola_ids.length === 0
+      await sendPushToUser({
+        isBroadcast,
+        escolaIds: notice.escola_ids ?? null,
+        turmaIds: notice.turma_ids ?? null,
+        title: `📢 Mural: ${notice.title}`,
+        message: notice.body,
+        link: `/mural?comunicado_id=${notice.id}`,
+        tag: 'comunicado-mural',
+        comunicadoId: notice.id,
+      })
+      toast.success('Disparo de notificação push reexecutado com sucesso!')
+      fetchNotices()
+    } catch {
+      toast.error('Falha ao reenviar push.')
+    }
+  }
 
   const handlePublicarComunicado = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -434,10 +707,13 @@ export default function MuralPage() {
     const { data: insertResult, error } = await (supabase.from as any)('comunicados').insert({
       title: titulo.trim(),
       body: mensagem.trim(),
+      categoria,
       date: dataReferencia,
       target: targetPayload,
       is_popup: isPopup,
+      leitura_obrigatoria: leituraObrigatoria,
       escola_ids: escolaIdsPayload,
+      turma_ids: turmasSelecionadas.length > 0 ? turmasSelecionadas : null,
       status: statusPayload,
       scheduled_for: scheduledForIso,
       disparado_em: statusPayload === 'publicado' ? new Date().toISOString() : null,
@@ -462,6 +738,7 @@ export default function MuralPage() {
         sendPushToUser({
           isBroadcast,
           escolaIds: escolaIdsPayload,
+          turmaIds: turmasSelecionadas.length > 0 ? turmasSelecionadas : null,
           title: `📢 Mural: ${titulo.trim()}`,
           message: mensagem.trim(),
           link: `/mural?comunicado_id=${insertResult?.id ?? ''}`,
@@ -474,13 +751,16 @@ export default function MuralPage() {
 
       setTitulo('')
       setMensagem('')
+      setCategoria('geral')
       setAlvo('Selecione o Público Alvo')
       setIsPopup(false)
+      setLeituraObrigatoria(false)
       setIsAgendado(false)
       setDataAgendamento(getHojeBrasilia())
       setHoraAgendamento('07:00')
       setTodaARede(true)
       setUnidadesSelecionadas([])
+      setTurmasSelecionadas([])
       setBuscaUnidade('')
       setArquivo(null)
       if (fileInputRef.current) {
@@ -515,6 +795,7 @@ export default function MuralPage() {
       sendPushToUser({
         isBroadcast,
         escolaIds: notice.escola_ids ?? null,
+        turmaIds: notice.turma_ids ?? null,
         title: `📢 Mural: ${notice.title}`,
         message: notice.body,
         link: `/mural?comunicado_id=${notice.id}`,
@@ -523,7 +804,7 @@ export default function MuralPage() {
       }).catch(() => {})
 
       fetchNotices()
-    } catch (err: any) {
+    } catch {
       toast.error('Falha ao acionar disparo imediato.')
     }
   }
@@ -547,6 +828,41 @@ export default function MuralPage() {
     }
   }
 
+  const getCategoriaBadge = (cat: string) => {
+    switch (cat) {
+      case 'urgente':
+        return {
+          icon: <AlertCircle className="w-3 h-3 text-red-400" />,
+          label: 'Urgente',
+          className: 'text-red-400 bg-red-500/10 border-red-500/30',
+        }
+      case 'reuniao':
+        return {
+          icon: <Users className="w-3 h-3 text-blue-400" />,
+          label: 'Reunião',
+          className: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+        }
+      case 'calendario':
+        return {
+          icon: <CalendarDays className="w-3 h-3 text-purple-400" />,
+          label: 'Calendário',
+          className: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+        }
+      case 'administrativo':
+        return {
+          icon: <ClipboardList className="w-3 h-3 text-amber-400" />,
+          label: 'Administrativo',
+          className: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+        }
+      default:
+        return {
+          icon: <Megaphone className="w-3 h-3 text-highlight" />,
+          label: 'Geral',
+          className: 'text-highlight bg-highlight/10 border-highlight/20',
+        }
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header da Página */}
@@ -561,7 +877,7 @@ export default function MuralPage() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Mural</h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Comunicados, avisos, agendamentos e aniversariantes da rede.
+            Comunicados, avisos, transmissões agendadas, reações e aniversariantes da rede.
           </p>
         </div>
         {podePublicar && (
@@ -579,8 +895,21 @@ export default function MuralPage() {
         <div className="space-y-4">
           {/* Formulário de Criação / Agendamento */}
           {showComposer && podePublicar && (
-            <Card className="border-borderCustom bg-card p-5 shadow-lg">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Criar Novo Comunicado</h2>
+            <Card className="border-borderCustom bg-card p-5 shadow-lg animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground">Criar Novo Comunicado</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewModal(true)}
+                  className="h-8 text-xs border-borderCustom text-foreground hover:bg-hoverCustom cursor-pointer gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5 text-highlight" />
+                  <span>Pré-visualizar</span>
+                </Button>
+              </div>
+
               <form onSubmit={handlePublicarComunicado} className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Título</label>
@@ -591,6 +920,43 @@ export default function MuralPage() {
                     onChange={(e) => setTitulo(e.target.value)}
                     className="bg-input border-borderCustom text-foreground placeholder:text-muted-foreground"
                   />
+                </div>
+
+                {/* Categoria e Público Alvo */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">
+                      Categoria / Classificação
+                    </label>
+                    <select
+                      value={categoria}
+                      onChange={(e) => setCategoria(e.target.value)}
+                      className="w-full bg-input border border-borderCustom text-foreground h-10 rounded-md px-3 text-xs focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+                    >
+                      <option value="geral">📢 Geral</option>
+                      <option value="urgente">🔴 Urgente</option>
+                      <option value="reuniao">👥 Reunião</option>
+                      <option value="calendario">📅 Calendário</option>
+                      <option value="administrativo">📋 Administrativo</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">
+                      Público Alvo
+                    </label>
+                    <select
+                      value={alvo}
+                      onChange={(e) => setAlvo(e.target.value)}
+                      className="w-full bg-input border border-borderCustom text-foreground h-10 rounded-md px-3 text-xs focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+                    >
+                      <option value="Selecione o Público Alvo">Selecione o Público Alvo</option>
+                      <option value="Professores">Professores</option>
+                      <option value="Alunos e Pais">Alunos e Pais</option>
+                      <option value="Equipe Administrativa">Equipe Administrativa</option>
+                      <option value="Equipe de Cozinha / Limpeza">Equipe de Cozinha / Limpeza</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Programação de Transmissão (Imediato vs Agendado) */}
@@ -646,7 +1012,9 @@ export default function MuralPage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">Data da Transmissão</label>
+                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">
+                            Data da Transmissão
+                          </label>
                           <Input
                             type="date"
                             value={dataAgendamento}
@@ -655,7 +1023,9 @@ export default function MuralPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">Horário de Disparo</label>
+                          <label className="text-[11px] font-semibold text-foreground/80 block mb-1">
+                            Horário de Disparo
+                          </label>
                           <Input
                             type="time"
                             value={horaAgendamento}
@@ -666,6 +1036,77 @@ export default function MuralPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Modalidades Pop-up e Leitura Obrigatória */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsPopup((prev) => !prev)}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+                      isPopup
+                        ? 'border-amber-500/40 bg-amber-500/10 text-foreground ring-1 ring-amber-500/30'
+                        : 'border-borderCustom bg-input/60 text-muted-foreground hover:bg-hoverCustom hover:text-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          isPopup
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-surface-2 text-muted-foreground'
+                        }`}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-semibold text-xs text-foreground block">Exibir como Pop-up</span>
+                        <span className="text-[11px] text-muted-foreground">Aparece na tela de login</span>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${
+                        isPopup ? 'border-amber-500 bg-amber-500 text-black font-bold' : 'border-borderCustom bg-surface-3'
+                      }`}
+                    >
+                      {isPopup ? '✓' : ''}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLeituraObrigatoria((prev) => !prev)}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+                      leituraObrigatoria
+                        ? 'border-rose-500/40 bg-rose-500/10 text-foreground ring-1 ring-rose-500/30'
+                        : 'border-borderCustom bg-input/60 text-muted-foreground hover:bg-hoverCustom hover:text-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          leituraObrigatoria
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            : 'bg-surface-2 text-muted-foreground'
+                        }`}
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-semibold text-xs text-foreground block">Leitura Obrigatória</span>
+                        <span className="text-[11px] text-muted-foreground">Exige confirmação formal</span>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${
+                        leituraObrigatoria
+                          ? 'border-rose-500 bg-rose-500 text-white font-bold'
+                          : 'border-borderCustom bg-surface-3'
+                      }`}
+                    >
+                      {leituraObrigatoria ? '✓' : ''}
+                    </div>
+                  </button>
                 </div>
 
                 {/* Destino das Unidades */}
@@ -773,96 +1214,97 @@ export default function MuralPage() {
                                 </button>
                               )
                             })}
-                          {listaEscolas.filter((esc) => esc.nome.toLowerCase().includes(buscaUnidade.toLowerCase())).length === 0 && (
-                            <p className="text-xs text-muted-foreground text-center py-2">Nenhuma escola encontrada.</p>
-                          )}
                         </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-3.5 bg-input/40 border border-borderCustom rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-highlight/10 text-highlight shrink-0">
-                      <School className="w-5 h-5" />
+                  <div className="p-3.5 bg-input/40 border border-borderCustom rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-highlight/10 text-highlight shrink-0">
+                        <School className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                          Mural de Destino
+                        </span>
+                        <span className="text-sm font-semibold text-foreground truncate block">
+                          {selectedEscola?.nome ?? 'Sua Unidade Escolar'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                        Mural de Destino
-                      </span>
-                      <span className="text-sm font-semibold text-foreground truncate block">
-                        {selectedEscola?.nome ?? 'Sua Unidade Escolar'}
-                      </span>
-                    </div>
+
+                    {listaTurmas.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground hidden sm:inline">Turmas específicas:</span>
+                        <select
+                          value={turmasSelecionadas[0] || ''}
+                          onChange={(e) => setTurmasSelecionadas(e.target.value ? [e.target.value] : [])}
+                          className="bg-input border border-borderCustom text-xs rounded-lg px-2.5 h-8 text-foreground"
+                        >
+                          <option value="">Todas as turmas</option>
+                          {listaTurmas.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.nome}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 )}
 
+                {/* Conteúdo com Barra de Ferramentas de Formatação */}
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Público Alvo</label>
-                  <select
-                    value={alvo}
-                    onChange={(e) => setAlvo(e.target.value)}
-                    className="w-full bg-input border border-borderCustom text-foreground h-10 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
-                  >
-                    <option value="Selecione o Público Alvo">Selecione o Público Alvo</option>
-                    <option value="Professores">Professores</option>
-                    <option value="Alunos e Pais">Alunos e Pais</option>
-                    <option value="Equipe Administrativa">Equipe Administrativa</option>
-                    <option value="Equipe de Cozinha / Limpeza">Equipe de Cozinha / Limpeza</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">Modalidade de Notificação</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsPopup((prev) => !prev)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
-                      isPopup
-                        ? 'border-amber-500/40 bg-amber-500/5 dark:bg-amber-950/25 text-foreground shadow-sm ring-1 ring-amber-500/20'
-                        : 'border-borderCustom bg-input/60 text-muted-foreground hover:bg-hoverCustom hover:text-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg transition-colors ${isPopup ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-surface-2 text-muted-foreground'}`}>
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm tracking-wide text-foreground">Exibir como Pop-up</span>
-                          {isPopup && (
-                            <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full tracking-wider">
-                              Efeito Ativo
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {isPopup
-                            ? 'O comunicado aparecerá no centro da tela dos funcionários ao fazer login.'
-                            : 'O comunicado será exibido normalmente no Mural e no sino de notificações.'}
-                        </p>
-                      </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Conteúdo</label>
+                    <div className="flex items-center gap-1 bg-input/60 p-0.5 rounded-lg border border-borderCustom">
+                      <button
+                        type="button"
+                        onClick={() => aplicarFormatacao('bold')}
+                        className="p-1 hover:bg-hoverCustom text-muted-foreground hover:text-foreground rounded cursor-pointer"
+                        title="Negrito (**texto**)"
+                      >
+                        <Bold className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => aplicarFormatacao('italic')}
+                        className="p-1 hover:bg-hoverCustom text-muted-foreground hover:text-foreground rounded cursor-pointer"
+                        title="Itálico (*texto*)"
+                      >
+                        <Italic className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => aplicarFormatacao('list')}
+                        className="p-1 hover:bg-hoverCustom text-muted-foreground hover:text-foreground rounded cursor-pointer"
+                        title="Lista de itens"
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => aplicarFormatacao('link')}
+                        className="p-1 hover:bg-hoverCustom text-muted-foreground hover:text-foreground rounded cursor-pointer"
+                        title="Link"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-                      isPopup ? 'border-amber-500 bg-amber-500 text-neutral-950 font-bold text-xs shadow-sm' : 'border-borderCustom bg-surface-3'
-                    }`}>
-                      {isPopup ? '✓' : ''}
-                    </div>
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Conteúdo</label>
+                  </div>
                   <textarea
+                    ref={textareaRef}
                     rows={4}
                     value={mensagem}
                     onChange={(e) => setMensagem(e.target.value)}
                     placeholder="Escreva a mensagem do comunicado aqui..."
-                    className="w-full resize-none rounded-lg border border-borderCustom bg-input p-3 text-sm text-foregroundCustom outline-none focus:border-highlight placeholder:text-muted-foreground"
+                    className="w-full resize-none rounded-lg border border-borderCustom bg-input p-3 text-sm text-foreground outline-none focus:border-highlight placeholder:text-muted-foreground"
                   />
                 </div>
 
+                {/* Anexo de Arquivo */}
                 <div className="flex flex-col gap-3 pt-2 border-t border-borderCustom">
-                  {/* Input de arquivo invisível */}
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -888,9 +1330,7 @@ export default function MuralPage() {
                         type="button"
                         onClick={() => {
                           setArquivo(null)
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = ''
-                          }
+                          if (fileInputRef.current) fileInputRef.current.value = ''
                         }}
                         className="ml-auto p-0.5 rounded-full hover:bg-highlight/20 text-highlight cursor-pointer"
                       >
@@ -904,7 +1344,7 @@ export default function MuralPage() {
                       type="button" 
                       variant="outline" 
                       onClick={() => fileInputRef.current?.click()} 
-                      className="border-borderCustom bg-hoverCustom text-foregroundCustom cursor-pointer"
+                      className="border-borderCustom bg-hoverCustom text-foreground cursor-pointer"
                     >
                       <Paperclip className="mr-2 h-4 w-4" />
                       Anexar Arquivo
@@ -928,45 +1368,85 @@ export default function MuralPage() {
             </Card>
           )}
 
-          {/* Filtros de Status (Apenas para Gestores) */}
-          {podePublicar && totalAgendados > 0 && (
-            <div className="flex items-center gap-2 p-1 bg-surface-2 border border-borderCustom rounded-xl w-fit">
-              <button
-                type="button"
-                onClick={() => setFiltroStatus('todos')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  filtroStatus === 'todos'
-                    ? 'bg-highlight/20 text-highlight border border-highlight/30'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Todos ({notices.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroStatus('publicados')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  filtroStatus === 'publicados'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Publicados ({notices.filter((n) => n.status !== 'agendado').length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroStatus('agendados')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  filtroStatus === 'agendados'
-                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Agendados ({totalAgendados})</span>
-              </button>
+          {/* Barra de Filtros e Busca Rápida */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Campo de Busca */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar comunicado por título, conteúdo ou autor..."
+                value={termoBusca}
+                onChange={(e) => setTermoBusca(e.target.value)}
+                className="h-10 pl-9 pr-8 text-xs bg-input border-borderCustom text-foreground"
+              />
+              {termoBusca && (
+                <button
+                  type="button"
+                  onClick={() => setTermoBusca('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          )}
+
+            {/* Filtro por Categoria */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                className="h-10 bg-input border border-borderCustom text-foreground rounded-lg px-3 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-highlight cursor-pointer"
+              >
+                <option value="todas">Todas as Categorias</option>
+                <option value="geral">📢 Geral</option>
+                <option value="urgente">🔴 Urgentes</option>
+                <option value="reuniao">👥 Reuniões</option>
+                <option value="calendario">📅 Calendário</option>
+                <option value="administrativo">📋 Administrativo</option>
+              </select>
+            </div>
+
+            {/* Filtros de Status (Gestores) */}
+            {podePublicar && totalAgendados > 0 && (
+              <div className="flex items-center gap-1 p-1 bg-surface-2 border border-borderCustom rounded-xl shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setFiltroStatus('todos')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    filtroStatus === 'todos'
+                      ? 'bg-highlight/20 text-highlight border border-highlight/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Todos ({notices.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroStatus('publicados')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    filtroStatus === 'publicados'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Publicados ({notices.filter((n) => n.status !== 'agendado').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroStatus('agendados')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                    filtroStatus === 'agendados'
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Agendados ({totalAgendados})</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Feed de Comunicados */}
           {loading ? (
@@ -976,29 +1456,59 @@ export default function MuralPage() {
             </Card>
           ) : filteredNotices.length === 0 ? (
             <Card className="border-borderCustom bg-card p-8 text-center text-muted-foreground">
-              Nenhum comunicado encontrado {selectedDate ? `para a data ${new Date(`${selectedDate}T00:00:00`).toLocaleDateString('pt-BR')}` : 'registrado no sistema'}.
+              {termoBusca
+                ? `Nenhum comunicado encontrado para a busca "${termoBusca}".`
+                : selectedDate
+                ? `Nenhum comunicado encontrado para a data ${new Date(`${selectedDate}T00:00:00`).toLocaleDateString('pt-BR')}.`
+                : 'Nenhum comunicado registrado no sistema.'}
             </Card>
           ) : (
-            filteredNotices.map((notice) => {
+            filteredNotices.slice(0, limiteExibicao).map((notice) => {
               const isNoticeAgendado = notice.status === 'agendado'
+              const catBadge = getCategoriaBadge(notice.categoria || 'geral')
+              const reacao = reacoesMap[notice.id] || { count: 0, userReagiu: false }
 
               return (
                 <Card
                   key={notice.id}
                   className={`border-borderCustom bg-card p-5 transition-all ${
-                    isNoticeAgendado
+                    notice.is_pinned
+                      ? 'border-highlight/40 bg-gradient-to-r from-highlight/5 via-card to-card shadow-sm'
+                      : isNoticeAgendado
                       ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-card'
                       : 'hover:border-highlight/30'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`rounded-lg p-2 shrink-0 ${isNoticeAgendado ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' : 'bg-highlight/10 text-highlight'}`}>
-                      {isNoticeAgendado ? <Clock className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                    <div
+                      className={`rounded-lg p-2 shrink-0 ${
+                        notice.is_pinned
+                          ? 'bg-highlight/20 text-highlight border border-highlight/30'
+                          : isNoticeAgendado
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          : 'bg-highlight/10 text-highlight'
+                      }`}
+                    >
+                      {notice.is_pinned ? (
+                        <Pin className="h-5 w-5 fill-current" />
+                      ) : isNoticeAgendado ? (
+                        <Clock className="h-5 w-5" />
+                      ) : (
+                        <Bell className="h-5 w-5" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h2 className="font-semibold text-foreground text-base">{notice.title}</h2>
+                          
+                          {notice.is_pinned && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-highlight bg-highlight/15 px-2 py-0.5 rounded-full border border-highlight/30">
+                              <Pin className="w-3 h-3 fill-current" />
+                              Fixado
+                            </span>
+                          )}
+
                           {isNoticeAgendado ? (
                             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
                               <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
@@ -1012,25 +1522,66 @@ export default function MuralPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Ações de Gestão nos Cards */}
+                        <div className="flex items-center gap-1.5">
                           <span className="rounded-full border border-borderCustom bg-input px-2.5 py-1 text-xs text-muted-foreground">
                             {notice.date ? new Date(`${notice.date}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
                           </span>
+
                           {podePublicar && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleExcluirComunicado(notice.id)}
-                              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
-                              title="Excluir comunicado"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handlePinarComunicado(notice)}
+                                className={`h-8 w-8 cursor-pointer ${
+                                  notice.is_pinned
+                                    ? 'text-highlight bg-highlight/10 hover:bg-highlight/20'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                                title={notice.is_pinned ? 'Desafixar comunicado' : 'Fixar no topo'}
+                              >
+                                {notice.is_pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDuplicar(notice)}
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                                title="Duplicar comunicado"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditModal({ open: true, comunicado: notice })}
+                                className="h-8 w-8 text-muted-foreground hover:text-highlight hover:bg-highlight/10 cursor-pointer"
+                                title="Editar comunicado"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleExcluirComunicado(notice.id)}
+                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                title="Excluir comunicado"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
 
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground whitespace-pre-line">{notice.body}</p>
+                      {/* Corpo do Comunicado Formatado */}
+                      <div className="mt-2.5">
+                        <ComunicadoCorpo texto={notice.body} />
+                      </div>
                       
                       {notice.anexo_url && (
                         <div className="mt-3">
@@ -1046,11 +1597,27 @@ export default function MuralPage() {
                         </div>
                       )}
 
+                      {/* Badges de Categoria, Pop-up, Unidades e Público */}
                       <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {/* Categoria */}
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${catBadge.className}`}
+                        >
+                          {catBadge.icon}
+                          {catBadge.label}
+                        </span>
+
                         {notice.is_popup && (
                           <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
                             <Sparkles className="w-3 h-3 text-amber-400" />
-                            Pop-up Prioritário
+                            Pop-up
+                          </span>
+                        )}
+
+                        {notice.leitura_obrigatoria && (
+                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/30">
+                            <AlertCircle className="w-3 h-3" />
+                            Leitura Obrigatória
                           </span>
                         )}
                         
@@ -1087,52 +1654,77 @@ export default function MuralPage() {
                         )}
                       </div>
 
-                      {/* Barra de Telemetria e Ações para Gestores */}
-                      {podePublicar && !isNoticeAgendado && (
-                        <div className="mt-3.5 pt-3 border-t border-borderCustom/60 flex flex-wrap items-center justify-between gap-2.5">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                            <span className="inline-flex items-center gap-1 bg-input/60 px-2.5 py-1 rounded-lg border border-borderCustom text-xs">
-                              <Send className="w-3 h-3 text-highlight shrink-0" />
-                              <span>Disparos:</span>
-                              <strong className="text-foreground font-bold">{notice.total_disparos ?? 0}</strong>
-                            </span>
-                            <span className="inline-flex items-center gap-1 bg-input/60 px-2.5 py-1 rounded-lg border border-borderCustom text-xs">
-                              <Smartphone className="w-3 h-3 text-emerald-400 shrink-0" />
-                              <span>Entrega Push:</span>
-                              <strong className="text-emerald-400 font-bold">
-                                {notice.total_disparos > 0
-                                  ? `${Math.round(((notice.total_entregues ?? 0) / notice.total_disparos) * 100)}%`
-                                  : '100%'}
-                              </strong>
-                            </span>
-                          </div>
-
-                          <Button
+                      {/* Barra Inferior: Reação Ciente 👍 + Telemetria / Ações */}
+                      <div className="mt-3.5 pt-3 border-t border-borderCustom/60 flex flex-wrap items-center justify-between gap-2.5">
+                        {/* Botão de Reação Ciente */}
+                        <div className="flex items-center gap-2">
+                          <button
                             type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setTelemetriaModal({
-                                open: true,
-                                comunicadoId: notice.id,
-                                comunicadoTitulo: notice.title,
-                              })
-                            }
-                            className="h-8 text-xs border-highlight/30 bg-highlight/5 text-highlight hover:bg-highlight/15 cursor-pointer gap-1.5 font-semibold"
+                            onClick={() => handleReagir(notice.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                              reacao.userReagiu
+                                ? 'bg-highlight/20 text-highlight border-highlight/40 ring-1 ring-highlight/30'
+                                : 'bg-input/60 border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                            }`}
+                            title="Confirmar que está ciente deste comunicado"
                           >
-                            <BarChart3 className="w-3.5 h-3.5" />
-                            <span>Telemetria & Leituras</span>
-                          </Button>
+                            <ThumbsUp className={`w-3.5 h-3.5 ${reacao.userReagiu ? 'fill-current' : ''}`} />
+                            <span>Ciente</span>
+                            {reacao.count > 0 && (
+                              <span className="ml-0.5 px-1.5 py-0.2 bg-highlight/30 rounded-full text-[10px] font-bold">
+                                {reacao.count}
+                              </span>
+                            )}
+                          </button>
                         </div>
-                      )}
 
-                      {podePublicar && isNoticeAgendado && (
-                        <div className="mt-3.5 pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-2.5">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                            Aguardando momento de transmissão automática
-                          </span>
+                        {/* Ações de Telemetria e Reenvio para Gestores */}
+                        {podePublicar && !isNoticeAgendado && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleReenviarPush(notice)}
+                              className="h-7 text-xs border-borderCustom text-muted-foreground hover:text-foreground cursor-pointer gap-1"
+                              title="Reenviar notificação push aos destinatários"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              <span className="hidden sm:inline">Reenviar Push</span>
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setTelemetriaModal({
+                                  open: true,
+                                  comunicadoId: notice.id,
+                                  comunicadoTitulo: notice.title,
+                                })
+                              }
+                              className="h-7 text-xs border-highlight/30 bg-highlight/5 text-highlight hover:bg-highlight/15 cursor-pointer gap-1.5 font-semibold"
+                            >
+                              <BarChart3 className="w-3.5 h-3.5" />
+                              <span>Telemetria & Leituras</span>
+                            </Button>
+                          </div>
+                        )}
+
+                        {podePublicar && isNoticeAgendado && (
                           <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setReagendarModal({ open: true, comunicado: notice })}
+                              className="h-8 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/10 cursor-pointer gap-1.5"
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Reagendar</span>
+                            </Button>
+
                             <Button
                               type="button"
                               size="sm"
@@ -1143,13 +1735,27 @@ export default function MuralPage() {
                               <span>Disparar Agora</span>
                             </Button>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
               )
             })
+          )}
+
+          {/* Paginação / Carregar Mais */}
+          {filteredNotices.length > limiteExibicao && (
+            <div className="text-center pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLimiteExibicao((prev) => prev + 20)}
+                className="border-borderCustom text-foreground hover:bg-hoverCustom cursor-pointer text-xs"
+              >
+                Carregar mais comunicados ({filteredNotices.length - limiteExibicao} restantes)
+              </Button>
+            </div>
           )}
         </div>
 
@@ -1158,9 +1764,20 @@ export default function MuralPage() {
           <Card className="border-borderCustom bg-card p-5">
             <h2 className="mb-4 text-lg font-semibold text-foreground">Filtrar por Data</h2>
             <div className="flex gap-2">
-              <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="bg-input border-borderCustom text-foreground" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+                className="bg-input border-borderCustom text-foreground"
+              />
               {selectedDate && (
-                <Button variant="outline" size="icon" onClick={() => setSelectedDate('')} className="border-borderCustom bg-hoverCustom text-foreground shrink-0" title="Limpar filtro">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedDate('')}
+                  className="border-borderCustom bg-hoverCustom text-foreground shrink-0"
+                  title="Limpar filtro"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -1253,7 +1870,7 @@ export default function MuralPage() {
         </aside>
       </div>
 
-      {/* Modal de Telemetria & CTR Nominal */}
+      {/* Modal de Telemetria & CTR Nominal com Gráfico e Exportação CSV */}
       <ModalTelemetriaComunicado
         open={telemetriaModal.open}
         onOpenChange={(open) => setTelemetriaModal((prev) => ({ ...prev, open }))}
@@ -1268,6 +1885,49 @@ export default function MuralPage() {
         aniversariantes={birthdaysOfSelectedDay}
         dia={birthdayModal.day}
         mes={MONTH_NAMES[viewDate.getMonth()]}
+      />
+
+      {/* Modal de Edição de Comunicado */}
+      {editModal.comunicado && (
+        <ModalEditarComunicado
+          open={editModal.open}
+          onOpenChange={(open) => setEditModal((prev) => ({ ...prev, open }))}
+          comunicado={editModal.comunicado}
+          listaEscolas={listaEscolas}
+          isNivel1OuSuperadmin={isNivel1OuSuperadmin}
+          selectedEscola={selectedEscola}
+          onSuccess={fetchNotices}
+        />
+      )}
+
+      {/* Modal de Reagendamento de Transmissão */}
+      {reagendarModal.comunicado && (
+        <ModalReagendarComunicado
+          open={reagendarModal.open}
+          onOpenChange={(open) => setReagendarModal((prev) => ({ ...prev, open }))}
+          comunicado={reagendarModal.comunicado}
+          onSuccess={fetchNotices}
+        />
+      )}
+
+      {/* Modal de Pré-visualização de Comunicado */}
+      <ModalPreviewComunicado
+        open={previewModal}
+        onOpenChange={setPreviewModal}
+        titulo={titulo}
+        mensagem={mensagem}
+        categoria={categoria}
+        alvo={alvo}
+        isPopup={isPopup}
+        leituraObrigatoria={leituraObrigatoria}
+        isAgendado={isAgendado}
+        dataAgendamento={dataAgendamento}
+        horaAgendamento={horaAgendamento}
+        todaARede={todaARede}
+        unidadesSelecionadas={unidadesSelecionadas}
+        mapaEscolas={mapaEscolas}
+        nomeAutor={funcionario?.nome}
+        arquivoNome={arquivo?.name}
       />
     </div>
   )

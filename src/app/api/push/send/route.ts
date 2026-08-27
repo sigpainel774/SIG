@@ -28,6 +28,7 @@ export async function POST(req: Request) {
       isBroadcast,
       escolaId,
       escolaIds,
+      turmaIds,
       comunicadoId,
     } = body || {}
 
@@ -38,36 +39,52 @@ export async function POST(req: Request) {
     let targetUserIds: string[] = []
 
     if (isBroadcast) {
-      // Broadcast para todos os usuários inscritos (ou filtrado por escola/unidades)
-      const targetEscolaIds: string[] = []
-      if (Array.isArray(escolaIds) && escolaIds.length > 0) {
-        targetEscolaIds.push(...escolaIds)
-      } else if (escolaId) {
-        targetEscolaIds.push(escolaId)
-      }
-
-      if (targetEscolaIds.length > 0) {
-        // Busca auth_user_id dos funcionários vinculados às escolas selecionadas
-        const { data: vinculos } = await supabaseAdmin
-          .from('vinculos_funcionarios')
+      // Broadcast para turmas específicas, escolas ou geral
+      if (Array.isArray(turmaIds) && turmaIds.length > 0) {
+        // Busca auth_user_id dos funcionários (professores) vinculados a essas turmas
+        const { data: vinculosTurmas } = await supabaseAdmin
+          .from('vinculos_turmas')
           .select('funcionario:funcionarios!funcionario_id(auth_user_id)')
-          .in('escola_id', targetEscolaIds)
-          .eq('ativo', true)
+          .in('turma_id', turmaIds)
 
         targetUserIds = Array.from(
           new Set(
-            (vinculos ?? [])
+            (vinculosTurmas ?? [])
               .map((v: any) => v.funcionario?.auth_user_id)
               .filter(Boolean)
           )
         )
       } else {
-        // Broadcast geral — busca todas as inscrições distintas
-        const { data: subs } = await (supabaseAdmin as any)
-          .from('push_subscriptions')
-          .select('user_id')
+        const targetEscolaIds: string[] = []
+        if (Array.isArray(escolaIds) && escolaIds.length > 0) {
+          targetEscolaIds.push(...escolaIds)
+        } else if (escolaId) {
+          targetEscolaIds.push(escolaId)
+        }
 
-        targetUserIds = Array.from(new Set((subs as any[] ?? []).map((s) => s.user_id)))
+        if (targetEscolaIds.length > 0) {
+          // Busca auth_user_id dos funcionários vinculados às escolas selecionadas
+          const { data: vinculos } = await supabaseAdmin
+            .from('vinculos_funcionarios')
+            .select('funcionario:funcionarios!funcionario_id(auth_user_id)')
+            .in('escola_id', targetEscolaIds)
+            .eq('ativo', true)
+
+          targetUserIds = Array.from(
+            new Set(
+              (vinculos ?? [])
+                .map((v: any) => v.funcionario?.auth_user_id)
+                .filter(Boolean)
+            )
+          )
+        } else {
+          // Broadcast geral — busca todas as inscrições distintas
+          const { data: subs } = await (supabaseAdmin as any)
+            .from('push_subscriptions')
+            .select('user_id')
+
+          targetUserIds = Array.from(new Set((subs as any[] ?? []).map((s) => s.user_id)))
+        }
       }
     } else {
       // Envio direto para 1 usuário

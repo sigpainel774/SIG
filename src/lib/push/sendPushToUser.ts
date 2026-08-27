@@ -8,6 +8,7 @@ export interface SendPushParams {
   isBroadcast?: boolean
   escolaId?: string | null
   escolaIds?: string[] | null
+  turmaIds?: string[] | null
   comunicadoId?: string | null
 }
 

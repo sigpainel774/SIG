@@ -193,10 +193,10 @@ export function VisitasHistoricoTrajetosTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      <div className="flex items-center justify-between bg-card border border-border p-4 rounded-2xl flex-wrap gap-3">
+      <div className="flex items-center justify-between bg-white border border-sidebar-border p-4 rounded-2xl flex-wrap gap-3 shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-blue-400" />
+          <h2 className="text-base font-bold text-sidebar-foreground flex items-center gap-2">
+            <Navigation className="w-5 h-5 text-sidebar-primary" />
             Histórico de Percursos e Auditoria de Campo
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -206,21 +206,21 @@ export function VisitasHistoricoTrajetosTab({
 
         <div className="flex items-center gap-2">
           {pendingIds.size > 0 && (
-            <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 flex items-center gap-1.5 animate-pulse">
-              <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5 animate-pulse">
+              <HardDrive className="w-3.5 h-3.5 text-amber-600" />
               {pendingIds.size} rota(s) local(is)
             </span>
           )}
-          <span className="text-xs font-semibold text-blue-300 bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-800/40">
+          <span className="text-xs font-semibold text-sidebar-accent-foreground bg-sidebar-accent px-3 py-1.5 rounded-xl border border-sidebar-border">
             {trajetosAtivos.length} trajeto(s) no total
           </span>
         </div>
       </div>
 
       {trajetosAtivos.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-card/40 space-y-3">
+        <div className="p-12 text-center border border-dashed border-sidebar-border rounded-2xl bg-white space-y-3">
           <Navigation className="w-10 h-10 text-muted-foreground mx-auto" />
-          <div className="text-sm font-semibold text-foreground">
+          <div className="text-sm font-semibold text-sidebar-foreground">
             Nenhum trajeto gravado ainda
           </div>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -235,16 +235,16 @@ export function VisitasHistoricoTrajetosTab({
             return (
               <div
                 key={t.id}
-                className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-blue-500/40 transition-all shadow-xs"
+                className="bg-white border border-sidebar-border rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-sidebar-primary/40 transition-all shadow-xs"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="font-bold text-sm text-foreground truncate" title={titulo}>
+                      <div className="font-bold text-sm text-sidebar-foreground truncate" title={titulo}>
                         {titulo}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center gap-1 text-[11px] text-blue-400 font-semibold">
+                        <div className="flex items-center gap-1 text-[11px] text-sidebar-primary font-semibold">
                           {t.modo === 'driving' ? (
                             <>
                               <Car className="w-3 h-3" />
@@ -257,7 +257,7 @@ export function VisitasHistoricoTrajetosTab({
                             </>
                           )}
                         </div>
-                        <span className="text-slate-600 text-xs">•</span>
+                        <span className="text-slate-400 text-xs">•</span>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(t.started_at).toLocaleString('pt-BR', {
@@ -274,18 +274,18 @@ export function VisitasHistoricoTrajetosTab({
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Badge
                         variant="outline"
-                        className="text-[10px] uppercase font-bold border-blue-500/30 text-blue-400 bg-blue-500/10"
+                        className="text-[10px] uppercase font-bold border-sidebar-border text-sidebar-accent-foreground bg-sidebar-accent"
                       >
                         {(t.distance_meters / 1000).toFixed(2)} km
                       </Badge>
                       {isPendente ? (
-                        <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                          <HardDrive className="w-2.5 h-2.5" />
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          <HardDrive className="w-2.5 h-2.5 text-amber-600" />
                           No Aparelho
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                          <CheckCircle2 className="w-2.5 h-2.5" />
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
                           Nuvem
                         </span>
                       )}
@@ -293,30 +293,30 @@ export function VisitasHistoricoTrajetosTab({
                   </div>
 
                 {/* Métricas do Card */}
-                <div className="grid grid-cols-2 gap-2 bg-muted/40 p-2.5 rounded-xl text-xs font-mono">
+                <div className="grid grid-cols-2 gap-2 bg-sidebar-accent/30 border border-sidebar-border p-2.5 rounded-xl text-xs font-mono">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block font-sans">
                       Em Movimento
                     </span>
-                    <strong className="text-foreground">
+                    <strong className="text-sidebar-foreground">
                       {formatarTempo(t.moving_seconds)}
                     </strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block font-sans">
                       Em Paradas
                     </span>
-                    <strong className="text-foreground">
+                    <strong className="text-sidebar-foreground">
                       {formatarTempo(t.visit_seconds)}
                     </strong>
                   </div>
 
                   {t.estimated_liters && (
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">
+                      <span className="text-[10px] text-muted-foreground block font-sans">
                         Combustível
                       </span>
-                      <strong className="text-foreground">
+                      <strong className="text-sidebar-foreground">
                         {t.estimated_liters} L
                       </strong>
                     </div>
@@ -324,10 +324,10 @@ export function VisitasHistoricoTrajetosTab({
 
                   {t.estimated_cost && (
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">
+                      <span className="text-[10px] text-muted-foreground block font-sans">
                         Custo Estimado
                       </span>
-                      <strong className="text-emerald-400">
+                      <strong className="text-emerald-700">
                         R$ {t.estimated_cost}
                       </strong>
                     </div>
@@ -335,19 +335,19 @@ export function VisitasHistoricoTrajetosTab({
                 </div>
 
                 {t.veiculo_id && (
-                  <div className="text-xs text-slate-600 flex items-center gap-1.5">
-                    <Car className="w-3.5 h-3.5 text-blue-600" />
+                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Car className="w-3.5 h-3.5 text-sidebar-primary" />
                     <span>{veicMap.get(t.veiculo_id) ?? 'Veículo de Campo'}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
+              <div className="flex items-center justify-between pt-3 border-t border-sidebar-border gap-2">
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
                     onClick={() => handleAbrirDetalhes(t.id, 'replay')}
-                    className="h-8 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
+                    className="h-8 text-xs font-bold gap-1.5 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white cursor-pointer shadow-xs"
                     title="Simular percurso animado com carrinho, velocímetro e relógio"
                   >
                     <Play className="w-3.5 h-3.5 text-white" />
@@ -358,9 +358,9 @@ export function VisitasHistoricoTrajetosTab({
                     size="sm"
                     variant="outline"
                     onClick={() => handleAbrirDetalhes(t.id, 'mapa')}
-                    className="h-8 text-xs font-semibold gap-1.5 border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                    className="h-8 text-xs font-semibold gap-1.5 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/50 cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5 text-slate-600" />
+                    <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Mapa</span>
                   </Button>
                 </div>

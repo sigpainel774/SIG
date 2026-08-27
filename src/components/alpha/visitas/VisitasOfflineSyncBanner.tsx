@@ -99,23 +99,23 @@ export function VisitasOfflineSyncBanner() {
   }
 
   return (
-    <div className="bg-card dark:bg-[#141416] border border-border dark:border-[#26262a] px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+    <div className="bg-white border border-sidebar-border px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
       <div className="flex items-center gap-2.5 text-xs flex-wrap">
         {isOnline ? (
-          <span className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-            <Wifi className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+            <Wifi className="w-4 h-4 text-emerald-600" />
             Online
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
-            <WifiOff className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-pulse" />
+          <span className="flex items-center gap-1.5 font-semibold text-amber-700">
+            <WifiOff className="w-4 h-4 text-amber-700 animate-pulse" />
             Modo Offline Ativo (Operando localmente)
           </span>
         )}
 
         {itensPendentes > 0 && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-[11px]">
-            <AlertCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[11px]">
+            <AlertCircle className="w-3 h-3 text-blue-600" />
             {itensPendentes} item(ns) pendente(s) de envio
           </span>
         )}
@@ -129,7 +129,7 @@ export function VisitasOfflineSyncBanner() {
             variant="outline"
             onClick={handleDescartarPendentes}
             disabled={descartando || sincronizando}
-            className="h-7 text-xs font-semibold gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 dark:border-destructive/40 shadow-xs cursor-pointer"
+            className="h-7 text-xs font-semibold gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 shadow-xs cursor-pointer"
             title="Excluir alterações pendentes acumuladas localmente"
           >
             <Trash2 className="w-3.5 h-3.5" />
