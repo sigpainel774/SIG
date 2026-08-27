@@ -621,7 +621,7 @@ export default function PacienteDetalhesPage() {
             <div>
               <span className="text-muted-foreground block mb-0.5">Contato de Emergência</span>
               <strong className="text-foreground">
-                {aluno?.nome_contato_emergencia ?? '-'} {aluno?.telefone ? `(${aluno.telefone})` : ((aluno?.dados_matricula as any)?.telefone_emergencia ? `(${(aluno?.dados_matricula as any).telefone_emergencia})` : '')}
+                {aluno?.nome_contato_emergencia || (aluno?.dados_matricula as any)?.contato_emergencia_nome || (aluno?.dados_matricula as any)?.contatoEmergencia || '-'} {aluno?.telefone ? `(${aluno.telefone})` : ((aluno?.dados_matricula as any)?.telefone_emergencia ? `(${(aluno?.dados_matricula as any).telefone_emergencia})` : ((aluno?.dados_matricula as any)?.telefoneEmergencia ? `(${(aluno?.dados_matricula as any).telefoneEmergencia})` : ''))}
               </strong>
             </div>
           </div>

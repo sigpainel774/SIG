@@ -365,15 +365,16 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Contato em caso de emergência</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Nome do contato de emergência</Label>
               <Input
+                placeholder="Ex: Maria dos Santos (Tia / Avó)"
                 value={contatoEmergencia}
                 onChange={(e) => setContatoEmergencia(e.target.value)}
                 className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Telefone</Label>
+              <Label className="block mb-1 text-xs font-bold text-foreground">Telefone de emergência</Label>
               <Input
                 placeholder="(75) 00000-0000"
                 value={telefoneEmergencia}

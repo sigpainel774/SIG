@@ -413,8 +413,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setLatitude(al.latitude != null ? Number(al.latitude) : (dm.latitude != null ? Number(dm.latitude) : -12.7299932))
       setLongitude(al.longitude != null ? Number(al.longitude) : (dm.longitude != null ? Number(dm.longitude) : -39.1858195))
       setZonaResidencial(al.zona_residencial ?? 'Urbana')
-      setContatoEmergencia(al.nome_contato_emergencia ?? '')
-      setTelefoneEmergencia(al.telefone ?? '')
+      const alDm = (al.dados_matricula as any) || {}
+      setContatoEmergencia(al.nome_contato_emergencia ?? alDm.nome_contato_emergencia ?? alDm.contatoEmergencia ?? '')
+      setTelefoneEmergencia(al.telefone ?? alDm.telefone_emergencia ?? alDm.telefoneEmergencia ?? alDm.telefone ?? '')
 
       // Foto 3x4
       const visualUrl = getVisualizacaoUrl({
@@ -633,8 +634,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setLatitude(aluno.latitude != null ? Number(aluno.latitude) : null)
     setLongitude(aluno.longitude != null ? Number(aluno.longitude) : null)
     setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
-    setContatoEmergencia(aluno.nome_contato_emergencia ?? '')
-    setTelefoneEmergencia(aluno.telefone ?? '')
+    const alunoDm = (aluno as any).dados_matricula || {}
+    setContatoEmergencia(aluno.nome_contato_emergencia ?? alunoDm.nome_contato_emergencia ?? alunoDm.contatoEmergencia ?? '')
+    setTelefoneEmergencia(aluno.telefone ?? alunoDm.telefone_emergencia ?? alunoDm.telefoneEmergencia ?? alunoDm.telefone ?? '')
 
     // Carregar foto existente
     const visualUrl = getVisualizacaoUrl({
@@ -867,6 +869,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           const updatedDadosMatricula = {
             ...currentDadosMatricula,
             cor_raca: corRaca || currentDadosMatricula.cor_raca,
+            contato_emergencia_nome: contatoEmergencia || currentDadosMatricula.contato_emergencia_nome,
+            telefone_emergencia: telefoneEmergencia || currentDadosMatricula.telefone_emergencia,
             assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
           }
 
@@ -1118,6 +1122,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             cidade_endereco: cidadeEndereco || 'Sapeaçu',
             uf_endereco: ufEndereco || 'BA',
             endereco_formatado: enderecoFinal,
+            contato_emergencia_nome: contatoEmergencia || null,
+            telefone_emergencia: telefoneEmergencia || null,
             assinatura_responsavel_url: assinaturaResponsavelUrl || null,
           }
         }
@@ -1143,6 +1149,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           cidade_endereco: cidadeEndereco || currentDadosMatricula.cidade_endereco || 'Sapeaçu',
           uf_endereco: ufEndereco || currentDadosMatricula.uf_endereco || 'BA',
           endereco_formatado: enderecoFinal || currentDadosMatricula.endereco_formatado,
+          contato_emergencia_nome: contatoEmergencia || currentDadosMatricula.contato_emergencia_nome,
+          telefone_emergencia: telefoneEmergencia || currentDadosMatricula.telefone_emergencia,
           assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
         }
 

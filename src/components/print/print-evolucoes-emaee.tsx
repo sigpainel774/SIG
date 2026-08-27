@@ -25,12 +25,19 @@ export interface EvolucaoPrintData {
 
 interface PrintEvolucoesEmaeeProps {
   aluno: {
-    nome: string
+    nome?: string | null
     numero_matricula_emaee?: string | null
     localizacao_atendimento?: string | null
     ano_escolarizacao?: string | null
+    escola_origem_nome?: string | null
     escolas?: {
       nome: string
+    } | null
+    alunos?: {
+      nome?: string | null
+      escolas?: {
+        nome: string
+      } | null
     } | null
   }
   evolucoes: EvolucaoPrintData[]
@@ -59,6 +66,13 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
   // URL da logo do EMAEE recuperada do banco de dados como fallback seguro
   const defaultEmaeeLogo = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/escola_1785901172024.png'
   const resolvedLogo = escolaLogoUrl || defaultEmaeeLogo
+
+  // Resolução resiliente dos dados do paciente e escola regular
+  const nomePaciente = aluno?.nome || aluno?.alunos?.nome || 'Paciente não identificado'
+  const matriculaPaciente = aluno?.numero_matricula_emaee ?? 'Não gerada'
+  const localizacaoPaciente = aluno?.localizacao_atendimento ?? 'Não informada'
+  const anoEscolarizacaoPaciente = aluno?.ano_escolarizacao ?? 'Não informado'
+  const escolaOrigemPaciente = aluno?.escolas?.nome || aluno?.alunos?.escolas?.nome || aluno?.escola_origem_nome || 'Sem Escola Regular'
 
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
@@ -89,6 +103,11 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+          .print-watermark {
+            opacity: 0.065 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
       
@@ -113,10 +132,23 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
 
       {/* A4 Printed Page Wrapper */}
       <div 
-        className="bg-white text-black w-full max-w-[800px] p-8 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-relaxed font-sans border border-gray-300 print:border-none flex flex-col justify-start my-auto"
+        className="bg-white text-black w-full max-w-[800px] p-8 shadow-2xl rounded-sm print:shadow-none print:p-0 print:w-full print:max-w-none text-[11px] leading-relaxed font-sans border border-gray-300 print:border-none flex flex-col justify-start my-auto relative overflow-hidden"
         style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
       >
-        <div>
+        {/* Marca d'água oficial do EMAEE de fundo */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={resolvedLogo}
+            alt=""
+            className="w-[420px] max-h-[420px] object-contain opacity-[0.065] print-watermark"
+            style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+          />
+        </div>
+
+        <div className="relative z-10">
           {/* Header */}
           <PrintHeader
             className="pb-3 border-b-2 border-black mb-4"
@@ -134,33 +166,33 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
 
           {/* Patient / Prontuário General Data Table */}
           <div className="mb-4">
-            <div className="bg-gray-100 border border-black px-2 py-1 font-bold text-[10px] uppercase mb-0 tracking-wide">
+            <div className="bg-gray-100/90 border border-black px-2 py-1 font-bold text-[10px] uppercase mb-0 tracking-wide">
               DADOS CADASTRAIS DO PACIENTE
             </div>
-            <table className="w-full border-collapse border border-black text-[10px]">
+            <table className="w-full border-collapse border border-black text-[10px] bg-white/70">
               <tbody>
                 <tr>
                   <td className="border border-black p-2 w-1/2">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Nome do Paciente</span>
-                    <span className="font-bold text-[11px] text-gray-900">{aluno.nome}</span>
+                    <span className="font-bold text-[11px] text-gray-900">{nomePaciente}</span>
                   </td>
                   <td className="border border-black p-2 w-1/4">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Nº Matrícula EMAEE</span>
-                    <span className="font-semibold">{aluno.numero_matricula_emaee ?? 'Não gerada'}</span>
+                    <span className="font-semibold">{matriculaPaciente}</span>
                   </td>
                   <td className="border border-black p-2 w-1/4">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Localização</span>
-                    <span>{aluno.localizacao_atendimento ?? 'Não informada'}</span>
+                    <span>{localizacaoPaciente}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="border border-black p-2 w-1/2">
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Escola de Origem (Regular)</span>
-                    <span>{aluno.escolas?.nome ?? 'Sem Escola Regular'}</span>
+                    <span>{escolaOrigemPaciente}</span>
                   </td>
                   <td className="border border-black p-2 w-1/2" colSpan={2}>
                     <span className="font-bold block text-[8px] uppercase text-gray-500">Ano de Escolarização</span>
-                    <span>{aluno.ano_escolarizacao ?? 'Não informado'}</span>
+                    <span>{anoEscolarizacaoPaciente}</span>
                   </td>
                 </tr>
               </tbody>
@@ -169,12 +201,12 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
 
           {/* Evolutions List */}
           <div className="space-y-6">
-            <div className="bg-gray-100 border border-black px-2 py-1 font-bold text-[10px] uppercase mb-0 tracking-wide">
+            <div className="bg-gray-100/90 border border-black px-2 py-1 font-bold text-[10px] uppercase mb-0 tracking-wide">
               HISTÓRICO DE ANOTAÇÕES DE EVOLUÇÃO
             </div>
 
             {evolucoes.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 border border-t-0 border-black text-xs italic">
+              <div className="text-center py-8 text-gray-500 border border-t-0 border-black text-xs italic bg-white/80">
                 Nenhuma evolução clínica registrada para este prontuário.
               </div>
             ) : (
@@ -189,7 +221,7 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
                     : null
 
                   return (
-                    <div key={evo.id} className="border border-black rounded-md p-4 bg-white space-y-3 break-inside-avoid">
+                    <div key={evo.id} className="border border-black rounded-md p-4 bg-white/80 backdrop-blur-[1px] space-y-3 break-inside-avoid shadow-sm">
                       {/* Evolution Meta Info */}
                       <div className="flex justify-between items-center border-b border-gray-200 pb-2">
                         <span className="font-bold text-xs text-blue-900">
@@ -208,7 +240,7 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
 
                       {/* Conduta/Orientações */}
                       {evo.conduta_orientacoes && (
-                        <div className="text-xs text-gray-800 bg-gray-50 p-2 rounded border border-gray-100">
+                        <div className="text-xs text-gray-800 bg-gray-50/90 p-2 rounded border border-gray-100">
                           <div className="font-bold text-[9px] uppercase text-gray-500 mb-1">Conduta / Próximos Passos</div>
                           <p className="whitespace-pre-line">{evo.conduta_orientacoes}</p>
                         </div>
@@ -248,8 +280,8 @@ export function PrintEvolucoesEmaee({ aluno, evolucoes, escolaLogoUrl, onClose, 
         </div>
 
         {/* Oficial Footnote */}
-        <div className="text-center text-[8px] text-gray-400 mt-12 border-t border-gray-200 pt-2">
-          Este prontuário é um documento oficial emitido sob a chancela da Secretaria Municipal.
+        <div className="text-center text-[8px] text-gray-500 mt-12 border-t border-gray-200 pt-2 relative z-10">
+          Esta ficha de evolução é um documento oficial emitido sob a chancela da Secretaria Municipal de Educação.
         </div>
       </div>
     </div>,

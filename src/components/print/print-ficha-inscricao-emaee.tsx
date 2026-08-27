@@ -298,7 +298,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
               <tr>
                 <td colSpan={2} className="border border-black p-1.5">
                   <span className="font-bold block text-[8px] uppercase text-gray-600">Contato de Emergência</span>
-                  <span>{aluno?.nome_contato_emergencia || dm?.contatoEmergencia || '-'} {aluno?.telefone_emergencia ? `(${aluno.telefone_emergencia})` : ''}</span>
+                  <span>{aluno?.nome_contato_emergencia || dm?.contatoEmergencia || dm?.nome_contato_emergencia || '-'} {aluno?.telefone || aluno?.telefone_emergencia || dm?.telefoneEmergencia ? `(${aluno?.telefone || aluno?.telefone_emergencia || dm?.telefoneEmergencia})` : ''}</span>
                 </td>
               </tr>
             </tbody>
