@@ -539,9 +539,9 @@ export default function HomePage() {
             <div className="flex items-center gap-2 bg-highlight/10 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
               <div className={`w-5 h-5 rounded-full overflow-hidden ${selectedEscola.logo_url ? 'bg-transparent' : selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
                 {selectedEscola.logo_url ? (
-                  <img src={selectedEscola.logo_url} alt={selectedEscola.nome} className="w-full h-full object-cover" />
+                  <img src={selectedEscola.logo_url} alt={selectedEscola.nome || 'Escola'} className="w-full h-full object-cover" />
                 ) : (
-                  selectedEscola.nome[0]
+                  (selectedEscola.nome || 'E')[0]
                 )}
               </div>
               <span>{selectedEscola.nome}</span>

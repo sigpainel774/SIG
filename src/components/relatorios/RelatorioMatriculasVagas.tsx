@@ -196,7 +196,7 @@ export default function RelatorioMatriculasVagas({ selectedEscola }: RelatorioMa
           setLoading(false)
         }
       } catch (err: any) {
-        console.error('Erro ao carregar dados de matrículas e vagas:', err)
+        console.error('Erro ao carregar dados de matrículas e vagas:', err?.message || err)
         if (isMounted) {
           toast.error('Erro ao carregar os dados de vagas.')
           setLoading(false)

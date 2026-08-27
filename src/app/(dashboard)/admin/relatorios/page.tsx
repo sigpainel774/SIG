@@ -25,6 +25,7 @@ import {
   GraduationCap,
   TrendingDown,
   BookOpenCheck,
+  Award,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +33,22 @@ export default function RelatoriosAdministrativosPage() {
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'disponiveis' | 'construcao'>('todos');
 
   const relatoriosDisponiveis = [
+    {
+      id: 'produtividade-secretarios',
+      title: 'Produtividade dos Secretários Escolares',
+      description:
+        'Auditoria executiva de novos cadastros de alunos, edições de fichas, volume de trabalho e assiduidade dos secretários da rede.',
+      icon: Award,
+      badge: 'Exclusivo Nível 1',
+      badgeColor: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/25 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/15 dark:border-emerald-500/30',
+      bgGradient: 'from-emerald-500/5 via-emerald-500/0 to-transparent dark:from-emerald-500/10 dark:via-emerald-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-emerald-500/40 dark:border-borderCustom dark:hover:border-emerald-500/40',
+      path: '/relatorios/produtividade',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
     {
       id: 'frequencia-evasao',
       title: 'Frequência, Assiduidade & Alerta de Evasão',

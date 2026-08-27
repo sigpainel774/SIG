@@ -32,6 +32,9 @@ const RelatorioMatriculasVagas = dynamic(() => import('@/components/relatorios/R
 const RelatorioDiariosClasse = dynamic(() => import('@/components/relatorios/RelatorioDiariosClasse'), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando monitoramento de diários de classe...</div>
 })
+const RelatorioProdutividadeSecretarios = dynamic(() => import('@/components/relatorios/RelatorioProdutividadeSecretarios'), {
+  loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando relatório de produtividade dos secretários...</div>
+})
 const PrintFicha = dynamic(() => import('@/components/print/print-ficha').then(m => ({ default: m.PrintFicha })), {
   loading: () => <div className="p-8 text-center text-muted-foreground animate-pulse font-semibold">Carregando ficha...</div>
 })
@@ -54,11 +57,12 @@ import {
   Activity, 
   Heart,
   TrendingDown,
-  BookOpenCheck
+  BookOpenCheck,
+  Award
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | 'frequencia_evasao' | 'matriculas_vagas' | 'diarios_classe' | null
+type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | 'frequencia_evasao' | 'matriculas_vagas' | 'diarios_classe' | 'produtividade_secretarios' | null
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
@@ -138,6 +142,13 @@ const REPORT_CARDS = [
     title: 'Relatório Estratégico EMAEE',
     description: 'Inteligência clínica, censo de neurodesenvolvimento, especialidades e rede.',
     icon: Heart,
+    variant: 'primary' as const,
+  },
+  {
+    id: 'produtividade_secretarios' as const,
+    title: 'Produtividade dos Secretários',
+    description: 'Auditoria de cadastros de novos alunos, edições de prontuários, volume de trabalho e assiduidade dos secretários.',
+    icon: Award,
     variant: 'primary' as const,
   },
 ]
@@ -709,6 +720,8 @@ export default function RelatoriosPage() {
           <RelatorioMatriculasVagas selectedEscola={selectedEscola} />
         ) : activeReport === 'diarios_classe' ? (
           <RelatorioDiariosClasse selectedEscola={selectedEscola} />
+        ) : activeReport === 'produtividade_secretarios' ? (
+          <RelatorioProdutividadeSecretarios selectedEscola={selectedEscola} />
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-foreground mb-3">
@@ -811,6 +824,9 @@ export default function RelatoriosPage() {
           }
           if (card.id === 'servidores') {
             return podeVerRelatorioServidores
+          }
+          if (card.id === 'produtividade_secretarios') {
+            return isSuperAdminOrNivel1
           }
           return true
         }).map((card) => {

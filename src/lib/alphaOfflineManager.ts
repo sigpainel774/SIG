@@ -431,7 +431,7 @@ export async function sincronizarFilaAlphaGlobal(
         item.tentativas = (item.tentativas || 0) + 1
         item.ultimo_erro = err.message || 'Falha de comunicação com o servidor'
         erros++
-        console.error(`Erro ao sincronizar item ${item.id} do módulo ${item.modulo}:`, err)
+        console.error(`Erro ao sincronizar item ${item.id} do módulo ${item.modulo}:`, err?.message || err)
 
         if (db) {
           const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite')
