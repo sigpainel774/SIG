@@ -30,6 +30,10 @@ export function SecaoDadosAluno() {
     profissaoMae, setProfissaoMae,
     nomePai, setNomePai,
     profissaoPai, setProfissaoPai,
+    tipoResponsavel, setTipoResponsavel,
+    responsavelOutroNome, setResponsavelOutroNome,
+    responsavelOutroParentesco, setResponsavelOutroParentesco,
+    responsavelOutroCpf, setResponsavelOutroCpf,
     
     // Endereço Residencial Estruturado
     cep, setCep,
@@ -329,39 +333,137 @@ export function SecaoDadosAluno() {
               />
             </div>
 
-            {/* Filiação */}
-            <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Nome da mãe</Label>
-              <Input
-                value={nomeMae}
-                onChange={(e) => setNomeMae(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-            <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Profissão da mãe</Label>
-              <Input
-                value={profissaoMae}
-                onChange={(e) => setProfissaoMae(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
+            {/* Filiação e Responsável Legal */}
+            <div className="col-span-12 p-3.5 border border-border rounded-xl bg-muted/40 dark:bg-[#0b0e14]/40 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">
+                    Filiação e Responsável Legal
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Marque quem é o responsável legal (o nome selecionado sairá na assinatura e comprovante)
+                  </span>
+                </div>
 
-            <div className="col-span-12 md:col-span-8">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Nome do pai</Label>
-              <Input
-                value={nomePai}
-                onChange={(e) => setNomePai(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-            <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-foreground">Profissão do pai</Label>
-              <Input
-                value={profissaoPai}
-                onChange={(e) => setProfissaoPai(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
+                {/* Checkbox / Radio do Responsável: Mãe / Pai / Outro */}
+                <div className="flex items-center gap-1.5 bg-input p-1 rounded-xl border border-border self-start sm:self-auto">
+                  <span className="text-[10px] font-bold text-muted-foreground px-1.5 uppercase">Responsável:</span>
+                  {[
+                    { value: 'MAE', label: 'Mãe' },
+                    { value: 'PAI', label: 'Pai' },
+                    { value: 'OUTRO', label: 'Outro' },
+                  ].map((op) => (
+                    <button
+                      key={op.value}
+                      type="button"
+                      onClick={() => setTipoResponsavel(op.value as any)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        tipoResponsavel === op.value
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {op.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 gap-3">
+                {/* Nome e Profissão da Mãe */}
+                <div className="col-span-12 md:col-span-8">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      Nome da mãe
+                      {tipoResponsavel === 'MAE' && (
+                        <span className="text-[10px] bg-primary/15 text-primary border border-primary/30 px-1.5 py-0.5 rounded-md font-extrabold">
+                          ✓ Responsável Principal
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                  <Input
+                    value={nomeMae}
+                    onChange={(e) => setNomeMae(e.target.value)}
+                    placeholder="Nome completo da mãe"
+                    className="bg-input border-border text-foreground text-sm rounded-xl"
+                  />
+                </div>
+                <div className="col-span-12 md:col-span-4">
+                  <Label className="block mb-1 text-xs font-bold text-foreground">Profissão da mãe</Label>
+                  <Input
+                    value={profissaoMae}
+                    onChange={(e) => setProfissaoMae(e.target.value)}
+                    placeholder="Ocupação / Profissão"
+                    className="bg-input border-border text-foreground text-sm rounded-xl"
+                  />
+                </div>
+
+                {/* Nome e Profissão do Pai */}
+                <div className="col-span-12 md:col-span-8">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      Nome do pai
+                      {tipoResponsavel === 'PAI' && (
+                        <span className="text-[10px] bg-primary/15 text-primary border border-primary/30 px-1.5 py-0.5 rounded-md font-extrabold">
+                          ✓ Responsável Principal
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                  <Input
+                    value={nomePai}
+                    onChange={(e) => setNomePai(e.target.value)}
+                    placeholder="Nome completo do pai"
+                    className="bg-input border-border text-foreground text-sm rounded-xl"
+                  />
+                </div>
+                <div className="col-span-12 md:col-span-4">
+                  <Label className="block mb-1 text-xs font-bold text-foreground">Profissão do pai</Label>
+                  <Input
+                    value={profissaoPai}
+                    onChange={(e) => setProfissaoPai(e.target.value)}
+                    placeholder="Ocupação / Profissão"
+                    className="bg-input border-border text-foreground text-sm rounded-xl"
+                  />
+                </div>
+
+                {/* Outro Responsável Legal (Condicional quando selecionado 'OUTRO') */}
+                {tipoResponsavel === 'OUTRO' && (
+                  <div className="col-span-12 p-3 rounded-xl border border-primary/40 bg-primary/5 space-y-2.5 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                        ✓ Outro Responsável Legal (Tutor / Guardião / Familiar)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-12 gap-3">
+                      <div className="col-span-12 md:col-span-7">
+                        <Label className="block mb-1 text-xs font-bold text-foreground">
+                          Nome do Responsável (Outro) <span className="text-rose-500">*</span>
+                        </Label>
+                        <Input
+                          value={responsavelOutroNome}
+                          onChange={(e) => setResponsavelOutroNome(e.target.value)}
+                          placeholder="Nome completo do responsável (ex: Avó, Tia, Tutor)"
+                          className="bg-input border-border text-foreground text-sm rounded-xl"
+                          required={tipoResponsavel === 'OUTRO'}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-5">
+                        <Label className="block mb-1 text-xs font-bold text-foreground">
+                          Grau de Parentesco / Vínculo
+                        </Label>
+                        <Input
+                          value={responsavelOutroParentesco}
+                          onChange={(e) => setResponsavelOutroParentesco(e.target.value)}
+                          placeholder="Ex: Avó Materna, Tia, Tutor Legal"
+                          className="bg-input border-border text-foreground text-sm rounded-xl"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="col-span-12 md:col-span-8">

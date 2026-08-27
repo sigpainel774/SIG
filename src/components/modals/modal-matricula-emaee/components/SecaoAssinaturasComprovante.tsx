@@ -44,7 +44,13 @@ export function SecaoAssinaturasComprovante() {
     celularSigningCode,
     iniciarAssinaturaCelular,
     cancelarAssinaturaCelular,
-    funcionario
+    funcionario,
+    
+    // Responsável
+    tipoResponsavel,
+    nomeMae,
+    nomePai,
+    responsavelOutroNome
   } = useMatriculaEmaeeContext()
 
   const [copied, setCopied] = React.useState(false)
@@ -52,6 +58,12 @@ export function SecaoAssinaturasComprovante() {
   const nomeUnidadeSelecionada = unidadesEmaee.find(u => u.id === escolaAtendimentoId)?.nome || 'EMAEE — Unidade Sede'
   const nomeAlunoExibicao = nomeCompleto || alunoSelecionado?.nome || 'Aguardando seleção do aluno'
   const vinculosVisiveis = vinculosAEE.filter((v: VinculoAEEConfig) => !v.isRemovido)
+
+  const nomeResponsavelExibicao = tipoResponsavel === 'MAE'
+    ? (nomeMae ? `Mãe: ${nomeMae}` : 'Mãe')
+    : tipoResponsavel === 'PAI'
+      ? (nomePai ? `Pai: ${nomePai}` : 'Pai')
+      : (responsavelOutroNome ? `Responsável: ${responsavelOutroNome}` : 'Outro Responsável')
 
   const handleCopyCode = () => {
     if (codigoColetaLocal) {
@@ -238,7 +250,7 @@ export function SecaoAssinaturasComprovante() {
             )}
 
             <SignaturePad
-              label="Assinar na Tela (Pai / Mãe / Tutor)"
+              label={`Assinar na Tela (${nomeResponsavelExibicao})`}
               value={assinaturaResponsavelUrl}
               onChange={setAssinaturaResponsavelUrl}
               isEditMode={true}

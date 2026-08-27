@@ -70,6 +70,31 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
 
   const defaultEmaeeLogo = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/escola_1785901172024.png'
 
+  const tipoResp = aluno?.dados_matricula?.tipo_responsavel || prontuario?.condicoes_saude?.tipo_responsavel
+  const nomeMae = aluno?.nome_mae || dm?.nomeMae || ''
+  const nomePai = aluno?.nome_pai || dm?.nomePai || ''
+  const outroNome = aluno?.dados_matricula?.responsavel_outro_nome || prontuario?.responsavel_outro_nome || ''
+  const outroParentesco = aluno?.dados_matricula?.responsavel_outro_parentesco || ''
+
+  // Identifica o nome do responsável legal
+  let nomeResponsavel = (prontuario?.responsavel_assinatura_nome || '').trim()
+  if (!nomeResponsavel) {
+    if (tipoResp === 'MAE') nomeResponsavel = nomeMae
+    else if (tipoResp === 'PAI') nomeResponsavel = nomePai
+    else if (tipoResp === 'OUTRO') nomeResponsavel = outroNome
+    else nomeResponsavel = nomeMae || nomePai || outroNome || ''
+  }
+
+  // Identifica a relação / papel do responsável
+  let labelResponsavel = 'Pai / Mãe / Responsável Legal'
+  if (nomeResponsavel && nomeMae && nomeResponsavel.toLowerCase() === nomeMae.toLowerCase()) {
+    labelResponsavel = 'Mãe / Responsável Legal'
+  } else if (nomeResponsavel && nomePai && nomeResponsavel.toLowerCase() === nomePai.toLowerCase()) {
+    labelResponsavel = 'Pai / Responsável Legal'
+  } else if (tipoResp === 'OUTRO' || (outroNome && nomeResponsavel.toLowerCase() === outroNome.toLowerCase())) {
+    labelResponsavel = outroParentesco ? `${outroParentesco} / Responsável Legal` : 'Responsável Legal'
+  }
+
   if (!mounted) return null
 
   // Helper para formatar data BR (dd/mm/aaaa)
@@ -270,15 +295,25 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
           </table>
 
           {/* 2. DADOS FAMILIARES */}
-          <div className="bg-black text-white font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wide">
-            2. DADOS FAMILIARES E RESPONSÁVEIS
+          <div className="bg-black text-white font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wide flex items-center justify-between">
+            <span>2. DADOS FAMILIARES E RESPONSÁVEIS</span>
+            {nomeResponsavel && (
+              <span className="text-[8px] font-normal normal-case opacity-90">
+                Responsável Principal: <strong>{nomeResponsavel}</strong>
+              </span>
+            )}
           </div>
           <table className="w-full border-collapse border border-black mb-2 text-[10px]">
             <tbody>
               <tr>
                 <td className="border border-black p-1.5 w-1/2">
-                  <span className="font-bold block text-[8px] uppercase text-gray-600">Nome da Mãe</span>
-                  <span className="font-bold">{aluno?.nome_mae || dm?.nomeMae || '-'}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold block text-[8px] uppercase text-gray-600">Nome da Mãe</span>
+                    {nomeResponsavel && nomeMae && nomeResponsavel.trim().toLowerCase() === nomeMae.trim().toLowerCase() && (
+                      <span className="text-[7.5px] font-bold bg-black text-white px-1 rounded-xs uppercase">Responsável Legal</span>
+                    )}
+                  </div>
+                  <span className="font-bold">{nomeMae || '-'}</span>
                 </td>
                 <td className="border border-black p-1.5 w-1/2">
                   <span className="font-bold block text-[8px] uppercase text-gray-600">Profissão da Mãe</span>
@@ -287,14 +322,34 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
               </tr>
               <tr>
                 <td className="border border-black p-1.5 w-1/2">
-                  <span className="font-bold block text-[8px] uppercase text-gray-600">Nome do Pai</span>
-                  <span className="font-bold">{aluno?.nome_pai || dm?.nomePai || '-'}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold block text-[8px] uppercase text-gray-600">Nome do Pai</span>
+                    {nomeResponsavel && nomePai && nomeResponsavel.trim().toLowerCase() === nomePai.trim().toLowerCase() && (
+                      <span className="text-[7.5px] font-bold bg-black text-white px-1 rounded-xs uppercase">Responsável Legal</span>
+                    )}
+                  </div>
+                  <span className="font-bold">{nomePai || '-'}</span>
                 </td>
                 <td className="border border-black p-1.5 w-1/2">
                   <span className="font-bold block text-[8px] uppercase text-gray-600">Profissão do Pai</span>
                   <span>{aluno?.profissao_pai || dm?.profissaoPai || '-'}</span>
                 </td>
               </tr>
+              {(tipoResp === 'OUTRO' || (outroNome && outroNome !== nomeMae && outroNome !== nomePai) || (nomeResponsavel && nomeResponsavel !== nomeMae && nomeResponsavel !== nomePai)) && (
+                <tr>
+                  <td className="border border-black p-1.5 w-1/2 bg-gray-50/50">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold block text-[8px] uppercase text-gray-600">Outro Responsável Legal</span>
+                      <span className="text-[7.5px] font-bold bg-black text-white px-1 rounded-xs uppercase">Responsável Legal</span>
+                    </div>
+                    <span className="font-bold">{outroNome || nomeResponsavel}</span>
+                  </td>
+                  <td className="border border-black p-1.5 w-1/2 bg-gray-50/50">
+                    <span className="font-bold block text-[8px] uppercase text-gray-600">Parentesco / Vínculo</span>
+                    <span>{outroParentesco || 'Tutor / Representante Legal'}</span>
+                  </td>
+                </tr>
+              )}
               <tr>
                 <td colSpan={2} className="border border-black p-1.5">
                   <span className="font-bold block text-[8px] uppercase text-gray-600">Contato de Emergência</span>
@@ -476,10 +531,10 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                 </div>
                 <div className="border-t border-black w-full pt-1">
                   <div className="font-bold text-[9.5px] uppercase text-gray-900">
-                    {prontuario?.responsavel_assinatura_nome || aluno?.nome_mae || aluno?.nome_pai || 'Assinatura do Pai/Mãe/Responsável'}
+                    {nomeResponsavel || 'Assinatura do Pai/Mãe/Responsável'}
                   </div>
                   <div className="text-[8px] text-gray-500">
-                    {prontuario?.responsavel_assinatura_cpf ? `CPF: ${prontuario.responsavel_assinatura_cpf}` : 'Responsável Legal'}
+                    {labelResponsavel}
                   </div>
                 </div>
               </div>

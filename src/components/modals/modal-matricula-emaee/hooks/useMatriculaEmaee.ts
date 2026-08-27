@@ -53,6 +53,12 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [profissaoMae, setProfissaoMae] = useState('')
   const [nomePai, setNomePai] = useState('')
   const [profissaoPai, setProfissaoPai] = useState('')
+
+  // Responsável Legal pelo Aluno (Mãe, Pai ou Outro)
+  const [tipoResponsavel, setTipoResponsavel] = useState<'MAE' | 'PAI' | 'OUTRO'>('MAE')
+  const [responsavelOutroNome, setResponsavelOutroNome] = useState('')
+  const [responsavelOutroParentesco, setResponsavelOutroParentesco] = useState('')
+  const [responsavelOutroCpf, setResponsavelOutroCpf] = useState('')
   
   // Endereço Residencial Estruturado com CEP e Geolocalização (MiniMapa)
   const [cep, setCep] = useState('')
@@ -296,6 +302,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setProfissaoMae('')
     setNomePai('')
     setProfissaoPai('')
+    setTipoResponsavel('MAE')
+    setResponsavelOutroNome('')
+    setResponsavelOutroParentesco('')
+    setResponsavelOutroCpf('')
     setCep('')
     setRua('')
     setNumero('')
@@ -401,6 +411,33 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setProfissaoMae(al.profissao_mae ?? '')
       setNomePai(al.nome_pai ?? '')
       setProfissaoPai(al.profissao_pai ?? '')
+      
+      // Carregar Responsável Legal
+      const tipoRespSalvo = dm.tipo_responsavel || (mat.condicoes_saude as any)?.tipo_responsavel
+      const respOutroNomeSalvo = dm.responsavel_outro_nome || ''
+      const respOutroParentescoSalvo = dm.responsavel_outro_parentesco || ''
+      const respOutroCpfSalvo = dm.responsavel_outro_cpf || ''
+
+      if (tipoRespSalvo === 'MAE' || tipoRespSalvo === 'PAI' || tipoRespSalvo === 'OUTRO') {
+        setTipoResponsavel(tipoRespSalvo)
+        setResponsavelOutroNome(respOutroNomeSalvo)
+        setResponsavelOutroParentesco(respOutroParentescoSalvo)
+        setResponsavelOutroCpf(respOutroCpfSalvo)
+      } else if (mat.responsavel_assinatura_nome) {
+        const respAssin = mat.responsavel_assinatura_nome.trim().toLowerCase()
+        const mae = (al.nome_mae || '').trim().toLowerCase()
+        const pai = (al.nome_pai || '').trim().toLowerCase()
+        if (mae && respAssin === mae) {
+          setTipoResponsavel('MAE')
+        } else if (pai && respAssin === pai) {
+          setTipoResponsavel('PAI')
+        } else {
+          setTipoResponsavel('OUTRO')
+          setResponsavelOutroNome(mat.responsavel_assinatura_nome)
+        }
+      } else {
+        setTipoResponsavel(al.nome_mae ? 'MAE' : (al.nome_pai ? 'PAI' : 'MAE'))
+      }
       
       // Endereço Residencial Estruturado
       setCep(dm.cep ?? '')
@@ -630,11 +667,25 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setProfissaoMae(aluno.profissao_mae ?? '')
     setNomePai(aluno.nome_pai ?? '')
     setProfissaoPai(aluno.profissao_pai ?? '')
+
+    const alunoDm = (aluno as any).dados_matricula || {}
+    const tipoRespSalvo = alunoDm.tipo_responsavel
+    if (tipoRespSalvo === 'MAE' || tipoRespSalvo === 'PAI' || tipoRespSalvo === 'OUTRO') {
+      setTipoResponsavel(tipoRespSalvo)
+      setResponsavelOutroNome(alunoDm.responsavel_outro_nome || '')
+      setResponsavelOutroParentesco(alunoDm.responsavel_outro_parentesco || '')
+      setResponsavelOutroCpf(alunoDm.responsavel_outro_cpf || '')
+    } else {
+      setTipoResponsavel(aluno.nome_mae ? 'MAE' : (aluno.nome_pai ? 'PAI' : 'MAE'))
+      setResponsavelOutroNome('')
+      setResponsavelOutroParentesco('')
+      setResponsavelOutroCpf('')
+    }
+
     setEndereco(aluno.endereco ?? '')
     setLatitude(aluno.latitude != null ? Number(aluno.latitude) : null)
     setLongitude(aluno.longitude != null ? Number(aluno.longitude) : null)
     setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
-    const alunoDm = (aluno as any).dados_matricula || {}
     setContatoEmergencia(aluno.nome_contato_emergencia ?? alunoDm.nome_contato_emergencia ?? alunoDm.contatoEmergencia ?? '')
     setTelefoneEmergencia(aluno.telefone ?? alunoDm.telefone_emergencia ?? alunoDm.telefoneEmergencia ?? alunoDm.telefone ?? '')
 
@@ -736,6 +787,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setProfissaoMae('')
     setNomePai('')
     setProfissaoPai('')
+    setTipoResponsavel('MAE')
+    setResponsavelOutroNome('')
+    setResponsavelOutroParentesco('')
+    setResponsavelOutroCpf('')
     setEndereco('')
     setLatitude(-12.7299932)
     setLongitude(-39.1858195)
@@ -864,11 +919,23 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         const targetAlunoId = props.matriculaEditar.aluno_id || alunoSelecionado?.id
 
         // 1. Atualizar dados do aluno se houver ID vinculado
+        const nomeRespCalculado = tipoResponsavel === 'MAE'
+          ? nomeMae.trim()
+          : tipoResponsavel === 'PAI'
+            ? nomePai.trim()
+            : responsavelOutroNome.trim()
+        const responsavelAssinaturaNomeFinal = nomeRespCalculado || nomeMae.trim() || nomePai.trim() || props.matriculaEditar.responsavel_assinatura_nome || null
+
         if (targetAlunoId) {
           const currentDadosMatricula = (props.matriculaEditar.alunos as any)?.dados_matricula || (alunoSelecionado as any)?.dados_matricula || {}
           const updatedDadosMatricula = {
             ...currentDadosMatricula,
             cor_raca: corRaca || currentDadosMatricula.cor_raca,
+            tipo_responsavel: tipoResponsavel,
+            responsavel_outro_nome: responsavelOutroNome.trim() || null,
+            responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
+            responsavel_outro_cpf: responsavelOutroCpf.trim() || null,
+            responsavel_principal_nome: responsavelAssinaturaNomeFinal,
             contato_emergencia_nome: contatoEmergencia || currentDadosMatricula.contato_emergencia_nome,
             telefone_emergencia: telefoneEmergencia || currentDadosMatricula.telefone_emergencia,
             assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
@@ -1009,8 +1076,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           assinatura_responsavel_matricula_url: assinaturaServidorUrl || props.matriculaEditar.assinatura_responsavel_matricula_url || null,
           assinatura_responsavel_aluno_url: assinaturaResponsavelUrl || props.matriculaEditar.assinatura_responsavel_aluno_url || null,
           autorizado_pelo_responsavel: Boolean(assinaturaResponsavelUrl || props.matriculaEditar.assinatura_responsavel_aluno_url),
-          responsavel_assinatura_nome: nomeMae || nomePai || props.matriculaEditar.responsavel_assinatura_nome || null,
-          responsavel_assinatura_cpf: cpf || props.matriculaEditar.responsavel_assinatura_cpf || null,
+          responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
+          responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
           ...deficiencias,
           transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
           def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
@@ -1087,6 +1154,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       const enderecoFinal = endereco.trim() || enderecoCompleto || null
 
       // 1. Se for cadastro de ALUNO NOVO (não existente no SIG)
+      const nomeRespCalculado = tipoResponsavel === 'MAE'
+        ? nomeMae.trim()
+        : tipoResponsavel === 'PAI'
+          ? nomePai.trim()
+          : responsavelOutroNome.trim()
+      const responsavelAssinaturaNomeFinal = nomeRespCalculado || nomeMae.trim() || nomePai.trim() || null
+
       if (!targetAlunoId) {
         const insertAlunoPayload: any = {
           nome: nomeCompleto.trim(),
@@ -1115,6 +1189,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           codigo_temp_resp_criado_em: codigoColetaLocal ? new Date().toISOString() : null,
           dados_matricula: {
             cor_raca: corRaca || null,
+            tipo_responsavel: tipoResponsavel,
+            responsavel_outro_nome: responsavelOutroNome.trim() || null,
+            responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
+            responsavel_outro_cpf: responsavelOutroCpf.trim() || null,
+            responsavel_principal_nome: responsavelAssinaturaNomeFinal,
             cep: cep || null,
             rua: rua || null,
             numero: numero || null,
@@ -1142,6 +1221,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         const updatedDadosMatricula = {
           ...currentDadosMatricula,
           cor_raca: corRaca || currentDadosMatricula.cor_raca,
+          tipo_responsavel: tipoResponsavel,
+          responsavel_outro_nome: responsavelOutroNome.trim() || null,
+          responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
+          responsavel_outro_cpf: responsavelOutroCpf.trim() || null,
+          responsavel_principal_nome: responsavelAssinaturaNomeFinal,
           cep: cep || currentDadosMatricula.cep,
           rua: rua || currentDadosMatricula.rua,
           numero: numero || currentDadosMatricula.numero,
@@ -1252,8 +1336,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         assinatura_responsavel_aluno_url: assinaturaResponsavelUrl || null,
         autorizado_pelo_responsavel: !!assinaturaResponsavelUrl,
         data_autorizacao: assinaturaResponsavelUrl ? new Date().toISOString() : null,
-        responsavel_assinatura_nome: nomeMae || nomePai || null,
-        responsavel_assinatura_cpf: cpf || null,
+        responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
+        responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
         ...deficiencias,
         transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
         def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
@@ -1355,6 +1439,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     profissaoMae, setProfissaoMae,
     nomePai, setNomePai,
     profissaoPai, setProfissaoPai,
+    tipoResponsavel, setTipoResponsavel,
+    responsavelOutroNome, setResponsavelOutroNome,
+    responsavelOutroParentesco, setResponsavelOutroParentesco,
+    responsavelOutroCpf, setResponsavelOutroCpf,
     
     // Endereço Residencial Estruturado e Geolocalização
     cep, setCep,

@@ -33,6 +33,31 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
     : (prontuario?.escolas?.nome ?? prontuario?.escola_regular_nome ?? dm?.escolaNome ?? 'Não informada / Encaminhamento externo')
   const defaultEmaeeLogo = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/escola_1785901172024.png'
 
+  const tipoResp = aluno?.dados_matricula?.tipo_responsavel || prontuario?.condicoes_saude?.tipo_responsavel
+  const nomeMae = aluno?.nome_mae || dm?.nomeMae || ''
+  const nomePai = aluno?.nome_pai || dm?.nomePai || ''
+  const outroNome = aluno?.dados_matricula?.responsavel_outro_nome || prontuario?.responsavel_outro_nome || ''
+  const outroParentesco = aluno?.dados_matricula?.responsavel_outro_parentesco || ''
+
+  // Identifica o nome do responsável legal
+  let nomeResponsavel = (prontuario?.responsavel_assinatura_nome || '').trim()
+  if (!nomeResponsavel) {
+    if (tipoResp === 'MAE') nomeResponsavel = nomeMae
+    else if (tipoResp === 'PAI') nomeResponsavel = nomePai
+    else if (tipoResp === 'OUTRO') nomeResponsavel = outroNome
+    else nomeResponsavel = nomeMae || nomePai || outroNome || ''
+  }
+
+  // Identifica a relação / papel do responsável
+  let labelResponsavel = 'Pai / Mãe / Responsável Legal'
+  if (nomeResponsavel && nomeMae && nomeResponsavel.toLowerCase() === nomeMae.toLowerCase()) {
+    labelResponsavel = 'Mãe / Responsável Legal'
+  } else if (nomeResponsavel && nomePai && nomeResponsavel.toLowerCase() === nomePai.toLowerCase()) {
+    labelResponsavel = 'Pai / Responsável Legal'
+  } else if (tipoResp === 'OUTRO' || (outroNome && nomeResponsavel.toLowerCase() === outroNome.toLowerCase())) {
+    labelResponsavel = outroParentesco ? `${outroParentesco} / Responsável Legal` : 'Responsável Legal'
+  }
+
   const assinaturaRespUrl = prontuario?.assinatura_responsavel_aluno_url || dm?.assinatura_responsavel_url || aluno?.assinatura_responsavel_url
   const assinaturaServidorUrl = prontuario?.assinatura_responsavel_matricula_url || prontuario?.funcionarios?.assinatura_url
 
@@ -134,8 +159,8 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
               </tr>
               <tr>
                 <td colSpan={2} className="border border-black p-1.5">
-                  <span className="font-bold block text-[7.5px] uppercase text-gray-600">Mãe / Pai / Responsável</span>
-                  <span className="font-bold">{aluno?.nome_mae || aluno?.nome_pai || prontuario?.responsavel_assinatura_nome || 'Não informado'}</span>
+                  <span className="font-bold block text-[7.5px] uppercase text-gray-600">Responsável Legal</span>
+                  <span className="font-bold">{nomeResponsavel || aluno?.nome_mae || aluno?.nome_pai || 'Não informado'}</span>
                 </td>
                 <td className="border border-black p-1.5">
                   <span className="font-bold block text-[7.5px] uppercase text-gray-600">Telefone para Contato</span>
@@ -194,10 +219,10 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
             </div>
             <div className="border-t border-black w-full pt-1">
               <div className="font-bold text-[8.5px] uppercase text-gray-900">
-                {prontuario?.responsavel_assinatura_nome || aluno?.nome_mae || aluno?.nome_pai || 'Assinatura do Responsável'}
+                {nomeResponsavel || aluno?.nome_mae || aluno?.nome_pai || 'Assinatura do Responsável'}
               </div>
               <div className="text-[7px] text-gray-500">
-                Pai / Mãe / Responsável Legal
+                {labelResponsavel}
               </div>
             </div>
           </div>
