@@ -159,20 +159,19 @@ export default function HomePage() {
   )
   const isMultiLotadoDocente = isProfessor && vinculosAtivos.length > 1
 
-  // ── Detecção de nível 1 (admin global não-superadmin) ──
-  // Nível 1 possui acesso a múltiplas secretarias e precisa selecionar
-  // secretaria → escola antes de acessar o dashboard
+  const isSuperAdmin = Boolean(funcionario?.is_superadmin)
   const isNivel1 = useMemo(
-    () => !funcionario?.is_superadmin && acessos.some(a => a.nivel === 1 && a.ativo),
-    [funcionario?.is_superadmin, acessos]
+    () => isSuperAdmin || acessos.some(a => a.nivel === 1 && a.ativo),
+    [isSuperAdmin, acessos]
   )
 
   // IDs de secretarias que o nível 1 pode acessar (null = todas)
   const secretariasIdsPermitidas = useMemo<string[] | null>(() => {
+    if (isSuperAdmin) return null
     if (!isNivel1) return null
     const acessoNivel1 = acessos.find(a => a.nivel === 1 && a.ativo)
     return (acessoNivel1 as any)?.secretarias_ids ?? null
-  }, [isNivel1, acessos])
+  }, [isSuperAdmin, isNivel1, acessos])
 
   // Lista de secretarias do banco (para o fluxo nível 1)
   const [secretarias, setSecretarias] = useState<SecretariaItem[]>([])
@@ -279,14 +278,16 @@ export default function HomePage() {
   }, [isEMAEE, selectedSecretaria, selectedEscola, secNome])
 
   const isSecretario = useMemo(
-    () => isSecretarioEducacao?.() ?? false,
-    [isSecretarioEducacao, acessos, funcionario?.cargo, funcionario?.is_superadmin]
+    () => isSuperAdmin || (isSecretarioEducacao?.() ?? false),
+    [isSuperAdmin, isSecretarioEducacao, acessos, funcionario?.cargo, funcionario?.is_superadmin]
   )
 
-  const isSemedContext = useMemo(
-    () => isSecretario && !isSaudeUnit && !isEMAEE,
-    [isSecretario, isSaudeUnit, isEMAEE]
-  )
+  const isSemedContext = useMemo(() => {
+    if (isEMAEE || isSaudeUnit) return false
+    const nome = (selectedSecretaria?.nome || '').toLowerCase()
+    const isEducacaoSec = /educa|semed|ensino/i.test(nome) || (!selectedSecretaria?.nome?.match(/sa[uú]de|social|obras|transporte/i))
+    return Boolean((isSecretario || isSuperAdmin || isNivel1) && isEducacaoSec)
+  }, [isEMAEE, isSaudeUnit, selectedSecretaria?.nome, isSecretario, isSuperAdmin, isNivel1])
 
   const [semedKpi, setSemedKpi] = useState<SemedKPIData | null>(null)
 
