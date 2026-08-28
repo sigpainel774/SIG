@@ -24,6 +24,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
   // Identificação do aluno
   const [alunosLista, setAlunosLista] = useState<any[]>([])
   const [alunoSelecionadoId, setAlunoSelecionadoId] = useState<string>('')
+  const [alunoManualNome, setAlunoManualNome] = useState<string>('')
   const [buscaAluno, setBuscaAluno] = useState('')
   const [etapa, setEtapa] = useState<'selecionar_aluno' | 'scanner' | 'resultado'>('selecionar_aluno')
 
@@ -189,22 +190,34 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
       alternativasPorQuestao: simulado.alternativas_por_questao
     })
 
-    // Se detectou QR Code ou se o aluno já selecionou o nome manualmente
-    const alunoIdDetectado = resultadoOMR.qrData?.alunoId || alunoSelecionadoId
-    const folhaValida = resultadoOMR.sucesso && (resultadoOMR.qrData?.simuladoId || alunoSelecionadoId)
+    // Se detectou QR Code ou se o aluno já selecionou o nome / digitou manualmente
+    const alunoIdDetectado = resultadoOMR.qrData?.alunoId || alunoSelecionadoId || null
+    let nomeAluno = resultadoOMR.qrData?.alunoNome || alunoManualNome || ''
 
-    if (folhaValida && alunoIdDetectado) {
+    if (alunoIdDetectado) {
+      const alunoObj = alunosLista.find((a) => a.id === alunoIdDetectado)
+      if (alunoObj) nomeAluno = alunoObj.nome
+    }
+
+    if (!nomeAluno) {
+      nomeAluno = 'Estudante'
+    }
+
+    const folhaValida =
+      resultadoOMR.sucesso &&
+      (resultadoOMR.qrData?.simuladoId || alunoIdDetectado || alunoManualNome || resultadoOMR.qrData?.alunoNome)
+
+    if (folhaValida && (alunoIdDetectado || nomeAluno !== 'Estudante')) {
       processingRef.current = true
       playScanSound('success')
-
-      const alunoObj = alunosLista.find((a) => a.id === alunoIdDetectado)
-      const nomeAluno = alunoObj ? alunoObj.nome : 'Estudante'
 
       const apuracao = calcularResultadoSimulado(
         resultadoOMR.respostas,
         simulado.gabarito_oficial,
         simulado.qtd_questoes
       )
+
+      const alunoObj = alunoIdDetectado ? alunosLista.find((a) => a.id === alunoIdDetectado) : null
 
       const dadosParaSalvar = {
         simulado_id: simulado.id,
@@ -224,11 +237,19 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
 
       setSalvando(true)
       try {
-        const { error } = await (supabase as any)
-          .from('simulados_respostas')
-          .upsert(dadosParaSalvar, { onConflict: 'simulado_id, aluno_id' })
+        if (alunoIdDetectado) {
+          const { error } = await (supabase as any)
+            .from('simulados_respostas')
+            .upsert(dadosParaSalvar, { onConflict: 'simulado_id, aluno_id' })
 
-        if (error) throw error
+          if (error) throw error
+        } else {
+          const { error } = await (supabase as any)
+            .from('simulados_respostas')
+            .insert(dadosParaSalvar)
+
+          if (error) throw error
+        }
 
         setResultadoFinal({
           nome: nomeAluno,
@@ -245,7 +266,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
         setSalvando(false)
       }
     }
-  }, [simulado, cameraActive, etapa, alunoSelecionadoId, alunosLista, stopCamera])
+  }, [simulado, cameraActive, etapa, alunoSelecionadoId, alunoManualNome, alunosLista, stopCamera])
 
   // Loop a cada 350ms
   useEffect(() => {
@@ -263,6 +284,10 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
   const alunosFiltrados = alunosLista.filter((a) =>
     a.nome.toLowerCase().includes(buscaAluno.toLowerCase())
   )
+
+  const isBuscaPersonalizada =
+    buscaAluno.trim().length > 1 &&
+    !alunosLista.some((a) => a.nome.toLowerCase() === buscaAluno.trim().toLowerCase())
 
   if (loading) {
     return (
@@ -326,7 +351,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
               </div>
               <h2 className="text-lg font-black text-foreground">Identifique-se para Corrigir</h2>
               <p className="text-xs text-muted-foreground">
-                Selecione seu nome na lista da turma ou aponte a câmera se sua folha possuir QR Code nominal.
+                Selecione seu nome na lista da turma ou digite seu nome se sua folha foi preenchida manualmente.
               </p>
             </div>
 
@@ -334,14 +359,42 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
               <input
                 type="text"
                 value={buscaAluno}
-                onChange={(e) => setBuscaAluno(e.target.value)}
-                placeholder="Digite seu nome para buscar..."
-                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                onChange={(e) => {
+                  setBuscaAluno(e.target.value)
+                  if (!e.target.value.trim()) {
+                    setAlunoManualNome('')
+                  }
+                }}
+                placeholder="Digite seu nome para buscar ou cadastrar..."
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 font-medium"
               />
 
+              {/* Opção Rápida de Usar Nome Manual Digitado */}
+              {isBuscaPersonalizada && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAlunoSelecionadoId('')
+                    setAlunoManualNome(buscaAluno.trim())
+                    toast.success(`Identificado como: "${buscaAluno.trim()}"`)
+                  }}
+                  className={`w-full text-left p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between ${
+                    alunoManualNome === buscaAluno.trim() && !alunoSelecionadoId
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                      : 'bg-emerald-500/5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-extrabold uppercase">Usar Nome Digitado: {buscaAluno.trim()}</span>
+                    <span className="text-[10px] font-normal text-muted-foreground">Folha Avulsa / Preenchida Manualmente</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 font-bold uppercase">Manual</span>
+                </button>
+              )}
+
               <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
-                {alunosFiltrados.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum estudante encontrado.</p>
+                {alunosFiltrados.length === 0 && !isBuscaPersonalizada ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum estudante encontrado na lista.</p>
                 ) : (
                   alunosFiltrados.map((aluno) => {
                     const isSelected = alunoSelecionadoId === aluno.id
@@ -349,7 +402,10 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
                       <button
                         key={aluno.id}
                         type="button"
-                        onClick={() => setAlunoSelecionadoId(aluno.id)}
+                        onClick={() => {
+                          setAlunoSelecionadoId(aluno.id)
+                          setAlunoManualNome(aluno.nome)
+                        }}
                         className={`w-full text-left p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between ${
                           isSelected
                             ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-700 dark:text-emerald-300 shadow-sm'
@@ -367,9 +423,24 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
               </div>
             </div>
 
+            {/* Identificação Selecionada */}
+            {(alunoSelecionadoId || alunoManualNome) && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-muted-foreground block uppercase font-bold">Estudante Identificado:</span>
+                  <span className="font-extrabold text-foreground text-sm uppercase">
+                    {alunoSelecionadoId
+                      ? alunosLista.find((a) => a.id === alunoSelecionadoId)?.nome
+                      : alunoManualNome}
+                  </span>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              </div>
+            )}
+
             <Button
               onClick={() => setEtapa('scanner')}
-              disabled={!alunoSelecionadoId}
+              disabled={!alunoSelecionadoId && !alunoManualNome}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-5 text-sm rounded-xl gap-2 shadow-lg shadow-emerald-900/30"
             >
               Abrir Câmera e Escanear Folha <ArrowRight className="w-4 h-4" />

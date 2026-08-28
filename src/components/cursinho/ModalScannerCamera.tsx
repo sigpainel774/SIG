@@ -28,11 +28,14 @@ export function ModalScannerCamera({
   const [scanning, setScanning] = useState(false)
   const [alunosLista, setAlunosLista] = useState<any[]>([])
   const [alunoManualId, setAlunoManualId] = useState<string>('')
+  const [alunoManualNome, setAlunoManualNome] = useState<string>('')
+  const [buscaAlunoScanner, setBuscaAlunoScanner] = useState<string>('')
+  const [mostrarBuscaManual, setMostrarBuscaManual] = useState<boolean>(false)
   const [autoSave, setAutoSave] = useState<boolean>(true)
 
   // Resultado da leitura em tempo real
   const [resultadoAtual, setResultadoAtual] = useState<{
-    alunoId?: string
+    alunoId?: string | null
     alunoNome: string
     respostas: Record<string, string | null>
     totalAcertos: number
@@ -63,7 +66,7 @@ export function ModalScannerCamera({
     const carregarAlunos = async () => {
       let query = (supabase as any)
         .from('alunos')
-        .select('id, nome, numero_matricula, turma_id')
+        .select('id, nome, numero_matricula, turma_id, turmas(nome)')
         .is('deleted_at', null)
         .order('nome', { ascending: true })
 
@@ -238,7 +241,8 @@ export function ModalScannerCamera({
 
     if (resultadoOMR.sucesso && resultadoOMR.qrData?.simuladoId) {
       const now = Date.now()
-      const qrIdent = `${resultadoOMR.qrData.simuladoId}_${resultadoOMR.qrData.alunoId || resultadoOMR.qrData.alunoNome || 'avulso'}`
+      const alunoIdent = resultadoOMR.qrData.alunoId || resultadoOMR.qrData.alunoNome || alunoManualId || alunoManualNome || 'avulso'
+      const qrIdent = `${resultadoOMR.qrData.simuladoId}_${alunoIdent}`
 
       // Evita disparos repetidos na mesma folha em menos de 3 segundos
       if (lastScannedQrRef.current === qrIdent && now - lastScanTimeRef.current < 3000) {
@@ -248,19 +252,17 @@ export function ModalScannerCamera({
       lastScannedQrRef.current = qrIdent
       lastScanTimeRef.current = now
 
-      // Encontra nome do aluno pelo QR Code
-      let alunoNome = resultadoOMR.qrData.alunoNome || 'Aluno Avulso'
-      let alunoId = resultadoOMR.qrData.alunoId
+      // Encontra nome do aluno pelo QR Code ou identificação manual prévia
+      let alunoId = resultadoOMR.qrData.alunoId || alunoManualId || null
+      let alunoNome = resultadoOMR.qrData.alunoNome || alunoManualNome || ''
 
       if (alunoId) {
         const aluno = alunosLista.find((a) => a.id === alunoId)
         if (aluno) alunoNome = aluno.nome
-      } else if (alunoManualId) {
-        const aluno = alunosLista.find((a) => a.id === alunoManualId)
-        if (aluno) {
-          alunoNome = aluno.nome
-          alunoId = aluno.id
-        }
+      }
+
+      if (!alunoNome) {
+        alunoNome = 'Aluno Avulso / Não Identificado'
       }
 
       const apuracao = calcularResultadoSimulado(
@@ -280,11 +282,11 @@ export function ModalScannerCamera({
 
       setResultadoAtual(dadosCompletos)
 
-      if (autoSave && (alunoId || (resultadoOMR.qrData.alunoNome && resultadoOMR.qrData.alunoNome !== 'Aluno Avulso'))) {
+      if (autoSave && (alunoId || (alunoNome && alunoNome !== 'Aluno Avulso / Não Identificado'))) {
         salvarCorrecao(dadosCompletos)
       }
     }
-  }, [simulado, cameraActive, alunosLista, alunoManualId, autoSave])
+  }, [simulado, cameraActive, alunosLista, alunoManualId, alunoManualNome, autoSave])
 
   // Dispara o loop de processamento a cada 350ms
   useEffect(() => {
@@ -302,6 +304,15 @@ export function ModalScannerCamera({
   const handleCapturaManual = () => {
     processFrame()
   }
+
+  // Filtragem de alunos para seleção manual
+  const alunosFiltradosScanner = alunosLista.filter((a) =>
+    a.nome.toLowerCase().includes(buscaAlunoScanner.toLowerCase())
+  )
+
+  const isBuscaManualPersonalizada =
+    buscaAlunoScanner.trim().length > 1 &&
+    !alunosLista.some((a) => a.nome.toLowerCase() === buscaAlunoScanner.trim().toLowerCase())
 
   if (!simulado) return null
 
@@ -378,6 +389,122 @@ export function ModalScannerCamera({
                 <Camera className="w-3.5 h-3.5" /> Forçar Leitura
               </Button>
             </div>
+          </div>
+
+          {/* Identificação para Folhas em Branco / Preenchidas Manualmente */}
+          <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <span>Atribuição Manual de Aluno:</span>
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  (Para folhas em branco ou preenchidas à mão)
+                </span>
+              </span>
+
+              {(alunoManualId || alunoManualNome) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAlunoManualId('')
+                    setAlunoManualNome('')
+                    setBuscaAlunoScanner('')
+                  }}
+                  className="text-[11px] text-rose-500 hover:text-rose-600 font-bold"
+                >
+                  Limpar Aluno
+                </button>
+              )}
+            </div>
+
+            {(alunoManualId || alunoManualNome) ? (
+              <div className="flex items-center justify-between p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs">
+                <div>
+                  <span className="text-[10px] text-muted-foreground block font-bold uppercase">Folha manual será atribuída a:</span>
+                  <span className="font-extrabold text-foreground uppercase">
+                    {alunoManualId
+                      ? alunosLista.find((a) => a.id === alunoManualId)?.nome
+                      : alunoManualNome}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMostrarBuscaManual(!mostrarBuscaManual)}
+                  className="h-7 text-xs font-bold"
+                >
+                  Trocar Aluno
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={buscaAlunoScanner}
+                  onChange={(e) => {
+                    setBuscaAlunoScanner(e.target.value)
+                    setMostrarBuscaManual(true)
+                  }}
+                  placeholder="Buscar aluno ou digitar nome para folha manual..."
+                  className="flex-1 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                />
+                {isBuscaManualPersonalizada && (
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setAlunoManualId('')
+                      setAlunoManualNome(buscaAlunoScanner.trim())
+                      setMostrarBuscaManual(false)
+                      toast.success(`Aluno manual definido: "${buscaAlunoScanner.trim()}"`)
+                    }}
+                    className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    Usar Nome Digitado
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Lista de Sugestões de Alunos */}
+            {mostrarBuscaManual && buscaAlunoScanner.trim().length > 0 && (
+              <div className="max-h-36 overflow-y-auto space-y-1 bg-background border border-border rounded-lg p-1.5">
+                {isBuscaManualPersonalizada && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAlunoManualId('')
+                      setAlunoManualNome(buscaAlunoScanner.trim())
+                      setMostrarBuscaManual(false)
+                      toast.success(`Aluno manual definido: "${buscaAlunoScanner.trim()}"`)
+                    }}
+                    className="w-full text-left p-1.5 rounded hover:bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between border-b border-border pb-2 mb-1"
+                  >
+                    <span>Usar nome avulso: &quot;{buscaAlunoScanner.trim()}&quot;</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20">Novo / Avulso</span>
+                  </button>
+                )}
+
+                {alunosFiltradosScanner.map((al) => (
+                  <button
+                    key={al.id}
+                    type="button"
+                    onClick={() => {
+                      setAlunoManualId(al.id)
+                      setAlunoManualNome(al.nome)
+                      setMostrarBuscaManual(false)
+                      setBuscaAlunoScanner('')
+                      toast.success(`Aluno selecionado: "${al.nome}"`)
+                    }}
+                    className="w-full text-left p-1.5 rounded hover:bg-muted text-xs flex items-center justify-between transition-colors"
+                  >
+                    <span className="font-bold text-foreground">{al.nome}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {al.turmas?.nome || 'Mat: ' + (al.numero_matricula || '---')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
