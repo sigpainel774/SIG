@@ -22,6 +22,8 @@ export interface Simulado {
   token_publico: string
   auto_correcao_ativa: boolean
   auto_correcao_limite?: string | null
+  caderno_questoes?: string | null
+  incluir_questoes_impressao?: boolean
   status: StatusSimulado
   created_by?: string | null
   created_at: string

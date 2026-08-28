@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, CheckSquare, Sparkles, Trash2, FileText } from 'lucide-react'
+import { Save, CheckSquare, Sparkles, Trash2, FileText, BookOpen, Edit3, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
@@ -37,6 +39,11 @@ export function ModalNovoSimulado({
   const [turmasDisponiveis, setTurmasDisponiveis] = useState<any[]>([])
   const [loadingTurmas, setLoadingTurmas] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Caderno de Questões
+  const [cadernoQuestoes, setCadernoQuestoes] = useState<string>('')
+  const [incluirQuestoesImpressao, setIncluirQuestoesImpressao] = useState<boolean>(false)
+  const [isModalQuestoesOpen, setIsModalQuestoesOpen] = useState<boolean>(false)
 
   const supabase = createClient()
 
@@ -74,6 +81,8 @@ export function ModalNovoSimulado({
       setTurmasIds(simuladoParaEditar.turmas_ids || [])
       setAutoCorrecaoAtiva(simuladoParaEditar.auto_correcao_ativa ?? true)
       setGabaritoOficial(simuladoParaEditar.gabarito_oficial || {})
+      setCadernoQuestoes(simuladoParaEditar.caderno_questoes || '')
+      setIncluirQuestoesImpressao(simuladoParaEditar.incluir_questoes_impressao ?? Boolean(simuladoParaEditar.caderno_questoes))
     } else {
       setTitulo('')
       setDescricao('')
@@ -84,6 +93,8 @@ export function ModalNovoSimulado({
       setTurmasIds([])
       setAutoCorrecaoAtiva(true)
       setGabaritoOficial({})
+      setCadernoQuestoes('')
+      setIncluirQuestoesImpressao(false)
     }
   }, [open, simuladoParaEditar])
 
@@ -154,6 +165,8 @@ export function ModalNovoSimulado({
         turmas_ids: turmasIds,
         auto_correcao_ativa: autoCorrecaoAtiva,
         gabarito_oficial: gabaritoOficial,
+        caderno_questoes: cadernoQuestoes.trim() || null,
+        incluir_questoes_impressao: incluirQuestoesImpressao,
         status: simuladoParaEditar?.status || 'ativo',
         updated_at: new Date().toISOString()
       }
@@ -186,7 +199,7 @@ export function ModalNovoSimulado({
   }
 
   // Gera colunas de gabarito para fácil visualização
-  const questoesPorColunaGabarito = Math.ceil(qtdQuestoes / (qtdQuestoes > 45 ? 4 : qtdQuestoes > 20 ? 3 : 2))
+  const questoesPorColunaGabarito = Math.ceil(qtdQuestoes / (qtdQuestoes > 45 ? 4 : qtdQuestoes > 20 ? 3 : qtdQuestoes > 10 ? 2 : 1))
   const numColunasGabarito = Math.ceil(qtdQuestoes / questoesPorColunaGabarito)
 
   const renderColunasGabarito = () => {
@@ -200,8 +213,8 @@ export function ModalNovoSimulado({
         const letraEscolhida = gabaritoOficial[q.toString()]
 
         questoes.push(
-          <div key={q} className="flex items-center justify-between py-1 px-2 border-b border-border text-xs">
-            <span className="font-mono font-bold text-muted-foreground w-6">
+          <div key={q} className="flex items-center justify-start gap-3 py-1 px-2 border-b border-border text-xs">
+            <span className="font-mono font-bold text-muted-foreground w-6 text-right">
               {q < 10 ? `0${q}` : q}
             </span>
             <div className="flex items-center gap-1.5">
@@ -229,11 +242,11 @@ export function ModalNovoSimulado({
 
       cols.push(
         <div key={c} className="flex-1 bg-card border border-border rounded-xl p-2 flex flex-col">
-          <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-border text-[11px] font-bold text-muted-foreground uppercase">
-            <span>Questão</span>
-            <div className="flex gap-2.5 pr-2">
+          <div className="flex items-center justify-start gap-3 pb-1.5 mb-1 border-b border-border text-[11px] font-bold text-muted-foreground uppercase">
+            <span className="w-6 text-right">Q.</span>
+            <div className="flex gap-2.5">
               {letras.map((l) => (
-                <span key={l}>{l}</span>
+                <span key={l} className="w-6 text-center">{l}</span>
               ))}
             </div>
           </div>
@@ -246,195 +259,308 @@ export function ModalNovoSimulado({
   }
 
   return (
-    <StandardDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={simuladoParaEditar ? 'Editar Simulado' : 'Novo Simulado'}
-      description="Configure os parâmetros do simulado, turmas participantes e o gabarito oficial com a chave de respostas."
-      maxWidth="sm:max-w-5xl"
-    >
-      <form onSubmit={handleSalvar} className="space-y-6">
-        {/* Parâmetros Gerais */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-          <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-            <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Identificação e Regras do Simulado
-          </h4>
+    <>
+      <StandardDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={simuladoParaEditar ? 'Editar Simulado' : 'Novo Simulado'}
+        description="Configure os parâmetros do simulado, turmas participantes e o gabarito oficial com a chave de respostas."
+        maxWidth="sm:max-w-5xl"
+      >
+        <form onSubmit={handleSalvar} className="space-y-6">
+          {/* Parâmetros Gerais */}
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Identificação e Regras do Simulado
+            </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-6 space-y-1.5">
-              <Label className="text-xs font-bold">Título do Simulado *</Label>
-              <Input
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex: 1º Simulado Geral Pré-ENEM 2026"
-                required
-                className="bg-background border-border"
-              />
-            </div>
-
-            <div className="md:col-span-3 space-y-1.5">
-              <Label className="text-xs font-bold">Data de Aplicação</Label>
-              <Input
-                type="date"
-                value={dataAplicacao}
-                onChange={(e) => setDataAplicacao(e.target.value)}
-                className="bg-background border-border"
-              />
-            </div>
-
-            <div className="md:col-span-3 space-y-1.5">
-              <Label className="text-xs font-bold">Ano Letivo</Label>
-              <Input
-                value={anoLetivo}
-                onChange={(e) => setAnoLetivo(e.target.value)}
-                placeholder="2026"
-                className="bg-background border-border"
-              />
-            </div>
-
-            <div className="md:col-span-4 space-y-1.5">
-              <Label className="text-xs font-bold">Quantidade de Questões</Label>
-              <div className="flex items-center gap-2">
-                {[20, 45, 60, 90].map((num) => (
-                  <Button
-                    key={num}
-                    type="button"
-                    size="sm"
-                    variant={qtdQuestoes === num ? 'default' : 'outline'}
-                    onClick={() => setQtdQuestoes(num)}
-                    className="flex-1 text-xs font-bold"
-                  >
-                    {num}
-                  </Button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-6 space-y-1.5">
+                <Label className="text-xs font-bold">Título do Simulado *</Label>
                 <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={qtdQuestoes}
-                  onChange={(e) => setQtdQuestoes(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
-                  className="w-16 bg-background border-border text-center font-bold"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ex: 1º Simulado Geral Pré-ENEM 2026"
+                  required
+                  className="bg-background border-border"
                 />
               </div>
-            </div>
 
-            <div className="md:col-span-4 space-y-1.5">
-              <Label className="text-xs font-bold">Alternativas por Questão</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={alternativasPorQuestao === 4 ? 'default' : 'outline'}
-                  onClick={() => setAlternativasPorQuestao(4)}
-                  className="flex-1 text-xs font-bold"
-                >
-                  4 Opções (A-D)
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={alternativasPorQuestao === 5 ? 'default' : 'outline'}
-                  onClick={() => setAlternativasPorQuestao(5)}
-                  className="flex-1 text-xs font-bold"
-                >
-                  5 Opções (A-E)
-                </Button>
+              <div className="md:col-span-3 space-y-1.5">
+                <Label className="text-xs font-bold">Data de Aplicação</Label>
+                <Input
+                  type="date"
+                  value={dataAplicacao}
+                  onChange={(e) => setDataAplicacao(e.target.value)}
+                  className="bg-background border-border"
+                />
               </div>
-            </div>
 
-            <div className="md:col-span-4 space-y-1.5">
-              <Label className="text-xs font-bold">Auto-Correção pelo Celular do Aluno</Label>
-              <div className="flex items-center gap-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={autoCorrecaoAtiva}
-                    onChange={(e) => setAutoCorrecaoAtiva(e.target.checked)}
-                    className="rounded border-border text-emerald-500 focus:ring-0"
+              <div className="md:col-span-3 space-y-1.5">
+                <Label className="text-xs font-bold">Ano Letivo</Label>
+                <Input
+                  value={anoLetivo}
+                  onChange={(e) => setAnoLetivo(e.target.value)}
+                  placeholder="2026"
+                  className="bg-background border-border"
+                />
+              </div>
+
+              <div className="md:col-span-4 space-y-1.5">
+                <Label className="text-xs font-bold">Quantidade de Questões</Label>
+                <div className="flex items-center gap-1.5">
+                  {[10, 20, 45, 60, 90].map((num) => (
+                    <Button
+                      key={num}
+                      type="button"
+                      size="sm"
+                      variant={qtdQuestoes === num ? 'default' : 'outline'}
+                      onClick={() => setQtdQuestoes(num)}
+                      className="flex-1 text-xs font-bold px-1"
+                    >
+                      {num}
+                    </Button>
+                  ))}
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={qtdQuestoes}
+                    onChange={(e) => setQtdQuestoes(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                    className="w-14 bg-background border-border text-center font-bold px-1"
                   />
-                  Permitir auto-correção via link público
-                </label>
+                </div>
               </div>
-            </div>
 
-            <div className="md:col-span-12 space-y-1.5">
-              <Label className="text-xs font-bold">Turmas Participantes do Cursinho</Label>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {turmasDisponiveis.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">Nenhuma turma cadastrada na escola.</span>
-                ) : (
-                  turmasDisponiveis.map((t) => {
-                    const isSelected = turmasIds.includes(t.id)
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => handleToggleTurma(t.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                          isSelected
-                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
-                            : 'bg-background border-border text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        {t.nome} {t.turno ? `(${t.turno})` : ''}
-                      </button>
-                    )
-                  })
-                )}
+              <div className="md:col-span-4 space-y-1.5">
+                <Label className="text-xs font-bold">Alternativas por Questão</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={alternativasPorQuestao === 4 ? 'default' : 'outline'}
+                    onClick={() => setAlternativasPorQuestao(4)}
+                    className="flex-1 text-xs font-bold"
+                  >
+                    4 Opções (A-D)
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={alternativasPorQuestao === 5 ? 'default' : 'outline'}
+                    onClick={() => setAlternativasPorQuestao(5)}
+                    className="flex-1 text-xs font-bold"
+                  >
+                    5 Opções (A-E)
+                  </Button>
+                </div>
+              </div>
+
+              <div className="md:col-span-4 space-y-1.5">
+                <Label className="text-xs font-bold">Auto-Correção pelo Celular do Aluno</Label>
+                <div className="flex items-center gap-2 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={autoCorrecaoAtiva}
+                      onChange={(e) => setAutoCorrecaoAtiva(e.target.checked)}
+                      className="rounded border-border text-emerald-500 focus:ring-0"
+                    />
+                    Permitir auto-correção via link público
+                  </label>
+                </div>
+              </div>
+
+              {/* Opção: Caderno de Questões nas próximas páginas */}
+              <div className="md:col-span-12 p-3.5 bg-muted/40 dark:bg-zinc-900/60 border border-border rounded-xl space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={incluirQuestoesImpressao}
+                      onChange={(e) => {
+                        setIncluirQuestoesImpressao(e.target.checked)
+                        if (e.target.checked && !cadernoQuestoes) {
+                          setIsModalQuestoesOpen(true)
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-border text-emerald-600 focus:ring-0"
+                    />
+                    <span>Adicionar questões às próximas páginas (Caderno de Questões da Prova)</span>
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    {cadernoQuestoes && (
+                      <Badge variant="secondary" className="text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 border-emerald-500/20">
+                        <Check className="w-3 h-3" /> Questões Adicionadas
+                      </Badge>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsModalQuestoesOpen(true)}
+                      className="text-xs font-bold gap-1.5 border-border"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                      {cadernoQuestoes ? 'Editar / Ver Questões' : 'Colar Questões da Prova'}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground pl-6">
+                  Permite imprimir as folhas de perguntas logo após a folha de respostas OMR, formando a prova completa para o estudante.
+                </p>
+              </div>
+
+              <div className="md:col-span-12 space-y-1.5">
+                <Label className="text-xs font-bold">Turmas Participantes do Cursinho</Label>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {turmasDisponiveis.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">Nenhuma turma cadastrada na escola.</span>
+                  ) : (
+                    turmasDisponiveis.map((t) => {
+                      const isSelected = turmasIds.includes(t.id)
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => handleToggleTurma(t.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                            isSelected
+                              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
+                              : 'bg-background border-border text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {t.nome} {t.turno ? `(${t.turno})` : ''}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Chave de Gabarito Oficial */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-            <div>
-              <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial (Chave de Respostas)
-              </h4>
-              <span className="text-xs text-muted-foreground">
-                Clique nas letras para definir a resposta correta de cada uma das {qtdQuestoes} questões.
-              </span>
+          {/* Chave de Gabarito Oficial */}
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+              <div>
+                <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial (Chave de Respostas)
+                </h4>
+                <span className="text-xs text-muted-foreground">
+                  Clique nas letras para definir a resposta correta de cada uma das {qtdQuestoes} questões.
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLimparGabarito}
+                  className="text-xs text-rose-400 hover:text-rose-300 gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Limpar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreencherAleatorio}
+                  className="text-xs text-amber-400 hover:text-amber-300 gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Teste Rápido
+                </Button>
+              </div>
             </div>
+
+            <div className="max-h-[350px] overflow-y-auto pr-1">
+              {renderColunasGabarito()}
+            </div>
+          </div>
+
+          {/* Botões de Ação */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2">
+              <Save className="w-4 h-4" /> {simuladoParaEditar ? 'Salvar Alterações' : 'Criar Simulado'}
+            </Button>
+          </div>
+        </form>
+      </StandardDialog>
+
+      {/* Modal para Colar / Digitar as Questões da Prova */}
+      <StandardDialog
+        open={isModalQuestoesOpen}
+        onOpenChange={setIsModalQuestoesOpen}
+        title="Caderno de Questões da Prova"
+        description="Cole os enunciados, textos e alternativas das questões para serem impressos nas próximas páginas junto com a folha de respostas."
+        maxWidth="sm:max-w-3xl"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-foreground">
+                Texto / Enunciados das Questões ({qtdQuestoes} questões previstas)
+              </Label>
+              {cadernoQuestoes && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCadernoQuestoes('')}
+                  className="h-6 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2"
+                >
+                  Limpar Texto
+                </Button>
+              )}
+            </div>
+
+            <Textarea
+              rows={16}
+              value={cadernoQuestoes}
+              onChange={(e) => setCadernoQuestoes(e.target.value)}
+              placeholder="Cole aqui o texto completo da prova com as questões. Exemplo:&#10;&#10;QUESTÃO 01&#10;Considere a seguinte equação exponencial...&#10;A) 12&#10;B) 24&#10;C) 36&#10;D) 48&#10;E) 60&#10;&#10;QUESTÃO 02&#10;O processo de urbanização brasileiro no século XX..."
+              className="text-xs font-mono bg-background border-border resize-y leading-relaxed"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <span className="text-xs text-muted-foreground">
+              {cadernoQuestoes ? `${cadernoQuestoes.length} caracteres • Pronto para impressão` : 'Nenhum texto colado'}
+            </span>
 
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleLimparGabarito}
-                className="text-xs text-rose-400 hover:text-rose-300 gap-1.5"
+                onClick={() => setIsModalQuestoesOpen(false)}
               >
-                <Trash2 className="w-3.5 h-3.5" /> Limpar
+                Fechar
               </Button>
               <Button
                 type="button"
-                variant="outline"
                 size="sm"
-                onClick={handlePreencherAleatorio}
-                className="text-xs text-amber-400 hover:text-amber-300 gap-1.5"
+                onClick={() => {
+                  if (cadernoQuestoes.trim()) {
+                    setIncluirQuestoesImpressao(true)
+                  }
+                  setIsModalQuestoesOpen(false)
+                  toast.success('Caderno de questões configurado com sucesso!')
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Teste Rápido
+                Salvar Questões
               </Button>
             </div>
           </div>
-
-          <div className="max-h-[350px] overflow-y-auto pr-1">
-            {renderColunasGabarito()}
-          </div>
         </div>
-
-        {/* Botões de Ação */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2">
-            <Save className="w-4 h-4" /> {simuladoParaEditar ? 'Salvar Alterações' : 'Criar Simulado'}
-          </Button>
-        </div>
-      </form>
-    </StandardDialog>
+      </StandardDialog>
+    </>
   )
 }
+
