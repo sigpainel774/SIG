@@ -31,7 +31,8 @@ import {
   UserPlus,
   FileSpreadsheet,
   MessageSquare,
-  Calendar
+  Calendar,
+  CheckSquare
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -70,6 +71,7 @@ export function Sidebar() {
 
   const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || selectedEscola?.secretarias?.nome || ''
   const isEMAEE = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome || '')
+  const isCursinho = selectedEscola?.tipo === 'CURSINHO' || /cursinho|pré[- ]universitário/i.test(selectedEscola?.nome || '')
   const isEducacao = !isEMAEE && ((!selectedEscola && !selectedSecretaria) || !secNome || /educa/i.test(secNome))
   const isSaude = !isEMAEE && (!isEducacao && /sa[uú]de/i.test(secNome))
 
@@ -89,6 +91,7 @@ export function Sidebar() {
     '/turmas': 'turmas',
     '/matriculas': 'matriculas',
     '/avaliacoes': 'avaliacoes',
+    '/cursinho/simulados': 'avaliacoes',
     '/ocorrencias': 'ocorrencias',
     '/documentos': 'documentos',
     '/transferencias': 'transferencias',
@@ -258,6 +261,9 @@ export function Sidebar() {
             ] : []),
             { href: '/alunos', label: 'Alunos', icon: GraduationCap },
             { href: '/turmas', label: 'Turmas', icon: BookOpen },
+            ...(isCursinho ? [
+              { href: '/cursinho/simulados', label: 'Simulados', icon: CheckSquare }
+            ] : []),
             { href: '/matriculas', label: 'Matrículas', icon: FileBadge },
             { href: '/avaliacoes', label: 'Avaliações', icon: ClipboardList },
             { href: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
