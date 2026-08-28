@@ -271,7 +271,139 @@ export function ModalImprimirGabarito({
   }
 
   const handleImprimir = () => {
-    window.print()
+    if (!printAreaRef.current) {
+      window.print()
+      return
+    }
+
+    const printContent = printAreaRef.current.innerHTML
+
+    // Obter estilos da página para herdar Tailwind e fontes
+    const existingStyles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join('\n')
+
+    // Criar iframe oculto para impressão isolada
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.style.zIndex = '-1000'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow?.document
+    if (!doc) {
+      window.print()
+      return
+    }
+
+    doc.open()
+    doc.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>Simulado_${simulado?.titulo ? simulado.titulo.replace(/[^a-zA-Z0-9]/g, '_') : 'Gabarito'}</title>
+          ${existingStyles}
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 0;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              box-sizing: border-box !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background-color: #ffffff !important;
+              color: #000000 !important;
+              width: 100% !important;
+            }
+            .print-area {
+              background: #ffffff !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              width: 100% !important;
+              max-height: none !important;
+              overflow: visible !important;
+              border: none !important;
+            }
+            .folha-container {
+              width: 100% !important;
+              page-break-inside: avoid;
+            }
+            .folha-omr {
+              width: 210mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
+              height: 297mm !important;
+              padding: 18mm 14mm !important;
+              margin: 0 auto !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              background: #ffffff !important;
+              color: #000000 !important;
+              position: relative !important;
+              box-sizing: border-box !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+            .folha-questoes {
+              width: 210mm !important;
+              min-height: 297mm !important;
+              padding: 20mm 16mm !important;
+              margin: 0 auto !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              background: #ffffff !important;
+              color: #000000 !important;
+              position: relative !important;
+              box-sizing: border-box !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-area">
+            ${printContent}
+          </div>
+        </body>
+      </html>
+    `)
+    doc.close()
+
+    let printed = false
+    const triggerPrint = () => {
+      if (printed) return
+      printed = true
+      try {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+      } catch (err) {
+        console.error('Erro ao acionar impressão:', err)
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe)
+          }
+        }, 1500)
+      }
+    }
+
+    iframe.onload = () => {
+      setTimeout(triggerPrint, 300)
+    }
+
+    // Fallback garantido
+    setTimeout(triggerPrint, 600)
   }
 
   if (!simulado) return null
@@ -545,10 +677,7 @@ export function ModalImprimirGabarito({
                   className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold text-xs shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
-                  Imprimir{' '}
-                  {modoImpressao === 'nominal'
-                    ? `${alunosTurma.length} Provas`
-                    : `${totalFolhasAvulsas} Provas`}
+                  Imprimir
                 </Button>
               </div>
             </div>
@@ -864,7 +993,8 @@ export function ModalImprimirGabarito({
           </div>
 
           {/* Estilos CSS Scoped para Impressão */}
-          <style jsx global>{`
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @media print {
               body * {
                 visibility: hidden;
@@ -897,7 +1027,7 @@ export function ModalImprimirGabarito({
                 border: none !important;
               }
             }
-          `}</style>
+          `}} />
         </div>
       </StandardDialog>
 
