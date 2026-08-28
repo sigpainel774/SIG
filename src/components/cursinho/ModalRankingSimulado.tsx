@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Award, Trophy, Medal, Search, Printer, Users, CheckCircle2, XCircle, AlertCircle, Eye, Trash2, BarChart3, ArrowUpDown, ChevronRight } from 'lucide-react'
+import { Award, Trophy, Search, Printer, Users, Eye, Trash2, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardDialog } from '@/components/ui/standard-dialog'

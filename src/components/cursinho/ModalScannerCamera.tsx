@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Camera, RefreshCw, CheckCircle2, AlertTriangle, User, Award, Check, X, RotateCcw, Volume2 } from 'lucide-react'
+import { Camera, RefreshCw, Award, Check, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado, SimuladoResposta } from '@/types/simulado'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, use } from 'react'
-import { Camera, CheckCircle2, Award, Trophy, Sparkles, RefreshCw, AlertTriangle, Check, User, ArrowRight, BookOpen, Volume2 } from 'lucide-react'
+import { Camera, CheckCircle2, Trophy, RefreshCw, AlertTriangle, User, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
 import { Simulado } from '@/types/simulado'

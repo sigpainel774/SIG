@@ -26,9 +26,9 @@ export interface OMRResult {
 export function playScanSound(type: 'success' | 'error' = 'success') {
   if (typeof window === 'undefined') return
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext
-    if (!AudioContext) return
-    const ctx = new AudioContext()
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
 
@@ -51,8 +51,8 @@ export function playScanSound(type: 'success' | 'error' = 'success') {
       osc.start()
       osc.stop(ctx.currentTime + 0.3)
     }
-  } catch (e) {
-    console.warn('Audio Context não inicializado:', e)
+  } catch {
+    // Audio Context silencioso
   }
 }
 
@@ -76,7 +76,7 @@ export function readQRCodeFromImageData(imageData: ImageData): { simuladoId?: st
     } catch {
       return { raw: code.data }
     }
-  } catch (e) {
+  } catch {
     return null
   }
 }

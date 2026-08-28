@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Save, X, CheckSquare, Sparkles, Trash2, Calendar, FileText, CheckCircle2 } from 'lucide-react'
+import { Save, CheckSquare, Sparkles, Trash2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'

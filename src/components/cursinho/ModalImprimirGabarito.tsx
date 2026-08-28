@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
-import { Printer, X, Download, Users, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Printer, Users, FileText, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado } from '@/types/simulado'

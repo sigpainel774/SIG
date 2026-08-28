@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, Search, CheckSquare, Printer, Camera, Trophy, Link as LinkIcon, Archive, Trash2, Edit3, ArrowLeft, RefreshCw, FileText, CheckCircle2, AlertCircle, Copy, Share2 } from 'lucide-react'
+import { Plus, Search, CheckSquare, Printer, Camera, Trophy, Link as LinkIcon, Archive, Trash2, Edit3, ArrowLeft, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
