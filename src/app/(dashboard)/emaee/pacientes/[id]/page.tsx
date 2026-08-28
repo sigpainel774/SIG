@@ -585,9 +585,15 @@ export default function PacienteDetalhesPage() {
           </div>
           
           <div className="space-y-3.5 text-xs">
-            <div>
-              <span className="text-muted-foreground block mb-0.5">Identificação Única (Censo)</span>
-              <strong className="text-foreground">{aluno?.identif_unica_censo ?? '-'}</strong>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Identificação Única (Censo)</span>
+                <strong className="text-foreground">{aluno?.identif_unica_censo ?? '-'}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Cartão do SUS (CNS)</span>
+                <strong className="text-foreground">{aluno?.cartao_sus || (aluno?.dados_matricula as any)?.cartao_sus || (aluno?.dados_matricula as any)?.susAluno || '-'}</strong>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

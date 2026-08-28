@@ -21,6 +21,7 @@ export function SecaoDadosAluno() {
     identificacaoCenso, setIdentificacaoCenso,
     rg, setRg,
     nis, setNis,
+    cartaoSus, setCartaoSus,
     certidaoNascimento, setCertidaoNascimento,
     corRaca, setCorRaca,
     sexo, setSexo,
@@ -226,6 +227,36 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-4">
+              <Label className="block mb-1 text-xs font-bold text-foreground">Cartão do SUS (CNS)</Label>
+              <Input
+                placeholder="Ex: 700000000000000"
+                value={cartaoSus}
+                onChange={(e) => setCartaoSus(e.target.value)}
+                className="bg-input border-border text-foreground text-sm rounded-xl"
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
+              <Label className="block mb-1 text-xs font-bold text-foreground">RG do aluno</Label>
+              <Input
+                value={rg}
+                onChange={(e) => setRg(e.target.value)}
+                placeholder="Número do RG"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
+              <Label className="block mb-1 text-xs font-bold text-foreground">NIS (CadÚnico)</Label>
+              <Input
+                value={nis}
+                onChange={(e) => setNis(e.target.value)}
+                placeholder="Número do NIS"
+                className="bg-input border-border text-foreground text-sm rounded-xl"
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
               <Label className="block mb-1 text-xs font-bold text-foreground">Identificação Censo (INEP)</Label>
               <Input
                 placeholder="Código INEP se houver"
@@ -236,24 +267,6 @@ export function SecaoDadosAluno() {
             </div>
 
             <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-foreground">RG do aluno</Label>
-              <Input
-                value={rg}
-                onChange={(e) => setRg(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-4">
-              <Label className="block mb-1 text-xs font-bold text-foreground">NIS (CadÚnico)</Label>
-              <Input
-                value={nis}
-                onChange={(e) => setNis(e.target.value)}
-                className="bg-input border-border text-foreground text-sm rounded-xl"
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-8">
               <Label className="block mb-1 text-xs font-bold text-foreground">Certidão de nascimento (Novo modelo)</Label>
               <Input
                 placeholder="000000 00 00 0000 0 00000 000 0000000 00"

@@ -13,6 +13,7 @@ export interface AlunoSearchData {
   cpf: string | null
   rg: string | null
   nis: string | null
+  cartao_sus?: string | null
   identif_unica_censo: string | null
   data_nascimento: string | null
   certidao_nascimento: string | null

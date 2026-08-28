@@ -120,15 +120,19 @@ export function PrintComprovanteMatriculaEmaee({ prontuario, onClose }: PrintCom
                 </td>
               </tr>
               <tr>
-                <td className="border border-black p-1.5 w-1/3">
+                <td className="border border-black p-1.5 w-1/4">
                   <span className="font-bold block text-[7.5px] uppercase text-gray-600">Data de Nascimento</span>
                   <span className="font-semibold">{formatarData(aluno?.data_nascimento || dm?.nascimentoAluno)}</span>
                 </td>
-                <td className="border border-black p-1.5 w-1/3">
+                <td className="border border-black p-1.5 w-1/4">
                   <span className="font-bold block text-[7.5px] uppercase text-gray-600">CPF do Aluno</span>
                   <span>{aluno?.cpf || dm?.cpfAluno || '-'}</span>
                 </td>
-                <td className="border border-black p-1.5 w-1/3">
+                <td className="border border-black p-1.5 w-1/4">
+                  <span className="font-bold block text-[7.5px] uppercase text-gray-600">Cartão do SUS</span>
+                  <span>{aluno?.cartao_sus || dm?.cartao_sus || dm?.susAluno || '-'}</span>
+                </td>
+                <td className="border border-black p-1.5 w-1/4">
                   <span className="font-bold block text-[7.5px] uppercase text-gray-600">Identificação Censo (INEP)</span>
                   <span>{aluno?.identif_unica_censo || aluno?.inep || dm?.censoAluno || '-'}</span>
                 </td>

@@ -45,6 +45,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [identificacaoCenso, setIdentificacaoCenso] = useState('')
   const [rg, setRg] = useState('')
   const [nis, setNis] = useState('')
+  const [cartaoSus, setCartaoSus] = useState('')
   const [certidaoNascimento, setCertidaoNascimento] = useState('')
   const [corRaca, setCorRaca] = useState('')
   const [sexo, setSexo] = useState('')
@@ -294,6 +295,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setIdentificacaoCenso('')
     setRg('')
     setNis('')
+    setCartaoSus('')
     setCertidaoNascimento('')
     setCorRaca('')
     setSexo('')
@@ -403,6 +405,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       setIdentificacaoCenso(al.identif_unica_censo ?? '')
       setRg(al.rg ?? '')
       setNis(al.nis ?? '')
+      setCartaoSus(al.cartao_sus ?? dm.cartao_sus ?? dm.susAluno ?? dm.sus ?? '')
       setCertidaoNascimento(al.certidao_nascimento_novo_modelo ?? al.certidao_nascimento ?? '')
       setCorRaca(al.cor_raca ?? dm.cor_raca ?? '')
       setSexo(al.sexo ?? '')
@@ -659,6 +662,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setIdentificacaoCenso(aluno.identif_unica_censo ?? '')
     setRg(aluno.rg ?? '')
     setNis(aluno.nis ?? '')
+    setCartaoSus(aluno.cartao_sus ?? (aluno.dados_matricula as any)?.cartao_sus ?? (aluno.dados_matricula as any)?.susAluno ?? '')
     setCertidaoNascimento(aluno.certidao_nascimento ?? '')
     setCorRaca(aluno.cor_raca ?? '')
     setSexo(aluno.sexo ?? '')
@@ -779,6 +783,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setIdentificacaoCenso('')
     setRg('')
     setNis('')
+    setCartaoSus('')
     setCertidaoNascimento('')
     setCorRaca('')
     setSexo('')
@@ -819,7 +824,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       const { data, error } = await (supabase
         .from('alunos')
         .select(`
-          id, nome, cpf, rg, nis, data_nascimento, certidao_nascimento,
+          id, nome, cpf, rg, nis, cartao_sus, data_nascimento, certidao_nascimento,
           certidao_nascimento_novo_modelo, identif_unica_censo,
           nome_mae, profissao_mae, nome_pai, profissao_pai, endereco,
           sexo, dados_matricula, uf_nascimento, municipio_nascimento,
@@ -842,6 +847,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         cpf: a.cpf,
         rg: a.rg,
         nis: a.nis,
+        cartao_sus: a.cartao_sus || (a.dados_matricula as any)?.cartao_sus || (a.dados_matricula as any)?.susAluno || null,
         identif_unica_censo: a.identif_unica_censo || null,
         data_nascimento: a.data_nascimento,
         certidao_nascimento: a.certidao_nascimento_novo_modelo || a.certidao_nascimento,
@@ -932,6 +938,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           const updatedDadosMatricula = {
             ...currentDadosMatricula,
             cor_raca: corRaca || currentDadosMatricula.cor_raca,
+            cartao_sus: cartaoSus.trim() || null,
+            susAluno: cartaoSus.trim() || null,
             tipo_responsavel: tipoResponsavel,
             responsavel_outro_nome: responsavelOutroNome.trim() || null,
             responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -947,6 +955,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             cpf: cpf || null,
             rg: rg || null,
             nis: nis || null,
+            cartao_sus: cartaoSus.trim() || null,
             identif_unica_censo: identificacaoCenso || null,
             data_nascimento: dataNascimento || null,
             certidao_nascimento_novo_modelo: certidaoNascimento || null,
@@ -1193,6 +1202,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           cpf: cpf || null,
           rg: rg || null,
           nis: nis || null,
+          cartao_sus: cartaoSus.trim() || null,
           identif_unica_censo: identificacaoCenso || null,
           data_nascimento: dataNascimento || null,
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
@@ -1215,6 +1225,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           codigo_temp_resp_criado_em: codigoColetaLocal ? new Date().toISOString() : null,
           dados_matricula: {
             cor_raca: corRaca || null,
+            cartao_sus: cartaoSus.trim() || null,
+            susAluno: cartaoSus.trim() || null,
             tipo_responsavel: tipoResponsavel,
             responsavel_outro_nome: responsavelOutroNome.trim() || null,
             responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -1266,6 +1278,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         const updatedDadosMatricula = {
           ...currentDadosMatricula,
           cor_raca: corRaca || currentDadosMatricula.cor_raca,
+          cartao_sus: cartaoSus.trim() || null,
+          susAluno: cartaoSus.trim() || null,
           tipo_responsavel: tipoResponsavel,
           responsavel_outro_nome: responsavelOutroNome.trim() || null,
           responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -1288,6 +1302,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           cpf: cpf || null,
           rg: rg || null,
           nis: nis || null,
+          cartao_sus: cartaoSus.trim() || null,
           identif_unica_censo: identificacaoCenso || null,
           data_nascimento: dataNascimento || null,
           certidao_nascimento_novo_modelo: certidaoNascimento || null,
@@ -1521,6 +1536,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     identificacaoCenso, setIdentificacaoCenso,
     rg, setRg,
     nis, setNis,
+    cartaoSus, setCartaoSus,
     certidaoNascimento, setCertidaoNascimento,
     corRaca, setCorRaca,
     sexo, setSexo,
