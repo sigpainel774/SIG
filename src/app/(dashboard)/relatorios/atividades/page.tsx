@@ -192,6 +192,8 @@ export default function CentralAtividadesPage() {
       'grade_semanal',
       'boletim',
       'matriculas',
+      'emaee_matriculas',
+      'emaee_evolucoes',
       'solicitacoes_edicao_aluno',
       'recuperacoes_finais',
       'prazos_unidades',
@@ -326,6 +328,8 @@ export default function CentralAtividadesPage() {
       accessor: (log) => {
         let label = log.entity
         if (log.entity.startsWith('alunos')) label = '🎓 Alunos'
+        else if (log.entity.startsWith('emaee_matriculas')) label = '♿ Matrícula EMAEE'
+        else if (log.entity.startsWith('emaee_evolucoes')) label = '📝 Evolução EMAEE'
         else if (log.entity.startsWith('responsaveis')) label = '👨‍👩‍👧 Portal dos Pais'
         else if (log.entity.startsWith('funcionarios')) label = '👤 Servidores'
         else if (log.entity.startsWith('atestados')) label = '🩺 Atestados'
@@ -374,6 +378,35 @@ export default function CentralAtividadesPage() {
                   )}
                 </div>
               )}
+            </div>
+          )
+        }
+
+        if (log.entity.startsWith('emaee_matriculas')) {
+          const nomeAluno = log.new_data?.aluno_nome || log.old_data?.aluno_nome || log.entity_id
+          const status = log.new_data?.status || log.old_data?.status
+          const turno = log.new_data?.turno_atendimento || log.old_data?.turno_atendimento
+          return (
+            <div className="flex flex-col text-xs max-w-[280px]">
+              <span className="font-medium text-foreground truncate">{nomeAluno}</span>
+              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
+                {status && <span className="text-emerald-400 font-semibold">{status}</span>}
+                {turno && <span>• Turno: {turno}</span>}
+              </div>
+            </div>
+          )
+        }
+
+        if (log.entity.startsWith('emaee_evolucoes')) {
+          const prof = log.new_data?.profissional_nome || log.user_name || 'Profissional'
+          const esp = log.new_data?.especialidade
+          const dataAtend = log.new_data?.data_atendimento
+          return (
+            <div className="flex flex-col text-xs max-w-[280px]">
+              <span className="font-medium text-foreground truncate">{esp || 'Evolução Clínica'}</span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                Prof: {prof} {dataAtend ? `• Data: ${dataAtend}` : ''}
+              </span>
             </div>
           )
         }
@@ -493,6 +526,7 @@ export default function CentralAtividadesPage() {
               ) : (
                 <>
                   <option value="alunos">Alunos</option>
+                  <option value="emaee">EMAEE (Matrículas & Evoluções)</option>
                   <option value="responsaveis">Portal dos Pais / Responsáveis</option>
                   <option value="funcionarios">Funcionários</option>
                   <option value="turmas">Turmas & Matérias</option>

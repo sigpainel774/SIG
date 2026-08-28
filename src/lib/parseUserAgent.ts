@@ -2,6 +2,7 @@ export interface ParsedUserAgent {
   browser: string
   os: string
   deviceType: 'mobile' | 'desktop' | 'tablet' | 'unknown'
+  isApk: boolean
 }
 
 export function parseUserAgent(uaString: string | null | undefined): ParsedUserAgent {
@@ -10,10 +11,19 @@ export function parseUserAgent(uaString: string | null | undefined): ParsedUserA
       browser: 'Navegador Desconhecido',
       os: 'Sistema Desconhecido',
       deviceType: 'unknown',
+      isApk: false,
     }
   }
 
   const ua = uaString.toLowerCase()
+
+  // Detect APK / Capacitor / Android WebView
+  // Capacitor Android WebView padrão inclui "capacitor", "wv" ou "version/4.0 chrome"
+  const isApk =
+    ua.includes('capacitor') ||
+    ua.includes('wv') ||
+    ua.includes('com.sapecau.sig') ||
+    (ua.includes('android') && ua.includes('version/') && ua.includes('chrome/'))
 
   // Detect OS
   let os = 'Sistema Operacional'
@@ -26,9 +36,10 @@ export function parseUserAgent(uaString: string | null | undefined): ParsedUserA
   else if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) os = 'iOS (iPhone/iPad)'
   else if (ua.includes('linux')) os = 'Linux'
 
-  // Detect Browser
+  // Detect Browser / App
   let browser = 'Navegador'
-  if (ua.includes('edg/') || ua.includes('edge/')) browser = 'Microsoft Edge'
+  if (isApk) browser = 'Aplicativo SIG (APK Android)'
+  else if (ua.includes('edg/') || ua.includes('edge/')) browser = 'Microsoft Edge'
   else if (ua.includes('chrome/') && !ua.includes('edg/')) browser = 'Google Chrome'
   else if (ua.includes('safari/') && !ua.includes('chrome/')) browser = 'Apple Safari'
   else if (ua.includes('firefox/')) browser = 'Mozilla Firefox'
@@ -39,11 +50,11 @@ export function parseUserAgent(uaString: string | null | undefined): ParsedUserA
   let deviceType: 'mobile' | 'desktop' | 'tablet' | 'unknown' = 'desktop'
   if (ua.includes('ipad') || ua.includes('tablet')) {
     deviceType = 'tablet'
-  } else if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+  } else if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone') || isApk) {
     deviceType = 'mobile'
   } else if (ua.includes('node')) {
     deviceType = 'unknown'
   }
 
-  return { browser, os, deviceType }
+  return { browser, os, deviceType, isApk }
 }

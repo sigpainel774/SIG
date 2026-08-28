@@ -12,6 +12,7 @@ import { SignaturePad } from '@/components/ui/SignaturePad'
 import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { logAudit } from '@/lib/audit/audit-agent'
 
 interface ModalEvolucaoEmaeeProps {
   open?: boolean
@@ -117,7 +118,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
       }
 
       // 2. Inserir a evolução clínica assinada atomicamente
-      const { error: evError } = await supabase
+      const { data: novaEvolucao, error: evError } = await supabase
         .from('emaee_evolucoes')
         .insert({
           emaee_matricula_id: matriculaEmaeeId,
@@ -132,8 +133,32 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
           profissional_nome: funcionario.nome || profissionalNome || 'Profissional AEE',
           profissional_registro: profissionalRegistro ?? null
         } as any)
+        .select('id')
+        .single()
         
       if (evError) throw evError
+
+      if (novaEvolucao?.id) {
+        await logAudit({
+          supabase,
+          action: 'CREATE',
+          entity: 'emaee_evolucoes',
+          entityId: novaEvolucao.id,
+          newData: {
+            emaee_matricula_id: matriculaEmaeeId,
+            especialidade,
+            data_atendimento: dataAtendimento,
+            tipo_atendimento: tipoAtendimento,
+            profissional_nome: funcionario.nome || profissionalNome || 'Profissional AEE'
+          },
+          performedBy: {
+            id: funcionario.id,
+            name: funcionario.nome || 'Profissional AEE',
+            email: funcionario.email || 'sem-email@sig.com',
+            cargo: funcionario.cargo || undefined
+          }
+        })
+      }
 
       toast.success('Evolução clínica assinada e salva com sucesso!')
       handleOpenChange(false)

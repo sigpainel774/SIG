@@ -3,6 +3,7 @@ import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalMatriculaEmaeeProps, AlunoSearchData } from '../types'
 import { useAuthStore } from '@/store/useAuthStore'
+import { logAudit } from '@/lib/audit/audit-agent'
 import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
 import { getHojeBrasilia } from '@/lib/dateUtils'
@@ -1131,6 +1132,31 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           }
         }
 
+        await logAudit({
+          supabase,
+          action: 'UPDATE',
+          entity: 'emaee_matriculas',
+          entityId: matriculaId,
+          oldData: {
+            aluno_nome: alunoSelecionado?.nome || props.matriculaEditar?.aluno_nome,
+            escola_atendimento_id: props.matriculaEditar?.escola_atendimento_id,
+            status: props.matriculaEditar?.status
+          },
+          newData: {
+            aluno_nome: nomeCompleto || alunoSelecionado?.nome,
+            escola_atendimento_id: validEscolaAtendimento,
+            status: statusMatricula || 'FILA_ESPERA',
+            ...updateMatriculaPayload
+          },
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome ?? 'Usuário',
+            email: funcionario?.email ?? 'sem-email@sig.com',
+            cargo: funcionario?.cargo ?? undefined
+          },
+          tenantId: validEscolaAtendimento || undefined
+        })
+
         toast.success('Ficha do aluno / Matrícula EMAEE atualizada com sucesso!')
         if (props.onSuccess) props.onSuccess()
         setIsOpen(false)
@@ -1215,6 +1241,25 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
         if (newAlunoErr) throw newAlunoErr
         targetAlunoId = newAluno.id
+
+        await logAudit({
+          supabase,
+          action: 'CREATE',
+          entity: 'alunos',
+          entityId: newAluno.id,
+          newData: {
+            nome: nomeCompleto.trim(),
+            escola_id: validEscolaAtendimento,
+            atendido_emaee: true
+          },
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome ?? 'Usuário',
+            email: funcionario?.email ?? 'sem-email@sig.com',
+            cargo: funcionario?.cargo ?? undefined
+          },
+          tenantId: validEscolaAtendimento || undefined
+        })
       } else {
         // 2. Aluno já existente: Atualizar dados e coordenadas
         const currentDadosMatricula = (alunoSelecionado as any)?.dados_matricula || {}
@@ -1276,6 +1321,28 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         if (alunoUpdateError) {
           console.error('Erro ao sincronizar aluno no EMAEE:', alunoUpdateError)
           toast.error('Aviso: Não foi possível atualizar todos os dados cadastrais do aluno.')
+        } else {
+          await logAudit({
+            supabase,
+            action: 'UPDATE',
+            entity: 'alunos',
+            entityId: targetAlunoId,
+            oldData: {
+              nome: alunoSelecionado?.nome,
+              escola_id: (alunoSelecionado as any)?.escola_id
+            },
+            newData: {
+              nome: updatePayload.nome,
+              atendido_emaee: true
+            },
+            performedBy: {
+              id: funcionario?.id ?? null,
+              name: funcionario?.nome ?? 'Usuário',
+              email: funcionario?.email ?? 'sem-email@sig.com',
+              cargo: funcionario?.cargo ?? undefined
+            },
+            tenantId: validEscolaAtendimento || (alunoSelecionado as any)?.escola_id || undefined
+          })
         }
       }
 
@@ -1352,6 +1419,30 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         .single()
 
       if (matriculaError) throw matriculaError
+
+      // Log de auditoria para nova matrícula EMAEE
+      if (novaMatricula?.id) {
+        await logAudit({
+          supabase,
+          action: 'CREATE',
+          entity: 'emaee_matriculas',
+          entityId: novaMatricula.id,
+          newData: {
+            aluno_id: targetAlunoId,
+            aluno_nome: nomeCompleto || alunoSelecionado?.nome,
+            escola_atendimento_id: validEscolaAtendimento,
+            status: statusMatricula || 'FILA_ESPERA',
+            ...insertPayload
+          },
+          performedBy: {
+            id: funcionario?.id ?? null,
+            name: funcionario?.nome ?? 'Usuário',
+            email: funcionario?.email ?? 'sem-email@sig.com',
+            cargo: funcionario?.cargo ?? undefined
+          },
+          tenantId: validEscolaAtendimento || undefined
+        })
+      }
 
       // 5. Inserir vínculos AEE se houver
       if (novaMatricula?.id && vinculosAEE.length > 0) {

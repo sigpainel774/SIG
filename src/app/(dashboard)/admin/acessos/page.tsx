@@ -30,8 +30,12 @@ import {
   ChevronRight,
   UserCheck,
   UserPlus,
-  Calendar
+  Calendar,
+  Smartphone,
+  Tablet,
+  Laptop
 } from 'lucide-react'
+import { parseUserAgent } from '@/lib/parseUserAgent'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -126,7 +130,7 @@ export default function AdminAcessosPage() {
   const [activeTab, setActiveTab] = useState<'permissoes' | 'avancado'>('permissoes')
 
   // Controle de Sub-aba em Informações Avançadas
-  const [subTab, setSubTab] = useState<'sessoes' | 'diarios' | 'trilha' | 'requisicoes' | 'mapa'>('sessoes')
+  const [subTab, setSubTab] = useState<'sessoes' | 'apk' | 'diarios' | 'trilha' | 'requisicoes' | 'mapa'>('sessoes')
 
   // ---------------- ABA 1: PERMISSÕES & NÍVEIS ----------------
   const [acessos, setAcessos] = useState<AcessoItem[]>([])
@@ -811,8 +815,145 @@ export default function AdminAcessosPage() {
     },
   ]
 
+  // Detecção e Agregação de Dispositivos e Sessões APK (Capacitor / Android App)
+  const sessoesApkAtivas = useMemo(() => {
+    return sessoesAtivas.filter((s) => {
+      const ua = parseUserAgent(s.user_agent)
+      return ua.isApk || ua.os === 'Android' || ua.browser.includes('APK')
+    })
+  }, [sessoesAtivas])
+
+  // Agrupar histórico por dispositivo/celular conectado via APK ou Mobile
+  const dispositivosApkConectados = useMemo(() => {
+    const map = new Map<string, {
+      id: string
+      deviceLabel: string
+      os: string
+      browser: string
+      ip: string
+      geo_city: string | null
+      geo_region: string | null
+      sessoesAtivas: SessaoAtivaItem[]
+      contasConectadas: {
+        funcionario_id: string | null
+        funcionario_nome: string
+        funcionario_email: string
+        funcionario_cargo: string
+        escola_nome: string
+        foto_url: string | null
+        ultima_atividade: string
+        isOnline: boolean
+      }[]
+      totalAcessos: number
+      primeiroAcesso: string
+      ultimoAcesso: string
+    }>()
+
+    // 1. Processar das sessões ativas
+    sessoesAtivas.forEach((sess) => {
+      const ua = parseUserAgent(sess.user_agent)
+      const isDeviceApk = ua.isApk || ua.os === 'Android' || ua.browser.includes('APK')
+      if (!isDeviceApk) return
+
+      const deviceKey = `${sess.ip || 'desconhecido'}_${ua.os}_${ua.browser}`
+      if (!map.has(deviceKey)) {
+        map.set(deviceKey, {
+          id: deviceKey,
+          deviceLabel: `${ua.os} • ${ua.browser}`,
+          os: ua.os,
+          browser: ua.browser,
+          ip: sess.ip || '127.0.0.1',
+          geo_city: sess.geo_city,
+          geo_region: sess.geo_region,
+          sessoesAtivas: [],
+          contasConectadas: [],
+          totalAcessos: 0,
+          primeiroAcesso: sess.created_at,
+          ultimoAcesso: sess.refreshed_at || sess.created_at,
+        })
+      }
+
+      const dev = map.get(deviceKey)!
+      dev.sessoesAtivas.push(sess)
+      dev.totalAcessos += 1
+      if (new Date(sess.created_at) < new Date(dev.primeiroAcesso)) {
+        dev.primeiroAcesso = sess.created_at
+      }
+      const dataUltima = sess.refreshed_at || sess.created_at
+      if (new Date(dataUltima) > new Date(dev.ultimoAcesso)) {
+        dev.ultimoAcesso = dataUltima
+      }
+
+      if (!dev.contasConectadas.some((c) => c.funcionario_email === sess.funcionario_email)) {
+        dev.contasConectadas.push({
+          funcionario_id: sess.funcionario_id,
+          funcionario_nome: sess.funcionario_nome,
+          funcionario_email: sess.funcionario_email,
+          funcionario_cargo: sess.funcionario_cargo,
+          escola_nome: sess.escola_nome,
+          foto_url: sess.foto_url,
+          ultima_atividade: sess.refreshed_at || sess.created_at,
+          isOnline: true,
+        })
+      }
+    })
+
+    // 2. Processar da trilha de navegação (para capturar histórico de contas que usaram o APK)
+    trilhaNavegacao.forEach((t) => {
+      const ua = parseUserAgent(t.user_agent)
+      const isDeviceApk = ua.isApk || ua.os === 'Android' || ua.browser.includes('APK')
+      if (!isDeviceApk) return
+
+      const deviceKey = `${t.ip_address || 'desconhecido'}_${ua.os}_${ua.browser}`
+      if (!map.has(deviceKey)) {
+        map.set(deviceKey, {
+          id: deviceKey,
+          deviceLabel: `${ua.os} • ${ua.browser}`,
+          os: ua.os,
+          browser: ua.browser,
+          ip: t.ip_address || '127.0.0.1',
+          geo_city: t.geo_city,
+          geo_region: t.geo_region,
+          sessoesAtivas: [],
+          contasConectadas: [],
+          totalAcessos: 0,
+          primeiroAcesso: t.opened_at,
+          ultimoAcesso: t.closed_at || t.opened_at,
+        })
+      }
+
+      const dev = map.get(deviceKey)!
+      dev.totalAcessos += 1
+      if (new Date(t.opened_at) < new Date(dev.primeiroAcesso)) {
+        dev.primeiroAcesso = t.opened_at
+      }
+      const dataUltima = t.closed_at || t.opened_at
+      if (new Date(dataUltima) > new Date(dev.ultimoAcesso)) {
+        dev.ultimoAcesso = dataUltima
+      }
+
+      const matchingConta = dev.contasConectadas.find((c) => c.funcionario_id === t.funcionario_id)
+      if (!matchingConta && t.funcionario_nome) {
+        dev.contasConectadas.push({
+          funcionario_id: t.funcionario_id,
+          funcionario_nome: t.funcionario_nome,
+          funcionario_email: 'Histórico de Navegação',
+          funcionario_cargo: 'Usuário Registrado',
+          escola_nome: 'Rede Municipal',
+          foto_url: null,
+          ultima_atividade: t.opened_at,
+          isOnline: false,
+        })
+      }
+    })
+
+    return Array.from(map.values())
+  }, [sessoesAtivas, trilhaNavegacao])
+
   // Cálculo de KPIs executivos
   const totalSessoesAtivas = sessoesAtivas.length
+  const totalSessoesApk = sessoesApkAtivas.length
+  const totalDispositivosApk = dispositivosApkConectados.length
   const totalLoginsHoje = loginsDiarios.filter((d) => d.data_acesso === getHojeBrasilia()).length
   const tempoMedioSegundos =
     loginsDiarios.length > 0
@@ -987,16 +1128,33 @@ export default function AdminAcessosPage() {
           </div>
 
           {/* Cards de KPIs Executivos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block">Sessões Ativas Agora</span>
+                <span className="text-xs text-muted-foreground font-semibold block">Sessões Ativas Geral</span>
                 <span className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
                   {totalSessoesAtivas}
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-card border border-borderCustom rounded-2xl p-4 shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground font-semibold block">Celulares / APK</span>
+                <span className="text-2xl font-black text-indigo-400 tracking-tight flex items-center gap-2">
+                  {totalDispositivosApk}
+                  {totalSessoesApk > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold">
+                      {totalSessoesApk} on
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -1006,7 +1164,7 @@ export default function AdminAcessosPage() {
                 <UserCheck className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block">Logins Registrados Hoje</span>
+                <span className="text-xs text-muted-foreground font-semibold block">Logins Hoje</span>
                 <span className="text-2xl font-black text-foreground tracking-tight">{totalLoginsHoje}</span>
               </div>
             </div>
@@ -1016,8 +1174,8 @@ export default function AdminAcessosPage() {
                 <Clock className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block">Tempo Médio de Tela Aberta</span>
-                <span className="text-xl font-black text-foreground tracking-tight">{formatDuration(tempoMedioSegundos)}</span>
+                <span className="text-xs text-muted-foreground font-semibold block">Tempo Médio de Tela</span>
+                <span className="text-lg font-black text-foreground tracking-tight">{formatDuration(tempoMedioSegundos)}</span>
               </div>
             </div>
 
@@ -1026,7 +1184,7 @@ export default function AdminAcessosPage() {
                 <Compass className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block">Telas Navegadas (Trilha)</span>
+                <span className="text-xs text-muted-foreground font-semibold block">Telas Navegadas</span>
                 <span className="text-2xl font-black text-foreground tracking-tight">{totalTelasNavegadas}</span>
               </div>
             </div>
@@ -1045,6 +1203,24 @@ export default function AdminAcessosPage() {
             >
               <Activity className="w-3.5 h-3.5" />
               <span>⚡ Sessões Ativas na Rede ({sessoesAtivas.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubTab('apk')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                subTab === 'apk'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted border border-borderCustom'
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
+              <span>📱 Dispositivos Conectados via APK ({dispositivosApkConectados.length})</span>
+              {sessoesApkAtivas.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300 text-[10px] font-black animate-pulse">
+                  {sessoesApkAtivas.length} online
+                </span>
+              )}
             </button>
 
             <button
@@ -1110,6 +1286,193 @@ export default function AdminAcessosPage() {
                 loading={loadingAvancado}
                 emptyMessage="Nenhuma sessão ativa encontrada na rede municipal neste momento."
               />
+            </div>
+          )}
+
+          {/* SUB-ABA APK: DISPOSITIVOS E CONTAS CONECTADAS PELO APK */}
+          {subTab === 'apk' && (
+            <div className="space-y-6">
+              {/* Header com resumo do ecossistema mobile */}
+              <div className="bg-card border border-borderCustom p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                    <Smartphone className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      Auditoria de Dispositivos Conectados via APK (Android / Mobile)
+                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] uppercase font-black">
+                        Capacitor Shell Native
+                      </span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Visualização consolidada de cada celular/dispositivo móvel, contas autenticadas e sessões em tempo real ativas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="px-3 py-2 rounded-xl bg-surface-2 border border-borderCustom text-right">
+                    <span className="text-[10px] text-muted-foreground font-semibold block uppercase">Dispositivos Mapeados</span>
+                    <span className="text-lg font-black text-indigo-400">{dispositivosApkConectados.length}</span>
+                  </div>
+                  <div className="px-3 py-2 rounded-xl bg-surface-2 border border-borderCustom text-right">
+                    <span className="text-[10px] text-muted-foreground font-semibold block uppercase">Sessões APK Online</span>
+                    <span className="text-lg font-black text-emerald-400 flex items-center gap-1.5 justify-end">
+                      {sessoesApkAtivas.length}
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista dos Dispositivos Conectados */}
+              {dispositivosApkConectados.length === 0 ? (
+                <div className="bg-card border border-borderCustom rounded-2xl p-12 text-center space-y-3">
+                  <Smartphone className="w-12 h-12 text-muted-foreground mx-auto opacity-40" />
+                  <h4 className="text-sm font-bold text-foreground">Nenhum dispositivo APK conectado registrado</h4>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                    Assim que servidores e operadores abrirem o aplicativo SIG no celular Android (APK), as informações detalhadas do aparelho, contas e sessões ativas serão exibidas aqui em tempo real.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-5">
+                  {dispositivosApkConectados.map((dispositivo) => (
+                    <div
+                      key={dispositivo.id}
+                      className="bg-card border border-borderCustom hover:border-borderCustom/90 transition-all rounded-2xl p-5 shadow-sm space-y-4"
+                    >
+                      {/* Topo do Card do Dispositivo */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-borderCustom">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                            <Smartphone className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-foreground text-sm">{dispositivo.deviceLabel}</h4>
+                              {dispositivo.sessoesAtivas.length > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-extrabold uppercase">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Online ({dispositivo.sessoesAtivas.length} sessão ativa)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted border border-border text-muted-foreground text-[10px] font-bold uppercase">
+                                  Offline
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                              <span className="flex items-center gap-1 font-mono text-sky-400">
+                                <Globe className="w-3 h-3" />
+                                IP: {dispositivo.ip}
+                              </span>
+                              <span className="flex items-center gap-1 text-rose-400">
+                                <MapPin className="w-3 h-3" />
+                                {dispositivo.geo_city ? `${dispositivo.geo_city}, ${dispositivo.geo_region || 'BA'}` : 'Sapeaçu, BA'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Última Atividade: {new Date(dispositivo.ultimoAcesso).toLocaleString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[11px] text-muted-foreground block">Total de Registros</span>
+                          <span className="text-xs font-mono font-bold text-foreground">{dispositivo.totalAcessos} eventos</span>
+                        </div>
+                      </div>
+
+                      {/* Bloco 1: Contas que se conectaram a partir deste dispositivo */}
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-indigo-400" />
+                          Contas que se conectaram a partir deste celular ({dispositivo.contasConectadas.length}):
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {dispositivo.contasConectadas.map((conta, cIdx) => (
+                            <div
+                              key={cIdx}
+                              className="bg-surface-2 border border-borderCustom p-3 rounded-xl flex items-center justify-between gap-2.5"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-surface-3 border border-borderCustom flex items-center justify-center font-bold text-xs text-primary overflow-hidden shrink-0">
+                                  {conta.foto_url ? (
+                                    <img src={conta.foto_url} alt={conta.funcionario_nome} className="w-full h-full object-cover" />
+                                  ) : (
+                                    conta.funcionario_nome.charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-foreground text-xs truncate flex items-center gap-1.5">
+                                    {conta.funcionario_nome}
+                                    {conta.isOnline && (
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Online Agora" />
+                                    )}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground truncate">{conta.funcionario_email}</div>
+                                  <div className="text-[10px] text-indigo-400 font-semibold truncate">{conta.funcionario_cargo} • {conta.escola_nome}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Bloco 2: Sessões Ativas em Tempo Real no Dispositivo */}
+                      {dispositivo.sessoesAtivas.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-borderCustom/60">
+                          <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Activity className="w-3.5 h-3.5" />
+                            Sessões Ativas em Execução Agora neste Aparelho ({dispositivo.sessoesAtivas.length}):
+                          </div>
+
+                          <div className="space-y-2">
+                            {dispositivo.sessoesAtivas.map((sessao) => (
+                              <div
+                                key={sessao.session_id}
+                                className="bg-emerald-950/20 border border-emerald-500/30 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-bold text-foreground text-xs">{sessao.funcionario_nome}</span>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-2 border border-borderCustom text-muted-foreground font-mono">
+                                      Rota: {sessao.current_pathname || '/home'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground flex items-center gap-3 flex-wrap">
+                                    <span>Início: <strong className="text-foreground">{new Date(sessao.created_at).toLocaleTimeString('pt-BR')}</strong></span>
+                                    <span>Tempo de tela: <strong className="text-emerald-400">{formatDuration(sessao.total_active_seconds_today)}</strong></span>
+                                  </div>
+                                </div>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRevokeSession(sessao.session_id, sessao.funcionario_nome)}
+                                  disabled={revokingSessionId === sessao.session_id}
+                                  className="bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/60 text-xs font-bold gap-1.5 h-8 rounded-lg cursor-pointer self-end sm:self-auto"
+                                >
+                                  {revokingSessionId === sessao.session_id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <LogOut className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Derrubar Sessão do APK</span>
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
