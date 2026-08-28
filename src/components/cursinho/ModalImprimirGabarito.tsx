@@ -271,139 +271,405 @@ export function ModalImprimirGabarito({
   }
 
   const handleImprimir = () => {
-    if (!printAreaRef.current) {
-      window.print()
-      return
+    if (!simulado) return
+
+    // Monta lista de folhas a serem impressas
+    let folhasParaImprimir: (AlunoFolha | undefined)[] = []
+
+    if (modoImpressao === 'nominal') {
+      if (alunosTurma.length > 0) {
+        folhasParaImprimir = alunosTurma
+      } else {
+        // Se a turma estiver vazia, gera 1 folha padrão para preenchimento
+        folhasParaImprimir = [undefined]
+      }
+    } else if (tipoAvulso === 'digitados') {
+      if (alunosAvulsosComQr.length > 0 || qtdAvulsaBranca > 0) {
+        folhasParaImprimir = [
+          ...alunosAvulsosComQr,
+          ...Array.from({ length: qtdAvulsaBranca }).map(() => undefined)
+        ]
+      } else {
+        folhasParaImprimir = [undefined]
+      }
+    } else {
+      folhasParaImprimir = Array.from({ length: Math.max(1, qtdSomenteBrancas) }).map(() => undefined)
     }
 
-    const printContent = printAreaRef.current.innerHTML
+    const colunasGabarito = []
+    for (let c = 0; c < numColunas; c++) {
+      const startQ = c * questoesPorColuna + 1
+      const endQ = Math.min(simulado.qtd_questoes, (c + 1) * questoesPorColuna)
+      const questoesRows = []
 
-    // Obter estilos da página para herdar Tailwind e fontes
-    const existingStyles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map((el) => el.outerHTML)
+      for (let q = startQ; q <= endQ; q++) {
+        const numFormatado = q < 10 ? `0${q}` : `${q}`
+        const alternativasHtml = alternativasLetras
+          .map(
+            (letra) =>
+              `<div style="width:19px; height:19px; border-radius:50%; border:1.5px solid #000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px; color:#000; background:#fff;">${letra}</div>`
+          )
+          .join('')
+
+        questoesRows.push(`
+          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:2px 0; border-bottom:1px solid #e5e7eb;">
+            <span style="font-weight:800; color:#111; width:18px; text-align:right; font-family:monospace; font-size:11px;">${numFormatado}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${alternativasHtml}
+            </div>
+          </div>
+        `)
+      }
+
+      colunasGabarito.push(`
+        <div style="flex:1; max-width:200px; border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff;">
+          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px; padding-bottom:4px; border-bottom:2px solid #000; font-weight:800; font-size:11px; color:#111; text-transform:uppercase;">
+            <span style="width:18px; text-align:right; font-family:monospace;">Q.</span>
+            <div style="display:flex; gap:6px;">
+              ${alternativasLetras.map((l) => `<span style="width:19px; text-align:center; font-size:10px;">${l}</span>`).join('')}
+            </div>
+          </div>
+          ${questoesRows.join('')}
+        </div>
+      `)
+    }
+
+    const gradeBolhasHtml = `
+      <div style="display:flex; gap:12px; width:100%; margin:8px 0; justify-content:${numColunas === 1 ? 'center' : 'flex-start'};">
+        ${colunasGabarito.join('')}
+      </div>
+    `
+
+    const dataFormatada = simulado.data_aplicacao
+      ? new Date(simulado.data_aplicacao + 'T00:00:00').toLocaleDateString('pt-BR')
+      : '__/__/____'
+
+    const sheetsHtml = folhasParaImprimir
+      .map((aluno, index) => {
+        const qrSrc = aluno?.qrCodeUrl || qrGenericoUrl
+        const nomeAluno = aluno?.nome || '____________________________________________________'
+        const matriculaAluno = aluno?.numero_matricula || '__________'
+        const isUltimaFolha = index === folhasParaImprimir.length - 1 && (!incluirQuestoes || !textoQuestoes.trim())
+
+        const cartaoOmrHtml = `
+          <div class="sheet-page sheet-omr" style="${isUltimaFolha ? 'page-break-after: auto; break-after: auto;' : ''}">
+            <!-- 4 Pontos Fiduciais Pretos de Referência Ótica (Cantos) -->
+            <div class="fiducial-box top-left"></div>
+            <div class="fiducial-box top-right"></div>
+            <div class="fiducial-box bottom-left"></div>
+            <div class="fiducial-box bottom-right"></div>
+
+            <!-- Linhas de Sincronização Periférica -->
+            <div class="timing-bar-top"></div>
+            <div class="timing-bar-bottom"></div>
+
+            <!-- Cabeçalho Oficial -->
+            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:8px; padding-top:4px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:48px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
+                <div>
+                  <p style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
+                    Prefeitura Municipal • Secretaria de Educação
+                  </p>
+                  <h1 style="font-size:15px; font-weight:900; text-transform:uppercase; color:#000; margin:2px 0;">
+                    ${escolaNome}
+                  </h1>
+                  <p style="font-size:11px; font-weight:800; color:#1f2937; margin:0;">
+                    CARTÃO-RESPOSTA OFICIAL • ${simulado.titulo.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                ${qrSrc ? `<img src="${qrSrc}" alt="QR" style="width:58px; height:58px; border:1px solid #999;" />` : ''}
+                <span style="font-size:8px; font-family:monospace; color:#4b5563; text-transform:uppercase; margin-top:2px;">OMR-SIG ID</span>
+              </div>
+            </div>
+
+            <!-- Bloco de Identificação do Aluno -->
+            <div style="display:grid; grid-template-columns:8fr 2fr 2fr; gap:8px; margin:8px 0; padding:8px 10px; background:#f9fafb; border:1.5px solid #000; border-radius:4px; font-size:11px;">
+              <div>
+                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Nome do(a) Estudante:</span>
+                <div style="font-weight:900; font-size:13px; color:#000; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${nomeAluno}
+                </div>
+              </div>
+              <div>
+                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Matrícula:</span>
+                <div style="font-family:monospace; font-weight:800; color:#111;">${matriculaAluno}</div>
+              </div>
+              <div>
+                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Data:</span>
+                <div style="font-weight:800; color:#111;">${dataFormatada}</div>
+              </div>
+            </div>
+
+            <!-- Instruções -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:4px; font-size:10px; color:#78350f; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:800; text-transform:uppercase;">Atenção:</span>
+                <span>Preencha totalmente a bolha com caneta <strong>preta</strong> ou <strong>azul</strong>.</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; font-weight:700;">
+                <span style="display:flex; align-items:center; gap:4px;">
+                  Correto: <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#000;"></span>
+                </span>
+                <span style="display:flex; align-items:center; gap:4px;">
+                  Incorreto: <span style="display:inline-block; width:12px; height:12px; border-radius:50%; border:1px solid #000; text-align:center; line-height:10px; font-size:9px;">×</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Grade OMR -->
+            <div style="padding:2px 0;">
+              ${gradeBolhasHtml}
+            </div>
+
+            <!-- Rodapé -->
+            <div style="position:absolute; bottom:12px; left:16px; right:16px; padding-top:6px; border-top:1px solid #d1d5db; display:flex; align-items:center; justify-content:space-between; font-size:9px; color:#6b7280;">
+              <div>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário</div>
+              <div style="display:flex; align-items:center; gap:14px;">
+                <span>Assinatura do Aluno: ___________________________________</span>
+                <span style="font-family:monospace; font-weight:700;">SIMULADO #${simulado.id.slice(0, 8)}</span>
+              </div>
+            </div>
+          </div>
+        `
+
+        let cadernoHtml = ''
+        if (incluirQuestoes && textoQuestoes.trim()) {
+          const isUltimaQuestoes = index === folhasParaImprimir.length - 1
+          cadernoHtml = `
+            <div class="sheet-page sheet-questoes" style="${isUltimaQuestoes ? 'page-break-after: auto; break-after: auto;' : ''}">
+              <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:40px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
+                  <div>
+                    <p style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
+                      Prefeitura Municipal • Secretaria de Educação
+                    </p>
+                    <h2 style="font-size:13px; font-weight:900; text-transform:uppercase; color:#000; margin:1px 0;">
+                      ${escolaNome}
+                    </h2>
+                    <h3 style="font-size:11px; font-weight:800; color:#1f2937; text-transform:uppercase; margin:0;">
+                      CADERNO DE QUESTÕES • ${simulado.titulo.toUpperCase()}
+                    </h3>
+                  </div>
+                </div>
+
+                <div style="text-align:right;">
+                  <span style="font-size:11px; font-weight:800; color:#1f2937; text-transform:uppercase; display:block; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    ${aluno?.nome ? aluno.nome : 'CADERNO DO ESTUDANTE'}
+                  </span>
+                  <span style="font-size:9px; color:#6b7280; font-family:monospace;">
+                    ${simulado.qtd_questoes} Questões • ${simulado.ano_letivo || new Date().getFullYear()}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Enunciados das Questões -->
+              <div style="font-size:11.5px; line-height:1.6; color:#000; font-family:ui-sans-serif, system-ui, -apple-system, sans-serif; white-space:pre-wrap; word-break:break-word;">
+                ${textoQuestoes}
+              </div>
+
+              <div style="margin-top:24px; padding-top:8px; border-top:1px solid #d1d5db; text-align:center; font-size:10px; color:#6b7280;">
+                <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta.</span>
+              </div>
+            </div>
+          `
+        }
+
+        return cartaoOmrHtml + cadernoHtml
+      })
       .join('\n')
 
-    // Criar iframe oculto para impressão isolada
-    const iframe = document.createElement('iframe')
-    iframe.style.position = 'fixed'
-    iframe.style.right = '0'
-    iframe.style.bottom = '0'
-    iframe.style.width = '0'
-    iframe.style.height = '0'
-    iframe.style.border = '0'
-    iframe.style.zIndex = '-1000'
-    document.body.appendChild(iframe)
-
-    const doc = iframe.contentWindow?.document
-    if (!doc) {
-      window.print()
-      return
-    }
-
-    doc.open()
-    doc.write(`
+    const htmlCompleto = `
       <!DOCTYPE html>
       <html lang="pt-BR">
         <head>
           <meta charset="utf-8" />
-          <title>Simulado_${simulado?.titulo ? simulado.titulo.replace(/[^a-zA-Z0-9]/g, '_') : 'Gabarito'}</title>
-          ${existingStyles}
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Simulado_${simulado.titulo.replace(/[^a-zA-Z0-9]/g, '_')}</title>
           <style>
             @page {
               size: A4 portrait;
-              margin: 0;
+              margin: 6mm 8mm 6mm 8mm;
             }
             * {
+              box-sizing: border-box;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
               color-adjust: exact !important;
-              box-sizing: border-box !important;
             }
             html, body {
               margin: 0 !important;
               padding: 0 !important;
-              background-color: #ffffff !important;
-              color: #000000 !important;
-              width: 100% !important;
-            }
-            .print-area {
-              background: #ffffff !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 100% !important;
-              max-height: none !important;
-              overflow: visible !important;
-              border: none !important;
-            }
-            .folha-container {
-              width: 100% !important;
-              page-break-inside: avoid;
-            }
-            .folha-omr {
-              width: 210mm !important;
-              min-height: 297mm !important;
-              max-height: 297mm !important;
-              height: 297mm !important;
-              padding: 18mm 14mm !important;
-              margin: 0 auto !important;
-              page-break-after: always !important;
-              break-after: page !important;
               background: #ffffff !important;
               color: #000000 !important;
-              position: relative !important;
-              box-sizing: border-box !important;
-              box-shadow: none !important;
-              border: none !important;
+              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             }
-            .folha-questoes {
-              width: 210mm !important;
-              min-height: 297mm !important;
-              padding: 20mm 16mm !important;
-              margin: 0 auto !important;
-              page-break-after: always !important;
-              break-after: page !important;
-              background: #ffffff !important;
-              color: #000000 !important;
-              position: relative !important;
-              box-sizing: border-box !important;
-              box-shadow: none !important;
-              border: none !important;
+            .no-print-bar {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              height: 48px;
+              background: #0f172a;
+              color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 20px;
+              z-index: 99999;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+              font-size: 13px;
+              font-weight: bold;
+            }
+            .btn-imprimir {
+              background: #059669;
+              color: #ffffff;
+              border: none;
+              padding: 8px 18px;
+              border-radius: 8px;
+              font-weight: 800;
+              font-size: 12px;
+              cursor: pointer;
+              transition: background 0.15s;
+            }
+            .btn-imprimir:hover {
+              background: #047857;
+            }
+            .print-container-wrapper {
+              padding-top: 60px;
+              background: #e2e8f0;
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 20px;
+              padding-bottom: 40px;
+            }
+            .sheet-page {
+              width: 194mm;
+              min-height: 280mm;
+              background: #ffffff;
+              color: #000000;
+              padding: 16px 18px;
+              position: relative;
+              box-sizing: border-box;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+              page-break-after: always;
+              break-after: page;
+              margin: 0 auto;
+            }
+            .sheet-questoes {
+              padding: 22px;
+            }
+            .fiducial-box {
+              position: absolute;
+              width: 15px;
+              height: 15px;
+              background-color: #000000;
+            }
+            .top-left { top: 12px; left: 12px; }
+            .top-right { top: 12px; right: 12px; }
+            .bottom-left { bottom: 12px; left: 12px; }
+            .bottom-right { bottom: 12px; right: 12px; }
+            .timing-bar-top {
+              position: absolute;
+              top: 12px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 34px;
+              height: 8px;
+              background: #000000;
+            }
+            .timing-bar-bottom {
+              position: absolute;
+              bottom: 12px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 34px;
+              height: 8px;
+              background: #000000;
+            }
+            @media print {
+              .no-print-bar {
+                display: none !important;
+              }
+              .print-container-wrapper {
+                padding: 0 !important;
+                background: transparent !important;
+                display: block !important;
+                gap: 0 !important;
+                min-height: 0 !important;
+              }
+              .sheet-page {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 auto !important;
+                width: 100% !important;
+                min-height: 280mm !important;
+              }
             }
           </style>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.focus();
+                window.print();
+              }, 400);
+            };
+          </script>
         </head>
         <body>
-          <div class="print-area">
-            ${printContent}
+          <div class="no-print-bar">
+            <span>Impressão de Cartão-Resposta e Caderno de Questões • SIG</span>
+            <button class="btn-imprimir" onclick="window.print()">Imprimir / Salvar PDF</button>
+          </div>
+          <div class="print-container-wrapper">
+            ${sheetsHtml}
           </div>
         </body>
       </html>
-    `)
-    doc.close()
+    `
 
-    let printed = false
-    const triggerPrint = () => {
-      if (printed) return
-      printed = true
-      try {
-        iframe.contentWindow?.focus()
-        iframe.contentWindow?.print()
-      } catch (err) {
-        console.error('Erro ao acionar impressão:', err)
-      } finally {
+    // Abre janela com o documento
+    const win = window.open('', '_blank', 'width=980,height=980')
+    if (win) {
+      win.document.open()
+      win.document.write(htmlCompleto)
+      win.document.close()
+    } else {
+      // Fallback para iframe visível caso o popup seja impedido
+      const iframe = document.createElement('iframe')
+      iframe.style.position = 'fixed'
+      iframe.style.left = '0'
+      iframe.style.top = '0'
+      iframe.style.width = '100vw'
+      iframe.style.height = '100vh'
+      iframe.style.opacity = '0'
+      iframe.style.pointerEvents = 'none'
+      iframe.style.border = '0'
+      iframe.style.zIndex = '-9999'
+      document.body.appendChild(iframe)
+
+      const doc = iframe.contentWindow?.document
+      if (doc) {
+        doc.open()
+        doc.write(htmlCompleto)
+        doc.close()
         setTimeout(() => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe)
-          }
-        }, 1500)
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe)
+            }
+          }, 2000)
+        }, 500)
       }
     }
-
-    iframe.onload = () => {
-      setTimeout(triggerPrint, 300)
-    }
-
-    // Fallback garantido
-    setTimeout(triggerPrint, 600)
   }
 
   if (!simulado) return null
