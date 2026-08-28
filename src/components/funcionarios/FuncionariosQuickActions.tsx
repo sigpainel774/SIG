@@ -13,6 +13,8 @@ interface FuncionariosQuickActionsProps {
   setViewMode: (mode: 'lista' | 'permissoes') => void
   setModalLotacoesOpen: (open: boolean) => void
   setFuncLotacaoInicial: (val: any) => void
+  isEmaee?: boolean
+  isSaude?: boolean
 }
 
 export function FuncionariosQuickActions({
@@ -20,7 +22,9 @@ export function FuncionariosQuickActions({
   viewMode,
   setViewMode,
   setModalLotacoesOpen,
-  setFuncLotacaoInicial
+  setFuncLotacaoInicial,
+  isEmaee,
+  isSaude
 }: FuncionariosQuickActionsProps) {
   const [isEmDesenvolvimentoOpen, setIsEmDesenvolvimentoOpen] = useState(false)
 
@@ -67,7 +71,7 @@ export function FuncionariosQuickActions({
               Gestão de Lotações
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Alocar funcionários em turmas e escolas
+              {isEmaee || isSaude ? 'Alocar servidores em setores e unidades' : 'Alocar funcionários em turmas e escolas'}
             </p>
           </div>
         </div>

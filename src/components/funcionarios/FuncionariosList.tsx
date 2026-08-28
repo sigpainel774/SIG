@@ -36,6 +36,8 @@ interface FuncionariosListProps {
   handleEditar: (func: Funcionario) => void
   handleDesligar: (func: Funcionario) => Promise<void>
   onResetFiltros?: () => void
+  isEmaee?: boolean
+  isSaude?: boolean
 }
 
 /* ── Estilos Visuais por Cargo / Profissão ─────────────────── */
@@ -275,8 +277,12 @@ export function FuncionariosList({
   handleImprimir,
   handleEditar,
   handleDesligar,
-  onResetFiltros
+  onResetFiltros,
+  isEmaee,
+  isSaude
 }: FuncionariosListProps) {
+  const isServidores = isEmaee || isSaude
+
   /* ── Agrupamento de Funcionários por Cargo ───────────────────── */
   const groupedFuncs = useMemo(() => {
     const map = new Map<string, Funcionario[]>()
@@ -314,7 +320,7 @@ export function FuncionariosList({
         </div>
       ) : funcsFiltrados.length === 0 ? (
         <div className="bg-surface-1 border border-dashed border-border rounded-2xl p-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center gap-3">
-          <p>Nenhum funcionário encontrado com os filtros aplicados.</p>
+          <p>{isServidores ? 'Nenhum servidor encontrado com os filtros aplicados.' : 'Nenhum funcionário encontrado com os filtros aplicados.'}</p>
           {onResetFiltros && (
             <button
               onClick={onResetFiltros}
@@ -518,7 +524,7 @@ export function FuncionariosList({
                             {isEditMode && (
                               <button
                                 onClick={() => handleEditar(func)}
-                                title="Editar funcionário"
+                                title={isServidores ? 'Editar servidor' : 'Editar funcionário'}
                                 className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-hoverCustom border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                               >
                                 <Pencil className="w-4 h-4" />
@@ -528,7 +534,7 @@ export function FuncionariosList({
                             {isEditMode && (
                               <button
                                 onClick={() => handleDesligar(func)}
-                                title="Desligar funcionário"
+                                title={isServidores ? 'Desligar servidor' : 'Desligar funcionário'}
                                 className="w-8.5 h-8.5 rounded-xl bg-transparent hover:bg-destructive/10 hover:text-destructive border border-border text-foreground flex items-center justify-center transition-all cursor-pointer"
                               >
                                 <UserX className="w-4 h-4" />

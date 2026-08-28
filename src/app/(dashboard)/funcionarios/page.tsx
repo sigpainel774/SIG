@@ -242,7 +242,7 @@ export default function FuncionariosPage() {
             className="h-10 w-10 shrink-0"
           />
           <h1 className="text-2xl font-bold text-foreground">
-            Gestão de Funcionários
+            {isEmaee || isSaude ? 'Gestão de Servidores' : 'Gestão de Funcionários'}
           </h1>
         </div>
 
@@ -336,6 +336,8 @@ export default function FuncionariosPage() {
         setViewMode={setViewMode}
         setModalLotacoesOpen={setModalLotacoesOpen}
         setFuncLotacaoInicial={setFuncLotacaoInicial}
+        isEmaee={isEmaee}
+        isSaude={isSaude}
       />
 
       {viewMode === 'permissoes' ? (
@@ -356,6 +358,8 @@ export default function FuncionariosPage() {
             cargosUnicos={cargosUnicos}
             handleImprimirLista={handlePrintLista}
             setModalNovoOpen={setModalNovoOpen}
+            isEmaee={isEmaee}
+            isSaude={isSaude}
           />
 
           {/* ── Grade de Cards / Listagem ───────────────────────────── */}
@@ -369,6 +373,8 @@ export default function FuncionariosPage() {
             handleEditar={handleEditar as any}
             handleDesligar={handleDesligar as any}
             onResetFiltros={resetFiltros}
+            isEmaee={isEmaee}
+            isSaude={isSaude}
           />
         </>
       )}

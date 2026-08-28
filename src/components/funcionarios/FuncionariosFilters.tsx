@@ -22,6 +22,8 @@ interface FuncionariosFiltersProps {
   cargosUnicos: string[]
   handleImprimirLista: () => void
   setModalNovoOpen: (open: boolean) => void
+  isEmaee?: boolean
+  isSaude?: boolean
 }
 
 export function FuncionariosFilters({
@@ -34,13 +36,17 @@ export function FuncionariosFilters({
   setFiltroStatus,
   cargosUnicos,
   handleImprimirLista,
-  setModalNovoOpen
+  setModalNovoOpen,
+  isEmaee,
+  isSaude
 }: FuncionariosFiltersProps) {
+  const isServidores = isEmaee || isSaude
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Busca */}
       <Input
-        placeholder="Buscar funcionário por nome..."
+        placeholder={isServidores ? "Buscar servidor por nome..." : "Buscar funcionário por nome..."}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         className="bg-surface-1 border-borderCustom text-foreground placeholder:text-muted-foreground h-9 w-56 text-sm"
@@ -90,14 +96,14 @@ export function FuncionariosFilters({
         Imprimir Lista
       </Button>
 
-      {/* Botão Novo Funcionário */}
+      {/* Botão Novo Funcionário / Servidor */}
       {isEditMode && (
         <Button
           onClick={() => setModalNovoOpen(true)}
           className="bg-success hover:bg-success/90 text-success-foreground font-semibold gap-2 h-9 text-sm cursor-pointer rounded-xl border-none shadow-sm flex items-center px-4 ml-auto"
         >
           <Plus className="w-4.5 h-4.5" />
-          Novo Funcionário
+          {isServidores ? 'Novo Servidor' : 'Novo Funcionário'}
         </Button>
       )}
     </div>
