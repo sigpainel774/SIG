@@ -186,11 +186,19 @@ export function ModalScannerCamera({
         data_correcao: new Date().toISOString()
       }
 
-      const { error } = await (supabase as any)
-        .from('simulados_respostas')
-        .upsert(payload, { onConflict: 'simulado_id, aluno_id' })
+      if (dados.alunoId) {
+        const { error } = await (supabase as any)
+          .from('simulados_respostas')
+          .upsert(payload, { onConflict: 'simulado_id, aluno_id' })
 
-      if (error) throw error
+        if (error) throw error
+      } else {
+        const { error } = await (supabase as any)
+          .from('simulados_respostas')
+          .insert(payload)
+
+        if (error) throw error
+      }
 
       toast.success(`Correção gravada: ${dados.alunoNome} (Nota ${dados.notaFinal.toFixed(1)})`)
       setHistoricoSessao((prev) => [
@@ -230,7 +238,7 @@ export function ModalScannerCamera({
 
     if (resultadoOMR.sucesso && resultadoOMR.qrData?.simuladoId) {
       const now = Date.now()
-      const qrIdent = `${resultadoOMR.qrData.simuladoId}_${resultadoOMR.qrData.alunoId || 'avulso'}`
+      const qrIdent = `${resultadoOMR.qrData.simuladoId}_${resultadoOMR.qrData.alunoId || resultadoOMR.qrData.alunoNome || 'avulso'}`
 
       // Evita disparos repetidos na mesma folha em menos de 3 segundos
       if (lastScannedQrRef.current === qrIdent && now - lastScanTimeRef.current < 3000) {
@@ -241,7 +249,7 @@ export function ModalScannerCamera({
       lastScanTimeRef.current = now
 
       // Encontra nome do aluno pelo QR Code
-      let alunoNome = 'Aluno Avulso'
+      let alunoNome = resultadoOMR.qrData.alunoNome || 'Aluno Avulso'
       let alunoId = resultadoOMR.qrData.alunoId
 
       if (alunoId) {
@@ -272,7 +280,7 @@ export function ModalScannerCamera({
 
       setResultadoAtual(dadosCompletos)
 
-      if (autoSave && alunoId) {
+      if (autoSave && (alunoId || (resultadoOMR.qrData.alunoNome && resultadoOMR.qrData.alunoNome !== 'Aluno Avulso'))) {
         salvarCorrecao(dadosCompletos)
       }
     }

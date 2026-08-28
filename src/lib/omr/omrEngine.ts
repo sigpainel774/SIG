@@ -15,6 +15,7 @@ export interface OMRResult {
   qrData?: {
     simuladoId?: string
     alunoId?: string
+    alunoNome?: string
     folhaNum?: number
   } | null
   respostas: Record<string, string | null> // "A", "B", "C", "D", "E", "ANULADA", "BRANCO"
@@ -59,7 +60,7 @@ export function playScanSound(type: 'success' | 'error' = 'success') {
 /**
  * Lê o QR Code contido na imagem/canvas se existir
  */
-export function readQRCodeFromImageData(imageData: ImageData): { simuladoId?: string; alunoId?: string; raw?: string } | null {
+export function readQRCodeFromImageData(imageData: ImageData): { simuladoId?: string; alunoId?: string; alunoNome?: string; raw?: string } | null {
   try {
     const code = jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: 'dontInvert'
@@ -71,6 +72,7 @@ export function readQRCodeFromImageData(imageData: ImageData): { simuladoId?: st
       return {
         simuladoId: parsed.s || parsed.simuladoId || parsed.simulado_id,
         alunoId: parsed.a || parsed.alunoId || parsed.aluno_id,
+        alunoNome: parsed.n || parsed.nome || parsed.alunoNome || parsed.aluno_nome,
         raw: code.data
       }
     } catch {
