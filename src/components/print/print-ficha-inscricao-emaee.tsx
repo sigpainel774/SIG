@@ -85,13 +85,21 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
     else nomeResponsavel = nomeMae || nomePai || outroNome || ''
   }
 
+  const norm = (s?: string | null) => (s || '').trim().toLowerCase()
+  const isMaeResponsavel = !!(nomeMae && norm(nomeResponsavel) === norm(nomeMae))
+  const isPaiResponsavel = !!(nomePai && norm(nomeResponsavel) === norm(nomePai))
+  const isOutroDiferente = !!(
+    (outroNome && norm(outroNome) !== norm(nomeMae) && norm(outroNome) !== norm(nomePai)) ||
+    (nomeResponsavel && !isMaeResponsavel && !isPaiResponsavel)
+  )
+
   // Identifica a relação / papel do responsável
   let labelResponsavel = 'Pai / Mãe / Responsável Legal'
-  if (nomeResponsavel && nomeMae && nomeResponsavel.toLowerCase() === nomeMae.toLowerCase()) {
+  if (isMaeResponsavel) {
     labelResponsavel = 'Mãe / Responsável Legal'
-  } else if (nomeResponsavel && nomePai && nomeResponsavel.toLowerCase() === nomePai.toLowerCase()) {
+  } else if (isPaiResponsavel) {
     labelResponsavel = 'Pai / Responsável Legal'
-  } else if (tipoResp === 'OUTRO' || (outroNome && nomeResponsavel.toLowerCase() === outroNome.toLowerCase())) {
+  } else if (tipoResp === 'OUTRO' || isOutroDiferente) {
     labelResponsavel = outroParentesco ? `${outroParentesco} / Responsável Legal` : 'Responsável Legal'
   }
 
@@ -309,7 +317,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                 <td className="border border-black p-1.5 w-1/2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold block text-[8px] uppercase text-gray-600">Nome da Mãe</span>
-                    {nomeResponsavel && nomeMae && nomeResponsavel.trim().toLowerCase() === nomeMae.trim().toLowerCase() && (
+                    {isMaeResponsavel && (
                       <span className="text-[7.5px] font-bold bg-black text-white px-1 rounded-xs uppercase">Responsável Legal</span>
                     )}
                   </div>
@@ -324,7 +332,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                 <td className="border border-black p-1.5 w-1/2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold block text-[8px] uppercase text-gray-600">Nome do Pai</span>
-                    {nomeResponsavel && nomePai && nomeResponsavel.trim().toLowerCase() === nomePai.trim().toLowerCase() && (
+                    {isPaiResponsavel && (
                       <span className="text-[7.5px] font-bold bg-black text-white px-1 rounded-xs uppercase">Responsável Legal</span>
                     )}
                   </div>
@@ -335,7 +343,7 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                   <span>{aluno?.profissao_pai || dm?.profissaoPai || '-'}</span>
                 </td>
               </tr>
-              {(tipoResp === 'OUTRO' || (outroNome && outroNome !== nomeMae && outroNome !== nomePai) || (nomeResponsavel && nomeResponsavel !== nomeMae && nomeResponsavel !== nomePai)) && (
+              {isOutroDiferente && (
                 <tr>
                   <td className="border border-black p-1.5 w-1/2 bg-gray-50/50">
                     <div className="flex items-center justify-between">
