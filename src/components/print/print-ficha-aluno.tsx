@@ -15,6 +15,10 @@ export interface AlunoPrintData {
   cpf?: string | null
   inep?: string | null
   data_nascimento?: string | null
+  cor_raca?: string | null
+  sexo?: string | null
+  municipio_nascimento?: string | null
+  uf_nascimento?: string | null
   telefone?: string | null
   rg?: string | null
   nis?: string | null
@@ -295,11 +299,11 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
                 </td>
                 <td className="border border-black p-1">
                   <span className="font-bold block text-[9px] text-gray-700">14 - Cidade de Nasc.</span>
-                  <span>{dm.cidadeNascAluno || '-'}</span>
+                  <span>{aluno.municipio_nascimento || dm.cidadeNascAluno || dm.naturalidadeAluno || '-'}</span>
                 </td>
                 <td className="border border-black p-1">
                   <span className="font-bold block text-[9px] text-gray-700">15 - UF Nasc.</span>
-                  <span>{dm.ufNascAluno || '-'}</span>
+                  <span>{aluno.uf_nascimento || dm.ufNascAluno || '-'}</span>
                 </td>
               </tr>
             </tbody>

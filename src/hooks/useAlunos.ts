@@ -14,6 +14,10 @@ export interface Aluno {
   inep?: string | null
   telefone?: string | null
   data_nascimento?: string | null
+  cor_raca?: string | null
+  sexo?: string | null
+  municipio_nascimento?: string | null
+  uf_nascimento?: string | null
   rg?: string | null
   nis?: string | null
   cartao_sus?: string | null
