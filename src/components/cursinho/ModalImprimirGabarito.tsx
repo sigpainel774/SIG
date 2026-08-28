@@ -302,7 +302,7 @@ export function ModalImprimirGabarito({
     >
       <div className="space-y-4">
         {/* Painel de Controle de Impressão (Não sai na impressão) */}
-        <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 space-y-4 print:hidden">
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-4 print:hidden">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Button
@@ -334,7 +334,7 @@ export function ModalImprimirGabarito({
                   max={200}
                   value={qtdAvulsa}
                   onChange={(e) => setQtdAvulsa(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20 bg-background border border-[#26262a] rounded-lg px-2 py-1 text-sm font-bold text-center"
+                  className="w-20 bg-background border border-border rounded-lg px-2 py-1 text-sm font-bold text-center"
                 />
               </div>
             )}
@@ -345,7 +345,7 @@ export function ModalImprimirGabarito({
             </Button>
           </div>
 
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 text-xs flex items-center gap-2">
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400 text-xs flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>
               As folhas contêm os 4 pontos pretos fiduciais nos cantos e o QR Code oficial para reconhecimento ótico ultra-rápido via câmera.
@@ -356,7 +356,7 @@ export function ModalImprimirGabarito({
         {/* Visualização das Folhas de Impressão */}
         <div
           ref={printAreaRef}
-          className="print-area max-h-[60vh] overflow-y-auto p-4 bg-zinc-900 rounded-xl flex flex-col items-center print:p-0 print:m-0 print:bg-white print:overflow-visible"
+          className="print-area max-h-[60vh] overflow-y-auto p-4 bg-muted/40 dark:bg-zinc-900 border border-border rounded-xl flex flex-col items-center print:p-0 print:m-0 print:bg-white print:overflow-visible"
         >
           {loading ? (
             <div className="py-12 text-center text-muted-foreground">Gerando cartões de resposta e QR Codes...</div>

@@ -156,8 +156,8 @@ export function ModalRankingSimulado({
       <div className="space-y-6">
         {/* Barra Superior com Métricas e Abas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3.5 bg-[#141416] border border-[#26262a] rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400">
+          <div className="p-3.5 bg-card border border-border rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
               <Users className="w-5 h-5" />
             </div>
             <div>
@@ -166,28 +166,28 @@ export function ModalRankingSimulado({
             </div>
           </div>
 
-          <div className="p-3.5 bg-[#141416] border border-[#26262a] rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400">
+          <div className="p-3.5 bg-card border border-border rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
               <Award className="w-5 h-5" />
             </div>
             <div>
               <span className="text-[11px] text-muted-foreground block">Média Geral</span>
-              <span className="text-xl font-extrabold text-emerald-400">{stats.mediaGeral.toFixed(1)}</span>
+              <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.mediaGeral.toFixed(1)}</span>
             </div>
           </div>
 
-          <div className="p-3.5 bg-[#141416] border border-[#26262a] rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400">
+          <div className="p-3.5 bg-card border border-border rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
               <Trophy className="w-5 h-5" />
             </div>
             <div>
               <span className="text-[11px] text-muted-foreground block">Maior Nota</span>
-              <span className="text-xl font-extrabold text-amber-400">{stats.maiorNota.toFixed(1)}</span>
+              <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{stats.maiorNota.toFixed(1)}</span>
             </div>
           </div>
 
-          <div className="p-3.5 bg-[#141416] border border-[#26262a] rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400">
+          <div className="p-3.5 bg-card border border-border rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-600 dark:text-purple-400">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
@@ -199,16 +199,16 @@ export function ModalRankingSimulado({
 
         {/* Pódio dos Top 3 (Apenas se houver pelo menos 2 alunos) */}
         {top3.length >= 2 && tabAtiva === 'ranking' && (
-          <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <h4 className="text-xs font-bold text-muted-foreground uppercase mb-3 flex items-center gap-1.5">
-              <Trophy className="w-4 h-4 text-amber-400" /> Pódio de Excelência do Simulado
+              <Trophy className="w-4 h-4 text-amber-500 dark:text-amber-400" /> Pódio de Excelência do Simulado
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* 2º Lugar */}
               {top3[1] && (
-                <div className="p-3 bg-background border border-slate-700/60 rounded-xl flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-500/20 text-slate-300 font-extrabold flex items-center justify-center text-lg border border-slate-500/40 shrink-0">
+                <div className="p-3 bg-muted/40 border border-border rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-500/20 text-slate-700 dark:text-slate-300 font-extrabold flex items-center justify-center text-lg border border-slate-500/40 shrink-0">
                     2º
                   </div>
                   <div className="truncate flex-1">
@@ -219,7 +219,7 @@ export function ModalRankingSimulado({
                       {top3[1].total_acertos} acertos ({top3[1].percentual_acerto}%)
                     </span>
                   </div>
-                  <span className="text-lg font-black text-slate-300">
+                  <span className="text-lg font-black text-slate-700 dark:text-slate-300">
                     {Number(top3[1].nota_final).toFixed(1)}
                   </span>
                 </div>
@@ -228,18 +228,18 @@ export function ModalRankingSimulado({
               {/* 1º Lugar (Destaque Central) */}
               {top3[0] && (
                 <div className="p-3 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3 shadow-md">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 font-extrabold flex items-center justify-center text-lg border border-amber-500/50 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold flex items-center justify-center text-lg border border-amber-500/50 shrink-0">
                     1º
                   </div>
                   <div className="truncate flex-1">
-                    <span className="font-extrabold text-sm text-amber-300 block truncate">
+                    <span className="font-extrabold text-sm text-amber-700 dark:text-amber-300 block truncate">
                       {top3[0].aluno?.nome || top3[0].nome_identificado}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {top3[0].total_acertos} acertos ({top3[0].percentual_acerto}%)
                     </span>
                   </div>
-                  <span className="text-xl font-black text-amber-400">
+                  <span className="text-xl font-black text-amber-600 dark:text-amber-400">
                     {Number(top3[0].nota_final).toFixed(1)}
                   </span>
                 </div>
@@ -247,8 +247,8 @@ export function ModalRankingSimulado({
 
               {/* 3º Lugar */}
               {top3[2] && (
-                <div className="p-3 bg-background border border-amber-900/40 rounded-xl flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-900/30 text-amber-600 font-extrabold flex items-center justify-center text-lg border border-amber-900/50 shrink-0">
+                <div className="p-3 bg-muted/40 border border-border rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-800/20 text-amber-700 dark:text-amber-600 font-extrabold flex items-center justify-center text-lg border border-amber-800/30 shrink-0">
                     3º
                   </div>
                   <div className="truncate flex-1">
@@ -259,7 +259,7 @@ export function ModalRankingSimulado({
                       {top3[2].total_acertos} acertos ({top3[2].percentual_acerto}%)
                     </span>
                   </div>
-                  <span className="text-lg font-black text-amber-600">
+                  <span className="text-lg font-black text-amber-700 dark:text-amber-600">
                     {Number(top3[2].nota_final).toFixed(1)}
                   </span>
                 </div>
@@ -297,7 +297,7 @@ export function ModalRankingSimulado({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar aluno..."
-                  className="pl-9 h-9 bg-[#141416] border-[#26262a] text-xs"
+                  className="pl-9 h-9 bg-background border-border text-xs"
                 />
               </div>
             )}
@@ -315,10 +315,10 @@ export function ModalRankingSimulado({
 
         {/* Conteúdo da Aba Ranking */}
         {tabAtiva === 'ranking' && (
-          <div className="bg-[#141416] border border-[#26262a] rounded-2xl overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto max-h-[400px]">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-[#1a1a1e] border-b border-[#26262a] sticky top-0 z-10">
+                <thead className="bg-muted/60 border-b border-border sticky top-0 z-10">
                   <tr className="text-muted-foreground font-bold uppercase text-[10px]">
                     <th className="py-3 px-4 w-12 text-center">Pos.</th>
                     <th className="py-3 px-4">Estudante</th>
@@ -331,7 +331,7 @@ export function ModalRankingSimulado({
                     <th className="py-3 px-4 text-center w-24">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26262a]">
+                <tbody className="divide-y divide-border">
                   {loading ? (
                     <tr>
                       <td colSpan={9} className="py-8 text-center text-muted-foreground">
@@ -351,11 +351,11 @@ export function ModalRankingSimulado({
                         <tr key={r.id} className="hover:bg-hoverCustom/40 transition-colors">
                           <td className="py-3 px-4 text-center font-bold">
                             {pos === 1 ? (
-                              <span className="text-amber-400 font-extrabold">🥇 1º</span>
+                              <span className="text-amber-500 dark:text-amber-400 font-extrabold">🥇 1º</span>
                             ) : pos === 2 ? (
-                              <span className="text-slate-300 font-extrabold">🥈 2º</span>
+                              <span className="text-slate-500 dark:text-slate-300 font-extrabold">🥈 2º</span>
                             ) : pos === 3 ? (
-                              <span className="text-amber-600 font-extrabold">🥉 3º</span>
+                              <span className="text-amber-700 dark:text-amber-600 font-extrabold">🥉 3º</span>
                             ) : (
                               <span className="text-muted-foreground">{pos}º</span>
                             )}
@@ -371,19 +371,19 @@ export function ModalRankingSimulado({
                           <td className="py-3 px-4 text-muted-foreground">
                             {r.turma?.nome || '---'}
                           </td>
-                          <td className="py-3 px-4 text-center font-bold text-emerald-400">
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
                             {r.total_acertos}
                           </td>
-                          <td className="py-3 px-4 text-center font-bold text-rose-400">
+                          <td className="py-3 px-4 text-center font-bold text-rose-600 dark:text-rose-400">
                             {r.total_erros}
                           </td>
-                          <td className="py-3 px-4 text-center text-amber-400">
+                          <td className="py-3 px-4 text-center text-amber-600 dark:text-amber-400">
                             {r.total_em_branco}
                           </td>
-                          <td className="py-3 px-4 text-center font-bold text-blue-400">
+                          <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
                             {r.percentual_acerto}%
                           </td>
-                          <td className="py-3 px-4 text-right font-black text-sm text-emerald-400">
+                          <td className="py-3 px-4 text-right font-black text-sm text-emerald-600 dark:text-emerald-400">
                             {Number(r.nota_final).toFixed(1)}
                           </td>
                           <td className="py-3 px-4 text-center">
@@ -401,7 +401,7 @@ export function ModalRankingSimulado({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleDeleteResposta(r.id, r.aluno?.nome || r.nome_identificado)}
-                                className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                                className="h-7 w-7 p-0 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10"
                                 title="Excluir nota"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -420,10 +420,10 @@ export function ModalRankingSimulado({
 
         {/* Conteúdo da Aba Raio-X das Questões */}
         {tabAtiva === 'raio-x' && (
-          <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
             <div>
               <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-emerald-400" /> Diagnóstico Pedagógico por Questão
+                <BarChart3 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Diagnóstico Pedagógico por Questão
               </h4>
               <p className="text-xs text-muted-foreground">
                 Acompanhe o índice de acerto de cada questão para identificar os tópicos que exigem reforço em sala.
@@ -443,14 +443,14 @@ export function ModalRankingSimulado({
                         ? 'bg-rose-500/5 border-rose-500/30'
                         : isFacil
                         ? 'bg-emerald-500/5 border-emerald-500/30'
-                        : 'bg-background border-[#26262a]'
+                        : 'bg-muted/30 border-border'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="font-mono text-foreground">
                         Questão {q.questao < 10 ? `0${q.questao}` : q.questao}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1e1e24] border border-[#33333a]">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted border border-border">
                         Gabarito: <strong>{q.gabarito}</strong>
                       </span>
                     </div>
@@ -461,13 +461,13 @@ export function ModalRankingSimulado({
                         <span className="text-muted-foreground">Taxa de Acerto:</span>
                         <span
                           className={`font-black ${
-                            isDificil ? 'text-rose-400' : isFacil ? 'text-emerald-400' : 'text-amber-400'
+                            isDificil ? 'text-rose-500 dark:text-rose-400' : isFacil ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
                           }`}
                         >
                           {q.taxaAcerto}%
                         </span>
                       </div>
-                      <div className="w-full bg-[#1a1a1e] h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
                             isDificil ? 'bg-rose-500' : isFacil ? 'bg-emerald-500' : 'bg-amber-500'
@@ -477,9 +477,9 @@ export function ModalRankingSimulado({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-[#26262a]">
-                      <span className="text-emerald-400 font-bold">{q.totalAcertos} acertaram</span>
-                      <span className="text-rose-400 font-bold">{q.totalErros} erraram</span>
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{q.totalAcertos} acertaram</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-bold">{q.totalErros} erraram</span>
                       <span>{q.totalBrancos} em branco</span>
                     </div>
                   </div>
@@ -491,8 +491,8 @@ export function ModalRankingSimulado({
 
         {/* Modal de Espelho de Respostas do Aluno Selecionado */}
         {selectedAlunoResposta && (
-          <div className="bg-[#141416] border border-emerald-500/40 rounded-2xl p-4 space-y-4 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-[#26262a] pb-3">
+          <div className="bg-card border border-emerald-500/40 rounded-2xl p-4 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h4 className="font-extrabold text-foreground text-sm">
                   Espelho da Folha: {selectedAlunoResposta.aluno?.nome || selectedAlunoResposta.nome_identificado}
@@ -524,10 +524,10 @@ export function ModalRankingSimulado({
                     key={q}
                     className={`p-2 rounded-xl border text-center ${
                       acertou
-                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
                         : respAluno === 'BRANCO'
-                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
-                        : 'bg-rose-500/10 border-rose-500/40 text-rose-300'
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                        : 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300'
                     }`}
                   >
                     <span className="text-[10px] text-muted-foreground block">Q{q < 10 ? `0${q}` : q}</span>

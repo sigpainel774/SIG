@@ -266,8 +266,8 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0e] text-white flex flex-col items-center justify-center p-4">
-        <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
+        <RefreshCw className="w-10 h-10 text-emerald-500 dark:text-emerald-400 animate-spin mb-4" />
         <h2 className="text-lg font-bold">Carregando Simulado...</h2>
       </div>
     )
@@ -275,9 +275,9 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
 
   if (errorMsg || !simulado) {
     return (
-      <div className="min-h-screen bg-[#0d0d0e] text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
         <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl max-w-md space-y-3">
-          <AlertTriangle className="w-12 h-12 text-rose-400 mx-auto" />
+          <AlertTriangle className="w-12 h-12 text-rose-500 dark:text-rose-400 mx-auto" />
           <h2 className="text-lg font-extrabold text-foreground">Acesso Indisponível</h2>
           <p className="text-xs text-muted-foreground">{errorMsg || 'Simulado não encontrado.'}</p>
         </div>
@@ -286,11 +286,11 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0e] text-zinc-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       <Toaster position="top-center" richColors />
 
       {/* Header Institucional Mobile */}
-      <header className="p-4 bg-[#141416] border-b border-[#26262a] flex items-center justify-between sticky top-0 z-20 shadow-md">
+      <header className="p-4 bg-card border-b border-border flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-3">
           <img
             src="/img/logo-prefeitura.png"
@@ -310,7 +310,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
           </div>
         </div>
 
-        <span className="px-2 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span className="px-2 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           Auto-Correção
         </span>
       </header>
@@ -319,9 +319,9 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
       <main className="p-4 max-w-lg mx-auto w-full flex-1 flex flex-col justify-center">
         {/* ETAPA 1: Identificação do Aluno */}
         {etapa === 'selecionar_aluno' && (
-          <div className="bg-[#141416] border border-[#26262a] rounded-3xl p-5 space-y-5 shadow-xl animate-in fade-in">
+          <div className="bg-card border border-border rounded-3xl p-5 space-y-5 shadow-xl animate-in fade-in">
             <div className="text-center space-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
                 <User className="w-6 h-6" />
               </div>
               <h2 className="text-lg font-black text-foreground">Identifique-se para Corrigir</h2>
@@ -336,7 +336,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
                 value={buscaAluno}
                 onChange={(e) => setBuscaAluno(e.target.value)}
                 placeholder="Digite seu nome para buscar..."
-                className="w-full bg-[#1a1a1e] border border-[#26262a] rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
               />
 
               <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
@@ -352,8 +352,8 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
                         onClick={() => setAlunoSelecionadoId(aluno.id)}
                         className={`w-full text-left p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between ${
                           isSelected
-                            ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 shadow-sm'
-                            : 'bg-background border-[#26262a] text-foreground hover:bg-[#1f1f24]'
+                            ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                            : 'bg-card border-border text-foreground hover:bg-muted/60'
                         }`}
                       >
                         <span className="truncate max-w-[220px]">{aluno.nome}</span>
@@ -380,7 +380,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
         {/* ETAPA 2: Scanner de Câmera em Tempo Real */}
         {etapa === 'scanner' && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="relative aspect-[3/4] bg-black rounded-3xl overflow-hidden border border-[#26262a] shadow-2xl flex items-center justify-center">
+            <div className="relative aspect-[3/4] bg-black rounded-3xl overflow-hidden border border-border shadow-2xl flex items-center justify-center">
               <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
               <canvas ref={canvasRef} className="hidden" />
 
@@ -410,7 +410,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
             </div>
 
             {/* Controles de Câmera */}
-            <div className="flex items-center justify-between gap-2 p-2 bg-[#141416] border border-[#26262a] rounded-xl text-xs">
+            <div className="flex items-center justify-between gap-2 p-2 bg-card border border-border rounded-xl text-xs">
               <button
                 type="button"
                 onClick={() => setEtapa('selecionar_aluno')}
@@ -432,13 +432,13 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
 
         {/* ETAPA 3: Tela de Resultado & Comemoração */}
         {etapa === 'resultado' && resultadoFinal && (
-          <div className="bg-[#141416] border border-emerald-500/40 rounded-3xl p-5 space-y-5 shadow-2xl animate-in zoom-in-95">
+          <div className="bg-card border border-emerald-500/40 rounded-3xl p-5 space-y-5 shadow-2xl animate-in zoom-in-95">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border-2 border-emerald-500/40">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border-2 border-emerald-500/40">
                 <Trophy className="w-8 h-8" />
               </div>
               <div>
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest block">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block">
                   Correção Concluída!
                 </span>
                 <h2 className="text-xl font-black text-foreground">{resultadoFinal.nome}</h2>
@@ -446,24 +446,24 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
             </div>
 
             {/* Placar de Nota */}
-            <div className="p-4 bg-background border border-[#26262a] rounded-2xl flex items-center justify-around text-center">
+            <div className="p-4 bg-muted/40 border border-border rounded-2xl flex items-center justify-around text-center">
               <div>
                 <span className="text-[11px] text-muted-foreground block">Nota Final</span>
-                <span className="text-3xl font-black text-emerald-400">
+                <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
                   {resultadoFinal.notaFinal.toFixed(1)}
                 </span>
               </div>
-              <div className="h-10 w-px bg-[#26262a]" />
+              <div className="h-10 w-px bg-border" />
               <div>
                 <span className="text-[11px] text-muted-foreground block">Acertos</span>
                 <span className="text-xl font-bold text-foreground">
                   {resultadoFinal.totalAcertos} / {simulado.qtd_questoes}
                 </span>
               </div>
-              <div className="h-10 w-px bg-[#26262a]" />
+              <div className="h-10 w-px bg-border" />
               <div>
                 <span className="text-[11px] text-muted-foreground block">Aproveitamento</span>
-                <span className="text-xl font-bold text-blue-400">
+                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                   {resultadoFinal.percentualAcerto}%
                 </span>
               </div>
@@ -480,10 +480,10 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
                     key={d.questao}
                     className={`p-2 rounded-xl border text-center ${
                       d.acertou
-                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
                         : d.respostaAluno === 'BRANCO'
-                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
-                        : 'bg-rose-500/10 border-rose-500/40 text-rose-300'
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                        : 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300'
                     }`}
                   >
                     <span className="text-[10px] text-muted-foreground block">Q{d.questao}</span>
@@ -494,7 +494,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
               <span>Sua nota foi gravada no ranking oficial do Cursinho Pré-Universitário!</span>
             </div>
@@ -506,7 +506,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
                 setResultadoFinal(null)
               }}
               variant="outline"
-              className="w-full border-[#26262a] text-xs font-bold"
+              className="w-full border-border text-xs font-bold"
             >
               Corrigir Outra Folha
             </Button>
@@ -515,7 +515,7 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
       </main>
 
       {/* Rodapé Mobile */}
-      <footer className="p-3 text-center text-[10px] text-muted-foreground border-t border-[#26262a] bg-[#141416]">
+      <footer className="p-3 text-center text-[10px] text-muted-foreground border-t border-border bg-card">
         Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário
       </footer>
     </div>

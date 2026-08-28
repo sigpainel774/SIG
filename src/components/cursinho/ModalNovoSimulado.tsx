@@ -200,7 +200,7 @@ export function ModalNovoSimulado({
         const letraEscolhida = gabaritoOficial[q.toString()]
 
         questoes.push(
-          <div key={q} className="flex items-center justify-between py-1 px-2 border-b border-[#26262a] text-xs">
+          <div key={q} className="flex items-center justify-between py-1 px-2 border-b border-border text-xs">
             <span className="font-mono font-bold text-muted-foreground w-6">
               {q < 10 ? `0${q}` : q}
             </span>
@@ -214,8 +214,8 @@ export function ModalNovoSimulado({
                     onClick={() => handleSelectAlternativa(q, letra)}
                     className={`w-6 h-6 rounded-full font-bold text-xs transition-all flex items-center justify-center ${
                       isSelected
-                        ? 'bg-emerald-500 text-black shadow-md scale-110'
-                        : 'bg-[#1a1a1e] hover:bg-[#26262a] text-foreground border border-[#333338]'
+                        ? 'bg-emerald-600 dark:bg-emerald-500 text-white dark:text-black shadow-md scale-110'
+                        : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
                     }`}
                   >
                     {letra}
@@ -228,8 +228,8 @@ export function ModalNovoSimulado({
       }
 
       cols.push(
-        <div key={c} className="flex-1 bg-[#141416] border border-[#26262a] rounded-xl p-2 flex flex-col">
-          <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-[#26262a] text-[11px] font-bold text-muted-foreground uppercase">
+        <div key={c} className="flex-1 bg-card border border-border rounded-xl p-2 flex flex-col">
+          <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-border text-[11px] font-bold text-muted-foreground uppercase">
             <span>Questão</span>
             <div className="flex gap-2.5 pr-2">
               {letras.map((l) => (
@@ -255,9 +255,9 @@ export function ModalNovoSimulado({
     >
       <form onSubmit={handleSalvar} className="space-y-6">
         {/* Parâmetros Gerais */}
-        <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
           <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-            <FileText className="w-4 h-4 text-emerald-400" /> Identificação e Regras do Simulado
+            <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Identificação e Regras do Simulado
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -268,7 +268,7 @@ export function ModalNovoSimulado({
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ex: 1º Simulado Geral Pré-ENEM 2026"
                 required
-                className="bg-background border-[#26262a]"
+                className="bg-background border-border"
               />
             </div>
 
@@ -278,7 +278,7 @@ export function ModalNovoSimulado({
                 type="date"
                 value={dataAplicacao}
                 onChange={(e) => setDataAplicacao(e.target.value)}
-                className="bg-background border-[#26262a]"
+                className="bg-background border-border"
               />
             </div>
 
@@ -288,7 +288,7 @@ export function ModalNovoSimulado({
                 value={anoLetivo}
                 onChange={(e) => setAnoLetivo(e.target.value)}
                 placeholder="2026"
-                className="bg-background border-[#26262a]"
+                className="bg-background border-border"
               />
             </div>
 
@@ -313,7 +313,7 @@ export function ModalNovoSimulado({
                   max={100}
                   value={qtdQuestoes}
                   onChange={(e) => setQtdQuestoes(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
-                  className="w-16 bg-background border-[#26262a] text-center font-bold"
+                  className="w-16 bg-background border-border text-center font-bold"
                 />
               </div>
             </div>
@@ -350,7 +350,7 @@ export function ModalNovoSimulado({
                     type="checkbox"
                     checked={autoCorrecaoAtiva}
                     onChange={(e) => setAutoCorrecaoAtiva(e.target.checked)}
-                    className="rounded border-[#26262a] text-emerald-500 focus:ring-0"
+                    className="rounded border-border text-emerald-500 focus:ring-0"
                   />
                   Permitir auto-correção via link público
                 </label>
@@ -372,8 +372,8 @@ export function ModalNovoSimulado({
                         onClick={() => handleToggleTurma(t.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                           isSelected
-                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                            : 'bg-background border-[#26262a] text-muted-foreground hover:text-foreground'
+                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
+                            : 'bg-background border-border text-muted-foreground hover:text-foreground'
                         }`}
                       >
                         {t.nome} {t.turno ? `(${t.turno})` : ''}
@@ -387,11 +387,11 @@ export function ModalNovoSimulado({
         </div>
 
         {/* Chave de Gabarito Oficial */}
-        <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-4 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#26262a] pb-3">
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <div>
               <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-emerald-400" /> Gabarito Oficial (Chave de Respostas)
+                <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial (Chave de Respostas)
               </h4>
               <span className="text-xs text-muted-foreground">
                 Clique nas letras para definir a resposta correta de cada uma das {qtdQuestoes} questões.

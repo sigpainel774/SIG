@@ -308,7 +308,7 @@ export function ModalScannerCamera({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Painel da Câmera (Lado Esquerdo) */}
         <div className="lg:col-span-7 flex flex-col space-y-3">
-          <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-[#26262a] shadow-inner flex items-center justify-center">
+          <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-border shadow-inner flex items-center justify-center">
             <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
             <canvas ref={canvasRef} className="hidden" />
 
@@ -339,13 +339,13 @@ export function ModalScannerCamera({
           </div>
 
           {/* Controles de Câmera */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-[#141416] border border-[#26262a] rounded-xl text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-card border border-border rounded-xl text-xs">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Câmera:</span>
               <select
                 value={selectedDeviceId}
                 onChange={(e) => setSelectedDeviceId(e.target.value)}
-                className="bg-background border border-[#26262a] rounded-lg px-2 py-1 text-foreground"
+                className="bg-background border border-border rounded-lg px-2 py-1 text-foreground"
               >
                 {videoDevices.map((d, i) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -361,7 +361,7 @@ export function ModalScannerCamera({
                   type="checkbox"
                   checked={autoSave}
                   onChange={(e) => setAutoSave(e.target.checked)}
-                  className="rounded border-[#26262a] text-emerald-500 focus:ring-0"
+                  className="rounded border-border text-emerald-500 focus:ring-0"
                 />
                 Salvar automático
               </label>
@@ -376,10 +376,10 @@ export function ModalScannerCamera({
         {/* Painel de Resultados da Leitura (Lado Direito) */}
         <div className="lg:col-span-5 flex flex-col space-y-3">
           {resultadoAtual ? (
-            <div className="bg-[#141416] border border-emerald-500/40 rounded-2xl p-4 space-y-4 shadow-lg animate-in fade-in duration-200">
-              <div className="flex items-center justify-between border-b border-[#26262a] pb-3">
+            <div className="bg-card border border-emerald-500/40 rounded-2xl p-4 space-y-4 shadow-lg animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-400">
+                  <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
                     <Award className="w-6 h-6" />
                   </div>
                   <div>
@@ -390,7 +390,7 @@ export function ModalScannerCamera({
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-black text-emerald-400">
+                  <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                     {resultadoAtual.notaFinal.toFixed(1)}
                   </span>
                   <span className="text-[10px] text-muted-foreground block">de 10.0</span>
@@ -401,19 +401,19 @@ export function ModalScannerCamera({
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                   <span className="text-xs text-muted-foreground block">Acertos</span>
-                  <span className="text-base font-bold text-emerald-400">{resultadoAtual.totalAcertos}</span>
+                  <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{resultadoAtual.totalAcertos}</span>
                 </div>
                 <div className="p-2 bg-rose-500/10 border border-rose-500/20 rounded-xl">
                   <span className="text-xs text-muted-foreground block">Erros</span>
-                  <span className="text-base font-bold text-rose-400">{resultadoAtual.totalErros}</span>
+                  <span className="text-base font-bold text-rose-600 dark:text-rose-400">{resultadoAtual.totalErros}</span>
                 </div>
                 <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                   <span className="text-xs text-muted-foreground block">Em Branco</span>
-                  <span className="text-base font-bold text-amber-400">{resultadoAtual.totalEmBranco}</span>
+                  <span className="text-base font-bold text-amber-600 dark:text-amber-400">{resultadoAtual.totalEmBranco}</span>
                 </div>
                 <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                   <span className="text-xs text-muted-foreground block">Aproveit.</span>
-                  <span className="text-base font-bold text-blue-400">{resultadoAtual.percentualAcerto}%</span>
+                  <span className="text-base font-bold text-blue-600 dark:text-blue-400">{resultadoAtual.percentualAcerto}%</span>
                 </div>
               </div>
 
@@ -422,16 +422,16 @@ export function ModalScannerCamera({
                 <span className="text-[11px] font-bold text-muted-foreground block uppercase">
                   Conferência de Questões:
                 </span>
-                <div className="max-h-32 overflow-y-auto grid grid-cols-5 gap-1.5 p-2 bg-background border border-[#26262a] rounded-xl text-[10px] font-mono">
+                <div className="max-h-32 overflow-y-auto grid grid-cols-5 gap-1.5 p-2 bg-muted/40 border border-border rounded-xl text-[10px] font-mono">
                   {resultadoAtual.detalhes.map((d) => (
                     <div
                       key={d.questao}
                       className={`p-1 rounded text-center border ${
                         d.acertou
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-bold'
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold'
                           : d.respostaAluno === 'BRANCO'
-                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                          : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
                       }`}
                     >
                       <span>Q{d.questao}: </span>
@@ -453,7 +453,7 @@ export function ModalScannerCamera({
               )}
             </div>
           ) : (
-            <div className="p-8 text-center bg-[#141416] border border-[#26262a] rounded-2xl space-y-3 flex flex-col items-center justify-center">
+            <div className="p-8 text-center bg-card border border-border rounded-2xl space-y-3 flex flex-col items-center justify-center">
               <Camera className="w-10 h-10 text-muted-foreground opacity-40 animate-pulse" />
               <h4 className="font-bold text-sm text-foreground">Aguardando Leitura</h4>
               <p className="text-xs text-muted-foreground max-w-xs">
@@ -463,10 +463,10 @@ export function ModalScannerCamera({
           )}
 
           {/* Histórico da Sessão Atual */}
-          <div className="bg-[#141416] border border-[#26262a] rounded-2xl p-3 space-y-2 flex-1 flex flex-col">
-            <div className="flex items-center justify-between text-xs font-bold text-muted-foreground pb-1 border-b border-[#26262a]">
+          <div className="bg-card border border-border rounded-2xl p-3 space-y-2 flex-1 flex flex-col">
+            <div className="flex items-center justify-between text-xs font-bold text-muted-foreground pb-1 border-b border-border">
               <span>Alunos Corrigidos nesta Sessão ({historicoSessao.length})</span>
-              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+              <Volume2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
             </div>
 
             <div className="flex-1 max-h-40 overflow-y-auto space-y-1.5 pr-1">
@@ -478,12 +478,12 @@ export function ModalScannerCamera({
                 historicoSessao.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-2 bg-background border border-[#26262a] rounded-lg text-xs"
+                    className="flex items-center justify-between p-2 bg-muted/40 border border-border rounded-lg text-xs"
                   >
                     <span className="font-bold text-foreground truncate max-w-[170px]">{item.nome}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-[10px]">{item.acertos} acertos</span>
-                      <span className="font-black text-emerald-400">{item.nota.toFixed(1)}</span>
+                      <span className="font-black text-emerald-600 dark:text-emerald-400">{item.nota.toFixed(1)}</span>
                     </div>
                   </div>
                 ))
