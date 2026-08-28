@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SIG Sapeaçu</string>
+    <string name="title_activity_main">SIG Sapeaçu</string>
+    <string name="package_name">com.sapecau.sig</string>
+    <string name="custom_url_scheme">com.sapecau.sig</string>
+</resources>
