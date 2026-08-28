@@ -323,6 +323,13 @@ export default function CalendarioAtendimentosPage() {
   // Cores por Especialidade
   const getColorByCargo = (cargo: string | null) => {
     const c = (cargo || '').toLowerCase()
+    if (c.includes('neuro')) {
+      return {
+        badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+        card: 'border-purple-500/30 bg-purple-500/5 hover:border-purple-500/60',
+        bar: 'bg-purple-500'
+      }
+    }
     if (c.includes('psicólogo') || c.includes('psicologa')) {
       return {
         badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -342,13 +349,6 @@ export default function CalendarioAtendimentosPage() {
         badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
         card: 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60',
         bar: 'bg-orange-500'
-      }
-    }
-    if (c.includes('neuro')) {
-      return {
-        badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-        card: 'border-purple-500/30 bg-purple-500/5 hover:border-purple-500/60',
-        bar: 'bg-purple-500'
       }
     }
     if (c.includes('fisio')) {
@@ -987,11 +987,11 @@ export default function CalendarioAtendimentosPage() {
                             <div
                               key={item.id}
                               onClick={() => handleVerDetalhes(item)}
-                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] shadow-sm relative group`}
+                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] shadow-sm relative group overflow-hidden`}
                             >
                               {/* Barra de cor superior/lateral */}
-                              <div className="flex items-center justify-between gap-1 mb-2">
-                                <div className="flex items-center gap-1 text-[11px] font-bold text-foreground">
+                              <div className="flex items-center justify-between gap-1.5 mb-2 min-w-0">
+                                <div className="flex items-center gap-1 text-[11px] font-bold text-foreground shrink-0">
                                   <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
                                   <span>
                                     {hInicio}
@@ -999,7 +999,8 @@ export default function CalendarioAtendimentosPage() {
                                   </span>
                                 </div>
                                 <span
-                                  className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.badge}`}
+                                  className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border uppercase tracking-normal truncate max-w-[100px] shrink min-w-0 text-center ${colors.badge}`}
+                                  title={item.especialidade || 'AEE'}
                                 >
                                   {item.especialidade || 'AEE'}
                                 </span>
@@ -1229,15 +1230,18 @@ export default function CalendarioAtendimentosPage() {
                             <div
                               key={item.id}
                               onClick={() => handleVerDetalhes(item)}
-                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01]`}
+                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden`}
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                              <div className="flex items-center justify-between mb-2 gap-1.5 min-w-0">
+                                <span className="text-xs font-bold text-foreground flex items-center gap-1 shrink-0">
+                                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                   {formatarHorario(item.horario_inicio)}
                                   {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
                                 </span>
-                                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded border ${colors.badge}`}>
+                                <span
+                                  className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal truncate max-w-[130px] shrink min-w-0 text-center ${colors.badge}`}
+                                  title={item.especialidade || 'AEE'}
+                                >
                                   {item.especialidade}
                                 </span>
                               </div>

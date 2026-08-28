@@ -105,14 +105,14 @@ export default function ProfissionaisAEEPage() {
 
   const getColorByCargo = (cargo: string | null) => {
     const c = (cargo || '').toLowerCase()
+    if (c.includes('neuro'))
+      return 'border-purple-500/30 dark:border-purple-500/50 shadow-purple-500/5 dark:shadow-purple-500/10 bg-purple-500/5 dark:bg-purple-500/10 hover:border-purple-500/60'
     if (c.includes('psicólogo') || c.includes('psicologa'))
       return 'border-blue-500/30 dark:border-blue-500/50 shadow-blue-500/5 dark:shadow-blue-500/10 bg-blue-500/5 dark:bg-blue-500/10 hover:border-blue-500/60'
     if (c.includes('fono'))
       return 'border-green-500/30 dark:border-green-500/50 shadow-green-500/5 dark:shadow-green-500/10 bg-green-500/5 dark:bg-green-500/10 hover:border-green-500/60'
     if (c.includes('psicopedagogo') || c.includes('psicopedagoga'))
       return 'border-orange-500/30 dark:border-orange-500/50 shadow-orange-500/5 dark:shadow-orange-500/10 bg-orange-500/5 dark:bg-orange-500/10 hover:border-orange-500/60'
-    if (c.includes('neuro'))
-      return 'border-purple-500/30 dark:border-purple-500/50 shadow-purple-500/5 dark:shadow-purple-500/10 bg-purple-500/5 dark:bg-purple-500/10 hover:border-purple-500/60'
     if (c.includes('fisio'))
       return 'border-pink-500/30 dark:border-pink-500/50 shadow-pink-500/5 dark:shadow-pink-500/10 bg-pink-500/5 dark:bg-pink-500/10 hover:border-pink-500/60'
     return 'border-border bg-card hover:border-primary/50'
