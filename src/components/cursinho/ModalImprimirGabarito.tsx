@@ -296,47 +296,71 @@ export function ModalImprimirGabarito({
       folhasParaImprimir = Array.from({ length: Math.max(1, qtdSomenteBrancas) }).map(() => undefined)
     }
 
-    const colunasGabarito = []
-    for (let c = 0; c < numColunas; c++) {
-      const startQ = c * questoesPorColuna + 1
-      const endQ = Math.min(simulado.qtd_questoes, (c + 1) * questoesPorColuna)
-      const questoesRows = []
+    const blocosGabaritoHtml = []
+    const numBlocos = simulado.qtd_questoes <= 20 ? 1 : simulado.qtd_questoes <= 45 ? 3 : simulado.qtd_questoes <= 60 ? 3 : 4
+    const questoesPorBloco = Math.ceil(simulado.qtd_questoes / numBlocos)
 
+    for (let b = 0; b < numBlocos; b++) {
+      const startQ = b * questoesPorBloco + 1
+      const endQ = Math.min(simulado.qtd_questoes, (b + 1) * questoesPorBloco)
+      const totalColunasBloco = endQ - startQ + 1
+
+      // Cabeçalho dos números das questões na horizontal
+      const thCols = []
       for (let q = startQ; q <= endQ; q++) {
         const numFormatado = q < 10 ? `0${q}` : `${q}`
-        const alternativasHtml = alternativasLetras
-          .map(
-            (letra) =>
-              `<div style="width:19px; height:19px; border-radius:50%; border:1.5px solid #000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px; color:#000; background:#fff;">${letra}</div>`
-          )
-          .join('')
-
-        questoesRows.push(`
-          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:2px 0; border-bottom:1px solid #e5e7eb;">
-            <span style="font-weight:800; color:#111; width:18px; text-align:right; font-family:monospace; font-size:11px;">${numFormatado}</span>
-            <div style="display:flex; align-items:center; gap:6px;">
-              ${alternativasHtml}
-            </div>
-          </div>
+        thCols.push(`
+          <th style="padding:3px 1px; font-weight:800; font-family:monospace; font-size:10.5px; color:#000; border:1px solid #d1d5db; background:#f3f4f6; text-align:center;">
+            ${numFormatado}
+          </th>
         `)
       }
 
-      colunasGabarito.push(`
-        <div style="flex:1; max-width:200px; border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff;">
-          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px; padding-bottom:4px; border-bottom:2px solid #000; font-weight:800; font-size:11px; color:#111; text-transform:uppercase;">
-            <span style="width:18px; text-align:right; font-family:monospace;">Q.</span>
-            <div style="display:flex; gap:6px;">
-              ${alternativasLetras.map((l) => `<span style="width:19px; text-align:center; font-size:10px;">${l}</span>`).join('')}
-            </div>
-          </div>
-          ${questoesRows.join('')}
+      // Linhas das letras A, B, C, D, E na vertical
+      const rowsLetrasHtml = alternativasLetras.map((letra) => {
+        const bubblesCols = []
+        for (let q = startQ; q <= endQ; q++) {
+          bubblesCols.push(`
+            <td style="padding:2px 1px; text-align:center; border:1px solid #e5e7eb; background:#fff;">
+              <div style="width:16px; height:16px; border-radius:50%; border:1.4px solid #000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:9.5px; color:#000; background:#fff; margin:0 auto;">
+                ${letra}
+              </div>
+            </td>
+          `)
+        }
+
+        return `
+          <tr>
+            <td style="width:34px; padding:2px 4px; font-weight:900; font-size:10.5px; color:#000; border:1px solid #9ca3af; background:#e5e7eb; text-align:center;">
+              ${letra}
+            </td>
+            ${bubblesCols.join('')}
+          </tr>
+        `
+      }).join('')
+
+      blocosGabaritoHtml.push(`
+        <div style="width:100%; border:1.8px solid #000; border-radius:4px; overflow:hidden; background:#fff; margin-bottom:6px;">
+          <table style="width:100%; border-collapse:collapse; text-align:center;">
+            <thead>
+              <tr>
+                <th style="width:34px; padding:3px 4px; font-weight:900; font-size:10px; color:#000; border:1px solid #9ca3af; background:#e5e7eb; text-transform:uppercase;">
+                  Nº
+                </th>
+                ${thCols.join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsLetrasHtml}
+            </tbody>
+          </table>
         </div>
       `)
     }
 
     const gradeBolhasHtml = `
-      <div style="display:flex; gap:12px; width:100%; margin:8px 0; justify-content:${numColunas === 1 ? 'center' : 'flex-start'};">
-        ${colunasGabarito.join('')}
+      <div style="display:flex; flex-direction:column; gap:4px; width:100%; margin:4px 0;">
+        ${blocosGabaritoHtml.join('')}
       </div>
     `
 
@@ -347,89 +371,102 @@ export function ModalImprimirGabarito({
     const sheetsHtml = folhasParaImprimir
       .map((aluno, index) => {
         const qrSrc = aluno?.qrCodeUrl || qrGenericoUrl
-        const nomeAluno = aluno?.nome || '____________________________________________________'
+        const nomeAluno = aluno?.nome || '____________________________________________________________________'
         const matriculaAluno = aluno?.numero_matricula || '__________'
+        const turmaAluno = aluno?.turma_nome || 'Regular'
         const isUltimaFolha = index === folhasParaImprimir.length - 1 && (!incluirQuestoes || !textoQuestoes.trim())
 
         const cartaoOmrHtml = `
           <div class="sheet-page sheet-omr" style="${isUltimaFolha ? 'page-break-after: auto; break-after: auto;' : ''}">
-            <!-- 4 Pontos Fiduciais Pretos de Referência Ótica (Cantos) -->
+            <!-- 4 Quadrados Pretos Fiduciais de Referência Ótica (Cantos do Gabarito) -->
             <div class="fiducial-box top-left"></div>
             <div class="fiducial-box top-right"></div>
             <div class="fiducial-box bottom-left"></div>
             <div class="fiducial-box bottom-right"></div>
 
-            <!-- Linhas de Sincronização Periférica -->
+            <!-- Linhas de Sincronização Periférica (Timing Bars) -->
             <div class="timing-bar-top"></div>
             <div class="timing-bar-bottom"></div>
+            <div class="timing-bar-left"></div>
+            <div class="timing-bar-right"></div>
 
-            <!-- Cabeçalho Oficial -->
-            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:8px; padding-top:4px;">
+            <!-- Cabeçalho Oficial Paisagem -->
+            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:6px; padding-top:2px;">
               <div style="display:flex; align-items:center; gap:12px;">
-                <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:48px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
+                <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:42px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
                 <div>
-                  <p style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
+                  <p style="font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
                     Prefeitura Municipal • Secretaria de Educação
                   </p>
-                  <h1 style="font-size:15px; font-weight:900; text-transform:uppercase; color:#000; margin:2px 0;">
+                  <h1 style="font-size:14px; font-weight:900; text-transform:uppercase; color:#000; margin:1px 0;">
                     ${escolaNome}
                   </h1>
                   <p style="font-size:11px; font-weight:800; color:#1f2937; margin:0;">
-                    CARTÃO-RESPOSTA OFICIAL • ${simulado.titulo.toUpperCase()}
+                    CARTÃO-RESPOSTA OFICIAL (MODO PAISAGEM) • ${simulado.titulo.toUpperCase()}
                   </p>
                 </div>
               </div>
 
-              <div style="display:flex; flex-direction:column; align-items:center;">
-                ${qrSrc ? `<img src="${qrSrc}" alt="QR" style="width:58px; height:58px; border:1px solid #999;" />` : ''}
-                <span style="font-size:8px; font-family:monospace; color:#4b5563; text-transform:uppercase; margin-top:2px;">OMR-SIG ID</span>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="text-align:right; font-size:9.5px; color:#374151; font-weight:700;">
+                  <div>${simulado.qtd_questoes} QUESTÕES</div>
+                  <div style="color:#6b7280; font-family:monospace;">ANO LETIVO ${simulado.ano_letivo || new Date().getFullYear()}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                  ${qrSrc ? `<img src="${qrSrc}" alt="QR" style="width:52px; height:52px; border:1px solid #999;" />` : ''}
+                  <span style="font-size:7.5px; font-family:monospace; color:#4b5563; text-transform:uppercase; margin-top:1px;">OMR-SIG</span>
+                </div>
               </div>
             </div>
 
-            <!-- Bloco de Identificação do Aluno -->
-            <div style="display:grid; grid-template-columns:8fr 2fr 2fr; gap:8px; margin:8px 0; padding:8px 10px; background:#f9fafb; border:1.5px solid #000; border-radius:4px; font-size:11px;">
+            <!-- Bloco de Identificação do Aluno Paisagem -->
+            <div style="display:grid; grid-template-columns:6fr 2fr 2fr 2fr; gap:6px; margin:6px 0; padding:6px 8px; background:#f9fafb; border:1.5px solid #000; border-radius:4px; font-size:10.5px;">
               <div>
-                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Nome do(a) Estudante:</span>
-                <div style="font-weight:900; font-size:13px; color:#000; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <span style="font-size:8.5px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Nome do(a) Estudante:</span>
+                <div style="font-weight:900; font-size:12px; color:#000; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                   ${nomeAluno}
                 </div>
               </div>
               <div>
-                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Matrícula:</span>
+                <span style="font-size:8.5px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Matrícula:</span>
                 <div style="font-family:monospace; font-weight:800; color:#111;">${matriculaAluno}</div>
               </div>
               <div>
-                <span style="font-size:9px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Data:</span>
+                <span style="font-size:8.5px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Turma:</span>
+                <div style="font-weight:800; color:#111; text-transform:uppercase;">${turmaAluno}</div>
+              </div>
+              <div>
+                <span style="font-size:8.5px; font-weight:700; color:#4b5563; display:block; text-transform:uppercase;">Data:</span>
                 <div style="font-weight:800; color:#111;">${dataFormatada}</div>
               </div>
             </div>
 
-            <!-- Instruções -->
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:4px; font-size:10px; color:#78350f; margin-bottom:6px;">
+            <!-- Instruções Compactas -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:3px 8px; background:#fffbeb; border:1px solid #fcd34d; border-radius:4px; font-size:9.5px; color:#78350f; margin-bottom:4px;">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-weight:800; text-transform:uppercase;">Atenção:</span>
-                <span>Preencha totalmente a bolha com caneta <strong>preta</strong> ou <strong>azul</strong>.</span>
+                <span style="font-weight:800; text-transform:uppercase;">Instruções:</span>
+                <span>Preencha totalmente a bolha com caneta <strong>preta</strong> ou <strong>azul</strong>. Letras na vertical (A-E) e Questões na horizontal (01-XX).</span>
               </div>
-              <div style="display:flex; align-items:center; gap:12px; font-weight:700;">
-                <span style="display:flex; align-items:center; gap:4px;">
-                  Correto: <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#000;"></span>
+              <div style="display:flex; align-items:center; gap:10px; font-weight:700;">
+                <span style="display:flex; align-items:center; gap:3px;">
+                  Correto: <span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#000;"></span>
                 </span>
-                <span style="display:flex; align-items:center; gap:4px;">
-                  Incorreto: <span style="display:inline-block; width:12px; height:12px; border-radius:50%; border:1px solid #000; text-align:center; line-height:10px; font-size:9px;">×</span>
+                <span style="display:flex; align-items:center; gap:3px;">
+                  Incorreto: <span style="display:inline-block; width:11px; height:11px; border-radius:50%; border:1px solid #000; text-align:center; line-height:9px; font-size:8.5px;">×</span>
                 </span>
               </div>
             </div>
 
-            <!-- Grade OMR -->
-            <div style="padding:2px 0;">
+            <!-- Grade OMR Paisagem -->
+            <div style="padding:1px 0;">
               ${gradeBolhasHtml}
             </div>
 
-            <!-- Rodapé -->
-            <div style="position:absolute; bottom:12px; left:16px; right:16px; padding-top:6px; border-top:1px solid #d1d5db; display:flex; align-items:center; justify-content:space-between; font-size:9px; color:#6b7280;">
-              <div>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário</div>
+            <!-- Rodapé Paisagem -->
+            <div style="position:absolute; bottom:8px; left:16px; right:16px; padding-top:4px; border-top:1px solid #d1d5db; display:flex; align-items:center; justify-content:space-between; font-size:8.5px; color:#6b7280;">
+              <div>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Padrão OMR Paisagem</div>
               <div style="display:flex; align-items:center; gap:14px;">
-                <span>Assinatura do Aluno: ___________________________________</span>
+                <span>Assinatura do Aluno: _____________________________________________</span>
                 <span style="font-family:monospace; font-weight:700;">SIMULADO #${simulado.id.slice(0, 8)}</span>
               </div>
             </div>
@@ -441,39 +478,39 @@ export function ModalImprimirGabarito({
           const isUltimaQuestoes = index === folhasParaImprimir.length - 1
           cadernoHtml = `
             <div class="sheet-page sheet-questoes" style="${isUltimaQuestoes ? 'page-break-after: auto; break-after: auto;' : ''}">
-              <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:6px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                  <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:40px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
+                  <img src="/img/logo-prefeitura.png" alt="Prefeitura" style="height:36px; width:auto; object-fit:contain;" onerror="this.style.display='none';" />
                   <div>
-                    <p style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
+                    <p style="font-size:8.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4b5563; margin:0;">
                       Prefeitura Municipal • Secretaria de Educação
                     </p>
-                    <h2 style="font-size:13px; font-weight:900; text-transform:uppercase; color:#000; margin:1px 0;">
+                    <h2 style="font-size:12px; font-weight:900; text-transform:uppercase; color:#000; margin:1px 0;">
                       ${escolaNome}
                     </h2>
-                    <h3 style="font-size:11px; font-weight:800; color:#1f2937; text-transform:uppercase; margin:0;">
+                    <h3 style="font-size:10.5px; font-weight:800; color:#1f2937; text-transform:uppercase; margin:0;">
                       CADERNO DE QUESTÕES • ${simulado.titulo.toUpperCase()}
                     </h3>
                   </div>
                 </div>
 
                 <div style="text-align:right;">
-                  <span style="font-size:11px; font-weight:800; color:#1f2937; text-transform:uppercase; display:block; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  <span style="font-size:10.5px; font-weight:800; color:#1f2937; text-transform:uppercase; display:block; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     ${aluno?.nome ? aluno.nome : 'CADERNO DO ESTUDANTE'}
                   </span>
-                  <span style="font-size:9px; color:#6b7280; font-family:monospace;">
+                  <span style="font-size:8.5px; color:#6b7280; font-family:monospace;">
                     ${simulado.qtd_questoes} Questões • ${simulado.ano_letivo || new Date().getFullYear()}
                   </span>
                 </div>
               </div>
 
-              <!-- Enunciados das Questões -->
-              <div style="font-size:11.5px; line-height:1.6; color:#000; font-family:ui-sans-serif, system-ui, -apple-system, sans-serif; white-space:pre-wrap; word-break:break-word;">
+              <!-- Enunciados das Questões em 2 colunas no modo paisagem para melhor aproveitamento -->
+              <div style="columns:2; column-gap:24px; font-size:11px; line-height:1.5; color:#000; font-family:ui-sans-serif, system-ui, -apple-system, sans-serif; white-space:pre-wrap; word-break:break-word;">
                 ${textoQuestoes}
               </div>
 
-              <div style="margin-top:24px; padding-top:8px; border-top:1px solid #d1d5db; text-align:center; font-size:10px; color:#6b7280;">
-                <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta.</span>
+              <div style="margin-top:16px; padding-top:6px; border-top:1px solid #d1d5db; text-align:center; font-size:9.5px; color:#6b7280;">
+                <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta no modo paisagem.</span>
               </div>
             </div>
           `
@@ -492,8 +529,8 @@ export function ModalImprimirGabarito({
           <title>Simulado_${simulado.titulo.replace(/[^a-zA-Z0-9]/g, '_')}</title>
           <style>
             @page {
-              size: A4 portrait;
-              margin: 6mm 8mm 6mm 8mm;
+              size: A4 landscape;
+              margin: 4mm 6mm 4mm 6mm;
             }
             * {
               box-sizing: border-box;
@@ -550,11 +587,12 @@ export function ModalImprimirGabarito({
               padding-bottom: 40px;
             }
             .sheet-page {
-              width: 194mm;
-              min-height: 280mm;
+              width: 285mm;
+              min-height: 194mm;
+              max-height: 198mm;
               background: #ffffff;
               color: #000000;
-              padding: 16px 18px;
+              padding: 12px 18px;
               position: relative;
               box-sizing: border-box;
               box-shadow: 0 4px 12px rgba(0,0,0,0.12);
@@ -563,34 +601,53 @@ export function ModalImprimirGabarito({
               margin: 0 auto;
             }
             .sheet-questoes {
-              padding: 22px;
+              padding: 18px 22px;
+              min-height: 194mm;
             }
             .fiducial-box {
               position: absolute;
-              width: 15px;
-              height: 15px;
+              width: 16px;
+              height: 16px;
               background-color: #000000;
             }
-            .top-left { top: 12px; left: 12px; }
-            .top-right { top: 12px; right: 12px; }
-            .bottom-left { bottom: 12px; left: 12px; }
-            .bottom-right { bottom: 12px; right: 12px; }
+            .top-left { top: 8px; left: 8px; }
+            .top-right { top: 8px; right: 8px; }
+            .bottom-left { bottom: 8px; left: 8px; }
+            .bottom-right { bottom: 8px; right: 8px; }
             .timing-bar-top {
               position: absolute;
-              top: 12px;
+              top: 8px;
               left: 50%;
               transform: translateX(-50%);
-              width: 34px;
-              height: 8px;
+              width: 44px;
+              height: 6px;
               background: #000000;
             }
             .timing-bar-bottom {
               position: absolute;
-              bottom: 12px;
+              bottom: 8px;
               left: 50%;
               transform: translateX(-50%);
-              width: 34px;
-              height: 8px;
+              width: 44px;
+              height: 6px;
+              background: #000000;
+            }
+            .timing-bar-left {
+              position: absolute;
+              left: 8px;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 6px;
+              height: 44px;
+              background: #000000;
+            }
+            .timing-bar-right {
+              position: absolute;
+              right: 8px;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 6px;
+              height: 44px;
               background: #000000;
             }
             @media print {
@@ -609,7 +666,7 @@ export function ModalImprimirGabarito({
                 border: none !important;
                 margin: 0 auto !important;
                 width: 100% !important;
-                min-height: 280mm !important;
+                min-height: 194mm !important;
               }
             }
           </style>
@@ -624,7 +681,7 @@ export function ModalImprimirGabarito({
         </head>
         <body>
           <div class="no-print-bar">
-            <span>Impressão de Cartão-Resposta e Caderno de Questões • SIG</span>
+            <span>Impressão de Cartão-Resposta e Caderno de Questões • Modo Paisagem (OMR) • SIG</span>
             <button class="btn-imprimir" onclick="window.print()">Imprimir / Salvar PDF</button>
           </div>
           <div class="print-container-wrapper">
@@ -635,7 +692,7 @@ export function ModalImprimirGabarito({
     `
 
     // Abre janela com o documento
-    const win = window.open('', '_blank', 'width=980,height=980')
+    const win = window.open('', '_blank', 'width=1100,height=800')
     if (win) {
       win.document.open()
       win.document.write(htmlCompleto)
@@ -674,7 +731,7 @@ export function ModalImprimirGabarito({
 
   if (!simulado) return null
 
-  const { numColunas, questoesPorColuna } = getBubbleGridCoordinates(
+  const { numBlocos, questoesPorBloco } = getBubbleGridCoordinates(
     simulado.qtd_questoes,
     simulado.alternativas_por_questao
   )
@@ -687,214 +744,238 @@ export function ModalImprimirGabarito({
       ? listaNomesDigitados.length + qtdAvulsaBranca
       : qtdSomenteBrancas
 
-  // Renderiza a grade de bolhas de uma folha (com bolinhas ajustadas pertinho do número)
+  // Renderiza a grade de bolhas no modo PAISAGEM (Números na horizontal, Letras na vertical)
   const renderGradeBolhas = () => {
-    const colunas = []
-    for (let c = 0; c < numColunas; c++) {
-      const startQ = c * questoesPorColuna + 1
-      const endQ = Math.min(simulado.qtd_questoes, (c + 1) * questoesPorColuna)
-      const questoesColuna = []
+    const blocos = []
 
+    for (let b = 0; b < numBlocos; b++) {
+      const startQ = b * questoesPorBloco + 1
+      const endQ = Math.min(simulado.qtd_questoes, (b + 1) * questoesPorBloco)
+
+      const questoesArray: number[] = []
       for (let q = startQ; q <= endQ; q++) {
-        questoesColuna.push(
-          <div key={q} className="flex items-center justify-start gap-2.5 py-[3px] border-b border-gray-200 text-xs">
-            <span className="font-bold text-gray-800 w-5 text-right font-mono">{q < 10 ? `0${q}` : q}</span>
-            <div className="flex items-center gap-2">
-              {alternativasLetras.map((letra) => (
-                <div
-                  key={letra}
-                  className="w-5 h-5 rounded-full border border-black flex items-center justify-center font-bold text-[10px] text-gray-900 bg-white"
-                >
-                  {letra}
-                </div>
-              ))}
-            </div>
-          </div>
-        )
+        questoesArray.push(q)
       }
 
-      colunas.push(
-        <div key={c} className="flex-1 max-w-[200px] border border-black rounded p-2 bg-white flex flex-col gap-0.5 shadow-none">
-          <div className="flex items-center justify-start gap-2.5 pb-1 border-b-2 border-black font-bold text-[11px] text-gray-800 uppercase">
-            <span className="w-5 text-right font-mono">Q.</span>
-            <div className="flex gap-2">
-              {alternativasLetras.map((l) => (
-                <span key={l} className="w-5 text-center">{l}</span>
+      blocos.push(
+        <div key={b} className="w-full border-2 border-black rounded-lg overflow-hidden bg-white mb-2 shadow-none">
+          <table className="w-full border-collapse text-center table-fixed">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-black">
+                <th className="w-9 py-1 px-1 text-[10px] font-extrabold text-black border-r border-gray-400 uppercase">
+                  Nº
+                </th>
+                {questoesArray.map((q) => (
+                  <th
+                    key={q}
+                    className="py-1 px-0.5 font-mono font-extrabold text-[11px] text-gray-900 border-r border-gray-300 last:border-r-0"
+                  >
+                    {q < 10 ? `0${q}` : q}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {alternativasLetras.map((letra) => (
+                <tr key={letra} className="border-b border-gray-200 last:border-b-0">
+                  <td className="w-9 py-1 px-1 font-black text-xs text-gray-900 bg-gray-200/80 border-r border-gray-400">
+                    {letra}
+                  </td>
+                  {questoesArray.map((q) => (
+                    <td key={`${q}-${letra}`} className="py-0.5 px-0.5 border-r border-gray-200 last:border-r-0">
+                      <div className="w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full border border-black flex items-center justify-center font-bold text-[9px] text-black bg-white mx-auto">
+                        {letra}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </div>
-          </div>
-          {questoesColuna}
+            </tbody>
+          </table>
         </div>
       )
     }
 
     return (
-      <div className={`flex gap-4 w-full my-2 ${numColunas === 1 ? 'justify-center' : 'justify-start'}`}>
-        {colunas}
+      <div className="flex flex-col gap-1.5 w-full my-1">
+        {blocos}
       </div>
     )
   }
 
-  // Componente de um pacote de folhas individual (Cartão OMR + Páginas de Questões se habilitado)
+  // Componente de um pacote de folhas individual no MODO PAISAGEM
   const renderFolhaIndividual = (aluno?: AlunoFolha, index?: number) => {
     const qrSrc = aluno?.qrCodeUrl || qrGenericoUrl
 
     return (
       <div key={aluno ? aluno.id : `avulso-item-${index}`} className="folha-container w-full">
-        {/* 1. Folha de Respostas OMR */}
+        {/* 1. Folha de Respostas OMR (MODO PAISAGEM) */}
         <div
-          className="folha-omr relative bg-white text-black p-6 mx-auto mb-8 border border-gray-300 shadow-sm print:shadow-none print:border-none print:m-0 print:p-6"
+          className="folha-omr relative bg-white text-black p-5 mx-auto mb-8 border-2 border-gray-400 shadow-md print:shadow-none print:border-none print:m-0 print:p-4 rounded-xl"
           style={{
-            width: '210mm',
-            minHeight: '290mm',
+            width: '280mm',
+            minHeight: '192mm',
+            maxWidth: '100%',
             boxSizing: 'border-box',
             pageBreakAfter: 'always'
           }}
         >
-          {/* 4 Pontos Fiduciais Pretos (Fiducial Corner Anchors) de 16mm x 16mm */}
-          <div className="absolute top-4 left-4 w-4 h-4 bg-black" />
-          <div className="absolute top-4 right-4 w-4 h-4 bg-black" />
-          <div className="absolute bottom-4 left-4 w-4 h-4 bg-black" />
-          <div className="absolute bottom-4 right-4 w-4 h-4 bg-black" />
+          {/* 4 Quadrados Pretos Fiduciais de Referência Ótica (Cantos do Gabarito) */}
+          <div className="absolute top-2.5 left-2.5 w-4 h-4 bg-black" />
+          <div className="absolute top-2.5 right-2.5 w-4 h-4 bg-black" />
+          <div className="absolute bottom-2.5 left-2.5 w-4 h-4 bg-black" />
+          <div className="absolute bottom-2.5 right-2.5 w-4 h-4 bg-black" />
 
           {/* Linhas de sincronização periférica (Timing Marks) */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-8 h-2 bg-black" />
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-8 h-2 bg-black" />
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black" />
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black" />
+          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-black" />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-black" />
 
-          {/* Cabeçalho Institucional Oficial */}
-          <div className="flex items-center justify-between border-b-2 border-black pb-3 pt-2">
+          {/* Cabeçalho Institucional Oficial Paisagem */}
+          <div className="flex items-center justify-between border-b-2 border-black pb-2 pt-1">
             <div className="flex items-center gap-3">
               <img
                 src="/img/logo-prefeitura.png"
                 alt="Prefeitura Municipal"
-                className="h-14 w-auto object-contain"
+                className="h-10 w-auto object-contain"
                 onError={(e) => {
                   ;(e.currentTarget as HTMLElement).style.display = 'none'
                 }}
               />
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-700">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-700">
                   Prefeitura Municipal • Secretaria de Educação
                 </p>
-                <h1 className="text-base font-extrabold uppercase text-gray-900 tracking-tight">
+                <h1 className="text-sm font-extrabold uppercase text-gray-900 tracking-tight">
                   {escolaNome}
                 </h1>
                 <p className="text-xs font-bold text-gray-800">
-                  CARTÃO-RESPOSTA OFICIAL • {simulado.titulo.toUpperCase()}
+                  CARTÃO-RESPOSTA OFICIAL (MODO PAISAGEM) • {simulado.titulo.toUpperCase()}
                 </p>
               </div>
             </div>
 
-            {/* QR Code de Rastreio Rápido */}
-            <div className="flex flex-col items-center">
-              {qrSrc && <img src={qrSrc} alt="QR Rastreio OMR" className="w-16 h-16 border border-gray-300" />}
-              <span className="text-[8px] font-mono text-gray-600 uppercase mt-0.5">OMR-SIG ID</span>
+            <div className="flex items-center gap-3">
+              <div className="text-right text-[10px] font-bold text-gray-700">
+                <div>{simulado.qtd_questoes} QUESTÕES</div>
+                <div className="font-mono text-gray-500">ANO {simulado.ano_letivo || new Date().getFullYear()}</div>
+              </div>
+              <div className="flex flex-col items-center">
+                {qrSrc && <img src={qrSrc} alt="QR Rastreio OMR" className="w-12 h-12 border border-gray-300" />}
+                <span className="text-[7.5px] font-mono text-gray-600 uppercase mt-0.5">OMR-SIG</span>
+              </div>
             </div>
           </div>
 
-          {/* Bloco de Identificação do Aluno */}
-          <div className="grid grid-cols-12 gap-2 my-3 p-2.5 bg-gray-50 border border-black rounded text-xs">
-            <div className="col-span-8">
-              <span className="text-[10px] font-bold text-gray-600 block uppercase">Nome do(a) Estudante:</span>
-              <div className="font-extrabold text-sm text-gray-900 uppercase truncate">
-                {aluno?.nome ? aluno.nome : '____________________________________________________'}
+          {/* Bloco de Identificação do Aluno Paisagem */}
+          <div className="grid grid-cols-12 gap-2 my-2 p-2 bg-gray-50 border-1.5 border-black rounded text-xs">
+            <div className="col-span-6">
+              <span className="text-[9px] font-bold text-gray-600 block uppercase">Nome do(a) Estudante:</span>
+              <div className="font-extrabold text-xs text-gray-900 uppercase truncate">
+                {aluno?.nome ? aluno.nome : '____________________________________________________________________'}
               </div>
             </div>
             <div className="col-span-2">
-              <span className="text-[10px] font-bold text-gray-600 block uppercase">Matrícula:</span>
+              <span className="text-[9px] font-bold text-gray-600 block uppercase">Matrícula:</span>
               <div className="font-mono font-bold text-gray-800">{aluno?.numero_matricula || '__________'}</div>
             </div>
             <div className="col-span-2">
-              <span className="text-[10px] font-bold text-gray-600 block uppercase">Data:</span>
+              <span className="text-[9px] font-bold text-gray-600 block uppercase">Turma:</span>
+              <div className="font-bold text-gray-800 uppercase truncate">{aluno?.turma_nome || 'Regular'}</div>
+            </div>
+            <div className="col-span-2">
+              <span className="text-[9px] font-bold text-gray-600 block uppercase">Data:</span>
               <div className="font-bold text-gray-800">
                 {simulado.data_aplicacao ? new Date(simulado.data_aplicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '__/__/____'}
               </div>
             </div>
           </div>
 
-          {/* Instruções de Preenchimento */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50 border border-amber-300 rounded text-[10px] text-amber-900 mb-2">
+          {/* Instruções de Preenchimento Compactas */}
+          <div className="flex items-center justify-between px-2.5 py-1 bg-amber-50 border border-amber-300 rounded text-[9.5px] text-amber-900 mb-1.5">
             <div className="flex items-center gap-2">
               <span className="font-bold uppercase">Atenção:</span>
-              <span>Preencha totalmente a bolha com caneta <strong>preta</strong> ou <strong>azul</strong>.</span>
+              <span>Preencha totalmente a bolha com caneta <strong>preta</strong> ou <strong>azul</strong>. Números na horizontal e letras na vertical.</span>
             </div>
             <div className="flex items-center gap-3 font-semibold">
               <span className="flex items-center gap-1">
-                Correto: <span className="inline-block w-3.5 h-3.5 rounded-full bg-black"></span>
+                Correto: <span className="inline-block w-3 h-3 rounded-full bg-black"></span>
               </span>
               <span className="flex items-center gap-1">
-                Incorreto: <span className="inline-block w-3.5 h-3.5 rounded-full border border-black text-center leading-3">×</span>
+                Incorreto: <span className="inline-block w-3 h-3 rounded-full border border-black text-center leading-2.5 text-[8px]">×</span>
               </span>
             </div>
           </div>
 
-          {/* Grade de Respostas OMR */}
-          <div className="omr-grid-container py-1">{renderGradeBolhas()}</div>
+          {/* Grade de Respostas OMR (Paisagem) */}
+          <div className="omr-grid-container py-0.5">{renderGradeBolhas()}</div>
 
           {/* Rodapé da Folha com Assinatura e Código de Validação */}
-          <div className="mt-4 pt-2 border-t border-gray-300 flex items-center justify-between text-[9px] text-gray-500">
+          <div className="mt-2 pt-1 border-t border-gray-300 flex items-center justify-between text-[8.5px] text-gray-500">
             <div>
-              <span>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário</span>
+              <span>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Padrão Paisagem</span>
             </div>
             <div className="flex items-center gap-4">
-              <span>Assinatura do Aluno: ___________________________________</span>
-              <span className="font-mono">SIMULADO #{simulado.id.slice(0, 8)}</span>
+              <span>Assinatura do Aluno: _____________________________________________</span>
+              <span className="font-mono font-bold">SIMULADO #{simulado.id.slice(0, 8)}</span>
             </div>
           </div>
         </div>
 
-        {/* 2. Páginas de Questões Anexadas (Caderno de Questões nas próximas páginas) */}
+        {/* 2. Páginas de Questões Anexadas */}
         {incluirQuestoes && textoQuestoes.trim() && (
           <div
-            className="folha-questoes relative bg-white text-black p-8 mx-auto mb-8 border border-gray-300 shadow-sm print:shadow-none print:border-none print:m-0 print:p-8"
+            className="folha-questoes relative bg-white text-black p-6 mx-auto mb-8 border-2 border-gray-400 shadow-md print:shadow-none print:border-none print:m-0 print:p-6 rounded-xl"
             style={{
-              width: '210mm',
-              minHeight: '290mm',
+              width: '280mm',
+              minHeight: '192mm',
+              maxWidth: '100%',
               boxSizing: 'border-box',
               pageBreakAfter: 'always',
               pageBreakBefore: 'always'
             }}
           >
-            <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-6">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-4">
               <div className="flex items-center gap-3">
                 <img
                   src="/img/logo-prefeitura.png"
                   alt="Prefeitura Municipal"
-                  className="h-10 w-auto object-contain"
+                  className="h-9 w-auto object-contain"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLElement).style.display = 'none'
                   }}
                 />
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+                  <p className="text-[9.5px] font-semibold uppercase tracking-wider text-gray-600">
                     Prefeitura Municipal • Secretaria de Educação
                   </p>
-                  <h2 className="text-sm font-extrabold uppercase text-gray-900">
-                    {escolaNome}
+                  <h2 className="text-xs font-extrabold uppercase text-gray-900">
+                    ${escolaNome}
                   </h2>
-                  <h3 className="text-xs font-bold text-gray-800 uppercase">
+                  <h3 className="text-[11px] font-bold text-gray-800 uppercase">
                     CADERNO DE QUESTÕES • {simulado.titulo.toUpperCase()}
                   </h3>
                 </div>
               </div>
 
               <div className="text-right">
-                <span className="text-xs font-bold text-gray-800 uppercase block truncate max-w-[200px]">
+                <span className="text-[11px] font-bold text-gray-800 uppercase block truncate max-w-[240px]">
                   {aluno?.nome ? aluno.nome : 'CADERNO DO ESTUDANTE'}
                 </span>
-                <span className="text-[10px] text-gray-500 font-mono">
+                <span className="text-[9.5px] text-gray-500 font-mono">
                   {simulado.qtd_questoes} Questões • {simulado.ano_letivo}
                 </span>
               </div>
             </div>
 
-            {/* Enunciados e Alternativas */}
-            <div className="text-xs leading-relaxed text-gray-900 font-sans whitespace-pre-wrap">
+            {/* Enunciados e Alternativas em 2 colunas para melhor leitura no modo paisagem */}
+            <div className="columns-2 gap-6 text-xs leading-relaxed text-gray-900 font-sans whitespace-pre-wrap">
               {textoQuestoes}
             </div>
 
-            <div className="mt-8 pt-3 border-t border-gray-300 text-center text-[10px] text-gray-500">
-              <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta.</span>
+            <div className="mt-4 pt-2 border-t border-gray-300 text-center text-[9px] text-gray-500">
+              <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta no modo paisagem.</span>
             </div>
           </div>
         )}
@@ -907,9 +988,9 @@ export function ModalImprimirGabarito({
       <StandardDialog
         open={open}
         onOpenChange={onOpenChange}
-        title="Impressão de Folhas de Resposta (OMR)"
-        description="Gere e imprima os cartões-resposta padronizados com marcadores óticos para correção automática por câmera."
-        maxWidth="sm:max-w-5xl"
+        title="Impressão de Folhas de Resposta (Modo Paisagem OMR)"
+        description="Gere e imprima os cartões-resposta no formato paisagem (números na horizontal e letras na vertical) com marcadores fiduciais pretos nos cantos."
+        maxWidth="sm:max-w-6xl"
       >
         <div className="space-y-4">
           {/* Painel de Controle de Impressão (Não sai na impressão) */}
@@ -1209,53 +1290,61 @@ export function ModalImprimirGabarito({
             </div>
           </div>
 
-          {/* Visualização das Folhas de Impressão */}
-          <div
-            ref={printAreaRef}
-            className="print-area max-h-[55vh] overflow-y-auto p-4 bg-muted/40 dark:bg-zinc-900 border border-border rounded-xl flex flex-col items-center print:p-0 print:m-0 print:bg-white print:overflow-visible"
-          >
-            {loadingTurma || loadingAvulsos ? (
-              <div className="py-12 text-center text-muted-foreground text-xs animate-pulse">
-                Gerando cartões de resposta e QR Codes...
-              </div>
-            ) : modoImpressao === 'nominal' ? (
-              alunosTurma.length > 0 ? (
-                alunosTurma.map((aluno) => renderFolhaIndividual(aluno))
-              ) : (
-                <div className="py-12 text-center text-muted-foreground text-xs space-y-2">
-                  <p>Nenhum aluno encontrado nas turmas selecionadas.</p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setModoImpressao('avulso')}
-                    className="text-xs font-bold"
-                  >
-                    Alternar para Folhas Avulsas / Digitar Nomes
-                  </Button>
+          {/* Visualização das Folhas de Impressão (Framed com Quadrados Pretos de Referência) */}
+          <div className="relative p-1 rounded-2xl border-2 border-border/80 bg-background/50 overflow-hidden shadow-inner">
+            {/* 4 Quadrados Pretos de Referência ao redor do container do modal */}
+            <div className="absolute top-2 left-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs z-10 pointer-events-none" />
+            <div className="absolute top-2 right-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs z-10 pointer-events-none" />
+            <div className="absolute bottom-2 left-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs z-10 pointer-events-none" />
+            <div className="absolute bottom-2 right-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs z-10 pointer-events-none" />
+
+            <div
+              ref={printAreaRef}
+              className="print-area max-h-[58vh] overflow-y-auto p-4 bg-muted/40 dark:bg-zinc-900 border border-border rounded-xl flex flex-col items-center print:p-0 print:m-0 print:bg-white print:overflow-visible"
+            >
+              {loadingTurma || loadingAvulsos ? (
+                <div className="py-12 text-center text-muted-foreground text-xs animate-pulse">
+                  Gerando cartões de resposta em modo paisagem e QR Codes...
                 </div>
-              )
-            ) : tipoAvulso === 'digitados' ? (
-              listaNomesDigitados.length === 0 && qtdAvulsaBranca === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-xs space-y-2 max-w-sm">
-                  <FileText className="w-8 h-8 text-muted-foreground/40 mx-auto" />
-                  <p className="font-semibold text-foreground">Nenhum nome digitado ainda</p>
-                  <p>
-                    Digite ou cole os nomes dos estudantes na caixa de texto acima para visualizar as folhas nominais aqui.
-                  </p>
-                </div>
+              ) : modoImpressao === 'nominal' ? (
+                alunosTurma.length > 0 ? (
+                  alunosTurma.map((aluno) => renderFolhaIndividual(aluno))
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground text-xs space-y-2">
+                    <p>Nenhum aluno encontrado nas turmas selecionadas.</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setModoImpressao('avulso')}
+                      className="text-xs font-bold"
+                    >
+                      Alternar para Folhas Avulsas / Digitar Nomes
+                    </Button>
+                  </div>
+                )
+              ) : tipoAvulso === 'digitados' ? (
+                listaNomesDigitados.length === 0 && qtdAvulsaBranca === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-xs space-y-2 max-w-sm">
+                    <FileText className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="font-semibold text-foreground">Nenhum nome digitado ainda</p>
+                    <p>
+                      Digite ou cole os nomes dos estudantes na caixa de texto acima para visualizar as folhas nominais aqui.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {alunosAvulsosComQr.map((aluno) => renderFolhaIndividual(aluno))}
+                    {Array.from({ length: qtdAvulsaBranca }).map((_, idx) =>
+                      renderFolhaIndividual(undefined, idx)
+                    )}
+                  </>
+                )
               ) : (
-                <>
-                  {alunosAvulsosComQr.map((aluno) => renderFolhaIndividual(aluno))}
-                  {Array.from({ length: qtdAvulsaBranca }).map((_, idx) =>
-                    renderFolhaIndividual(undefined, idx)
-                  )}
-                </>
-              )
-            ) : (
-              Array.from({ length: qtdSomenteBrancas }).map((_, idx) =>
-                renderFolhaIndividual(undefined, idx)
-              )
-            )}
+                Array.from({ length: qtdSomenteBrancas }).map((_, idx) =>
+                  renderFolhaIndividual(undefined, idx)
+                )
+              )}
+            </div>
           </div>
 
           {/* Estilos CSS Scoped para Impressão */}

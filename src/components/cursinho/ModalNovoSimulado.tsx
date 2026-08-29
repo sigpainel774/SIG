@@ -198,64 +198,80 @@ export function ModalNovoSimulado({
     }
   }
 
-  // Gera colunas de gabarito para fácil visualização
-  const questoesPorColunaGabarito = Math.ceil(qtdQuestoes / (qtdQuestoes > 45 ? 4 : qtdQuestoes > 20 ? 3 : qtdQuestoes > 10 ? 2 : 1))
-  const numColunasGabarito = Math.ceil(qtdQuestoes / questoesPorColunaGabarito)
+  // Gera blocos de gabarito no MODO PAISAGEM (Letras na vertical, Números na horizontal)
+  const numBlocosGabarito = qtdQuestoes <= 20 ? 1 : qtdQuestoes <= 45 ? 3 : qtdQuestoes <= 60 ? 3 : 4
+  const questoesPorBlocoGabarito = Math.ceil(qtdQuestoes / numBlocosGabarito)
 
-  const renderColunasGabarito = () => {
-    const cols = []
-    for (let c = 0; c < numColunasGabarito; c++) {
-      const startQ = c * questoesPorColunaGabarito + 1
-      const endQ = Math.min(qtdQuestoes, (c + 1) * questoesPorColunaGabarito)
-      const questoes = []
+  const renderGabaritoPaisagem = () => {
+    const blocos = []
+
+    for (let b = 0; b < numBlocosGabarito; b++) {
+      const startQ = b * questoesPorBlocoGabarito + 1
+      const endQ = Math.min(qtdQuestoes, (b + 1) * questoesPorBlocoGabarito)
+      const questoes: number[] = []
 
       for (let q = startQ; q <= endQ; q++) {
-        const letraEscolhida = gabaritoOficial[q.toString()]
-
-        questoes.push(
-          <div key={q} className="flex items-center justify-start gap-3 py-1 px-2 border-b border-border text-xs">
-            <span className="font-mono font-bold text-muted-foreground w-6 text-right">
-              {q < 10 ? `0${q}` : q}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {letras.map((letra) => {
-                const isSelected = letraEscolhida === letra
-                return (
-                  <button
-                    key={letra}
-                    type="button"
-                    onClick={() => handleSelectAlternativa(q, letra)}
-                    className={`w-6 h-6 rounded-full font-bold text-xs transition-all flex items-center justify-center ${
-                      isSelected
-                        ? 'bg-emerald-600 dark:bg-emerald-500 text-white dark:text-black shadow-md scale-110'
-                        : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                    }`}
-                  >
-                    {letra}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )
+        questoes.push(q)
       }
 
-      cols.push(
-        <div key={c} className="flex-1 bg-card border border-border rounded-xl p-2 flex flex-col">
-          <div className="flex items-center justify-start gap-3 pb-1.5 mb-1 border-b border-border text-[11px] font-bold text-muted-foreground uppercase">
-            <span className="w-6 text-right">Q.</span>
-            <div className="flex gap-2.5">
-              {letras.map((l) => (
-                <span key={l} className="w-6 text-center">{l}</span>
-              ))}
-            </div>
+      blocos.push(
+        <div key={b} className="w-full border-2 border-border/80 dark:border-zinc-700 rounded-xl overflow-hidden bg-card mb-3 shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-center">
+              <thead>
+                <tr className="bg-muted/60 border-b-2 border-border">
+                  <th className="w-12 py-2 px-2 text-xs font-black text-foreground border-r border-border uppercase">
+                    Nº
+                  </th>
+                  {questoes.map((q) => {
+                    const temResposta = Boolean(gabaritoOficial[q.toString()])
+                    return (
+                      <th
+                        key={q}
+                        className={`py-1.5 px-1 font-mono font-black text-xs border-r border-border/60 last:border-r-0 ${
+                          temResposta ? 'text-foreground' : 'text-amber-500 dark:text-amber-400'
+                        }`}
+                      >
+                        {q < 10 ? `0${q}` : q}
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {letras.map((letra) => (
+                  <tr key={letra} className="border-b border-border/40 last:border-b-0 hover:bg-muted/20 transition-colors">
+                    <td className="w-12 py-1.5 px-2 font-black text-xs text-foreground bg-muted/40 border-r border-border">
+                      {letra}
+                    </td>
+                    {questoes.map((q) => {
+                      const isSelected = gabaritoOficial[q.toString()] === letra
+                      return (
+                        <td key={`${q}-${letra}`} className="py-1 px-1 border-r border-border/40 last:border-r-0">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectAlternativa(q, letra)}
+                            className={`w-7 h-7 rounded-full font-extrabold text-xs transition-all flex items-center justify-center mx-auto ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-black shadow-md scale-110 ring-2 ring-emerald-400'
+                                : 'bg-background hover:bg-muted text-foreground border border-border/70 hover:scale-105'
+                            }`}
+                          >
+                            {letra}
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          {questoes}
         </div>
       )
     }
 
-    return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">{cols}</div>
+    return <div className="space-y-2">{blocos}</div>
   }
 
   return (
@@ -263,9 +279,9 @@ export function ModalNovoSimulado({
       <StandardDialog
         open={open}
         onOpenChange={onOpenChange}
-        title={simuladoParaEditar ? 'Editar Simulado' : 'Novo Simulado'}
-        description="Configure os parâmetros do simulado, turmas participantes e o gabarito oficial com a chave de respostas."
-        maxWidth="sm:max-w-5xl"
+        title={simuladoParaEditar ? 'Editar Simulado • Modo Paisagem' : 'Novo Simulado • Modo Paisagem'}
+        description="Configure os parâmetros do simulado, turmas participantes e a chave de respostas no gabarito em modo paisagem (números na horizontal e letras na vertical)."
+        maxWidth="sm:max-w-6xl"
       >
         <form onSubmit={handleSalvar} className="space-y-6">
           {/* Parâmetros Gerais */}
@@ -441,15 +457,21 @@ export function ModalNovoSimulado({
             </div>
           </div>
 
-          {/* Chave de Gabarito Oficial */}
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+          {/* Chave de Gabarito Oficial (Modo Paisagem com Marcadores Fiduciais) */}
+          <div className="relative bg-card border-2 border-border/90 rounded-2xl p-5 space-y-4 shadow-sm overflow-hidden">
+            {/* 4 Quadrados Pretos de Referência Ótica (Cantos do Gabarito) */}
+            <div className="absolute top-2 left-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs pointer-events-none" />
+            <div className="absolute top-2 right-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs pointer-events-none" />
+            <div className="absolute bottom-2 left-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs pointer-events-none" />
+            <div className="absolute bottom-2 right-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs pointer-events-none" />
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 px-2">
               <div>
                 <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial (Chave de Respostas)
+                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial • Modo Paisagem (Horizontal)
                 </h4>
                 <span className="text-xs text-muted-foreground">
-                  Clique nas letras para definir a resposta correta de cada uma das {qtdQuestoes} questões.
+                  Letras na vertical (A-E) e questões na horizontal (01-{qtdQuestoes < 10 ? `0${qtdQuestoes}` : qtdQuestoes}). Clique para marcar a chave de respostas oficial.
                 </span>
               </div>
 
@@ -475,8 +497,8 @@ export function ModalNovoSimulado({
               </div>
             </div>
 
-            <div className="max-h-[350px] overflow-y-auto pr-1">
-              {renderColunasGabarito()}
+            <div className="max-h-[380px] overflow-y-auto pr-1">
+              {renderGabaritoPaisagem()}
             </div>
           </div>
 

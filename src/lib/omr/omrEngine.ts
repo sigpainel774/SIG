@@ -84,18 +84,20 @@ export function readQRCodeFromImageData(imageData: ImageData): { simuladoId?: st
 }
 
 /**
- * Calcula a posição paramétrica normalizada de cada bolha da folha
+ * Calcula a posição paramétrica normalizada de cada bolha da folha no modo paisagem
+ * (Letras na vertical A-E e Números na horizontal 01, 02, 03...)
  * Retorna as coordenadas relativas (0.0 a 1.0) dentro do retângulo delimitado pelos marcadores
  */
 export function getBubbleGridCoordinates(qtdQuestoes: number, alternativasPorQuestao: number) {
-  // Determinamos quantidade de colunas conforme número de questões
-  const numColunas = qtdQuestoes <= 20 ? 1 : qtdQuestoes <= 45 ? 2 : qtdQuestoes <= 70 ? 3 : 4
-  const questoesPorColuna = Math.ceil(qtdQuestoes / numColunas)
+  // No modo paisagem, organizamos as questões em blocos horizontais (linhas de questões)
+  const numBlocos = qtdQuestoes <= 20 ? 1 : qtdQuestoes <= 45 ? 3 : qtdQuestoes <= 60 ? 3 : 4
+  const questoesPorBloco = Math.ceil(qtdQuestoes / numBlocos)
 
   const coordenadas: Array<{
     questao: number
     opcao: string
     opcaoIndex: number
+    blocoIndex: number
     colunaIndex: number
     rx: number // 0.0 - 1.0
     ry: number // 0.0 - 1.0
@@ -103,40 +105,44 @@ export function getBubbleGridCoordinates(qtdQuestoes: number, alternativasPorQue
 
   const letras = ['A', 'B', 'C', 'D', 'E'].slice(0, alternativasPorQuestao)
 
-  const colWidth = 1.0 / numColunas
-  const marginX = 0.04
-  const marginY = 0.06
+  const marginX = 0.03
+  const marginY = 0.04
+  const blocoHeight = (1.0 - marginY * 2) / numBlocos
 
-  for (let q = 1; q <= qtdQuestoes; q++) {
-    const colIndex = Math.floor((q - 1) / questoesPorColuna)
-    const rowIndex = (q - 1) % questoesPorColuna
+  for (let b = 0; b < numBlocos; b++) {
+    const startQ = b * questoesPorBloco + 1
+    const endQ = Math.min(qtdQuestoes, (b + 1) * questoesPorBloco)
+    const totalQNoBloco = questoesPorBloco
+    const blocoTop = marginY + b * blocoHeight
 
-    const colLeft = colIndex * colWidth + marginX
-    const colUsableWidth = colWidth - marginX * 2
+    for (let q = startQ; q <= endQ; q++) {
+      const colIndex = q - startQ
+      // A coluna 0 é o label da letra (ocupando ~7% do bloco), as questões ocupam o restante
+      const colWidth = (1.0 - marginX * 2 - 0.07) / totalQNoBloco
+      const rx = marginX + 0.07 + (colIndex + 0.5) * colWidth
 
-    const rowTop = marginY + (rowIndex / Math.max(1, questoesPorColuna - 1 || 1)) * (1.0 - marginY * 2)
+      // As letras A, B, C, D, E ficam distribuídas verticalmente dentro do bloco
+      const headerSpace = blocoHeight * 0.22
+      const usableBlocoHeight = blocoHeight - headerSpace
+      const rowStep = usableBlocoHeight / letras.length
 
-    // O label da questão fica à esquerda, as opções distribuídas à direita
-    const optionsStart = colLeft + colUsableWidth * 0.22
-    const optionsWidth = colUsableWidth * 0.78
-    const optionSpacing = optionsWidth / Math.max(1, letras.length - 1)
+      letras.forEach((letra, optIdx) => {
+        const ry = blocoTop + headerSpace + (optIdx + 0.5) * rowStep
 
-    letras.forEach((letra, optIdx) => {
-      const rx = optionsStart + optIdx * optionSpacing
-      const ry = rowTop
-
-      coordenadas.push({
-        questao: q,
-        opcao: letra,
-        opcaoIndex: optIdx,
-        colunaIndex: colIndex,
-        rx,
-        ry
+        coordenadas.push({
+          questao: q,
+          opcao: letra,
+          opcaoIndex: optIdx,
+          blocoIndex: b,
+          colunaIndex: colIndex,
+          rx,
+          ry
+        })
       })
-    })
+    }
   }
 
-  return { coordenadas, numColunas, questoesPorColuna }
+  return { coordenadas, numBlocos, questoesPorBloco }
 }
 
 /**

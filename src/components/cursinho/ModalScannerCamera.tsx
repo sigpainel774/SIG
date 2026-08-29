@@ -320,8 +320,8 @@ export function ModalScannerCamera({
     <StandardDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Correção por Câmera OMR • ${simulado.titulo}`}
-      description="Aponte a câmera para a folha de respostas. O sistema detecta os marcadores, o QR Code e calcula a nota na hora."
+      title={`Correção por Câmera OMR (Modo Paisagem) • ${simulado.titulo}`}
+      description="Aponte a câmera para o cartão-resposta no modo paisagem. O sistema detecta os 4 marcadores pretos, o QR Code e calcula a nota automaticamente."
       maxWidth="sm:max-w-5xl"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -331,14 +331,14 @@ export function ModalScannerCamera({
             <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
             <canvas ref={canvasRef} className="hidden" />
 
-            {/* Guia de Enquadramento OMR na tela */}
+            {/* Guia de Enquadramento OMR na tela (Formato Paisagem 16:9) */}
             <div className="absolute inset-4 border-2 border-dashed border-emerald-500/60 rounded-xl pointer-events-none flex flex-col justify-between p-3">
               <div className="flex justify-between">
                 <div className="w-8 h-8 border-t-4 border-l-4 border-emerald-400"></div>
                 <div className="w-8 h-8 border-t-4 border-r-4 border-emerald-400"></div>
               </div>
-              <div className="text-center text-xs font-bold text-white bg-black/60 py-1 px-3 rounded-full backdrop-blur-sm self-center">
-                Enquadre os 4 cantos pretos da folha aqui
+              <div className="text-center text-xs font-bold text-white bg-black/70 py-1 px-3 rounded-full backdrop-blur-sm self-center border border-emerald-500/30">
+                Enquadre os 4 cantos pretos do gabarito paisagem aqui
               </div>
               <div className="flex justify-between">
                 <div className="w-8 h-8 border-b-4 border-l-4 border-emerald-400"></div>
