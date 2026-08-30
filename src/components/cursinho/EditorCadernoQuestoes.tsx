@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
 import {
   Bold,
   Italic,
@@ -14,11 +14,11 @@ import {
   Edit3,
   Trash2,
   HelpCircle,
-  FileText
+  FileText,
+  RotateCcw,
+  Sparkles
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 
 interface EditorCadernoQuestoesProps {
   value: string
@@ -27,32 +27,35 @@ interface EditorCadernoQuestoesProps {
 }
 
 /**
- * Converte o texto com marcadores de formatação (Markdown e tags de alinhamento)
- * para HTML seguro pronto para exibição e impressão em 2 colunas.
+ * Converte o texto (seja Markdown ou HTML rico)
+ * para HTML seguro pronto para renderização na pré-visualização e impressão em 2 colunas.
  */
 export function formatarTextoQuestoesParaHtml(rawText: string): string {
   if (!rawText || !rawText.trim()) return ''
 
   let text = rawText
 
-  // Tags de alinhamento em bloco
+  // Tags de alinhamento em formato [tag]
   text = text.replace(/\[center\]([\s\S]*?)\[\/center\]/gi, '<div style="text-align: center; margin: 4px 0;">$1</div>')
   text = text.replace(/\[right\]([\s\S]*?)\[\/right\]/gi, '<div style="text-align: right; margin: 4px 0;">$1</div>')
   text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/gi, '<div style="text-align: justify; margin: 4px 0;">$1</div>')
   text = text.replace(/\[left\]([\s\S]*?)\[\/left\]/gi, '<div style="text-align: left; margin: 4px 0;">$1</div>')
 
-  // Negrito: **texto**
+  // Negrito markdown: **texto**
   text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 800;">$1</strong>')
 
-  // Sublinhado: <u>texto</u> ou __texto__
+  // Sublinhado markdown: __texto__
   text = text.replace(/__(.*?)__/g, '<u style="text-decoration: underline;">$1</u>')
 
-  // Itálico: *texto*
+  // Itálico markdown: *texto*
   text = text.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em style="font-style: italic;">$1</em>')
 
-  // Quebras de linha para <br/> preservando os blocos
-  const lines = text.split('\n')
-  return lines.join('<br/>')
+  // Se o texto não contém tags HTML estruturadas de parágrafos/divs, converte \n em <br/>
+  if (!text.includes('<p') && !text.includes('<div') && text.includes('\n')) {
+    text = text.split('\n').join('<br/>')
+  }
+
+  return text
 }
 
 export function EditorCadernoQuestoes({
@@ -61,165 +64,228 @@ export function EditorCadernoQuestoes({
   qtdQuestoes
 }: EditorCadernoQuestoesProps) {
   const [tab, setTab] = useState<'editor' | 'preview'>('editor')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
+  const isUpdatingFromProps = useRef(false)
 
-  // Aplica tags na seleção atual do textarea
-  const wrapSelection = (prefix: string, suffix: string, placeholder = 'texto') => {
-    const textarea = textareaRef.current
-    if (!textarea) return
-
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const currentVal = textarea.value
-    const selectedText = currentVal.substring(start, end)
-
-    const textToInsert = selectedText ? `${prefix}${selectedText}${suffix}` : `${prefix}${placeholder}${suffix}`
-
-    const newVal = currentVal.substring(0, start) + textToInsert + currentVal.substring(end)
-    onChange(newVal)
-
-    // Restaura o foco e ajusta seleção
-    setTimeout(() => {
-      textarea.focus()
-      if (selectedText) {
-        textarea.setSelectionRange(start, start + textToInsert.length)
-      } else {
-        const newCursorStart = start + prefix.length
-        const newCursorEnd = newCursorStart + placeholder.length
-        textarea.setSelectionRange(newCursorStart, newCursorEnd)
+  // Inicializa e sincroniza o conteúdo do contentEditable com a prop value
+  useEffect(() => {
+    if (editorRef.current) {
+      const currentHtml = editorRef.current.innerHTML
+      // Formata se for texto legado com markdown
+      const targetHtml = formatarTextoQuestoesParaHtml(value || '')
+      
+      // Só atualiza se o conteúdo for realmente diferente para não perder a posição do cursor
+      if (currentHtml !== targetHtml && currentHtml.replace(/\s+/g, '') !== targetHtml.replace(/\s+/g, '')) {
+        isUpdatingFromProps.current = true
+        editorRef.current.innerHTML = targetHtml
+        isUpdatingFromProps.current = false
       }
-    }, 10)
+    }
+  }, [value])
+
+  const handleInput = useCallback(() => {
+    if (isUpdatingFromProps.current) return
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML
+      onChange(html)
+    }
+  }, [onChange])
+
+  // Executa comandos de formatação no editor preservando o foco
+  const executeCommand = (command: string, commandValue: string | undefined = undefined) => {
+    if (!editorRef.current) return
+
+    editorRef.current.focus()
+    // Executa comando no documento / seleção ativa
+    document.execCommand(command, false, commandValue)
+    handleInput()
   }
 
-  // Atalhos de teclado (Ctrl+B, Ctrl+I, Ctrl+U)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // Atalhos de teclado no contentEditable
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'b' || e.key === 'B') {
         e.preventDefault()
-        wrapSelection('**', '**', 'negrito')
+        executeCommand('bold')
       } else if (e.key === 'i' || e.key === 'I') {
         e.preventDefault()
-        wrapSelection('*', '*', 'itálico')
+        executeCommand('italic')
       } else if (e.key === 'u' || e.key === 'U') {
         e.preventDefault()
-        wrapSelection('__', '__', 'sublinhado')
+        executeCommand('underline')
+      } else if (e.key === 'j' || e.key === 'J') {
+        e.preventDefault()
+        executeCommand('justifyFull')
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault()
+        executeCommand('justifyCenter')
+      } else if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault()
+        executeCommand('justifyLeft')
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault()
+        executeCommand('justifyRight')
       }
     }
   }
 
+  // Inserção rápida de modelo de questão formatado
   const inserirModeloQuestao = () => {
-    const numeroQuestao = (value.match(/QUESTÃO\s+(\d+)/gi) || []).length + 1
+    if (!editorRef.current) return
+    editorRef.current.focus()
+
+    const rawText = editorRef.current.innerText || ''
+    const matchQuestoes = rawText.match(/QUESTÃO\s+(\d+)/gi) || []
+    const numeroQuestao = matchQuestoes.length + 1
     const padNumero = numeroQuestao < 10 ? `0${numeroQuestao}` : numeroQuestao
 
-    const template = `\n\n**QUESTÃO ${padNumero}**\n[justify]Digite ou cole aqui o enunciado completo da questão com todos os detalhes e contexto necessário.[/justify]\n\nA) Primeira alternativa\nB) Segunda alternativa\nC) Terceira alternativa\nD) Quarta alternativa\nE) Quinta alternativa\n`
+    const questionHtml = `
+      <div style="margin: 14px 0;">
+        <p style="margin: 4px 0;"><strong style="font-weight: 800; font-size: 13px;">QUESTÃO ${padNumero}</strong></p>
+        <p style="text-align: justify; margin: 6px 0; line-height: 1.5;">Digite ou cole aqui o enunciado completo da questão com todos os detalhes e contexto necessário...</p>
+        <p style="margin: 6px 0; line-height: 1.6;">
+          A) Primeira alternativa<br/>
+          B) Segunda alternativa<br/>
+          C) Terceira alternativa<br/>
+          D) Quarta alternativa<br/>
+          E) Quinta alternativa
+        </p>
+      </div>
+      <p><br/></p>
+    `
 
-    onChange((value ? value.trimEnd() : '') + template)
+    document.execCommand('insertHTML', false, questionHtml)
+    handleInput()
+  }
+
+  const limparTexto = () => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ''
+      onChange('')
+      editorRef.current.focus()
+    }
   }
 
   return (
     <div className="space-y-2.5">
-      {/* Barra de Ferramentas Superior */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-muted/40 dark:bg-zinc-900/70 border border-border rounded-xl">
-        {/* Controles de Formatação de Texto */}
+      {/* Barra de Ferramentas WYSIWYG */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-muted/50 dark:bg-zinc-900 border border-border rounded-xl">
+        {/* Controles de Formatação Visual de Texto */}
         <div className="flex flex-wrap items-center gap-1">
+          {/* Negrito */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('**', '**', 'texto em negrito')}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('bold')}
             title="Negrito (Ctrl+B)"
-            className="h-8 px-2.5 font-bold gap-1 text-xs hover:bg-muted"
+            className="h-8 px-2.5 font-extrabold gap-1 text-xs hover:bg-muted active:scale-95"
           >
-            <Bold className="w-3.5 h-3.5" />
+            <Bold className="w-4 h-4" />
             <span className="hidden sm:inline">Negrito</span>
           </Button>
 
+          {/* Itálico */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('*', '*', 'texto em itálico')}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('italic')}
             title="Itálico (Ctrl+I)"
-            className="h-8 px-2.5 italic gap-1 text-xs hover:bg-muted"
+            className="h-8 px-2.5 italic gap-1 text-xs hover:bg-muted active:scale-95"
           >
-            <Italic className="w-3.5 h-3.5" />
+            <Italic className="w-4 h-4" />
             <span className="hidden sm:inline">Itálico</span>
           </Button>
 
+          {/* Sublinhado */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('__', '__', 'texto sublinhado')}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('underline')}
             title="Sublinhado (Ctrl+U)"
-            className="h-8 px-2.5 underline gap-1 text-xs hover:bg-muted"
+            className="h-8 px-2.5 underline gap-1 text-xs hover:bg-muted active:scale-95"
           >
-            <Underline className="w-3.5 h-3.5" />
+            <Underline className="w-4 h-4" />
           </Button>
 
           <div className="w-[1px] h-5 bg-border mx-1" />
 
-          {/* Botões de Alinhamento */}
+          {/* Alinhar à Esquerda */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('[left]', '[/left]', 'texto alinhado à esquerda')}
-            title="Alinhar à Esquerda"
-            className="h-8 px-2 text-xs hover:bg-muted"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('justifyLeft')}
+            title="Alinhar à Esquerda (Ctrl+L)"
+            className="h-8 px-2 text-xs hover:bg-muted active:scale-95"
           >
-            <AlignLeft className="w-3.5 h-3.5" />
+            <AlignLeft className="w-4 h-4" />
           </Button>
 
+          {/* Centralizar */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('[center]', '[/center]', 'texto centralizado')}
-            title="Centralizar"
-            className="h-8 px-2 text-xs hover:bg-muted"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('justifyCenter')}
+            title="Centralizar (Ctrl+E)"
+            className="h-8 px-2 text-xs hover:bg-muted active:scale-95"
           >
-            <AlignCenter className="w-3.5 h-3.5" />
+            <AlignCenter className="w-4 h-4" />
           </Button>
 
+          {/* Alinhar à Direita */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('[right]', '[/right]', 'texto alinhado à direita')}
-            title="Alinhar à Direita"
-            className="h-8 px-2 text-xs hover:bg-muted"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('justifyRight')}
+            title="Alinhar à Direita (Ctrl+R)"
+            className="h-8 px-2 text-xs hover:bg-muted active:scale-95"
           >
-            <AlignRight className="w-3.5 h-3.5" />
+            <AlignRight className="w-4 h-4" />
           </Button>
 
+          {/* Justificado */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => wrapSelection('[justify]', '[/justify]', 'texto justificado')}
-            title="Justificado"
-            className="h-8 px-2 text-xs hover:bg-muted"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => executeCommand('justifyFull')}
+            title="Justificar Texto (Ctrl+J)"
+            className="h-8 px-2.5 font-bold gap-1 text-xs hover:bg-muted active:scale-95"
           >
-            <AlignJustify className="w-3.5 h-3.5" />
+            <AlignJustify className="w-4 h-4" />
+            <span className="hidden sm:inline">Justificar</span>
           </Button>
 
           <div className="w-[1px] h-5 bg-border mx-1" />
 
+          {/* Inserir Modelo de Questão */}
           <Button
             type="button"
             variant="outline"
             size="sm"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={inserirModeloQuestao}
             title="Adicionar modelo estruturado de questão"
-            className="h-8 px-2.5 text-xs font-semibold gap-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+            className="h-8 px-2.5 text-xs font-semibold gap-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 active:scale-95"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>+ Questão</span>
           </Button>
         </div>
 
-        {/* Alternador de Abas: Editor vs Pré-visualização */}
+        {/* Alternador de Abas: Editor Visual vs Pré-visualização de Impressão */}
         <div className="flex items-center gap-1 bg-background border border-border rounded-lg p-0.5">
           <Button
             type="button"
@@ -229,7 +295,7 @@ export function EditorCadernoQuestoes({
             className="h-7 px-2.5 text-xs font-bold gap-1"
           >
             <Edit3 className="w-3 h-3" />
-            Digitar
+            Editor Visual
           </Button>
           <Button
             type="button"
@@ -239,31 +305,35 @@ export function EditorCadernoQuestoes({
             className="h-7 px-2.5 text-xs font-bold gap-1"
           >
             <Eye className="w-3 h-3" />
-            Visualizar
+            Prévia (2 Colunas)
           </Button>
         </div>
       </div>
 
-      {/* Área Principal de Edição ou Visualização */}
+      {/* Área Principal de Edição WYSIWYG ou Pré-visualização */}
       {tab === 'editor' ? (
         <div className="relative">
-          <textarea
-            ref={textareaRef}
-            rows={15}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={`Cole aqui o texto completo da prova com as questões. Você pode usar a barra de ferramentas acima para aplicar negrito e alinhamentos:\n\n**QUESTÃO 01**\n[justify]Considere o seguinte trecho sobre a história do Brasil...[/justify]\n\nA) Alternativa A\nB) Alternativa B\nC) Alternativa C\nD) Alternativa D\nE) Alternativa E`}
-            className="w-full p-3.5 text-xs font-mono bg-background text-foreground border border-border rounded-xl resize-y leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-inner"
+            data-placeholder="Digite ou cole aqui os textos das questões da prova. Selecione o texto e clique nos botões da barra acima para aplicar Negrito ou Justificar em tempo real..."
+            className="w-full min-h-[280px] max-h-[420px] overflow-y-auto p-4 text-xs font-sans bg-background text-foreground border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-inner leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60 empty:before:pointer-events-none"
+            style={{
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}
           />
         </div>
       ) : (
-        <div className="border border-border rounded-xl bg-white text-black p-5 max-h-[380px] overflow-y-auto shadow-sm">
+        <div className="border border-border rounded-xl bg-white text-black p-5 max-h-[420px] overflow-y-auto shadow-sm">
           <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-700" />
               <span className="text-xs font-black uppercase tracking-wide text-gray-900">
-                Pré-visualização do Caderno de Questões (2 Colunas)
+                Visualização da Folha de Questões (2 Colunas A4)
               </span>
             </div>
             {qtdQuestoes && (
@@ -273,7 +343,7 @@ export function EditorCadernoQuestoes({
             )}
           </div>
 
-          {value.trim() ? (
+          {value && value.trim() ? (
             <div
               className="text-xs leading-relaxed text-gray-900 font-sans"
               style={{
@@ -287,32 +357,32 @@ export function EditorCadernoQuestoes({
             />
           ) : (
             <div className="py-12 text-center text-xs text-gray-400 italic">
-              Nenhum texto digitado ainda. Clique na aba &quot;Digitar&quot; e adicione os enunciados.
+              Nenhum texto digitado ainda. Clique na aba &quot;Editor Visual&quot; para adicionar questões.
             </div>
           )}
         </div>
       )}
 
-      {/* Rodapé Informativo e Limpar */}
+      {/* Rodapé Informativo */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-2">
-          <span>{value ? `${value.length} caracteres` : '0 caracteres'}</span>
-          <span>•</span>
           <span className="flex items-center gap-1">
-            <HelpCircle className="w-3 h-3 text-muted-foreground/70" />
-            Dica: Selecione o texto e clique em <strong>Negrito</strong> ou <strong>Alinhamento</strong> (ou use Ctrl+B).
+            <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
+            <span>
+              <strong>Dica:</strong> Selecione o texto e clique em <strong>Negrito</strong> (Ctrl+B) ou <strong>Justificar</strong> (Ctrl+J). O texto formata visualmente na hora.
+            </span>
           </span>
         </div>
 
-        {value && (
+        {value && value.trim() && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => onChange('')}
+            onClick={limparTexto}
             className="h-6 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 px-2 gap-1"
           >
-            <Trash2 className="w-3 h-3" /> Limpar Texto
+            <Trash2 className="w-3 h-3" /> Limpar Tudo
           </Button>
         )}
       </div>
