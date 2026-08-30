@@ -11,6 +11,7 @@ import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { EditorCadernoQuestoes } from './EditorCadernoQuestoes'
 
 interface ModalNovoSimuladoProps {
   open: boolean
@@ -279,8 +280,8 @@ export function ModalNovoSimulado({
       <StandardDialog
         open={open}
         onOpenChange={onOpenChange}
-        title={simuladoParaEditar ? 'Editar Simulado • Modo Paisagem' : 'Novo Simulado • Modo Paisagem'}
-        description="Configure os parâmetros do simulado, turmas participantes e a chave de respostas no gabarito em modo paisagem (números na horizontal e letras na vertical)."
+        title={simuladoParaEditar ? 'Editar Simulado' : 'Novo Simulado'}
+        description="Configure os parâmetros do simulado, turmas participantes e a chave de respostas no gabarito oficial."
         maxWidth="sm:max-w-6xl"
       >
         <form onSubmit={handleSalvar} className="space-y-6">
@@ -457,7 +458,7 @@ export function ModalNovoSimulado({
             </div>
           </div>
 
-          {/* Chave de Gabarito Oficial (Modo Paisagem com Marcadores Fiduciais) */}
+          {/* Chave de Gabarito Oficial */}
           <div className="relative bg-card border-2 border-border/90 rounded-2xl p-5 space-y-4 shadow-sm overflow-hidden">
             {/* 4 Quadrados Pretos de Referência Ótica (Cantos do Gabarito) */}
             <div className="absolute top-2 left-2 w-3.5 h-3.5 bg-black dark:bg-white rounded-xs pointer-events-none" />
@@ -468,7 +469,7 @@ export function ModalNovoSimulado({
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 px-2">
               <div>
                 <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial • Modo Paisagem (Horizontal)
+                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial
                 </h4>
                 <span className="text-xs text-muted-foreground">
                   Letras na vertical (A-E) e questões na horizontal (01-{qtdQuestoes < 10 ? `0${qtdQuestoes}` : qtdQuestoes}). Clique para marcar a chave de respostas oficial.
@@ -519,66 +520,39 @@ export function ModalNovoSimulado({
         open={isModalQuestoesOpen}
         onOpenChange={setIsModalQuestoesOpen}
         title="Caderno de Questões da Prova"
-        description="Cole os enunciados, textos e alternativas das questões para serem impressos nas próximas páginas junto com a folha de respostas."
-        maxWidth="sm:max-w-3xl"
+        description="Digite, cole ou formate os enunciados e alternativas das questões para serem impressos junto com o cartão-resposta."
+        maxWidth="sm:max-w-4xl"
       >
         <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-foreground">
-                Texto / Enunciados das Questões ({qtdQuestoes} questões previstas)
-              </Label>
-              {cadernoQuestoes && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCadernoQuestoes('')}
-                  className="h-6 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2"
-                >
-                  Limpar Texto
-                </Button>
-              )}
-            </div>
+          <EditorCadernoQuestoes
+            value={cadernoQuestoes}
+            onChange={setCadernoQuestoes}
+            qtdQuestoes={qtdQuestoes}
+          />
 
-            <Textarea
-              rows={16}
-              value={cadernoQuestoes}
-              onChange={(e) => setCadernoQuestoes(e.target.value)}
-              placeholder="Cole aqui o texto completo da prova com as questões. Exemplo:&#10;&#10;QUESTÃO 01&#10;Considere a seguinte equação exponencial...&#10;A) 12&#10;B) 24&#10;C) 36&#10;D) 48&#10;E) 60&#10;&#10;QUESTÃO 02&#10;O processo de urbanização brasileiro no século XX..."
-              className="text-xs font-mono bg-background border-border resize-y leading-relaxed"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              {cadernoQuestoes ? `${cadernoQuestoes.length} caracteres • Pronto para impressão` : 'Nenhum texto colado'}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsModalQuestoesOpen(false)}
-              >
-                Fechar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => {
-                  if (cadernoQuestoes.trim()) {
-                    setIncluirQuestoesImpressao(true)
-                  }
-                  setIsModalQuestoesOpen(false)
-                  toast.success('Caderno de questões configurado com sucesso!')
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-              >
-                Salvar Questões
-              </Button>
-            </div>
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModalQuestoesOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                if (cadernoQuestoes.trim()) {
+                  setIncluirQuestoesImpressao(true)
+                }
+                setIsModalQuestoesOpen(false)
+                toast.success('Caderno de questões configurado com sucesso!')
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+            >
+              Salvar Questões
+            </Button>
           </div>
         </div>
       </StandardDialog>

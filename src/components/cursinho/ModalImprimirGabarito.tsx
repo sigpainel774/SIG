@@ -26,6 +26,7 @@ import { Simulado } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { getBubbleGridCoordinates } from '@/lib/omr/omrEngine'
+import { EditorCadernoQuestoes, formatarTextoQuestoesParaHtml } from './EditorCadernoQuestoes'
 
 interface ModalImprimirGabaritoProps {
   open: boolean
@@ -402,7 +403,7 @@ export function ModalImprimirGabarito({
                     ${escolaNome}
                   </h1>
                   <p style="font-size:11px; font-weight:800; color:#1f2937; margin:0;">
-                    CARTÃO-RESPOSTA OFICIAL (MODO PAISAGEM) • ${simulado.titulo.toUpperCase()}
+                    CARTÃO-RESPOSTA OFICIAL • ${simulado.titulo.toUpperCase()}
                   </p>
                 </div>
               </div>
@@ -464,7 +465,7 @@ export function ModalImprimirGabarito({
 
             <!-- Rodapé Paisagem -->
             <div style="position:absolute; bottom:8px; left:16px; right:16px; padding-top:4px; border-top:1px solid #d1d5db; display:flex; align-items:center; justify-content:space-between; font-size:8.5px; color:#6b7280;">
-              <div>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Padrão OMR Paisagem</div>
+              <div>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Gabarito Oficial</div>
               <div style="display:flex; align-items:center; gap:14px;">
                 <span>Assinatura do Aluno: _____________________________________________</span>
                 <span style="font-family:monospace; font-weight:700;">SIMULADO #${simulado.id.slice(0, 8)}</span>
@@ -504,13 +505,13 @@ export function ModalImprimirGabarito({
                 </div>
               </div>
 
-              <!-- Enunciados das Questões em 2 colunas no modo paisagem para melhor aproveitamento -->
-              <div style="columns:2; column-gap:24px; font-size:11px; line-height:1.5; color:#000; font-family:ui-sans-serif, system-ui, -apple-system, sans-serif; white-space:pre-wrap; word-break:break-word;">
-                ${textoQuestoes}
+              <!-- Enunciados das Questões em 2 colunas para melhor aproveitamento -->
+              <div style="columns:2; column-gap:24px; font-size:11px; line-height:1.5; color:#000; font-family:ui-sans-serif, system-ui, -apple-system, sans-serif; word-break:break-word;">
+                ${formatarTextoQuestoesParaHtml(textoQuestoes)}
               </div>
 
               <div style="margin-top:16px; padding-top:6px; border-top:1px solid #d1d5db; text-align:center; font-size:9.5px; color:#6b7280;">
-                <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta no modo paisagem.</span>
+                <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta.</span>
               </div>
             </div>
           `
@@ -681,7 +682,7 @@ export function ModalImprimirGabarito({
         </head>
         <body>
           <div class="no-print-bar">
-            <span>Impressão de Cartão-Resposta e Caderno de Questões • Modo Paisagem (OMR) • SIG</span>
+            <span>Impressão de Cartão-Resposta e Caderno de Questões • Gabarito OMR • SIG</span>
             <button class="btn-imprimir" onclick="window.print()">Imprimir / Salvar PDF</button>
           </div>
           <div class="print-container-wrapper">
@@ -851,7 +852,7 @@ export function ModalImprimirGabarito({
                   {escolaNome}
                 </h1>
                 <p className="text-xs font-bold text-gray-800">
-                  CARTÃO-RESPOSTA OFICIAL (MODO PAISAGEM) • {simulado.titulo.toUpperCase()}
+                  CARTÃO-RESPOSTA OFICIAL • {simulado.titulo.toUpperCase()}
                 </p>
               </div>
             </div>
@@ -914,7 +915,7 @@ export function ModalImprimirGabarito({
           {/* Rodapé da Folha com Assinatura e Código de Validação */}
           <div className="mt-2 pt-1 border-t border-gray-300 flex items-center justify-between text-[8.5px] text-gray-500">
             <div>
-              <span>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Padrão Paisagem</span>
+              <span>Sistema Integrado de Gestão Escolar (SIG) • Cursinho Pré-Universitário • Gabarito Oficial</span>
             </div>
             <div className="flex items-center gap-4">
               <span>Assinatura do Aluno: _____________________________________________</span>
@@ -969,13 +970,21 @@ export function ModalImprimirGabarito({
               </div>
             </div>
 
-            {/* Enunciados e Alternativas em 2 colunas para melhor leitura no modo paisagem */}
-            <div className="columns-2 gap-6 text-xs leading-relaxed text-gray-900 font-sans whitespace-pre-wrap">
-              {textoQuestoes}
-            </div>
+            {/* Enunciados e Alternativas em 2 colunas para melhor leitura */}
+            <div
+              className="text-xs leading-relaxed text-gray-900 font-sans"
+              style={{
+                columns: '2',
+                columnGap: '24px',
+                wordBreak: 'break-word'
+              }}
+              dangerouslySetInnerHTML={{
+                __html: formatarTextoQuestoesParaHtml(textoQuestoes)
+              }}
+            />
 
             <div className="mt-4 pt-2 border-t border-gray-300 text-center text-[9px] text-gray-500">
-              <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta no modo paisagem.</span>
+              <span>Fim do caderno de questões • Preencha com atenção seu cartão-resposta.</span>
             </div>
           </div>
         )}
@@ -988,8 +997,8 @@ export function ModalImprimirGabarito({
       <StandardDialog
         open={open}
         onOpenChange={onOpenChange}
-        title="Impressão de Folhas de Resposta (Modo Paisagem OMR)"
-        description="Gere e imprima os cartões-resposta no formato paisagem (números na horizontal e letras na vertical) com marcadores fiduciais pretos nos cantos."
+        title="Impressão de Folhas de Resposta (Gabarito OMR)"
+        description="Gere e imprima os cartões-resposta oficiais com marcadores fiduciais pretos nos cantos e caderno de questões."
         maxWidth="sm:max-w-6xl"
       >
         <div className="space-y-4">
@@ -1391,66 +1400,39 @@ export function ModalImprimirGabarito({
         open={isModalEditarQuestoesOpen}
         onOpenChange={setIsModalEditarQuestoesOpen}
         title="Caderno de Questões da Prova"
-        description="Cole os enunciados, textos e alternativas das questões para serem impressos nas páginas seguintes junto com o cartão-resposta."
-        maxWidth="sm:max-w-3xl"
+        description="Digite, cole ou formate os enunciados e alternativas das questões para serem impressos junto com o cartão-resposta."
+        maxWidth="sm:max-w-4xl"
       >
         <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-foreground">
-                Texto / Enunciados das Questões ({simulado.qtd_questoes} questões)
-              </Label>
-              {textoQuestoes && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTextoQuestoes('')}
-                  className="h-6 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2"
-                >
-                  Limpar Texto
-                </Button>
-              )}
-            </div>
+          <EditorCadernoQuestoes
+            value={textoQuestoes}
+            onChange={setTextoQuestoes}
+            qtdQuestoes={simulado.qtd_questoes}
+          />
 
-            <Textarea
-              rows={16}
-              value={textoQuestoes}
-              onChange={(e) => setTextoQuestoes(e.target.value)}
-              placeholder="Cole aqui o texto completo da prova com as questões. Exemplo:&#10;&#10;QUESTÃO 01&#10;Considere a seguinte equação exponencial...&#10;A) 12&#10;B) 24&#10;C) 36&#10;D) 48&#10;E) 60&#10;&#10;QUESTÃO 02&#10;O processo de urbanização brasileiro no século XX..."
-              className="text-xs font-mono bg-background border-border resize-y leading-relaxed"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              {textoQuestoes ? `${textoQuestoes.length} caracteres • Pronto para impressão` : 'Nenhum texto colado'}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsModalEditarQuestoesOpen(false)}
-              >
-                Fechar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => {
-                  if (textoQuestoes.trim()) {
-                    setIncluirQuestoes(true)
-                  }
-                  setIsModalEditarQuestoesOpen(false)
-                  toast.success('Caderno de questões atualizado para impressão!')
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-              >
-                Confirmar Questões
-              </Button>
-            </div>
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModalEditarQuestoesOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                if (textoQuestoes.trim()) {
+                  setIncluirQuestoes(true)
+                }
+                setIsModalEditarQuestoesOpen(false)
+                toast.success('Caderno de questões atualizado para impressão!')
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+            >
+              Confirmar Questões
+            </Button>
           </div>
         </div>
       </StandardDialog>
