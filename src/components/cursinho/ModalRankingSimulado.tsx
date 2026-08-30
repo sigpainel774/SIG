@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Award, Trophy, Search, Printer, Users, Eye, Trash2, BarChart3 } from 'lucide-react'
+import { Award, Trophy, Search, Printer, Users, Eye, Trash2, BarChart3, UserPlus, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado, SimuladoResposta } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
+import { ModalAdicionarAlunoSimulado } from './ModalAdicionarAlunoSimulado'
+import { ModalScannerCamera } from './ModalScannerCamera'
 
 interface ModalRankingSimuladoProps {
   open: boolean
@@ -28,6 +30,8 @@ export function ModalRankingSimulado({
   const [turmaFilter, setTurmaFilter] = useState('all')
   const [selectedAlunoResposta, setSelectedAlunoResposta] = useState<SimuladoResposta | null>(null)
   const [tabAtiva, setTabAtiva] = useState<'ranking' | 'raio-x'>('ranking')
+  const [isModalAdicionarAlunoOpen, setIsModalAdicionarAlunoOpen] = useState(false)
+  const [isModalScannerOpen, setIsModalScannerOpen] = useState(false)
 
   const supabase = createClient()
 
@@ -289,9 +293,9 @@ export function ModalRankingSimulado({
             </Button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {tabAtiva === 'ranking' && (
-              <div className="relative w-64">
+              <div className="relative w-48 sm:w-56">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchTerm}
@@ -303,12 +307,30 @@ export function ModalRankingSimulado({
             )}
 
             <Button
+              size="sm"
+              onClick={() => setIsModalAdicionarAlunoOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 text-xs shadow-xs"
+            >
+              <UserPlus className="w-4 h-4" /> + Adicionar Aluno
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsModalScannerOpen(true)}
+              className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold gap-1.5 text-xs"
+              title="Corrigir mais provas por câmera"
+            >
+              <Camera className="w-4 h-4" /> Ler Câmera
+            </Button>
+
+            <Button
               variant="outline"
               size="sm"
               onClick={() => window.print()}
               className="gap-2 text-xs font-bold"
             >
-              <Printer className="w-4 h-4" /> Imprimir Relatório
+              <Printer className="w-4 h-4" /> Imprimir
             </Button>
           </div>
         </div>
@@ -540,6 +562,26 @@ export function ModalRankingSimulado({
           </div>
         )}
       </div>
+
+      {/* Modal para Adicionar Aluno e Lançar Nota (Manual / Grade) */}
+      <ModalAdicionarAlunoSimulado
+        open={isModalAdicionarAlunoOpen}
+        onOpenChange={setIsModalAdicionarAlunoOpen}
+        simulado={simulado}
+        onSuccess={() => {
+          carregarRespostas()
+        }}
+      />
+
+      {/* Modal para Corrigir com Câmera diretamente do Ranking */}
+      <ModalScannerCamera
+        open={isModalScannerOpen}
+        onOpenChange={setIsModalScannerOpen}
+        simulado={simulado}
+        onCorrecaoSalva={() => {
+          carregarRespostas()
+        }}
+      />
     </StandardDialog>
   )
 }

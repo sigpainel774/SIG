@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, Search, CheckSquare, Printer, Camera, Trophy, Link as LinkIcon, Archive, Trash2, Edit3, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Plus, Search, CheckSquare, Printer, Camera, Trophy, Link as LinkIcon, Archive, Trash2, Edit3, ArrowLeft, RefreshCw, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import { ModalNovoSimulado } from '@/components/cursinho/ModalNovoSimulado'
 import { ModalImprimirGabarito } from '@/components/cursinho/ModalImprimirGabarito'
 import { ModalScannerCamera } from '@/components/cursinho/ModalScannerCamera'
 import { ModalRankingSimulado } from '@/components/cursinho/ModalRankingSimulado'
+import { ModalAdicionarAlunoSimulado } from '@/components/cursinho/ModalAdicionarAlunoSimulado'
 
 export default function SimuladosPage() {
   const [simulados, setSimulados] = useState<Simulado[]>([])
@@ -26,6 +27,7 @@ export default function SimuladosPage() {
   const [isModalImprimirOpen, setIsModalImprimirOpen] = useState(false)
   const [isModalScannerOpen, setIsModalScannerOpen] = useState(false)
   const [isModalRankingOpen, setIsModalRankingOpen] = useState(false)
+  const [isModalAdicionarAlunoOpen, setIsModalAdicionarAlunoOpen] = useState(false)
   const [simuladoSelecionado, setSimuladoSelecionado] = useState<Simulado | null>(null)
   const [simuladoParaEditar, setSimuladoParaEditar] = useState<Simulado | null>(null)
 
@@ -397,6 +399,20 @@ export default function SimuladosPage() {
                   </Button>
                 </div>
 
+                {/* Botão de Adicionar Aluno / Lançar Nota */}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSimuladoSelecionado(simulado)
+                    setIsModalAdicionarAlunoOpen(true)
+                  }}
+                  className="w-full text-xs font-bold gap-1.5 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> + Adicionar Aluno / Lançar Nota
+                </Button>
+
                 {/* Botões Secundários (Editar, Arquivar, Excluir) */}
                 <div className="flex items-center justify-between pt-1 text-xs">
                   <button
@@ -458,6 +474,13 @@ export default function SimuladosPage() {
         onOpenChange={setIsModalRankingOpen}
         simulado={simuladoSelecionado}
         escolaNome={selectedEscola?.nome || 'Cursinho Pré-Universitário'}
+      />
+
+      <ModalAdicionarAlunoSimulado
+        open={isModalAdicionarAlunoOpen}
+        onOpenChange={setIsModalAdicionarAlunoOpen}
+        simulado={simuladoSelecionado}
+        onSuccess={carregarSimulados}
       />
     </div>
   )
