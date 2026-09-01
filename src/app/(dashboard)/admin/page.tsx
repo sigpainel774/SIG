@@ -49,7 +49,6 @@ import {
 } from 'lucide-react'
 
 import { ModalSessionTimeout } from '@/components/modals/modal-session-timeout'
-import { CardLogsAcessoRelatorios } from '@/components/admin/CardLogsAcessoRelatorios'
 
 import { cn } from '@/lib/utils'
 
@@ -1294,9 +1293,6 @@ export default function AdminHubPage() {
         </div>
       </div>
 
-
-      {/* ── Card de Auditoria de Acessos ao Relatório Estratégico EMAEE (LGPD) ── */}
-      <CardLogsAcessoRelatorios />
 
       {/* ── Accordion Groups ── */}
       <div className="space-y-3">

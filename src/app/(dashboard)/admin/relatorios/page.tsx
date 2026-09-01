@@ -26,7 +26,9 @@ import {
   TrendingDown,
   BookOpenCheck,
   Award,
+  Heart,
 } from 'lucide-react';
+import { CardLogsAcessoRelatorios } from '@/components/admin/CardLogsAcessoRelatorios';
 import { cn } from '@/lib/utils';
 
 export default function RelatoriosAdministrativosPage() {
@@ -46,6 +48,22 @@ export default function RelatoriosAdministrativosPage() {
       bgGradient: 'from-emerald-500/5 via-emerald-500/0 to-transparent dark:from-emerald-500/10 dark:via-emerald-500/5 dark:to-transparent',
       borderColor: 'border-border hover:border-emerald-500/40 dark:border-borderCustom dark:hover:border-emerald-500/40',
       path: '/relatorios/produtividade',
+      destaque: false,
+      status: 'disponivel' as const,
+    },
+    {
+      id: 'emaee-estrategico',
+      title: 'Relatório Estratégico EMAEE & AEE',
+      description:
+        'Painel executivo de atendimentos da Educação Especial, censo de neurodesenvolvimento, especialidades clínicas e rede inclusiva.',
+      icon: Heart,
+      badge: 'Educação Especial',
+      badgeColor: 'bg-rose-500/10 text-rose-700 border-rose-500/25 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30',
+      iconColor: 'text-rose-600 dark:text-rose-400',
+      iconBg: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/15 dark:border-rose-500/30',
+      bgGradient: 'from-rose-500/5 via-rose-500/0 to-transparent dark:from-rose-500/10 dark:via-rose-500/5 dark:to-transparent',
+      borderColor: 'border-border hover:border-rose-500/40 dark:border-borderCustom dark:hover:border-rose-500/40',
+      path: '/relatorios',
       destaque: false,
       status: 'disponivel' as const,
     },
@@ -448,6 +466,11 @@ export default function RelatoriosAdministrativosPage() {
             </Link>
           );
         })}
+      </div>
+
+      {/* ── Auditoria de Acessos ao Relatório Estratégico EMAEE (LGPD) ── */}
+      <div className="mt-12">
+        <CardLogsAcessoRelatorios />
       </div>
     </div>
   );

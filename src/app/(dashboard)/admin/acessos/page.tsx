@@ -9,6 +9,7 @@ import {
   Mail,
   RefreshCw,
   Pause,
+  Play,
   Trash2,
   Search,
   ShieldCheck,
@@ -706,10 +707,14 @@ export default function AdminAcessosPage() {
             <button
               type="button"
               onClick={() => handleTogglePausa(item)}
-              className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-[#450a0a]/30 hover:bg-rose-200 dark:hover:bg-[#7f1d1d]/60 border border-rose-300 dark:border-[#ef4444]/40 text-rose-600 dark:text-[#f87171] flex items-center justify-center transition-all cursor-pointer shadow-sm"
-              title={isPausado ? 'Reativar Acesso' : 'Pausar Acesso'}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm ${
+                isPausado
+                  ? 'bg-emerald-100 dark:bg-emerald-950/40 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-400 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-rose-100 dark:bg-[#450a0a]/30 hover:bg-rose-200 dark:hover:bg-[#7f1d1d]/60 border border-rose-300 dark:border-[#ef4444]/40 text-rose-600 dark:text-[#f87171]'
+              }`}
+              title={isPausado ? `Reativar Acesso de ${item.funcionario}` : `Pausar Acesso de ${item.funcionario}`}
             >
-              <Pause className="w-4 h-4" />
+              {isPausado ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
             </button>
 
             <button
