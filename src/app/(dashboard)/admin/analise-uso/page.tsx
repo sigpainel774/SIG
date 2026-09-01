@@ -23,6 +23,10 @@ import {
   MousePointer,
   ChevronRight,
   ShieldCheck,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Flame,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,6 +51,10 @@ interface SessaoAtiva {
   total_active_seconds_today: number
   ip: string | null
   user_agent: string | null
+  last_interaction_at?: number
+  last_action_desc?: string
+  is_actively_using?: boolean
+  is_tab_focused?: boolean
 }
 
 interface SessaoGravada {
@@ -77,12 +85,40 @@ function formatDuration(seconds: number): string {
   return `${s}s`
 }
 
+function getTempoRelativo(timestampMs?: number): string {
+  if (!timestampMs) return 'agora'
+  const diffSec = Math.max(0, Math.floor((Date.now() - timestampMs) / 1000))
+  if (diffSec < 5) return 'agora mesmo'
+  if (diffSec < 60) return `há ${diffSec}s`
+  const min = Math.floor(diffSec / 60)
+  return `há ${min}m`
+}
+
+type StatusSessao = 'em_uso_real' | 'ocioso' | 'segundo_plano'
+
+function calcularStatusSessao(s: SessaoAtiva): StatusSessao {
+  const isFocused = s.is_tab_focused !== false
+  const lastTs = s.last_interaction_at || (s.refreshed_at ? new Date(s.refreshed_at).getTime() : 0)
+  const diffSec = Math.floor((Date.now() - lastTs) / 1000)
+
+  if (!isFocused) {
+    return 'segundo_plano'
+  }
+  if (s.is_actively_using === true || diffSec <= 50) {
+    return 'em_uso_real'
+  }
+  return 'ocioso'
+}
+
 export default function AnaliseUsoPage() {
   const supabase = createClient()
   const { funcionario } = useAuthStore()
 
   // Abas: 'ao-vivo' | 'historico'
   const [tab, setTab] = useState<'ao-vivo' | 'historico'>('ao-vivo')
+
+  // Sub-filtro de status para a aba Ao Vivo: 'ALL' | 'EM_USO' | 'OCIOSO' | 'SEGUNDO_PLANO'
+  const [filtroStatusAoVivo, setFiltroStatusAoVivo] = useState<'ALL' | 'EM_USO' | 'OCIOSO' | 'SEGUNDO_PLANO'>('ALL')
 
   // Dados
   const [sessoesAtivas, setSessoesAtivas] = useState<SessaoAtiva[]>([])
@@ -128,7 +164,6 @@ export default function AnaliseUsoPage() {
         const data = await res.json()
         if (data.active_sessions && isMounted.current) {
           setSessoesAtivas((prevPresences) => {
-            // Unir sessões de banco com as recebidas via Realtime Presence
             const map = new Map<string, SessaoAtiva>()
             data.active_sessions.forEach((s: SessaoAtiva) => {
               const key = s.funcionario_id || s.user_id || s.session_id
@@ -183,6 +218,10 @@ export default function AnaliseUsoPage() {
               total_active_seconds_today: p.active_time_seconds || 10,
               ip: null,
               user_agent: null,
+              last_interaction_at: p.last_interaction_at || Date.now(),
+              last_action_desc: p.last_action_desc || 'Interagindo no sistema',
+              is_actively_using: p.is_actively_using,
+              is_tab_focused: p.is_tab_focused,
             })
           }
         })
@@ -242,18 +281,40 @@ export default function AnaliseUsoPage() {
     return () => clearInterval(interval)
   }, [carregarTudo, carregarSessoesAtivas])
 
-  // Filtragem de Busca
+  // Métricas Calculadas
+  const totalAoVivo = sessoesAtivas.length
+  const totalEmUsoReal = useMemo(() => {
+    return sessoesAtivas.filter((s) => calcularStatusSessao(s) === 'em_uso_real').length
+  }, [sessoesAtivas])
+  const totalOciosos = useMemo(() => {
+    return sessoesAtivas.filter((s) => calcularStatusSessao(s) === 'ocioso').length
+  }, [sessoesAtivas])
+  const totalSegundoPlano = useMemo(() => {
+    return sessoesAtivas.filter((s) => calcularStatusSessao(s) === 'segundo_plano').length
+  }, [sessoesAtivas])
+
+  // Filtragem de Busca e Sub-filtro
   const filteredAtivas = useMemo(() => {
-    if (!searchTerm.trim()) return sessoesAtivas
+    let list = sessoesAtivas
+
+    if (filtroStatusAoVivo === 'EM_USO') {
+      list = list.filter((s) => calcularStatusSessao(s) === 'em_uso_real')
+    } else if (filtroStatusAoVivo === 'OCIOSO') {
+      list = list.filter((s) => calcularStatusSessao(s) === 'ocioso')
+    } else if (filtroStatusAoVivo === 'SEGUNDO_PLANO') {
+      list = list.filter((s) => calcularStatusSessao(s) === 'segundo_plano')
+    }
+
+    if (!searchTerm.trim()) return list
     const q = searchTerm.toLowerCase()
-    return sessoesAtivas.filter(
+    return list.filter(
       (s) =>
         s.funcionario_nome?.toLowerCase().includes(q) ||
         s.funcionario_cargo?.toLowerCase().includes(q) ||
         s.escola_nome?.toLowerCase().includes(q) ||
         s.current_pathname?.toLowerCase().includes(q)
     )
-  }, [sessoesAtivas, searchTerm])
+  }, [sessoesAtivas, searchTerm, filtroStatusAoVivo])
 
   const filteredGravadas = useMemo(() => {
     if (!searchTerm.trim()) return sessoesGravadas
@@ -299,8 +360,6 @@ export default function AnaliseUsoPage() {
     })
   }
 
-  // Métricas Totais
-  const totalAoVivo = sessoesAtivas.length
   const totalCliquesHoje = sessoesGravadas.reduce((acc, curr) => acc + (Number(curr.total_clicks) || 0), 0)
   const totalErrosHoje = sessoesGravadas.reduce((acc, curr) => acc + (Number(curr.total_errors) || 0), 0)
   const avgRttRede = sessoesGravadas.length > 0
@@ -322,7 +381,7 @@ export default function AnaliseUsoPage() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Monitoramento de comandos em tempo real, visualização de cliques, simulação de tela e histórico de uso dos servidores.
+            Diferenciação em tempo real entre servidores em uso ativo (cliques/digitação) e sessões conectadas em standby.
           </p>
         </div>
 
@@ -339,22 +398,30 @@ export default function AnaliseUsoPage() {
 
       {/* KPI Cards de Resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Ao Vivo */}
-        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
-          <div>
-            <div className="text-xs font-medium text-muted-foreground">Usuários Ao Vivo Agora</div>
-            <div className="text-2xl font-bold text-foreground mt-1 flex items-center gap-2">
-              {totalAoVivo}
-              {totalAoVivo > 0 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 animate-pulse border border-emerald-500/30">
+        {/* Card 1: Em Uso Real Agora */}
+        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm relative overflow-hidden">
+          <div className="space-y-1">
+            <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-emerald-500" />
+              Em Uso Real Agora
+            </div>
+            <div className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <span className="text-emerald-600 dark:text-emerald-400">{totalEmUsoReal}</span>
+              {totalEmUsoReal > 0 ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" />
-                  ONLINE
+                  INTERAGINDO
                 </span>
+              ) : (
+                <span className="text-xs text-muted-foreground font-normal">Sem interação</span>
               )}
             </div>
+            <div className="text-[11px] text-muted-foreground">
+              Total conectados: <span className="font-semibold text-foreground">{totalAoVivo}</span> ({totalOciosos} ociosos)
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-            <Radio className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+            <Radio className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
           </div>
         </Card>
 
@@ -365,8 +432,9 @@ export default function AnaliseUsoPage() {
             <div className="text-2xl font-bold text-foreground mt-1">
               {avgRttRede} <span className="text-sm font-normal text-muted-foreground">ms</span>
             </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Tempo de resposta médio</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
             <Wifi className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           </div>
         </Card>
@@ -376,8 +444,9 @@ export default function AnaliseUsoPage() {
           <div>
             <div className="text-xs font-medium text-muted-foreground">Cliques & Comandos Registrados</div>
             <div className="text-2xl font-bold text-sky-600 dark:text-sky-400 mt-1">{totalCliquesHoje}</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Ações registradas hoje</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
             <MousePointer className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           </div>
         </Card>
@@ -385,12 +454,15 @@ export default function AnaliseUsoPage() {
         {/* Card 4: Erros Capturados */}
         <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Possíveis Falhas / Erros JS</div>
+            <div className="text-xs font-medium text-muted-foreground">Falhas / Erros JS</div>
             <div className={cn('text-2xl font-bold mt-1', totalErrosHoje > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
               {totalErrosHoje}
             </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {totalErrosHoje === 0 ? 'Nenhum erro reportado' : 'Erros capturados na sessão'}
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
           </div>
         </Card>
@@ -398,7 +470,7 @@ export default function AnaliseUsoPage() {
 
       {/* Seletor de Abas & Barra de Busca */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setTab('ao-vivo')}
@@ -411,7 +483,7 @@ export default function AnaliseUsoPage() {
           >
             <Radio className="w-4 h-4" />
             Sessões Ao Vivo ({sessoesAtivas.length})
-            {sessoesAtivas.length > 0 && (
+            {totalEmUsoReal > 0 && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             )}
           </button>
@@ -445,79 +517,214 @@ export default function AnaliseUsoPage() {
         </div>
       </div>
 
-      {/* Conteúdo da Aba 1: Sessões Ao Vivo */}
+      {/* Conteúdo da Aba 1: Sessões Ao Vivo com Diferenciação Visual */}
       {tab === 'ao-vivo' && (
         <div className="space-y-4">
+          {/* Sub-filtros Rápidos de Status */}
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <span className="text-muted-foreground font-semibold mr-1">Filtrar por Status:</span>
+
+            <button
+              type="button"
+              onClick={() => setFiltroStatusAoVivo('ALL')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer border',
+                filtroStatusAoVivo === 'ALL'
+                  ? 'bg-primary text-primary-foreground border-primary font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              Todos ({sessoesAtivas.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFiltroStatusAoVivo('EM_USO')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer border',
+                filtroStatusAoVivo === 'EM_USO'
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Em Uso Real ({totalEmUsoReal})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFiltroStatusAoVivo('OCIOSO')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer border',
+                filtroStatusAoVivo === 'OCIOSO'
+                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/40 font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Ociosos / Standby ({totalOciosos})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFiltroStatusAoVivo('SEGUNDO_PLANO')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer border',
+                filtroStatusAoVivo === 'SEGUNDO_PLANO'
+                  ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/40 font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              <span className="w-2 h-2 rounded-full bg-indigo-400" />
+              Em 2º Plano ({totalSegundoPlano})
+            </button>
+          </div>
+
           {filteredAtivas.length === 0 ? (
             <Card className="p-12 text-center bg-card border-border rounded-2xl shadow-sm">
               <Radio className="w-10 h-10 mx-auto text-muted-foreground/60 mb-3 animate-pulse" />
-              <h3 className="text-base font-bold text-foreground">Nenhuma sessão com atividade ao vivo no momento</h3>
+              <h3 className="text-base font-bold text-foreground">Nenhuma sessão encontrada para este filtro</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                Assim que qualquer servidor acessar qualquer tela do SIG, a sessão aparecerá aqui em tempo real com o indicador de transmissão ao vivo.
+                Assim que qualquer servidor interagir com o SIG, a sessão atualizará automaticamente seu estado em tempo real.
               </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredAtivas.map((s) => (
-                <Card
-                  key={s.session_id}
-                  className="p-5 bg-card border-border rounded-2xl hover:border-border/80 shadow-sm transition-all flex flex-col justify-between gap-4 group"
-                >
-                  <div className="space-y-3">
-                    {/* Header do Card com Indicador Ao Vivo */}
-                    <div className="flex items-center justify-between">
-                      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        AO VIVO
-                      </Badge>
+              {filteredAtivas.map((s) => {
+                const statusSessao = calcularStatusSessao(s)
+                const isEmUso = statusSessao === 'em_uso_real'
+                const isSegundoPlano = statusSessao === 'segundo_plano'
 
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatDuration(s.total_active_seconds_today)}
-                      </span>
-                    </div>
+                return (
+                  <Card
+                    key={s.session_id}
+                    className={cn(
+                      'p-5 rounded-2xl shadow-sm transition-all flex flex-col justify-between gap-4 group relative overflow-hidden',
+                      isEmUso
+                        ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-500/[0.05] to-card ring-1 ring-emerald-500/25 shadow-emerald-500/5'
+                        : isSegundoPlano
+                        ? 'border-indigo-500/30 bg-gradient-to-b from-indigo-500/[0.03] to-card'
+                        : 'border-border bg-card hover:border-border/80'
+                    )}
+                  >
+                    <div className="space-y-3">
+                      {/* Header do Card com Diferenciação Visual Clara */}
+                      <div className="flex items-center justify-between gap-2">
+                        {isEmUso ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 text-[11px] font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-500/20">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            EM USO REAL AGORA
+                          </Badge>
+                        ) : isSegundoPlano ? (
+                          <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 text-[11px] font-medium flex items-center gap-1.5">
+                            <EyeOff className="w-3 h-3 text-indigo-400" />
+                            EM SEGUNDO PLANO
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] font-medium flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            CONECTADO (OCIOSO)
+                          </Badge>
+                        )}
 
-                    {/* Dados do Servidor */}
-                    <div className="flex items-center gap-3">
-                      {s.foto_url ? (
-                        <img
-                          src={s.foto_url}
-                          alt={s.funcionario_nome}
-                          className="w-11 h-11 rounded-xl object-cover border border-border"
-                        />
-                      ) : (
-                        <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center font-bold text-sky-600 dark:text-sky-400">
-                          {s.funcionario_nome?.slice(0, 2).toUpperCase() || 'US'}
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
+                          <Clock className="w-3 h-3" />
+                          {formatDuration(s.total_active_seconds_today)}
+                        </span>
+                      </div>
+
+                      {/* Dados do Servidor */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          {s.foto_url ? (
+                            <img
+                              src={s.foto_url}
+                              alt={s.funcionario_nome}
+                              className="w-12 h-12 rounded-xl object-cover border border-border"
+                            />
+                          ) : (
+                            <div className={cn(
+                              'w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm border',
+                              isEmUso ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400'
+                            )}>
+                              {s.funcionario_nome?.slice(0, 2).toUpperCase() || 'US'}
+                            </div>
+                          )}
+
+                          {/* Ponto indicador de status no Avatar */}
+                          <span
+                            className={cn(
+                              'absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-background',
+                              isEmUso ? 'bg-emerald-500 animate-pulse' : isSegundoPlano ? 'bg-indigo-400' : 'bg-amber-400'
+                            )}
+                            title={isEmUso ? 'Interagindo ativamente' : isSegundoPlano ? 'Aba minimizada' : 'Conectado mas ocioso'}
+                          />
                         </div>
-                      )}
 
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-foreground truncate">{s.funcionario_nome}</div>
-                        <div className="text-xs text-muted-foreground truncate">{s.funcionario_cargo || 'Servidor'}</div>
-                        <div className="text-[11px] text-muted-foreground/80 truncate flex items-center gap-1 mt-0.5">
-                          <School className="w-3 h-3 shrink-0" />
-                          {s.escola_nome || 'Rede Municipal'}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-foreground truncate">{s.funcionario_nome}</div>
+                          <div className="text-xs text-muted-foreground truncate">{s.funcionario_cargo || 'Servidor'}</div>
+                          <div className="text-[11px] text-muted-foreground/80 truncate flex items-center gap-1 mt-0.5">
+                            <School className="w-3 h-3 shrink-0" />
+                            {s.escola_nome || 'Rede Municipal'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Linha de Atividade em Tempo Real */}
+                      <div className="space-y-1.5">
+                        <div className="bg-muted/70 border border-border rounded-xl p-2.5 px-3 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2 min-w-0 font-mono text-sky-600 dark:text-sky-300">
+                            <Compass className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" />
+                            <span className="truncate">{s.current_pathname || '/home'}</span>
+                          </div>
+                        </div>
+
+                        {/* Indicador de Última Ação do Usuário */}
+                        <div className="flex items-center justify-between text-[11px] px-1">
+                          {isEmUso ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 truncate">
+                              <Zap className="w-3 h-3 shrink-0 fill-current" />
+                              <span className="truncate">{s.last_action_desc || 'Interagindo ativamente'}</span>
+                            </span>
+                          ) : isSegundoPlano ? (
+                            <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 truncate">
+                              <EyeOff className="w-3 h-3 shrink-0" />
+                              <span>Janela em 2º plano</span>
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground flex items-center gap-1 truncate">
+                              <Clock className="w-3 h-3 shrink-0" />
+                              <span>Sem cliques recentes</span>
+                            </span>
+                          )}
+
+                          <span className="text-muted-foreground text-[10px] shrink-0">
+                            {getTempoRelativo(s.last_interaction_at)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Tela Atual Sendo Usada */}
-                    <div className="bg-muted/70 border border-border rounded-xl p-2.5 px-3 flex items-center gap-2 text-xs font-mono text-sky-600 dark:text-sky-300">
-                      <Compass className="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
-                      <span className="truncate">{s.current_pathname || '/home'}</span>
-                    </div>
-                  </div>
-
-                  {/* Botão de Espelhar Comandos Ao Vivo */}
-                  <Button
-                    onClick={() => handleAssistirAoVivo(s)}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    <Monitor className="w-4 h-4" />
-                    Espelhar Comandos Ao Vivo
-                  </Button>
-                </Card>
-              ))}
+                    {/* Botão de Espelhar Comandos Ao Vivo */}
+                    <Button
+                      onClick={() => handleAssistirAoVivo(s)}
+                      className={cn(
+                        'w-full font-semibold rounded-xl h-10 flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all',
+                        isEmUso
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                          : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                      )}
+                    >
+                      <Monitor className="w-4 h-4" />
+                      {isEmUso ? 'Espelhar Interação Ao Vivo' : 'Espelhar Tela da Sessão'}
+                    </Button>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>

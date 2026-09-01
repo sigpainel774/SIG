@@ -95,6 +95,8 @@ export function useSessionReplay() {
   const channelRef = useRef<any>(null)
   const presenceChannelRef = useRef<any>(null)
   const queueRef = useRef<ReplayEventItem[]>([])
+  const lastInteractionAtRef = useRef<number>(Date.now())
+  const lastActionDescRef = useRef<string>('Navegação no sistema')
   const isMounted = useRef<boolean>(true)
 
   useEffect(() => {
@@ -105,6 +107,45 @@ export function useSessionReplay() {
     fotoUrlRef.current = funcionario?.foto_url ?? null
     escolaIdRef.current = escolaAtivaId ?? null
   }, [funcionario, escolaAtivaId])
+
+  // Atualizar estado de presença em tempo real
+  const updatePresenceState = useCallback((actionDesc?: string) => {
+    if (actionDesc) {
+      lastActionDescRef.current = actionDesc
+      lastInteractionAtRef.current = Date.now()
+    }
+    if (!presenceChannelRef.current || !userAuthIdRef.current) return
+
+    const isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+    const hasFocus = typeof document !== 'undefined' ? (document.hasFocus ? document.hasFocus() : true) : true
+    const isTabFocused = isVisible && hasFocus
+    const now = Date.now()
+    const secondsSinceInteraction = Math.floor((now - lastInteractionAtRef.current) / 1000)
+    const isActivelyUsing = isTabFocused && secondsSinceInteraction <= 45
+
+    const net = getNetworkDetails()
+
+    presenceChannelRef.current.track({
+      session_id: activeSessionIdRef.current,
+      user_id: userAuthIdRef.current,
+      funcionario_id: funcionarioIdRef.current,
+      funcionario_nome: funcionarioNomeRef.current,
+      funcionario_email: funcionarioEmailRef.current,
+      funcionario_cargo: funcionarioCargoRef.current,
+      foto_url: fotoUrlRef.current,
+      escola_nome: escolaNomeRef.current || 'Rede Municipal',
+      current_pathname: currentPathRef.current || '/',
+      online_at: new Date().toISOString(),
+      last_interaction_at: lastInteractionAtRef.current,
+      last_action_desc: lastActionDescRef.current,
+      is_actively_using: isActivelyUsing,
+      is_tab_focused: isTabFocused,
+      rtt: net.rtt,
+      downlink: net.downlink,
+      effective_type: net.effective_type,
+      active_time_seconds: Math.floor((now - sessionStartTimeRef.current) / 1000),
+    }).catch(() => {})
+  }, [])
 
   // Despachar evento para o canal Realtime e enfileirar para persistência
   const dispatchEvent = useCallback((event: Omit<ReplayEventItem, 'session_id' | 'funcionario_id' | 'escola_id'>) => {
@@ -193,6 +234,10 @@ export function useSessionReplay() {
                   escola_nome: escolaNomeRef.current || 'Rede Municipal',
                   current_pathname: currentPathRef.current || '/',
                   online_at: new Date().toISOString(),
+                  last_interaction_at: lastInteractionAtRef.current,
+                  last_action_desc: 'Entrou no sistema',
+                  is_actively_using: true,
+                  is_tab_focused: true,
                   rtt: net.rtt,
                   downlink: net.downlink,
                   effective_type: net.effective_type,
@@ -227,7 +272,6 @@ export function useSessionReplay() {
                   timestamp: Date.now(),
                 },
               })
-              // Força envio imediato para persistir primeira presença
               flushQueue()
             }
           })
@@ -264,7 +308,7 @@ export function useSessionReplay() {
     }
   }, [supabase, dispatchEvent, flushQueue])
 
-  // Heartbeat periódico (a cada 20s) para manter a sessão ativa no banco e no presence
+  // Heartbeat periódico (a cada 15s) para atualizar presença e manter vivo no banco
   useEffect(() => {
     const heartbeatInterval = setInterval(() => {
       if (!isMounted.current || typeof document === 'undefined') return
@@ -283,30 +327,12 @@ export function useSessionReplay() {
           },
         })
 
-        // Atualizar também o status de presença se o canal estiver conectado
-        if (presenceChannelRef.current && userAuthIdRef.current) {
-          presenceChannelRef.current.track({
-            session_id: activeSessionIdRef.current,
-            user_id: userAuthIdRef.current,
-            funcionario_id: funcionarioIdRef.current,
-            funcionario_nome: funcionarioNomeRef.current,
-            funcionario_email: funcionarioEmailRef.current,
-            funcionario_cargo: funcionarioCargoRef.current,
-            foto_url: fotoUrlRef.current,
-            escola_nome: escolaNomeRef.current || 'Rede Municipal',
-            current_pathname: currentPathRef.current || '/',
-            online_at: new Date().toISOString(),
-            rtt: net.rtt,
-            downlink: net.downlink,
-            effective_type: net.effective_type,
-            active_time_seconds: Math.floor((Date.now() - sessionStartTimeRef.current) / 1000),
-          }).catch(() => {})
-        }
+        updatePresenceState()
       }
-    }, 20000)
+    }, 15000)
 
     return () => clearInterval(heartbeatInterval)
-  }, [dispatchEvent])
+  }, [dispatchEvent, updatePresenceState])
 
   // Timer periódico de gravação a cada 4 segundos
   useEffect(() => {
@@ -323,6 +349,7 @@ export function useSessionReplay() {
   useEffect(() => {
     currentPathRef.current = pathname
     const net = getNetworkDetails()
+    updatePresenceState(`Navegou para ${pathname}`)
 
     dispatchEvent({
       event_type: 'navigation',
@@ -336,7 +363,7 @@ export function useSessionReplay() {
         timestamp: Date.now(),
       },
     })
-  }, [pathname, dispatchEvent])
+  }, [pathname, dispatchEvent, updatePresenceState])
 
   // 3. Captura de Cliques e Toques (Coordenadas Percentuais)
   useEffect(() => {
@@ -372,6 +399,8 @@ export function useSessionReplay() {
       }
 
       const net = getNetworkDetails()
+      const clickDesc = targetText ? `Clicou em "${targetText}"` : `Clicou em <${targetTag.toLowerCase()}>`
+      updatePresenceState(clickDesc)
 
       dispatchEvent({
         event_type: 'click',
@@ -401,6 +430,8 @@ export function useSessionReplay() {
         const inputElem = target as HTMLInputElement
         const fieldName = inputElem.name || inputElem.id || inputElem.getAttribute('placeholder') || 'Campo Formulário'
         const fieldType = inputElem.type || tagName.toLowerCase()
+
+        updatePresenceState(`Editando campo "${fieldName}"`)
 
         dispatchEvent({
           event_type: 'input_focus',
@@ -455,10 +486,16 @@ export function useSessionReplay() {
       })
     }
 
+    // Detecção de foco/visibilidade da aba
+    const handleVisibility = () => {
+      updatePresenceState(document.visibilityState === 'visible' ? 'Retornou para a aba' : 'Minimizou a aba')
+    }
+
     document.addEventListener('click', handleClick, { passive: true, capture: true })
     document.addEventListener('touchstart', handleClick, { passive: true, capture: true })
     document.addEventListener('focusin', handleFocusIn, { passive: true, capture: true })
     document.addEventListener('focusout', handleFocusOut, { passive: true, capture: true })
+    document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
@@ -467,10 +504,11 @@ export function useSessionReplay() {
       document.removeEventListener('touchstart', handleClick, { capture: true })
       document.removeEventListener('focusin', handleFocusIn, { capture: true })
       document.removeEventListener('focusout', handleFocusOut, { capture: true })
+      document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('error', handleError)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
     }
-  }, [dispatchEvent])
+  }, [dispatchEvent, updatePresenceState])
 
   // 6. Enviar eventos pendentes no encerramento da página (unload)
   useEffect(() => {

@@ -51,11 +51,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, count: 0 })
     }
 
-    const { error } = await (supabaseAdmin as any).from('session_events').insert(batchToInsert)
+    // Tentativa 1: Inserção direta completa
+    let { error } = await (supabaseAdmin as any).from('session_events').insert(batchToInsert)
 
+    // Se falhar por chave estrangeira (FK) inválida, tenta salvar sem as FKs para não perder os eventos
     if (error) {
-      console.warn('[API session-events] Aviso ao persistir eventos de sessão:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.warn('[API session-events] Tentando inserção de recuperação sem FKs:', error.message)
+      const safeBatch = batchToInsert.map((e) => ({
+        session_id: e.session_id,
+        funcionario_id: null,
+        escola_id: null,
+        event_type: e.event_type,
+        event_data: {
+          ...e.event_data,
+          original_funcionario_id: e.funcionario_id,
+          original_escola_id: e.escola_id,
+        },
+        created_at: e.created_at,
+      }))
+
+      const recoveryResult = await (supabaseAdmin as any).from('session_events').insert(safeBatch)
+      if (recoveryResult.error) {
+        console.error('[API session-events] Falha na recuperação de inserção:', recoveryResult.error.message)
+        return NextResponse.json({ error: recoveryResult.error.message }, { status: 500 })
+      }
     }
 
     return NextResponse.json({ success: true, count: batchToInsert.length })
@@ -65,7 +84,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: Buscar histórico de eventos de uma sessão específica ou sumário de sessões
+// GET: Buscar histórico de eventos de uma sessão específica ou sumário de sessões gravadas
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -84,79 +103,64 @@ export async function GET(request: NextRequest) {
 
     // 0. Modo Sessões Ativas Ao Vivo
     if (mode === 'active') {
-      // Tenta via RPC primeiro
-      try {
-        const { data: rpcData, error: rpcErr } = await (supabaseAdmin as any).rpc('get_all_active_sessions_admin')
-        if (!rpcErr && Array.isArray(rpcData) && rpcData.length > 0) {
-          return NextResponse.json({ active_sessions: rpcData })
-        }
-      } catch {
-        // Ignorar e ir para query direta nos eventos de telemetria
-      }
-
-      // Query direta em eventos recentes (últimos 15 minutos)
       const recentThreshold = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-      const { data: recentEvents, error: evErr } = await (supabaseAdmin as any)
+      
+      const { data: recentEvents } = await (supabaseAdmin as any)
         .from('session_events')
-        .select('session_id, funcionario_id, escola_id, event_type, event_data, created_at, funcionarios(id, nome, email, cargo, foto_url, auth_user_id), escolas(nome)')
+        .select('session_id, funcionario_id, escola_id, event_type, event_data, created_at')
         .gte('created_at', recentThreshold)
         .order('created_at', { ascending: false })
-        .limit(500)
+        .limit(600)
 
-      if (!evErr && recentEvents && recentEvents.length > 0) {
+      if (recentEvents && recentEvents.length > 0) {
+        // Coletar IDs de funcionários para buscar nomes
+        const funcIds = Array.from(new Set(recentEvents.map((e: any) => e.funcionario_id).filter(Boolean)))
+        const escolaIds = Array.from(new Set(recentEvents.map((e: any) => e.escola_id).filter(Boolean)))
+
+        let funcMap = new Map<string, any>()
+        if (funcIds.length > 0) {
+          const { data: funcs } = await (supabaseAdmin as any)
+            .from('funcionarios')
+            .select('id, nome, email, cargo, foto_url, auth_user_id')
+            .in('id', funcIds)
+          ;(funcs || []).forEach((f: any) => funcMap.set(f.id, f))
+        }
+
+        let escolaMap = new Map<string, string>()
+        if (escolaIds.length > 0) {
+          const { data: esc } = await (supabaseAdmin as any)
+            .from('escolas')
+            .select('id, nome')
+            .in('id', escolaIds)
+          ;(esc || []).forEach((e: any) => escolaMap.set(e.id, e.nome))
+        }
+
         const activeMap = new Map<string, any>()
         recentEvents.forEach((e: any) => {
-          const key = e.funcionario_id || e.session_id
+          const sid = e.session_id
+          const func = funcMap.get(e.funcionario_id)
+          const key = e.funcionario_id || sid
+
           if (!activeMap.has(key)) {
             activeMap.set(key, {
-              session_id: e.session_id,
-              user_id: e.funcionarios?.auth_user_id || e.session_id,
+              session_id: sid,
+              user_id: func?.auth_user_id || sid,
               funcionario_id: e.funcionario_id,
-              funcionario_nome: e.funcionarios?.nome || 'Usuário Online',
-              funcionario_email: e.funcionarios?.email || '-',
-              funcionario_cargo: e.funcionarios?.cargo || 'Servidor',
-              escola_nome: e.escolas?.nome || 'Rede Municipal',
-              foto_url: e.funcionarios?.foto_url || null,
+              funcionario_nome: func?.nome || e.event_data?.funcionario_nome || 'Servidor Online',
+              funcionario_email: func?.email || '-',
+              funcionario_cargo: func?.cargo || 'Servidor',
+              escola_nome: escolaMap.get(e.escola_id) || 'Rede Municipal',
+              foto_url: func?.foto_url || null,
               created_at: e.created_at,
               refreshed_at: e.created_at,
               current_pathname: e.event_data?.pathname || '/home',
               total_active_seconds_today: e.event_data?.active_time_seconds || 60,
               ip: null,
               user_agent: null,
-            })
-          }
-        })
-        return NextResponse.json({ active_sessions: Array.from(activeMap.values()) })
-      }
-
-      // Fallback em user_navigation_trail
-      const { data: trailData } = await (supabaseAdmin as any)
-        .from('user_navigation_trail')
-        .select('session_id, user_id, funcionario_id, pathname, opened_at, duration_seconds, ip_address, user_agent, funcionarios(id, nome, email, cargo, foto_url)')
-        .gte('opened_at', recentThreshold)
-        .order('opened_at', { ascending: false })
-        .limit(100)
-
-      if (trailData && trailData.length > 0) {
-        const activeMap = new Map<string, any>()
-        trailData.forEach((t: any) => {
-          const key = t.funcionario_id || t.user_id || t.session_id
-          if (!activeMap.has(key)) {
-            activeMap.set(key, {
-              session_id: t.session_id || t.user_id,
-              user_id: t.user_id,
-              funcionario_id: t.funcionario_id,
-              funcionario_nome: t.funcionarios?.nome || 'Usuário Online',
-              funcionario_email: t.funcionarios?.email || '-',
-              funcionario_cargo: t.funcionarios?.cargo || 'Servidor',
-              escola_nome: 'Rede Municipal',
-              foto_url: t.funcionarios?.foto_url || null,
-              created_at: t.opened_at,
-              refreshed_at: t.opened_at,
-              current_pathname: t.pathname || '/home',
-              total_active_seconds_today: t.duration_seconds || 30,
-              ip: t.ip_address,
-              user_agent: t.user_agent,
+              last_interaction_at: e.event_data?.timestamp || new Date(e.created_at).getTime(),
+              last_action_desc: e.event_type === 'click' ? `Clicou em ${e.event_data?.target_text || 'item'}` : 'Navegando no SIG',
+              is_actively_using: true,
+              is_tab_focused: true,
             })
           }
         })
@@ -166,103 +170,158 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ active_sessions: [] })
     }
 
-    // 1. Se informou session_id, retorna os eventos cronológicos daquela sessão para o Replay
+    // 1. Se informou session_id, retorna os eventos cronológicos para o Replay
     if (sessionId) {
-      const { data, error } = await (supabaseAdmin as any).rpc('get_session_replay_events', {
-        p_session_id: sessionId,
-        p_limit: 1500,
-      })
+      let query = (supabaseAdmin as any)
+        .from('session_events')
+        .select('id, session_id, funcionario_id, escola_id, event_type, event_data, created_at')
+        .order('created_at', { ascending: true })
+        .limit(2000)
 
-      if (error) {
-        // Fallback para query direta caso a RPC não tenha sido aplicada no banco
-        const { data: directEvents, error: directErr } = await (supabaseAdmin as any)
-          .from('session_events')
-          .select('id, session_id, funcionario_id, escola_id, event_type, event_data, created_at, funcionarios(nome), escolas(nome)')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: true })
-          .limit(1500)
+      if (sessionId.includes('_')) {
+        const [userId] = sessionId.split('_')
+        query = query.or(`session_id.eq.${sessionId},session_id.eq.${userId}`)
+      } else {
+        query = query.eq('session_id', sessionId)
+      }
 
-        if (directErr) {
-          console.error('[API session-events] Erro ao buscar eventos diretos:', directErr.message)
-          return NextResponse.json({ error: directErr.message }, { status: 500 })
-        }
+      const { data: directEvents, error: directErr } = await query
 
-        const formatted = (directEvents || []).map((e: any) => ({
+      if (directErr) {
+        console.error('[API session-events] Erro ao buscar eventos de replay:', directErr.message)
+        return NextResponse.json({ error: directErr.message }, { status: 500 })
+      }
+
+      // Buscar nomes dos funcionários e escolas envolvidos
+      const funcIds = Array.from(new Set((directEvents || []).map((e: any) => e.funcionario_id).filter(Boolean)))
+      const escolaIds = Array.from(new Set((directEvents || []).map((e: any) => e.escola_id).filter(Boolean)))
+
+      let funcMap = new Map<string, any>()
+      if (funcIds.length > 0) {
+        const { data: funcs } = await (supabaseAdmin as any)
+          .from('funcionarios')
+          .select('id, nome, email, cargo, foto_url')
+          .in('id', funcIds)
+        ;(funcs || []).forEach((f: any) => funcMap.set(f.id, f))
+      }
+
+      let escolaMap = new Map<string, string>()
+      if (escolaIds.length > 0) {
+        const { data: esc } = await (supabaseAdmin as any)
+          .from('escolas')
+          .select('id, nome')
+          .in('id', escolaIds)
+        ;(esc || []).forEach((e: any) => escolaMap.set(e.id, e.nome))
+      }
+
+      const formatted = (directEvents || []).map((e: any) => {
+        const func = funcMap.get(e.funcionario_id)
+        return {
           id: e.id,
           session_id: e.session_id,
           funcionario_id: e.funcionario_id,
-          funcionario_nome: e.funcionarios?.nome || 'Usuário',
+          funcionario_nome: func?.nome || e.event_data?.funcionario_nome || 'Usuário',
           escola_id: e.escola_id,
-          escola_nome: e.escolas?.nome || 'Rede Municipal',
+          escola_nome: escolaMap.get(e.escola_id) || 'Rede Municipal',
           event_type: e.event_type,
           event_data: e.event_data,
           created_at: e.created_at,
-        }))
-
-        return NextResponse.json({ events: formatted })
-      }
-
-      return NextResponse.json({ events: data || [] })
-    }
-
-    // 2. Caso contrário, retorna o sumário de sessões gravadas
-    const { data: summaryData, error: summaryErr } = await (supabaseAdmin as any).rpc('get_recorded_sessions_summary', {
-      p_start_date: startDate ? new Date(startDate).toISOString() : null,
-      p_end_date: endDate ? new Date(endDate).toISOString() : null,
-      p_funcionario_id: sanitizeUuid(funcionarioId),
-      p_limit: 150,
-    })
-
-    if (summaryErr) {
-      // Fallback query direta para sumário
-      const { data: recentEvents } = await (supabaseAdmin as any)
-        .from('session_events')
-        .select('session_id, funcionario_id, event_type, event_data, created_at, funcionarios(nome, email, cargo), escolas(nome)')
-        .order('created_at', { ascending: false })
-        .limit(1000)
-
-      // Agrupar manualmente no fallback
-      const sessionMap = new Map<string, any>()
-      ;(recentEvents || []).forEach((e: any) => {
-        const sid = e.session_id
-        if (!sessionMap.has(sid)) {
-          sessionMap.set(sid, {
-            session_id: sid,
-            funcionario_id: e.funcionario_id,
-            funcionario_nome: e.funcionarios?.nome || 'Usuário',
-            funcionario_email: e.funcionarios?.email || '-',
-            funcionario_cargo: e.funcionarios?.cargo || 'Servidor',
-            escola_nome: e.escolas?.nome || 'Rede Municipal',
-            total_events: 0,
-            total_clicks: 0,
-            total_errors: 0,
-            first_event_at: e.created_at,
-            last_event_at: e.created_at,
-            duration_seconds: 0,
-            last_pathname: e.event_data?.pathname || '/',
-            avg_rtt: e.event_data?.rtt || 45,
-          })
-        }
-        const item = sessionMap.get(sid)
-        item.total_events += 1
-        if (e.event_type === 'click') item.total_clicks += 1
-        if (e.event_type === 'error') item.total_errors += 1
-        if (new Date(e.created_at) < new Date(item.first_event_at)) item.first_event_at = e.created_at
-        if (new Date(e.created_at) > new Date(item.last_event_at)) {
-          item.last_event_at = e.created_at
-          if (e.event_data?.pathname) item.last_pathname = e.event_data.pathname
         }
       })
 
-      const summaryList = Array.from(sessionMap.values()).map((s) => ({
-        ...s,
-        duration_seconds: Math.max(0, Math.round((new Date(s.last_event_at).getTime() - new Date(s.first_event_at).getTime()) / 1000)),
-      }))
-
-      return NextResponse.json({ sessions: summaryList })
+      return NextResponse.json({ events: formatted })
     }
 
-    return NextResponse.json({ sessions: summaryData || [] })
+    // 2. Sumário de Sessões Gravadas para a listagem histórica
+    let query = (supabaseAdmin as any)
+      .from('session_events')
+      .select('session_id, funcionario_id, escola_id, event_type, event_data, created_at')
+      .order('created_at', { ascending: false })
+      .limit(3000)
+
+    if (startDate) {
+      query = query.gte('created_at', new Date(startDate).toISOString())
+    }
+    if (endDate) {
+      // Ajustar fim do dia
+      const endDt = new Date(endDate)
+      endDt.setHours(23, 59, 59, 999)
+      query = query.lte('created_at', endDt.toISOString())
+    }
+    if (funcionarioId) {
+      query = query.eq('funcionario_id', funcionarioId)
+    }
+
+    const { data: allEvents, error: evErr } = await query
+
+    if (evErr) {
+      console.error('[API session-events] Erro ao buscar sessões para histórico:', evErr.message)
+      return NextResponse.json({ error: evErr.message }, { status: 500 })
+    }
+
+    // Buscar nomes dos funcionários e escolas
+    const funcIds = Array.from(new Set((allEvents || []).map((e: any) => e.funcionario_id).filter(Boolean)))
+    const escolaIds = Array.from(new Set((allEvents || []).map((e: any) => e.escola_id).filter(Boolean)))
+
+    let funcMap = new Map<string, any>()
+    if (funcIds.length > 0) {
+      const { data: funcs } = await (supabaseAdmin as any)
+        .from('funcionarios')
+        .select('id, nome, email, cargo, foto_url')
+        .in('id', funcIds)
+      ;(funcs || []).forEach((f: any) => funcMap.set(f.id, f))
+    }
+
+    let escolaMap = new Map<string, string>()
+    if (escolaIds.length > 0) {
+      const { data: esc } = await (supabaseAdmin as any)
+        .from('escolas')
+        .select('id, nome')
+        .in('id', escolaIds)
+      ;(esc || []).forEach((e: any) => escolaMap.set(e.id, e.nome))
+    }
+
+    // Agrupar eventos por session_id
+    const sessionMap = new Map<string, any>()
+    ;(allEvents || []).forEach((e: any) => {
+      const sid = e.session_id
+      if (!sessionMap.has(sid)) {
+        const func = funcMap.get(e.funcionario_id)
+        sessionMap.set(sid, {
+          session_id: sid,
+          funcionario_id: e.funcionario_id,
+          funcionario_nome: func?.nome || e.event_data?.funcionario_nome || 'Usuário',
+          funcionario_email: func?.email || '-',
+          funcionario_cargo: func?.cargo || 'Servidor',
+          escola_nome: escolaMap.get(e.escola_id) || 'Rede Municipal',
+          total_events: 0,
+          total_clicks: 0,
+          total_errors: 0,
+          first_event_at: e.created_at,
+          last_event_at: e.created_at,
+          duration_seconds: 0,
+          last_pathname: e.event_data?.pathname || '/',
+          avg_rtt: e.event_data?.rtt || 45,
+        })
+      }
+
+      const item = sessionMap.get(sid)
+      item.total_events += 1
+      if (e.event_type === 'click') item.total_clicks += 1
+      if (e.event_type === 'error') item.total_errors += 1
+      if (new Date(e.created_at) < new Date(item.first_event_at)) item.first_event_at = e.created_at
+      if (new Date(e.created_at) > new Date(item.last_event_at)) {
+        item.last_event_at = e.created_at
+        if (e.event_data?.pathname) item.last_pathname = e.event_data.pathname
+      }
+    })
+
+    const summaryList = Array.from(sessionMap.values()).map((s) => ({
+      ...s,
+      duration_seconds: Math.max(0, Math.round((new Date(s.last_event_at).getTime() - new Date(s.first_event_at).getTime()) / 1000)),
+    }))
+
+    return NextResponse.json({ sessions: summaryList })
   } catch (err: any) {
     console.error('[API session-events GET] Exceção:', err)
     return NextResponse.json({ error: err?.message || 'Erro interno' }, { status: 500 })
