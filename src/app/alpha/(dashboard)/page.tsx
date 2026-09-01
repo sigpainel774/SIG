@@ -52,7 +52,9 @@ export default function AlphaDashboardPage() {
           setFuncoes(cached)
           setLoading(false)
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[Alpha/page] Falha ao ler cache IndexedDB de módulos:', err)
+      }
 
       // 2. Se online, sincroniza com o Supabase e atualiza o cache
       if (navigator.onLine) {

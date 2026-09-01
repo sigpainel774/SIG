@@ -62,7 +62,9 @@ export function AlphaSidebar() {
           setFuncoes(cached)
           setLoading(false)
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[AlphaSidebar] Falha ao ler cache local de módulos:', err)
+      }
 
       // 2. Se estiver online, busca a versão mais recente do Supabase e atualiza o cache
       if (navigator.onLine) {

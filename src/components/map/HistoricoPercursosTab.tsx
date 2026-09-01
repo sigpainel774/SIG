@@ -493,14 +493,18 @@ export default function HistoricoPercursosTab() {
           .from('registros_navegacoes_livres')
           .delete()
           .eq('id', navParaExcluir.id);
-      } catch {}
+      } catch (err) {
+        console.warn('[HistoricoPercursos] Falha ao excluir de registros_navegacoes_livres (pode não existir):', err);
+      }
 
       try {
         await (supabase as any)
           .from('visitas_trajetos')
           .update({ deleted_at: new Date().toISOString() })
           .eq('id', navParaExcluir.id);
-      } catch {}
+      } catch (err) {
+        console.warn('[HistoricoPercursos] Falha ao soft-delete em visitas_trajetos (pode não existir):', err);
+      }
 
       // 2. Remove do IndexedDB (offlineRouteStore e visitasOfflineService)
       await removerNavegacaoOffline(navParaExcluir.id);
@@ -508,7 +512,9 @@ export default function HistoricoPercursosTab() {
         const trajetosAlpha = await visitasOfflineService.getTrajetos();
         const filtrados = (trajetosAlpha || []).filter((t) => t.id !== navParaExcluir.id);
         await visitasOfflineService.setTrajetos(filtrados);
-      } catch {}
+      } catch (err) {
+        console.warn('[HistoricoPercursos] Falha ao atualizar cache offline de trajetos:', err);
+      }
 
       // 3. Atualiza estado
       setNavegacoes((prev) => prev.filter((n) => n.id !== navParaExcluir.id));

@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
           },
           { onConflict: 'ip_address' }
         )
-        .then()
+        .then(({ error: geoErr }: { error: any }) => {
+          if (geoErr) console.warn('[GeoCache] Falha ao salvar cache de geo (Trilha):', geoErr.message)
+        })
     }
 
     return NextResponse.json({ success: true, count: batchToInsert.length })

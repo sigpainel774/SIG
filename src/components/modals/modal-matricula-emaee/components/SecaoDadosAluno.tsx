@@ -221,7 +221,19 @@ export function SecaoDadosAluno() {
               <Input
                 placeholder="000.000.000-00"
                 value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
+                maxLength={14}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 11)
+                  let masked = raw
+                  if (raw.length > 9) {
+                    masked = `${raw.slice(0, 3)}.${raw.slice(3, 6)}.${raw.slice(6, 9)}-${raw.slice(9)}`
+                  } else if (raw.length > 6) {
+                    masked = `${raw.slice(0, 3)}.${raw.slice(3, 6)}.${raw.slice(6)}`
+                  } else if (raw.length > 3) {
+                    masked = `${raw.slice(0, 3)}.${raw.slice(3)}`
+                  }
+                  setCpf(masked)
+                }}
                 className="bg-input border-border text-foreground text-sm rounded-xl"
               />
             </div>

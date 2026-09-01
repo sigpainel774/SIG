@@ -48,7 +48,9 @@ export default function AlphaRotasEscolasPage() {
         setEscolas(cached)
         setCarregando(false)
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[RotasEscolas] Falha ao ler cache offline de escolas:', err)
+    }
 
     // 2. Se estiver online, atualiza do Supabase e salva no cache
     if (navigator.onLine) {

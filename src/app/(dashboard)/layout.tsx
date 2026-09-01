@@ -12,6 +12,7 @@ import { getPerfilUsuario } from '@/lib/profileCache'
 import { AuthInitializer } from '@/components/AuthInitializer'
 import { PerformanceTracker } from '@/components/PerformanceTracker'
 import { AccessTracker } from '@/components/AccessTracker'
+import { SessionReplayTracker } from '@/components/SessionReplayTracker'
 import { SessionTimeoutWatcher } from '@/components/SessionTimeoutWatcher'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -63,6 +64,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <SessionTimeoutWatcher />
         <PerformanceTracker />
         <AccessTracker />
+        <SessionReplayTracker />
         <SimulationBanner />
         <RootAdminHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-8 w-full min-w-0 max-w-full">
@@ -79,6 +81,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <SessionTimeoutWatcher />
       <PerformanceTracker />
       <AccessTracker />
+      <SessionReplayTracker />
       {/* Sidebar Component */}
       <Sidebar />
 

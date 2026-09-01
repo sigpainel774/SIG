@@ -45,6 +45,7 @@ import {
   LogIn,
   Clock,
   MapPin,
+  Radio,
 } from 'lucide-react'
 
 import { ModalSessionTimeout } from '@/components/modals/modal-session-timeout'
@@ -141,6 +142,13 @@ const adminGroups: AdminGroup[] = [
     headerColor: 'text-purple-600 dark:text-purple-400',
     badgeColor: 'bg-purple-500/10 text-purple-700 border-purple-500/25 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
     items: [
+      {
+        title: 'Análise de Uso',
+        subtitle: 'Replay e telemetria ao vivo',
+        icon: Radio,
+        iconColor: 'text-sky-500 dark:text-sky-400',
+        path: '/admin/analise-uso',
+      },
       {
         title: 'Logs de Auditoria',
         subtitle: 'Histórico e ficha de auditoria',

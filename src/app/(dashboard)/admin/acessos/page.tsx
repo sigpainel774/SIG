@@ -239,7 +239,7 @@ export default function AdminAcessosPage() {
       // 1. Carregar Sessões Ativas via RPC get_all_active_sessions_admin
       const { data: sessoesData, error: sessoesError } = await (supabase as any).rpc('get_all_active_sessions_admin')
       if (sessoesError) {
-        console.warn('Aviso ao buscar sessões ativas via RPC:', sessoesError.message)
+        console.error('[Acessos] Falha ao buscar sessões ativas via RPC:', sessoesError.message)
       } else if (sessoesData && isMounted.current) {
         setSessoesAtivas((sessoesData as unknown) as SessaoAtivaItem[])
       }
@@ -255,7 +255,7 @@ export default function AdminAcessosPage() {
       })
 
       if (diariosError) {
-        console.warn('Aviso ao buscar diário de logins:', diariosError.message)
+        console.error('[Acessos] Falha ao buscar diário de logins:', diariosError.message)
       } else if (diariosData && isMounted.current) {
         setLoginsDiarios((diariosData as unknown) as LoginDiarioItem[])
       }
@@ -269,7 +269,7 @@ export default function AdminAcessosPage() {
       })
 
       if (trilhaError) {
-        console.warn('Aviso ao buscar trilha de navegação:', trilhaError.message)
+        console.error('[Acessos] Falha ao buscar trilha de navegação:', trilhaError.message)
       } else if (trilhaData && isMounted.current) {
         setTrilhaNavegacao((trilhaData as unknown) as TrilhaNavegacaoItem[])
       }

@@ -36,7 +36,9 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
         if (isMounted && cached && cached.length > 0) {
           setFuncoesAtivas(cached.filter((f) => f.ativo !== false))
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[AlphaQuickActions] Falha ao ler cache de módulos:', err)
+      }
 
       if (navigator.onLine) {
         try {
@@ -49,7 +51,9 @@ export function AlphaQuickActionsModal({ isOpen, onClose }: AlphaQuickActionsMod
           if (isMounted && data) {
             setFuncoesAtivas(data)
           }
-        } catch {}
+        } catch (err) {
+          console.warn('[AlphaQuickActions] Falha ao buscar módulos online:', err)
+        }
       }
     }
 

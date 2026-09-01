@@ -32,7 +32,8 @@ import {
   FileSpreadsheet,
   MessageSquare,
   Calendar,
-  CheckSquare
+  CheckSquare,
+  Radio,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -359,6 +360,9 @@ export function Sidebar() {
       ]
 
   const systemItems: MenuItem[] = [
+    ...(isAdminGlobalOrRoot() || funcionario?.is_superadmin ? [
+      { href: '/admin/analise-uso', label: 'Análise de Uso', icon: Radio },
+    ] : []),
     { href: '/configuracoes', label: 'Configurações', icon: Settings },
     { href: '/coleta-local', label: 'Coleta Local', icon: Fingerprint },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },

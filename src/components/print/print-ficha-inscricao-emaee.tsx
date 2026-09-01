@@ -299,6 +299,18 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
                   <span>{aluno?.telefone || dm?.telefoneAluno || '-'}</span>
                 </td>
               </tr>
+              <tr>
+                <td colSpan={2} className="border border-black p-1.5">
+                  <span className="font-bold block text-[8px] uppercase text-gray-600">Certidão de Nascimento</span>
+                  <span className="font-mono text-[9px] break-all">{aluno?.certidao_nascimento || aluno?.certidao_nascimento_novo_modelo || dm?.certidao_nascimento || dm?.certidaoAluno || '-'}</span>
+                </td>
+                <td colSpan={2} className="border border-black p-1.5">
+                  <span className="font-bold block text-[8px] uppercase text-gray-600">Naturalidade</span>
+                  <span>
+                    {aluno?.municipio_nascimento ? `${aluno.municipio_nascimento} - ${aluno.uf_nascimento || 'BA'}` : (dm?.cidade_nascimento ? `${dm.cidade_nascimento} - ${dm.uf_nascimento || 'BA'}` : (dm?.cidadeNasc ? `${dm.cidadeNasc} - ${dm.ufNasc || 'BA'}` : '-'))}
+                  </span>
+                </td>
+              </tr>
             </tbody>
           </table>
 

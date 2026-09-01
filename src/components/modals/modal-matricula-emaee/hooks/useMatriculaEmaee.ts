@@ -430,16 +430,16 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
       setNomeCompleto(al.nome ?? '')
       setDataNascimento(al.data_nascimento ?? '')
-      setCpf(al.cpf ?? '')
-      setIdentificacaoCenso(al.identif_unica_censo ?? '')
-      setRg(al.rg ?? '')
-      setNis(al.nis ?? '')
+      setCpf(al.cpf ?? dm.cpf ?? dm.cpfAluno ?? '')
+      setIdentificacaoCenso(al.identif_unica_censo ?? al.inep ?? dm.censoAluno ?? '')
+      setRg(al.rg ?? dm.rgAluno ?? '')
+      setNis(al.nis ?? dm.nisAluno ?? '')
       setCartaoSus(al.cartao_sus ?? dm.cartao_sus ?? dm.susAluno ?? dm.sus ?? '')
-      setCertidaoNascimento(al.certidao_nascimento_novo_modelo ?? al.certidao_nascimento ?? '')
-      setCorRaca(al.cor_raca ?? dm.cor_raca ?? '')
-      setSexo(al.sexo ?? '')
-      setCidadeNascimento(al.municipio_nascimento ?? '')
-      setEstadoNascimento(al.uf_nascimento ?? 'BA')
+      setCertidaoNascimento(al.certidao_nascimento_novo_modelo ?? al.certidao_nascimento ?? dm.certidao_nascimento ?? dm.certidaoAluno ?? '')
+      setCorRaca(al.cor_raca ?? dm.cor_raca ?? dm.corRacaAluno ?? '')
+      setSexo(al.sexo ?? dm.sexoAluno ?? '')
+      setCidadeNascimento(al.municipio_nascimento ?? dm.municipio_nascimento ?? dm.cidade_nascimento ?? dm.cidadeNascimento ?? '')
+      setEstadoNascimento(al.uf_nascimento ?? dm.uf_nascimento ?? dm.ufNasc ?? 'BA')
       setNomeMae(al.nome_mae ?? '')
       setProfissaoMae(al.profissao_mae ?? '')
       setNomePai(al.nome_pai ?? '')
@@ -950,24 +950,23 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setSearchTerm(aluno.nome)
     
     // Auto-preenchimento
+    const alunoDm = (aluno as any).dados_matricula || {}
     setNomeCompleto(aluno.nome ?? '')
     setDataNascimento(aluno.data_nascimento ?? '')
-    setCpf(aluno.cpf ?? '')
-    setIdentificacaoCenso(aluno.identif_unica_censo ?? '')
-    setRg(aluno.rg ?? '')
-    setNis(aluno.nis ?? '')
-    setCartaoSus(aluno.cartao_sus ?? (aluno.dados_matricula as any)?.cartao_sus ?? (aluno.dados_matricula as any)?.susAluno ?? '')
-    setCertidaoNascimento(aluno.certidao_nascimento ?? '')
-    setCorRaca(aluno.cor_raca ?? '')
-    setSexo(aluno.sexo ?? '')
-    setCidadeNascimento(aluno.municipio_nascimento ?? '')
-    setEstadoNascimento(aluno.uf_nascimento ?? 'BA')
+    setCpf(aluno.cpf ?? alunoDm.cpf ?? alunoDm.cpfAluno ?? '')
+    setIdentificacaoCenso(aluno.identif_unica_censo ?? (aluno as any).inep ?? alunoDm.censoAluno ?? '')
+    setRg(aluno.rg ?? alunoDm.rgAluno ?? '')
+    setNis(aluno.nis ?? alunoDm.nisAluno ?? '')
+    setCartaoSus(aluno.cartao_sus ?? alunoDm.cartao_sus ?? alunoDm.susAluno ?? '')
+    setCertidaoNascimento(aluno.certidao_nascimento ?? (aluno as any).certidao_nascimento_novo_modelo ?? alunoDm.certidao_nascimento ?? alunoDm.certidaoAluno ?? '')
+    setCorRaca(aluno.cor_raca ?? alunoDm.cor_raca ?? alunoDm.corRacaAluno ?? '')
+    setSexo(aluno.sexo ?? alunoDm.sexoAluno ?? '')
+    setCidadeNascimento(aluno.municipio_nascimento ?? alunoDm.municipio_nascimento ?? alunoDm.cidade_nascimento ?? alunoDm.cidadeNascimento ?? '')
+    setEstadoNascimento(aluno.uf_nascimento ?? alunoDm.uf_nascimento ?? alunoDm.ufNasc ?? 'BA')
     setNomeMae(aluno.nome_mae ?? '')
     setProfissaoMae(aluno.profissao_mae ?? '')
     setNomePai(aluno.nome_pai ?? '')
     setProfissaoPai(aluno.profissao_pai ?? '')
-
-    const alunoDm = (aluno as any).dados_matricula || {}
     const tipoRespSalvo = alunoDm.tipo_responsavel
     if (tipoRespSalvo === 'MAE' || tipoRespSalvo === 'PAI' || tipoRespSalvo === 'OUTRO') {
       setTipoResponsavel(tipoRespSalvo)
@@ -1232,8 +1231,15 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           const updatedDadosMatricula = {
             ...currentDadosMatricula,
             cor_raca: corRaca || currentDadosMatricula.cor_raca,
+            cpf: cpf.trim() || currentDadosMatricula.cpf || null,
+            cpfAluno: cpf.trim() || currentDadosMatricula.cpfAluno || null,
             cartao_sus: cartaoSus.trim() || null,
             susAluno: cartaoSus.trim() || null,
+            certidao_nascimento: certidaoNascimento.trim() || currentDadosMatricula.certidao_nascimento || null,
+            certidaoAluno: certidaoNascimento.trim() || currentDadosMatricula.certidaoAluno || null,
+            cidade_nascimento: cidadeNascimento.trim() || currentDadosMatricula.cidade_nascimento || null,
+            municipio_nascimento: cidadeNascimento.trim() || currentDadosMatricula.municipio_nascimento || null,
+            uf_nascimento: estadoNascimento.trim().toUpperCase() || currentDadosMatricula.uf_nascimento || 'BA',
             tipo_responsavel: tipoResponsavel,
             responsavel_outro_nome: responsavelOutroNome.trim() || null,
             responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -1246,26 +1252,27 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
           const updateAlunoPayload: any = {
             nome: nomeCompleto.trim() || (alunoSelecionado?.nome ?? ''),
-            cpf: cpf || null,
-            rg: rg || null,
-            nis: nis || null,
+            cpf: cpf.trim() || null,
+            rg: rg.trim() || null,
+            nis: nis.trim() || null,
             cartao_sus: cartaoSus.trim() || null,
-            identif_unica_censo: identificacaoCenso || null,
+            identif_unica_censo: identificacaoCenso.trim() || null,
             data_nascimento: dataNascimento || null,
-            certidao_nascimento_novo_modelo: certidaoNascimento || null,
+            certidao_nascimento: certidaoNascimento.trim() || null,
+            certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
             sexo: sexo || null,
-            uf_nascimento: estadoNascimento || null,
+            uf_nascimento: estadoNascimento.trim().toUpperCase() || 'BA',
             municipio_nascimento: cidadeNascimento.trim() || null,
-            nome_mae: nomeMae || null,
-            profissao_mae: profissaoMae || null,
-            nome_pai: nomePai || null,
-            profissao_pai: profissaoPai || null,
+            nome_mae: nomeMae.trim() || null,
+            profissao_mae: profissaoMae.trim() || null,
+            nome_pai: nomePai.trim() || null,
+            profissao_pai: profissaoPai.trim() || null,
             endereco: endereco || null,
             latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
             longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
             zona_residencial: zonaResidencial || 'Urbana',
-            nome_contato_emergencia: contatoEmergencia || null,
-            telefone: telefoneEmergencia || null,
+            nome_contato_emergencia: contatoEmergencia.trim() || null,
+            telefone: telefoneEmergencia.trim() || null,
             dados_matricula: updatedDadosMatricula
           }
 
@@ -1494,34 +1501,42 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       if (!targetAlunoId) {
         const insertAlunoPayload: any = {
           nome: nomeCompleto.trim(),
-          cpf: cpf || null,
-          rg: rg || null,
-          nis: nis || null,
+          cpf: cpf.trim() || null,
+          rg: rg.trim() || null,
+          nis: nis.trim() || null,
           cartao_sus: cartaoSus.trim() || null,
-          identif_unica_censo: identificacaoCenso || null,
+          identif_unica_censo: identificacaoCenso.trim() || null,
           data_nascimento: dataNascimento || null,
-          certidao_nascimento_novo_modelo: certidaoNascimento || null,
+          certidao_nascimento: certidaoNascimento.trim() || null,
+          certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
           sexo: sexo || null,
-          uf_nascimento: estadoNascimento || 'BA',
+          uf_nascimento: estadoNascimento.trim().toUpperCase() || 'BA',
           municipio_nascimento: cidadeNascimento.trim() || null,
-          nome_mae: nomeMae || null,
-          profissao_mae: profissaoMae || null,
-          nome_pai: nomePai || null,
-          profissao_pai: profissaoPai || null,
+          nome_mae: nomeMae.trim() || null,
+          profissao_mae: profissaoMae.trim() || null,
+          nome_pai: nomePai.trim() || null,
+          profissao_pai: profissaoPai.trim() || null,
           endereco: enderecoFinal,
           latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
           longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
-          nome_contato_emergencia: contatoEmergencia || null,
-          telefone: telefoneEmergencia || null,
+          nome_contato_emergencia: contatoEmergencia.trim() || null,
+          telefone: telefoneEmergencia.trim() || null,
           escola_id: validEscolaAtendimento,
           atendido_emaee: true,
           codigo_temp_resp: codigoColetaLocal || null,
           codigo_temp_resp_criado_em: codigoColetaLocal ? new Date().toISOString() : null,
           dados_matricula: {
             cor_raca: corRaca || null,
+            cpf: cpf.trim() || null,
+            cpfAluno: cpf.trim() || null,
             cartao_sus: cartaoSus.trim() || null,
             susAluno: cartaoSus.trim() || null,
+            certidao_nascimento: certidaoNascimento.trim() || null,
+            certidaoAluno: certidaoNascimento.trim() || null,
+            cidade_nascimento: cidadeNascimento.trim() || null,
+            municipio_nascimento: cidadeNascimento.trim() || null,
+            uf_nascimento: estadoNascimento.trim().toUpperCase() || 'BA',
             tipo_responsavel: tipoResponsavel,
             responsavel_outro_nome: responsavelOutroNome.trim() || null,
             responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -1534,8 +1549,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             cidade_endereco: cidadeEndereco || 'Sapeaçu',
             uf_endereco: ufEndereco || 'BA',
             endereco_formatado: enderecoFinal,
-            contato_emergencia_nome: contatoEmergencia || null,
-            telefone_emergencia: telefoneEmergencia || null,
+            contato_emergencia_nome: contatoEmergencia.trim() || null,
+            telefone_emergencia: telefoneEmergencia.trim() || null,
             assinatura_responsavel_url: assinaturaResponsavelUrl || null,
           }
         }
@@ -1573,8 +1588,15 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         const updatedDadosMatricula = {
           ...currentDadosMatricula,
           cor_raca: corRaca || currentDadosMatricula.cor_raca,
+          cpf: cpf.trim() || currentDadosMatricula.cpf || null,
+          cpfAluno: cpf.trim() || currentDadosMatricula.cpfAluno || null,
           cartao_sus: cartaoSus.trim() || null,
           susAluno: cartaoSus.trim() || null,
+          certidao_nascimento: certidaoNascimento.trim() || currentDadosMatricula.certidao_nascimento || null,
+          certidaoAluno: certidaoNascimento.trim() || currentDadosMatricula.certidaoAluno || null,
+          cidade_nascimento: cidadeNascimento.trim() || currentDadosMatricula.cidade_nascimento || null,
+          municipio_nascimento: cidadeNascimento.trim() || currentDadosMatricula.municipio_nascimento || null,
+          uf_nascimento: estadoNascimento.trim().toUpperCase() || currentDadosMatricula.uf_nascimento || 'BA',
           tipo_responsavel: tipoResponsavel,
           responsavel_outro_nome: responsavelOutroNome.trim() || null,
           responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
@@ -1587,33 +1609,34 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           cidade_endereco: cidadeEndereco || currentDadosMatricula.cidade_endereco || 'Sapeaçu',
           uf_endereco: ufEndereco || currentDadosMatricula.uf_endereco || 'BA',
           endereco_formatado: enderecoFinal || currentDadosMatricula.endereco_formatado,
-          contato_emergencia_nome: contatoEmergencia || currentDadosMatricula.contato_emergencia_nome,
-          telefone_emergencia: telefoneEmergencia || currentDadosMatricula.telefone_emergencia,
+          contato_emergencia_nome: contatoEmergencia.trim() || currentDadosMatricula.contato_emergencia_nome,
+          telefone_emergencia: telefoneEmergencia.trim() || currentDadosMatricula.telefone_emergencia,
           assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
         }
 
         const updatePayload: any = {
-          nome: nomeCompleto || (alunoSelecionado?.nome ?? ''),
-          cpf: cpf || null,
-          rg: rg || null,
-          nis: nis || null,
+          nome: nomeCompleto.trim() || (alunoSelecionado?.nome ?? ''),
+          cpf: cpf.trim() || null,
+          rg: rg.trim() || null,
+          nis: nis.trim() || null,
           cartao_sus: cartaoSus.trim() || null,
-          identif_unica_censo: identificacaoCenso || null,
+          identif_unica_censo: identificacaoCenso.trim() || null,
           data_nascimento: dataNascimento || null,
-          certidao_nascimento_novo_modelo: certidaoNascimento || null,
+          certidao_nascimento: certidaoNascimento.trim() || null,
+          certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
           sexo: sexo || null,
-          uf_nascimento: estadoNascimento || 'BA',
+          uf_nascimento: estadoNascimento.trim().toUpperCase() || 'BA',
           municipio_nascimento: cidadeNascimento.trim() || null,
-          nome_mae: nomeMae || null,
-          profissao_mae: profissaoMae || null,
-          nome_pai: nomePai || null,
-          profissao_pai: profissaoPai || null,
+          nome_mae: nomeMae.trim() || null,
+          profissao_mae: profissaoMae.trim() || null,
+          nome_pai: nomePai.trim() || null,
+          profissao_pai: profissaoPai.trim() || null,
           endereco: enderecoFinal,
           latitude: latitude != null && !isNaN(latitude) && latitude !== 0 ? Number(latitude) : null,
           longitude: longitude != null && !isNaN(longitude) && longitude !== 0 ? Number(longitude) : null,
           zona_residencial: zonaResidencial || 'Urbana',
-          nome_contato_emergencia: contatoEmergencia || null,
-          telefone: telefoneEmergencia || null,
+          nome_contato_emergencia: contatoEmergencia.trim() || null,
+          telefone: telefoneEmergencia.trim() || null,
           atendido_emaee: true,
           dados_matricula: updatedDadosMatricula
         }

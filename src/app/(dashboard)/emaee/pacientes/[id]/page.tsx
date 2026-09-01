@@ -122,6 +122,9 @@ export default function PacienteDetalhesPage() {
             identif_unica_censo,
             cartao_sus,
             certidao_nascimento,
+            certidao_nascimento_novo_modelo,
+            municipio_nascimento,
+            uf_nascimento,
             data_nascimento,
             sexo,
             cor_raca,
@@ -587,12 +590,38 @@ export default function PacienteDetalhesPage() {
           <div className="space-y-3.5 text-xs">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-muted-foreground block mb-0.5">Identificação Única (Censo)</span>
-                <strong className="text-foreground">{aluno?.identif_unica_censo ?? '-'}</strong>
+                <span className="text-muted-foreground block mb-0.5">CPF do Aluno</span>
+                <strong className="text-foreground">{aluno?.cpf || (aluno?.dados_matricula as any)?.cpf || (aluno?.dados_matricula as any)?.cpfAluno || '-'}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Data de Nascimento</span>
+                <strong className="text-foreground">{aluno?.data_nascimento ? formatDate(aluno.data_nascimento) : '-'}</strong>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-muted-foreground block mb-0.5">RG do Aluno</span>
+                <strong className="text-foreground">{aluno?.rg || (aluno?.dados_matricula as any)?.rgAluno || '-'}</strong>
               </div>
               <div>
                 <span className="text-muted-foreground block mb-0.5">Cartão do SUS (CNS)</span>
                 <strong className="text-foreground">{aluno?.cartao_sus || (aluno?.dados_matricula as any)?.cartao_sus || (aluno?.dados_matricula as any)?.susAluno || '-'}</strong>
+              </div>
+            </div>
+            <div>
+              <span className="text-muted-foreground block mb-0.5">Certidão de Nascimento</span>
+              <strong className="text-foreground font-mono text-[11px] break-all">{aluno?.certidao_nascimento || aluno?.certidao_nascimento_novo_modelo || (aluno?.dados_matricula as any)?.certidao_nascimento || '-'}</strong>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Naturalidade (Cidade/UF)</span>
+                <strong className="text-foreground">
+                  {aluno?.municipio_nascimento ? `${aluno.municipio_nascimento} - ${aluno.uf_nascimento || 'BA'}` : ((aluno?.dados_matricula as any)?.cidade_nascimento ? `${(aluno.dados_matricula as any).cidade_nascimento} - ${(aluno.dados_matricula as any).uf_nascimento || 'BA'}` : '-')}
+                </strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Identificação INEP</span>
+                <strong className="text-foreground">{aluno?.identif_unica_censo || aluno?.inep || '-'}</strong>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -617,12 +646,12 @@ export default function PacienteDetalhesPage() {
             </div>
             <div className="border-t border-border/50 my-3" />
             <div>
-              <span className="text-muted-foreground block mb-0.5">Profissão da Mãe</span>
-              <strong className="text-foreground">{aluno?.profissao_mae ?? '-'}</strong>
+              <span className="text-muted-foreground block mb-0.5">Nome da Mãe</span>
+              <strong className="text-foreground">{aluno?.nome_mae || '-'} {aluno?.profissao_mae ? `(${aluno.profissao_mae})` : ''}</strong>
             </div>
             <div>
-              <span className="text-muted-foreground block mb-0.5">Profissão do Pai</span>
-              <strong className="text-foreground">{aluno?.profissao_pai ?? '-'}</strong>
+              <span className="text-muted-foreground block mb-0.5">Nome do Pai</span>
+              <strong className="text-foreground">{aluno?.nome_pai || '-'} {aluno?.profissao_pai ? `(${aluno.profissao_pai})` : ''}</strong>
             </div>
             <div>
               <span className="text-muted-foreground block mb-0.5">Contato de Emergência</span>

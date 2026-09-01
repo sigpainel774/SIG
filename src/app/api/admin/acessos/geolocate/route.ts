@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
             },
             { onConflict: 'ip_address' }
           )
-          .then()
+          .then(({ error: geoErr }: { error: any }) => {
+            if (geoErr) console.warn('[GeoCache] Falha ao salvar cache de geo (Vercel):', geoErr.message)
+          })
       }
 
       return NextResponse.json({

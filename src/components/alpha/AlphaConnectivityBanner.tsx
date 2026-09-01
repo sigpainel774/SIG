@@ -17,7 +17,9 @@ export function AlphaConnectivityBanner() {
     try {
       const items = await obterFilaPendenteAlpha()
       setPendentesCount(items.length)
-    } catch {}
+    } catch (err) {
+      console.warn('[AlphaConnectivity] Falha ao obter fila pendente:', err)
+    }
   }, [])
 
   const handleSincronizarManual = async () => {
