@@ -84,83 +84,31 @@ export function useSessionReplay() {
   const userAuthIdRef = useRef<string | null>(null)
   const funcionarioIdRef = useRef<string | null>(funcionario?.id ?? null)
   const funcionarioNomeRef = useRef<string>(funcionario?.nome ?? 'Servidor')
+  const funcionarioCargoRef = useRef<string>(funcionario?.cargo ?? 'Servidor')
+  const funcionarioEmailRef = useRef<string>(funcionario?.email ?? '')
+  const fotoUrlRef = useRef<string | null>(funcionario?.foto_url ?? null)
   const escolaIdRef = useRef<string | null>(escolaAtivaId ?? null)
+  const escolaNomeRef = useRef<string>('')
   const currentPathRef = useRef<string>(pathname)
   const sessionStartTimeRef = useRef<number>(Date.now())
 
   const channelRef = useRef<any>(null)
+  const presenceChannelRef = useRef<any>(null)
   const queueRef = useRef<ReplayEventItem[]>([])
   const isMounted = useRef<boolean>(true)
 
   useEffect(() => {
     funcionarioIdRef.current = funcionario?.id ?? null
     funcionarioNomeRef.current = funcionario?.nome ?? 'Servidor'
+    funcionarioCargoRef.current = funcionario?.cargo ?? 'Servidor'
+    funcionarioEmailRef.current = funcionario?.email ?? ''
+    fotoUrlRef.current = funcionario?.foto_url ?? null
     escolaIdRef.current = escolaAtivaId ?? null
   }, [funcionario, escolaAtivaId])
 
-  // 1. Inicializar sessão e canal Realtime Broadcast
-  useEffect(() => {
-    async function initSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const sid = session.access_token ? `${session.user.id}_${session.expires_at || Date.now()}` : session.user.id
-          activeSessionIdRef.current = sid
-          userAuthIdRef.current = session.user.id
-
-          // Canal realtime broadcast de transmissão de comandos visuais
-          const channelName = `session_replay:${sid}`
-          const channel = supabase.channel(channelName, {
-            config: { broadcast: { self: false } },
-          })
-
-          channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              // Envia evento de presença / início
-              const net = getNetworkDetails()
-              channel.send({
-                type: 'broadcast',
-                event: 'event',
-                payload: {
-                  session_id: sid,
-                  funcionario_id: funcionarioIdRef.current,
-                  funcionario_nome: funcionarioNomeRef.current,
-                  escola_id: escolaIdRef.current,
-                  event_type: 'heartbeat',
-                  event_data: {
-                    pathname: currentPathRef.current,
-                    page_title: typeof document !== 'undefined' ? document.title : '',
-                    rtt: net.rtt,
-                    downlink: net.downlink,
-                    effective_type: net.effective_type,
-                    packet_loss_estimate_pct: net.packet_loss_estimate_pct,
-                    active_time_seconds: 0,
-                    timestamp: Date.now(),
-                  },
-                },
-              })
-            }
-          })
-
-          channelRef.current = channel
-        }
-      } catch (err) {
-        console.warn('[useSessionReplay] Erro ao carregar sessão para replay:', err)
-      }
-    }
-
-    initSession()
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-      }
-    }
-  }, [supabase])
-
   // Despachar evento para o canal Realtime e enfileirar para persistência
   const dispatchEvent = useCallback((event: Omit<ReplayEventItem, 'session_id' | 'funcionario_id' | 'escola_id'>) => {
-    const sid = activeSessionIdRef.current
+    const sid = activeSessionIdRef.current || userAuthIdRef.current
     if (!sid) return
 
     const fullItem: ReplayEventItem = {
@@ -213,6 +161,152 @@ export function useSessionReplay() {
       // Ignorar falha transitória de envio
     }
   }, [])
+
+  // 1. Inicializar sessão, Realtime Presence e Canal Broadcast
+  useEffect(() => {
+    async function initSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const sid = session.access_token ? `${session.user.id}_${session.expires_at || Date.now()}` : session.user.id
+          activeSessionIdRef.current = sid
+          userAuthIdRef.current = session.user.id
+
+          const net = getNetworkDetails()
+
+          // A. Canal Realtime Presence Global para identificar quem está ao vivo no SIG
+          const presenceChannel = supabase.channel('sig_live_presence', {
+            config: { presence: { key: session.user.id } },
+          })
+
+          presenceChannel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              try {
+                await presenceChannel.track({
+                  session_id: sid,
+                  user_id: session.user.id,
+                  funcionario_id: funcionarioIdRef.current,
+                  funcionario_nome: funcionarioNomeRef.current,
+                  funcionario_email: funcionarioEmailRef.current,
+                  funcionario_cargo: funcionarioCargoRef.current,
+                  foto_url: fotoUrlRef.current,
+                  escola_nome: escolaNomeRef.current || 'Rede Municipal',
+                  current_pathname: currentPathRef.current || '/',
+                  online_at: new Date().toISOString(),
+                  rtt: net.rtt,
+                  downlink: net.downlink,
+                  effective_type: net.effective_type,
+                  active_time_seconds: 0,
+                })
+              } catch (trackErr) {
+                console.warn('[useSessionReplay] Erro ao registrar presença ao vivo:', trackErr)
+              }
+            }
+          })
+          presenceChannelRef.current = presenceChannel
+
+          // B. Canal realtime broadcast específico para espelhar comandos da sessão
+          const channelName = `session_replay:${sid}`
+          const channel = supabase.channel(channelName, {
+            config: { broadcast: { self: false } },
+          })
+
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              // Dispara evento inicial de presença/heartbeat imediatamente
+              dispatchEvent({
+                event_type: 'heartbeat',
+                event_data: {
+                  pathname: currentPathRef.current,
+                  page_title: typeof document !== 'undefined' ? document.title : '',
+                  rtt: net.rtt,
+                  downlink: net.downlink,
+                  effective_type: net.effective_type,
+                  packet_loss_estimate_pct: net.packet_loss_estimate_pct,
+                  active_time_seconds: 0,
+                  timestamp: Date.now(),
+                },
+              })
+              // Força envio imediato para persistir primeira presença
+              flushQueue()
+            }
+          })
+          channelRef.current = channel
+
+          // Disparar navegação inicial agora que sid está ativo
+          dispatchEvent({
+            event_type: 'navigation',
+            event_data: {
+              pathname: currentPathRef.current,
+              page_title: typeof document !== 'undefined' ? document.title : currentPathRef.current,
+              rtt: net.rtt,
+              downlink: net.downlink,
+              effective_type: net.effective_type,
+              packet_loss_estimate_pct: net.packet_loss_estimate_pct,
+              timestamp: Date.now(),
+            },
+          })
+        }
+      } catch (err) {
+        console.warn('[useSessionReplay] Erro ao carregar sessão para replay:', err)
+      }
+    }
+
+    initSession()
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current)
+      }
+    }
+  }, [supabase, dispatchEvent, flushQueue])
+
+  // Heartbeat periódico (a cada 20s) para manter a sessão ativa no banco e no presence
+  useEffect(() => {
+    const heartbeatInterval = setInterval(() => {
+      if (!isMounted.current || typeof document === 'undefined') return
+      if (document.visibilityState === 'visible') {
+        const net = getNetworkDetails()
+        dispatchEvent({
+          event_type: 'heartbeat',
+          event_data: {
+            pathname: currentPathRef.current,
+            page_title: document.title,
+            rtt: net.rtt,
+            downlink: net.downlink,
+            effective_type: net.effective_type,
+            packet_loss_estimate_pct: net.packet_loss_estimate_pct,
+            timestamp: Date.now(),
+          },
+        })
+
+        // Atualizar também o status de presença se o canal estiver conectado
+        if (presenceChannelRef.current && userAuthIdRef.current) {
+          presenceChannelRef.current.track({
+            session_id: activeSessionIdRef.current,
+            user_id: userAuthIdRef.current,
+            funcionario_id: funcionarioIdRef.current,
+            funcionario_nome: funcionarioNomeRef.current,
+            funcionario_email: funcionarioEmailRef.current,
+            funcionario_cargo: funcionarioCargoRef.current,
+            foto_url: fotoUrlRef.current,
+            escola_nome: escolaNomeRef.current || 'Rede Municipal',
+            current_pathname: currentPathRef.current || '/',
+            online_at: new Date().toISOString(),
+            rtt: net.rtt,
+            downlink: net.downlink,
+            effective_type: net.effective_type,
+            active_time_seconds: Math.floor((Date.now() - sessionStartTimeRef.current) / 1000),
+          }).catch(() => {})
+        }
+      }
+    }, 20000)
+
+    return () => clearInterval(heartbeatInterval)
+  }, [dispatchEvent])
 
   // Timer periódico de gravação a cada 4 segundos
   useEffect(() => {

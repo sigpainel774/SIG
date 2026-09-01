@@ -120,17 +120,92 @@ export default function AnaliseUsoPage() {
     }
   }, [])
 
-  // 1. Carregar Sessões Ao Vivo
+  // 1. Carregar Sessões Ao Vivo (via API com fallback multi-tabelas)
   const carregarSessoesAtivas = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any).rpc('get_all_active_sessions_admin')
-      if (error) {
-        console.error('[AnaliseUso] Erro ao buscar sessões ativas:', error.message)
-      } else if (data && isMounted.current) {
-        setSessoesAtivas(data as SessaoAtiva[])
+      const res = await fetch('/api/admin/session-events?mode=active')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.active_sessions && isMounted.current) {
+          setSessoesAtivas((prevPresences) => {
+            // Unir sessões de banco com as recebidas via Realtime Presence
+            const map = new Map<string, SessaoAtiva>()
+            data.active_sessions.forEach((s: SessaoAtiva) => {
+              const key = s.funcionario_id || s.user_id || s.session_id
+              map.set(key, s)
+            })
+            prevPresences.forEach((p) => {
+              const key = p.funcionario_id || p.user_id || p.session_id
+              map.set(key, { ...map.get(key), ...p })
+            })
+            return Array.from(map.values())
+          })
+          return
+        }
+      }
+
+      // Fallback via RPC
+      const { data: rpcData, error } = await (supabase as any).rpc('get_all_active_sessions_admin')
+      if (!error && rpcData && isMounted.current) {
+        setSessoesAtivas(rpcData as SessaoAtiva[])
       }
     } catch (err) {
       console.error('[AnaliseUso] Falha ao carregar sessões ativas:', err)
+    }
+  }, [supabase])
+
+  // 1.1 Conectar ao Realtime Presence Global (para detecção instantânea 0ms)
+  useEffect(() => {
+    const presenceChannel = supabase.channel('sig_live_presence', {
+      config: { presence: { key: 'admin_dashboard' } },
+    })
+
+    const syncPresences = () => {
+      if (!isMounted.current) return
+      const state = presenceChannel.presenceState()
+      const liveList: SessaoAtiva[] = []
+
+      Object.values(state).forEach((presences: any) => {
+        presences.forEach((p: any) => {
+          if (p.user_id && p.funcionario_nome) {
+            liveList.push({
+              session_id: p.session_id || p.user_id,
+              user_id: p.user_id,
+              funcionario_id: p.funcionario_id || null,
+              funcionario_nome: p.funcionario_nome || 'Servidor Online',
+              funcionario_email: p.funcionario_email || '-',
+              funcionario_cargo: p.funcionario_cargo || 'Servidor',
+              escola_nome: p.escola_nome || 'Rede Municipal',
+              foto_url: p.foto_url || null,
+              created_at: p.online_at || new Date().toISOString(),
+              refreshed_at: new Date().toISOString(),
+              current_pathname: p.current_pathname || '/home',
+              total_active_seconds_today: p.active_time_seconds || 10,
+              ip: null,
+              user_agent: null,
+            })
+          }
+        })
+      })
+
+      if (liveList.length > 0) {
+        setSessoesAtivas((prev) => {
+          const map = new Map<string, SessaoAtiva>()
+          prev.forEach((s) => map.set(s.funcionario_id || s.user_id || s.session_id, s))
+          liveList.forEach((s) => map.set(s.funcionario_id || s.user_id || s.session_id, s))
+          return Array.from(map.values())
+        })
+      }
+    }
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, syncPresences)
+      .on('presence', { event: 'join' }, syncPresences)
+      .on('presence', { event: 'leave' }, syncPresences)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(presenceChannel)
     }
   }, [supabase])
 

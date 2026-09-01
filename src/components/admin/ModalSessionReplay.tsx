@@ -159,49 +159,60 @@ export function ModalSessionReplay({
     if (isLiveMode) {
       setIsPlaying(true)
       const channelName = `session_replay:${session.sessionId}`
+      const baseUserId = session.sessionId.includes('_') ? session.sessionId.split('_')[0] : null
       const channel = supabase.channel(channelName, {
         config: { broadcast: { self: true } },
       })
 
-      channel
-        .on('broadcast', { event: 'event' }, ({ payload }: { payload: ReplayEventItem }) => {
-          if (!isMounted.current || !payload) return
+      const handleIncomingBroadcast = ({ payload }: { payload: ReplayEventItem }) => {
+        if (!isMounted.current || !payload) return
 
-          setEvents((prev) => [...prev, payload])
+        setEvents((prev) => [...prev, payload])
 
-          // Executar visualização do clique instantaneamente
-          if (payload.event_type === 'click' && payload.event_data.x_pct !== undefined && payload.event_data.y_pct !== undefined) {
-            setCursorPos({
-              x: payload.event_data.x_pct,
-              y: payload.event_data.y_pct,
-              active: true,
-              text: payload.event_data.target_text,
-              tag: payload.event_data.target_tag,
-            })
-            setTimeout(() => {
-              if (isMounted.current) setCursorPos((p) => ({ ...p, active: false }))
-            }, 1200)
-          }
+        // Executar visualização do clique instantaneamente
+        if (payload.event_type === 'click' && payload.event_data.x_pct !== undefined && payload.event_data.y_pct !== undefined) {
+          setCursorPos({
+            x: payload.event_data.x_pct,
+            y: payload.event_data.y_pct,
+            active: true,
+            text: payload.event_data.target_text,
+            tag: payload.event_data.target_tag,
+          })
+          setTimeout(() => {
+            if (isMounted.current) setCursorPos((p) => ({ ...p, active: false }))
+          }, 1200)
+        }
 
-          // Atualizar telemetria em tempo real
-          setTelemetry((prev) => ({
-            rtt: payload.event_data.rtt ?? prev.rtt,
-            downlink: payload.event_data.downlink ?? prev.downlink,
-            effectiveType: payload.event_data.effective_type ?? prev.effectiveType,
-            packetLossPct: payload.event_data.packet_loss_estimate_pct ?? prev.packetLossPct,
-            activeSeconds: payload.event_data.active_time_seconds ?? prev.activeSeconds + 1,
-            currentPathname: payload.event_data.pathname || prev.currentPathname,
-            totalClicks: payload.event_type === 'click' ? prev.totalClicks + 1 : prev.totalClicks,
-            totalInputs: payload.event_type === 'input_focus' ? prev.totalInputs + 1 : prev.totalInputs,
-            totalErrors: payload.event_type === 'error' ? prev.totalErrors + 1 : prev.totalErrors,
-          }))
-        })
-        .subscribe()
+        // Atualizar telemetria em tempo real
+        setTelemetry((prev) => ({
+          rtt: payload.event_data.rtt ?? prev.rtt,
+          downlink: payload.event_data.downlink ?? prev.downlink,
+          effectiveType: payload.event_data.effective_type ?? prev.effectiveType,
+          packetLossPct: payload.event_data.packet_loss_estimate_pct ?? prev.packetLossPct,
+          activeSeconds: payload.event_data.active_time_seconds ?? prev.activeSeconds + 1,
+          currentPathname: payload.event_data.pathname || prev.currentPathname,
+          totalClicks: payload.event_type === 'click' ? prev.totalClicks + 1 : prev.totalClicks,
+          totalInputs: payload.event_type === 'input_focus' ? prev.totalInputs + 1 : prev.totalInputs,
+          totalErrors: payload.event_type === 'error' ? prev.totalErrors + 1 : prev.totalErrors,
+        }))
+      }
 
+      channel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
       channelRef.current = channel
+
+      let secondaryChannel: any = null
+      if (baseUserId && baseUserId !== session.sessionId) {
+        secondaryChannel = supabase.channel(`session_replay:${baseUserId}`, {
+          config: { broadcast: { self: true } },
+        })
+        secondaryChannel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
+      }
 
       return () => {
         supabase.removeChannel(channel)
+        if (secondaryChannel) {
+          supabase.removeChannel(secondaryChannel)
+        }
       }
     } else {
       // Modo Playback Histórico

@@ -80,6 +80,91 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('start_date')
     const endDate = searchParams.get('end_date')
     const funcionarioId = searchParams.get('funcionario_id')
+    const mode = searchParams.get('mode')
+
+    // 0. Modo Sessões Ativas Ao Vivo
+    if (mode === 'active') {
+      // Tenta via RPC primeiro
+      try {
+        const { data: rpcData, error: rpcErr } = await (supabaseAdmin as any).rpc('get_all_active_sessions_admin')
+        if (!rpcErr && Array.isArray(rpcData) && rpcData.length > 0) {
+          return NextResponse.json({ active_sessions: rpcData })
+        }
+      } catch {
+        // Ignorar e ir para query direta nos eventos de telemetria
+      }
+
+      // Query direta em eventos recentes (últimos 15 minutos)
+      const recentThreshold = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+      const { data: recentEvents, error: evErr } = await (supabaseAdmin as any)
+        .from('session_events')
+        .select('session_id, funcionario_id, escola_id, event_type, event_data, created_at, funcionarios(id, nome, email, cargo, foto_url, auth_user_id), escolas(nome)')
+        .gte('created_at', recentThreshold)
+        .order('created_at', { ascending: false })
+        .limit(500)
+
+      if (!evErr && recentEvents && recentEvents.length > 0) {
+        const activeMap = new Map<string, any>()
+        recentEvents.forEach((e: any) => {
+          const key = e.funcionario_id || e.session_id
+          if (!activeMap.has(key)) {
+            activeMap.set(key, {
+              session_id: e.session_id,
+              user_id: e.funcionarios?.auth_user_id || e.session_id,
+              funcionario_id: e.funcionario_id,
+              funcionario_nome: e.funcionarios?.nome || 'Usuário Online',
+              funcionario_email: e.funcionarios?.email || '-',
+              funcionario_cargo: e.funcionarios?.cargo || 'Servidor',
+              escola_nome: e.escolas?.nome || 'Rede Municipal',
+              foto_url: e.funcionarios?.foto_url || null,
+              created_at: e.created_at,
+              refreshed_at: e.created_at,
+              current_pathname: e.event_data?.pathname || '/home',
+              total_active_seconds_today: e.event_data?.active_time_seconds || 60,
+              ip: null,
+              user_agent: null,
+            })
+          }
+        })
+        return NextResponse.json({ active_sessions: Array.from(activeMap.values()) })
+      }
+
+      // Fallback em user_navigation_trail
+      const { data: trailData } = await (supabaseAdmin as any)
+        .from('user_navigation_trail')
+        .select('session_id, user_id, funcionario_id, pathname, opened_at, duration_seconds, ip_address, user_agent, funcionarios(id, nome, email, cargo, foto_url)')
+        .gte('opened_at', recentThreshold)
+        .order('opened_at', { ascending: false })
+        .limit(100)
+
+      if (trailData && trailData.length > 0) {
+        const activeMap = new Map<string, any>()
+        trailData.forEach((t: any) => {
+          const key = t.funcionario_id || t.user_id || t.session_id
+          if (!activeMap.has(key)) {
+            activeMap.set(key, {
+              session_id: t.session_id || t.user_id,
+              user_id: t.user_id,
+              funcionario_id: t.funcionario_id,
+              funcionario_nome: t.funcionarios?.nome || 'Usuário Online',
+              funcionario_email: t.funcionarios?.email || '-',
+              funcionario_cargo: t.funcionarios?.cargo || 'Servidor',
+              escola_nome: 'Rede Municipal',
+              foto_url: t.funcionarios?.foto_url || null,
+              created_at: t.opened_at,
+              refreshed_at: t.opened_at,
+              current_pathname: t.pathname || '/home',
+              total_active_seconds_today: t.duration_seconds || 30,
+              ip: t.ip_address,
+              user_agent: t.user_agent,
+            })
+          }
+        })
+        return NextResponse.json({ active_sessions: Array.from(activeMap.values()) })
+      }
+
+      return NextResponse.json({ active_sessions: [] })
+    }
 
     // 1. Se informou session_id, retorna os eventos cronológicos daquela sessão para o Replay
     if (sessionId) {
