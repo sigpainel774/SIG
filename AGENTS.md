@@ -16,6 +16,7 @@ Before creating or changing UI, read `DESIGN_PREFERENCES.md`. The old project us
 Ao converter recursos do projeto antigo (Vanilla HTML/CSS/JS) para este repositório SIG:
 - **Visual & Layout**: Mantenha o visual, cores, botões, modais, tabelas e disposições fiéis às imagens e telas originais do projeto legado.
 - **Arquitetura de Código**: Reescreva totalmente a lógica em React/TSX com Next.js App Router, Tailwind CSS, componentes shadcn/ui, ícones `lucide-react` e Supabase. Nunca importe scripts imperativos ou manipulação direta de DOM do legado.
+<!-- END:vanilla-to-react-fidelity -->
 
 <!-- BEGIN:supabase-client-rules -->
 # Separação de Clientes Supabase & Segurança
@@ -46,6 +47,28 @@ Ao converter recursos do projeto antigo (Vanilla HTML/CSS/JS) para este reposit�
 - **Visual Legado Modernizado**: Manter o tema escuro denso, administrativo e funcional (`bg-background`, `bg-[#141416]`, bordas suaves `#26262a`, cartões arredondados `rounded-2xl`).
 - **Ícones e Primitivos**: Utilizar exclusivamente ícones da biblioteca `lucide-react` e componentes primitivos `shadcn/ui`.
 <!-- END:sig-design-system-rules -->
+
+<!-- BEGIN:sig-theme-tokens-rule -->
+# Regra de Cores Semânticas & Suporte Estrito a Tema Claro/Escuro (Sem Cores Hardcoded)
+
+Ao criar ou editar qualquer componente, tela, tabela, modal, badge ou formulário:
+
+1. **Proibição Estrita de Cores Escuras Hardcoded no Modo Claro**:
+   - NUNCA use classes de fundo, borda ou texto fixas em tons escuros sem a variante `dark:` (ex: `bg-[#141416]`, `bg-[#1c1c1f]`, `bg-zinc-900`, `text-white`, `border-zinc-800` soltos no modo padrão).
+   - O estilo padrão (sem prefixo `dark:`) DEVE SEMPRE representar o **Modo Claro** (Light Mode).
+   - O tema escuro DEVE ser aplicado **exclusivamente** via prefixo `dark:` (ex: `bg-white dark:bg-[#141416]`, `text-slate-900 dark:text-zinc-100`, `border-slate-200 dark:border-[#26262a]`).
+
+2. **Uso Obrigatório de Tokens Semânticos do Tailwind / Shadcn UI**:
+   - **Fundos**: `bg-background` (fundo de página), `bg-card` ou `bg-surface-1` (cartões/painéis), `bg-muted` ou `bg-slate-100 dark:bg-zinc-800` (áreas secundárias/destaque suave).
+   - **Textos**: `text-foreground` (título/texto principal), `text-muted-foreground` (legendas/subtítulos/secundários).
+   - **Bordas**: `border-border` ou `border-slate-200 dark:border-zinc-800`.
+   - **Destaques / Ações**: `text-primary`, `bg-primary`, `bg-primary/10`, `text-destructive`.
+
+3. **Checklist Obrigatório para Novas Telas e Componentes**:
+   - [ ] Todos os textos são legíveis tanto com fundo branco quanto com fundo escuro.
+   - [ ] Não há `text-white` aplicado sobre fundos que ficam brancos ou cinza-claros no modo claro.
+   - [ ] Cards, modais e containers possuem `bg-card` ou `bg-white dark:bg-[#141416]` com borda visível em ambos os temas (`border-border` ou `border-slate-200 dark:border-[#26262a]`).
+<!-- END:sig-theme-tokens-rule -->
 
 <!-- BEGIN:sig-project-urls -->
 # URLs do Projeto SIG

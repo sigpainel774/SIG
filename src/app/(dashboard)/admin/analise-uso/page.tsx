@@ -238,15 +238,15 @@ export default function AnaliseUsoPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 text-sky-400" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Activity className="w-6 h-6 text-sky-500 dark:text-sky-400" />
               Análise Avançada de Uso & Telemetria
             </h1>
-            <Badge className="bg-sky-500/10 text-sky-400 border-sky-500/30 text-xs font-semibold">
+            <Badge className="bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 text-xs font-semibold">
               ROOT / SUPERADMIN
             </Badge>
           </div>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Monitoramento de comandos em tempo real, visualização de cliques, simulação de tela e histórico de uso dos servidores.
           </p>
         </div>
@@ -255,9 +255,9 @@ export default function AnaliseUsoPage() {
           onClick={carregarTudo}
           disabled={loading}
           variant="outline"
-          className="bg-neutral-900 border-neutral-800 text-white hover:bg-neutral-800 h-10 px-4 rounded-xl cursor-pointer"
+          className="bg-card hover:bg-muted border-border text-foreground h-10 px-4 rounded-xl cursor-pointer"
         >
-          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin text-sky-400')} />
+          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin text-sky-500 dark:text-sky-400')} />
           Atualizar Dados
         </Button>
       </div>
@@ -265,13 +265,13 @@ export default function AnaliseUsoPage() {
       {/* KPI Cards de Resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Ao Vivo */}
-        <Card className="p-4 bg-[#141417] border-neutral-800/80 rounded-2xl flex items-center justify-between">
+        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <div className="text-xs font-medium text-neutral-400">Usuários Ao Vivo Agora</div>
-            <div className="text-2xl font-bold text-white mt-1 flex items-center gap-2">
+            <div className="text-xs font-medium text-muted-foreground">Usuários Ao Vivo Agora</div>
+            <div className="text-2xl font-bold text-foreground mt-1 flex items-center gap-2">
               {totalAoVivo}
               {totalAoVivo > 0 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 animate-pulse border border-emerald-500/40">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 animate-pulse border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" />
                   ONLINE
                 </span>
@@ -279,50 +279,50 @@ export default function AnaliseUsoPage() {
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-            <Radio className="w-5 h-5 text-emerald-400" />
+            <Radio className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
         </Card>
 
         {/* Card 2: Latência Média */}
-        <Card className="p-4 bg-[#141417] border-neutral-800/80 rounded-2xl flex items-center justify-between">
+        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <div className="text-xs font-medium text-neutral-400">Latência Média da Rede</div>
-            <div className="text-2xl font-bold text-white mt-1">
-              {avgRttRede} <span className="text-sm font-normal text-neutral-400">ms</span>
+            <div className="text-xs font-medium text-muted-foreground">Latência Média da Rede</div>
+            <div className="text-2xl font-bold text-foreground mt-1">
+              {avgRttRede} <span className="text-sm font-normal text-muted-foreground">ms</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
-            <Wifi className="w-5 h-5 text-sky-400" />
+            <Wifi className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           </div>
         </Card>
 
         {/* Card 3: Cliques Registrados */}
-        <Card className="p-4 bg-[#141417] border-neutral-800/80 rounded-2xl flex items-center justify-between">
+        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <div className="text-xs font-medium text-neutral-400">Cliques & Comandos Registrados</div>
-            <div className="text-2xl font-bold text-sky-400 mt-1">{totalCliquesHoje}</div>
+            <div className="text-xs font-medium text-muted-foreground">Cliques & Comandos Registrados</div>
+            <div className="text-2xl font-bold text-sky-600 dark:text-sky-400 mt-1">{totalCliquesHoje}</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center">
-            <MousePointer className="w-5 h-5 text-sky-400" />
+            <MousePointer className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           </div>
         </Card>
 
         {/* Card 4: Erros Capturados */}
-        <Card className="p-4 bg-[#141417] border-neutral-800/80 rounded-2xl flex items-center justify-between">
+        <Card className="p-4 bg-card border-border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <div className="text-xs font-medium text-neutral-400">Possíveis Falhas / Erros JS</div>
-            <div className={cn('text-2xl font-bold mt-1', totalErrosHoje > 0 ? 'text-rose-400' : 'text-neutral-400')}>
+            <div className="text-xs font-medium text-muted-foreground">Possíveis Falhas / Erros JS</div>
+            <div className={cn('text-2xl font-bold mt-1', totalErrosHoje > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
               {totalErrosHoje}
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
           </div>
         </Card>
       </div>
 
       {/* Seletor de Abas & Barra de Busca */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-neutral-800 pb-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -330,8 +330,8 @@ export default function AnaliseUsoPage() {
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer',
               tab === 'ao-vivo'
-                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
           >
             <Radio className="w-4 h-4" />
@@ -347,8 +347,8 @@ export default function AnaliseUsoPage() {
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer',
               tab === 'historico'
-                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
           >
             <Clock className="w-4 h-4" />
@@ -359,12 +359,12 @@ export default function AnaliseUsoPage() {
         {/* Input de Busca */}
         <div className="flex items-center gap-3">
           <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar servidor, escola ou tela..."
-              className="bg-neutral-900 border-neutral-800 text-white pl-9 h-10 rounded-xl"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground pl-9 h-10 rounded-xl"
             />
           </div>
         </div>
@@ -374,10 +374,10 @@ export default function AnaliseUsoPage() {
       {tab === 'ao-vivo' && (
         <div className="space-y-4">
           {filteredAtivas.length === 0 ? (
-            <Card className="p-12 text-center bg-[#141417] border-neutral-800/80 rounded-2xl">
-              <Radio className="w-10 h-10 mx-auto text-neutral-600 mb-3 animate-pulse" />
-              <h3 className="text-base font-bold text-white">Nenhuma sessão com atividade ao vivo no momento</h3>
-              <p className="text-sm text-neutral-400 mt-1 max-w-md mx-auto">
+            <Card className="p-12 text-center bg-card border-border rounded-2xl shadow-sm">
+              <Radio className="w-10 h-10 mx-auto text-muted-foreground/60 mb-3 animate-pulse" />
+              <h3 className="text-base font-bold text-foreground">Nenhuma sessão com atividade ao vivo no momento</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
                 Assim que qualquer servidor acessar qualquer tela do SIG, a sessão aparecerá aqui em tempo real com o indicador de transmissão ao vivo.
               </p>
             </Card>
@@ -386,17 +386,17 @@ export default function AnaliseUsoPage() {
               {filteredAtivas.map((s) => (
                 <Card
                   key={s.session_id}
-                  className="p-5 bg-[#141417] border-neutral-800/80 rounded-2xl hover:border-neutral-700 transition-all flex flex-col justify-between gap-4 group"
+                  className="p-5 bg-card border-border rounded-2xl hover:border-border/80 shadow-sm transition-all flex flex-col justify-between gap-4 group"
                 >
                   <div className="space-y-3">
                     {/* Header do Card com Indicador Ao Vivo */}
                     <div className="flex items-center justify-between">
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[11px] font-bold flex items-center gap-1.5 animate-pulse">
+                      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 animate-pulse">
                         <span className="w-2 h-2 rounded-full bg-emerald-500" />
                         AO VIVO
                       </Badge>
 
-                      <span className="text-xs text-neutral-400 flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatDuration(s.total_active_seconds_today)}
                       </span>
@@ -408,18 +408,18 @@ export default function AnaliseUsoPage() {
                         <img
                           src={s.foto_url}
                           alt={s.funcionario_nome}
-                          className="w-11 h-11 rounded-xl object-cover border border-neutral-700"
+                          className="w-11 h-11 rounded-xl object-cover border border-border"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center font-bold text-sky-400">
+                        <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center font-bold text-sky-600 dark:text-sky-400">
                           {s.funcionario_nome?.slice(0, 2).toUpperCase() || 'US'}
                         </div>
                       )}
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-white truncate">{s.funcionario_nome}</div>
-                        <div className="text-xs text-neutral-400 truncate">{s.funcionario_cargo || 'Servidor'}</div>
-                        <div className="text-[11px] text-neutral-500 truncate flex items-center gap-1 mt-0.5">
+                        <div className="text-sm font-bold text-foreground truncate">{s.funcionario_nome}</div>
+                        <div className="text-xs text-muted-foreground truncate">{s.funcionario_cargo || 'Servidor'}</div>
+                        <div className="text-[11px] text-muted-foreground/80 truncate flex items-center gap-1 mt-0.5">
                           <School className="w-3 h-3 shrink-0" />
                           {s.escola_nome || 'Rede Municipal'}
                         </div>
@@ -427,8 +427,8 @@ export default function AnaliseUsoPage() {
                     </div>
 
                     {/* Tela Atual Sendo Usada */}
-                    <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-2.5 px-3 flex items-center gap-2 text-xs font-mono text-sky-300">
-                      <Compass className="w-4 h-4 text-sky-400 shrink-0" />
+                    <div className="bg-muted/70 border border-border rounded-xl p-2.5 px-3 flex items-center gap-2 text-xs font-mono text-sky-600 dark:text-sky-300">
+                      <Compass className="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
                       <span className="truncate">{s.current_pathname || '/home'}</span>
                     </div>
                   </div>
@@ -436,7 +436,7 @@ export default function AnaliseUsoPage() {
                   {/* Botão de Espelhar Comandos Ao Vivo */}
                   <Button
                     onClick={() => handleAssistirAoVivo(s)}
-                    className="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl h-10 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-sky-600/20"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-10 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                   >
                     <Monitor className="w-4 h-4" />
                     Espelhar Comandos Ao Vivo
@@ -452,36 +452,36 @@ export default function AnaliseUsoPage() {
       {tab === 'historico' && (
         <div className="space-y-4">
           {/* Barra de Filtros de Período */}
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-[#141417] border border-neutral-800/80 rounded-2xl text-xs">
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-border rounded-2xl text-xs shadow-sm">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-neutral-400" />
-              <span className="text-neutral-300 font-semibold">Período:</span>
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span className="text-foreground font-semibold">Período:</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-neutral-400">De</span>
+              <span className="text-muted-foreground">De</span>
               <Input
                 type="date"
                 value={filtroDataInicio}
                 onChange={(e) => setFiltroDataInicio(e.target.value)}
-                className="bg-neutral-900 border-neutral-800 text-white h-9 rounded-lg text-xs"
+                className="bg-background border-border text-foreground h-9 rounded-xl text-xs"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-neutral-400">Até</span>
+              <span className="text-muted-foreground">Até</span>
               <Input
                 type="date"
                 value={filtroDataFim}
                 onChange={(e) => setFiltroDataFim(e.target.value)}
-                className="bg-neutral-900 border-neutral-800 text-white h-9 rounded-lg text-xs"
+                className="bg-background border-border text-foreground h-9 rounded-xl text-xs"
               />
             </div>
 
             <Button
               size="sm"
               onClick={carregarSessoesGravadas}
-              className="bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg h-9 cursor-pointer ml-auto"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-9 cursor-pointer ml-auto"
             >
               Filtrar Gravações
             </Button>
@@ -489,18 +489,18 @@ export default function AnaliseUsoPage() {
 
           {/* Tabela de Sessões Gravadas */}
           {filteredGravadas.length === 0 ? (
-            <Card className="p-12 text-center bg-[#141417] border-neutral-800/80 rounded-2xl">
-              <Clock className="w-10 h-10 mx-auto text-neutral-600 mb-3" />
-              <h3 className="text-base font-bold text-white">Nenhuma gravação histórica encontrada</h3>
-              <p className="text-sm text-neutral-400 mt-1 max-w-md mx-auto">
+            <Card className="p-12 text-center bg-card border-border rounded-2xl shadow-sm">
+              <Clock className="w-10 h-10 mx-auto text-muted-foreground/60 mb-3" />
+              <h3 className="text-base font-bold text-foreground">Nenhuma gravação histórica encontrada</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
                 As sessões dos servidores são gravadas automaticamente para auditoria e você pode reproduzir os cliques e comandos de qualquer dia passado.
               </p>
             </Card>
           ) : (
-            <div className="bg-[#141417] border border-neutral-800/80 rounded-2xl overflow-hidden">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-neutral-300">
-                  <thead className="bg-[#18181d] border-b border-neutral-800 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                <table className="w-full text-left text-xs text-muted-foreground">
+                  <thead className="bg-muted/60 border-b border-border text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="py-3.5 px-4">Servidor / Cargo</th>
                       <th className="py-3.5 px-4">Unidade Escolar</th>
@@ -512,43 +512,43 @@ export default function AnaliseUsoPage() {
                       <th className="py-3.5 px-4 text-right">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredGravadas.map((g) => (
-                      <tr key={g.session_id} className="hover:bg-neutral-900/60 transition-colors">
+                      <tr key={g.session_id} className="hover:bg-muted/50 transition-colors">
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-white">{g.funcionario_nome}</div>
-                          <div className="text-[11px] text-neutral-400">{g.funcionario_cargo}</div>
+                          <div className="font-bold text-foreground">{g.funcionario_nome}</div>
+                          <div className="text-[11px] text-muted-foreground">{g.funcionario_cargo}</div>
                         </td>
 
-                        <td className="py-3.5 px-4 text-neutral-400">
+                        <td className="py-3.5 px-4 text-muted-foreground">
                           {g.escola_nome || 'Rede Municipal'}
                         </td>
 
-                        <td className="py-3.5 px-4 font-mono text-neutral-300">
+                        <td className="py-3.5 px-4 font-mono text-foreground/90">
                           {g.last_event_at ? new Date(g.last_event_at).toLocaleString('pt-BR') : '-'}
                         </td>
 
-                        <td className="py-3.5 px-4 font-mono">
+                        <td className="py-3.5 px-4 font-mono text-muted-foreground">
                           {formatDuration(g.duration_seconds)}
                         </td>
 
                         <td className="py-3.5 px-4">
-                          <Badge variant="outline" className="bg-sky-500/10 text-sky-400 border-sky-500/30 text-xs">
+                          <Badge variant="outline" className="bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 text-xs">
                             {g.total_clicks || 0} cliques
                           </Badge>
                         </td>
 
                         <td className="py-3.5 px-4">
                           {g.total_errors > 0 ? (
-                            <Badge className="bg-rose-500/20 text-rose-400 border-rose-500/30 text-xs">
+                            <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 text-xs">
                               {g.total_errors} erros
                             </Badge>
                           ) : (
-                            <span className="text-neutral-500">-</span>
+                            <span className="text-muted-foreground/60">-</span>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 font-mono text-sky-300 max-w-[160px] truncate">
+                        <td className="py-3.5 px-4 font-mono text-sky-600 dark:text-sky-400 max-w-[160px] truncate">
                           {g.last_pathname || '/'}
                         </td>
 
@@ -556,7 +556,7 @@ export default function AnaliseUsoPage() {
                           <Button
                             size="sm"
                             onClick={() => handleAssistirPlayback(g)}
-                            className="bg-neutral-800 hover:bg-sky-600 text-white font-semibold rounded-xl h-8 px-3 text-xs transition-colors cursor-pointer"
+                            className="bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground border border-border font-semibold rounded-xl h-8 px-3 text-xs transition-colors cursor-pointer"
                           >
                             <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
                             Ver Replay
