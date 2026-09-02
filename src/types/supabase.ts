@@ -3819,6 +3819,7 @@ export type Database = {
           metric_value: number
           pathname: string
           rating: string
+          record_id?: string | null
           user_agent: string | null
         }
         Insert: {
@@ -3833,6 +3834,7 @@ export type Database = {
           metric_value: number
           pathname: string
           rating: string
+          record_id?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -3847,6 +3849,7 @@ export type Database = {
           metric_value?: number
           pathname?: string
           rating?: string
+          record_id?: string | null
           user_agent?: string | null
         }
         Relationships: [

@@ -78,7 +78,7 @@ export function PerformanceTracker() {
     }
   }, [])
 
-  // Capturar intenções de navegação em memória com expiração de 10s e filtros
+  // Capturar intenções de navegação em memória com expiração de 10s e filtros anti-contaminação
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
 
@@ -105,6 +105,9 @@ export function PerformanceTracker() {
         // Ignorar se for a mesma rota atual (apenas âncora ou query param sem mudança de página)
         if (url.pathname === window.location.pathname) return
 
+        // Descartar se a aba estiver oculta (evita medições infladas por throttle de segundo plano)
+        if (document.visibilityState === 'hidden') return
+
         // Cancelar expiração anterior se existir
         if (pendingNavigationRef.current?.timeoutId) {
           clearTimeout(pendingNavigationRef.current.timeoutId)
@@ -127,9 +130,19 @@ export function PerformanceTracker() {
       }
     }
 
+    // Se o usuário minimizar ou trocar de aba enquanto havia transição pendente, descartar
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && pendingNavigationRef.current) {
+        clearTimeout(pendingNavigationRef.current.timeoutId)
+        pendingNavigationRef.current = null
+      }
+    }
+
     document.addEventListener('click', handleClick, true)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       document.removeEventListener('click', handleClick, true)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
@@ -140,14 +153,26 @@ export function PerformanceTracker() {
     if (queueRef.current.length === 0) return
     const batch = [...queueRef.current]
     queueRef.current = []
-    
+
     try {
-      const { error } = await supabase
-        .from('performance_metrics')
-        .insert(batch)
-      if (error) console.warn('[Perf] Erro ao salvar Web Vitals (batch):', error.message)
+      // Envio via endpoint de lote otimizado no servidor
+      const res = await fetch('/api/admin/desempenho/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metrics: batch }),
+        keepalive: true,
+      })
+
+      if (!res.ok) {
+        // Fallback defensivo com cliente Supabase se rota responder erro
+        const { error } = await supabase.from('performance_metrics').insert(batch)
+        if (error) console.warn('[Perf] Fallback supabase insert:', error.message)
+      }
     } catch {
-      // Falha silenciosa intencional
+      // Fallback silencioso sem travar a interface do usuário
+      try {
+        await supabase.from('performance_metrics').insert(batch)
+      } catch {}
     }
   }, [supabase])
 
@@ -159,21 +184,26 @@ export function PerformanceTracker() {
     }
   }, [flushQueue])
 
-  // Callback para Core Web Vitals
+  // Callback para Core Web Vitals com sanitização
   const handleWebVitals = useCallback(
     (metric: Metric) => {
       if (!shouldSampleRef.current) return
-      // Ignorar deslocamentos insignificantes de CLS (< 0.01) para evitar rajadas de inserts (ES-2)
+      // Descartar se a aba estiver em segundo plano no momento da captura
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      // Ignorar deslocamentos insignificantes de CLS (< 0.01) para evitar rajadas de inserts
       if (metric.name === 'CLS' && metric.value < 0.01) return
+      // Descartar valores anômalos ou irreais de Web Vitals (> 60 segundos ou negativos)
+      if (metric.name !== 'CLS' && (metric.value < 1 || metric.value > 60000)) return
 
       const normalizedPath = normalizePathname(pathname)
 
       const payload = {
+        record_id: crypto.randomUUID(),
         funcionario_id: funcionarioRef.current?.id ?? null,
         escola_id: escolaAtivaIdRef.current ?? null,
         pathname: normalizedPath,
         metric_name: metric.name,
-        metric_value: metric.value,
+        metric_value: metric.name === 'CLS' ? Number(metric.value.toFixed(4)) : Math.round(metric.value),
         rating: metric.rating ?? 'needs-improvement',
         connection_type: getConnectionType(),
         device_memory: getDeviceMemory(),
@@ -191,7 +221,7 @@ export function PerformanceTracker() {
 
   useReportWebVitals(handleWebVitals)
 
-  // Medição executada exclusivamente quando pathname realmente muda
+  // Medição de troca de rota protegida contra contaminações de background e cancelamentos
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!shouldSampleRef.current) return
@@ -205,30 +235,40 @@ export function PerformanceTracker() {
       pendingNavigationRef.current = null
       clearTimeout(nav.timeoutId)
 
-      const durationMs = performance.now() - nav.startTime
+      const normalizedPath = normalizePathname(pathname)
 
-      if (durationMs > 0 && isMounted.current) {
-        const normalizedPath = normalizePathname(pathname)
+      // Verificar correspondência com a rota pretendida e se a aba continuou visível
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible' &&
+        normalizedPath === nav.targetPath
+      ) {
+        const durationMs = performance.now() - nav.startTime
 
-        const rating =
-          durationMs < 300 ? 'good'
-          : durationMs < 1000 ? 'needs-improvement'
-          : 'poor'
+        // Filtro de acurácia: apenas durações entre 15ms e 15.000ms (15s)
+        if (durationMs >= 15 && durationMs <= 15000 && isMounted.current) {
+          const roundedMs = Math.round(durationMs)
+          const rating =
+            roundedMs < 300 ? 'good'
+            : roundedMs < 1000 ? 'needs-improvement'
+            : 'poor'
 
-        const payload = {
-          funcionario_id: funcionarioRef.current?.id ?? null,
-          escola_id: escolaAtivaIdRef.current ?? null,
-          pathname: normalizedPath,
-          metric_name: 'ROUTE_CHANGE_MS',
-          metric_value: durationMs,
-          rating,
-          connection_type: getConnectionType(),
-          device_memory: getDeviceMemory(),
-          hardware_concurrency: getHardwareConcurrency(),
-          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          const payload = {
+            record_id: crypto.randomUUID(),
+            funcionario_id: funcionarioRef.current?.id ?? null,
+            escola_id: escolaAtivaIdRef.current ?? null,
+            pathname: normalizedPath,
+            metric_name: 'ROUTE_CHANGE_MS',
+            metric_value: roundedMs,
+            rating,
+            connection_type: getConnectionType(),
+            device_memory: getDeviceMemory(),
+            hardware_concurrency: getHardwareConcurrency(),
+            user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          }
+
+          queueRef.current.push(payload)
         }
-
-        queueRef.current.push(payload)
       }
     }
 
