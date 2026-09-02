@@ -21,11 +21,15 @@ export default function LoginPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       if (params.get('error') === 'orphan') {
-        supabase.auth.signOut().then(() => {
-          toast.error('Acesso negado. Seu e-mail não pertence a nenhum funcionário cadastrado.')
-          // Limpa o parâmetro da URL
-          window.history.replaceState({}, '', '/login')
-        })
+        supabase.auth.signOut()
+          .then(() => {
+            toast.error('Acesso negado. Seu e-mail não pertence a nenhum funcionário cadastrado.')
+            // Limpa o parâmetro da URL
+            window.history.replaceState({}, '', '/login')
+          })
+          .catch((err) => {
+            console.warn('[LoginPage] Erro ao fazer signOut automático:', err)
+          })
       }
     }
   }, [supabase])

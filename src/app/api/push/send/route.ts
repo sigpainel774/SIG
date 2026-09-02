@@ -42,10 +42,14 @@ export async function POST(req: Request) {
       // Broadcast para turmas específicas, escolas ou geral
       if (Array.isArray(turmaIds) && turmaIds.length > 0) {
         // Busca auth_user_id dos funcionários (professores) vinculados a essas turmas
-        const { data: vinculosTurmas } = await supabaseAdmin
+        const { data: vinculosTurmas, error: errVinculosTurmas } = await supabaseAdmin
           .from('vinculos_turmas')
           .select('funcionario:funcionarios!funcionario_id(auth_user_id)')
           .in('turma_id', turmaIds)
+
+        if (errVinculosTurmas) {
+          console.error('[push/send] Erro ao buscar vínculos de turmas:', errVinculosTurmas.message)
+        }
 
         targetUserIds = Array.from(
           new Set(
@@ -64,11 +68,15 @@ export async function POST(req: Request) {
 
         if (targetEscolaIds.length > 0) {
           // Busca auth_user_id dos funcionários vinculados às escolas selecionadas
-          const { data: vinculos } = await supabaseAdmin
+          const { data: vinculos, error: errVinculos } = await supabaseAdmin
             .from('vinculos_funcionarios')
             .select('funcionario:funcionarios!funcionario_id(auth_user_id)')
             .in('escola_id', targetEscolaIds)
             .eq('ativo', true)
+
+          if (errVinculos) {
+            console.error('[push/send] Erro ao buscar vínculos de escola:', errVinculos.message)
+          }
 
           targetUserIds = Array.from(
             new Set(
@@ -79,9 +87,13 @@ export async function POST(req: Request) {
           )
         } else {
           // Broadcast geral — busca todas as inscrições distintas
-          const { data: subs } = await (supabaseAdmin as any)
+          const { data: subs, error: errSubs } = await (supabaseAdmin as any)
             .from('push_subscriptions')
             .select('user_id')
+
+          if (errSubs) {
+            console.error('[push/send] Erro ao buscar subscriptions:', errSubs.message)
+          }
 
           targetUserIds = Array.from(new Set((subs as any[] ?? []).map((s) => s.user_id)))
         }
@@ -91,11 +103,15 @@ export async function POST(req: Request) {
       let resolvedUserId = destinatarioUserId
 
       if (!resolvedUserId && destinatarioId) {
-        const { data: funcData } = await supabaseAdmin
+        const { data: funcData, error: errFunc } = await supabaseAdmin
           .from('funcionarios')
           .select('auth_user_id')
           .eq('id', destinatarioId)
           .maybeSingle()
+
+        if (errFunc) {
+          console.error('[push/send] Erro ao resolver destinatário:', errFunc.message)
+        }
 
         resolvedUserId = funcData?.auth_user_id || null
       }

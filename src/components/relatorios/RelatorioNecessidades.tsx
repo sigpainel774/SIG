@@ -52,14 +52,16 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
 
   // Efeito para carregar dados
   useEffect(() => {
+    let active = true
+
     async function fetchData() {
       if (!isAuthorized) {
-        setLoading(false)
+        if (active) setLoading(false)
         return
       }
 
-      setLoading(true)
-      setError(null)
+      if (active) setLoading(true)
+      if (active) setError(null)
       try {
         // Carrega as turmas se houver escola selecionada
         if (selectedEscola) {
@@ -70,7 +72,7 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
             .is('deleted_at', null)
           
           if (errTurmas) throw errTurmas
-          setTurmas(dataTurmas || [])
+          if (active) setTurmas(dataTurmas || [])
         }
 
         // Carrega alunos
@@ -97,16 +99,18 @@ export default function RelatorioNecessidades({ selectedEscola }: RelatorioNeces
         const { data: dataAlunos, error: errAlunos } = await query
         if (errAlunos) throw errAlunos
 
-        setAlunos(dataAlunos || [])
+        if (active) setAlunos(dataAlunos || [])
       } catch (err: any) {
+        if (!active) return
         console.error('Erro ao buscar dados de necessidades especiais:', err)
         setError('Ocorreu um erro ao carregar as informações do banco de dados.')
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
 
     fetchData()
+    return () => { active = false }
   }, [selectedEscola, isAuthorized])
 
   // Limpa o cuidador ao trocar de aluno

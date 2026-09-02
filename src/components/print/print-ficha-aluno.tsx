@@ -58,11 +58,14 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
       // 1. Unidade Escolar
       const targetEscolaId = aluno.escola_id ?? dm.escolaId
       if (targetEscolaId) {
-        const { data: esc } = await supabase
+        const { data: esc, error: errEsc } = await supabase
           .from('escolas')
           .select('nome')
           .eq('id', targetEscolaId)
           .single()
+        if (errEsc) {
+          console.error('[print-ficha-aluno] Erro ao buscar escola:', errEsc.message)
+        }
         if (esc && active) {
           setEscolaNome(esc.nome)
         }
@@ -71,11 +74,14 @@ export function PrintFichaAluno({ aluno, onClose }: PrintFichaAlunoProps) {
       // 2. Turma e Ano
       const targetTurmaId = aluno.turma_id ?? dm.turmaIdAluno
       if (targetTurmaId) {
-        const { data: tur } = await supabase
+        const { data: tur, error: errTur } = await supabase
           .from('turmas')
           .select('nome, turno')
           .eq('id', targetTurmaId)
           .single()
+        if (errTur) {
+          console.error('[print-ficha-aluno] Erro ao buscar turma:', errTur.message)
+        }
         if (tur && active) {
           setTurnoVal(tur.turno ?? '')
           

@@ -90,7 +90,9 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
           sessionStorage.setItem(SESSION_KEY, funcionarioId)
           // Cookie lido pelo proxy.ts (server-side) para liberar /home durante simulação
           document.cookie = 'sig_simulating=1; path=/; SameSite=Lax'
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[SimulationStore] Não foi possível persistir simulação no sessionStorage:', e)
+        }
       }
 
       set({
@@ -128,8 +130,12 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       // Revalidar caches SWR para forçar re-render dos componentes sob o perfil simulado
       if (typeof window !== 'undefined') {
         try {
-          mutate(() => true, undefined, { revalidate: true }).catch(() => {})
-        } catch (e) {}
+          mutate(() => true, undefined, { revalidate: true }).catch((e) => {
+            console.warn('[SimulationStore] Falha ao revalidar cache SWR (iniciar):', e)
+          })
+        } catch (e) {
+          console.warn('[SimulationStore] Erro ao chamar mutate SWR (iniciar):', e)
+        }
       }
 
       return true
@@ -164,7 +170,9 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
           sessionStorage.removeItem(SESSION_KEY)
           sessionStorage.setItem(SUPERADMIN_ESCOLA_KEY, escolaId)
           document.cookie = 'sig_simulating=1; path=/; SameSite=Lax'
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[SimulationStore] Não foi possível persistir superadmin no sessionStorage:', e)
+        }
       }
 
       // 3. Garantir que a conta real continue desativando qualquer impersonação prévia
@@ -188,8 +196,12 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       // Revalidar caches SWR
       if (typeof window !== 'undefined') {
         try {
-          mutate(() => true, undefined, { revalidate: true }).catch(() => {})
-        } catch (e) {}
+          mutate(() => true, undefined, { revalidate: true }).catch((e) => {
+            console.warn('[SimulationStore] Falha ao revalidar cache SWR (superadmin):', e)
+          })
+        } catch (e) {
+          console.warn('[SimulationStore] Erro ao chamar mutate SWR (superadmin):', e)
+        }
       }
 
       return true
@@ -207,7 +219,9 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
         sessionStorage.removeItem(SUPERADMIN_ESCOLA_KEY)
         // Remove cookie de sinalização para o proxy.ts
         document.cookie = 'sig_simulating=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[SimulationStore] Não foi possível limpar sessionStorage ao encerrar:', e)
+      }
     }
 
     set({
@@ -227,8 +241,12 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
     // Revalidar caches SWR para restaurar visão original
     if (typeof window !== 'undefined') {
       try {
-        mutate(() => true, undefined, { revalidate: true }).catch(() => {})
-      } catch (e) {}
+        mutate(() => true, undefined, { revalidate: true }).catch((e) => {
+          console.warn('[SimulationStore] Falha ao revalidar cache SWR (encerrar):', e)
+        })
+      } catch (e) {
+        console.warn('[SimulationStore] Erro ao chamar mutate SWR (encerrar):', e)
+      }
     }
   },
 
@@ -245,6 +263,8 @@ export const usePermissionSimulationStore = create<PermissionSimulationState>((s
       if (savedId) {
         await get().iniciarSimulacao(savedId, supabase)
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[SimulationStore] Erro ao restaurar simulação da sessão:', e)
+    }
   },
 }))

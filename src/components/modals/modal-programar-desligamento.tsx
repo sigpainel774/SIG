@@ -34,6 +34,8 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
 
   // Busca o vínculo ativo do funcionário
   useEffect(() => {
+    let active = true
+
     async function loadActiveVinculo() {
       if (!funcionarioId || !open) return
       setLoadingVinculo(true)
@@ -47,6 +49,8 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
 
         if (error) throw error
 
+        if (!active) return
+
         if (data) {
           setVinculoId(data.id)
           setCargoName(data.cargo || 'Não definido')
@@ -56,9 +60,10 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
           toast.error('Nenhum vínculo ativo encontrado para este funcionário.')
         }
       } catch (err: any) {
+        if (!active) return
         toast.error(`Erro ao carregar lotação: ${err.message}`)
       } finally {
-        setLoadingVinculo(false)
+        if (active) setLoadingVinculo(false)
       }
     }
 
@@ -66,6 +71,7 @@ export function ModalProgramarDesligamento({ open, onOpenChange, funcionarioId, 
     // Reset form
     setDataDesligamento('')
     setMotivo('')
+    return () => { active = false }
   }, [funcionarioId, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
