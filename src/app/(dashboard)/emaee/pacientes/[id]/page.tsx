@@ -35,13 +35,31 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { StandardDialog } from '@/components/ui/standard-dialog'
-import { ModalEvolucaoEmaee } from '@/components/modals/modal-evolucao-emaee'
-import { ModalMatriculaEmaee } from '@/components/modals/modal-matricula-emaee'
-import { PrintEvolucoesEmaee, EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
-import { PrintFichaInscricaoEmaee } from '@/components/print/print-ficha-inscricao-emaee'
-import { PrintComprovanteMatriculaEmaee } from '@/components/print/print-comprovante-matricula-emaee'
+import type { EvolucaoPrintData } from '@/components/print/print-evolucoes-emaee'
 import { useSchoolStore } from '@/store/useSchoolStore'
+
+const ModalEvolucaoEmaee = dynamic(
+  () => import('@/components/modals/modal-evolucao-emaee').then((mod) => mod.ModalEvolucaoEmaee),
+  { ssr: false }
+)
+const ModalMatriculaEmaee = dynamic(
+  () => import('@/components/modals/modal-matricula-emaee').then((mod) => mod.ModalMatriculaEmaee),
+  { ssr: false }
+)
+const PrintEvolucoesEmaee = dynamic(
+  () => import('@/components/print/print-evolucoes-emaee').then((mod) => mod.PrintEvolucoesEmaee),
+  { ssr: false }
+)
+const PrintFichaInscricaoEmaee = dynamic(
+  () => import('@/components/print/print-ficha-inscricao-emaee').then((mod) => mod.PrintFichaInscricaoEmaee),
+  { ssr: false }
+)
+const PrintComprovanteMatriculaEmaee = dynamic(
+  () => import('@/components/print/print-comprovante-matricula-emaee').then((mod) => mod.PrintComprovanteMatriculaEmaee),
+  { ssr: false }
+)
 import { compressImageBeforeUpload, formatBytes } from '@/lib/imageCompression'
 import { formatDate } from '@/lib/utils'
 
@@ -73,9 +91,13 @@ export default function PacienteDetalhesPage() {
   // Estados de Evolução
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [loadingEvolucoes, setLoadingEvolucoes] = useState(false)
+  const [modalNovaEvolucaoOpen, setModalNovaEvolucaoOpen] = useState(false)
   const [printData, setPrintData] = useState<EvolucaoPrintData[] | null>(null)
   const [printFichaOpen, setPrintFichaOpen] = useState(false)
   const [printComprovanteOpen, setPrintComprovanteOpen] = useState(false)
+
+  // Cache de abas visitadas na sessão para evitar refetches e spinners piscantes
+  const abasCarregadasRef = useRef<Set<string>>(new Set())
 
   // Estados de Especialidades & Widget
   const [especialidades, setEspecialidades] = useState<any[]>([])
@@ -234,26 +256,46 @@ export default function PacienteDetalhesPage() {
 
       if (error) throw error
       if (data && isMounted.current) {
-        // Gerar URLs assinadas temporárias (60 min) para acesso seguro aos anexos médicos
-        const anexosSeguros = await Promise.all(
-          data.map(async (anexo) => {
-            let rawPath = anexo.arquivo_url || ''
-            if (rawPath.includes('/alunos-anexos/')) {
-              rawPath = rawPath.split('/alunos-anexos/')[1].split('?')[0]
+        // Gerar URLs assinadas temporárias (60 min) em batch (1 única requisição HTTP ao storage)
+        const rawPaths: string[] = []
+        data.forEach((anexo) => {
+          let rawPath = anexo.arquivo_url || ''
+          if (rawPath.includes('/alunos-anexos/')) {
+            rawPath = rawPath.split('/alunos-anexos/')[1].split('?')[0]
+          }
+          if (rawPath) rawPaths.push(rawPath)
+        })
+
+        const signedMap = new Map<string, string>()
+        if (rawPaths.length > 0) {
+          try {
+            const { data: signedData } = await supabase.storage
+              .from('alunos-anexos')
+              .createSignedUrls(rawPaths, 3600)
+
+            if (signedData) {
+              signedData.forEach((item) => {
+                if (item?.path && item?.signedUrl) {
+                  signedMap.set(item.path, item.signedUrl)
+                }
+              })
             }
-            try {
-              const { data: signedData } = await supabase.storage
-                .from('alunos-anexos')
-                .createSignedUrl(rawPath, 3600)
-              return {
-                ...anexo,
-                signed_url: signedData?.signedUrl || anexo.arquivo_url
-              }
-            } catch (err) {
-              return { ...anexo, signed_url: anexo.arquivo_url }
-            }
-          })
-        )
+          } catch (signErr) {
+            console.warn('Fallback para URLs originais de anexos:', signErr)
+          }
+        }
+
+        const anexosSeguros = data.map((anexo) => {
+          let rawPath = anexo.arquivo_url || ''
+          if (rawPath.includes('/alunos-anexos/')) {
+            rawPath = rawPath.split('/alunos-anexos/')[1].split('?')[0]
+          }
+          return {
+            ...anexo,
+            signed_url: signedMap.get(rawPath) || anexo.arquivo_url
+          }
+        })
+
         if (isMounted.current) {
           setAnexos(anexosSeguros)
         }
@@ -288,21 +330,43 @@ export default function PacienteDetalhesPage() {
     }
   }
 
+  // Carregamento inicial em paralelo na montagem (evita requisições duplicadas em cadeia)
   useEffect(() => {
     if (id) {
       carregarProntuario()
+      carregarEvolucoes()
+      abasCarregadasRef.current.add('evolucao')
     }
   }, [id])
 
+  // Troca de abas com cache em memória (renderização imediata sem refetch desnecessário)
   useEffect(() => {
-    if (id) {
-      if (activeTab === 'evolucao') carregarEvolucoes()
-      if (activeTab === 'especialistas') {
-        carregarEspecialidades()
+    if (!id) return
+
+    if (activeTab === 'evolucao') {
+      if (!abasCarregadasRef.current.has('evolucao')) {
         carregarEvolucoes()
+        abasCarregadasRef.current.add('evolucao')
       }
-      if (activeTab === 'anexos') carregarAnexos()
-      if (activeTab === 'relatorios') carregarSolicitacoesRelatorios()
+    } else if (activeTab === 'especialistas') {
+      if (!abasCarregadasRef.current.has('especialistas')) {
+        carregarEspecialidades()
+        if (!abasCarregadasRef.current.has('evolucao')) {
+          carregarEvolucoes()
+          abasCarregadasRef.current.add('evolucao')
+        }
+        abasCarregadasRef.current.add('especialistas')
+      }
+    } else if (activeTab === 'anexos') {
+      if (prontuario?.aluno_id && !abasCarregadasRef.current.has('anexos')) {
+        carregarAnexos()
+        abasCarregadasRef.current.add('anexos')
+      }
+    } else if (activeTab === 'relatorios') {
+      if (!abasCarregadasRef.current.has('relatorios')) {
+        carregarSolicitacoesRelatorios()
+        abasCarregadasRef.current.add('relatorios')
+      }
     }
   }, [id, activeTab, prontuario?.aluno_id])
 
@@ -718,15 +782,12 @@ export default function PacienteDetalhesPage() {
                       <Printer className="w-4 h-4" /> Imprimir Todas
                     </Button>
                   )}
-                  <ModalEvolucaoEmaee
-                    matriculaEmaeeId={id}
-                    onSuccess={carregarEvolucoes}
-                    trigger={
-                      <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow">
-                        <Plus className="w-4 h-4" /> Evolução
-                      </Button>
-                    }
-                  />
+                  <Button
+                    onClick={() => setModalNovaEvolucaoOpen(true)}
+                    className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Evolução
+                  </Button>
                 </div>
               </div>
 
@@ -1104,17 +1165,12 @@ export default function PacienteDetalhesPage() {
               <div className="text-center py-10 border border-dashed border-border rounded-xl bg-secondary/10 text-muted-foreground text-xs space-y-3">
                 <History className="w-8 h-8 mx-auto text-muted-foreground/50" />
                 <p>Nenhuma atualização ou evolução registrada por este especialista para este aluno ainda.</p>
-                <ModalEvolucaoEmaee
-                  matriculaEmaeeId={id}
-                  onSuccess={() => {
-                    carregarEvolucoes()
-                  }}
-                  trigger={
-                    <Button className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow mx-auto">
-                      <Plus className="w-4 h-4" /> Registrar Nova Evolução
-                    </Button>
-                  }
-                />
+                <Button
+                  onClick={() => setModalNovaEvolucaoOpen(true)}
+                  className="bg-primary hover:bg-hoverCustom text-white rounded-xl gap-2 font-semibold text-xs py-2 shadow mx-auto cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Registrar Nova Evolução
+                </Button>
               </div>
             ) : (
               <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
@@ -1231,6 +1287,19 @@ export default function PacienteDetalhesPage() {
         <PrintComprovanteMatriculaEmaee
           prontuario={prontuario}
           onClose={() => setPrintComprovanteOpen(false)}
+        />
+      )}
+
+      {/* Modal de Nova Evolução Clínica (Montado apenas quando aberto) */}
+      {modalNovaEvolucaoOpen && (
+        <ModalEvolucaoEmaee
+          open={modalNovaEvolucaoOpen}
+          onOpenChange={setModalNovaEvolucaoOpen}
+          matriculaEmaeeId={id}
+          onSuccess={() => {
+            setModalNovaEvolucaoOpen(false)
+            carregarEvolucoes()
+          }}
         />
       )}
 

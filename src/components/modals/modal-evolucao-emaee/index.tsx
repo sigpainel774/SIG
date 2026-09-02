@@ -179,7 +179,8 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
         </div>
       )}
       
-      <StandardDialog
+      {activeOpen && (
+        <StandardDialog
         open={activeOpen}
         onOpenChange={handleOpenChange}
         title="Nova Evolução Clínica"
@@ -314,6 +315,7 @@ export function ModalEvolucaoEmaee({ open, onOpenChange, trigger, matriculaEmaee
           </div>
         </form>
       </StandardDialog>
+      )}
     </>
   )
 }
