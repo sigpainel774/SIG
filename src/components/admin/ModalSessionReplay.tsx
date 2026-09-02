@@ -41,6 +41,17 @@ import {
   Plus,
   Filter,
   Table,
+  Download,
+  BookOpen,
+  Calendar,
+  Eye,
+  Check,
+  Building2,
+  Phone,
+  Mail,
+  FileCheck,
+  AlertCircle,
+  Hash,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ReplayEventItem } from '@/hooks/useSessionReplay'
@@ -57,6 +68,14 @@ interface ModalSessionReplayProps {
     isLive?: boolean
     currentPathname?: string
   } | null
+}
+
+interface ActiveModalState {
+  isOpen: boolean
+  title: string
+  fieldFocus?: string
+  lastTypingField?: string
+  characterCount?: number
 }
 
 export function ModalSessionReplay({
@@ -84,6 +103,9 @@ export function ModalSessionReplay({
     active: false,
   })
 
+  // Estado do Modal Aberto na Transmissão
+  const [activeModal, setActiveModal] = useState<ActiveModalState | null>(null)
+
   // Telemetria ao vivo / atual
   const [telemetry, setTelemetry] = useState<{
     rtt: number
@@ -94,6 +116,7 @@ export function ModalSessionReplay({
     currentPathname: string
     totalClicks: number
     totalInputs: number
+    totalModals: number
     totalErrors: number
   }>({
     rtt: 45,
@@ -104,10 +127,12 @@ export function ModalSessionReplay({
     currentPathname: session?.currentPathname || '/',
     totalClicks: 0,
     totalInputs: 0,
+    totalModals: 0,
     totalErrors: 0,
   })
 
   const channelRef = useRef<any>(null)
+  const userChannelRef = useRef<any>(null)
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMounted = useRef<boolean>(true)
 
@@ -117,6 +142,13 @@ export function ModalSessionReplay({
       isMounted.current = false
     }
   }, [])
+
+  // Sincronizar pathname inicial vindo da sessão selecionada
+  useEffect(() => {
+    if (session?.currentPathname) {
+      setTelemetry((prev) => ({ ...prev, currentPathname: session.currentPathname || '/' }))
+    }
+  }, [session?.currentPathname])
 
   // 1. Carregar histórico de eventos se for modo Playback ou inicial
   const loadHistoricalEvents = useCallback(async (sid: string) => {
@@ -140,20 +172,23 @@ export function ModalSessionReplay({
 
           // Calcular totais iniciais de telemetria
           const clicks = loaded.filter((ev) => ev.event_type === 'click').length
-          const inputs = loaded.filter((ev) => ev.event_type === 'input_focus').length
+          const inputs = loaded.filter((ev) => ev.event_type === 'input_focus' || ev.event_type === 'input_change').length
+          const modals = loaded.filter((ev) => ev.event_type === 'modal_open').length
           const errors = loaded.filter((ev) => ev.event_type === 'error').length
-          const lastNet = loaded[loaded.length - 1]?.event_data
+          const lastEvent = loaded[loaded.length - 1]
+          const lastNet = lastEvent?.event_data
 
           setTelemetry((prev) => ({
             ...prev,
             totalClicks: clicks,
             totalInputs: inputs,
+            totalModals: modals,
             totalErrors: errors,
             rtt: lastNet?.rtt ?? prev.rtt,
             downlink: lastNet?.downlink ?? prev.downlink,
             effectiveType: lastNet?.effective_type ?? prev.effectiveType,
             packetLossPct: lastNet?.packet_loss_estimate_pct ?? prev.packetLossPct,
-            currentPathname: loaded[loaded.length - 1]?.event_data?.pathname || prev.currentPathname,
+            currentPathname: lastEvent?.event_data?.pathname || prev.currentPathname,
           }))
         }
       }
@@ -172,6 +207,7 @@ export function ModalSessionReplay({
       setIsPlaying(true)
       const channelName = `session_replay:${session.sessionId}`
       const baseUserId = session.sessionId.includes('_') ? session.sessionId.split('_')[0] : null
+      
       const channel = supabase.channel(channelName, {
         config: { broadcast: { self: true } },
       })
@@ -181,7 +217,7 @@ export function ModalSessionReplay({
 
         setEvents((prev) => [...prev, payload])
 
-        // Executar visualização do clique instantaneamente
+        // A. Cliques
         if (payload.event_type === 'click' && payload.event_data.x_pct !== undefined && payload.event_data.y_pct !== undefined) {
           setCursorPos({
             x: payload.event_data.x_pct,
@@ -195,7 +231,42 @@ export function ModalSessionReplay({
           }, 1200)
         }
 
-        // Atualizar telemetria em tempo real
+        // B. Navegação em Tempo Real
+        if (payload.event_type === 'navigation' && payload.event_data.pathname) {
+          setTelemetry((prev) => ({
+            ...prev,
+            currentPathname: payload.event_data.pathname || prev.currentPathname,
+          }))
+          // Ao navegar para outra rota, fecha qualquer modal aberto
+          setActiveModal(null)
+        }
+
+        // C. Abertura e Fechamento de Modais
+        if (payload.event_type === 'modal_open') {
+          setActiveModal({
+            isOpen: true,
+            title: payload.event_data.modal_title || 'Janela de Formulário do SIG',
+          })
+        } else if (payload.event_type === 'modal_close') {
+          setActiveModal(null)
+        }
+
+        // D. Foco e Digitação em Campos
+        if (payload.event_type === 'input_focus') {
+          setActiveModal((prev) => (prev ? { ...prev, fieldFocus: payload.event_data.field_name } : prev))
+        } else if (payload.event_type === 'input_change') {
+          setActiveModal((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  lastTypingField: payload.event_data.field_name,
+                  characterCount: payload.event_data.character_count,
+                }
+              : prev
+          )
+        }
+
+        // E. Atualizar telemetria consolidada
         setTelemetry((prev) => ({
           rtt: payload.event_data.rtt ?? prev.rtt,
           downlink: payload.event_data.downlink ?? prev.downlink,
@@ -204,7 +275,8 @@ export function ModalSessionReplay({
           activeSeconds: payload.event_data.active_time_seconds ?? prev.activeSeconds + 1,
           currentPathname: payload.event_data.pathname || prev.currentPathname,
           totalClicks: payload.event_type === 'click' ? prev.totalClicks + 1 : prev.totalClicks,
-          totalInputs: payload.event_type === 'input_focus' ? prev.totalInputs + 1 : prev.totalInputs,
+          totalInputs: payload.event_type === 'input_focus' || payload.event_type === 'input_change' ? prev.totalInputs + 1 : prev.totalInputs,
+          totalModals: payload.event_type === 'modal_open' ? prev.totalModals + 1 : prev.totalModals,
           totalErrors: payload.event_type === 'error' ? prev.totalErrors + 1 : prev.totalErrors,
         }))
       }
@@ -212,12 +284,14 @@ export function ModalSessionReplay({
       channel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
       channelRef.current = channel
 
+      // Canal secundário pelo user_id para garantir recepção de broadcast
       let secondaryChannel: any = null
       if (baseUserId && baseUserId !== session.sessionId) {
         secondaryChannel = supabase.channel(`session_replay:${baseUserId}`, {
           config: { broadcast: { self: true } },
         })
         secondaryChannel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
+        userChannelRef.current = secondaryChannel
       }
 
       return () => {
@@ -247,13 +321,12 @@ export function ModalSessionReplay({
     const currentEv = events[currentIndex]
     const nextEv = events[currentIndex + 1]
 
-    // Calcular intervalo real entre eventos com compensação de velocidade
     const currentTs = currentEv?.event_data?.timestamp || 0
     const nextTs = nextEv?.event_data?.timestamp || currentTs + 1000
     let delay = (nextTs - currentTs) / playbackSpeed
 
-    // Limitar delay entre 100ms e 2500ms para evitar longos períodos ociosos
-    delay = Math.max(120, Math.min(2500, delay))
+    // Limitar delay entre 100ms e 2200ms para playback fluído
+    delay = Math.max(100, Math.min(2200, delay))
 
     playTimerRef.current = setTimeout(() => {
       if (!isMounted.current) return
@@ -262,7 +335,7 @@ export function ModalSessionReplay({
         const ev = events[nextIdx]
 
         if (ev) {
-          // Animar cursor
+          // A. Animar cursor
           if (ev.event_type === 'click' && ev.event_data.x_pct !== undefined && ev.event_data.y_pct !== undefined) {
             setCursorPos({
               x: ev.event_data.x_pct,
@@ -276,7 +349,22 @@ export function ModalSessionReplay({
             }, 800)
           }
 
-          // Atualizar telemetria daquele ponto no tempo
+          // B. Modais no Playback
+          if (ev.event_type === 'modal_open') {
+            setActiveModal({
+              isOpen: true,
+              title: ev.event_data.modal_title || 'Janela Modal do SIG',
+            })
+          } else if (ev.event_type === 'modal_close') {
+            setActiveModal(null)
+          }
+
+          // C. Navegação no Playback
+          if (ev.event_type === 'navigation' && ev.event_data.pathname) {
+            setActiveModal(null)
+          }
+
+          // D. Atualizar telemetria daquele ponto no tempo
           setTelemetry((prevTel) => ({
             ...prevTel,
             rtt: ev.event_data.rtt ?? prevTel.rtt,
@@ -301,14 +389,19 @@ export function ModalSessionReplay({
   const handleReset = () => {
     setIsPlaying(false)
     setCurrentIndex(0)
+    setActiveModal(null)
     setCursorPos({ x: 50, y: 50, active: false })
   }
 
   // Eventos filtrados para o painel de log
   const filteredLogs = useMemo(() => {
     if (filtroTipoLog === 'ALL') return events
+    if (filtroTipoLog === 'modal') return events.filter((e) => e.event_type === 'modal_open' || e.event_type === 'modal_close')
+    if (filtroTipoLog === 'input') return events.filter((e) => e.event_type === 'input_focus' || e.event_type === 'input_blur' || e.event_type === 'input_change')
     return events.filter((e) => e.event_type === filtroTipoLog)
   }, [events, filtroTipoLog])
+
+  const path = (telemetry.currentPathname || '/').toLowerCase()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -327,7 +420,7 @@ export function ModalSessionReplay({
                 {isLiveMode ? (
                   <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 animate-pulse">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />
-                    AO VIVO TRANSMITINDO
+                    TRANSMISSÃO AO VIVO
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[11px]">
@@ -336,7 +429,7 @@ export function ModalSessionReplay({
                 )}
               </div>
               <p className="text-xs text-muted-foreground truncate">
-                {session?.funcionarioCargo || 'Servidor'} • {session?.escolaNome || 'Rede Municipal'} • ID:{' '}
+                {session?.funcionarioCargo || 'Servidor'} • {session?.escolaNome || 'Rede Municipal'} • Sessão:{' '}
                 <span className="font-mono text-foreground/80">{session?.sessionId?.slice(0, 16)}...</span>
               </p>
             </div>
@@ -358,7 +451,7 @@ export function ModalSessionReplay({
 
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/70 border border-border text-xs">
               <Activity className={cn('w-3.5 h-3.5', telemetry.packetLossPct === 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')} />
-              <span className="text-muted-foreground">Perda Pacotes:</span>
+              <span className="text-muted-foreground">Perda:</span>
               <span className="font-mono font-bold text-foreground">{telemetry.packetLossPct}%</span>
             </div>
           </div>
@@ -379,10 +472,10 @@ export function ModalSessionReplay({
                 <span className="font-mono text-foreground/80 ml-2">Painel Escolar SIG</span>
               </div>
 
-              {/* Rota Atual da Sessão */}
-              <div className="flex items-center gap-2 bg-background px-3 py-1 rounded-md border border-border font-mono text-[11px] text-sky-600 dark:text-sky-300 max-w-sm truncate">
+              {/* Rota Atual da Sessão em Tempo Real */}
+              <div className="flex items-center gap-2 bg-background px-3 py-1 rounded-md border border-border font-mono text-[11px] text-sky-600 dark:text-sky-300 max-w-sm truncate shadow-xs">
                 <Compass className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" />
-                <span>{telemetry.currentPathname || '/'}</span>
+                <span className="font-bold">{telemetry.currentPathname || '/'}</span>
               </div>
 
               <div className="flex items-center gap-2 text-[11px]">
@@ -392,7 +485,7 @@ export function ModalSessionReplay({
             </div>
 
             {/* Viewport Interativo com Cursor Virtual e Ripple de Clique */}
-            <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px]">
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center p-3 sm:p-4 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px]">
               {/* Esqueleto Representativo de Alta Fidelidade da UI do SIG */}
               <div className="w-full h-full max-w-5xl max-h-[640px] bg-card border border-border rounded-xl shadow-2xl relative overflow-hidden flex flex-col pointer-events-none text-foreground">
                 {/* Header Mock com Identidade SIG */}
@@ -431,9 +524,9 @@ export function ModalSessionReplay({
                   </div>
                 </div>
 
-                {/* Conteúdo Mock: Sidebar com Menus Reais + Área Principal */}
+                {/* Conteúdo Mock: Sidebar com Menus Reais + Área Principal com Espelhamento Dinâmico */}
                 <div className="flex-1 flex overflow-hidden relative">
-                  {/* Sidebar Mock Realista com Menus do SIG */}
+                  {/* Sidebar Mock Realista com Menus do SIG sincronizados com a rota atual */}
                   <div className="w-44 border-r border-border bg-muted/20 p-2 space-y-1 hidden sm:flex flex-col justify-between shrink-0">
                     <div className="space-y-1">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/70 px-2 py-1">
@@ -441,28 +534,28 @@ export function ModalSessionReplay({
                       </div>
 
                       {[
-                        { label: 'Início', icon: Home, active: (telemetry.currentPathname || '').includes('home') || telemetry.currentPathname === '/' },
-                        { label: 'Alunos', icon: Users, active: (telemetry.currentPathname || '').includes('aluno') },
-                        { label: 'Turmas', icon: GraduationCap, active: (telemetry.currentPathname || '').includes('turma') },
-                        { label: 'Matrículas', icon: UserPlus, active: (telemetry.currentPathname || '').includes('matricula') },
-                        { label: 'Notas & Diário', icon: ClipboardList, active: (telemetry.currentPathname || '').includes('avaliacao') || (telemetry.currentPathname || '').includes('nota') },
-                        { label: 'Mural de Avisos', icon: MessageSquare, active: (telemetry.currentPathname || '').includes('mural') },
-                        { label: 'Documentos', icon: FileText, active: (telemetry.currentPathname || '').includes('documento') },
-                        { label: 'Relatórios', icon: FileBarChart, active: (telemetry.currentPathname || '').includes('relatorio') },
-                        { label: 'Auditoria & Logs', icon: Activity, active: (telemetry.currentPathname || '').includes('analise-uso') || (telemetry.currentPathname || '').includes('admin') },
+                        { label: 'Início', icon: Home, active: path === '/' || path.includes('home') },
+                        { label: 'Alunos', icon: Users, active: path.includes('aluno') },
+                        { label: 'Turmas', icon: GraduationCap, active: path.includes('turma') },
+                        { label: 'Matrículas', icon: UserPlus, active: path.includes('matricula') },
+                        { label: 'Notas & Diário', icon: ClipboardList, active: path.includes('avaliacao') || path.includes('nota') },
+                        { label: 'Mural de Avisos', icon: MessageSquare, active: path.includes('mural') },
+                        { label: 'Documentos', icon: FileText, active: path.includes('documento') },
+                        { label: 'Relatórios', icon: FileBarChart, active: path.includes('relatorio') },
+                        { label: 'Auditoria & Logs', icon: Activity, active: path.includes('analise-uso') || path.includes('admin') },
                       ].map((item, idx) => {
                         const Icon = item.icon
                         return (
                           <div
                             key={idx}
                             className={cn(
-                              'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors',
+                              'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
                               item.active
-                                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-300 font-bold border border-sky-500/30'
+                                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-300 font-bold border border-sky-500/30 shadow-xs'
                                 : 'text-muted-foreground hover:bg-muted/50'
                             )}
                           >
-                            <Icon className={cn('w-3.5 h-3.5', item.active ? 'text-sky-600 dark:text-sky-400' : 'text-muted-foreground')} />
+                            <Icon className={cn('w-3.5 h-3.5 shrink-0', item.active ? 'text-sky-600 dark:text-sky-400' : 'text-muted-foreground')} />
                             <span className="truncate">{item.label}</span>
                           </div>
                         )
@@ -477,196 +570,458 @@ export function ModalSessionReplay({
                     </div>
                   </div>
 
-                  {/* Main Canvas: Conteúdo Rico Contextual da Tela */}
-                  <div className="flex-1 p-5 space-y-4 overflow-hidden flex flex-col justify-between">
-                    {/* Título e Ações da Tela */}
-                    {(() => {
-                      const p = (telemetry.currentPathname || '/').toLowerCase()
-                      let title = 'Painel Integrado de Gestão Escolar (SIG)'
-                      let subtitle = 'Visão unificada das rotinas acadêmicas e pedagógicas da unidade escolar'
-                      let btnPrimary = '+ Novo Registro'
-                      let btnSecondary = 'Filtrar Dados'
-
-                      if (p.includes('analise-uso') || p.includes('admin')) {
-                        title = 'Auditoria e Análise de Uso em Tempo Real'
-                        subtitle = 'Monitoramento de sessões ativas, telemetria de rede e rastreamento de acessos'
-                        btnPrimary = 'Exportar Relatório'
-                        btnSecondary = 'Filtrar Eventos'
-                      } else if (p.includes('aluno')) {
-                        title = 'Gestão e Fichas de Alunos'
-                        subtitle = 'Consulta de matrículas ativas, históricos escolares e dados cadastrais'
-                        btnPrimary = '+ Novo Aluno'
-                        btnSecondary = 'Filtrar Turma'
-                      } else if (p.includes('turma')) {
-                        title = 'Turmas, Horários e Enturmação'
-                        subtitle = 'Organização de salas de aula, turnos, professores regentes e capacidade'
-                        btnPrimary = '+ Nova Turma'
-                        btnSecondary = 'Matriz Curricular'
-                      } else if (p.includes('matricula')) {
-                        title = 'Matrículas e Rematrículas Escolares'
-                        subtitle = 'Gestão do ciclo de matrículas, documentação de responsáveis e vagas'
-                        btnPrimary = '+ Nova Matrícula'
-                        btnSecondary = 'Comprovantes'
-                      } else if (p.includes('avaliacao') || p.includes('nota')) {
-                        title = 'Lançamento de Notas e Diário Escolar'
-                        subtitle = 'Controle de boletins bimestrais, faltas, recuperações e conceitos'
-                        btnPrimary = 'Salvar Notas'
-                        btnSecondary = 'Boletim em Lote'
-                      }
-
-                      return (
+                  {/* Main Canvas: Conteúdo Dinâmico com Fidelidade de Telas do SIG */}
+                  <div className="flex-1 p-4 sm:p-5 space-y-4 overflow-y-auto flex flex-col justify-between">
+                    {/* 1. TELA: RELATÓRIOS (ex: /relatorios ou /admin/relatorios) */}
+                    {path.includes('relatorio') ? (
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                              {title}
+                              <FileBarChart className="w-4 h-4 text-sky-500" />
+                              Relatórios e Indicadores Educacionais
                             </h3>
-                            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              Geração de atas de rendimento, estatísticas de frequência e boletins consolidados
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                              <Filter className="w-3 h-3" />
-                              {btnSecondary}
+                              <Filter className="w-3 h-3" /> Filtrar Período
                             </div>
-                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-sm">
-                              <Plus className="w-3 h-3" />
-                              {btnPrimary}
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Download className="w-3 h-3" /> Exportar Relatório
                             </div>
                           </div>
                         </div>
-                      )
-                    })()}
 
-                    {/* Cards de Métricas Reais do Módulo */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
-                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total Cadastrado</div>
-                        <div className="text-base font-bold text-foreground">412 Registros</div>
-                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">● 98% Regular</div>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
-                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Movimentações</div>
-                        <div className="text-base font-bold text-sky-600 dark:text-sky-400">18 Turmas</div>
-                        <div className="text-[10px] text-muted-foreground">Turno Matutino / Vespertino</div>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
-                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Pendências / Avisos</div>
-                        <div className="text-base font-bold text-amber-600 dark:text-amber-400">0 Pendentes</div>
-                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tudo atualizado</div>
-                      </div>
-                    </div>
-
-                    {/* Tabela Estruturada com Linhas Reais */}
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                      <div className="p-2.5 px-3 bg-muted/40 border-b border-border flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Table className="w-3.5 h-3.5" />
-                          <span>Registros Recentes</span>
-                        </div>
-                        <span className="text-[10px] font-mono">Exibindo 4 de 412</span>
-                      </div>
-
-                      <div className="divide-y divide-border text-[11px]">
-                        {[
-                          { cod: '00194', nome: 'Gabriel Henrique Silva', desc: '9º Ano A • Manhã', status: 'Ativo' },
-                          { cod: '00195', nome: 'Ana Beatriz Souza', desc: '8º Ano B • Tarde', status: 'Ativo' },
-                          { cod: '00196', nome: 'Lucas Matheus Costa', desc: '1º Ano EM • Integral', status: 'Pendente' },
-                          { cod: '00197', nome: 'Mariana Oliveira Ramos', desc: '7º Ano A • Manhã', status: 'Ativo' },
-                        ].map((row, idx) => (
-                          <div key={idx} className="p-2.5 px-3 flex items-center justify-between hover:bg-muted/20">
-                            <div className="flex items-center gap-2.5">
-                              <span className="font-mono text-[10px] text-muted-foreground">{row.cod}</span>
-                              <div>
-                                <div className="font-semibold text-foreground">{row.nome}</div>
-                                <div className="text-[10px] text-muted-foreground">{row.desc}</div>
+                        {/* Grid de Modelos de Relatórios */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { title: 'Ata de Rendimento Bimestral', desc: 'Médias, faltas e situação final', count: '100% Emitido' },
+                            { title: 'Frequência e Infrequência', desc: 'Controle de faltas e infrequentes', count: '14 Avisos' },
+                            { title: 'Quadro de Matrículas e Vagas', desc: 'Ocupação por série e turno', count: '412 Alunos' },
+                            { title: 'Censo Escolar / MEC', desc: 'Dados padronizados do censo', count: 'Atualizado' },
+                            { title: 'Rotas de Transporte Escolar', desc: 'Quilometragem e alunos atendidos', count: '8 Rotas' },
+                            { title: 'Atestados e Licenças', desc: 'Afastamentos médicos de servidores', count: '3 Ativos' },
+                          ].map((rep, idx) => (
+                            <div key={idx} className="p-3 rounded-xl bg-card border border-border space-y-1.5 hover:border-sky-500/40 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">DOC #{idx + 1}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">{rep.count}</span>
                               </div>
+                              <div className="text-xs font-bold text-foreground">{rep.title}</div>
+                              <div className="text-[10px] text-muted-foreground line-clamp-1">{rep.desc}</div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                                  row.status === 'Ativo'
-                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                                )}
-                              >
-                                {row.status}
-                              </span>
-                              <div className="px-2 py-0.5 rounded bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
-                                Ações
-                              </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : path.includes('aluno') ? (
+                      /* 2. TELA: ALUNOS (ex: /alunos) */
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <Users className="w-4 h-4 text-sky-500" />
+                              Gestão e Fichas de Alunos
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">
+                              Consulta cadastral, matrículas ativas, históricos escolares e transferências
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                              <Filter className="w-3 h-3" /> Filtrar Turma
+                            </div>
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Plus className="w-3 h-3" /> + Novo Aluno
                             </div>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Tabela de Alunos */}
+                        <div className="rounded-xl border border-border bg-card overflow-hidden">
+                          <div className="p-2.5 px-3 bg-muted/40 border-b border-border flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Table className="w-3.5 h-3.5" />
+                              <span>Fichas de Matrícula Ativas</span>
+                            </div>
+                            <span className="text-[10px] font-mono">Total: 412 alunos</span>
+                          </div>
+                          <div className="divide-y divide-border text-[11px]">
+                            {[
+                              { cod: 'MAT-00194', nome: 'Gabriel Henrique Silva', turma: '9º Ano A • Matutino', resp: 'Patrícia Silva', status: 'Ativo' },
+                              { cod: 'MAT-00195', nome: 'Ana Beatriz Souza', turma: '8º Ano B • Vespertino', resp: 'Carlos Souza', status: 'Ativo' },
+                              { cod: 'MAT-00196', nome: 'Lucas Matheus Costa', turma: '1º Ano EM • Integral', resp: 'Marcos Costa', status: 'Pendente' },
+                              { cod: 'MAT-00197', nome: 'Mariana Oliveira Ramos', turma: '7º Ano A • Matutino', resp: 'Luciana Ramos', status: 'Ativo' },
+                            ].map((row, idx) => (
+                              <div key={idx} className="p-2.5 px-3 flex items-center justify-between hover:bg-muted/20">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="font-mono text-[10px] text-muted-foreground">{row.cod}</span>
+                                  <div>
+                                    <div className="font-semibold text-foreground">{row.nome}</div>
+                                    <div className="text-[10px] text-muted-foreground">{row.turma} • Resp: {row.resp}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', row.status === 'Ativo' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30')}>
+                                    {row.status}
+                                  </span>
+                                  <div className="px-2 py-0.5 rounded bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
+                                    Ficha
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ) : path.includes('turma') ? (
+                      /* 3. TELA: TURMAS (ex: /turmas) */
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <GraduationCap className="w-4 h-4 text-sky-500" />
+                              Turmas, Salas e Enturmação
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">
+                              Distribuição de estudantes, matriz curricular por turno e professores regentes
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Plus className="w-3 h-3" /> + Nova Turma
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cards de Turmas */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { name: '6º Ano A', turno: 'Matutino', alunos: '32 / 35', prof: 'Prof. Ricardo' },
+                            { name: '7º Ano A', turno: 'Matutino', alunos: '34 / 35', prof: 'Profa. Cristina' },
+                            { name: '8º Ano B', turno: 'Vespertino', alunos: '30 / 35', prof: 'Prof. Marcos' },
+                            { name: '9º Ano A', turno: 'Matutino', alunos: '28 / 35', prof: 'Profa. Vanessa' },
+                            { name: '1º Ano EM', turno: 'Integral', alunos: '35 / 35', prof: 'Prof. André' },
+                            { name: '2º Ano EM', turno: 'Integral', alunos: '31 / 35', prof: 'Profa. Juliana' },
+                          ].map((t, idx) => (
+                            <div key={idx} className="p-3 rounded-xl bg-card border border-border space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-foreground">{t.name}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold">{t.turno}</span>
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">Capacidade: <span className="font-semibold text-foreground">{t.alunos}</span></div>
+                              <div className="text-[10px] text-muted-foreground truncate">Regente: {t.prof}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : path.includes('matricula') ? (
+                      /* 4. TELA: MATRÍCULAS (ex: /matriculas) */
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <UserPlus className="w-4 h-4 text-sky-500" />
+                              Matrículas e Rematrículas Escolares
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">
+                              Acompanhamento de novas solicitações, validação de documentos e vagas
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Plus className="w-3 h-3" /> + Nova Matrícula
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground">SOLICITAÇÕES ABERTAS</div>
+                            <div className="text-base font-bold text-sky-600 dark:text-sky-400">48 Candidatos</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground">DOCUMENTOS PENDENTES</div>
+                            <div className="text-base font-bold text-amber-600 dark:text-amber-400">12 Aguardando</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground">EFETIVADAS</div>
+                            <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">180 Alunos</div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : path.includes('avaliacao') || path.includes('nota') ? (
+                      /* 5. TELA: NOTAS E DIÁRIO DE CLASSE (ex: /avaliacoes) */
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-sky-500" />
+                              Lançamento de Notas e Diário de Classe
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">
+                              Registro de notas bimestrais, conceitos, frequência diária e recuperações
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Check className="w-3 h-3" /> Salvar Diário
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-border bg-card overflow-hidden">
+                          <div className="p-2.5 px-3 bg-muted/40 border-b border-border flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                            <span>Turma: 9º Ano A • Disciplina: Matemática • 2º Bimestre</span>
+                            <span className="text-[10px] font-mono">32 Alunos</span>
+                          </div>
+                          <div className="divide-y divide-border text-[11px]">
+                            {[
+                              { aluno: 'Gabriel Henrique Silva', n1: '8.5', n2: '9.0', media: '8.8', faltas: '2' },
+                              { aluno: 'Ana Beatriz Souza', n1: '7.0', n2: '8.0', media: '7.5', faltas: '0' },
+                              { aluno: 'Lucas Matheus Costa', n1: '6.0', n2: '5.5', media: '5.8', faltas: '4' },
+                            ].map((row, idx) => (
+                              <div key={idx} className="p-2.5 px-3 flex items-center justify-between">
+                                <div className="font-semibold text-foreground">{row.aluno}</div>
+                                <div className="flex items-center gap-3 text-xs font-mono">
+                                  <span>N1: <strong>{row.n1}</strong></span>
+                                  <span>N2: <strong>{row.n2}</strong></span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Média: {row.media}</span>
+                                  <span className="text-muted-foreground">Faltas: {row.faltas}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* 6. TELA PADRÃO / PAINEL GERAL (ex: /home ou /admin) */
+                      <div className="space-y-4 animate-in fade-in-50 duration-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              Painel Integrado de Gestão Escolar (SIG)
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">
+                              Visão unificada das rotinas acadêmicas, registros de presença e telemetria da unidade
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                              <Filter className="w-3 h-3" /> Filtrar Dados
+                            </div>
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-xs">
+                              <Plus className="w-3 h-3" /> + Novo Registro
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cards de Métricas Gerais */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total Cadastrado</div>
+                            <div className="text-base font-bold text-foreground">412 Alunos</div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">● 98% Regular</div>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Turmas Ativas</div>
+                            <div className="text-base font-bold text-sky-600 dark:text-sky-400">18 Turmas</div>
+                            <div className="text-[10px] text-muted-foreground">Turno Matutino / Vespertino</div>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Pendências / Avisos</div>
+                            <div className="text-base font-bold text-amber-600 dark:text-amber-400">0 Pendentes</div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tudo sincronizado</div>
+                          </div>
+                        </div>
+
+                        {/* Tabela Estruturada Geral */}
+                        <div className="rounded-xl border border-border bg-card overflow-hidden">
+                          <div className="p-2.5 px-3 bg-muted/40 border-b border-border flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Table className="w-3.5 h-3.5" />
+                              <span>Registros e Acessos Recentes</span>
+                            </div>
+                            <span className="text-[10px] font-mono">Exibindo 4 registros</span>
+                          </div>
+
+                          <div className="divide-y divide-border text-[11px]">
+                            {[
+                              { cod: '00194', nome: 'Gabriel Henrique Silva', desc: '9º Ano A • Matutino', status: 'Ativo' },
+                              { cod: '00195', nome: 'Ana Beatriz Souza', desc: '8º Ano B • Vespertino', status: 'Ativo' },
+                              { cod: '00196', nome: 'Lucas Matheus Costa', desc: '1º Ano EM • Integral', status: 'Pendente' },
+                              { cod: '00197', nome: 'Mariana Oliveira Ramos', desc: '7º Ano A • Matutino', status: 'Ativo' },
+                            ].map((row, idx) => (
+                              <div key={idx} className="p-2.5 px-3 flex items-center justify-between hover:bg-muted/20">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="font-mono text-[10px] text-muted-foreground">{row.cod}</span>
+                                  <div>
+                                    <div className="font-semibold text-foreground">{row.nome}</div>
+                                    <div className="text-[10px] text-muted-foreground">{row.desc}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={cn(
+                                      'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                      row.status === 'Ativo'
+                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                    )}
+                                  >
+                                    {row.status}
+                                  </span>
+                                  <div className="px-2 py-0.5 rounded bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
+                                    Detalhes
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Simulação Dinâmica de Modal / Janela Flutuante quando houver interação com Modal/Botão */}
-                  {Boolean(
-                    cursorPos.text &&
-                      (cursorPos.text.toLowerCase().includes('novo') ||
-                        cursorPos.text.toLowerCase().includes('cadastr') ||
-                        cursorPos.text.toLowerCase().includes('adicionar') ||
-                        cursorPos.text.toLowerCase().includes('editar') ||
-                        cursorPos.text.toLowerCase().includes('filtr') ||
-                        cursorPos.text.toLowerCase().includes('modal') ||
-                        cursorPos.text.toLowerCase().includes('relatório') ||
-                        cursorPos.text.toLowerCase().includes('detalhe') ||
-                        cursorPos.text.toLowerCase().includes('salvar') ||
-                        cursorPos.text.toLowerCase().includes('excluir') ||
-                        cursorPos.tag === 'DIALOG' ||
-                        cursorPos.tag === 'FORM')
-                  ) && (
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center p-6 z-20 animate-in fade-in zoom-in-95 duration-200">
-                      <div className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-4 space-y-3">
-                        <div className="flex items-center justify-between pb-2 border-b border-border">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
-                              <Layers className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                  {/* ─────────────────────────────────────────────────────────────
+                      REPRODUÇÃO IMERSIVA DE MODAL (ABRE AO VIVO QUANDO O USUÁRIO ABRE)
+                     ───────────────────────────────────────────────────────────── */}
+                  {Boolean(activeModal?.isOpen) && (
+                    <div className="absolute inset-0 bg-background/70 backdrop-blur-[3px] flex items-center justify-center p-4 sm:p-6 z-20 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="w-full max-w-lg bg-card text-foreground border border-border rounded-2xl shadow-2xl p-5 space-y-4">
+                        {/* Header do Modal Reproduzido */}
+                        <div className="flex items-center justify-between pb-3 border-b border-border">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
+                              <Layers className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                             </div>
                             <div>
-                              <h4 className="text-xs font-bold text-foreground">
-                                {cursorPos.text ? `Modal: ${cursorPos.text}` : 'Formulário do SIG'}
+                              <h4 className="text-xs sm:text-sm font-bold text-foreground">
+                                {activeModal?.title || 'Formulário do SIG'}
                               </h4>
-                              <p className="text-[10px] text-muted-foreground">Janela de Diálogo / Modal Interativo</p>
+                              <p className="text-[10px] text-muted-foreground">Janela de Diálogo / Modal Interativo Ao Vivo</p>
                             </div>
                           </div>
-                          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
-                            <XCircle className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 text-[11px]">
-                          <div>
-                            <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Identificação / Registro</label>
-                            <div className="h-7 px-2.5 rounded-lg bg-muted/60 border border-border flex items-center text-foreground font-mono text-[10px]">
-                              {session?.funcionarioNome || 'Servidor Responsável'}
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Categoria / Turma</label>
-                              <div className="h-7 px-2.5 rounded-lg bg-muted/60 border border-border flex items-center text-foreground text-[10px]">
-                                Ensino Fundamental
-                              </div>
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Situação</label>
-                              <div className="h-7 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center text-[10px] font-semibold">
-                                <CheckCircle2 className="w-3 h-3 mr-1" /> Regular
-                              </div>
-                            </div>
+                          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+                            <XCircle className="w-4 h-4" />
                           </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                          <div className="px-3 py-1 rounded-lg bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
+                        {/* Conteúdo Contextual do Modal */}
+                        {(() => {
+                          const modalTitleLower = (activeModal?.title || '').toLowerCase()
+
+                          if (modalTitleLower.includes('aluno') || modalTitleLower.includes('cadastr') || path.includes('aluno')) {
+                            // A. Modal de Cadastro de Aluno
+                            return (
+                              <div className="space-y-3 text-[11px]">
+                                <div className="flex items-center gap-1 border-b border-border pb-2 text-[10px] font-semibold text-muted-foreground">
+                                  <span className="px-2 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400 font-bold">1. Dados Pessoais</span>
+                                  <span className="px-2 py-0.5">2. Responsáveis</span>
+                                  <span className="px-2 py-0.5">3. Documentos</span>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome Completo do Aluno</label>
+                                    <div className={cn('h-8 px-3 rounded-lg bg-muted/50 border flex items-center justify-between text-foreground text-[11px]', activeModal?.fieldFocus?.toLowerCase().includes('nome') ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-border')}>
+                                      <span>{activeModal?.lastTypingField?.toLowerCase().includes('nome') ? 'Digitando nome...' : 'Nome do Estudante'}</span>
+                                      {activeModal?.fieldFocus?.toLowerCase().includes('nome') && (
+                                        <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 text-[9px] h-4">FOCADO</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Data de Nascimento</label>
+                                      <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px]">
+                                        DD/MM/AAAA
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Turma Pretendida</label>
+                                      <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                        9º Ano A • Matutino
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome da Mãe / Responsável Legal</label>
+                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px]">
+                                      Nome completo do responsável
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          } else if (modalTitleLower.includes('relat') || path.includes('relatorio')) {
+                            // B. Modal de Emissão de Relatórios
+                            return (
+                              <div className="space-y-3 text-[11px]">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Tipo de Relatório</label>
+                                  <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground font-semibold text-[11px]">
+                                    Ata de Rendimento & Boletins Bimestrais
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Período Letivo</label>
+                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                      2º Bimestre / 2026
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Formato</label>
+                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                      Documento PDF (.pdf)
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          } else {
+                            // C. Modal Genérico / Dinâmico
+                            return (
+                              <div className="space-y-3 text-[11px]">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Identificação / Formulário</label>
+                                  <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground font-mono text-[10px]">
+                                    {session?.funcionarioNome || 'Servidor SIG'}
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Campo em Foco</label>
+                                    <div className="h-8 px-3 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center text-[10px] font-semibold">
+                                      {activeModal?.fieldFocus || 'Interagindo no formulário'}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Status</label>
+                                    <div className="h-8 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center text-[10px] font-semibold">
+                                      <CheckCircle2 className="w-3 h-3 mr-1" /> Em edição ativa
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          }
+                        })()}
+
+                        {/* Rodapé de Ações do Modal */}
+                        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                          <div className="px-3 py-1.5 rounded-xl bg-muted border border-border text-[11px] text-muted-foreground font-semibold">
                             Cancelar
                           </div>
-                          <div className="px-3 py-1 rounded-lg bg-sky-600 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                            <CheckCircle2 className="w-3 h-3" /> Salvar Alterações
+                          <div className="px-4 py-1.5 rounded-xl bg-sky-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Salvar / Confirmar
                           </div>
                         </div>
                       </div>
@@ -775,6 +1130,11 @@ export function ModalSessionReplay({
                           tag: ev.event_data.target_tag,
                         })
                       }
+                      if (ev?.event_type === 'modal_open') {
+                        setActiveModal({ isOpen: true, title: ev.event_data.modal_title || 'Modal' })
+                      } else if (ev?.event_type === 'modal_close') {
+                        setActiveModal(null)
+                      }
                     }}
                     className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-sky-500"
                   />
@@ -785,25 +1145,29 @@ export function ModalSessionReplay({
 
           {/* Painel Direito: Console de Telemetria e Linha do Tempo de Ações */}
           <div className="w-full lg:w-96 flex flex-col bg-card border-t lg:border-t-0 lg:border-l border-border">
-            {/* Resumo Estatístico */}
+            {/* Resumo Estatístico Consolidado */}
             <div className="p-4 border-b border-border bg-muted/30 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Sliders className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-                Telemetria Consolidada
+                Telemetria da Sessão
               </h3>
 
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-1.5 text-center">
                 <div className="p-2 rounded-xl bg-background border border-border">
-                  <div className="text-[10px] text-muted-foreground">Cliques</div>
-                  <div className="text-base font-bold text-sky-600 dark:text-sky-400">{telemetry.totalClicks}</div>
+                  <div className="text-[9px] text-muted-foreground">Cliques</div>
+                  <div className="text-sm font-bold text-sky-600 dark:text-sky-400">{telemetry.totalClicks}</div>
                 </div>
                 <div className="p-2 rounded-xl bg-background border border-border">
-                  <div className="text-[10px] text-muted-foreground">Formulários</div>
-                  <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">{telemetry.totalInputs}</div>
+                  <div className="text-[9px] text-muted-foreground">Campos</div>
+                  <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{telemetry.totalInputs}</div>
                 </div>
                 <div className="p-2 rounded-xl bg-background border border-border">
-                  <div className="text-[10px] text-muted-foreground">Erros JS</div>
-                  <div className={cn('text-base font-bold', telemetry.totalErrors > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
+                  <div className="text-[9px] text-muted-foreground">Modais</div>
+                  <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{telemetry.totalModals}</div>
+                </div>
+                <div className="p-2 rounded-xl bg-background border border-border">
+                  <div className="text-[9px] text-muted-foreground">Erros</div>
+                  <div className={cn('text-sm font-bold', telemetry.totalErrors > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
                     {telemetry.totalErrors}
                   </div>
                 </div>
@@ -824,14 +1188,15 @@ export function ModalSessionReplay({
                 className="bg-background border border-border text-foreground text-[11px] rounded-lg px-2 py-1 outline-none cursor-pointer"
               >
                 <option value="ALL">Todos Eventos</option>
-                <option value="click">Cliques / Toques</option>
                 <option value="navigation">Navegação</option>
-                <option value="input_focus">Campos</option>
+                <option value="modal">Modais</option>
+                <option value="input">Campos</option>
+                <option value="click">Cliques</option>
                 <option value="error">Erros</option>
               </select>
             </div>
 
-            {/* Lista com Rolagem dos Eventos */}
+            {/* Lista com Rolagem dos Eventos em Tempo Real */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs font-mono">
               {loadingEvents ? (
                 <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
@@ -852,7 +1217,7 @@ export function ModalSessionReplay({
                       className={cn(
                         'p-2.5 rounded-xl border transition-all duration-150',
                         isCurrent
-                          ? 'bg-sky-500/10 border-sky-500/50 shadow-sm'
+                          ? 'bg-sky-500/10 border-sky-500/50 shadow-xs'
                           : 'bg-muted/40 border-border hover:bg-muted/80 text-muted-foreground'
                       )}
                     >
@@ -868,9 +1233,19 @@ export function ModalSessionReplay({
                               <Compass className="w-3 h-3 mr-1" /> NAVEGAÇÃO
                             </Badge>
                           )}
-                          {ev.event_type === 'input_focus' && (
+                          {ev.event_type === 'modal_open' && (
+                            <Badge className="bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/30 text-[10px]">
+                              <Layers className="w-3 h-3 mr-1" /> ABRIU MODAL
+                            </Badge>
+                          )}
+                          {ev.event_type === 'modal_close' && (
+                            <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                              <XCircle className="w-3 h-3 mr-1" /> FECHOU MODAL
+                            </Badge>
+                          )}
+                          {(ev.event_type === 'input_focus' || ev.event_type === 'input_change') && (
                             <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30 text-[10px]">
-                              <FileText className="w-3 h-3 mr-1" /> CAMPO
+                              <FileText className="w-3 h-3 mr-1" /> {ev.event_type === 'input_change' ? 'DIGITAÇÃO' : 'CAMPO'}
                             </Badge>
                           )}
                           {ev.event_type === 'error' && (
@@ -885,18 +1260,18 @@ export function ModalSessionReplay({
                           )}
                         </div>
 
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground font-mono">
                           {ev.event_data?.timestamp ? new Date(ev.event_data.timestamp).toLocaleTimeString('pt-BR') : ''}
                         </span>
                       </div>
 
                       {/* Detalhes do Evento */}
-                      <div className="text-[11px] text-foreground/90 break-words">
+                      <div className="text-[11px] text-foreground/90 break-words font-sans">
                         {ev.event_type === 'click' && (
                           <div>
                             Elemento: <span className="text-sky-600 dark:text-sky-300 font-bold">{ev.event_data.target_tag}</span>{' '}
                             {ev.event_data.target_text && `("${ev.event_data.target_text}")`}
-                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                            <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">
                               Posição: {ev.event_data.x_pct}% x {ev.event_data.y_pct}%
                             </div>
                           </div>
@@ -904,7 +1279,19 @@ export function ModalSessionReplay({
 
                         {ev.event_type === 'navigation' && (
                           <div>
-                            Entrou em: <span className="text-purple-600 dark:text-purple-300 font-bold">{ev.event_data.pathname}</span>
+                            Navegou para a tela: <span className="text-purple-600 dark:text-purple-300 font-bold font-mono">{ev.event_data.pathname}</span>
+                          </div>
+                        )}
+
+                        {ev.event_type === 'modal_open' && (
+                          <div className="text-indigo-600 dark:text-indigo-300 font-medium">
+                            Abriu modal: <span className="font-bold">{ev.event_data.modal_title}</span>
+                          </div>
+                        )}
+
+                        {ev.event_type === 'modal_close' && (
+                          <div className="text-muted-foreground">
+                            Fechou modal {ev.event_data.modal_title ? `"${ev.event_data.modal_title}"` : ''}
                           </div>
                         )}
 
@@ -914,15 +1301,24 @@ export function ModalSessionReplay({
                           </div>
                         )}
 
+                        {ev.event_type === 'input_change' && (
+                          <div>
+                            Digitando no campo: <span className="text-emerald-600 dark:text-emerald-300 font-bold">{ev.event_data.field_name}</span>
+                            {ev.event_data.character_count !== undefined && (
+                              <span className="text-[10px] text-muted-foreground ml-1">({ev.event_data.character_count} caracteres)</span>
+                            )}
+                          </div>
+                        )}
+
                         {ev.event_type === 'error' && (
-                          <div className="text-rose-600 dark:text-rose-300">
-                            Erro: {ev.event_data.error_message}
+                          <div className="text-rose-600 dark:text-rose-300 font-semibold">
+                            {ev.event_data.error_message}
                           </div>
                         )}
 
                         {ev.event_type === 'heartbeat' && (
                           <div className="text-muted-foreground">
-                            Sessão ativa na tela {ev.event_data.pathname}
+                            Sessão conectada na rota {ev.event_data.pathname}
                           </div>
                         )}
                       </div>
@@ -937,3 +1333,4 @@ export function ModalSessionReplay({
     </Dialog>
   )
 }
+

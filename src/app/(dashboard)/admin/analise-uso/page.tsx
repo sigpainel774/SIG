@@ -53,6 +53,7 @@ interface SessaoAtiva {
   user_agent: string | null
   last_interaction_at?: number
   last_action_desc?: string
+  active_modal?: { isOpen: boolean; title: string } | null
   is_actively_using?: boolean
   is_tab_focused?: boolean
 }
@@ -220,6 +221,7 @@ export default function AnaliseUsoPage() {
               user_agent: null,
               last_interaction_at: p.last_interaction_at || Date.now(),
               last_action_desc: p.last_action_desc || 'Interagindo no sistema',
+              active_modal: p.active_modal || null,
               is_actively_using: p.is_actively_using,
               is_tab_focused: p.is_tab_focused,
             })
@@ -681,6 +683,12 @@ export default function AnaliseUsoPage() {
                             <Compass className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" />
                             <span className="truncate">{s.current_pathname || '/home'}</span>
                           </div>
+                          {s.active_modal?.isOpen && (
+                            <Badge className="bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 text-[10px] shrink-0 font-semibold flex items-center gap-1">
+                              <Layers className="w-3 h-3" />
+                              <span className="truncate max-w-[120px]">{s.active_modal.title}</span>
+                            </Badge>
+                          )}
                         </div>
 
                         {/* Indicador de Última Ação do Usuário */}
