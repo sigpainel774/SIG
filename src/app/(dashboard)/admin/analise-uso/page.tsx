@@ -142,6 +142,7 @@ export default function AnaliseUsoPage() {
       escolaNome?: string
       isLive?: boolean
       currentPathname?: string
+      initialActiveModal?: { isOpen: boolean; title: string } | null
     } | null
   }>({
     open: false,
@@ -342,6 +343,7 @@ export default function AnaliseUsoPage() {
         escolaNome: s.escola_nome,
         isLive: true,
         currentPathname: s.current_pathname || '/',
+        initialActiveModal: s.active_modal || null,
       },
     })
   }

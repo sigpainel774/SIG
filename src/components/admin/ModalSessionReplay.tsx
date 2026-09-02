@@ -52,6 +52,14 @@ import {
   FileCheck,
   AlertCircle,
   Hash,
+  ShieldCheck,
+  Heart,
+  Camera,
+  Save,
+  Printer,
+  Sparkles,
+  MapPin,
+  Lock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ReplayEventItem } from '@/hooks/useSessionReplay'
@@ -67,6 +75,7 @@ interface ModalSessionReplayProps {
     escolaNome?: string
     isLive?: boolean
     currentPathname?: string
+    initialActiveModal?: { isOpen: boolean; title: string } | null
   } | null
 }
 
@@ -104,7 +113,26 @@ export function ModalSessionReplay({
   })
 
   // Estado do Modal Aberto na Transmissão
-  const [activeModal, setActiveModal] = useState<ActiveModalState | null>(null)
+  const [activeModal, setActiveModal] = useState<ActiveModalState | null>(() => {
+    if (session?.initialActiveModal?.isOpen) {
+      return {
+        isOpen: true,
+        title: session.initialActiveModal.title,
+      }
+    }
+    return null
+  })
+
+  useEffect(() => {
+    if (session?.initialActiveModal?.isOpen) {
+      setActiveModal({
+        isOpen: true,
+        title: session.initialActiveModal.title,
+      })
+    } else if (!isLiveMode) {
+      setActiveModal(null)
+    }
+  }, [open, session?.sessionId, session?.initialActiveModal, isLiveMode])
 
   // Telemetria ao vivo / atual
   const [telemetry, setTelemetry] = useState<{
@@ -253,17 +281,30 @@ export function ModalSessionReplay({
 
         // D. Foco e Digitação em Campos
         if (payload.event_type === 'input_focus') {
-          setActiveModal((prev) => (prev ? { ...prev, fieldFocus: payload.event_data.field_name } : prev))
+          setActiveModal((prev) => {
+            if (prev) return { ...prev, fieldFocus: payload.event_data.field_name }
+            return {
+              isOpen: true,
+              title: payload.event_data.modal_title || 'Formulário / Ficha de Matrícula',
+              fieldFocus: payload.event_data.field_name,
+            }
+          })
         } else if (payload.event_type === 'input_change') {
-          setActiveModal((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  lastTypingField: payload.event_data.field_name,
-                  characterCount: payload.event_data.character_count,
-                }
-              : prev
-          )
+          setActiveModal((prev) => {
+            if (prev) {
+              return {
+                ...prev,
+                lastTypingField: payload.event_data.field_name,
+                characterCount: payload.event_data.character_count,
+              }
+            }
+            return {
+              isOpen: true,
+              title: payload.event_data.modal_title || 'Formulário / Ficha de Matrícula',
+              lastTypingField: payload.event_data.field_name,
+              characterCount: payload.event_data.character_count,
+            }
+          })
         }
 
         // E. Atualizar telemetria consolidada
@@ -891,137 +932,397 @@ export function ModalSessionReplay({
                       REPRODUÇÃO IMERSIVA DE MODAL (ABRE AO VIVO QUANDO O USUÁRIO ABRE)
                      ───────────────────────────────────────────────────────────── */}
                   {Boolean(activeModal?.isOpen) && (
-                    <div className="absolute inset-0 bg-background/70 backdrop-blur-[3px] flex items-center justify-center p-4 sm:p-6 z-20 animate-in fade-in zoom-in-95 duration-200">
-                      <div className="w-full max-w-lg bg-card text-foreground border border-border rounded-2xl shadow-2xl p-5 space-y-4">
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-[4px] flex items-center justify-center p-3 sm:p-5 z-20 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="w-full max-w-3xl max-h-[92%] bg-card text-foreground border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                         {/* Header do Modal Reproduzido */}
-                        <div className="flex items-center justify-between pb-3 border-b border-border">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
-                              <Layers className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                        <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 shrink-0">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                              <Layers className="w-5 h-5 text-primary" />
                             </div>
-                            <div>
-                              <h4 className="text-xs sm:text-sm font-bold text-foreground">
-                                {activeModal?.title || 'Formulário do SIG'}
+                            <div className="min-w-0">
+                              <h4 className="text-sm sm:text-base font-bold text-foreground truncate">
+                                {activeModal?.title || 'Ficha de Matrícula AEE 2026 — SIG'}
                               </h4>
-                              <p className="text-[10px] text-muted-foreground">Janela de Diálogo / Modal Interativo Ao Vivo</p>
+                              <p className="text-[11px] text-muted-foreground flex items-center gap-2">
+                                <span>Janela de Diálogo / Modal Interativo Ao Vivo</span>
+                              </p>
                             </div>
                           </div>
-                          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                            <XCircle className="w-4 h-4" />
+
+                          <div className="flex items-center gap-2">
+                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>LGPD: Dados Mascarados</span>
+                            </div>
+                            <div className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground cursor-default">
+                              <XCircle className="w-4 h-4" />
+                            </div>
                           </div>
                         </div>
 
-                        {/* Conteúdo Contextual do Modal */}
-                        {(() => {
-                          const modalTitleLower = (activeModal?.title || '').toLowerCase()
+                        {/* Conteúdo Contextual do Modal (Scrollável com visual idêntico ao original) */}
+                        <div className="p-4 sm:p-5 overflow-y-auto max-h-[62vh] space-y-5 text-xs">
+                          {(() => {
+                            const modalTitleLower = (activeModal?.title || '').toLowerCase()
 
-                          if (modalTitleLower.includes('aluno') || modalTitleLower.includes('cadastr') || path.includes('aluno')) {
-                            // A. Modal de Cadastro de Aluno
-                            return (
-                              <div className="space-y-3 text-[11px]">
-                                <div className="flex items-center gap-1 border-b border-border pb-2 text-[10px] font-semibold text-muted-foreground">
-                                  <span className="px-2 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400 font-bold">1. Dados Pessoais</span>
-                                  <span className="px-2 py-0.5">2. Responsáveis</span>
-                                  <span className="px-2 py-0.5">3. Documentos</span>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome Completo do Aluno</label>
-                                    <div className={cn('h-8 px-3 rounded-lg bg-muted/50 border flex items-center justify-between text-foreground text-[11px]', activeModal?.fieldFocus?.toLowerCase().includes('nome') ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-border')}>
-                                      <span>{activeModal?.lastTypingField?.toLowerCase().includes('nome') ? 'Digitando nome...' : 'Nome do Estudante'}</span>
-                                      {activeModal?.fieldFocus?.toLowerCase().includes('nome') && (
-                                        <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 text-[9px] h-4">FOCADO</Badge>
-                                      )}
+                            if (modalTitleLower.includes('matricula') || modalTitleLower.includes('emaee') || modalTitleLower.includes('paciente') || path.includes('emaee') || path.includes('paciente')) {
+                              // A. Modal Completo de Matrícula EMAEE / Paciente AEE (Fidelidade Total + LGPD Mask)
+                              return (
+                                <div className="space-y-5">
+                                  {/* Sub-cabeçalho de Identificação */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+                                    <div>
+                                      <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider">EMAEE • Ano letivo 2026</p>
+                                      <h2 className="text-sm font-bold text-foreground">Ficha de Matrícula para AEE</h2>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
+                                        Edição de Matrícula
+                                      </span>
+                                      <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Rascunho salvo
+                                      </span>
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-2 gap-2">
+                                  {/* Stepper de 4 Passos */}
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <div className="flex items-center gap-2 p-2 rounded-xl border border-primary/40 bg-primary/10 text-foreground font-bold text-[11px] shadow-sm">
+                                      <span className="w-5 h-5 rounded-md bg-primary text-primary-foreground grid place-items-center text-[10px] font-extrabold">1</span>
+                                      <span className="truncate">Aluno e Endereço</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-muted/40 text-muted-foreground text-[11px]">
+                                      <span className="w-5 h-5 rounded-md bg-primary/10 text-primary grid place-items-center text-[10px] font-extrabold">2</span>
+                                      <span className="truncate">Escola regular</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-muted/40 text-muted-foreground text-[11px]">
+                                      <span className="w-5 h-5 rounded-md bg-primary/10 text-primary grid place-items-center text-[10px] font-extrabold">3</span>
+                                      <span className="truncate">Dados clínicos</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-muted/40 text-muted-foreground text-[11px]">
+                                      <span className="w-5 h-5 rounded-md bg-primary/10 text-primary grid place-items-center text-[10px] font-extrabold">4</span>
+                                      <span className="truncate">Assinaturas</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Seção 1: Dados do Aluno e Endereço */}
+                                  <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-sm">
+                                    <div className="flex items-center gap-2.5 p-3.5 bg-muted/40 border-b border-border">
+                                      <span className="grid place-items-center w-6 h-6 rounded-lg bg-primary/10 font-bold text-xs text-primary">01</span>
+                                      <div>
+                                        <h3 className="font-bold text-foreground text-xs">Dados do Aluno, Endereço e Localização</h3>
+                                        <p className="text-[10px] text-muted-foreground">Cadastral, filiação, endereço com CEP e localização no EMAEE</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="p-4 space-y-3.5">
+                                      {/* Foto 3x4 + Busca de Aluno */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-start">
+                                        <div className="sm:col-span-1 border border-dashed border-border rounded-xl p-3 flex flex-col items-center justify-center text-center bg-muted/20">
+                                          <div className="w-14 h-16 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground mb-1.5">
+                                            <Camera className="w-6 h-6 text-muted-foreground/60" />
+                                          </div>
+                                          <span className="text-[9px] font-semibold text-muted-foreground">Foto 3x4 (EMAEE)</span>
+                                        </div>
+
+                                        <div className="sm:col-span-3 space-y-2">
+                                          <div>
+                                            <label className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
+                                              <span>Nome Completo do Aluno</span>
+                                              {(activeModal?.fieldFocus?.toLowerCase().includes('nome') || activeModal?.lastTypingField?.toLowerCase().includes('nome') || activeModal?.fieldFocus?.toLowerCase().includes('aluno')) && (
+                                                <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 text-[9px] h-4">EM FOCO AO VIVO</Badge>
+                                              )}
+                                            </label>
+                                            <div className={cn('h-8 px-3 rounded-xl bg-muted/50 border flex items-center justify-between text-[11px] font-mono select-none', (activeModal?.fieldFocus?.toLowerCase().includes('nome') || activeModal?.lastTypingField?.toLowerCase().includes('nome') || activeModal?.fieldFocus?.toLowerCase().includes('aluno')) ? 'border-sky-500 ring-2 ring-sky-500/20 text-sky-500' : 'border-border text-muted-foreground')}>
+                                              <span>{activeModal?.lastTypingField?.toLowerCase().includes('nome') ? 'Digitando nome...' : '••••••••••••••••••••••••••••••'}</span>
+                                              <Lock className="w-3 h-3 text-muted-foreground/60" />
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">CPF do Estudante</label>
+                                              <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center justify-between text-muted-foreground text-[11px] font-mono">
+                                                <span>•••.•••.•••-••</span>
+                                                <Lock className="w-3 h-3 text-muted-foreground/60" />
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Data de Nascimento</label>
+                                              <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                                ••/••/••••
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Documentos & Filiação */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-border/60">
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Cartão SUS</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            ••• •••• •••• ••••
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome da Mãe</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            ••••••••••••••••••••
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome do Pai</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            ••••••••••••••••••••
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Endereço Residencial */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-border/60">
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">CEP</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            •••••-•••
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Endereço / Bairro</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            ••••••••••••••••••••
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Zona Residencial</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                            Urbana • Sede
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Seção 2: Escola Regular */}
+                                  <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-sm">
+                                    <div className="flex items-center gap-2.5 p-3.5 bg-muted/40 border-b border-border">
+                                      <span className="grid place-items-center w-6 h-6 rounded-lg bg-primary/10 font-bold text-xs text-primary">02</span>
+                                      <div>
+                                        <h3 className="font-bold text-foreground text-xs">Escola Regular e Turma de Origem</h3>
+                                        <p className="text-[10px] text-muted-foreground">Vínculo escolar da rede municipal de ensino</p>
+                                      </div>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Escola Regular</label>
+                                        <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground text-[11px] truncate">
+                                          Escola Municipal Vinculada
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Ano / Turma</label>
+                                        <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                          9º Ano B Regular
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Turno Regular</label>
+                                        <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                          Matutino
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Seção 3: Dados Clínicos & CID */}
+                                  <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-sm">
+                                    <div className="flex items-center gap-2.5 p-3.5 bg-muted/40 border-b border-border">
+                                      <span className="grid place-items-center w-6 h-6 rounded-lg bg-primary/10 font-bold text-xs text-primary">03</span>
+                                      <div>
+                                        <h3 className="font-bold text-foreground text-xs">Dados Clínicos, Diagnóstico e Especialidades</h3>
+                                        <p className="text-[10px] text-muted-foreground">Classificação internacional de doenças e plano multidisciplinar</p>
+                                      </div>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between mb-0.5">
+                                            <span>Diagnóstico Clínico / CID-10</span>
+                                            {activeModal?.fieldFocus?.toLowerCase().includes('cid') && (
+                                              <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 text-[9px] h-4">FOCADO</Badge>
+                                            )}
+                                          </label>
+                                          <div className={cn('h-8 px-3 rounded-xl bg-muted/50 border flex items-center justify-between text-[11px]', activeModal?.fieldFocus?.toLowerCase().includes('cid') ? 'border-sky-500 ring-2 ring-sky-500/20 text-sky-500 font-bold' : 'border-border text-foreground font-mono')}>
+                                            <span>F84.0 — Transtorno do Espectro Autista</span>
+                                            <Badge variant="outline" className="text-[9px] h-4">CID-10</Badge>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Queixa Principal / Motivo</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] truncate">
+                                            Acolhimento clínico e desenvolvimento multidisciplinar
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-1">Especialidades Vinculadas no EMAEE</label>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                                            Psicologia Clínica
+                                          </span>
+                                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                            Fonoaudiologia
+                                          </span>
+                                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                            Psicopedagogia
+                                          </span>
+                                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                            Atendimento Multidisciplinar
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Seção 4: Assinaturas */}
+                                  <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-sm">
+                                    <div className="flex items-center gap-2.5 p-3.5 bg-muted/40 border-b border-border">
+                                      <span className="grid place-items-center w-6 h-6 rounded-lg bg-primary/10 font-bold text-xs text-primary">04</span>
+                                      <div>
+                                        <h3 className="font-bold text-foreground text-xs">Assinaturas e Termo de Compromisso</h3>
+                                        <p className="text-[10px] text-muted-foreground">Responsável legal e equipe multidisciplinar do EMAEE</p>
+                                      </div>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="p-3 rounded-xl border border-dashed border-border bg-muted/30 text-center">
+                                        <div className="text-[10px] font-bold text-foreground mb-1">Responsável Legal</div>
+                                        <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center justify-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3" /> Assinatura Eletrônica Registrada
+                                        </div>
+                                      </div>
+                                      <div className="p-3 rounded-xl border border-dashed border-border bg-muted/30 text-center">
+                                        <div className="text-[10px] font-bold text-foreground mb-1">Especialista / EMAEE</div>
+                                        <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center justify-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3" /> Equipe Técnica Acreditada
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            } else if (modalTitleLower.includes('aluno') || modalTitleLower.includes('cadastr') || path.includes('aluno')) {
+                              // B. Modal Completo de Aluno Regular (Fidelidade + LGPD)
+                              return (
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-start">
+                                    <div className="sm:col-span-1 border border-dashed border-border rounded-xl p-3 flex flex-col items-center justify-center text-center bg-muted/20">
+                                      <div className="w-14 h-16 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground mb-1.5">
+                                        <Camera className="w-6 h-6 text-muted-foreground/60" />
+                                      </div>
+                                      <span className="text-[9px] font-semibold text-muted-foreground">Foto 3x4</span>
+                                    </div>
+
+                                    <div className="sm:col-span-3 space-y-2">
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome Completo do Aluno</label>
+                                        <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center justify-between text-muted-foreground text-[11px] font-mono">
+                                          <span>••••••••••••••••••••••••••••••</span>
+                                          <Lock className="w-3 h-3 text-muted-foreground/60" />
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Data de Nascimento</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                            ••/••/••••
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Turma Pretendida</label>
+                                          <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
+                                            9º Ano A • Matutino
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-border">
                                     <div>
-                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Data de Nascimento</label>
-                                      <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px]">
-                                        DD/MM/AAAA
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">CPF do Estudante</label>
+                                      <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                        •••.•••.•••-••
                                       </div>
                                     </div>
                                     <div>
-                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Turma Pretendida</label>
-                                      <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
-                                        9º Ano A • Matutino
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome da Mãe / Responsável</label>
+                                      <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                        ••••••••••••••••••••
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">CEP Residencial</label>
+                                      <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px] font-mono">
+                                        •••••-•••
                                       </div>
                                     </div>
                                   </div>
+                                </div>
+                              )
+                            } else {
+                              // C. Modal Dinâmico Contextual
+                              return (
+                                <div className="space-y-4">
+                                  <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Usuário em Atividade</label>
+                                        <div className="h-8 px-3 rounded-xl bg-muted/50 border border-border flex items-center text-foreground font-semibold text-[11px]">
+                                          {session?.funcionarioNome || 'Servidor SIG'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Status de Interação</label>
+                                        <div className="h-8 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center text-[10px] font-semibold">
+                                          <CheckCircle2 className="w-3 h-3 mr-1.5" /> Em edição ativa no modal
+                                        </div>
+                                      </div>
+                                    </div>
 
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Nome da Mãe / Responsável Legal</label>
-                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-muted-foreground text-[11px]">
-                                      Nome completo do responsável
+                                    <div>
+                                      <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Campo / Ação em Foco</label>
+                                      <div className="h-8 px-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center text-[11px] font-mono">
+                                        {activeModal?.fieldFocus || 'Interagindo no formulário do SIG'}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          } else if (modalTitleLower.includes('relat') || path.includes('relatorio')) {
-                            // B. Modal de Emissão de Relatórios
-                            return (
-                              <div className="space-y-3 text-[11px]">
-                                <div>
-                                  <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Tipo de Relatório</label>
-                                  <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground font-semibold text-[11px]">
-                                    Ata de Rendimento & Boletins Bimestrais
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Período Letivo</label>
-                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
-                                      2º Bimestre / 2026
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Formato</label>
-                                    <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground text-[11px]">
-                                      Documento PDF (.pdf)
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          } else {
-                            // C. Modal Genérico / Dinâmico
-                            return (
-                              <div className="space-y-3 text-[11px]">
-                                <div>
-                                  <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Identificação / Formulário</label>
-                                  <div className="h-8 px-3 rounded-lg bg-muted/50 border border-border flex items-center text-foreground font-mono text-[10px]">
-                                    {session?.funcionarioNome || 'Servidor SIG'}
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Campo em Foco</label>
-                                    <div className="h-8 px-3 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center text-[10px] font-semibold">
-                                      {activeModal?.fieldFocus || 'Interagindo no formulário'}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Status</label>
-                                    <div className="h-8 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center text-[10px] font-semibold">
-                                      <CheckCircle2 className="w-3 h-3 mr-1" /> Em edição ativa
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          }
-                        })()}
+                              )
+                            }
+                          })()}
+                        </div>
 
-                        {/* Rodapé de Ações do Modal */}
-                        <div className="flex justify-end gap-2 pt-3 border-t border-border">
-                          <div className="px-3 py-1.5 rounded-xl bg-muted border border-border text-[11px] text-muted-foreground font-semibold">
-                            Cancelar
+                        {/* Rodapé Fiel do Modal com Botões e LGPD */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-border bg-muted/30 shrink-0">
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1.5 rounded-xl bg-card border border-border text-[11px] text-foreground font-semibold flex items-center gap-1.5 shadow-sm">
+                              <Printer className="w-3.5 h-3.5 text-primary" /> Imprimir Ficha
+                            </div>
+                            <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                              • Protegido pela Lei Geral de Proteção de Dados
+                            </span>
                           </div>
-                          <div className="px-4 py-1.5 rounded-xl bg-sky-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Salvar / Confirmar
+
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 border border-border text-[11px] text-muted-foreground font-semibold cursor-default">
+                              Cancelar
+                            </div>
+                            <div className="px-4 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold flex items-center gap-1.5 shadow-md cursor-default">
+                              <Save className="w-3.5 h-3.5" /> Salvar Matrícula AEE
+                            </div>
                           </div>
                         </div>
                       </div>
