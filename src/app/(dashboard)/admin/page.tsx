@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { usePermissionSimulationStore } from '@/store/usePermissionSimulationStore'
@@ -980,14 +981,14 @@ export default function AdminHubPage() {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => router.push('/configuracoes?tab=localidades')}
+                <Link
+                  href="/configuracoes?tab=localidades"
+                  prefetch={true}
                   className="w-full bg-[#0067c0] hover:bg-[#005aab] dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
                 >
                   <MapPin className="w-3.5 h-3.5" />
                   <span>Gerenciar Localidades</span>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -1350,12 +1351,10 @@ export default function AdminHubPage() {
                     {group.items.map((item, i) => {
                       const ItemIcon = item.icon
                       return (
-                        <div
+                        <Link
                           key={i}
-                          onClick={() => router.push(item.path)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => e.key === 'Enter' && router.push(item.path)}
+                          href={item.path}
+                          prefetch={true}
                           className="bg-card hover:bg-surface-2 border border-borderCustom hover:border-[#0067c0]/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group active:scale-[0.97] shadow-sm hover:shadow-md min-h-[110px]"
                         >
                           <div className="mb-2.5 flex items-center justify-center">
@@ -1373,7 +1372,7 @@ export default function AdminHubPage() {
                           <p className="text-[11px] text-muted-foreground font-normal mt-0.5 leading-tight">
                             {item.subtitle}
                           </p>
-                        </div>
+                        </Link>
                       )
                     })}
                   </div>
