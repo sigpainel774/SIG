@@ -29,6 +29,18 @@ import {
   CheckCircle2,
   XCircle,
   Zap,
+  Home,
+  Users,
+  GraduationCap,
+  UserPlus,
+  ClipboardList,
+  MessageSquare,
+  FileBarChart,
+  Settings,
+  Search,
+  Plus,
+  Filter,
+  Table,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ReplayEventItem } from '@/hooks/useSessionReplay'
@@ -381,53 +393,285 @@ export function ModalSessionReplay({
 
             {/* Viewport Interativo com Cursor Virtual e Ripple de Clique */}
             <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px]">
-              {/* Esqueleto Representativo da UI do SIG */}
-              <div className="w-full h-full max-w-5xl max-h-[640px] bg-card border border-border rounded-xl shadow-2xl relative overflow-hidden flex flex-col pointer-events-none">
-                {/* Header Mock */}
+              {/* Esqueleto Representativo de Alta Fidelidade da UI do SIG */}
+              <div className="w-full h-full max-w-5xl max-h-[640px] bg-card border border-border rounded-xl shadow-2xl relative overflow-hidden flex flex-col pointer-events-none text-foreground">
+                {/* Header Mock com Identidade SIG */}
                 <div className="h-12 border-b border-border bg-muted/40 px-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-sky-500/20 border border-sky-500/40" />
-                    <div className="w-28 h-3.5 rounded bg-muted-foreground/20" />
+                    <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-black text-xs">
+                      SIG
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-foreground">Painel Escolar</span>
+                      <span className="text-muted-foreground/50 text-xs">•</span>
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                        {session?.escolaNome || 'Escola Municipal de Ensino Fundamental'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-6 rounded-md bg-muted-foreground/20" />
-                    <div className="w-7 h-7 rounded-full bg-muted-foreground/30" />
+
+                  {/* Barra de Pesquisa Simulada & Usuário */}
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-background border border-border text-[11px] text-muted-foreground w-44 justify-between">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Search className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <span className="truncate">Buscar no sistema...</span>
+                      </div>
+                      <kbd className="text-[9px] font-mono px-1 rounded bg-muted border border-border">⌘K</kbd>
+                    </div>
+
+                    <div className="flex items-center gap-2 pl-2 border-l border-border">
+                      <div className="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                        {session?.funcionarioNome ? session.funcionarioNome.slice(0, 2).toUpperCase() : 'US'}
+                      </div>
+                      <span className="text-xs font-semibold text-foreground hidden md:inline truncate max-w-[100px]">
+                        {session?.funcionarioNome?.split(' ')[0] || 'Servidor'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Conteúdo Mock */}
-                <div className="flex-1 flex">
-                  {/* Sidebar Mock */}
-                  <div className="w-48 border-r border-border bg-muted/20 p-3 space-y-2 hidden sm:block">
-                    <div className="w-full h-7 rounded-lg bg-muted-foreground/15" />
-                    <div className="w-full h-7 rounded-lg bg-sky-500/10 border border-sky-500/30" />
-                    <div className="w-full h-7 rounded-lg bg-muted-foreground/10" />
-                    <div className="w-full h-7 rounded-lg bg-muted-foreground/10" />
-                  </div>
-
-                  {/* Main Canvas Mock */}
-                  <div className="flex-1 p-6 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1.5">
-                        <div className="w-40 h-5 rounded bg-muted-foreground/25" />
-                        <div className="w-64 h-3.5 rounded bg-muted-foreground/15" />
+                {/* Conteúdo Mock: Sidebar com Menus Reais + Área Principal */}
+                <div className="flex-1 flex overflow-hidden relative">
+                  {/* Sidebar Mock Realista com Menus do SIG */}
+                  <div className="w-44 border-r border-border bg-muted/20 p-2 space-y-1 hidden sm:flex flex-col justify-between shrink-0">
+                    <div className="space-y-1">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/70 px-2 py-1">
+                        Menu Principal
                       </div>
-                      <div className="w-24 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30" />
+
+                      {[
+                        { label: 'Início', icon: Home, active: (telemetry.currentPathname || '').includes('home') || telemetry.currentPathname === '/' },
+                        { label: 'Alunos', icon: Users, active: (telemetry.currentPathname || '').includes('aluno') },
+                        { label: 'Turmas', icon: GraduationCap, active: (telemetry.currentPathname || '').includes('turma') },
+                        { label: 'Matrículas', icon: UserPlus, active: (telemetry.currentPathname || '').includes('matricula') },
+                        { label: 'Notas & Diário', icon: ClipboardList, active: (telemetry.currentPathname || '').includes('avaliacao') || (telemetry.currentPathname || '').includes('nota') },
+                        { label: 'Mural de Avisos', icon: MessageSquare, active: (telemetry.currentPathname || '').includes('mural') },
+                        { label: 'Documentos', icon: FileText, active: (telemetry.currentPathname || '').includes('documento') },
+                        { label: 'Relatórios', icon: FileBarChart, active: (telemetry.currentPathname || '').includes('relatorio') },
+                        { label: 'Auditoria & Logs', icon: Activity, active: (telemetry.currentPathname || '').includes('analise-uso') || (telemetry.currentPathname || '').includes('admin') },
+                      ].map((item, idx) => {
+                        const Icon = item.icon
+                        return (
+                          <div
+                            key={idx}
+                            className={cn(
+                              'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors',
+                              item.active
+                                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-300 font-bold border border-sky-500/30'
+                                : 'text-muted-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            <Icon className={cn('w-3.5 h-3.5', item.active ? 'text-sky-600 dark:text-sky-400' : 'text-muted-foreground')} />
+                            <span className="truncate">{item.label}</span>
+                          </div>
+                        )
+                      })}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="h-20 rounded-xl bg-muted/30 border border-border p-3" />
-                      <div className="h-20 rounded-xl bg-muted/30 border border-border p-3" />
-                      <div className="h-20 rounded-xl bg-muted/30 border border-border p-3" />
-                    </div>
-
-                    <div className="h-44 rounded-xl bg-muted/20 border border-border p-4 space-y-2">
-                      <div className="w-full h-6 rounded bg-muted-foreground/20" />
-                      <div className="w-full h-6 rounded bg-muted-foreground/15" />
-                      <div className="w-full h-6 rounded bg-muted-foreground/15" />
-                      <div className="w-full h-6 rounded bg-muted-foreground/15" />
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] text-muted-foreground">
+                        <Settings className="w-3.5 h-3.5" />
+                        <span>Configurações</span>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Main Canvas: Conteúdo Rico Contextual da Tela */}
+                  <div className="flex-1 p-5 space-y-4 overflow-hidden flex flex-col justify-between">
+                    {/* Título e Ações da Tela */}
+                    {(() => {
+                      const p = (telemetry.currentPathname || '/').toLowerCase()
+                      let title = 'Painel Integrado de Gestão Escolar (SIG)'
+                      let subtitle = 'Visão unificada das rotinas acadêmicas e pedagógicas da unidade escolar'
+                      let btnPrimary = '+ Novo Registro'
+                      let btnSecondary = 'Filtrar Dados'
+
+                      if (p.includes('analise-uso') || p.includes('admin')) {
+                        title = 'Auditoria e Análise de Uso em Tempo Real'
+                        subtitle = 'Monitoramento de sessões ativas, telemetria de rede e rastreamento de acessos'
+                        btnPrimary = 'Exportar Relatório'
+                        btnSecondary = 'Filtrar Eventos'
+                      } else if (p.includes('aluno')) {
+                        title = 'Gestão e Fichas de Alunos'
+                        subtitle = 'Consulta de matrículas ativas, históricos escolares e dados cadastrais'
+                        btnPrimary = '+ Novo Aluno'
+                        btnSecondary = 'Filtrar Turma'
+                      } else if (p.includes('turma')) {
+                        title = 'Turmas, Horários e Enturmação'
+                        subtitle = 'Organização de salas de aula, turnos, professores regentes e capacidade'
+                        btnPrimary = '+ Nova Turma'
+                        btnSecondary = 'Matriz Curricular'
+                      } else if (p.includes('matricula')) {
+                        title = 'Matrículas e Rematrículas Escolares'
+                        subtitle = 'Gestão do ciclo de matrículas, documentação de responsáveis e vagas'
+                        btnPrimary = '+ Nova Matrícula'
+                        btnSecondary = 'Comprovantes'
+                      } else if (p.includes('avaliacao') || p.includes('nota')) {
+                        title = 'Lançamento de Notas e Diário Escolar'
+                        subtitle = 'Controle de boletins bimestrais, faltas, recuperações e conceitos'
+                        btnPrimary = 'Salvar Notas'
+                        btnSecondary = 'Boletim em Lote'
+                      }
+
+                      return (
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                              {title}
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                              <Filter className="w-3 h-3" />
+                              {btnSecondary}
+                            </div>
+                            <div className="px-3 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[11px] font-bold flex items-center gap-1 shadow-sm">
+                              <Plus className="w-3 h-3" />
+                              {btnPrimary}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Cards de Métricas Reais do Módulo */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total Cadastrado</div>
+                        <div className="text-base font-bold text-foreground">412 Registros</div>
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">● 98% Regular</div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Movimentações</div>
+                        <div className="text-base font-bold text-sky-600 dark:text-sky-400">18 Turmas</div>
+                        <div className="text-[10px] text-muted-foreground">Turno Matutino / Vespertino</div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Pendências / Avisos</div>
+                        <div className="text-base font-bold text-amber-600 dark:text-amber-400">0 Pendentes</div>
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tudo atualizado</div>
+                      </div>
+                    </div>
+
+                    {/* Tabela Estruturada com Linhas Reais */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                      <div className="p-2.5 px-3 bg-muted/40 border-b border-border flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Table className="w-3.5 h-3.5" />
+                          <span>Registros Recentes</span>
+                        </div>
+                        <span className="text-[10px] font-mono">Exibindo 4 de 412</span>
+                      </div>
+
+                      <div className="divide-y divide-border text-[11px]">
+                        {[
+                          { cod: '00194', nome: 'Gabriel Henrique Silva', desc: '9º Ano A • Manhã', status: 'Ativo' },
+                          { cod: '00195', nome: 'Ana Beatriz Souza', desc: '8º Ano B • Tarde', status: 'Ativo' },
+                          { cod: '00196', nome: 'Lucas Matheus Costa', desc: '1º Ano EM • Integral', status: 'Pendente' },
+                          { cod: '00197', nome: 'Mariana Oliveira Ramos', desc: '7º Ano A • Manhã', status: 'Ativo' },
+                        ].map((row, idx) => (
+                          <div key={idx} className="p-2.5 px-3 flex items-center justify-between hover:bg-muted/20">
+                            <div className="flex items-center gap-2.5">
+                              <span className="font-mono text-[10px] text-muted-foreground">{row.cod}</span>
+                              <div>
+                                <div className="font-semibold text-foreground">{row.nome}</div>
+                                <div className="text-[10px] text-muted-foreground">{row.desc}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                  row.status === 'Ativo'
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                )}
+                              >
+                                {row.status}
+                              </span>
+                              <div className="px-2 py-0.5 rounded bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
+                                Ações
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Simulação Dinâmica de Modal / Janela Flutuante quando houver interação com Modal/Botão */}
+                  {Boolean(
+                    cursorPos.text &&
+                      (cursorPos.text.toLowerCase().includes('novo') ||
+                        cursorPos.text.toLowerCase().includes('cadastr') ||
+                        cursorPos.text.toLowerCase().includes('adicionar') ||
+                        cursorPos.text.toLowerCase().includes('editar') ||
+                        cursorPos.text.toLowerCase().includes('filtr') ||
+                        cursorPos.text.toLowerCase().includes('modal') ||
+                        cursorPos.text.toLowerCase().includes('relatório') ||
+                        cursorPos.text.toLowerCase().includes('detalhe') ||
+                        cursorPos.text.toLowerCase().includes('salvar') ||
+                        cursorPos.text.toLowerCase().includes('excluir') ||
+                        cursorPos.tag === 'DIALOG' ||
+                        cursorPos.tag === 'FORM')
+                  ) && (
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center p-6 z-20 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-4 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-border">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
+                              <Layers className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-foreground">
+                                {cursorPos.text ? `Modal: ${cursorPos.text}` : 'Formulário do SIG'}
+                              </h4>
+                              <p className="text-[10px] text-muted-foreground">Janela de Diálogo / Modal Interativo</p>
+                            </div>
+                          </div>
+                          <div className="w-5 h-5 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+                            <XCircle className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-[11px]">
+                          <div>
+                            <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Identificação / Registro</label>
+                            <div className="h-7 px-2.5 rounded-lg bg-muted/60 border border-border flex items-center text-foreground font-mono text-[10px]">
+                              {session?.funcionarioNome || 'Servidor Responsável'}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Categoria / Turma</label>
+                              <div className="h-7 px-2.5 rounded-lg bg-muted/60 border border-border flex items-center text-foreground text-[10px]">
+                                Ensino Fundamental
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">Situação</label>
+                              <div className="h-7 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center text-[10px] font-semibold">
+                                <CheckCircle2 className="w-3 h-3 mr-1" /> Regular
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                          <div className="px-3 py-1 rounded-lg bg-muted border border-border text-[10px] text-muted-foreground font-semibold">
+                            Cancelar
+                          </div>
+                          <div className="px-3 py-1 rounded-lg bg-sky-600 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                            <CheckCircle2 className="w-3 h-3" /> Salvar Alterações
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Cursor Virtual & Indicador de Onda de Choque do Clique */}
