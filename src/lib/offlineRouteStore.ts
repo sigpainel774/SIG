@@ -117,7 +117,9 @@ export async function salvarRotaAtiva(rota: RotaAtivaState): Promise<void> {
   // Fallback rápido no localStorage
   try {
     localStorage.setItem(LS_FALLBACK_ROTA, JSON.stringify(rota));
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível para rota ativa:', err);
+  }
 
   try {
     const db = await openDB();
@@ -172,7 +174,9 @@ export async function limparRotaAtiva(): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(LS_FALLBACK_ROTA);
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao limpar rota:', err);
+  }
 
   try {
     const db = await openDB();
@@ -182,7 +186,9 @@ export async function limparRotaAtiva(): Promise<void> {
       store.clear();
       tx.oncomplete = () => resolve();
     });
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] Erro ao limpar rota ativa no IndexedDB:', err);
+  }
 }
 
 /**
@@ -203,7 +209,9 @@ export async function enfileirarVisitaOffline(visita: VisitaPonto): Promise<void
     }
     const limitedList = list.slice(-MAX_ITEMS);
     localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(limitedList));
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] Falha ao salvar visita no localStorage — dados offline podem ser perdidos:', err);
+  }
 
   try {
     const db = await openDB();
@@ -262,7 +270,9 @@ export async function marcarVisitasComoSincronizadas(ids: string[]): Promise<voi
       const updated = list.map((item) => (ids.includes(item.id) ? { ...item, sincronizado: true } : item));
       localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(updated));
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao marcar visitas sincronizadas:', err);
+  }
 
   try {
     const db = await openDB();
@@ -297,7 +307,9 @@ export async function removerVisitaOffline(id: string): Promise<void> {
       const filtered = list.filter((item) => item.id !== id);
       localStorage.setItem(LS_FALLBACK_VISITAS, JSON.stringify(filtered));
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao remover visita offline:', err);
+  }
 
   try {
     const db = await openDB();
@@ -331,7 +343,9 @@ export async function salvarNavegacaoLivreOffline(nav: NavegacaoLivreRegistro): 
     }
     const limitedList = list.slice(0, MAX_ITEMS);
     localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(limitedList));
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao salvar navegação:', err);
+  }
 
   try {
     const db = await openDB();
@@ -400,7 +414,9 @@ export async function marcarNavegacaoComoSincronizada(id: string): Promise<void>
       const updated = list.map((item) => (item.id === id ? { ...item, sincronizado: true } : item));
       localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(updated));
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao marcar navegação sincronizada:', err);
+  }
 
   try {
     const db = await openDB();
@@ -432,7 +448,9 @@ export async function removerNavegacaoOffline(id: string): Promise<void> {
       const filtered = list.filter((item) => item.id !== id);
       localStorage.setItem(LS_FALLBACK_NAVEGACOES, JSON.stringify(filtered));
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[offlineRouteStore] localStorage indisponível ao remover navegação:', err);
+  }
 
   try {
     const db = await openDB();

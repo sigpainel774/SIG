@@ -341,6 +341,9 @@ export default function HistoricoPercursosTab() {
       }
     } catch (err) {
       console.error('Erro ao carregar navegações livres:', err);
+      if (isMounted.current) {
+        toast.error('Não foi possível carregar o histórico de trajetos/navegações.');
+      }
     }
   };
 
@@ -479,6 +482,9 @@ export default function HistoricoPercursosTab() {
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico de visitas:', err);
+      if (isMounted.current) {
+        toast.error('Não foi possível carregar o histórico de visitas/check-ins.');
+      }
     }
   };
 

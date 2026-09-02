@@ -306,7 +306,12 @@ export default function RelatorioRecursosHumanos() {
         `)
         .order('data_inclusao', { ascending: false });
 
-      if (rawAtestados && !atestadoError) {
+      if (!isMountedRef.current || currentReq !== requestCounter.current) return;
+
+      if (atestadoError) {
+        console.error('[RelatorioRH] Erro ao buscar atestados:', atestadoError.message);
+        toast.error('Erro ao carregar dados de atestados do servidor.');
+      } else if (rawAtestados) {
         const atestadosMapeados: AtestadoItem[] = (rawAtestados as any[]).map((a) => ({
           id: a.id,
           funcionario_id: a.funcionario_id,

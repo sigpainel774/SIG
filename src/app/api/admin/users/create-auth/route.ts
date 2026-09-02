@@ -24,11 +24,15 @@ async function getAuthenticatedSuperadmin() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: funcionario } = await supabaseAdmin
+  const { data: funcionario, error: funcErr } = await supabaseAdmin
     .from('funcionarios')
     .select('id, nome, email, is_superadmin')
     .eq('auth_user_id', user.id)
     .maybeSingle()
+
+  if (funcErr) {
+    console.error('[create-auth] Erro ao buscar funcionário executor:', funcErr.message)
+  }
 
   if (!funcionario?.is_superadmin) return null
   return funcionario
@@ -152,12 +156,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Verificar se o e-mail informado já está vinculado a outro funcionário diferente
-    const { data: existingOtherFunc } = await supabaseAdmin
+    const { data: existingOtherFunc, error: errExisting } = await supabaseAdmin
       .from('funcionarios')
       .select('id, nome')
       .eq('email', cleanEmail)
       .neq('id', funcionarioId)
       .maybeSingle()
+
+    if (errExisting) {
+      console.error('[create-auth] Erro ao verificar duplicidade de e-mail:', errExisting.message)
+    }
 
     if (existingOtherFunc) {
       return NextResponse.json(
@@ -263,15 +271,19 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Garantir existência de registro em public.acessos_usuarios
-    const { data: acessoExistente } = await supabaseAdmin
+    const { data: acessoExistente, error: errAcesso } = await supabaseAdmin
       .from('acessos_usuarios')
       .select('id')
       .eq('funcionario_id', funcionarioId)
       .maybeSingle()
 
+    if (errAcesso) {
+      console.error('[create-auth] Erro ao verificar acesso existente:', errAcesso.message)
+    }
+
     if (!acessoExistente) {
       // Buscar escola vinculada ativa se houver
-      const { data: vinculoAtivo } = await supabaseAdmin
+      const { data: vinculoAtivo, error: errVinculo } = await supabaseAdmin
         .from('vinculos_funcionarios')
         .select('escola_id')
         .eq('funcionario_id', funcionarioId)
@@ -279,9 +291,13 @@ export async function POST(req: NextRequest) {
         .limit(1)
         .maybeSingle()
 
+      if (errVinculo) {
+        console.error('[create-auth] Erro ao buscar vínculo escolar ativo:', errVinculo.message)
+      }
+
       const initialPerms = getInitialNivelByCargo(funcionario.cargo)
 
-      await supabaseAdmin.from('acessos_usuarios').insert({
+      const { error: errInsertAcesso } = await supabaseAdmin.from('acessos_usuarios').insert({
         funcionario_id: funcionarioId,
         escola_id: vinculoAtivo?.escola_id ?? null,
         nivel: initialPerms.nivel,
@@ -294,6 +310,10 @@ export async function POST(req: NextRequest) {
         pode_atestados: initialPerms.pode_atestados,
         pode_funcionarios: initialPerms.pode_funcionarios,
       })
+
+      if (errInsertAcesso) {
+        console.error('[create-auth] Erro ao inserir acesso inicial do funcionário:', errInsertAcesso.message)
+      }
     }
 
     // 6. Invalidar tags de cache de perfil no Next.js

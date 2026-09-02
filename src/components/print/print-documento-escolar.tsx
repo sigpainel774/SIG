@@ -79,19 +79,23 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
   }
 
   useEffect(() => {
+    let active = true
     const fetchDados = async () => {
       const supabase = createClient()
       
       // 1. Unidade Escolar e Assinatura do Diretor
       const targetEscolaId = aluno?.escola_id || dm.escolaId || selectedEscola?.id
       if (targetEscolaId) {
-        const { data: esc } = await supabase
+        const { data: esc, error: errEsc } = await supabase
           .from('escolas')
           .select('*, funcionarios!diretor_id(nome, assinatura_url)')
           .eq('id', targetEscolaId)
           .maybeSingle()
         
-        if (esc) {
+        if (errEsc) {
+          console.error('[print-documento-escolar] Erro ao buscar escola:', errEsc.message)
+        }
+        if (esc && active) {
           setEscolaNome(esc.nome)
           setEscolaLogoUrl(esc.logo_url || null)
           setEscolaInep(esc.inep || '')
@@ -119,6 +123,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     }
 
     fetchDados()
+    return () => { active = false }
   }, [aluno?.escola_id, aluno?.turma_id, dm.escolaId, dm.turmaIdAluno, selectedEscola?.id])
 
   // Carregar assinatura existente se houver (Modo Histórico)

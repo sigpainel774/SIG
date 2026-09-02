@@ -114,11 +114,15 @@ export async function POST(request: NextRequest) {
     const dm = (aluno.dados_matricula as Record<string, any>) || {}
 
     // 4. Verificar se o usuário autenticado possui permissão ABAC / vínculo sobre a escola do aluno
-    const { data: funcionario } = await supabaseAdmin
+    const { data: funcionario, error: funcErr } = await supabaseAdmin
       .from('funcionarios')
       .select('id, is_superadmin')
       .eq('auth_user_id', user.id)
       .maybeSingle()
+
+    if (funcErr) {
+      console.error('[gerar-pdf] Erro ao buscar dados do funcionário:', funcErr.message)
+    }
 
     if (!funcionario) {
       return NextResponse.json({ error: 'Usuário logado não possui perfil de funcionário cadastrado.' }, { status: 403 })
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
       const targetEscolaId = aluno.escola_id || dm.escolaId
 
       if (targetEscolaId) {
-        const { data: vinculo } = await supabaseAdmin
+        const { data: vinculo, error: errVinculo } = await supabaseAdmin
           .from('vinculos_funcionarios')
           .select('id')
           .eq('funcionario_id', funcionario.id)
@@ -136,7 +140,11 @@ export async function POST(request: NextRequest) {
           .eq('ativo', true)
           .limit(1)
 
-        const { data: acesso } = await supabaseAdmin
+        if (errVinculo) {
+          console.error('[gerar-pdf] Erro ao verificar vínculo do funcionário:', errVinculo.message)
+        }
+
+        const { data: acesso, error: errAcesso } = await supabaseAdmin
           .from('acessos_usuarios')
           .select('id')
           .eq('funcionario_id', funcionario.id)
@@ -144,18 +152,26 @@ export async function POST(request: NextRequest) {
           .eq('ativo', true)
           .limit(1)
 
+        if (errAcesso) {
+          console.error('[gerar-pdf] Erro ao verificar acesso do funcionário:', errAcesso.message)
+        }
+
         if ((!vinculo || vinculo.length === 0) && (!acesso || acesso.length === 0)) {
           return NextResponse.json({ 
             error: 'Acesso negado: Você não possui vínculo ou permissão ativa para a escola deste aluno.' 
           }, { status: 403 })
         }
       } else {
-        const { data: vinculoQualquer } = await supabaseAdmin
+        const { data: vinculoQualquer, error: errVinculoQualquer } = await supabaseAdmin
           .from('vinculos_funcionarios')
           .select('id')
           .eq('funcionario_id', funcionario.id)
           .eq('ativo', true)
           .limit(1)
+
+        if (errVinculoQualquer) {
+          console.error('[gerar-pdf] Erro ao verificar vínculo geral do funcionário:', errVinculoQualquer.message)
+        }
 
         if (!vinculoQualquer || vinculoQualquer.length === 0) {
           return NextResponse.json({ 

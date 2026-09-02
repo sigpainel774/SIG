@@ -193,11 +193,15 @@ export default function DetalhesAlunoPortalPage() {
         }
 
         // 1. Perfil do responsável
-        const { data: respData } = await supabase
+        const { data: respData, error: respErr } = await supabase
           .from('responsaveis')
           .select('id, nome, email, telefone')
           .eq('auth_user_id', user.id)
           .maybeSingle()
+
+        if (respErr) {
+          console.error('[portal-aluno/dashboard] Erro ao buscar dados do responsável:', respErr.message)
+        }
 
         if (respData && isMounted.current) setResponsavel(respData)
 

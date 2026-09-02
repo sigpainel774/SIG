@@ -108,10 +108,14 @@ export async function precarregarFotosCache(urls: (string | null | undefined)[])
 
   if (validUrls.length === 0) return
 
-  // Executa o pré-carregamento em lotes paralelos de 5 requisições por vez
-  const batchSize = 5
-  for (let i = 0; i < validUrls.length; i += batchSize) {
-    const chunk = validUrls.slice(i, i + batchSize)
-    await Promise.all(chunk.map((cleanUrl) => obterFotoCache(cleanUrl)))
+  try {
+    // Executa o pré-carregamento em lotes paralelos de 5 requisições por vez
+    const batchSize = 5
+    for (let i = 0; i < validUrls.length; i += batchSize) {
+      const chunk = validUrls.slice(i, i + batchSize)
+      await Promise.all(chunk.map((cleanUrl) => obterFotoCache(cleanUrl)))
+    }
+  } catch (err) {
+    console.warn('[photoCache] Erro durante pré-carregamento em lote:', err)
   }
 }

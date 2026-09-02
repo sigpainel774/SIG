@@ -54,11 +54,15 @@ export async function POST(request: Request) {
     const cleanCargo = cargo ? String(cargo).trim() : 'Operador Alpha'
 
     // Verificar se já existe um funcionário oficial cadastrado com este e-mail
-    const { data: funcionarioExistente } = await supabaseAdmin
+    const { data: funcionarioExistente, error: errFuncExistente } = await supabaseAdmin
       .from('funcionarios')
       .select('id, is_alpha, email, auth_user_id')
       .eq('email', cleanEmail)
       .maybeSingle()
+
+    if (errFuncExistente) {
+      console.error('[criar-conta-alpha] Erro ao verificar funcionário existente:', errFuncExistente.message)
+    }
 
     if (funcionarioExistente && !funcionarioExistente.is_alpha) {
       return NextResponse.json(
@@ -151,14 +155,18 @@ export async function POST(request: Request) {
     }
 
     // 6. Criação de registro em acessos_usuarios com perfil operacional (Nível 4)
-    const { data: acessoExistente } = await supabaseAdmin
+    const { data: acessoExistente, error: errAcessoAlpha } = await supabaseAdmin
       .from('acessos_usuarios')
       .select('id')
       .eq('funcionario_id', novoFuncionario.id)
       .maybeSingle()
 
+    if (errAcessoAlpha) {
+      console.error('[criar-conta-alpha] Erro ao verificar acesso existente:', errAcessoAlpha.message)
+    }
+
     if (acessoExistente) {
-      await supabaseAdmin
+      const { error: errUpdateAcesso } = await supabaseAdmin
         .from('acessos_usuarios')
         .update({
           nivel: 4,
@@ -166,8 +174,11 @@ export async function POST(request: Request) {
           ativo: true,
         })
         .eq('id', acessoExistente.id)
+      if (errUpdateAcesso) {
+        console.error('[criar-conta-alpha] Erro ao atualizar acesso Alpha:', errUpdateAcesso.message)
+      }
     } else {
-      await supabaseAdmin.from('acessos_usuarios').insert({
+      const { error: errInsertAcesso } = await supabaseAdmin.from('acessos_usuarios').insert({
         funcionario_id: novoFuncionario.id,
         escola_id: escola_id || null,
         nivel: 4, // Nível operacional / equipe de apoio
@@ -182,6 +193,9 @@ export async function POST(request: Request) {
         pode_rh_rede: false,
         pode_eja: false,
       })
+      if (errInsertAcesso) {
+        console.error('[criar-conta-alpha] Erro ao inserir acesso Alpha:', errInsertAcesso.message)
+      }
     }
 
     return NextResponse.json({

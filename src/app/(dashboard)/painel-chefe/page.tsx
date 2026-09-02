@@ -112,7 +112,11 @@ export default function PainelChefePage() {
       queryFunc = queryFunc.in('cargo', cargos)
     }
 
-    const { data: funcData } = await queryFunc
+    const { data: funcData, error: funcErr } = await queryFunc
+    if (funcErr) {
+      console.error('[painel-chefe] Erro ao carregar funcionários da equipe:', funcErr)
+      toast.error('Erro ao carregar servidores da equipe.')
+    }
     if (!isMountedRef.current) return
 
     let filteredEquipe = (funcData || []).filter((f: any) => !f.is_conta_especial)
@@ -163,6 +167,13 @@ export default function PainelChefePage() {
     }
 
     const [escRes, altRes] = await Promise.all([queryEsc, queryAlt])
+
+    if (escRes.error) {
+      console.error('[painel-chefe] Erro ao carregar escalas:', escRes.error)
+    }
+    if (altRes.error) {
+      console.error('[painel-chefe] Erro ao carregar solicitações RH:', altRes.error)
+    }
     
     if (isMountedRef.current) {
       setEscalas(escRes.data || [])
