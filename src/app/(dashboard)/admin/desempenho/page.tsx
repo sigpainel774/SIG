@@ -14,7 +14,11 @@ import {
   Monitor, 
   AlertCircle,
   Clock,
-  Activity
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldCheck,
+  Filter
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,23 +28,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'sonner'
 
-// Auxiliares para formatação de valores e cores
-const getRatingColor = (rating: string) => {
+// Auxiliares para formatação de valores e cores com suporte estrito a tema claro/escuro
+const getRatingBadge = (rating: string) => {
   switch (rating) {
-    case 'good': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-    case 'needs-improvement': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-    case 'poor': return 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-    default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    case 'good':
+      return {
+        label: 'Bom',
+        className: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+      }
+    case 'needs-improvement':
+      return {
+        label: 'Regular',
+        className: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30'
+      }
+    case 'poor':
+      return {
+        label: 'Ruim',
+        className: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+      }
+    default:
+      return {
+        label: rating || 'N/D',
+        className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+      }
   }
 }
 
 const getMetricIcon = (name: string) => {
   switch (name) {
-    case 'ROUTE_CHANGE_MS': return <TrendingUp className="w-4 h-4 text-violet-400" />
-    case 'LCP': return <Layers className="w-4 h-4 text-sky-400" />
-    case 'FID': return <Clock className="w-4 h-4 text-emerald-400" />
-    case 'TTFB': return <Wifi className="w-4 h-4 text-amber-400" />
-    default: return <Gauge className="w-4 h-4 text-gray-400" />
+    case 'ROUTE_CHANGE_MS': return <TrendingUp className="w-4 h-4 text-primary" />
+    case 'LCP': return <Layers className="w-4 h-4 text-primary" />
+    case 'FID': return <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+    case 'TTFB': return <Wifi className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+    default: return <Gauge className="w-4 h-4 text-slate-500 dark:text-slate-400" />
   }
 }
 
@@ -100,7 +120,7 @@ export default function DesempenhoPage() {
     }
   }, [])
 
-  // Carregar dados com tratamento defensivo
+  // Carregar dados com tratamento defensivo e cancelamento
   const loadData = useCallback(async () => {
     if (isMounted.current) setLoading(true)
     try {
@@ -109,9 +129,8 @@ export default function DesempenhoPage() {
         'get_performance_dashboard_stats',
         { period_days: period }
       )
-      if (statsError) throw statsError
       
-      if (statsData && isMounted.current) {
+      if (!statsError && statsData && isMounted.current) {
         const parsedData = (typeof statsData === 'string' ? JSON.parse(statsData) : statsData) as any
         setDashboardStats({
           score: parsedData.score !== null && parsedData.score !== undefined ? Number(parsedData.score) : null,
@@ -188,18 +207,21 @@ export default function DesempenhoPage() {
     return `${Math.round(value)}ms`
   }
 
+  // Avaliação da precisão estatística da amostra
+  const isSampleReliable = dashboardStats.total_samples >= 30
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Painel de Desempenho Global"
-        description="Diagnóstico e monitoramento de velocidade e gargalos de processamento."
+        description="Diagnóstico e telemetria de velocidade com filtragem anti-ruído de abas em segundo plano e dados calibrados."
         icon={Gauge}
         iconVariant="primary"
         backHref="/admin"
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {/* Seletor de Período */}
-            <div className="flex bg-muted/60 border border-borderCustom rounded-lg p-1">
+            <div className="flex bg-muted border border-border rounded-lg p-1">
               {[
                 { label: '24 Horas', value: 1 },
                 { label: '7 Dias', value: 7 },
@@ -213,7 +235,7 @@ export default function DesempenhoPage() {
                   }}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
                     period === opt.value
-                      ? 'bg-violet-600 text-white shadow'
+                      ? 'bg-primary text-primary-foreground shadow'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -226,7 +248,7 @@ export default function DesempenhoPage() {
               variant="outline"
               onClick={() => loadData()}
               disabled={loading || clearing}
-              className="bg-card border-borderCustom text-foreground hover:bg-muted h-10"
+              className="bg-card border-border text-foreground hover:bg-muted h-10"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
@@ -236,7 +258,7 @@ export default function DesempenhoPage() {
               variant="outline"
               onClick={handleCleanup}
               disabled={loading || clearing}
-              className="bg-[#2a0808] border-[#ef4444]/30 text-[#f87171] hover:bg-[#450a0a] h-10"
+              className="bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 h-10"
             >
               <Trash2 className={`w-4 h-4 mr-2 ${clearing ? 'animate-spin' : ''}`} />
               {clearing ? 'Expurgando...' : 'Limpar Antigos'}
@@ -245,81 +267,132 @@ export default function DesempenhoPage() {
         }
       />
 
+      {/* Banner de Garantia de Qualidade e Acurácia */}
+      <div className="bg-card border border-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+        <div className="flex items-center gap-2.5 text-muted-foreground">
+          <ShieldCheck className="w-5 h-5 text-emerald-700 dark:text-emerald-400 font-semibold shrink-0" />
+          <div>
+            <strong className="text-foreground font-semibold block">Proteção Anti-Contaminação Ativa:</strong>
+            Filtro de acurácia exclui congelamento em segundo plano, cliques espúrios (&lt;15ms) e anomalias (&gt;20s).
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge 
+            variant="outline"
+            className={
+              isSampleReliable
+                ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50 gap-1.5'
+                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50 gap-1.5'
+            }
+          >
+            {isSampleReliable ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Amostragem Alta ({dashboardStats.total_samples} coletas)
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Amostragem Baixa ({dashboardStats.total_samples}/30)
+              </>
+            )}
+          </Badge>
+        </div>
+      </div>
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <Card className="bg-card border-borderCustom text-foreground">
+        {/* KPI 1 - P95 */}
+        <Card className="bg-card border-border text-foreground">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P95</CardDescription>
+            <CardDescription className="text-muted-foreground text-xs uppercase font-semibold">Navegação P95</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
               {dashboardStats.p95 > 0 ? formatMetricValue('ROUTE_CHANGE_MS', dashboardStats.p95) : 'Sem dados'}
               {dashboardStats.p95 > 0 && (
-                <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.p95 < 600 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.p95 < 1500 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                  dashboardStats.p95 < 600 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30' 
+                    : dashboardStats.p95 < 1500 
+                    ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30' 
+                    : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+                }`}>
                   {dashboardStats.p95 < 600 ? 'Bom' : dashboardStats.p95 < 1500 ? 'Regular' : 'Ruim'}
                 </span>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-500">95% das transições são mais rápidas que isso.</p>
+            <p className="text-xs text-muted-foreground">95% das transições válidas ocorrem abaixo desta marca.</p>
           </CardContent>
         </Card>
 
-        {/* KPI 2 */}
-        <Card className="bg-card border-borderCustom text-foreground">
+        {/* KPI 2 - P99 */}
+        <Card className="bg-card border-border text-foreground">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Navegação P99</CardDescription>
+            <CardDescription className="text-muted-foreground text-xs uppercase font-semibold">Navegação P99</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
               {dashboardStats.p99 > 0 ? formatMetricValue('ROUTE_CHANGE_MS', dashboardStats.p99) : 'Sem dados'}
               {dashboardStats.p99 > 0 && (
-                <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.p99 < 1500 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.p99 < 3000 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                  dashboardStats.p99 < 1500 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30' 
+                    : dashboardStats.p99 < 3000 
+                    ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30' 
+                    : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+                }`}>
                   {dashboardStats.p99 < 1500 ? 'Regular' : dashboardStats.p99 < 3000 ? 'Alerta' : 'Crítico'}
                 </span>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-500">99% das transições são mais rápidas que isso.</p>
+            <p className="text-xs text-muted-foreground">Pior cenário controlado para 99% dos acessos reais.</p>
           </CardContent>
         </Card>
 
-        {/* KPI 3 - Tratar Nullish para mitigar ES-3 */}
-        <Card className="bg-card border-borderCustom text-foreground">
+        {/* KPI 3 - Score */}
+        <Card className="bg-card border-border text-foreground">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Score Geral de Navegação</CardDescription>
+            <CardDescription className="text-muted-foreground text-xs uppercase font-semibold">Índice de Fluidez (Score)</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
               {dashboardStats.score !== null ? `${dashboardStats.score}%` : 'Sem dados'}
               {dashboardStats.score !== null ? (
-                <span className={`text-xs px-2 py-0.5 rounded ${dashboardStats.score >= 85 ? 'bg-emerald-500/10 text-emerald-400' : dashboardStats.score >= 70 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                  dashboardStats.score >= 85 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30' 
+                    : dashboardStats.score >= 70 
+                    ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30' 
+                    : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+                }`}>
                   {dashboardStats.score >= 85 ? 'Excelente' : dashboardStats.score >= 70 ? 'Regular' : 'Ruim'}
                 </span>
               ) : (
-                <span className="text-xs bg-gray-500/10 text-gray-400 px-2 py-0.5 rounded">
+                <span className="text-xs bg-muted text-foreground border border-border px-2 py-0.5 rounded">
                   Aguardando
                 </span>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-500">
-              {dashboardStats.total_samples < 30 ? 'Amostragem baixa (< 30)' : 'Baseado em transições válidas no período.'}
+            <p className="text-xs text-muted-foreground">
+              {!isSampleReliable ? 'Amostragem em formação (< 30)' : 'Proporção de transições instantâneas (<300ms).'}
             </p>
           </CardContent>
         </Card>
 
-        {/* KPI 4 */}
-        <Card className="bg-card border-borderCustom text-foreground">
+        {/* KPI 4 - Amostras */}
+        <Card className="bg-card border-border text-foreground">
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-400 text-xs uppercase font-semibold">Amostras de Navegação</CardDescription>
+            <CardDescription className="text-muted-foreground text-xs uppercase font-semibold">Amostras Verificadas</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-baseline gap-2">
               {dashboardStats.total_samples.toLocaleString()}
-              <span className="text-xs bg-slate-500/10 text-slate-400 px-2 py-0.5 rounded">
-                Navegações
+              <span className="text-xs bg-muted text-foreground border border-border px-2 py-0.5 rounded font-normal">
+                Transições
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-500">Capturadas no período selecionado.</p>
+            <p className="text-xs text-muted-foreground">Coletadas no período com filtro de consistência.</p>
           </CardContent>
         </Card>
       </div>
@@ -327,47 +400,50 @@ export default function DesempenhoPage() {
       {/* Main Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Ranking de Gargalos por Rota com Percentis */}
-        <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-4 shadow-sm">
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-violet-400" />
+            <Clock className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-foreground text-lg">Tempo de Renderização por Rota</h3>
           </div>
-          <p className="text-xs text-slate-400">Telas ordenadas por latência média no cliente (com percentis P50, P75 e P95).</p>
+          <p className="text-xs text-muted-foreground">Telas ordenadas por latência crítica no cliente com percentis P50, P75 e P95.</p>
           
           <StandardTable
             data={dashboardStats.route_metrics}
             columns={[
               {
                 header: 'Rota (Tela)',
-                className: 'font-mono text-xs text-slate-300 max-w-[180px] truncate',
+                className: 'font-mono text-xs text-foreground max-w-[180px] truncate',
                 accessor: (r) => r.pathname
               },
               {
                 header: 'P50',
                 headClassName: 'text-right',
-                className: 'text-right font-mono text-xs text-slate-300',
+                className: 'text-right font-mono text-xs text-muted-foreground',
                 accessor: (r) => `${r.p50 ?? Math.round(r.avg_value)}ms`
               },
               {
                 header: 'P95',
                 headClassName: 'text-right',
                 className: 'text-right font-mono text-xs font-bold',
-                accessor: (r) => (
-                  <span className={(r.p95 ?? r.avg_value) > 1000 ? 'text-rose-400' : (r.p95 ?? r.avg_value) > 400 ? 'text-amber-400' : 'text-emerald-400'}>
-                    {`${r.p95 ?? Math.round(r.avg_value)}ms`}
-                  </span>
-                )
+                accessor: (r) => {
+                  const val = r.p95 ?? r.avg_value
+                  return (
+                    <span className={val > 1000 ? 'text-rose-700 dark:text-rose-400 font-semibold' : val > 400 ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-emerald-700 dark:text-emerald-400 font-semibold'}>
+                      {`${Math.round(val)}ms`}
+                    </span>
+                  )
+                }
               },
               {
                 header: 'Média',
                 headClassName: 'text-right',
-                className: 'text-right font-mono text-xs text-slate-400',
+                className: 'text-right font-mono text-xs text-muted-foreground',
                 accessor: (r) => formatMetricValue('ROUTE_CHANGE_MS', r.avg_value)
               },
               {
                 header: 'Amostras',
                 headClassName: 'text-right',
-                className: 'text-right text-slate-400 text-xs',
+                className: 'text-right text-muted-foreground text-xs',
                 accessor: (r) => r.sample_count
               }
             ]}
@@ -378,151 +454,154 @@ export default function DesempenhoPage() {
         </div>
 
         {/* Right: Análise por Fatores (Hardware e Conexão) */}
-        <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-5 shadow-sm">
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-violet-400" />
+            <Cpu className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-foreground text-lg">Gargalos Externos (Hardware e Rede)</h3>
           </div>
-          <p className="text-xs text-slate-400">Verificação do impacto da rede, memória RAM e núcleos de CPU no carregamento no período.</p>
+          <p className="text-xs text-muted-foreground">Avaliação de impacto do perfil do cliente (rede móvel, memória RAM e núcleos de CPU).</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Bloco Conexão */}
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-                <Wifi className="w-4 h-4 text-sky-400" /> Por Rede
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Wifi className="w-4 h-4 text-primary" /> Por Rede
               </h4>
-              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-border bg-muted/50 p-3 space-y-2 text-xs">
                 {dashboardStats.network_stats.map((c, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
-                    <span className="text-slate-400 uppercase font-semibold">{c.type}</span>
-                    <span className={`font-bold ${c.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {c.avg}ms <span className="text-[10px] text-slate-500 font-normal">({c.count}x)</span>
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground uppercase font-semibold">{c.type}</span>
+                    <span className={`font-bold ${c.avg > 1000 ? 'text-rose-700 dark:text-rose-400 font-semibold' : 'text-emerald-700 dark:text-emerald-400 font-semibold'}`}>
+                      {c.avg}ms <span className="text-[10px] text-muted-foreground font-normal">({c.count}x)</span>
                     </span>
                   </div>
                 ))}
                 {dashboardStats.network_stats.length === 0 && (
-                  <p className="text-slate-500 text-center py-4">Sem dados.</p>
+                  <p className="text-muted-foreground text-center py-4">Sem dados.</p>
                 )}
               </div>
             </div>
 
             {/* Bloco Memória */}
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-                <Monitor className="w-4 h-4 text-emerald-400" /> Por RAM
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Monitor className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Por RAM
               </h4>
-              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-border bg-muted/50 p-3 space-y-2 text-xs">
                 {dashboardStats.ram_stats.map((m, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
-                    <span className="text-slate-400">{m.ram}</span>
-                    <span className={`font-bold ${m.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {m.avg}ms <span className="text-[10px] text-slate-500 font-normal">({m.count}x)</span>
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground">{m.ram}</span>
+                    <span className={`font-bold ${m.avg > 1000 ? 'text-rose-700 dark:text-rose-400 font-semibold' : 'text-emerald-700 dark:text-emerald-400 font-semibold'}`}>
+                      {m.avg}ms <span className="text-[10px] text-muted-foreground font-normal">({m.count}x)</span>
                     </span>
                   </div>
                 ))}
                 {dashboardStats.ram_stats.length === 0 && (
-                  <p className="text-slate-500 text-center py-4">Sem dados.</p>
+                  <p className="text-muted-foreground text-center py-4">Sem dados.</p>
                 )}
               </div>
             </div>
 
             {/* Bloco Cores/CPU */}
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-violet-400" /> Por Cores CPU
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-primary" /> Por CPU
               </h4>
-              <div className="rounded-xl border border-borderCustom bg-muted/60 p-3 space-y-2 text-xs">
+              <div className="rounded-xl border border-border bg-muted/50 p-3 space-y-2 text-xs">
                 {dashboardStats.cpu_stats.map((cpu, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-borderCustom/50 last:border-0">
-                    <span className="text-slate-400">{cpu.cpu} Cores</span>
-                    <span className={`font-bold ${cpu.avg > 1000 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {cpu.avg}ms <span className="text-[10px] text-slate-500 font-normal">({cpu.count}x)</span>
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground">{cpu.cpu} Cores</span>
+                    <span className={`font-bold ${cpu.avg > 1000 ? 'text-rose-700 dark:text-rose-400 font-semibold' : 'text-emerald-700 dark:text-emerald-400 font-semibold'}`}>
+                      {cpu.avg}ms <span className="text-[10px] text-muted-foreground font-normal">({cpu.count}x)</span>
                     </span>
                   </div>
                 ))}
                 {dashboardStats.cpu_stats.length === 0 && (
-                  <p className="text-slate-500 text-center py-4">Sem dados.</p>
+                  <p className="text-muted-foreground text-center py-4">Sem dados.</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="bg-[#1c1917]/20 border border-[#ea580c]/20 p-3.5 rounded-xl flex gap-3 text-xs text-amber-200">
-            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 p-3.5 rounded-xl flex gap-3 text-xs text-amber-900 dark:text-amber-200">
+            <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-400 font-semibold shrink-0 mt-0.5" />
             <div>
-              <strong className="text-foreground block mb-0.5">Dica de Diagnóstico:</strong>
-              Se a latência P95 de rota estiver abaixo de 300ms em conexões rápidas (Wi-Fi/4G) mas aumentar muito em 3G/2G, o gargalo é o tamanho dos payloads de dados e requisições HTTP redundantes.
+              <strong className="text-foreground block mb-0.5">Critério de Diagnóstico:</strong>
+              Se a latência P95 estiver baixa em Wi-Fi/4G mas alta em 3G/2G, o gargalo é o tamanho dos payloads de dados e rotas com requisições redundantes.
             </div>
           </div>
         </div>
       </div>
 
       {/* Bottom: Tabela de Logs Recentes Paginada */}
-      <div className="bg-card border border-borderCustom rounded-2xl p-5 space-y-4 shadow-sm">
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-violet-400" />
+          <FileText className="w-5 h-5 text-primary" />
           <h3 className="font-bold text-foreground text-lg">Histórico de Medições Recentes</h3>
         </div>
-        <p className="text-xs text-slate-400">Auditoria das métricas capturadas em tempo real nos navegadores para o período selecionado.</p>
+        <p className="text-xs text-muted-foreground">Auditoria das métricas capturadas em tempo real nos navegadores para o período selecionado.</p>
 
-        <div className="rounded-xl border border-borderCustom bg-card overflow-hidden">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/60 border-b border-borderCustom">
+            <TableHeader className="bg-muted/60 border-b border-border">
               <TableRow className="border-none hover:bg-transparent">
-                <TableHead className="text-slate-300 font-semibold">Data/Hora</TableHead>
-                <TableHead className="text-slate-300 font-semibold">Usuário</TableHead>
-                <TableHead className="text-slate-300 font-semibold">Rota</TableHead>
-                <TableHead className="text-slate-300 font-semibold">Métrica</TableHead>
-                <TableHead className="text-slate-300 font-semibold text-right">Valor</TableHead>
-                <TableHead className="text-slate-300 font-semibold text-center">Status</TableHead>
-                <TableHead className="text-slate-300 font-semibold">Dispositivo / Conexão</TableHead>
+                <TableHead className="text-foreground font-semibold">Data/Hora</TableHead>
+                <TableHead className="text-foreground font-semibold">Usuário</TableHead>
+                <TableHead className="text-foreground font-semibold">Rota</TableHead>
+                <TableHead className="text-foreground font-semibold">Métrica</TableHead>
+                <TableHead className="text-foreground font-semibold text-right">Valor</TableHead>
+                <TableHead className="text-foreground font-semibold text-center">Status</TableHead>
+                <TableHead className="text-foreground font-semibold">Dispositivo / Conexão</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentLogs.map((log) => (
-                <TableRow key={log.id} className="border-b border-borderCustom/60 hover:bg-muted/50 transition-colors">
-                  <TableCell className="text-slate-400 text-xs whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="text-slate-300 text-xs">
-                    {log.funcionarios ? (
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{log.funcionarios.nome}</span>
-                        <span className="text-[10px] text-slate-500">{log.funcionarios.email}</span>
+              {recentLogs.map((log) => {
+                const badgeInfo = getRatingBadge(log.rating)
+                return (
+                  <TableRow key={log.id} className="border-b border-border/60 hover:bg-muted/50 transition-colors">
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-foreground text-xs">
+                      {log.funcionarios ? (
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{log.funcionarios.nome}</span>
+                          <span className="text-[10px] text-muted-foreground">{log.funcionarios.email}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground font-semibold">Não logado</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-foreground max-w-[180px] truncate" title={log.pathname}>
+                      {log.pathname}
+                    </TableCell>
+                    <TableCell className="text-xs font-semibold whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        {getMetricIcon(log.metric_name)}
+                        <span>{getMetricLabel(log.metric_name)}</span>
                       </div>
-                    ) : (
-                      <span className="text-slate-500 font-semibold">Não logado</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-slate-400 max-w-[180px] truncate" title={log.pathname}>
-                    {log.pathname}
-                  </TableCell>
-                  <TableCell className="text-xs font-semibold whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      {getMetricIcon(log.metric_name)}
-                      <span>{getMetricLabel(log.metric_name)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono font-bold text-xs">
-                    {formatMetricValue(log.metric_name, Number(log.metric_value))}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className={`text-[10px] py-0.5 px-2 font-bold tracking-wide uppercase ${getRatingColor(log.rating)}`}>
-                      {log.rating === 'good' ? 'Bom' : log.rating === 'needs-improvement' ? 'Regular' : 'Ruim'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-slate-400 text-[10px] whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span>Rede: <strong className="text-slate-300 uppercase">{log.connection_type ?? 'N/D'}</strong></span>
-                      <span>RAM: <strong className="text-slate-300">{log.device_memory ? `${log.device_memory} GB` : 'N/D'}</strong> | Cores: <strong className="text-slate-300">{log.hardware_concurrency ?? 'N/D'}</strong></span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-bold text-xs">
+                      {formatMetricValue(log.metric_name, Number(log.metric_value))}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className={`text-[10px] py-0.5 px-2 font-bold tracking-wide uppercase ${badgeInfo.className}`}>
+                        {badgeInfo.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-[10px] whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span>Rede: <strong className="text-foreground uppercase">{log.connection_type ?? 'N/D'}</strong></span>
+                        <span>RAM: <strong className="text-foreground">{log.device_memory ? `${log.device_memory} GB` : 'N/D'}</strong> | Cores: <strong className="text-foreground">{log.hardware_concurrency ?? 'N/D'}</strong></span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
 
               {recentLogs.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                     Nenhum log de desempenho encontrado neste período.
                   </TableCell>
                 </TableRow>
@@ -533,11 +612,11 @@ export default function DesempenhoPage() {
 
         {/* Paginação */}
         {totalLogsCount > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-borderCustom">
-            <p className="text-xs text-slate-400">
-              Mostrando <strong className="text-slate-300">{Math.min(totalLogsCount, (currentPage - 1) * pageSize + 1)}</strong> a{' '}
-              <strong className="text-slate-300">{Math.min(currentPage * pageSize, totalLogsCount)}</strong> de{' '}
-              <strong className="text-slate-300">{totalLogsCount}</strong> logs
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Mostrando <strong className="text-foreground">{Math.min(totalLogsCount, (currentPage - 1) * pageSize + 1)}</strong> a{' '}
+              <strong className="text-foreground">{Math.min(currentPage * pageSize, totalLogsCount)}</strong> de{' '}
+              <strong className="text-foreground">{totalLogsCount}</strong> logs
             </p>
             <div className="flex items-center gap-3">
               <Button
@@ -545,11 +624,11 @@ export default function DesempenhoPage() {
                 size="sm"
                 disabled={currentPage === 1 || loading}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                className="bg-card border-borderCustom text-foreground hover:bg-muted disabled:opacity-50"
+                className="bg-card border-border text-foreground hover:bg-muted disabled:opacity-50"
               >
                 Anterior
               </Button>
-              <span className="text-xs text-slate-300 font-medium">
+              <span className="text-xs text-muted-foreground font-medium">
                 Página {currentPage} de {Math.max(1, Math.ceil(totalLogsCount / pageSize))}
               </span>
               <Button
@@ -557,7 +636,7 @@ export default function DesempenhoPage() {
                 size="sm"
                 disabled={currentPage >= Math.ceil(totalLogsCount / pageSize) || loading}
                 onClick={() => setCurrentPage(prev => prev + 1)}
-                className="bg-card border-borderCustom text-foreground hover:bg-muted disabled:opacity-50"
+                className="bg-card border-border text-foreground hover:bg-muted disabled:opacity-50"
               >
                 Próxima
               </Button>
