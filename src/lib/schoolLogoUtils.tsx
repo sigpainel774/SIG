@@ -18,6 +18,8 @@ export function getSchoolIconProps(escola: any) {
         <img
           src={logoSrc}
           alt={escola.nome}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
       )

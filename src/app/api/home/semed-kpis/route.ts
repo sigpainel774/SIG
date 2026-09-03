@@ -93,7 +93,8 @@ export async function GET(req: NextRequest) {
         .select('funcionario_id')
         .in('escola_id', escolaIds)
         .eq('ativo', true)
-        .ilike('cargo', '%profess%'),
+        .ilike('cargo', '%profess%')
+        .limit(10000),
 
       // Transferências de alunos pendentes na rede
       supabase

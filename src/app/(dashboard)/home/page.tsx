@@ -40,15 +40,23 @@ import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useDashboardMetricsSWR } from '@/lib/swr/useSigSWR'
 import { toast } from 'sonner'
-import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma'
 import { KPICard } from '@/components/KPICard'
 import { FrequenciaBar } from '@/components/FrequenciaBar'
-import { ModalDetalhesFrequenciaHoje } from '@/components/modals/ModalDetalhesFrequenciaHoje'
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
 import { createClient } from '@/lib/supabaseClient'
 
-import { ModalServidoresDiscriminados } from '@/components/modals/modal-servidores-discriminados'
-
+const ModalDetalhesTurma = dynamic(
+  () => import('@/components/ModalDetalhesTurma').then((m) => m.ModalDetalhesTurma),
+  { ssr: false }
+)
+const ModalDetalhesFrequenciaHoje = dynamic(
+  () => import('@/components/modals/ModalDetalhesFrequenciaHoje').then((m) => m.ModalDetalhesFrequenciaHoje),
+  { ssr: false }
+)
+const ModalServidoresDiscriminados = dynamic(
+  () => import('@/components/modals/modal-servidores-discriminados').then((m) => m.ModalServidoresDiscriminados),
+  { ssr: false }
+)
 const RelatorioServidores = dynamic(
   () => import('@/components/relatorios/RelatorioServidores'),
   { ssr: false }
@@ -190,8 +198,12 @@ export default function HomePage() {
     setIsDiscriminadosModalOpen(true)
   }
 
-  // Carrega estatísticas resumidas para o widget de servidores
+  // Carrega estatísticas resumidas para o widget de servidores (apenas Nível 1 na visão geral de secretarias)
   useEffect(() => {
+    if (!isNivel1 || selectedSecretaria) {
+      setWidgetStats(null)
+      return
+    }
     let active = true
     setLoadingWidgetStats(true)
     const carregarStats = async () => {
@@ -217,7 +229,7 @@ export default function HomePage() {
     }
     carregarStats()
     return () => { active = false }
-  }, [])
+  }, [isNivel1, selectedSecretaria])
 
   // Carrega secretarias do banco para o fluxo nível 1
   useEffect(() => {
@@ -318,11 +330,24 @@ export default function HomePage() {
 
   const isAdmin = isAdminGlobalOrRoot?.() ?? false
 
+  // Determina o nível do usuário na escola selecionada (para exibição de KPIs)
+  const nivelNaEscola = selectedEscola
+    ? acessos.find(a => a.escola_id === selectedEscola.id)?.nivel ?? 99
+    : 99
+  const podeVerKpiGerencial = isAdmin || nivelNaEscola <= 3
+  const isVisaoDocente = isProfessor && !podeVerKpiGerencial
+
   const activeEscolaId = selectedEscola?.id || escolaAtivaId
-  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(!isEMAEE && !isSaudeUnit ? activeEscolaId : null)
+  const deveBuscarKpiEscola = !isEMAEE && !isSaudeUnit && !isVisaoDocente
+  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(deveBuscarKpiEscola ? activeEscolaId : null)
+
+  const dashboardSwrMetricsRef = useRef(dashboardSwrMetrics)
+  useEffect(() => {
+    dashboardSwrMetricsRef.current = dashboardSwrMetrics
+  }, [dashboardSwrMetrics])
 
   useEffect(() => {
-    if (dashboardSwrMetrics && !isEMAEE && !isSaudeUnit) {
+    if (dashboardSwrMetrics && !isEMAEE && !isSaudeUnit && !isVisaoDocente) {
       setKpi(prev => ({
         totalAlunos: dashboardSwrMetrics.totalAlunos ?? prev?.totalAlunos ?? 0,
         totalTurmas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmas ?? 0,
@@ -333,10 +358,10 @@ export default function HomePage() {
         atividadesPendentesSecretaria: dashboardSwrMetrics.diariosPendentes ?? prev?.atividadesPendentesSecretaria ?? 0,
       }))
     }
-  }, [dashboardSwrMetrics, isEMAEE, isSaudeUnit])
+  }, [dashboardSwrMetrics, isEMAEE, isSaudeUnit, isVisaoDocente])
 
   const fetchKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
-    if (isMounted.current && !dashboardSwrMetrics) setLoadingKpi(true)
+    if (isMounted.current && !dashboardSwrMetricsRef.current) setLoadingKpi(true)
     try {
       const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`, { signal })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -348,7 +373,7 @@ export default function HomePage() {
     } finally {
       if (isMounted.current) setLoadingKpi(false)
     }
-  }, [dashboardSwrMetrics])
+  }, [])
 
   const fetchSaudeKpis = useCallback(async (unidadeId: string, signal?: AbortSignal) => {
     if (isMounted.current) setLoadingKpi(true)
@@ -406,14 +431,14 @@ export default function HomePage() {
         setKpi(null)
         setEmaeeKpi(null)
         fetchSaudeKpis(selectedEscola.id, controller.signal)
-      } else {
+      } else if (!isVisaoDocente) {
         setSaudeKpi(null)
         setEmaeeKpi(null)
         fetchKpis(selectedEscola.id, controller.signal)
       }
       return () => controller.abort()
     }
-  }, [selectedEscola?.id, isEMAEE, isSaudeUnit, fetchKpis, fetchSaudeKpis, fetchEmaeeKpis])
+  }, [selectedEscola?.id, isEMAEE, isSaudeUnit, isVisaoDocente, fetchKpis, fetchSaudeKpis, fetchEmaeeKpis])
 
   useEffect(() => {
     if (selectedSecretaria?.id && isSemedContext && !selectedEscola) {
@@ -511,12 +536,6 @@ export default function HomePage() {
     }
   }, [isAdmin, escolas, acessos, escolaAtivaId, selectedEscola, setSelectedEscola, isMultiLotadoDocente])
 
-  // Determina o nível do usuário na escola selecionada (para exibição de KPIs)
-  const nivelNaEscola = selectedEscola
-    ? acessos.find(a => a.escola_id === selectedEscola.id)?.nivel ?? 99
-    : 99
-  const podeVerKpiGerencial = isAdmin || nivelNaEscola <= 3
-
   if (isContaEja()) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 bg-surface-1 border border-borderCustom rounded-2xl">
@@ -539,7 +558,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2 bg-highlight/10 text-highlight border border-highlight/30 px-3 py-1.5 rounded-xl text-sm font-medium">
               <div className={`w-5 h-5 rounded-full overflow-hidden ${selectedEscola.logo_url ? 'bg-transparent' : selectedEscola.color || 'bg-blue-600'} flex items-center justify-center text-white text-xs font-bold`}>
                 {selectedEscola.logo_url ? (
-                  <img src={selectedEscola.logo_url} alt={selectedEscola.nome || 'Escola'} className="w-full h-full object-cover" />
+                  <img src={selectedEscola.logo_url} alt={selectedEscola.nome || 'Escola'} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 ) : (
                   (selectedEscola.nome || 'E')[0]
                 )}
@@ -597,7 +616,7 @@ export default function HomePage() {
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center bg-white p-2 border border-borderCustom shrink-0 group-hover:scale-105 transition-transform">
                       {secretaria.logo_url ? (
-                        <img src={secretaria.logo_url} alt={secretaria.nome} className="w-full h-full object-contain" />
+                        <img src={secretaria.logo_url} alt={secretaria.nome} loading="lazy" decoding="async" className="w-full h-full object-contain" />
                       ) : (
                         <Building2 className="w-7 h-7 text-sky-500" />
                       )}
@@ -745,6 +764,8 @@ export default function HomePage() {
                     <img
                       src={selectedSecretaria.logo_url}
                       alt={selectedSecretaria.nome}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain p-1"
                     />
                   ) : (
@@ -928,7 +949,7 @@ export default function HomePage() {
               <span className="text-muted-foreground">/</span>
               <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                 {selectedSecretaria.logo_url ? (
-                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} className="w-7 h-7 object-contain rounded-lg bg-white p-0.5" />
+                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} loading="lazy" decoding="async" className="w-7 h-7 object-contain rounded-lg bg-white p-0.5" />
                 ) : (
                   <Building2 className="w-6 h-6 text-sky-400" />
                 )}
@@ -1046,6 +1067,8 @@ export default function HomePage() {
                   <img
                     src={selectedEscola.logo_url}
                     alt={selectedEscola.nome}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-contain p-1"
                   />
                 ) : (
@@ -1191,6 +1214,8 @@ export default function HomePage() {
                   <img
                     src={selectedEscola.logo_url}
                     alt={selectedEscola.nome}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-contain p-1"
                   />
                 ) : isEMAEE ? (
