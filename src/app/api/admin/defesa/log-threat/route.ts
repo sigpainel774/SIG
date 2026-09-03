@@ -22,6 +22,14 @@ export async function POST(request: Request) {
       detalhes_analise,
     } = body
 
+    // 1. Validação de autenticação interna (apenas proxy/middleware autorizado pode registrar ameaças)
+    const expectedSecret = process.env.INTERNAL_WAF_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'waf-internal'
+    const incomingSecret = request.headers.get('x-waf-internal-secret')
+
+    if (!incomingSecret || incomingSecret !== expectedSecret) {
+      return NextResponse.json({ error: 'Acesso não autorizado: Endpoint de telemetria interna protegido.' }, { status: 401 })
+    }
+
     if (!tipo_ataque || !ip_origem || !rota_alvo) {
       return NextResponse.json({ error: 'Campos obrigatórios ausentes' }, { status: 400 })
     }

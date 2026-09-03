@@ -258,3 +258,64 @@ export function useDashboardMetricsSWR(escolaId: string | null | undefined) {
     }
   )
 }
+
+export interface EscolaAdminKPIData {
+  totalAlunos: number
+  totalTurmas: number
+  ocorrenciasMes: number
+  transferenciasPendentes: number
+  turmasComFrequenciaHoje: number
+  totalTurmasAtivas: number
+  atividadesPendentesSecretaria: number
+}
+
+/**
+ * Hook SWR para buscar os KPIs gerenciais completos da escola (/api/home/admin-kpis)
+ */
+export function useEscolaAdminKpisSWR(escolaId: string | null | undefined) {
+  const key = escolaId ? `/api/home/admin-kpis?escolaId=${escolaId}` : null
+
+  return useSWR<EscolaAdminKPIData>(
+    key,
+    async (url: string) => {
+      const res = await fetch(url)
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      return res.json()
+    },
+    {
+      ...DEFAULT_SWR_OPTIONS,
+      keepPreviousData: false,
+      refreshInterval: 60000,
+    }
+  )
+}
+
+/**
+ * Hook SWR para buscar a lista de secretarias ativas da rede municipal
+ */
+export function useSecretariasListSWR(enabled = true) {
+  const supabase = createBrowserClient()
+  const key = enabled ? 'secretarias_ativas_lista' : null
+
+  return useSWR(
+    key,
+    async () => {
+      const { data, error } = await supabase
+        .from('secretarias')
+        .select('id, nome, logo_url')
+        .is('deleted_at', null)
+        .eq('ativo', true)
+        .order('nome')
+
+      if (error) throw error
+      return data || []
+    },
+    {
+      ...DEFAULT_SWR_OPTIONS,
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  )
+}

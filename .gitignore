@@ -42,7 +42,10 @@ next-env.d.ts
 
 # Backups locais e bancos de dados
 /backups/
-/backup_funcionarios/
+backups/
+/backup*/
+backup*/
+*backup*.json
 *.bak
 *.backup
 *.db

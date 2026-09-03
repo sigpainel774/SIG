@@ -1,6 +1,358 @@
 # Projeto SIG – Análise de Funções (último mês)
 
-_Gerado em 2026-09-02T22:37:43.978Z_
+_Gerado em 2026-09-03T18:32:34.095Z_
+
+## src\app\(dashboard)\emaee\calendario-atendimentos\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\print\print-calendario-atendimentos.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\emaee\calendario-atendimentos\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\emaee\pacientes\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- dynamic import without next/dynamic
+- Missing 'use client' in client component
+
+## src\components\modals\modal-comunicado-popup.tsx
+
+### Funções encontradas
+
+- `ModalComunicadoPopup` – [src\components\modals\modal-comunicado-popup.tsx:L41](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-comunicado-popup.tsx#L41)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\emaee\pacientes\[id]\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- dynamic import without next/dynamic
+- Missing 'use client' in client component
+
+## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
+
+### Funções encontradas
+
+- `useMatriculaEmaee` – [src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts:L12](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts#L12)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\simulado-externo\[token]\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\cursinho\ModalScannerCamera.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\modals\scanner-foto-3x4\ModalScannerFoto3x4.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\lib\mediaCleanup.ts
+
+## src\lib\omr\omrEngine.ts
+
+### Funções encontradas
+
+- `getAudioContext` – [src\lib\omr\omrEngine.ts:L29](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L29)
+- `playScanSound` – [src\lib\omr\omrEngine.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L48)
+- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L83](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L83)
+- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L111](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L111)
+
+## src\app\(dashboard)\admin\layout.tsx
+
+## src\app\(dashboard)\admin\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\alunos\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- dynamic import without next/dynamic
+
+## src\app\(dashboard)\avaliacoes\page.tsx
+
+### Funções encontradas
+
+- `AvaliacoesContent` – [src\app\(dashboard)\avaliacoes\page.tsx:L70](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L70)
+- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L901](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L901)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\cursinho\simulados\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\eja\alunos\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- dynamic import without next/dynamic
+
+## src\app\(dashboard)\eja\turmas\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\emaee\layout.tsx
+
+## src\app\(dashboard)\ocorrencias\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\painel-chefe\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\relatorios\atividades\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\PerformanceTracker.tsx
+
+### Funções encontradas
+
+- `getConnectionType` – [src\components\PerformanceTracker.tsx:L26](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\PerformanceTracker.tsx#L26)
+- `getDeviceMemory` – [src\components\PerformanceTracker.tsx:L33](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\PerformanceTracker.tsx#L33)
+- `getHardwareConcurrency` – [src\components\PerformanceTracker.tsx:L38](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\PerformanceTracker.tsx#L38)
+- `normalizePathname` – [src\components\PerformanceTracker.tsx:L44](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\PerformanceTracker.tsx#L44)
+- `PerformanceTracker` – [src\components\PerformanceTracker.tsx:L53](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\PerformanceTracker.tsx#L53)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\hooks\useAlunos.ts
+
+### Funções encontradas
+
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\hooks\usePwaUpdateWatcher.ts
+
+### Funções encontradas
+
+- `usePwaUpdateWatcher` – [src\hooks\usePwaUpdateWatcher.ts:L20](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\usePwaUpdateWatcher.ts#L20)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\hooks\useSessionReplay.ts
+
+### Funções encontradas
+
+- `getNetworkDetails` – [src\hooks\useSessionReplay.ts:L52](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useSessionReplay.ts#L52)
+- `sanitizeText` – [src\hooks\useSessionReplay.ts:L76](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useSessionReplay.ts#L76)
+- `useSessionReplay` – [src\hooks\useSessionReplay.ts:L82](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useSessionReplay.ts#L82)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\(dashboard)\home\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- dynamic import without next/dynamic
+- Missing 'use client' in client component
+
+## src\app\api\home\semed-kpis\route.ts
+
+### Funções encontradas
+
+- `GET` – [src\app\api\home\semed-kpis\route.ts:L16](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\home\semed-kpis\route.ts#L16)
+
+## src\lib\schoolLogoUtils.tsx
+
+### Funções encontradas
+
+- `getSchoolIconProps` – [src\lib\schoolLogoUtils.tsx:L4](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\schoolLogoUtils.tsx#L4)
+
+## src\app\(dashboard)\painel-chefe\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\api\admin\alpha\criar-conta\route.ts
+
+### Funções encontradas
+
+- `POST` – [src\app\api\admin\alpha\criar-conta\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\alpha\criar-conta\route.ts#L7)
+
+## src\app\api\admin\users\create-auth\route.ts
+
+### Funções encontradas
+
+- `getAuthenticatedSuperadmin` – [src\app\api\admin\users\create-auth\route.ts:L11](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L11)
+- `getInitialNivelByCargo` – [src\app\api\admin\users\create-auth\route.ts:L41](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L41)
+- `POST` – [src\app\api\admin\users\create-auth\route.ts:L113](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L113)
+
+## src\app\api\matricula\gerar-pdf\route.ts
+
+### Funções encontradas
+
+- `getRobotoFont` – [src\app\api\matricula\gerar-pdf\route.ts:L17](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L17)
+- `generateVerificacaoToken` – [src\app\api\matricula\gerar-pdf\route.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L48)
+- `getImageBytes` – [src\app\api\matricula\gerar-pdf\route.ts:L57](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L57)
+- `POST` – [src\app\api\matricula\gerar-pdf\route.ts:L72](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L72)
+
+## src\app\portal-aluno\dashboard\[alunoId]\page.tsx
+
+### Funções encontradas
+
+- `calcularMediaUnidade` – [src\app\portal-aluno\dashboard\[alunoId]\page.tsx:L122](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\portal-aluno\dashboard\[alunoId]\page.tsx#L122)
+- `formatarData` – [src\app\portal-aluno\dashboard\[alunoId]\page.tsx:L131](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\portal-aluno\dashboard\[alunoId]\page.tsx#L131)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\ModalDetalhesAluno.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\map\HistoricoPercursosTab.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\print\print-comprovante-matricula.tsx
+
+### Funções encontradas
+
+- `PrintComprovanteMatricula` – [src\components\print\print-comprovante-matricula.tsx:L39](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\print\print-comprovante-matricula.tsx#L39)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\print\print-documento-escolar.tsx
+
+### Funções encontradas
+
+- `PrintDocumentoEscolar` – [src\components\print\print-documento-escolar.tsx:L26](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\print\print-documento-escolar.tsx#L26)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\relatorios\RelatorioRecursosHumanos.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\lib\offlineRouteStore.ts
+
+### Funções encontradas
+
+- `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
+- `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
+
+## src\lib\photoCache.ts
+
+### Funções encontradas
+
+- `invalidarCacheFoto` – [src\lib\photoCache.ts:L76](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoCache.ts#L76)
+- `precarregarFotosCache` – [src\lib\photoCache.ts:L98](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoCache.ts#L98)
+
+## src\app\(auth)\login\page.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\app\api\push\send\route.ts
+
+### Funções encontradas
+
+- `POST` – [src\app\api\push\send\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\push\send\route.ts#L7)
+
+## src\components\modals\modal-programar-desligamento.tsx
+
+### Funções encontradas
+
+- `ModalProgramarDesligamento` – [src\components\modals\modal-programar-desligamento.tsx:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-programar-desligamento.tsx#L22)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\print\print-ficha-aluno.tsx
+
+### Funções encontradas
+
+- `PrintFichaAluno` – [src\components\print\print-ficha-aluno.tsx:L44](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\print\print-ficha-aluno.tsx#L44)
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\components\relatorios\RelatorioNecessidades.tsx
+
+### Avisos de montagem/carregamento e performance
+
+- Missing 'use client' in client component
+
+## src\store\usePermissionSimulationStore.ts
 
 ## src\app\(dashboard)\emaee\pacientes\[id]\page.tsx
 
@@ -509,9 +861,10 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `playScanSound` – [src\lib\omr\omrEngine.ts:L27](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L27)
-- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L63](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L63)
-- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L91](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L91)
+- `getAudioContext` – [src\lib\omr\omrEngine.ts:L29](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L29)
+- `playScanSound` – [src\lib\omr\omrEngine.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L48)
+- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L83](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L83)
+- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L111](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L111)
 
 ## src\app\simulado-externo\[token]\page.tsx
 
@@ -567,9 +920,10 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `playScanSound` – [src\lib\omr\omrEngine.ts:L27](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L27)
-- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L63](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L63)
-- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L91](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L91)
+- `getAudioContext` – [src\lib\omr\omrEngine.ts:L29](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L29)
+- `playScanSound` – [src\lib\omr\omrEngine.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L48)
+- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L83](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L83)
+- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L111](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L111)
 
 ## src\app\(dashboard)\cursinho\simulados\page.tsx
 
@@ -647,9 +1001,10 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `playScanSound` – [src\lib\omr\omrEngine.ts:L27](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L27)
-- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L63](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L63)
-- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L91](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L91)
+- `getAudioContext` – [src\lib\omr\omrEngine.ts:L29](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L29)
+- `playScanSound` – [src\lib\omr\omrEngine.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L48)
+- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L83](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L83)
+- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L111](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L111)
 
 ## src\app\(dashboard)\cursinho\simulados\page.tsx
 
@@ -697,9 +1052,10 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `playScanSound` – [src\lib\omr\omrEngine.ts:L27](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L27)
-- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L63](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L63)
-- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L91](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L91)
+- `getAudioContext` – [src\lib\omr\omrEngine.ts:L29](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L29)
+- `playScanSound` – [src\lib\omr\omrEngine.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L48)
+- `readQRCodeFromImageData` – [src\lib\omr\omrEngine.ts:L83](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L83)
+- `getBubbleGridCoordinates` – [src\lib\omr\omrEngine.ts:L111](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\omr\omrEngine.ts#L111)
 
 ## src\types\simulado.ts
 
@@ -785,7 +1141,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\print\print-ficha-aluno.tsx
 
@@ -801,7 +1156,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `useAlunos` – [src\hooks\useAlunos.ts:L55](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L55)
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -1012,6 +1367,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\relatorios\page.tsx
@@ -1146,6 +1502,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\admin\relatorios\page.tsx
@@ -1201,6 +1558,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\turmas\page.tsx
@@ -1281,10 +1639,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `POST` – [src\app\api\push\send\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\push\send\route.ts#L7)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\alpha\AlphaBottomNav.tsx
 
@@ -1385,10 +1739,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `sendPushToUser` – [src\lib\push\sendPushToUser.ts:L20](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\push\sendPushToUser.ts#L20)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\Sidebar.tsx
 
@@ -1659,10 +2009,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\comunicados\notify-pending\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\comunicados\notify-pending\route.ts#L7)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\api\comunicados\process-scheduled\route.ts
 
 ### Funções encontradas
@@ -1675,10 +2021,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `POST` – [src\app\api\push\send\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\push\send\route.ts#L7)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-comunicado-popup.tsx
 
@@ -1702,10 +2044,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `sendPushToUser` – [src\lib\push\sendPushToUser.ts:L20](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\push\sendPushToUser.ts#L20)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-abastecimento.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -1727,7 +2065,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-cadastro-responsavel.tsx
 
@@ -1746,7 +2083,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-manutencao.tsx
 
@@ -2489,10 +2825,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\alpha\(dashboard)\visitas\page.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -2600,6 +2932,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\alpha\(dashboard)\rotas-escolas\page.tsx
@@ -2647,17 +2980,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
 - `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
-- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L139](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L139)
-- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L171](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L171)
-- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L191](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L191)
-- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L225](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L225)
-- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L255](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L255)
-- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L290](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L290)
-- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L319](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L319)
-- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L353](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L353)
-- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L385](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L385)
-- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L393](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L393)
-- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L425](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L425)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
 
 ## src\lib\routeOptimizer.ts
 
@@ -2712,6 +3045,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## next.config.ts
@@ -2828,7 +3162,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-aluno\index.tsx
 
@@ -2848,7 +3181,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\index.tsx
 
@@ -2889,17 +3221,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
 - `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
-- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L139](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L139)
-- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L171](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L171)
-- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L191](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L191)
-- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L225](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L225)
-- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L255](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L255)
-- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L290](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L290)
-- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L319](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L319)
-- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L353](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L353)
-- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L385](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L385)
-- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L393](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L393)
-- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L425](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L425)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
 
 ## src\components\map\MapaRotasEscolas.tsx
 
@@ -3098,10 +3430,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\store\useAuthStore.ts
 
 ## public\sw.js
@@ -3182,17 +3510,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
 - `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
-- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L139](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L139)
-- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L171](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L171)
-- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L191](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L191)
-- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L225](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L225)
-- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L255](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L255)
-- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L290](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L290)
-- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L319](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L319)
-- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L353](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L353)
-- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L385](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L385)
-- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L393](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L393)
-- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L425](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L425)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
 
 ## src\app\(dashboard)\admin\alpha\page.tsx
 
@@ -3244,10 +3572,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\types\supabase.ts
 
 ## src\app\(dashboard)\admin\escolas\page.tsx
@@ -3287,7 +3611,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\types.ts
 
@@ -3322,7 +3645,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-aluno\index.tsx
 
@@ -3377,17 +3699,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
 - `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
-- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L139](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L139)
-- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L171](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L171)
-- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L191](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L191)
-- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L225](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L225)
-- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L255](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L255)
-- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L290](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L290)
-- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L319](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L319)
-- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L353](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L353)
-- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L385](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L385)
-- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L393](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L393)
-- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L425](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L425)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
 
 ## src\components\modals\modal-aluno\components\SecaoAssinaturas.tsx
 
@@ -3432,7 +3754,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-aluno\index.tsx
 
@@ -3534,17 +3855,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `openDB` – [src\lib\offlineRouteStore.ts:L81](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L81)
 - `salvarRotaAtiva` – [src\lib\offlineRouteStore.ts:L114](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L114)
-- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L139](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L139)
-- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L171](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L171)
-- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L191](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L191)
-- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L225](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L225)
-- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L255](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L255)
-- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L290](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L290)
-- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L319](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L319)
-- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L353](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L353)
-- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L385](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L385)
-- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L393](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L393)
-- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L425](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L425)
+- `obterRotaAtiva` – [src\lib\offlineRouteStore.ts:L141](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L141)
+- `limparRotaAtiva` – [src\lib\offlineRouteStore.ts:L173](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L173)
+- `enfileirarVisitaOffline` – [src\lib\offlineRouteStore.ts:L197](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L197)
+- `obterVisitasPendentes` – [src\lib\offlineRouteStore.ts:L233](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L233)
+- `marcarVisitasComoSincronizadas` – [src\lib\offlineRouteStore.ts:L263](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L263)
+- `removerVisitaOffline` – [src\lib\offlineRouteStore.ts:L300](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L300)
+- `salvarNavegacaoLivreOffline` – [src\lib\offlineRouteStore.ts:L331](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L331)
+- `obterNavegacoesLivresOffline` – [src\lib\offlineRouteStore.ts:L367](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L367)
+- `obterNavegacoesPendentes` – [src\lib\offlineRouteStore.ts:L399](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L399)
+- `marcarNavegacaoComoSincronizada` – [src\lib\offlineRouteStore.ts:L407](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L407)
+- `removerNavegacaoOffline` – [src\lib\offlineRouteStore.ts:L441](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\offlineRouteStore.ts#L441)
 
 ## src\types\supabase.ts
 
@@ -3664,6 +3985,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\mural\page.tsx
@@ -3728,14 +4050,12 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-manutencao.tsx
 
@@ -3898,7 +4218,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-cadastro-responsavel.tsx
 
@@ -3929,7 +4248,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-update-email-user.tsx
 
@@ -3972,12 +4290,8 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `getAuthenticatedSuperadmin` – [src\app\api\admin\users\create-auth\route.ts:L11](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L11)
-- `getInitialNivelByCargo` – [src\app\api\admin\users\create-auth\route.ts:L37](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L37)
-- `POST` – [src\app\api\admin\users\create-auth\route.ts:L109](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L109)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
+- `getInitialNivelByCargo` – [src\app\api\admin\users\create-auth\route.ts:L41](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L41)
+- `POST` – [src\app\api\admin\users\create-auth\route.ts:L113](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\create-auth\route.ts#L113)
 
 ## src\components\modals\modal-create-auth-user.tsx
 
@@ -4046,7 +4360,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
 
@@ -4314,7 +4627,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-aluno\index.tsx
 
@@ -4334,7 +4646,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\index.tsx
 
@@ -4357,16 +4668,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
 
@@ -4384,16 +4690,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
 
@@ -4417,16 +4718,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\lib\imageCompression.ts
 
@@ -4494,14 +4790,12 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
 
@@ -4519,10 +4813,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-aluno\hooks\useAlunoFormStates.ts
 
 ### Funções encontradas
@@ -4532,14 +4822,12 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-matricula-emaee\hooks\useMatriculaEmaee.ts
 
@@ -4556,7 +4844,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\api\emaee\anexos\process\route.ts
 
@@ -4576,16 +4863,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\emaee\calendario-atendimentos\page.tsx
 
@@ -4637,6 +4919,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\painel-chefe\page.tsx
@@ -4823,10 +5106,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `getAuthenticatedSuperadmin` – [src\app\api\admin\users\update-email\route.ts:L11](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\update-email\route.ts#L11)
 - `POST` – [src\app\api\admin\users\update-email\route.ts:L37](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\users\update-email\route.ts#L37)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-update-email-user.tsx
 
@@ -5139,6 +5418,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\components\Sidebar.tsx
@@ -5384,10 +5664,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `GET` – [src\app\api\admin\pwa-update\route.ts:L32](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\pwa-update\route.ts#L32)
 - `POST` – [src\app\api\admin\pwa-update\route.ts:L76](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\pwa-update\route.ts#L76)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\layout.tsx
 
 ## src\app\portal-aluno\layout.tsx
@@ -5422,10 +5698,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `POST` – [src\app\api\admin\defesa\block-ip\route.ts:L44](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\block-ip\route.ts#L44)
 - `DELETE` – [src\app\api\admin\defesa\block-ip\route.ts:L97](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\block-ip\route.ts#L97)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\api\admin\defesa\log-threat\route.ts
 
 ### Funções encontradas
@@ -5439,10 +5711,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `checkSuperadmin` – [src\app\api\admin\defesa\report\route.ts:L6](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\report\route.ts#L6)
 - `GET` – [src\app\api\admin\defesa\report\route.ts:L43](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\report\route.ts#L43)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\api\admin\defesa\route.ts
 
 ### Funções encontradas
@@ -5450,10 +5718,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `checkSuperadmin` – [src\app\api\admin\defesa\route.ts:L9](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\route.ts#L9)
 - `GET` – [src\app\api\admin\defesa\route.ts:L46](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\route.ts#L46)
 - `PATCH` – [src\app\api\admin\defesa\route.ts:L174](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\defesa\route.ts#L174)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\lib\security\ipBlockStore.ts
 
@@ -5472,10 +5736,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `inspectPayloadObject` – [src\lib\security\threatDetector.ts:L125](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\security\threatDetector.ts#L125)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\lib\security\wafPatterns.ts
 
 ## src\proxy.ts
@@ -5484,10 +5744,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\calendario-academico\page.tsx
 
@@ -5584,7 +5840,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `AvaliacoesContent` – [src\app\(dashboard)\avaliacoes\page.tsx:L70](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L70)
-- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L899](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L899)
+- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L901](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L901)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -5684,7 +5940,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\hooks\useFuncionarios.ts
 
@@ -6070,7 +6325,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `useAlunos` – [src\hooks\useAlunos.ts:L55](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L55)
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -6194,10 +6449,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\permissoes\toggle-eja\route.ts:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\permissoes\toggle-eja\route.ts#L7)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\Sidebar.tsx
 
 ### Funções encontradas
@@ -6289,6 +6540,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\page.tsx
@@ -6351,10 +6603,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `POST` – [src\app\api\admin\responsaveis\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L8)
 - `GET` – [src\app\api\admin\responsaveis\route.ts:L325](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L325)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-cadastro-responsavel.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -6401,10 +6649,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\responsaveis\page.tsx
 
@@ -6462,10 +6706,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\app\portal-aluno\ajuda\page.tsx
 
@@ -6600,10 +6840,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `POST` – [src\app\api\admin\responsaveis\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L8)
 - `GET` – [src\app\api\admin\responsaveis\route.ts:L325](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L325)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\(dashboard)\relatorios\atividades\page.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -6616,10 +6852,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\admin\responsaveis\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L8)
 - `GET` – [src\app\api\admin\responsaveis\route.ts:L325](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L325)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\responsaveis\page.tsx
 
@@ -6673,6 +6905,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\components\SchoolSelector.tsx
@@ -6870,10 +7103,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `POST` – [src\app\api\admin\responsaveis\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L8)
 - `GET` – [src\app\api\admin\responsaveis\route.ts:L325](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\responsaveis\route.ts#L325)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\portal-aluno\dashboard\[alunoId]\page.tsx
 
 ### Funções encontradas
@@ -6928,10 +7157,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\store\useSchoolStore.ts
 
 ## src\types\supabase.ts
@@ -6970,6 +7195,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\components\funcionarios\FuncionariosList.tsx
@@ -6994,7 +7220,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\hooks\useGestaoLotacoes.ts
 
@@ -7141,7 +7366,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\store\usePermissionSimulationStore.ts
 
@@ -7154,7 +7378,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\print\print-evolucoes-emaee.tsx
 
@@ -7178,10 +7401,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ## src\components\print\print-header.tsx
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\(dashboard)\documentos\page.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -7204,7 +7423,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\arquivos\page.tsx
 
@@ -7245,7 +7463,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-imprimir-ficha-funcionario.tsx
 
@@ -7258,23 +7475,14 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\print\print-header.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\hooks\useImprimirFuncionario.ts
 
 ### Funções encontradas
 
 - `useImprimirFuncionario` – [src\hooks\useImprimirFuncionario.ts:L11](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useImprimirFuncionario.ts#L11)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\documentos\page.tsx
 
@@ -7301,7 +7509,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `useAlunos` – [src\hooks\useAlunos.ts:L55](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L55)
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -7452,6 +7660,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\app\(dashboard)\relatorios\page.tsx
@@ -7499,7 +7708,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `useAlunos` – [src\hooks\useAlunos.ts:L55](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L55)
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -7985,19 +8194,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `getImageBytes` – [src\app\api\matricula\gerar-pdf\route.ts:L57](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L57)
 - `POST` – [src\app\api\matricula\gerar-pdf\route.ts:L72](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\matricula\gerar-pdf\route.ts#L72)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\lib\authGuard.ts
 
 ### Funções encontradas
 
 - `requireSuperAdminApi` – [src\lib\authGuard.ts:L27](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\authGuard.ts#L27)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\lib\rateLimit.ts
 
@@ -8017,10 +8218,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\funcionarios\FuncionariosList.tsx
 
@@ -8141,10 +8338,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `applySecurityHeaders` – [src\proxy.ts:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L10)
 - `proxy` – [src\proxy.ts:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\proxy.ts#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\store\usePermissionSimulationStore.ts
 
 ## src\app\(dashboard)\admin\page.tsx
@@ -8261,7 +8454,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Funções encontradas
 
-- `useAlunos` – [src\hooks\useAlunos.ts:L55](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L55)
+- `useAlunos` – [src\hooks\useAlunos.ts:L56](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useAlunos.ts#L56)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -8350,7 +8543,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\funcionarios\FuncionariosList.tsx
 
@@ -8396,7 +8588,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\Sidebar.tsx
 
@@ -8491,6 +8682,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 ### Avisos de montagem/carregamento e performance
 
+- dynamic import without next/dynamic
 - Missing 'use client' in client component
 
 ## src\components\Header.tsx
@@ -8522,16 +8714,11 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\hooks\useFuncionarios.ts
 
@@ -8561,10 +8748,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `formatBytes` – [src\app\(dashboard)\admin\armazenamento\components\StorageFileInspector.tsx:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\admin\armazenamento\components\StorageFileInspector.tsx#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\(dashboard)\funcionarios\page.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -8587,10 +8770,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `useImprimirFuncionario` – [src\hooks\useImprimirFuncionario.ts:L11](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useImprimirFuncionario.ts#L11)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\types\funcionario.ts
 
@@ -8634,7 +8813,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\admin\page.tsx
 
@@ -8703,7 +8881,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-gestao-lotacoes.tsx
 
@@ -9101,10 +9278,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 
 - `formatBytes` – [src\app\(dashboard)\admin\armazenamento\components\StorageFileInspector.tsx:L22](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\admin\armazenamento\components\StorageFileInspector.tsx#L22)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\(dashboard)\admin\armazenamento\page.tsx
 
 ### Funções encontradas
@@ -9223,7 +9396,7 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `AvaliacoesContent` – [src\app\(dashboard)\avaliacoes\page.tsx:L70](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L70)
-- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L899](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L899)
+- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L901](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L901)
 
 ### Avisos de montagem/carregamento e performance
 
@@ -9270,7 +9443,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\admin\dispositivos\page.tsx
 
@@ -9285,10 +9457,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `getAuthenticatedSuperadmin` – [src\app\api\admin\pwa-update\route.ts:L6](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\pwa-update\route.ts#L6)
 - `GET` – [src\app\api\admin\pwa-update\route.ts:L32](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\pwa-update\route.ts#L32)
 - `POST` – [src\app\api\admin\pwa-update\route.ts:L76](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\admin\pwa-update\route.ts#L76)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\hooks\usePwaUpdateWatcher.ts
 
@@ -9323,7 +9491,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\types.ts
 
@@ -9334,10 +9501,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Funções encontradas
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\lotacoes\FuncionarioLotacaoList.tsx
 
@@ -9378,10 +9541,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `getAvatarUrl` – [src\lib\photoHelper.ts:L17](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoHelper.ts#L17)
 - `getVisualizacaoUrl` – [src\lib\photoHelper.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoHelper.ts#L48)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\(dashboard)\funcionarios\page.tsx
 
 ### Avisos de montagem/carregamento e performance
@@ -9414,7 +9573,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\types.ts
 
@@ -9438,26 +9596,17 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `getAvatarUrl` – [src\lib\photoHelper.ts:L17](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoHelper.ts#L17)
 - `getVisualizacaoUrl` – [src\lib\photoHelper.ts:L48](file://C:\Users\Pc\Documents\GitHub\SIG\src\lib\photoHelper.ts#L48)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\app\api\fotos\process\route.ts
 
 ### Funções encontradas
 
 - `POST` – [src\app\api\fotos\process\route.ts:L8](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\api\fotos\process\route.ts#L8)
 
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
 ## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
 
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\types.ts
 
@@ -9521,7 +9670,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\print\print-documento-escolar.tsx
 
@@ -9532,7 +9680,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\app\(dashboard)\emaee\pacientes\[id]\page.tsx
 
@@ -9602,7 +9749,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\types.ts
 
@@ -9899,7 +10045,6 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 ### Avisos de montagem/carregamento e performance
 
 - Missing 'use client' in client component
-- Supabase client misuse (service key in client)
 
 ## src\components\modals\modal-funcionario\index.tsx
 
@@ -10041,254 +10186,4 @@ _Gerado em 2026-09-02T22:37:43.978Z_
 - `Sidebar` – [src\components\Sidebar.tsx:L49](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\Sidebar.tsx#L49)
 
 ## src\types\supabase.ts
-
-## src\app\(dashboard)\funcionarios\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\components\print\print-header.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Supabase client misuse (service key in client)
-
-## src\components\relatorios\RelatorioNecessidades.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\hooks\useRelatorioNotas.ts
-
-### Funções encontradas
-
-- `useRelatorioNotas` – [src\hooks\useRelatorioNotas.ts:L44](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useRelatorioNotas.ts#L44)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\avaliacoes\page.tsx
-
-### Funções encontradas
-
-- `AvaliacoesContent` – [src\app\(dashboard)\avaliacoes\page.tsx:L70](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L70)
-- `activitiesListEmpty` – [src\app\(dashboard)\avaliacoes\page.tsx:L899](file://C:\Users\Pc\Documents\GitHub\SIG\src\app\(dashboard)\avaliacoes\page.tsx#L899)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\relatorios\atividades\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\modals\modal-funcionario\hooks\useFuncionarioFormStates.ts
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-- Supabase client misuse (service key in client)
-
-## src\components\modals\modal-funcionario\index.tsx
-
-### Funções encontradas
-
-- `ModalFuncionarioContent` – [src\components\modals\modal-funcionario\index.tsx:L31](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L31)
-- `ModalFuncionarioFooter` – [src\components\modals\modal-funcionario\index.tsx:L262](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L262)
-- `ModalFuncionario` – [src\components\modals\modal-funcionario\index.tsx:L299](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L299)
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\components\modals\modal-funcionario\types.ts
-
-## src\store\useSchoolStore.ts
-
-## next.config.ts
-
-## public\sw.js
-
-## src\app\(dashboard)\home\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\layout.tsx
-
-## src\components\modals\modal-servidores-discriminados.tsx
-
-### Funções encontradas
-
-- `getInitials` – [src\components\modals\modal-servidores-discriminados.tsx:L46](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-servidores-discriminados.tsx#L46)
-- `avatarColor` – [src\components\modals\modal-servidores-discriminados.tsx:L53](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-servidores-discriminados.tsx#L53)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\pwa\PWAIconUpdateNotice.tsx
-
-### Funções encontradas
-
-- `PWAIconUpdateNotice` – [src\components\pwa\PWAIconUpdateNotice.tsx:L7](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\pwa\PWAIconUpdateNotice.tsx#L7)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\relatorios\RelatorioServidores.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\home\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\Header.tsx
-
-### Funções encontradas
-
-- `Header` – [src\components\Header.tsx:L35](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\Header.tsx#L35)
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\components\Sidebar.tsx
-
-### Funções encontradas
-
-- `Sidebar` – [src\components\Sidebar.tsx:L49](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\Sidebar.tsx#L49)
-
-## src\store\useSchoolStore.ts
-
-## src\components\modals\modal-comunicado-popup.tsx
-
-### Funções encontradas
-
-- `ModalComunicadoPopup` – [src\components\modals\modal-comunicado-popup.tsx:L41](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-comunicado-popup.tsx#L41)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\atestados\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\funcionarios\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\home\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\SchoolSelector.tsx
-
-### Funções encontradas
-
-- `SchoolSelector` – [src\components\SchoolSelector.tsx:L12](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\SchoolSelector.tsx#L12)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\Sidebar.tsx
-
-### Funções encontradas
-
-- `Sidebar` – [src\components\Sidebar.tsx:L49](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\Sidebar.tsx#L49)
-
-## src\hooks\useGestaoLotacoes.ts
-
-### Funções encontradas
-
-- `useGestaoLotacoes` – [src\hooks\useGestaoLotacoes.ts:L58](file://C:\Users\Pc\Documents\GitHub\SIG\src\hooks\useGestaoLotacoes.ts#L58)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\funcionarios\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\mural\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
-
-## src\app\(dashboard)\painel-chefe\page.tsx
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\modals\modal-comunicado-popup.tsx
-
-### Funções encontradas
-
-- `ModalComunicadoPopup` – [src\components\modals\modal-comunicado-popup.tsx:L41](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-comunicado-popup.tsx#L41)
-
-### Avisos de montagem/carregamento e performance
-
-- Missing 'use client' in client component
-
-## src\components\modals\modal-funcionario\components\EmpregoTab.tsx
-
-### Funções encontradas
-
-- `EmpregoTab` – [src\components\modals\modal-funcionario\components\EmpregoTab.tsx:L9](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\components\EmpregoTab.tsx#L9)
-
-## src\components\modals\modal-funcionario\components\EscolaridadeTab.tsx
-
-### Funções encontradas
-
-- `EscolaridadeTab` – [src\components\modals\modal-funcionario\components\EscolaridadeTab.tsx:L13](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\components\EscolaridadeTab.tsx#L13)
-
-## src\components\modals\modal-funcionario\components\PessoaisTab.tsx
-
-### Funções encontradas
-
-- `PessoaisTab` – [src\components\modals\modal-funcionario\components\PessoaisTab.tsx:L10](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\components\PessoaisTab.tsx#L10)
-
-## src\components\modals\modal-funcionario\index.tsx
-
-### Funções encontradas
-
-- `ModalFuncionarioContent` – [src\components\modals\modal-funcionario\index.tsx:L31](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L31)
-- `ModalFuncionarioFooter` – [src\components\modals\modal-funcionario\index.tsx:L262](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L262)
-- `ModalFuncionario` – [src\components\modals\modal-funcionario\index.tsx:L299](file://C:\Users\Pc\Documents\GitHub\SIG\src\components\modals\modal-funcionario\index.tsx#L299)
-
-### Avisos de montagem/carregamento e performance
-
-- dynamic import without next/dynamic
-- Missing 'use client' in client component
 

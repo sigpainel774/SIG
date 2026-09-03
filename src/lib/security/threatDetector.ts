@@ -176,11 +176,13 @@ export function recordThreatEventAsync(eventData: {
   // Utiliza fetch assíncrono interno ou chamada de background segura
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
+  const internalSecret = process.env.INTERNAL_WAF_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'waf-internal'
+
   fetch(`${baseUrl}/api/admin/defesa/log-threat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-waf-internal-secret': process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 32) || 'waf-internal',
+      'x-waf-internal-secret': internalSecret,
     },
     body: JSON.stringify(eventData),
   }).catch((err) => {

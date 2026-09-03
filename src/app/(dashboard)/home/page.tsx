@@ -30,37 +30,19 @@ import {
   FileSpreadsheet,
   Calendar,
 } from 'lucide-react'
-import dynamic from 'next/dynamic'
-import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useDashboardMetricsSWR } from '@/lib/swr/useSigSWR'
+import { useEscolaAdminKpisSWR, useSecretariasListSWR, EscolaAdminKPIData } from '@/lib/swr/useSigSWR'
 import { toast } from 'sonner'
 import { KPICard } from '@/components/KPICard'
-import { FrequenciaBar } from '@/components/FrequenciaBar'
 import { getSchoolIconProps } from '@/lib/schoolLogoUtils'
-import { createClient } from '@/lib/supabaseClient'
+import { WidgetRelatorioServidores } from './components/WidgetRelatorioServidores'
+import { HomeFrequenciaSection } from './components/HomeFrequenciaSection'
+import { TeacherAgendaSection } from './components/TeacherAgendaSection'
 
-const ModalDetalhesTurma = dynamic(
-  () => import('@/components/ModalDetalhesTurma').then((m) => m.ModalDetalhesTurma),
-  { ssr: false }
-)
-const ModalDetalhesFrequenciaHoje = dynamic(
-  () => import('@/components/modals/ModalDetalhesFrequenciaHoje').then((m) => m.ModalDetalhesFrequenciaHoje),
-  { ssr: false }
-)
-const ModalServidoresDiscriminados = dynamic(
-  () => import('@/components/modals/modal-servidores-discriminados').then((m) => m.ModalServidoresDiscriminados),
-  { ssr: false }
-)
-const RelatorioServidores = dynamic(
-  () => import('@/components/relatorios/RelatorioServidores'),
-  { ssr: false }
-)
 
 interface KPIData {
   totalAlunos: number
@@ -181,84 +163,16 @@ export default function HomePage() {
     return (acessoNivel1 as any)?.secretarias_ids ?? null
   }, [isSuperAdmin, isNivel1, acessos])
 
-  // Lista de secretarias do banco (para o fluxo nível 1)
-  const [secretarias, setSecretarias] = useState<SecretariaItem[]>([])
-  const [loadingSecretarias, setLoadingSecretarias] = useState(false)
+  // Lista de secretarias do banco (para o fluxo nível 1 com cache SWR)
+  const { data: allSecretarias, isLoading: loadingSecretarias } = useSecretariasListSWR(isNivel1)
 
-  // Estados para o Widget de Relatório de Servidores
-  const [widgetStats, setWidgetStats] = useState<{ total: number; concursados: number; contratados: number; nomeados: number; outros: number } | null>(null)
-  const [loadingWidgetStats, setLoadingWidgetStats] = useState(false)
-  const [isRelatorioServidoresModalOpen, setIsRelatorioServidoresModalOpen] = useState(false)
-  const [isDiscriminadosModalOpen, setIsDiscriminadosModalOpen] = useState(false)
-  const [selectedTipoVinculoModal, setSelectedTipoVinculoModal] = useState<string>('Total')
-
-  const handleOpenDiscriminadosModal = (e: React.MouseEvent, vinculo: string) => {
-    e.stopPropagation()
-    setSelectedTipoVinculoModal(vinculo)
-    setIsDiscriminadosModalOpen(true)
-  }
-
-  // Carrega estatísticas resumidas para o widget de servidores (apenas Nível 1 na visão geral de secretarias)
-  useEffect(() => {
-    if (!isNivel1 || selectedSecretaria) {
-      setWidgetStats(null)
-      return
-    }
-    let active = true
-    setLoadingWidgetStats(true)
-    const carregarStats = async () => {
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase.rpc('get_relatorio_servidores', {})
-        if (!active) return
-        if (!error && data && (data as any).resumo) {
-          const res = (data as any).resumo
-          setWidgetStats({
-            total: res.total_servidores_unicos ?? 0,
-            concursados: res.total_concursados ?? 0,
-            contratados: res.total_contratados ?? 0,
-            nomeados: res.total_nomeados ?? 0,
-            outros: res.total_outros ?? 0,
-          })
-        }
-      } catch (err) {
-        console.error('Erro ao carregar estatísticas do widget:', err)
-      } finally {
-        if (active) setLoadingWidgetStats(false)
-      }
-    }
-    carregarStats()
-    return () => { active = false }
-  }, [isNivel1, selectedSecretaria])
-
-  // Carrega secretarias do banco para o fluxo nível 1
-  useEffect(() => {
-    if (!isNivel1) return
-    let active = true
-    setLoadingSecretarias(true)
-    const supabase = createClient()
-    supabase
-      .from('secretarias')
-      .select('id, nome, logo_url')
-      .is('deleted_at', null)
-      .eq('ativo', true)
-      .order('nome')
-      .then(({ data, error }) => {
-        if (!active) return
-        if (error) {
-          console.error('[home] Erro ao carregar secretarias:', error)
-          toast.error('Erro ao carregar lista de secretarias.')
-        } else if (data) {
-          // Filtra pelas secretarias permitidas ao nível 1 (null = todas)
-          const filtradas = secretariasIdsPermitidas
-            ? data.filter(s => secretariasIdsPermitidas.includes(s.id))
-            : data
-          setSecretarias(filtradas)
-        }
-        setLoadingSecretarias(false)
-      })
-    return () => { active = false }
-  }, [isNivel1, secretariasIdsPermitidas])
+  // Filtra pelas secretarias permitidas ao nível 1 (null = todas, [] = nenhuma)
+  const secretarias = useMemo<SecretariaItem[]>(() => {
+    if (!allSecretarias || allSecretarias.length === 0) return []
+    if (secretariasIdsPermitidas === null) return allSecretarias
+    const permitidasSet = new Set(secretariasIdsPermitidas)
+    return allSecretarias.filter(s => permitidasSet.has(s.id))
+  }, [allSecretarias, secretariasIdsPermitidas])
 
   // Escolas filtradas pela secretaria selecionada (para o passo 2 do fluxo nível 1)
   const escolasDaSecretaria = useMemo(() => {
@@ -266,18 +180,13 @@ export default function HomePage() {
     return escolas.filter(e => !e.is_teste && e.secretaria_id === selectedSecretaria.id)
   }, [escolas, selectedSecretaria])
 
-  const [kpi, setKpi] = useState<KPIData | null>(null)
   const [saudeKpi, setSaudeKpi] = useState<SaudeKPIData | null>(null)
   const [emaeeKpi, setEmaeeKpi] = useState<EmaeeKPIData | null>(null)
   const [loadingKpi, setLoadingKpi] = useState(false)
 
   // ── Detecção Estrita de EMAEE x Saúde x Educação Regular ──
-  const isEMAEE = useMemo(() => {
-    if (!selectedEscola) return false
-    return selectedEscola.tipo === 'EMAEE' || /emaee/i.test(selectedEscola.nome || '')
-  }, [selectedEscola])
+  const isEMAEE = Boolean(selectedEscola && (selectedEscola.tipo === 'EMAEE' || /emaee/i.test(selectedEscola.nome || '')))
 
-  const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
   const isSaudeUnit = useMemo(() => {
     if (isEMAEE) return false
     if (selectedSecretaria && /sa[uú]de/i.test(selectedSecretaria.nome)) return true
@@ -286,13 +195,11 @@ export default function HomePage() {
       if (/sa[uú]de/i.test(selectedEscola.secretariaNome || '')) return true
       if (/sa[uú]de|posto|ubs|usf|hospital|upa/i.test(selectedEscola.nome)) return true
     }
+    const secNome = selectedSecretaria?.nome || selectedEscola?.secretariaNome || (selectedEscola?.secretarias as any)?.nome || ''
     return Boolean(secNome && /sa[uú]de/i.test(secNome))
-  }, [isEMAEE, selectedSecretaria, selectedEscola, secNome])
+  }, [isEMAEE, selectedSecretaria, selectedEscola])
 
-  const isSecretario = useMemo(
-    () => isSuperAdmin || (isSecretarioEducacao?.() ?? false),
-    [isSuperAdmin, isSecretarioEducacao, acessos, funcionario?.cargo, funcionario?.is_superadmin]
-  )
+  const isSecretario = isSuperAdmin || (isSecretarioEducacao?.() ?? false)
 
   const isSemedContext = useMemo(() => {
     if (isEMAEE || isSaudeUnit) return false
@@ -317,12 +224,6 @@ export default function HomePage() {
   
   const [schoolStats, setSchoolStats] = useState<Record<string, { turmas: number; aulasHoje: number; chamadasPendentes: number }>>({})
   const [loadingSchoolStats, setLoadingSchoolStats] = useState(false)
-  
-  // Modal de Chamada do Professor
-  const [selectedTurmaChamada, setSelectedTurmaChamada] = useState<any | null>(null)
-  const [selectedAulaChamada, setSelectedAulaChamada] = useState<any | null>(null)
-  const [isModalChamadaOpen, setIsModalChamadaOpen] = useState(false)
-  const [isModalFrequenciaOpen, setIsModalFrequenciaOpen] = useState(false)
 
   useEffect(() => {
     loadEscolas()
@@ -337,43 +238,19 @@ export default function HomePage() {
   const podeVerKpiGerencial = isAdmin || nivelNaEscola <= 3
   const isVisaoDocente = isProfessor && !podeVerKpiGerencial
 
-  const activeEscolaId = selectedEscola?.id || escolaAtivaId
-  const deveBuscarKpiEscola = !isEMAEE && !isSaudeUnit && !isVisaoDocente
-  const { data: dashboardSwrMetrics } = useDashboardMetricsSWR(deveBuscarKpiEscola ? activeEscolaId : null)
+  // ── SWR KPI da Escola Regular ──
+  const activeEscolaId = selectedEscola?.id
+  const deveBuscarKpiEscola = Boolean(!isEMAEE && !isSaudeUnit && !isVisaoDocente && activeEscolaId)
+  const {
+    data: escolaKpiData,
+    isLoading: isLoadingEscolaKpi,
+    isValidating: isValidatingEscolaKpi,
+    mutate: mutateEscolaKpis,
+  } = useEscolaAdminKpisSWR(deveBuscarKpiEscola ? activeEscolaId : null)
 
-  const dashboardSwrMetricsRef = useRef(dashboardSwrMetrics)
-  useEffect(() => {
-    dashboardSwrMetricsRef.current = dashboardSwrMetrics
-  }, [dashboardSwrMetrics])
-
-  useEffect(() => {
-    if (dashboardSwrMetrics && !isEMAEE && !isSaudeUnit && !isVisaoDocente) {
-      setKpi(prev => ({
-        totalAlunos: dashboardSwrMetrics.totalAlunos ?? prev?.totalAlunos ?? 0,
-        totalTurmas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmas ?? 0,
-        ocorrenciasMes: dashboardSwrMetrics.ocorrenciasMes ?? prev?.ocorrenciasMes ?? 0,
-        transferenciasPendentes: prev?.transferenciasPendentes ?? 0,
-        turmasComFrequenciaHoje: prev?.turmasComFrequenciaHoje ?? 0,
-        totalTurmasAtivas: dashboardSwrMetrics.totalTurmas ?? prev?.totalTurmasAtivas ?? 0,
-        atividadesPendentesSecretaria: dashboardSwrMetrics.diariosPendentes ?? prev?.atividadesPendentesSecretaria ?? 0,
-      }))
-    }
-  }, [dashboardSwrMetrics, isEMAEE, isSaudeUnit, isVisaoDocente])
-
-  const fetchKpis = useCallback(async (escolaId: string, signal?: AbortSignal) => {
-    if (isMounted.current && !dashboardSwrMetricsRef.current) setLoadingKpi(true)
-    try {
-      const res = await fetch(`/api/home/admin-kpis?escolaId=${escolaId}`, { signal })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: KPIData = await res.json()
-      if (isMounted.current) setKpi(data)
-    } catch (err: any) {
-      if (err?.name === 'AbortError') return
-      console.error('[home] Erro ao carregar KPIs gerenciais:', err)
-    } finally {
-      if (isMounted.current) setLoadingKpi(false)
-    }
-  }, [])
+  const kpi = deveBuscarKpiEscola ? (escolaKpiData as KPIData | null) ?? null : null
+  const isEscolaKpiLoading = deveBuscarKpiEscola && (isLoadingEscolaKpi || isValidatingEscolaKpi)
+  const isKpiAtivoLoading = isEMAEE || isSaudeUnit ? loadingKpi : isEscolaKpiLoading
 
   const fetchSaudeKpis = useCallback(async (unidadeId: string, signal?: AbortSignal) => {
     if (isMounted.current) setLoadingKpi(true)
@@ -424,21 +301,18 @@ export default function HomePage() {
     if (selectedEscola?.id) {
       const controller = new AbortController()
       if (isEMAEE) {
-        setKpi(null)
         setSaudeKpi(null)
         fetchEmaeeKpis(selectedEscola.id, controller.signal)
       } else if (isSaudeUnit) {
-        setKpi(null)
         setEmaeeKpi(null)
         fetchSaudeKpis(selectedEscola.id, controller.signal)
-      } else if (!isVisaoDocente) {
+      } else {
         setSaudeKpi(null)
         setEmaeeKpi(null)
-        fetchKpis(selectedEscola.id, controller.signal)
       }
       return () => controller.abort()
     }
-  }, [selectedEscola?.id, isEMAEE, isSaudeUnit, isVisaoDocente, fetchKpis, fetchSaudeKpis, fetchEmaeeKpis])
+  }, [selectedEscola?.id, isEMAEE, isSaudeUnit, fetchSaudeKpis, fetchEmaeeKpis])
 
   useEffect(() => {
     if (selectedSecretaria?.id && isSemedContext && !selectedEscola) {
@@ -448,14 +322,20 @@ export default function HomePage() {
     }
   }, [selectedSecretaria?.id, isSemedContext, selectedEscola, fetchSemedKpis])
 
+  const vinculosEscolasKey = useMemo(() => {
+    return vinculosAtivos
+      .map((v) => v.escola_id)
+      .filter((id): id is string => Boolean(id))
+      .sort()
+      .join(',')
+  }, [vinculosAtivos])
+
   // Buscar estatísticas rápidas por escola para professores multi-lotados
   const fetchSchoolStats = useCallback(async (signal?: AbortSignal) => {
-    if (!funcionario?.id || vinculosAtivos.length === 0) return
+    if (!funcionario?.id || !vinculosEscolasKey) return
     if (isMounted.current) setLoadingSchoolStats(true)
     try {
-      const escolaIds = vinculosAtivos
-        .map((v) => v.escola_id)
-        .filter((id): id is string => Boolean(id))
+      const escolaIds = vinculosEscolasKey.split(',')
       const escolaIdsParam = encodeURIComponent(JSON.stringify(escolaIds))
       const res = await fetch(
         `/api/home/school-stats?funcionarioId=${funcionario.id}&escolaIds=${escolaIdsParam}`,
@@ -471,15 +351,16 @@ export default function HomePage() {
     } finally {
       if (isMounted.current) setLoadingSchoolStats(false)
     }
-  }, [funcionario?.id, vinculosAtivos])
+  }, [funcionario?.id, vinculosEscolasKey])
 
   useEffect(() => {
-    if (isProfessor && vinculosAtivos.length > 0 && !selectedEscola) {
+    if (isProfessor && vinculosEscolasKey && !selectedEscola) {
       const controller = new AbortController()
       fetchSchoolStats(controller.signal)
       return () => controller.abort()
     }
-  }, [isProfessor, vinculosAtivos, selectedEscola, fetchSchoolStats])
+  }, [isProfessor, vinculosEscolasKey, selectedEscola, fetchSchoolStats])
+
 
   // Buscar dados específicos do professor para a escola selecionada
   const fetchTeacherDashboard = useCallback(async (escolaId: string, signal?: AbortSignal) => {
@@ -636,112 +517,9 @@ export default function HomePage() {
           </div>
 
           {/* Seção Inferior: Widgets com Dados Importantes */}
-          <div className="space-y-4 pt-6 border-t border-borderCustom">
-            <div className="flex items-center gap-2.5">
-              <FileBarChart className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-lg font-bold text-foreground">Indicadores & Relatórios Consolidados</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Widget 1: Relatório de Servidores */}
-              <div
-                onClick={() => setIsRelatorioServidoresModalOpen(true)}
-                className="group bg-surface-1 border border-borderCustom hover:border-emerald-500/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer space-y-4 relative overflow-hidden"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-foreground group-hover:text-emerald-400 transition-colors">
-                        Relatório de Servidores
-                      </h3>
-                      <p className="text-xs text-muted-foreground">Consolidado por Vínculo Empregatício</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                    Ver Detalhes
-                  </span>
-                </div>
-
-                {/* Métricas resumidas no widget */}
-                {loadingWidgetStats ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div
-                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Total')}
-                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-primary/50 transition-all cursor-pointer group/item"
-                      title="Clique para ver todos os servidores discriminados por secretarias"
-                    >
-                      <span className="text-[11px] text-muted-foreground block font-medium group-hover/item:text-foreground transition-colors">Total de Servidores</span>
-                      <span className="text-xl font-bold text-foreground">{widgetStats?.total ?? 0}</span>
-                    </div>
-
-                    <div
-                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Concursado')}
-                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-blue-500/50 transition-all cursor-pointer group/item"
-                      title="Clique para ver Concursados discriminados por secretarias"
-                    >
-                      <span className="text-[11px] text-blue-400 block font-medium group-hover/item:underline">Concursados</span>
-                      <span className="text-xl font-bold text-blue-400">{widgetStats?.concursados ?? 0}</span>
-                    </div>
-
-                    <div
-                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Contratado')}
-                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-emerald-500/50 transition-all cursor-pointer group/item"
-                      title="Clique para ver Contratados discriminados por secretarias"
-                    >
-                      <span className="text-[11px] text-emerald-400 block font-medium group-hover/item:underline">Contratados</span>
-                      <span className="text-xl font-bold text-emerald-400">{widgetStats?.contratados ?? 0}</span>
-                    </div>
-
-                    <div
-                      onClick={(e) => handleOpenDiscriminadosModal(e, 'Nomeado')}
-                      className="bg-background/50 hover:bg-background/80 p-3 rounded-xl border border-borderCustom/50 hover:border-purple-500/50 transition-all cursor-pointer group/item"
-                      title="Clique para ver Nomeados discriminados por secretarias"
-                    >
-                      <span className="text-[11px] text-purple-400 block font-medium group-hover/item:underline">Nomeados</span>
-                      <span className="text-xl font-bold text-purple-400">{widgetStats?.nomeados ?? 0}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-[11px] text-muted-foreground pt-1 flex items-center justify-between border-t border-borderCustom/40">
-                  <span>Clique para abrir o relatório gerencial completo</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Modal de Relatório de Servidores */}
-          {isRelatorioServidoresModalOpen && (
-            <StandardDialog
-              open={isRelatorioServidoresModalOpen}
-              onOpenChange={setIsRelatorioServidoresModalOpen}
-              title="Relatório Geral de Servidores da Rede Municipal"
-              description="Consolidado de pessoal, distribuição por cargos, modalidades e tipos de vínculo."
-              maxWidth="sm:max-w-6xl"
-            >
-              <div className="py-2">
-                <RelatorioServidores />
-              </div>
-            </StandardDialog>
-          )}
-
-          {/* Modal de Servidores Discriminados por Secretaria e Unidades */}
-          {isDiscriminadosModalOpen && (
-            <ModalServidoresDiscriminados
-              open={isDiscriminadosModalOpen}
-              onOpenChange={setIsDiscriminadosModalOpen}
-              tipoVinculoInicial={selectedTipoVinculoModal}
-            />
-          )}
+          <WidgetRelatorioServidores />
         </div>
+
 
       ) : isNivel1 && isSemedContext && selectedSecretaria && !selectedEscola ? (
         /* ── VISÃO 1B: SEMED — PAINEL E KPIS DA REDE MUNICIPAL ── */
@@ -1128,79 +906,11 @@ export default function HomePage() {
           </div>
 
           {/* Minhas Aulas Hoje */}
-          <Card className="bg-surface-1 border-borderCustom rounded-2xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-highlight" />
-              Minha Agenda de Aulas — Hoje
-            </h3>
+          <TeacherAgendaSection
+            aulasHoje={aulasHoje}
+            loadingAulasHoje={loadingAulasHoje}
+          />
 
-            {loadingAulasHoje ? (
-              <div className="space-y-3 py-6 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-highlight" />
-                <span>Buscando agenda de aulas...</span>
-              </div>
-            ) : aulasHoje.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-borderCustom rounded-2xl text-muted-foreground text-sm">
-                Nenhuma aula programada na agenda para o dia de hoje.
-              </div>
-            ) : (
-              <div className="rounded-xl border border-borderCustom overflow-hidden bg-[#0d0d0d] overflow-x-auto">
-                <Table className="min-w-[600px]">
-                  <TableHeader className="bg-[#080808]">
-                    <TableRow className="border-borderCustom hover:bg-transparent">
-                      <TableHead className="text-white">Horário</TableHead>
-                      <TableHead className="text-white text-center">Turma</TableHead>
-                      <TableHead className="text-white text-center">Disciplina</TableHead>
-                      <TableHead className="text-white text-center">Status</TableHead>
-                      <TableHead className="text-white text-right">Ação</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {aulasHoje.map((aula) => (
-                      <TableRow key={aula.id} className="border-borderCustom hover:bg-[#151517] transition-colors">
-                        <TableCell className="font-semibold text-white font-mono text-xs">
-                          {aula.horario_inicio.slice(0, 5)} - {aula.horario_fim.slice(0, 5)}
-                        </TableCell>
-                        <TableCell className="text-center text-white font-bold">
-                          {aula.turmas?.nome ?? '-'}
-                        </TableCell>
-                        <TableCell className="text-center text-muted-foreground font-medium">
-                          {aula.materias?.nome ?? '-'}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                            aula.status === 'normal'
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                              : aula.status === 'alterado'
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          }`}>
-                            {aula.status.toUpperCase()}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            onClick={() => {
-                              setSelectedTurmaChamada({
-                                id: aula.turma_id,
-                                nome: aula.turmas?.nome || 'Turma'
-                              })
-                              setSelectedAulaChamada(aula)
-                              setIsModalChamadaOpen(true)
-                            }}
-                            disabled={aula.status === 'cancelado'}
-                            className="bg-highlight hover:bg-highlight/90 text-background font-bold text-xs h-8 rounded-lg cursor-pointer"
-                          >
-                            Lançar Presença
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </Card>
         </div>
       ) : (
         /* ── VISÃO 2: DASHBOARD DE KPIs DA UNIDADE DE SAÚDE, ESCOLA OU EMAEE ── */
@@ -1245,12 +955,12 @@ export default function HomePage() {
               onClick={() => {
                 if (isEMAEE) fetchEmaeeKpis(selectedEscola.id)
                 else if (isSaudeUnit) fetchSaudeKpis(selectedEscola.id)
-                else fetchKpis(selectedEscola.id)
+                else mutateEscolaKpis()
               }}
-              disabled={loadingKpi}
+              disabled={isKpiAtivoLoading}
               className="text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
             >
-              <RefreshCw className={cn('w-4 h-4', loadingKpi && 'animate-spin')} />
+              <RefreshCw className={cn('w-4 h-4', isKpiAtivoLoading && 'animate-spin')} />
               Atualizar
             </Button>
           </div>
@@ -1332,7 +1042,7 @@ export default function HomePage() {
                 icon={GraduationCap}
                 label="Alunos Ativos"
                 value={kpi?.totalAlunos ?? 0}
-                loading={loadingKpi}
+                loading={isKpiAtivoLoading}
                 color="blue"
                 href="/alunos"
               />
@@ -1340,7 +1050,7 @@ export default function HomePage() {
                 icon={BookOpen}
                 label="Turmas Ativas"
                 value={kpi?.totalTurmas ?? 0}
-                loading={loadingKpi}
+                loading={isKpiAtivoLoading}
                 color="violet"
                 href="/turmas"
               />
@@ -1348,7 +1058,7 @@ export default function HomePage() {
                 icon={AlertTriangle}
                 label="Ocorrências (Mês)"
                 value={kpi?.ocorrenciasMes ?? 0}
-                loading={loadingKpi}
+                loading={isKpiAtivoLoading}
                 color="amber"
                 href="/ocorrencias"
               />
@@ -1356,7 +1066,7 @@ export default function HomePage() {
                 icon={ArrowLeftRight}
                 label="Transf. Pendentes"
                 value={kpi?.transferenciasPendentes ?? 0}
-                loading={loadingKpi}
+                loading={isKpiAtivoLoading}
                 color="rose"
                 href="/transferencias"
               />
@@ -1366,11 +1076,13 @@ export default function HomePage() {
           {/* ── BARRA DE FREQUÊNCIA + ATIVIDADES SECRETARIA (Apenas para Educação Regular) ── */}
           {!isSaudeUnit && !isEMAEE && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FrequenciaBar
+              <HomeFrequenciaSection
                 feitas={kpi?.turmasComFrequenciaHoje ?? 0}
                 total={kpi?.totalTurmasAtivas ?? 0}
-                loading={loadingKpi}
-                onClick={() => setIsModalFrequenciaOpen(true)}
+                loading={isKpiAtivoLoading}
+                escolaId={selectedEscola?.id}
+                escolaNome={selectedEscola?.nome}
+                escolaLogoUrl={selectedEscola?.logo_url}
               />
 
               {/* Atividades pendentes na secretaria */}
@@ -1386,7 +1098,7 @@ export default function HomePage() {
                     </Button>
                   </Link>
                 </div>
-                {loadingKpi ? (
+                {isKpiAtivoLoading ? (
                   <div className="space-y-2">
                     <div className="h-8 w-16 bg-muted/20 rounded animate-pulse" />
                     <div className="h-3 w-32 bg-muted/20 rounded animate-pulse" />
@@ -1438,27 +1150,7 @@ export default function HomePage() {
 
         </div>
       )}
-
-      {isModalChamadaOpen && selectedTurmaChamada && (
-        <ModalDetalhesTurma
-          open={isModalChamadaOpen}
-          onOpenChange={setIsModalChamadaOpen}
-          turma={selectedTurmaChamada}
-          initialMateriaId={selectedAulaChamada?.materia_id}
-          initialAgendaAulaId={selectedAulaChamada?.id}
-          initialData={getHojeBrasilia()}
-        />
-      )}
-
-      {isModalFrequenciaOpen && (
-        <ModalDetalhesFrequenciaHoje
-          open={isModalFrequenciaOpen}
-          onOpenChange={setIsModalFrequenciaOpen}
-          escolaId={selectedEscola?.id}
-          escolaNome={selectedEscola?.nome}
-          escolaLogoUrl={selectedEscola?.logo_url}
-        />
-      )}
     </div>
   )
 }
+
