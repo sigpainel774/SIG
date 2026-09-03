@@ -981,6 +981,18 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     }
 
     setEndereco(aluno.endereco ?? '')
+    const alCep = alunoDm.cep || ''
+    const alRua = alunoDm.rua || alunoDm.logradouro || ''
+    const alNumero = alunoDm.numero || ''
+    const alBairro = alunoDm.bairro || ''
+    const alCidade = alunoDm.cidade_endereco || alunoDm.cidadeEnd || 'Sapeaçu'
+    const alUf = alunoDm.uf_endereco || alunoDm.ufEnd || 'BA'
+    setCep(alCep)
+    setRua(alRua)
+    setNumero(alNumero)
+    setBairro(alBairro)
+    setCidadeEndereco(alCidade)
+    setUfEndereco(alUf)
     setLatitude(aluno.latitude != null ? Number(aluno.latitude) : null)
     setLongitude(aluno.longitude != null ? Number(aluno.longitude) : null)
     setZonaResidencial(aluno.zona_residencial ?? 'Urbana')
@@ -1118,7 +1130,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         .from('alunos')
         .select(`
           id, nome, cpf, rg, nis, cartao_sus, data_nascimento, certidao_nascimento,
-          certidao_nascimento_novo_modelo, identif_unica_censo,
+          certidao_nascimento_novo_modelo, identif_unica_censo, inep, cor_raca,
           nome_mae, profissao_mae, nome_pai, profissao_pai, endereco,
           sexo, dados_matricula, uf_nascimento, municipio_nascimento,
           zona_residencial, nome_contato_emergencia, telefone,
@@ -1141,7 +1153,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         rg: a.rg,
         nis: a.nis,
         cartao_sus: a.cartao_sus || (a.dados_matricula as any)?.cartao_sus || (a.dados_matricula as any)?.susAluno || null,
-        identif_unica_censo: a.identif_unica_censo || null,
+        identif_unica_censo: a.identif_unica_censo || a.inep || null,
         data_nascimento: a.data_nascimento,
         certidao_nascimento: a.certidao_nascimento_novo_modelo || a.certidao_nascimento,
         nome_mae: a.nome_mae,
@@ -1150,7 +1162,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         profissao_pai: a.profissao_pai || null,
         endereco: a.endereco,
         sexo: a.sexo,
-        cor_raca: (a.dados_matricula as any)?.cor_raca || null,
+        cor_raca: a.cor_raca || (a.dados_matricula as any)?.cor_raca || (a.dados_matricula as any)?.corRacaAluno || null,
         uf_nascimento: a.uf_nascimento || null,
         municipio_nascimento: a.municipio_nascimento || null,
         zona_residencial: a.zona_residencial || 'Urbana',
@@ -1245,6 +1257,13 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             responsavel_outro_parentesco: responsavelOutroParentesco.trim() || null,
             responsavel_outro_cpf: responsavelOutroCpf.trim() || null,
             responsavel_principal_nome: responsavelAssinaturaNomeFinal,
+            cep: cep || currentDadosMatricula.cep || null,
+            rua: rua || currentDadosMatricula.rua || null,
+            numero: numero || currentDadosMatricula.numero || null,
+            bairro: bairro || currentDadosMatricula.bairro || null,
+            cidade_endereco: cidadeEndereco || currentDadosMatricula.cidade_endereco || 'Sapeaçu',
+            uf_endereco: ufEndereco || currentDadosMatricula.uf_endereco || 'BA',
+            endereco_formatado: endereco || currentDadosMatricula.endereco_formatado || null,
             contato_emergencia_nome: contatoEmergencia || currentDadosMatricula.contato_emergencia_nome,
             telefone_emergencia: telefoneEmergencia || currentDadosMatricula.telefone_emergencia,
             assinatura_responsavel_url: assinaturaResponsavelUrl || currentDadosMatricula.assinatura_responsavel_url,
@@ -1257,6 +1276,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             nis: nis.trim() || null,
             cartao_sus: cartaoSus.trim() || null,
             identif_unica_censo: identificacaoCenso.trim() || null,
+            inep: identificacaoCenso.trim() || null,
+            cor_raca: corRaca || null,
             data_nascimento: dataNascimento || null,
             certidao_nascimento: certidaoNascimento.trim() || null,
             certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
@@ -1390,6 +1411,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
           responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
           ...deficiencias,
+          transtorno_outros: Boolean(outrosTranstornos.trim()) || deficiencias.transtorno_outros,
           transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
           def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
           condicoes_saude: condicoesSaude,
@@ -1506,6 +1528,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           nis: nis.trim() || null,
           cartao_sus: cartaoSus.trim() || null,
           identif_unica_censo: identificacaoCenso.trim() || null,
+          inep: identificacaoCenso.trim() || null,
+          cor_raca: corRaca || null,
           data_nascimento: dataNascimento || null,
           certidao_nascimento: certidaoNascimento.trim() || null,
           certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
@@ -1621,6 +1645,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           nis: nis.trim() || null,
           cartao_sus: cartaoSus.trim() || null,
           identif_unica_censo: identificacaoCenso.trim() || null,
+          inep: identificacaoCenso.trim() || null,
+          cor_raca: corRaca || null,
           data_nascimento: dataNascimento || null,
           certidao_nascimento: certidaoNascimento.trim() || null,
           certidao_nascimento_novo_modelo: certidaoNascimento.trim() || null,
@@ -1739,6 +1765,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
         responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
         ...deficiencias,
+        transtorno_outros: Boolean(outrosTranstornos.trim()) || deficiencias.transtorno_outros,
         transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
         def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
         condicoes_saude: condicoesSaude,
