@@ -81,7 +81,7 @@ export default function AlunosPage() {
     solicitacoes,
     handleResponderSolicitacao,
     salvarHistoricoAluno,
-  } = useAlunos()
+  } = useAlunos({ enabled: !isProfessor })
 
   /* ── Guard: Professores não acessam esta tela ─────────────── */
   if (isProfessor) {

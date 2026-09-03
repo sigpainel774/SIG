@@ -82,7 +82,7 @@ export default function EjaAlunosPage() {
     solicitacoes,
     handleResponderSolicitacao,
     salvarHistoricoAluno,
-  } = useAlunos({ onlyEja: true })
+  } = useAlunos({ onlyEja: true, enabled: authorized === true })
 
   /* ── Alunos exclusivamente da modalidade EJA ── */
   const alunosEja = alunosFiltrados

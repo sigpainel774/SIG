@@ -134,25 +134,29 @@ export default function EjaTurmasPage() {
   return (
     <div className="space-y-6">
       {/* Modal de Criar / Editar Turma */}
-      <ModalTurma
-        open={isModalOpen}
-        onOpenChange={(isOpen) => {
-          setIsModalOpen(isOpen)
-          if (!isOpen) setSelectedTurma(null)
-        }}
-        turma={selectedTurma}
-        onSuccess={fetchTurmas}
-      />
+      {isModalOpen && (
+        <ModalTurma
+          open={isModalOpen}
+          onOpenChange={(isOpen) => {
+            setIsModalOpen(isOpen)
+            if (!isOpen) setSelectedTurma(null)
+          }}
+          turma={selectedTurma}
+          onSuccess={fetchTurmas}
+        />
+      )}
 
       {/* Modal de Detalhes da Turma */}
-      <ModalDetalhesTurma
-        open={isDetailsModalOpen}
-        onOpenChange={(isOpen) => {
-          setIsDetailsModalOpen(isOpen)
-          if (!isOpen) setSelectedTurma(null)
-        }}
-        turma={selectedTurma}
-      />
+      {isDetailsModalOpen && (
+        <ModalDetalhesTurma
+          open={isDetailsModalOpen}
+          onOpenChange={(isOpen) => {
+            setIsDetailsModalOpen(isOpen)
+            if (!isOpen) setSelectedTurma(null)
+          }}
+          turma={selectedTurma}
+        />
+      )}
 
       {/* Modal de Impressão de Relação Nominal da Turma */}
       {isPrintModalOpen && selectedTurma && (

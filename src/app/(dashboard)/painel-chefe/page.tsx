@@ -75,6 +75,7 @@ export default function PainelChefePage() {
     const userId = state.funcionario?.id
 
     if (!userId) return // Aguarda hydrate do Zustand
+    if (!isDir && !isCh && !isAdmin) return // Bloqueia chamada desnecessária para usuários não autorizados
 
     setLoading(true)
 
@@ -183,12 +184,15 @@ export default function PainelChefePage() {
   }
 
   useEffect(() => {
+    if (!funcionario || isEMAEE) return
+    if (!isDiretor() && !isChefe() && !isAdminGlobalOrRoot()) return
+
     const isMountedRef = { current: true }
     fetchPainelData(isMountedRef)
     return () => {
       isMountedRef.current = false
     }
-  }, [funcionario?.id])
+  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, isEMAEE])
 
   const equipeFiltrada = equipe.filter(
     (membro) => 

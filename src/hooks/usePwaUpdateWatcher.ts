@@ -88,49 +88,56 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
 
   useEffect(() => {
     isMounted.current = true
+    let channel: any = null
 
     // 1. Checagem inicial
     checkVersion()
 
-    // 2. Realtime subscription
-    const channel = supabase
-      .channel('system_config_pwa_watcher')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'system_config' },
-        (payload: any) => {
-          if (!isMounted.current) return
-          const newRow = payload.new
-          if (!newRow) return
+    // 2. Realtime subscription apenas se houver sessão autenticada (evita conexões WebSocket de deslogados)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted.current || !session) return
 
-          if (newRow.chave === 'pwa_version') {
-            let localVer: string | null = null
-            if (typeof window !== 'undefined') {
-              try {
-                localVer = localStorage.getItem(LOCAL_STORAGE_KEY)
-              } catch (e) {
-                console.warn('[usePwaUpdateWatcher] Falha ao ler localStorage:', e)
+      channel = supabase
+        .channel('system_config_pwa_watcher')
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'system_config' },
+          (payload: any) => {
+            if (!isMounted.current) return
+            const newRow = payload.new
+            if (!newRow) return
+
+            if (newRow.chave === 'pwa_version') {
+              let localVer: string | null = null
+              if (typeof window !== 'undefined') {
+                try {
+                  localVer = localStorage.getItem(LOCAL_STORAGE_KEY)
+                } catch (e) {
+                  console.warn('[usePwaUpdateWatcher] Falha ao ler localStorage:', e)
+                }
               }
-            }
-            setCurrentVersion(newRow.valor)
-            if (newRow.updated_at) setLastUpdatedAt(newRow.updated_at)
+              setCurrentVersion(newRow.valor)
+              if (newRow.updated_at) setLastUpdatedAt(newRow.updated_at)
 
-            if (localVer && localVer !== newRow.valor) {
-              setNewVersion(newRow.valor)
-              setShowUpdateModal(true)
+              if (localVer && localVer !== newRow.valor) {
+                setNewVersion(newRow.valor)
+                setShowUpdateModal(true)
+              }
+            } else if (newRow.chave === 'pwa_update_message') {
+              setNewMessage(newRow.valor)
+            } else if (newRow.chave === 'pwa_stagger_seconds') {
+              setStaggerSeconds(parseInt(newRow.valor, 10) || 60)
             }
-          } else if (newRow.chave === 'pwa_update_message') {
-            setNewMessage(newRow.valor)
-          } else if (newRow.chave === 'pwa_stagger_seconds') {
-            setStaggerSeconds(parseInt(newRow.valor, 10) || 60)
           }
-        }
-      )
-      .subscribe()
+        )
+        .subscribe()
+    })
 
     return () => {
       isMounted.current = false
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [supabase, checkVersion])
 

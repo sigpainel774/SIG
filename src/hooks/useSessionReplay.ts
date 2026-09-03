@@ -209,8 +209,15 @@ export function useSessionReplay() {
       }
     }
 
-    // 2. Colocar na fila de persistência histórica
-    queueRef.current.push(fullItem)
+    // 2. Colocar na fila de persistência histórica apenas se gravação estiver ativa ou se for erro
+    const isRecordingEnabled = typeof window !== 'undefined' && (
+      (window as any).__SIG_RECORD_SESSION__ === true ||
+      window.localStorage?.getItem('sig_record_session') === '1' ||
+      event.event_type === 'error'
+    )
+    if (isRecordingEnabled) {
+      queueRef.current.push(fullItem)
+    }
   }, [])
 
   // Enviar lote para a API de persistência histórica

@@ -1384,11 +1384,13 @@ export default function AdminHubPage() {
       </div>
 
       {/* Modal de Gerenciamento de Regras de Tempo de Sessões */}
-      <ModalSessionTimeout
-        open={isSessionTimeoutModalOpen}
-        onOpenChange={setIsSessionTimeoutModalOpen}
-        onRulesChanged={refreshSessionRulesSummary}
-      />
+      {isSessionTimeoutModalOpen && (
+        <ModalSessionTimeout
+          open={isSessionTimeoutModalOpen}
+          onOpenChange={setIsSessionTimeoutModalOpen}
+          onRulesChanged={refreshSessionRulesSummary}
+        />
+      )}
     </div>
   )
 }

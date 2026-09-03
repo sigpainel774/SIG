@@ -446,42 +446,52 @@ export default function SimuladosPage() {
         </div>
       )}
 
-      {/* Modais Integrados */}
-      <ModalNovoSimulado
-        open={isModalNovoOpen}
-        onOpenChange={setIsModalNovoOpen}
-        escolaId={escolaAtivaId}
-        simuladoParaEditar={simuladoParaEditar}
-        onSuccess={carregarSimulados}
-      />
+      {/* Modais Integrados com montagem condicional estrita */}
+      {isModalNovoOpen && (
+        <ModalNovoSimulado
+          open={isModalNovoOpen}
+          onOpenChange={setIsModalNovoOpen}
+          escolaId={escolaAtivaId}
+          simuladoParaEditar={simuladoParaEditar}
+          onSuccess={carregarSimulados}
+        />
+      )}
 
-      <ModalImprimirGabarito
-        open={isModalImprimirOpen}
-        onOpenChange={setIsModalImprimirOpen}
-        simulado={simuladoSelecionado}
-        escolaNome={selectedEscola?.nome || 'Cursinho Pré-Universitário'}
-      />
+      {isModalImprimirOpen && (
+        <ModalImprimirGabarito
+          open={isModalImprimirOpen}
+          onOpenChange={setIsModalImprimirOpen}
+          simulado={simuladoSelecionado}
+          escolaNome={selectedEscola?.nome || 'Cursinho Pré-Universitário'}
+        />
+      )}
 
-      <ModalScannerCamera
-        open={isModalScannerOpen}
-        onOpenChange={setIsModalScannerOpen}
-        simulado={simuladoSelecionado}
-        onCorrecaoSalva={carregarSimulados}
-      />
+      {isModalScannerOpen && (
+        <ModalScannerCamera
+          open={isModalScannerOpen}
+          onOpenChange={setIsModalScannerOpen}
+          simulado={simuladoSelecionado}
+          onCorrecaoSalva={carregarSimulados}
+        />
+      )}
 
-      <ModalRankingSimulado
-        open={isModalRankingOpen}
-        onOpenChange={setIsModalRankingOpen}
-        simulado={simuladoSelecionado}
-        escolaNome={selectedEscola?.nome || 'Cursinho Pré-Universitário'}
-      />
+      {isModalRankingOpen && (
+        <ModalRankingSimulado
+          open={isModalRankingOpen}
+          onOpenChange={setIsModalRankingOpen}
+          simulado={simuladoSelecionado}
+          escolaNome={selectedEscola?.nome || 'Cursinho Pré-Universitário'}
+        />
+      )}
 
-      <ModalAdicionarAlunoSimulado
-        open={isModalAdicionarAlunoOpen}
-        onOpenChange={setIsModalAdicionarAlunoOpen}
-        simulado={simuladoSelecionado}
-        onSuccess={carregarSimulados}
-      />
+      {isModalAdicionarAlunoOpen && (
+        <ModalAdicionarAlunoSimulado
+          open={isModalAdicionarAlunoOpen}
+          onOpenChange={setIsModalAdicionarAlunoOpen}
+          simulado={simuladoSelecionado}
+          onSuccess={carregarSimulados}
+        />
+      )}
     </div>
   )
 }

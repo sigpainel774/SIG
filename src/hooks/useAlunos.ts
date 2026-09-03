@@ -50,6 +50,7 @@ export interface SolicitacaoLiberacao {
 
 export interface UseAlunosOptions {
   onlyEja?: boolean
+  enabled?: boolean
 }
 
 export function useAlunos(options?: UseAlunosOptions) {
@@ -64,9 +65,10 @@ export function useAlunos(options?: UseAlunosOptions) {
   } = useAuthStore()
 
   const ejaMode = options?.onlyEja === true || isContaEja()
+  const isEnabled = options?.enabled !== false
 
   const [alunos, setAlunos] = useState<Aluno[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(isEnabled)
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
@@ -88,6 +90,11 @@ export function useAlunos(options?: UseAlunosOptions) {
 
   /* ── Carregar Alunos (Paginação e Filtros no Servidor) ──────── */
   const carregarAlunos = useCallback(async () => {
+    if (!isEnabled) {
+      if (isMounted.current) setLoading(false)
+      return
+    }
+
     const supabase = createClient()
     if (isMounted.current) setLoading(true)
 
@@ -210,6 +217,7 @@ export function useAlunos(options?: UseAlunosOptions) {
 
   /* ── Carregar Solicitações de Liberação ──────────────────────── */
   const carregarSolicitacoes = useCallback(async () => {
+    if (!isEnabled) return
     const isDiretor = acessos.some((a) => a.nivel === 2 && a.ativo)
     const isAdmin = isAdminGlobalOrRoot()
 
@@ -293,12 +301,16 @@ export function useAlunos(options?: UseAlunosOptions) {
 
   /* ── Carregar ao alterar dependências ────────────────────────── */
   useEffect(() => {
-    carregarAlunos()
-  }, [carregarAlunos])
+    if (isEnabled) {
+      carregarAlunos()
+    }
+  }, [carregarAlunos, isEnabled])
 
   useEffect(() => {
-    carregarSolicitacoes()
-  }, [carregarSolicitacoes])
+    if (isEnabled) {
+      carregarSolicitacoes()
+    }
+  }, [carregarSolicitacoes, isEnabled])
 
   return {
     alunos,

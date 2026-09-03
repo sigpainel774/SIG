@@ -12,8 +12,12 @@ import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useLocalSearch } from '@/hooks/useLocalSearch'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export default function OcorrenciasPage() {
+  const { escolaAtivaId, isAdminGlobalOrRoot } = useAuthStore()
+  const { selectedEscola } = useSchoolStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [dataFiltro, setDataFiltro] = useState('')
   const [gravidadeFiltro, setGravidadeFiltro] = useState('todas')
@@ -33,9 +37,17 @@ export default function OcorrenciasPage() {
   const fetchOcorrencias = async () => {
     if (isMounted.current) setLoading(true)
     try {
-      const { data, error } = await (supabase.from as any)('ocorrencias')
+      const targetEscolaId = selectedEscola?.id || escolaAtivaId
+      let query = (supabase.from as any)('ocorrencias')
         .select('id, aluno_id, turma_id, escola_id, tipo, gravidade, descricao, status_pais, data, registrado_por, created_at, alunos(nome), turmas(nome), funcionarios(nome)')
         .order('data', { ascending: false })
+        .limit(100)
+
+      if (targetEscolaId) {
+        query = query.eq('escola_id', targetEscolaId)
+      }
+
+      const { data, error } = await query
       
       if (error) throw error
 
@@ -53,7 +65,7 @@ export default function OcorrenciasPage() {
 
   useEffect(() => {
     fetchOcorrencias()
-  }, [])
+  }, [escolaAtivaId, selectedEscola?.id])
 
   // 1. Aplica busca com acentuação e busca insensível a caixa alta/baixa
   const ocorrenciasBuscadas = useLocalSearch(ocorrencias, searchTerm, (item, term) => {

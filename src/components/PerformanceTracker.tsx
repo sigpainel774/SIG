@@ -147,7 +147,7 @@ export function PerformanceTracker() {
   }, [])
 
   const queueRef = useRef<any[]>([])
-  const shouldSampleRef = useRef(Math.random() <= 1.0) // 100% amostragem inicial, ajustável
+  const shouldSampleRef = useRef(Math.random() <= 0.1) // 10% de amostragem estatística para poupar recursos
 
   const flushQueue = useCallback(async () => {
     if (queueRef.current.length === 0) return

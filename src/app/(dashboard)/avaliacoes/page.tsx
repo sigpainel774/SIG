@@ -811,19 +811,21 @@ function AvaliacoesContent() {
       </Card>
 
       {/* ── MODAIS ── */}
-      <ModalNovaAtividade
-        open={novaAtividadeOpen}
-        onOpenChange={(open) => {
-          setNovaAtividadeOpen(open)
-          if (!open) setInitialNovaAtiv({})
-        }}
-        initialTurmaId={initialNovaAtiv.turmaId}
-        initialMateriaId={initialNovaAtiv.materiaId}
-        initialTrimestre={initialNovaAtiv.trimestre}
-        onSuccess={() => {
-          fetchAtividades()
-        }}
-      />
+      {novaAtividadeOpen && (
+        <ModalNovaAtividade
+          open={novaAtividadeOpen}
+          onOpenChange={(open) => {
+            setNovaAtividadeOpen(open)
+            if (!open) setInitialNovaAtiv({})
+          }}
+          initialTurmaId={initialNovaAtiv.turmaId}
+          initialMateriaId={initialNovaAtiv.materiaId}
+          initialTrimestre={initialNovaAtiv.trimestre}
+          onSuccess={() => {
+            fetchAtividades()
+          }}
+        />
+      )}
 
       {detalhesOpen && (
         <ModalDetalhesAtividade

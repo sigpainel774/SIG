@@ -104,7 +104,7 @@ export default function CentralAtividadesPage() {
       .from('audit_logs')
       .select('id, entity, entity_id, action, created_at, user_id, user_name, user_email, user_cargo, old_data, new_data, tenant_id, ip_address')
       .order('created_at', { ascending: false })
-      .limit(1000)
+      .limit(150)
 
     // Filtrar por unidade específica se selecionada
     if (targetEscolaId) {
