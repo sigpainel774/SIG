@@ -138,7 +138,7 @@ export default function PacientesPage() {
 
   const prontuariosFiltrados = useMemo(() => {
     const txtBusca = busca.toLowerCase().trim()
-    return prontuarios.filter((p) => {
+    const filtrados = prontuarios.filter((p) => {
       const nomeAluno = (p.alunos?.nome || '').toLowerCase()
       const cpfAluno = (p.alunos?.cpf || '').toLowerCase()
       const escolaNome = (p.escola_origem_nome || p.escolas?.nome || '').toLowerCase()
@@ -147,6 +147,12 @@ export default function PacientesPage() {
       const matchesZona = filtroZona === 'todos' || p.localizacao_atendimento === filtroZona
 
       return matchesBusca && matchesStatus && matchesZona
+    })
+
+    return filtrados.sort((a, b) => {
+      const nomeA = a.alunos?.nome || ''
+      const nomeB = b.alunos?.nome || ''
+      return nomeA.localeCompare(nomeB, 'pt-BR', { sensitivity: 'base' })
     })
   }, [prontuarios, busca, filtroStatus, filtroZona])
 

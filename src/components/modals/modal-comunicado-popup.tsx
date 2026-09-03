@@ -83,6 +83,9 @@ export function ModalComunicadoPopup() {
       }
 
       if (target.toLowerCase() === cargoUser) return true
+      if (funcionario?.email && target.toLowerCase() === funcionario.email.toLowerCase()) return true
+      if (funcionario?.id && target.toLowerCase() === funcionario.id.toLowerCase()) return true
+      if (funcionario?.auth_user_id && target.toLowerCase() === funcionario.auth_user_id.toLowerCase()) return true
 
       return false
     }
@@ -140,6 +143,11 @@ export function ModalComunicadoPopup() {
               if (v.escola_id) userEscolaIds.add(v.escola_id)
             })
           }
+          if (acessos && Array.isArray(acessos)) {
+            acessos.forEach((a) => {
+              if (a.escola_id) userEscolaIds.add(a.escola_id)
+            })
+          }
 
           const isSuperOuNivel1 = funcionario?.is_superadmin || acessos.some((a) => a.nivel === 1 && a.ativo)
 
@@ -190,8 +198,28 @@ export function ModalComunicadoPopup() {
 
     fetchPopups()
 
+    // Assinatura em Tempo Real via Supabase Realtime para que novos comunicados apareçam instantaneamente
+    const supabaseClient = createClient()
+    const channel = supabaseClient
+      .channel('realtime_comunicados_popup_watcher')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comunicados',
+        },
+        () => {
+          if (active) {
+            fetchPopups()
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
       active = false
+      supabaseClient.removeChannel(channel)
     }
   }, [
     authUserId,

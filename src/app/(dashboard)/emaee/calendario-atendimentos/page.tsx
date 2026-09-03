@@ -325,41 +325,41 @@ export default function CalendarioAtendimentosPage() {
     const c = (cargo || '').toLowerCase()
     if (c.includes('neuro')) {
       return {
-        badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-        card: 'border-purple-500/30 bg-purple-500/5 hover:border-purple-500/60',
+        badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25',
+        card: 'border-purple-500/25 bg-purple-500/[0.03] dark:bg-purple-500/10 hover:border-purple-500/50',
         bar: 'bg-purple-500'
       }
     }
     if (c.includes('psicólogo') || c.includes('psicologa')) {
       return {
-        badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        card: 'border-blue-500/30 bg-blue-500/5 hover:border-blue-500/60',
+        badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/25',
+        card: 'border-blue-500/25 bg-blue-500/[0.03] dark:bg-blue-500/10 hover:border-blue-500/50',
         bar: 'bg-blue-500'
       }
     }
     if (c.includes('fono')) {
       return {
-        badge: 'bg-green-500/10 text-green-400 border-green-500/20',
-        card: 'border-green-500/30 bg-green-500/5 hover:border-green-500/60',
-        bar: 'bg-green-500'
+        badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+        card: 'border-emerald-500/25 bg-emerald-500/[0.03] dark:bg-emerald-500/10 hover:border-emerald-500/50',
+        bar: 'bg-emerald-500'
       }
     }
     if (c.includes('psicopedagogo') || c.includes('psicopedagoga')) {
       return {
-        badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-        card: 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60',
+        badge: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/25',
+        card: 'border-orange-500/25 bg-orange-500/[0.03] dark:bg-orange-500/10 hover:border-orange-500/50',
         bar: 'bg-orange-500'
       }
     }
     if (c.includes('fisio')) {
       return {
-        badge: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-        card: 'border-pink-500/30 bg-pink-500/5 hover:border-pink-500/60',
+        badge: 'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/25',
+        card: 'border-pink-500/25 bg-pink-500/[0.03] dark:bg-pink-500/10 hover:border-pink-500/50',
         bar: 'bg-pink-500'
       }
     }
     return {
-      badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25',
       card: 'border-border bg-card hover:border-border/80',
       bar: 'bg-amber-500'
     }
@@ -937,121 +937,136 @@ export default function CalendarioAtendimentosPage() {
         <>
           {/* MODO 1: GRADE SEMANAL (Colunas de Segunda a Sexta) */}
           {modoVisualizacao === 'grade' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
-              {[1, 2, 3, 4, 5].map((diaNum) => {
-                const sessoes = gradePorDia[diaNum] || []
-                const isHojeDia = kpis.diaAeeHoje === diaNum
+            <div className="overflow-x-auto pb-4 -mx-1 px-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start min-w-[960px] xl:min-w-0">
+                {[1, 2, 3, 4, 5].map((diaNum) => {
+                  const sessoes = gradePorDia[diaNum] || []
+                  const isHojeDia = kpis.diaAeeHoje === diaNum
 
-                return (
-                  <div
-                    key={diaNum}
-                    className={`bg-card border rounded-2xl p-3.5 space-y-3 shadow-sm transition-all ${
-                      isHojeDia
-                        ? 'border-sky-500/50 ring-1 ring-sky-500/20 bg-sky-500/5'
-                        : 'border-border'
-                    }`}
-                  >
-                    {/* Cabeçalho do Dia */}
-                    <div className="flex items-center justify-between pb-2.5 border-b border-border">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-foreground text-xs">
-                          {DIAS_SEMANA_NOMES[diaNum]}
-                        </span>
-                        {isHojeDia && (
-                          <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
-                            Hoje
+                  return (
+                    <div
+                      key={diaNum}
+                      className={`bg-card border rounded-2xl p-3 space-y-3 shadow-sm transition-all ${
+                        isHojeDia
+                          ? 'border-sky-500/50 ring-1 ring-sky-500/20 bg-sky-500/5'
+                          : 'border-border'
+                      }`}
+                    >
+                      {/* Cabeçalho do Dia */}
+                      <div className="flex items-center justify-between pb-2.5 border-b border-border">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-foreground text-xs">
+                            {DIAS_SEMANA_NOMES[diaNum]}
                           </span>
-                        )}
+                          {isHojeDia && (
+                            <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
+                              Hoje
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">
+                          {sessoes.length} {sessoes.length === 1 ? 'sessão' : 'sessões'}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">
-                        {sessoes.length} {sessoes.length === 1 ? 'sessão' : 'sessões'}
-                      </span>
-                    </div>
 
-                    {/* Cards de Atendimento do Dia */}
-                    {sessoes.length === 0 ? (
-                      <div className="py-8 text-center text-muted-foreground/60 text-[11px] border border-dashed border-border/60 rounded-xl bg-background/50">
-                        Nenhum atendimento agendado
-                      </div>
-                    ) : (
-                      <div className="space-y-2.5">
-                        {sessoes.map((item) => {
-                          const aluno = item.emaee_matriculas?.alunos
-                          const prof = item.funcionarios
-                          const colors = getColorByCargo(item.especialidade || prof?.cargo)
-                          const avatarUrl = getAvatarUrl(prof)
-                          const hInicio = formatarHorario(item.horario_inicio)
-                          const hFim = formatarHorario(item.horario_fim)
+                      {/* Cards de Atendimento do Dia */}
+                      {sessoes.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground/60 text-[11px] border border-dashed border-border/60 rounded-xl bg-background/50">
+                          Nenhum atendimento agendado
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {sessoes.map((item) => {
+                            const aluno = item.emaee_matriculas?.alunos
+                            const prof = item.funcionarios
+                            const colors = getColorByCargo(item.especialidade || prof?.cargo)
+                            const avatarUrl = getAvatarUrl(prof)
+                            const hInicio = formatarHorario(item.horario_inicio)
+                            const hFim = formatarHorario(item.horario_fim)
 
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => handleVerDetalhes(item)}
-                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] shadow-sm relative group overflow-hidden`}
-                            >
-                              {/* Barra de cor superior/lateral */}
-                              <div className="flex items-center justify-between gap-1.5 mb-2 min-w-0">
-                                <div className="flex items-center gap-1 text-[11px] font-bold text-foreground shrink-0">
-                                  <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                                  <span>
-                                    {hInicio}
-                                    {hFim ? ` - ${hFim}` : ''}
-                                  </span>
-                                </div>
-                                <span
-                                  className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border uppercase tracking-normal truncate max-w-[100px] shrink min-w-0 text-center ${colors.badge}`}
-                                  title={item.especialidade || 'AEE'}
-                                >
-                                  {item.especialidade || 'AEE'}
-                                </span>
-                              </div>
-
-                              {/* Aluno e Nome da Mãe */}
-                              <div className="space-y-0.5 mb-2.5">
-                                <div className="font-bold text-foreground text-xs leading-tight truncate" title={aluno?.nome}>
-                                  {aluno?.nome ?? 'Aluno'}
-                                </div>
-                                <div className="text-[10px] text-muted-foreground truncate" title={aluno?.nome_mae}>
-                                  <span className="font-medium text-foreground/70">Mãe:</span>{' '}
-                                  {aluno?.nome_mae ?? 'Não informada'}
-                                </div>
-                              </div>
-
-                              {/* Rodapé: Profissional e Ações */}
-                              <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                  <div className="h-5 w-5 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
-                                    {avatarUrl ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <User className="w-3 h-3 text-muted-foreground" />
-                                    )}
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => handleVerDetalhes(item)}
+                                className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] shadow-xs relative group overflow-hidden flex flex-col justify-between`}
+                              >
+                                <div>
+                                  {/* Horário e Especialidade */}
+                                  <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-foreground shrink-0">
+                                      <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                      <span>
+                                        {hInicio}
+                                        {hFim ? ` - ${hFim}` : ''}
+                                      </span>
+                                    </div>
+                                    <span
+                                      className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[130px] leading-tight text-center ${colors.badge}`}
+                                      title={item.especialidade || 'AEE'}
+                                    >
+                                      {item.especialidade || 'AEE'}
+                                    </span>
                                   </div>
-                                  <span className="text-[10px] font-medium text-muted-foreground truncate" title={prof?.nome}>
-                                    {prof?.nome}
-                                  </span>
+
+                                  {/* Aluno e Nome da Mãe */}
+                                  <div className="space-y-0.5 mb-2.5">
+                                    <div
+                                      className="font-bold text-foreground text-xs leading-snug break-words"
+                                      title={aluno?.nome}
+                                    >
+                                      {aluno?.nome ?? 'Aluno'}
+                                    </div>
+                                    <div
+                                      className="text-[10px] text-muted-foreground leading-snug break-words"
+                                      title={aluno?.nome_mae}
+                                    >
+                                      <span className="font-medium text-foreground/70">Mãe:</span>{' '}
+                                      {aluno?.nome_mae ?? 'Não informada'}
+                                    </div>
+                                  </div>
                                 </div>
 
-                                {isEditMode && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => handleConfirmarExcluir(e, item)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-all"
-                                    title="Desvincular atendimento"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
+                                {/* Rodapé: Profissional e Ações */}
+                                <div className="pt-2 border-t border-border/40 flex items-start justify-between gap-1.5 mt-auto">
+                                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                                    <div className="h-6 w-6 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                                      {avatarUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <User className="w-3.5 h-3.5 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <span
+                                        className="text-[11px] font-semibold text-foreground/90 leading-tight block break-words"
+                                        title={prof?.nome}
+                                      >
+                                        {prof?.nome ?? 'Profissional AEE'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {isEditMode && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleConfirmarExcluir(e, item)}
+                                      className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-all shrink-0 mt-0.5"
+                                      title="Desvincular atendimento"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -1230,37 +1245,45 @@ export default function CalendarioAtendimentosPage() {
                             <div
                               key={item.id}
                               onClick={() => handleVerDetalhes(item)}
-                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden`}
+                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden flex flex-col justify-between`}
                             >
-                              <div className="flex items-center justify-between mb-2 gap-1.5 min-w-0">
-                                <span className="text-xs font-bold text-foreground flex items-center gap-1 shrink-0">
-                                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                  {formatarHorario(item.horario_inicio)}
-                                  {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
-                                </span>
-                                <span
-                                  className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal truncate max-w-[130px] shrink min-w-0 text-center ${colors.badge}`}
-                                  title={item.especialidade || 'AEE'}
-                                >
-                                  {item.especialidade}
-                                </span>
+                              <div>
+                                <div className="flex flex-wrap items-center justify-between mb-2 gap-1.5 min-w-0">
+                                  <span className="text-xs font-bold text-foreground flex items-center gap-1 shrink-0">
+                                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    {formatarHorario(item.horario_inicio)}
+                                    {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
+                                  </span>
+                                  <span
+                                    className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[140px] leading-tight text-center ${colors.badge}`}
+                                    title={item.especialidade || 'AEE'}
+                                  >
+                                    {item.especialidade}
+                                  </span>
+                                </div>
+
+                                <div className="text-xs font-bold text-foreground break-words leading-snug" title={aluno?.nome}>
+                                  {aluno?.nome}
+                                </div>
+                                <div className="text-[11px] text-muted-foreground break-words leading-snug mt-0.5" title={aluno?.nome_mae}>
+                                  <span className="font-medium text-foreground/70">Mãe:</span> {aluno?.nome_mae ?? 'Não informada'}
+                                </div>
                               </div>
 
-                              <div className="text-xs font-bold text-foreground truncate">{aluno?.nome}</div>
-                              <div className="text-[11px] text-muted-foreground truncate">
-                                Mãe: {aluno?.nome_mae ?? 'Não informada'}
-                              </div>
-
-                              <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-2">
-                                <div className="h-5 w-5 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
+                              <div className="mt-2.5 pt-2 border-t border-border/50 flex items-start gap-2">
+                                <div className="h-6 w-6 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                   {avatarUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
                                   ) : (
-                                    <User className="w-3 h-3 text-muted-foreground" />
+                                    <User className="w-3.5 h-3.5 text-muted-foreground" />
                                   )}
                                 </div>
-                                <span className="text-[10px] text-muted-foreground truncate">{prof?.nome}</span>
+                                <div className="min-w-0 flex-1">
+                                  <span className="text-[11px] font-semibold text-foreground/90 leading-tight block break-words" title={prof?.nome}>
+                                    {prof?.nome}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           )
