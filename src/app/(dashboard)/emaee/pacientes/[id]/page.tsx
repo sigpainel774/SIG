@@ -695,7 +695,7 @@ export default function PacienteDetalhesPage() {
               </div>
               <div>
                 <span className="text-muted-foreground block mb-0.5">Cor/Raça</span>
-                <strong className="text-foreground">{aluno?.cor_raca ?? '-'}</strong>
+                <strong className="text-foreground">{aluno?.cor_raca || (aluno?.dados_matricula as any)?.cor_raca || (aluno?.dados_matricula as any)?.corRacaAluno || '-'}</strong>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
