@@ -23,37 +23,57 @@ export interface OMRResult {
   confidence?: number
 }
 
-// Emite bip de sucesso ou erro usando Web Audio API nativa
-export function playScanSound(type: 'success' | 'error' = 'success') {
-  if (typeof window === 'undefined') return
+// Instância compartilhada de AudioContext para evitar limite de instâncias nos navegadores
+let sharedAudioContext: AudioContext | null = null
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
+    if (!AudioCtx) return null
+    if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+      sharedAudioContext = new AudioCtx()
+    }
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume().catch(() => {})
+    }
+    return sharedAudioContext
+  } catch (err) {
+    console.warn('[omrEngine] Falha ao inicializar AudioContext:', err)
+    return null
+  }
+}
+
+// Emite bip de sucesso ou erro usando Web Audio API nativa
+export function playScanSound(type: 'success' | 'error' = 'success') {
+  try {
+    const ctx = getAudioContext()
+    if (!ctx) return
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
 
     osc.connect(gain)
     gain.connect(ctx.destination)
 
+    const now = ctx.currentTime
     if (type === 'success') {
       osc.type = 'sine'
-      osc.frequency.setValueAtTime(880, ctx.currentTime) // Lá (A5)
-      osc.frequency.setValueAtTime(1760, ctx.currentTime + 0.08) // A6
-      gain.gain.setValueAtTime(0.2, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.25)
+      osc.frequency.setValueAtTime(880, now) // Lá (A5)
+      osc.frequency.setValueAtTime(1760, now + 0.08) // A6
+      gain.gain.setValueAtTime(0.2, now)
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25)
+      osc.start(now)
+      osc.stop(now + 0.25)
     } else {
       osc.type = 'sawtooth'
-      osc.frequency.setValueAtTime(220, ctx.currentTime)
-      gain.gain.setValueAtTime(0.25, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.3)
+      osc.frequency.setValueAtTime(220, now)
+      gain.gain.setValueAtTime(0.25, now)
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+      osc.start(now)
+      osc.stop(now + 0.3)
     }
-  } catch {
-    // Audio Context silencioso
+  } catch (err) {
+    console.warn('[omrEngine] Erro ao reproduzir bip sonoro:', err)
   }
 }
 

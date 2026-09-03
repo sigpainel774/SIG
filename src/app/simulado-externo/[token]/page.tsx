@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabaseClient'
 import { Simulado } from '@/types/simulado'
 import { processOMRCanvas, calcularResultadoSimulado, playScanSound } from '@/lib/omr/omrEngine'
+import { disposeMediaStream } from '@/lib/mediaCleanup'
 import { toast, Toaster } from 'sonner'
 
 interface SimuladoExternoPageProps {
@@ -40,6 +41,11 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
   const streamRef = useRef<MediaStream | null>(null)
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const processingRef = useRef<boolean>(false)
+  const etapaRef = useRef(etapa)
+
+  useEffect(() => {
+    etapaRef.current = etapa
+  }, [etapa])
 
   const supabase = createClient()
 
@@ -115,13 +121,33 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
     getDevices()
   }, [etapa])
 
+  // Para a câmera e libera hardware e GPU
+  const stopCamera = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current)
+      scanIntervalRef.current = null
+    }
+    disposeMediaStream(streamRef.current, videoRef.current)
+    streamRef.current = null
+    setCameraActive(false)
+  }, [])
+
   // Inicia câmera
   const startCamera = useCallback(async () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
+      disposeMediaStream(streamRef.current, videoRef.current)
+      streamRef.current = null
     }
 
+    if (etapaRef.current !== 'scanner') return
+
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        toast.error('Seu navegador não possui suporte para acesso direto à câmera.')
+        setCameraActive(false)
+        return
+      }
+
       const constraints: MediaStreamConstraints = {
         video: selectedDeviceId
           ? { deviceId: { exact: selectedDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
@@ -129,28 +155,34 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
       }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+      // Se saiu da etapa de scanner enquanto a câmera solicitava permissão
+      if (etapaRef.current !== 'scanner') {
+        disposeMediaStream(stream)
+        return
+      }
+
       streamRef.current = stream
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        await videoRef.current.play()
-        setCameraActive(true)
+        try {
+          await videoRef.current.play()
+        } catch (playErr) {
+          console.warn('[simulado-externo] Erro no autoplay do vídeo:', playErr)
+        }
+        if (etapaRef.current === 'scanner') {
+          setCameraActive(true)
+        } else {
+          stopCamera()
+        }
       }
     } catch (err) {
       console.error('Erro de câmera:', err)
       toast.error('Permissão de câmera negada ou dispositivo indisponível.')
       setCameraActive(false)
     }
-  }, [selectedDeviceId])
-
-  const stopCamera = useCallback(() => {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current)
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
-    }
-    setCameraActive(false)
-  }, [])
+  }, [selectedDeviceId, stopCamera])
 
   useEffect(() => {
     if (etapa === 'scanner') {
@@ -158,7 +190,34 @@ export default function SimuladoExternoPage({ params }: SimuladoExternoPageProps
     } else {
       stopCamera()
     }
-    return () => stopCamera()
+    return () => {
+      stopCamera()
+    }
+  }, [etapa, startCamera, stopCamera])
+
+  // Despejo ativo de câmera em segundo plano ou descarga de página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopCamera()
+      } else if (!document.hidden && etapa === 'scanner') {
+        startCamera()
+      }
+    }
+
+    const handleUnload = () => {
+      stopCamera()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleUnload)
+    window.addEventListener('pagehide', handleUnload)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleUnload)
+      window.removeEventListener('pagehide', handleUnload)
+    }
   }, [etapa, startCamera, stopCamera])
 
   // Processamento e Salvamento da Correção

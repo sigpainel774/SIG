@@ -8,6 +8,7 @@ import { Simulado, SimuladoResposta } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { processOMRCanvas, calcularResultadoSimulado, playScanSound } from '@/lib/omr/omrEngine'
+import { disposeMediaStream } from '@/lib/mediaCleanup'
 
 interface ModalScannerCameraProps {
   open: boolean
@@ -56,28 +57,43 @@ export function ModalScannerCamera({
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastScannedQrRef = useRef<string>('')
   const lastScanTimeRef = useRef<number>(0)
+  const isOpenRef = useRef(open)
+
+  // Mantém isOpenRef atualizado instantaneamente
+  useEffect(() => {
+    isOpenRef.current = open
+  }, [open])
 
   const supabase = createClient()
 
-  // Carrega lista de alunos do simulado / escola
+  // Carrega lista de alunos do simulado / escola com tratamento de erro
   useEffect(() => {
     if (!open || !simulado) return
 
     const carregarAlunos = async () => {
-      let query = (supabase as any)
-        .from('alunos')
-        .select('id, nome, numero_matricula, turma_id, turmas(nome)')
-        .is('deleted_at', null)
-        .order('nome', { ascending: true })
+      try {
+        let query = (supabase as any)
+          .from('alunos')
+          .select('id, nome, numero_matricula, turma_id, turmas(nome)')
+          .is('deleted_at', null)
+          .order('nome', { ascending: true })
 
-      if (simulado.turmas_ids && simulado.turmas_ids.length > 0) {
-        query = query.in('turma_id', simulado.turmas_ids)
-      } else {
-        query = query.eq('escola_id', simulado.escola_id)
+        if (simulado.turmas_ids && simulado.turmas_ids.length > 0) {
+          query = query.in('turma_id', simulado.turmas_ids)
+        } else {
+          query = query.eq('escola_id', simulado.escola_id)
+        }
+
+        const { data, error } = await query
+        if (error) {
+          console.error('[ModalScannerCamera] Erro ao carregar alunos do simulado:', error)
+          toast.error('Não foi possível carregar a lista de alunos deste simulado.')
+          return
+        }
+        if (data) setAlunosLista(data)
+      } catch (err) {
+        console.error('[ModalScannerCamera] Erro inesperado ao carregar alunos:', err)
       }
-
-      const { data } = await query
-      if (data) setAlunosLista(data)
     }
 
     carregarAlunos()
@@ -88,6 +104,7 @@ export function ModalScannerCamera({
     if (!open) return
     const getDevices = async () => {
       try {
+        if (!navigator?.mediaDevices?.enumerateDevices) return
         const devices = await navigator.mediaDevices.enumerateDevices()
         const videoInputs = devices.filter((d) => d.kind === 'videoinput')
         setVideoDevices(videoInputs)
@@ -97,19 +114,44 @@ export function ModalScannerCamera({
           setSelectedDeviceId(backCam ? backCam.deviceId : videoInputs[0].deviceId)
         }
       } catch (err) {
-        console.error('Erro ao listar câmeras:', err)
+        console.error('[ModalScannerCamera] Erro ao listar câmeras:', err)
       }
     }
     getDevices()
   }, [open])
 
-  // Inicia a câmera
-  const startCamera = useCallback(async () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
+  // Para a câmera e libera hardware e buffers da GPU
+  const stopCamera = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current)
+      scanIntervalRef.current = null
     }
 
+    // Interrompe faixas do MediaStream ativo e desvincula vídeo
+    disposeMediaStream(streamRef.current, videoRef.current)
+    streamRef.current = null
+
+    setCameraActive(false)
+    setScanning(false)
+  }, [])
+
+  // Inicia a câmera com verificação de montagem e cancelamento assíncrono
+  const startCamera = useCallback(async () => {
+    // Interrompe qualquer stream anterior antes de abrir nova captura
+    if (streamRef.current) {
+      disposeMediaStream(streamRef.current, videoRef.current)
+      streamRef.current = null
+    }
+
+    if (!isOpenRef.current) return
+
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        toast.error('Seu navegador ou dispositivo não possui suporte a captura de câmera.')
+        setCameraActive(false)
+        return
+      }
+
       const constraints: MediaStreamConstraints = {
         video: selectedDeviceId
           ? { deviceId: { exact: selectedDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
@@ -117,32 +159,56 @@ export function ModalScannerCamera({
       }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+      // Se o modal foi fechado enquanto a permissão do dispositivo era concedida
+      if (!isOpenRef.current) {
+        disposeMediaStream(stream)
+        return
+      }
+
       streamRef.current = stream
 
+      const vincularVideo = async (videoEl: HTMLVideoElement) => {
+        videoEl.srcObject = stream
+        try {
+          await videoEl.play()
+        } catch (playErr) {
+          console.warn('[ModalScannerCamera] Erro no autoplay do vídeo:', playErr)
+        }
+        if (isOpenRef.current) {
+          setCameraActive(true)
+          setScanning(true)
+        } else {
+          stopCamera()
+        }
+      }
+
       if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-        setCameraActive(true)
-        setScanning(true)
+        await vincularVideo(videoRef.current)
+      } else {
+        // Fallback para caso o Portal do Dialog ainda esteja montando o elemento no DOM
+        setTimeout(() => {
+          if (!isOpenRef.current) {
+            disposeMediaStream(stream)
+            return
+          }
+          if (videoRef.current) {
+            vincularVideo(videoRef.current)
+          } else {
+            disposeMediaStream(stream)
+            streamRef.current = null
+            setCameraActive(false)
+          }
+        }, 60)
       }
     } catch (err: any) {
-      console.error('Erro ao acessar câmera:', err)
+      console.error('[ModalScannerCamera] Erro ao acessar câmera:', err)
       toast.error('Não foi possível acessar a câmera. Verifique as permissões do navegador.')
       setCameraActive(false)
     }
-  }, [selectedDeviceId])
+  }, [selectedDeviceId, stopCamera])
 
-  // Para a câmera
-  const stopCamera = useCallback(() => {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current)
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
-    }
-    setCameraActive(false)
-    setScanning(false)
-  }, [])
-
+  // Despejo ativo de mídia ao abrir/fechar o modal
   useEffect(() => {
     if (open) {
       startCamera()
@@ -150,7 +216,34 @@ export function ModalScannerCamera({
       stopCamera()
       setResultadoAtual(null)
     }
-    return () => stopCamera()
+    return () => {
+      stopCamera()
+    }
+  }, [open, startCamera, stopCamera])
+
+  // Interrompe faixas caso a aba seja ocultada ou a janela seja descarregada (prevenção de vazamento de hardware)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopCamera()
+      } else if (!document.hidden && open) {
+        startCamera()
+      }
+    }
+
+    const handleUnload = () => {
+      stopCamera()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleUnload)
+    window.addEventListener('pagehide', handleUnload)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleUnload)
+      window.removeEventListener('pagehide', handleUnload)
+    }
   }, [open, startCamera, stopCamera])
 
   // Função para salvar a correção no Supabase
@@ -220,71 +313,88 @@ export function ModalScannerCamera({
 
   // Loop de escaneamento de quadros
   const processFrame = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || !simulado || !cameraActive) return
+    try {
+      if (!videoRef.current || !canvasRef.current || !simulado || !cameraActive) return
 
-    const video = videoRef.current
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) return
+      const video = videoRef.current
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return
 
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) return
 
-    canvas.width = video.videoWidth || 1280
-    canvas.height = video.videoHeight || 720
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      canvas.width = video.videoWidth || 1280
+      canvas.height = video.videoHeight || 720
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-    // Executa motor OMR
-    const resultadoOMR = processOMRCanvas(canvas, {
-      qtdQuestoes: simulado.qtd_questoes,
-      alternativasPorQuestao: simulado.alternativas_por_questao
-    })
+      // Executa motor OMR
+      const resultadoOMR = processOMRCanvas(canvas, {
+        qtdQuestoes: simulado.qtd_questoes,
+        alternativasPorQuestao: simulado.alternativas_por_questao
+      })
 
-    if (resultadoOMR.sucesso && resultadoOMR.qrData?.simuladoId) {
-      const now = Date.now()
-      const alunoIdent = resultadoOMR.qrData.alunoId || resultadoOMR.qrData.alunoNome || alunoManualId || alunoManualNome || 'avulso'
-      const qrIdent = `${resultadoOMR.qrData.simuladoId}_${alunoIdent}`
+      // Aceita se tiver QR do mesmo simulado OU folha manual com aluno selecionado
+      const simuladoValido = resultadoOMR.qrData?.simuladoId
+        ? resultadoOMR.qrData.simuladoId === simulado.id
+        : true
 
-      // Evita disparos repetidos na mesma folha em menos de 3 segundos
-      if (lastScannedQrRef.current === qrIdent && now - lastScanTimeRef.current < 3000) {
-        return
-      }
-
-      lastScannedQrRef.current = qrIdent
-      lastScanTimeRef.current = now
-
-      // Encontra nome do aluno pelo QR Code ou identificação manual prévia
-      let alunoId = resultadoOMR.qrData.alunoId || alunoManualId || null
-      let alunoNome = resultadoOMR.qrData.alunoNome || alunoManualNome || ''
-
-      if (alunoId) {
-        const aluno = alunosLista.find((a) => a.id === alunoId)
-        if (aluno) alunoNome = aluno.nome
-      }
-
-      if (!alunoNome) {
-        alunoNome = 'Aluno Avulso / Não Identificado'
-      }
-
-      const apuracao = calcularResultadoSimulado(
-        resultadoOMR.respostas,
-        simulado.gabarito_oficial,
-        simulado.qtd_questoes
+      const temIdentificacao = Boolean(
+        resultadoOMR.qrData?.simuladoId ||
+        resultadoOMR.qrData?.alunoId ||
+        resultadoOMR.qrData?.alunoNome ||
+        alunoManualId ||
+        alunoManualNome
       )
 
-      playScanSound('success')
+      if (resultadoOMR.sucesso && simuladoValido && temIdentificacao) {
+        const now = Date.now()
+        const alunoIdent = resultadoOMR.qrData?.alunoId || resultadoOMR.qrData?.alunoNome || alunoManualId || alunoManualNome || 'avulso'
+        const qrIdent = `${resultadoOMR.qrData?.simuladoId || simulado.id}_${alunoIdent}`
 
-      const dadosCompletos = {
-        alunoId,
-        alunoNome,
-        respostas: resultadoOMR.respostas,
-        ...apuracao
+        // Evita disparos repetidos na mesma folha em menos de 3 segundos
+        if (lastScannedQrRef.current === qrIdent && now - lastScanTimeRef.current < 3000) {
+          return
+        }
+
+        lastScannedQrRef.current = qrIdent
+        lastScanTimeRef.current = now
+
+        // Encontra nome do aluno pelo QR Code ou identificação manual prévia
+        let alunoId = resultadoOMR.qrData?.alunoId || alunoManualId || null
+        let alunoNome = resultadoOMR.qrData?.alunoNome || alunoManualNome || ''
+
+        if (alunoId) {
+          const aluno = alunosLista.find((a) => a.id === alunoId)
+          if (aluno) alunoNome = aluno.nome
+        }
+
+        if (!alunoNome) {
+          alunoNome = 'Aluno Avulso / Não Identificado'
+        }
+
+        const apuracao = calcularResultadoSimulado(
+          resultadoOMR.respostas,
+          simulado.gabarito_oficial,
+          simulado.qtd_questoes
+        )
+
+        playScanSound('success')
+
+        const dadosCompletos = {
+          alunoId,
+          alunoNome,
+          respostas: resultadoOMR.respostas,
+          ...apuracao
+        }
+
+        setResultadoAtual(dadosCompletos)
+
+        if (autoSave && (alunoId || (alunoNome && alunoNome !== 'Aluno Avulso / Não Identificado'))) {
+          salvarCorrecao(dadosCompletos)
+        }
       }
-
-      setResultadoAtual(dadosCompletos)
-
-      if (autoSave && (alunoId || (alunoNome && alunoNome !== 'Aluno Avulso / Não Identificado'))) {
-        salvarCorrecao(dadosCompletos)
-      }
+    } catch (err) {
+      console.error('[ModalScannerCamera] Erro durante processamento do frame:', err)
     }
   }, [simulado, cameraActive, alunosLista, alunoManualId, alunoManualNome, autoSave])
 
@@ -305,6 +415,15 @@ export function ModalScannerCamera({
     processFrame()
   }
 
+  // Despejo ativo de câmera no encerramento do diálogo
+  const handleModalOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      stopCamera()
+      setResultadoAtual(null)
+    }
+    onOpenChange(newOpen)
+  }
+
   // Filtragem de alunos para seleção manual
   const alunosFiltradosScanner = alunosLista.filter((a) =>
     a.nome.toLowerCase().includes(buscaAlunoScanner.toLowerCase())
@@ -319,7 +438,7 @@ export function ModalScannerCamera({
   return (
     <StandardDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleModalOpenChange}
       title={`Correção por Câmera OMR • ${simulado.titulo}`}
       description="Aponte a câmera para o cartão-resposta. O sistema detecta os 4 marcadores pretos, o QR Code e calcula a nota automaticamente."
       maxWidth="sm:max-w-5xl"

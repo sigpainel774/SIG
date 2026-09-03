@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { compressImageBeforeUpload } from '@/lib/imageCompression'
+import { disposeMediaStream } from '@/lib/mediaCleanup'
 
 export interface ModalScannerFoto3x4Props {
   open: boolean
@@ -42,6 +43,7 @@ export function ModalScannerFoto3x4({
   
   // Estados da Câmera
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isInitializingCamera, setIsInitializingCamera] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -49,6 +51,17 @@ export function ModalScannerFoto3x4({
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
   const [hasTorch, setHasTorch] = useState(false)
   const [isTorchOn, setIsTorchOn] = useState(false)
+
+  const isOpenRef = useRef(open)
+  const modeRef = useRef(mode)
+
+  useEffect(() => {
+    isOpenRef.current = open
+  }, [open])
+
+  useEffect(() => {
+    modeRef.current = mode
+  }, [mode])
 
   // Imagem capturada (Data URL em alta resolução)
   const [capturedImageRaw, setCapturedImageRaw] = useState<string | null>(null)
@@ -67,21 +80,14 @@ export function ModalScannerFoto3x4({
   const dragStartRef = useRef({ x: 0, y: 0 })
   const panStartRef = useRef({ x: 0, y: 0 })
 
-  // 1. Função para parar todas as faixas da câmera e liberar memória/hardware
+  // 1. Função para parar todas as faixas da câmera e liberar memória/hardware e buffers da GPU
   const stopCameraStream = useCallback((streamToStop?: MediaStream | null) => {
-    const activeStream = streamToStop || stream
-    if (activeStream) {
-      activeStream.getTracks().forEach((track) => {
-        try {
-          track.stop()
-        } catch {
-          // Ignore
-        }
-      })
+    const activeStream = streamToStop || streamRef.current || stream
+    disposeMediaStream(activeStream, videoRef.current)
+    if (streamRef.current && streamRef.current !== activeStream) {
+      disposeMediaStream(streamRef.current)
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
+    streamRef.current = null
     setStream(null)
     setIsTorchOn(false)
   }, [stream])
@@ -91,6 +97,11 @@ export function ModalScannerFoto3x4({
     setIsInitializingCamera(true)
     setCameraError(null)
     stopCameraStream()
+
+    if (!isOpenRef.current || modeRef.current !== 'camera') {
+      setIsInitializingCamera(false)
+      return
+    }
 
     if (!navigator?.mediaDevices?.getUserMedia) {
       setCameraError('Seu navegador não possui suporte para acesso direto à câmera.')
@@ -122,6 +133,13 @@ export function ModalScannerFoto3x4({
         throw new Error('Não foi possível obter o stream de vídeo da câmera.')
       }
 
+      // Se o modal foi fechado ou modo mudou enquanto o navegador solicitava permissão
+      if (!isOpenRef.current || modeRef.current !== 'camera') {
+        disposeMediaStream(mediaStream)
+        return
+      }
+
+      streamRef.current = mediaStream
       setStream(mediaStream)
 
       // Verificar suporte a múltiplas câmeras
@@ -168,8 +186,9 @@ export function ModalScannerFoto3x4({
 
   // Alternar Lanterna / Torch
   const toggleTorch = async () => {
-    if (!stream || !hasTorch) return
-    const track = stream.getVideoTracks()[0]
+    const currentStream = streamRef.current || stream
+    if (!currentStream || !hasTorch) return
+    const track = currentStream.getVideoTracks()[0]
     if (!track) return
 
     try {
@@ -204,21 +223,30 @@ export function ModalScannerFoto3x4({
     }
   }, [open, mode])
 
-  // Desligar câmera se o usuário trocar de aba no navegador (Prevenção de Battery Drain)
+  // Desligar câmera se o usuário trocar de aba no navegador ou descarregar a página
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && stream) {
+      if (document.hidden) {
         stopCameraStream()
       } else if (!document.hidden && open && mode === 'camera') {
         startCamera(facingMode)
       }
     }
 
+    const handleUnload = () => {
+      stopCameraStream()
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleUnload)
+    window.addEventListener('pagehide', handleUnload)
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleUnload)
+      window.removeEventListener('pagehide', handleUnload)
     }
-  }, [open, mode, stream, facingMode, startCamera, stopCameraStream])
+  }, [open, mode, facingMode, startCamera, stopCameraStream])
 
   // Resetar estados ao fechar ou reabrir
   const handleClose = () => {
