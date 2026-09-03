@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabaseServer'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,60 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 3. Retornar resposta com cabeçalhos de cache privado e tempo de revalidação
+    // 3. Garantir a acurácia demográfica de "Zona de Residência dos Pacientes"
+    // Como a unidade do EMAEE situa-se na zona urbana, a RPC original contava localizacao_atendimento.
+    // Aqui garantimos que a aba de Demografia reflita a zona residencial real dos alunos atendidos.
+    if (data && data.logistica) {
+      try {
+        let demografiaQuery = supabaseAdmin
+          .from('emaee_matriculas')
+          .select(`
+            data_matricula,
+            status,
+            alunos!inner (
+              zona_residencial,
+              dados_matricula
+            )
+          `)
+          .is('deleted_at', null)
+          .in('status', ['ATIVO', 'FILA_ESPERA', 'EM_INVESTIGACAO'])
+
+        if (escolaId) {
+          demografiaQuery = demografiaQuery.eq('escola_atendimento_id', escolaId)
+        }
+
+        if (ano) {
+          demografiaQuery = demografiaQuery
+            .gte('data_matricula', `${ano}-01-01`)
+            .lte('data_matricula', `${ano}-12-31`)
+        }
+
+        const { data: demografiaData, error: demografiaError } = await demografiaQuery
+
+        if (!demografiaError && demografiaData && demografiaData.length > 0) {
+          let zonaRuralCount = 0
+          let zonaUrbanaCount = 0
+
+          demografiaData.forEach((m: any) => {
+            const al = m.alunos
+            const dm = al?.dados_matricula || {}
+            const z = (al?.zona_residencial || dm?.zona_residencial || dm?.zona || dm?.zonaResidencial || 'Urbana').trim().toLowerCase()
+            if (z === 'rural') {
+              zonaRuralCount++
+            } else {
+              zonaUrbanaCount++
+            }
+          })
+
+          data.logistica.zona_rural = zonaRuralCount
+          data.logistica.zona_urbana = zonaUrbanaCount
+        }
+      } catch (errDemografia) {
+        console.warn('[api/relatorios/emaee-estrategico] Falha não impeditiva ao apurar zona de residência:', errDemografia)
+      }
+    }
+
+    // 4. Retornar resposta com cabeçalhos de cache privado e tempo de revalidação
     return NextResponse.json(data, {
       status: 200,
       headers: {

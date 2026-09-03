@@ -97,10 +97,13 @@ export default function PacientesPage() {
               foto_url,
               foto_avatar_path,
               foto_visualizacao_path,
-              foto_updated_at
+              foto_updated_at,
+              zona_residencial
             ),
             escolas:escola_regular_id (
-              nome
+              id,
+              nome,
+              localizacao
             )
           `)
           .is('deleted_at', null)
@@ -144,7 +147,11 @@ export default function PacientesPage() {
       const escolaNome = (p.escola_origem_nome || p.escolas?.nome || '').toLowerCase()
       const matchesBusca = !txtBusca || nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
       const matchesStatus = filtroStatus === 'todos' || p.status === filtroStatus
-      const matchesZona = filtroZona === 'todos' || p.localizacao_atendimento === filtroZona
+      const rawZona = p.escolas?.localizacao
+      const zonaEscola = rawZona
+        ? (String(rawZona).toUpperCase() === 'RURAL' ? 'Rural' : 'Urbana')
+        : (p.escola_origem_fora_rede ? 'Fora da Rede' : 'Não informada')
+      const matchesZona = filtroZona === 'todos' || zonaEscola === filtroZona
 
       return matchesBusca && matchesStatus && matchesZona
     })
@@ -206,7 +213,9 @@ export default function PacientesPage() {
         escola_origem_municipio,
         escola_origem_uf,
         escolas:escola_regular_id (
-          nome
+          id,
+          nome,
+          localizacao
         )
       `)
       .eq('id', matriculaId)
@@ -339,6 +348,10 @@ export default function PacientesPage() {
               const regularEscola = paciente.escola_origem_fora_rede && paciente.escola_origem_nome
                 ? `${paciente.escola_origem_nome}${paciente.escola_origem_municipio ? ` (${paciente.escola_origem_municipio} - ${paciente.escola_origem_uf ?? 'BA'})` : ''}`
                 : (paciente.escolas?.nome ?? 'Sem Escola Regular');
+              const rawZonaEscola = paciente.escolas?.localizacao;
+              const zonaEscola = rawZonaEscola
+                ? (String(rawZonaEscola).toUpperCase() === 'RURAL' ? 'Rural' : 'Urbana')
+                : (paciente.escola_origem_fora_rede ? 'Fora da Rede' : 'Não informada');
               const avatarUrl = getAvatarUrl(paciente.alunos);
               const isActionBusy = carregandoAcao?.id === paciente.id;
 
@@ -394,7 +407,7 @@ export default function PacientesPage() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                        <span>Localidade: {paciente.localizacao_atendimento}</span>
+                        <span>Zona da Escola: <strong className={zonaEscola === 'Rural' ? 'text-emerald-500 font-semibold' : 'text-foreground font-medium'}>{zonaEscola}</strong></span>
                       </div>
                     </div>
                   </div>
