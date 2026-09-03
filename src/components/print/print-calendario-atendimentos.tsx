@@ -239,8 +239,8 @@ export function PrintCalendarioAtendimentos({
                     {grupo.itens.map((item, idx) => {
                       const alunoNome = item.emaee_matriculas?.alunos?.nome ?? 'Aluno não identificado'
                       const matriculaEmaee = item.emaee_matriculas?.numero_matricula_emaee
-                      const especialidadeNome = item.especialidade === 'Outros' 
-                        ? (item.especialidade_outros || 'Outros') 
+                      const especialidadeNome = (!item.especialidade || item.especialidade === 'Outros' || item.especialidade === 'Outro') 
+                        ? (item.especialidade_outros || item.funcionarios?.cargo || 'Especialista AEE') 
                         : item.especialidade
                       const profNome = item.funcionarios?.nome ?? 'Profissional não atribuído'
                       const profCargo = item.funcionarios?.cargo ?? 'Especialista AEE'

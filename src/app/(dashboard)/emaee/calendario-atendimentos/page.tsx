@@ -226,22 +226,37 @@ export default function CalendarioAtendimentosPage() {
     return h.slice(0, 5)
   }
 
+  // Obter nome de exibição da especialidade / cargo com fallback inteligente
+  const getEspecialidadeNome = (item: any) => {
+    if (!item) return 'AEE'
+    const esp = item.especialidade
+    if (esp && typeof esp === 'string' && esp.trim() && esp !== 'Outro' && esp !== 'Outros') {
+      return esp.trim()
+    }
+    if (item.especialidade_outros && typeof item.especialidade_outros === 'string' && item.especialidade_outros.trim()) {
+      return item.especialidade_outros.trim()
+    }
+    const cargo = item.funcionarios?.cargo
+    if (cargo && typeof cargo === 'string' && cargo.trim() && cargo !== 'Outro' && cargo !== 'Outros') {
+      return cargo.trim()
+    }
+    return esp || cargo || 'AEE'
+  }
+
   // Lista de especialidades / profissões únicas dos profissionais AEE ativos e atendimentos
   const listaEspecialidades = useMemo(() => {
     const setEsp = new Set<string>()
     // 1. Profissões / cargos dos profissionais AEE ativos na unidade EMAEE
     profissionais.forEach((p) => {
-      if (p.cargo && typeof p.cargo === 'string' && p.cargo.trim()) {
+      if (p.cargo && typeof p.cargo === 'string' && p.cargo.trim() && p.cargo !== 'Outro' && p.cargo !== 'Outros') {
         setEsp.add(p.cargo.trim())
       }
     })
     // 2. Especialidades ou cargos dos atendimentos já cadastrados
     vinculos.forEach((v) => {
-      if (v.especialidade && typeof v.especialidade === 'string' && v.especialidade.trim()) {
-        setEsp.add(v.especialidade.trim())
-      }
-      if (v.funcionarios?.cargo && typeof v.funcionarios.cargo === 'string' && v.funcionarios.cargo.trim()) {
-        setEsp.add(v.funcionarios.cargo.trim())
+      const espNome = getEspecialidadeNome(v)
+      if (espNome && espNome !== 'AEE' && espNome !== 'Outro' && espNome !== 'Outros') {
+        setEsp.add(espNome)
       }
     })
     return Array.from(setEsp).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
@@ -276,9 +291,10 @@ export default function CalendarioAtendimentosPage() {
       // Filtro Especialidade / Profissão
       if (filtroEspecialidade !== 'todos') {
         const filtroNorm = normalizar(filtroEspecialidade)
+        const espResolvidaNorm = normalizar(getEspecialidadeNome(v))
         const espNorm = normalizar(v.especialidade || '')
         const profCargoNorm = normalizar(prof?.cargo || '')
-        if (espNorm !== filtroNorm && profCargoNorm !== filtroNorm) {
+        if (espResolvidaNorm !== filtroNorm && espNorm !== filtroNorm && profCargoNorm !== filtroNorm) {
           return false
         }
       }
@@ -564,7 +580,7 @@ export default function CalendarioAtendimentosPage() {
                     {atendimentoSelecionado.funcionarios?.nome ?? 'Profissional não identificado'}
                   </div>
                   <div className="text-amber-500 font-semibold text-[11px]">
-                    {atendimentoSelecionado.especialidade ?? atendimentoSelecionado.funcionarios?.cargo}
+                    {getEspecialidadeNome(atendimentoSelecionado)}
                   </div>
                 </div>
               </div>
@@ -979,7 +995,8 @@ export default function CalendarioAtendimentosPage() {
                           {sessoes.map((item) => {
                             const aluno = item.emaee_matriculas?.alunos
                             const prof = item.funcionarios
-                            const colors = getColorByCargo(item.especialidade || prof?.cargo)
+                            const espNome = getEspecialidadeNome(item)
+                            const colors = getColorByCargo(espNome)
                             const avatarUrl = getAvatarUrl(prof)
                             const hInicio = formatarHorario(item.horario_inicio)
                             const hFim = formatarHorario(item.horario_fim)
@@ -1002,9 +1019,9 @@ export default function CalendarioAtendimentosPage() {
                                     </div>
                                     <span
                                       className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[130px] leading-tight text-center ${colors.badge}`}
-                                      title={item.especialidade || 'AEE'}
+                                      title={espNome}
                                     >
-                                      {item.especialidade || 'AEE'}
+                                      {espNome}
                                     </span>
                                   </div>
 
@@ -1238,7 +1255,8 @@ export default function CalendarioAtendimentosPage() {
                         {sessoesDoDia.map((item) => {
                           const aluno = item.emaee_matriculas?.alunos
                           const prof = item.funcionarios
-                          const colors = getColorByCargo(item.especialidade || prof?.cargo)
+                          const espNome = getEspecialidadeNome(item)
+                          const colors = getColorByCargo(espNome)
                           const avatarUrl = getAvatarUrl(prof)
 
                           return (
@@ -1256,9 +1274,9 @@ export default function CalendarioAtendimentosPage() {
                                   </span>
                                   <span
                                     className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[140px] leading-tight text-center ${colors.badge}`}
-                                    title={item.especialidade || 'AEE'}
+                                    title={espNome}
                                   >
-                                    {item.especialidade}
+                                    {espNome}
                                   </span>
                                 </div>
 
@@ -1361,7 +1379,7 @@ export default function CalendarioAtendimentosPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="font-medium text-xs text-foreground truncate">{prof?.nome}</div>
-                            <div className="text-[10px] text-amber-500">{item.especialidade}</div>
+                            <div className="text-[10px] text-amber-500">{getEspecialidadeNome(item)}</div>
                           </div>
                         </div>
                       )
