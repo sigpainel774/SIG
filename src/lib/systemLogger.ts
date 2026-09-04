@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useSchoolStore } from '@/store/useSchoolStore'
 
 export type LogSeverity = 'info' | 'warning' | 'error' | 'critical'
 
@@ -34,7 +36,8 @@ function sanitizeMetadata(metadata: any): any {
           if (
             lowerKey.includes('password') || 
             lowerKey.includes('token') || 
-            lowerKey.includes('secret')
+            lowerKey.includes('secret') ||
+            lowerKey.includes('authorization')
           ) {
             o[key] = '[SANITIZED]'
           } else {
@@ -71,12 +74,40 @@ export const sysLogger = {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       
-      const safeMetadata = sanitizeMetadata(payload.metadata)
+      const safeMetadata = sanitizeMetadata(payload.metadata || {})
+
+      // Inclui rota e dados do usuário caso esteja no browser
+      if (typeof window !== 'undefined') {
+        if (!safeMetadata.pathname) {
+          safeMetadata.pathname = window.location.pathname
+          safeMetadata.url = window.location.href
+        }
+
+        if (!safeMetadata.usuario) {
+          try {
+            const authState = useAuthStore.getState()
+            const schoolState = useSchoolStore.getState()
+            const func = authState.getFuncionarioAtivo?.() || authState.funcionario
+            if (func || user) {
+              safeMetadata.usuario = {
+                id: func?.id || user?.id || null,
+                auth_user_id: user?.id || func?.auth_user_id || null,
+                nome: func?.nome || user?.user_metadata?.nome || user?.email || 'Usuário Não Identificado',
+                email: func?.email || user?.email || 'N/A',
+                cargo: func?.cargo || (func?.is_superadmin ? 'Superadmin' : 'Usuário'),
+                escola: schoolState.selectedEscola?.nome || null
+              }
+            }
+          } catch {
+            // Ignora erro ao acessar store
+          }
+        }
+      }
 
       await (supabase.from as any)('system_logs').insert({
         severity: payload.severity,
         context: payload.context,
-        message: payload.message,
+        message: payload.message || 'Erro sem mensagem',
         error_code: payload.error_code || null,
         user_id: user?.id || null,
         metadata: safeMetadata
@@ -92,7 +123,7 @@ export const sysLogger = {
   
   error: (context: string, error: any, metadata?: any) => {
     let message = 'Unknown Error'
-    let errorCode = null
+    let errorCode: string | null = null
     let stack = undefined
     
     if (error instanceof Error) {
@@ -100,14 +131,21 @@ export const sysLogger = {
       stack = error.stack
       errorCode = (error as any).status || (error as any).code || null
     } else if (typeof error === 'string') {
-      message = error
+      message = error === '[object Object]' ? 'Erro de objeto não serializado' : error
     } else if (error && typeof error === 'object') {
-      message = error.message || JSON.stringify(error)
-      errorCode = error.status || error.code || null
+      message = error.message || error.error_description || error.details || error.hint || ''
+      if (!message) {
+        try {
+          message = JSON.stringify(error)
+        } catch {
+          message = 'Erro em objeto não serializável'
+        }
+      }
+      errorCode = error.status || error.code || error.statusCode || null
     }
 
-    // Se for erro de Supabase API
-    if (error?.status === 401 || error?.code === '401' || errorCode === 401) {
+    // Se for erro de Supabase API / Auth
+    if (error?.status === 401 || error?.code === '401' || errorCode === '401' || (errorCode as any) === 401) {
       errorCode = '401'
     }
 
@@ -115,7 +153,7 @@ export const sysLogger = {
       severity: 'error',
       context,
       message,
-      error_code: String(errorCode || ''),
+      error_code: errorCode ? String(errorCode) : null,
       metadata: { ...metadata, stack }
     })
   }

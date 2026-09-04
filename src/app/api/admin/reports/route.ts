@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({ data: data || [] })
     } else {
-      const { data, error } = await (supabaseAdmin.from as any)('system_logs')
+      const { data: logsData, error } = await (supabaseAdmin.from as any)('system_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -52,7 +52,53 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      return NextResponse.json({ data: data || [] })
+      const logs = logsData || []
+
+      // Coletar user_ids que precisam de resolução de usuário
+      const userIdsToResolve = Array.from(
+        new Set(
+          logs
+            .map((l: any) => l.user_id)
+            .filter((uid: any) => uid && typeof uid === 'string')
+        )
+      )
+
+      if (userIdsToResolve.length > 0) {
+        // Buscar em funcionarios por id ou auth_user_id
+        const { data: funcs } = await (supabaseAdmin.from as any)('funcionarios')
+          .select('id, auth_user_id, nome, email, cargo')
+          .or(`id.in.(${userIdsToResolve.join(',')}),auth_user_id.in.(${userIdsToResolve.join(',')})`)
+
+        const funcMap = new Map<string, any>()
+        if (funcs) {
+          for (const f of funcs) {
+            if (f.id) funcMap.set(f.id, f)
+            if (f.auth_user_id) funcMap.set(f.auth_user_id, f)
+          }
+        }
+
+        for (const log of logs) {
+          if (!log.metadata || typeof log.metadata !== 'object') {
+            log.metadata = {}
+          }
+          const currentNome = log.metadata.usuario?.nome
+          if (!currentNome || currentNome === 'Usuário Anônimo / Não Autenticado' || currentNome === 'Não autenticado' || currentNome === 'Usuário Não Identificado') {
+            if (log.user_id && funcMap.has(log.user_id)) {
+              const matchedFunc = funcMap.get(log.user_id)
+              log.metadata.usuario = {
+                id: matchedFunc.id,
+                auth_user_id: matchedFunc.auth_user_id,
+                nome: matchedFunc.nome,
+                email: matchedFunc.email,
+                cargo: matchedFunc.cargo,
+                escola: log.metadata.usuario?.escola || null
+              }
+            }
+          }
+        }
+      }
+
+      return NextResponse.json({ data: logs })
     }
   } catch (err: any) {
     console.error('Exceção ao listar reports/logs:', err)

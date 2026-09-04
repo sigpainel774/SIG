@@ -382,13 +382,26 @@ export default function AdminReportsPage() {
                               <span className="text-muted-foreground">Tentativa de ação:</span>
                               <span className="font-semibold text-foreground">{acao}</span>
                             </div>
-                            {usuario && (
+                            {usuario ? (
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap pt-1 border-t border-borderCustom/40">
+                                <span className="flex items-center gap-1 font-bold text-foreground">
+                                  <User className="w-3.5 h-3.5 text-primary" /> {usuario.nome}
+                                </span>
+                                {usuario.cargo && <span className="text-foreground/80">• {usuario.cargo}</span>}
+                                {usuario.email && usuario.email !== 'N/A' && <span className="text-muted-foreground">• {usuario.email}</span>}
+                                {usuario.escola && <span className="text-muted-foreground">• {usuario.escola}</span>}
+                              </div>
+                            ) : log.user_id ? (
                               <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap pt-1 border-t border-borderCustom/40">
                                 <span className="flex items-center gap-1 font-medium text-foreground">
-                                  <User className="w-3 h-3 text-primary" /> {usuario.nome}
+                                  <User className="w-3.5 h-3.5 text-primary" /> ID Usuário: <code className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">{log.user_id}</code>
                                 </span>
-                                {usuario.cargo && <span>• {usuario.cargo}</span>}
-                                {usuario.escola && <span>• {usuario.escola}</span>}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap pt-1 border-t border-borderCustom/40">
+                                <span className="flex items-center gap-1 text-muted-foreground italic">
+                                  <User className="w-3.5 h-3.5" /> Sessão Anônima / Não Autenticada
+                                </span>
                               </div>
                             )}
                           </div>
@@ -638,11 +651,17 @@ export default function AdminReportsPage() {
 
                   <div className="p-3 bg-muted/50 border border-borderCustom rounded-xl space-y-1">
                     <span className="text-[10px] font-bold uppercase text-muted-foreground">Usuário Responsável</span>
-                    <p className="font-semibold text-foreground">
-                      {selectedLog.metadata?.usuario?.nome || 'Não autenticado'}
+                    <p className="font-bold text-foreground">
+                      {selectedLog.metadata?.usuario?.nome || (selectedLog.user_id ? `ID: ${selectedLog.user_id}` : 'Sessão Anônima')}
                     </p>
                     {selectedLog.metadata?.usuario?.cargo && (
-                      <p className="text-[11px] text-muted-foreground">{selectedLog.metadata.usuario.cargo}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">{selectedLog.metadata.usuario.cargo}</p>
+                    )}
+                    {selectedLog.metadata?.usuario?.email && selectedLog.metadata.usuario.email !== 'N/A' && (
+                      <p className="text-[11px] text-muted-foreground font-mono">{selectedLog.metadata.usuario.email}</p>
+                    )}
+                    {selectedLog.metadata?.usuario?.escola && (
+                      <p className="text-[11px] text-primary/80 font-medium">Escola: {selectedLog.metadata.usuario.escola}</p>
                     )}
                   </div>
 
