@@ -96,3 +96,10 @@ Sempre que for alterar o visual do sistema, consulte previamente o arquivo `desi
 
 Sempre que for criar, alterar ou verificar migrations do Supabase (`supabase/migrations/`), consulte e mantenha atualizado o arquivo `MIGRATIONS_MAP.md` na raiz do projeto, registrando a data, nome do arquivo, propósito e tabelas/funções modificadas.
 <!-- END:migrations-map-rule -->
+
+<!-- BEGIN:architecture-map-rule -->
+# Consulta da Arquitetura do Sistema
+
+Antes de criar novas rotas, refatorar módulos ou alterar fluxos estruturais de dados, consulte o arquivo `ARCHITECTURE.md` para respeitar a separação de camadas, responsabilidades de pastas e padrões de validação com Zod.
+<!-- END:architecture-map-rule -->
+

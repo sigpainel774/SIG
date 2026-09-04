@@ -35,6 +35,8 @@ import {
   QrCode,
   FileDiff,
   MapPinned,
+  GitFork,
+  Workflow,
   LucideIcon,
 } from 'lucide-react'
 
@@ -73,6 +75,8 @@ export const AlphaIconMap: Record<string, LucideIcon> = {
   QrCode,
   FileDiff,
   MapPinned,
+  GitFork,
+  Workflow,
 }
 
 interface AlphaIconProps {

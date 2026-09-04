@@ -21,6 +21,7 @@ import {
   CheckSquare,
   Flame,
   Zap,
+  GitFork,
 } from 'lucide-react'
 import { AlphaIcon } from '@/components/alpha/AlphaIcon'
 import { AlphaFuncao } from '@/components/alpha/AlphaSidebar'
@@ -109,9 +110,26 @@ export default function AlphaDashboardPage() {
     return 'produtividade'
   }
 
-  // Filtragem combinada por busca e categoria
+  // Filtragem combinada por busca e categoria (incluindo Flow Studio se não cadastrado no banco)
+  const funcoesComLocais = useMemo(() => {
+    const list = [...funcoes]
+    if (!list.some((f) => f.rota === '/alpha/flow-studio')) {
+      list.push({
+        id: 'flow-studio-local',
+        codigo: 'flow-studio',
+        nome: 'Alpha Flow Studio',
+        descricao: 'Modelagem visual de processos escolares, organogramas e esteiras administrativas.',
+        icone: 'GitFork',
+        rota: '/alpha/flow-studio',
+        ativo: true,
+        ordem: 99,
+      })
+    }
+    return list
+  }, [funcoes])
+
   const funcoesFiltradas = useMemo(() => {
-    return funcoes.filter((fn) => {
+    return funcoesComLocais.filter((fn) => {
       const matchBusca =
         busca.trim() === '' ||
         fn.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -123,13 +141,14 @@ export default function AlphaDashboardPage() {
       if (categoriaAtiva === 'todos') return true
       return categorizarFuncao(fn.codigo) === categoriaAtiva
     })
-  }, [funcoes, busca, categoriaAtiva])
+  }, [funcoesComLocais, busca, categoriaAtiva])
 
-  // Grade de Atalhos Rápidos no Topo (apenas módulos que estejam ativos no banco/cache)
+  // Grade de Atalhos Rápidos no Topo
   const quickShortcuts = useMemo(() => {
     const templates = [
       { label: 'Visitas.', href: '/alpha/visitas', icon: MapPinned, color: 'from-violet-600 to-indigo-600', code: 'visitas' },
       { label: 'Rotas', href: '/alpha/rotas-escolas', icon: Route, color: 'from-blue-600 to-cyan-600', code: 'rotas-escolas' },
+      { label: 'Fluxos', href: '/alpha/flow-studio', icon: GitFork, color: 'from-indigo-600 to-purple-600', code: 'flow-studio' },
       { label: 'Comprimir', href: '/alpha/compressor-imagens', icon: FileImage, color: 'from-emerald-600 to-teal-600', code: 'compressor-imagens' },
       { label: 'Converter', href: '/alpha/conversor-imagens', icon: ArrowLeftRight, color: 'from-amber-600 to-orange-600', code: 'conversor-imagens' },
       { label: 'PDFs', href: '/alpha/manipulador-pdf', icon: Files, color: 'from-rose-600 to-pink-600', code: 'manipulador_pdf' },
@@ -139,6 +158,7 @@ export default function AlphaDashboardPage() {
     ]
 
     return templates.filter((item) =>
+      item.href === '/alpha/flow-studio' ||
       funcoes.some(
         (fn) =>
           fn.ativo !== false &&
