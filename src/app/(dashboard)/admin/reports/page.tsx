@@ -88,12 +88,26 @@ export default function AdminReportsPage() {
   const [modalLogOpen, setModalLogOpen] = useState(false)
   const [logDetailTab, setLogDetailTab] = useState<'resumo' | 'trilha' | 'raw'>('resumo')
 
+  const getAuthHeaders = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+      return headers
+    } catch {
+      return { 'Content-Type': 'application/json' }
+    }
+  }
+
   const loadData = async () => {
     setBuscando(true)
+    const headers = await getAuthHeaders()
     if (activeTab === 'chamados') {
       setLoadingReports(true)
       try {
-        const res = await fetch('/api/admin/reports?type=chamados&limit=100')
+        const res = await fetch('/api/admin/reports?type=chamados&limit=100', { headers })
         const json = await res.json()
         if (res.ok && json.data) {
           setReports(json.data as BugReport[])
@@ -108,7 +122,7 @@ export default function AdminReportsPage() {
     } else {
       setLoadingLogs(true)
       try {
-        const res = await fetch('/api/admin/reports?type=logs&limit=100')
+        const res = await fetch('/api/admin/reports?type=logs&limit=100', { headers })
         const json = await res.json()
         if (res.ok && json.data) {
           setLogs(json.data as SystemLog[])
@@ -138,9 +152,10 @@ export default function AdminReportsPage() {
   ) => {
     setSalvandoStatus(true)
     try {
+      const headers = await getAuthHeaders()
       const res = await fetch('/api/admin/reports', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           type: 'chamado',
           id,
@@ -178,9 +193,10 @@ export default function AdminReportsPage() {
   // ============================
   const handleResolveLog = async (id: string, currentlyResolved: boolean) => {
     try {
+      const headers = await getAuthHeaders()
       const res = await fetch('/api/admin/reports', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           type: 'log',
           id,
