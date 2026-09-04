@@ -93,11 +93,13 @@ export default function AdminReportsPage() {
     if (activeTab === 'chamados') {
       setLoadingReports(true)
       try {
-        const { data, error } = await (supabase.from as any)('bug_reports')
-          .select('id, tipo, titulo, descricao, autor_nome, autor_email, escola, resposta_root, status, created_at')
-          .order('created_at', { ascending: false })
-
-        if (data && !error) setReports(data as BugReport[])
+        const res = await fetch('/api/admin/reports?type=chamados&limit=100')
+        const json = await res.json()
+        if (res.ok && json.data) {
+          setReports(json.data as BugReport[])
+        } else {
+          toast.error(json.error || 'Erro ao carregar relatos')
+        }
       } catch (err) {
         console.warn('Erro ao carregar reports do banco:', err)
       } finally {
@@ -106,12 +108,13 @@ export default function AdminReportsPage() {
     } else {
       setLoadingLogs(true)
       try {
-        const { data, error } = await (supabase.from as any)('system_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100)
-
-        if (data && !error) setLogs(data as SystemLog[])
+        const res = await fetch('/api/admin/reports?type=logs&limit=100')
+        const json = await res.json()
+        if (res.ok && json.data) {
+          setLogs(json.data as SystemLog[])
+        } else {
+          toast.error(json.error || 'Erro ao carregar logs automáticos')
+        }
       } catch (err) {
         console.warn('Erro ao carregar system logs:', err)
       } finally {
@@ -135,15 +138,18 @@ export default function AdminReportsPage() {
   ) => {
     setSalvandoStatus(true)
     try {
-      const { error } = await (supabase.from as any)('bug_reports')
-        .update({ 
+      const res = await fetch('/api/admin/reports', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'chamado',
+          id,
           status: novoStatus,
-          resposta_root: resposta !== undefined ? resposta : undefined,
-          updated_at: new Date().toISOString()
+          resposta_root: resposta !== undefined ? resposta : undefined
         })
-        .eq('id', id)
-
-      if (error) throw error
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro ao atualizar chamado')
 
       setReports(prev => prev.map(r => r.id === id ? { ...r, status: novoStatus, resposta_root: resposta !== undefined ? resposta : r.resposta_root } : r))
       if (novoStatus === 'resolvido') toast.success('Não conformidade marcada como resolvida!')
@@ -172,16 +178,22 @@ export default function AdminReportsPage() {
   // ============================
   const handleResolveLog = async (id: string, currentlyResolved: boolean) => {
     try {
-      const { error } = await (supabase.from as any)('system_logs')
-        .update({ resolved: !currentlyResolved })
-        .eq('id', id)
-      
-      if (error) throw error
+      const res = await fetch('/api/admin/reports', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'log',
+          id,
+          resolved: !currentlyResolved
+        })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Falha ao atualizar log')
       
       setLogs(prev => prev.map(l => l.id === id ? { ...l, resolved: !currentlyResolved } : l))
       toast.success(currentlyResolved ? 'Log reaberto.' : 'Log marcado como resolvido.')
-    } catch (err) {
-      toast.error('Falha ao atualizar log.')
+    } catch (err: any) {
+      toast.error(err.message || 'Falha ao atualizar log.')
     }
   }
 
