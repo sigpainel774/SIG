@@ -103,3 +103,10 @@ Sempre que for criar, alterar ou verificar migrations do Supabase (`supabase/mig
 Antes de criar novas rotas, refatorar módulos ou alterar fluxos estruturais de dados, consulte o arquivo `ARCHITECTURE.md` para respeitar a separação de camadas, responsabilidades de pastas e padrões de validação com Zod.
 <!-- END:architecture-map-rule -->
 
+<!-- BEGIN:dependencies-inventory-rule -->
+# Consulta do Inventário de Ferramentas e Dependências
+
+Antes de iniciar qualquer tarefa ou considerar a instalação de novos pacotes, consulte o arquivo `DEPENDENCIES_AND_TOOLS.md` para conhecer todos os MCP servers ativos, bibliotecas de UI, mapas, gráficos, cálculos e utilitários já disponíveis no projeto.
+<!-- END:dependencies-inventory-rule -->
+
+

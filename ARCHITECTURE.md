@@ -101,6 +101,7 @@ SIG/
 │   └── migrations/             # Migrations SQL versionadas (ver MIGRATIONS_MAP.md)
 ├── AGENTS.md                   # Diretrizes estritas para agentes de IA
 ├── DESIGN_PREFERENCES.md       # Diretrizes visuais e tokens do Design System
+├── DEPENDENCIES_AND_TOOLS.md   # Inventário completo de MCPs, CLI e bibliotecas
 ├── MIGRATIONS_MAP.md           # Mapeamento detalhado de banco e RPCs
 └── ROADMAP.md                  # Status operacional e planejamento de entregas
 ```

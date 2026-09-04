@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
@@ -96,6 +96,36 @@ export function AlphaSidebar() {
       isMounted = false
     }
   }, [])
+
+  // Garante que novos módulos apareçam na sidebar mesmo antes do sync no banco
+  const funcoesExibidas = useMemo(() => {
+    const list = [...funcoes]
+    if (!list.some((f) => f.rota === '/alpha/flow-studio')) {
+      list.push({
+        id: 'flow-studio-local',
+        codigo: 'flow-studio',
+        nome: 'Alpha Flow Studio',
+        descricao: 'Modelagem visual de processos escolares, organogramas e esteiras.',
+        icone: 'GitFork',
+        rota: '/alpha/flow-studio',
+        ativo: true,
+        ordem: 8,
+      })
+    }
+    if (!list.some((f) => f.rota === '/alpha/carimbador-pdf')) {
+      list.push({
+        id: 'carimbador-pdf-local',
+        codigo: 'carimbador_pdf',
+        nome: 'Carimbador & Marca d’Água',
+        descricao: 'Insira carimbos digitais, numeração e marcas d’água em lote.',
+        icone: 'Stamp',
+        rota: '/alpha/carimbador-pdf',
+        ativo: true,
+        ordem: 6,
+      })
+    }
+    return list.sort((a, b) => a.ordem - b.ordem)
+  }, [funcoes])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -201,7 +231,7 @@ export function AlphaSidebar() {
           <div>
             <div className="flex items-center justify-between px-3 mb-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/75">
-                Funções Ativas ({funcoes.length})
+                Funções Ativas ({funcoesExibidas.length})
               </span>
               <Sparkles className="w-3 h-3 text-sidebar-primary" />
             </div>
@@ -211,7 +241,7 @@ export function AlphaSidebar() {
                 <Loader2 className="w-4 h-4 animate-spin text-sidebar-primary" />
                 Carregando funções...
               </div>
-            ) : funcoes.length === 0 ? (
+            ) : funcoesExibidas.length === 0 ? (
               <div className="px-3 py-4 text-center border border-dashed border-sidebar-border rounded-xl bg-sidebar-accent/30">
                 <p className="text-xs text-muted-foreground">
                   Nenhuma função ativa no momento.
@@ -219,7 +249,7 @@ export function AlphaSidebar() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {funcoes.map((fn) => {
+                {funcoesExibidas.map((fn) => {
                   const isActive = pathname.startsWith(fn.rota)
                   return (
                     <Link

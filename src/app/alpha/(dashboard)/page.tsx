@@ -110,7 +110,7 @@ export default function AlphaDashboardPage() {
     return 'produtividade'
   }
 
-  // Filtragem combinada por busca e categoria (incluindo Flow Studio se não cadastrado no banco)
+  // Filtragem combinada por busca e categoria (incluindo Flow Studio e Carimbador de PDF)
   const funcoesComLocais = useMemo(() => {
     const list = [...funcoes]
     if (!list.some((f) => f.rota === '/alpha/flow-studio')) {
@@ -122,7 +122,19 @@ export default function AlphaDashboardPage() {
         icone: 'GitFork',
         rota: '/alpha/flow-studio',
         ativo: true,
-        ordem: 99,
+        ordem: 8,
+      })
+    }
+    if (!list.some((f) => f.rota === '/alpha/carimbador-pdf')) {
+      list.push({
+        id: 'carimbador-pdf-local',
+        codigo: 'carimbador_pdf',
+        nome: 'Carimbador & Marca d’Água',
+        descricao: 'Insira carimbos digitais, numeração de páginas e marcas d’água em lote em documentos PDF.',
+        icone: 'Stamp',
+        rota: '/alpha/carimbador-pdf',
+        ativo: true,
+        ordem: 6,
       })
     }
     return list
@@ -149,16 +161,17 @@ export default function AlphaDashboardPage() {
       { label: 'Visitas.', href: '/alpha/visitas', icon: MapPinned, color: 'from-violet-600 to-indigo-600', code: 'visitas' },
       { label: 'Rotas', href: '/alpha/rotas-escolas', icon: Route, color: 'from-blue-600 to-cyan-600', code: 'rotas-escolas' },
       { label: 'Fluxos', href: '/alpha/flow-studio', icon: GitFork, color: 'from-indigo-600 to-purple-600', code: 'flow-studio' },
+      { label: 'Carimbos', href: '/alpha/carimbador-pdf', icon: Stamp, color: 'from-fuchsia-600 to-purple-600', code: 'carimbador_pdf' },
       { label: 'Comprimir', href: '/alpha/compressor-imagens', icon: FileImage, color: 'from-emerald-600 to-teal-600', code: 'compressor-imagens' },
       { label: 'Converter', href: '/alpha/conversor-imagens', icon: ArrowLeftRight, color: 'from-amber-600 to-orange-600', code: 'conversor-imagens' },
       { label: 'PDFs', href: '/alpha/manipulador-pdf', icon: Files, color: 'from-rose-600 to-pink-600', code: 'manipulador_pdf' },
-      { label: 'Carimbos', href: '/alpha/carimbador-pdf', icon: Stamp, color: 'from-fuchsia-600 to-purple-600', code: 'carimbador_pdf' },
       { label: 'Planilhas', href: '/alpha/conversor-planilhas', icon: Table, color: 'from-lime-600 to-emerald-600', code: 'conversor_planilhas' },
       { label: 'CPFs', href: '/alpha/validador-dados', icon: CheckSquare, color: 'from-sky-600 to-blue-600', code: 'validador_dados' },
     ]
 
     return templates.filter((item) =>
       item.href === '/alpha/flow-studio' ||
+      item.href === '/alpha/carimbador-pdf' ||
       funcoes.some(
         (fn) =>
           fn.ativo !== false &&
@@ -299,7 +312,7 @@ export default function AlphaDashboardPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'todos', label: 'Todas as Funções', count: funcoes.length },
+            { id: 'todos', label: 'Todas as Funções', count: funcoesComLocais.length },
             { id: 'geo', label: 'Geolocalização & Rotas' },
             { id: 'pdf', label: 'Documentos & PDFs' },
             { id: 'imagens', label: 'Imagens & Mídia' },
