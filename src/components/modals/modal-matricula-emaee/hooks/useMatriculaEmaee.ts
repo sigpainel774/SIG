@@ -1202,9 +1202,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const handleSubmit = async (e: React.FormEvent) => {
     if (e) {
       e.preventDefault()
-      if (e.target && e.currentTarget && e.target !== e.currentTarget) {
-        return
-      }
+
     }
     
     // Validação: ou selecionou aluno ou digitou nome manual
@@ -1765,7 +1763,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
         responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
         ...deficiencias,
-        transtorno_outros: Boolean(outrosTranstornos.trim()) || deficiencias.transtorno_outros,
+        transtorno_outros: Boolean(outrosTranstornos?.trim()) || deficiencias.transtorno_outros,
         transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
         def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
         condicoes_saude: condicoesSaude,
