@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Button } from '@/components/ui/button'
-import { Save, Printer, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Save, Printer, RotateCcw, Sparkles, CheckCircle2, X } from 'lucide-react'
 import { ModalMatriculaEmaeeProps } from './types'
 import { MatriculaEmaeeProvider, useMatriculaEmaeeContext } from './context/MatriculaEmaeeContext'
 
@@ -27,7 +27,10 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     handleSubmit, 
     handleResetForm,
     handleDiscardDraft,
-    draftRestoredTime,
+    handleApplyDraft,
+    savedDraft,
+    draftSavedAt,
+    draftApplied,
     lastSavedDraftAt,
     alunoSelecionado, 
     nomeCompleto, 
@@ -130,13 +133,45 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
               {isEditMode ? 'Editar ficha de matrícula para AEE' : 'Ficha de matrícula para AEE'}
             </h1>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            {!isEditMode && lastSavedDraftAt && (
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {!isEditMode && savedDraft && !draftApplied && (
+              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 rounded-xl px-2 py-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleApplyDraft}
+                  className="h-6 px-2 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-100 hover:bg-amber-500/20 rounded-lg gap-1.5 cursor-pointer"
+                  title={`Rascunho gravado em ${draftSavedAt || 'sessão anterior'}`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  Utilizar rascunho
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="text-amber-800/70 hover:text-destructive dark:text-amber-400/70 dark:hover:text-destructive p-0.5 rounded transition-colors cursor-pointer"
+                  title="Descartar rascunho salvo"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {!isEditMode && draftApplied && (
+              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                Rascunho em uso
+              </span>
+            )}
+
+            {!isEditMode && lastSavedDraftAt && !savedDraft && !draftApplied && (
               <span className="sm:hidden flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                 Rascunho {lastSavedDraftAt}
               </span>
             )}
+
             <span className={`px-3 py-1 border rounded-full text-xs font-bold ${
               isEditMode 
                 ? 'border-blue-600/30 text-blue-600 bg-blue-500/10 dark:border-[#3ea6ff]/30 dark:text-[#3ea6ff] dark:bg-[#3ea6ff]/10' 
@@ -146,28 +181,6 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
             </span>
           </div>
         </div>
-
-        {/* Banner de Rascunho Recuperado Automaticamente */}
-        {draftRestoredTime && !isEditMode && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/10 dark:border-amber-500/25 rounded-2xl text-xs text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-              <div>
-                <span className="font-bold">Rascunho recuperado automaticamente:</span>{' '}
-                <span>As informações digitadas anteriormente foram restauradas ({draftRestoredTime}).</span>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleDiscardDraft}
-              className="self-end sm:self-auto h-7 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 hover:text-amber-950 dark:hover:text-amber-100 rounded-xl px-2.5"
-            >
-              Descartar rascunho
-            </Button>
-          </div>
-        )}
 
         {/* Stepper de 4 Passos */}
         <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2 no-print" aria-label="Etapas da ficha AEE">

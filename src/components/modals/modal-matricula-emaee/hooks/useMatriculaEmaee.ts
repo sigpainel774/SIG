@@ -288,7 +288,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   // SISTEMA DE RASCUNHO AUTOMÁTICO (AUTO-SAVE)
   // ==========================================
   const draftKey = `sig_draft_emaee_matricula_${funcionario?.id || 'default'}`
-  const [draftRestoredTime, setDraftRestoredTime] = useState<string | null>(null)
+  const [savedDraft, setSavedDraft] = useState<any | null>(null)
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
+  const [draftApplied, setDraftApplied] = useState(false)
   const [lastSavedDraftAt, setLastSavedDraftAt] = useState<string | null>(null)
   const isRestoringDraftRef = useRef(false)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -298,7 +300,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       if (typeof window !== 'undefined') {
         localStorage.removeItem(draftKey)
       }
-      setDraftRestoredTime(null)
+      setSavedDraft(null)
+      setDraftSavedAt(null)
+      setDraftApplied(false)
       setLastSavedDraftAt(null)
     } catch (e) {
       console.warn('[useMatriculaEmaee] Erro ao limpar rascunho local:', e)
@@ -394,9 +398,86 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setVinculosRemovidos([])
   }
 
+  const handleApplyDraft = () => {
+    if (!savedDraft) return
+    isRestoringDraftRef.current = true
+
+    if (savedDraft.alunoSelecionado) {
+      setAlunoSelecionado(savedDraft.alunoSelecionado)
+      setIsManualAluno(false)
+      setSearchTerm(savedDraft.searchTerm || savedDraft.alunoSelecionado.nome || '')
+    } else {
+      setAlunoSelecionado(null)
+      setIsManualAluno(savedDraft.isManualAluno ?? true)
+      setSearchTerm(savedDraft.searchTerm || '')
+    }
+
+    setNomeCompleto(savedDraft.nomeCompleto || '')
+    setDataNascimento(savedDraft.dataNascimento || '')
+    setCpf(savedDraft.cpf || '')
+    setIdentificacaoCenso(savedDraft.identificacaoCenso || '')
+    setRg(savedDraft.rg || '')
+    setNis(savedDraft.nis || '')
+    setCartaoSus(savedDraft.cartaoSus || '')
+    setCertidaoNascimento(savedDraft.certidaoNascimento || '')
+    setCorRaca(savedDraft.corRaca || '')
+    setSexo(savedDraft.sexo || '')
+    setCidadeNascimento(savedDraft.cidadeNascimento || '')
+    setEstadoNascimento(savedDraft.estadoNascimento || 'BA')
+    setNomeMae(savedDraft.nomeMae || '')
+    setProfissaoMae(savedDraft.profissaoMae || '')
+    setNomePai(savedDraft.nomePai || '')
+    setProfissaoPai(savedDraft.profissaoPai || '')
+    setTipoResponsavel(savedDraft.tipoResponsavel || 'MAE')
+    setResponsavelOutroNome(savedDraft.responsavelOutroNome || '')
+    setResponsavelOutroParentesco(savedDraft.responsavelOutroParentesco || '')
+    setResponsavelOutroCpf(savedDraft.responsavelOutroCpf || '')
+    setCep(savedDraft.cep || '')
+    setRua(savedDraft.rua || '')
+    setNumero(savedDraft.numero || '')
+    setBairro(savedDraft.bairro || '')
+    setCidadeEndereco(savedDraft.cidadeEndereco || 'Sapeaçu')
+    setUfEndereco(savedDraft.ufEndereco || 'BA')
+    setEndereco(savedDraft.endereco || '')
+    setLatitude(savedDraft.latitude ?? -12.7299932)
+    setLongitude(savedDraft.longitude ?? -39.1858195)
+    setZonaResidencial(savedDraft.zonaResidencial || 'Urbana')
+    setContatoEmergencia(savedDraft.contatoEmergencia || '')
+    setTelefoneEmergencia(savedDraft.telefoneEmergencia || '')
+    if (savedDraft.escolaAtendimentoId) setEscolaAtendimentoId(savedDraft.escolaAtendimentoId)
+    setLocalizacaoAtendimento(savedDraft.localizacaoAtendimento || 'Urbana')
+    setDataMatricula(savedDraft.dataMatricula || getHojeBrasilia())
+    setTurnoAtendimento(savedDraft.turnoAtendimento || 'Matutino')
+    setStatusMatricula(savedDraft.statusMatricula || 'FILA_ESPERA')
+    setEscolaOrigemForaRede(Boolean(savedDraft.escolaOrigemForaRede))
+    setEscolaOrigemNome(savedDraft.escolaOrigemNome || '')
+    setEscolaOrigemMunicipio(savedDraft.escolaOrigemMunicipio || '')
+    setEscolaOrigemUf(savedDraft.escolaOrigemUf || 'BA')
+    setEscolaRegularId(savedDraft.escolaRegularId || '')
+    setAnoEscolarizacao(savedDraft.anoEscolarizacao || '')
+    setTurnoRegular(savedDraft.turnoRegular || '')
+    setTurmaRegular(savedDraft.turmaRegular || '')
+    setProfessorRegular(savedDraft.professorRegular || '')
+    setGestorRegular(savedDraft.gestorRegular || '')
+    setCidCodigo(savedDraft.cidCodigo || '')
+    setOutrosTranstornos(savedDraft.outrosTranstornos || '')
+    setObservacoes(savedDraft.observacoes || '')
+    if (savedDraft.deficiencias) setDeficiencias(savedDraft.deficiencias)
+    if (savedDraft.condicoesSaude) setCondicoesSaude(savedDraft.condicoesSaude)
+    if (Array.isArray(savedDraft.vinculosAEE)) setVinculosAEE(savedDraft.vinculosAEE)
+
+    setDraftApplied(true)
+    setSavedDraft(null)
+    toast.success('Rascunho aplicado no formulário!')
+    setTimeout(() => {
+      isRestoringDraftRef.current = false
+    }, 500)
+  }
+
   const handleDiscardDraft = () => {
-    handleResetForm(true)
-    toast.info('Rascunho descartado com sucesso.')
+    clearDraft()
+    handleResetForm(false)
+    toast.info('Rascunho descartado.')
   }
 
   // Sincronizar dados quando o modal for ABERTO ou quando a matrícula a editar mudar
@@ -614,8 +695,10 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         })()
       }
     } else {
-      // Tentar restaurar rascunho salvo anteriormente
-      let draftRestored = false
+      // Modo Nova Matrícula: SEMPRE inicia limpo e verifica se há rascunho prévio disponível
+      handleResetForm(false)
+      setDraftApplied(false)
+
       try {
         if (typeof window !== 'undefined') {
           const rawDraft = localStorage.getItem(draftKey)
@@ -633,90 +716,24 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             )
 
             if (hasDraftContent) {
-              isRestoringDraftRef.current = true
-              if (draft.alunoSelecionado) {
-                setAlunoSelecionado(draft.alunoSelecionado)
-                setIsManualAluno(false)
-                setSearchTerm(draft.searchTerm || draft.alunoSelecionado.nome || '')
-              } else {
-                setAlunoSelecionado(null)
-                setIsManualAluno(draft.isManualAluno ?? true)
-                setSearchTerm(draft.searchTerm || '')
-              }
-
-              setNomeCompleto(draft.nomeCompleto || '')
-              setDataNascimento(draft.dataNascimento || '')
-              setCpf(draft.cpf || '')
-              setIdentificacaoCenso(draft.identificacaoCenso || '')
-              setRg(draft.rg || '')
-              setNis(draft.nis || '')
-              setCartaoSus(draft.cartaoSus || '')
-              setCertidaoNascimento(draft.certidaoNascimento || '')
-              setCorRaca(draft.corRaca || '')
-              setSexo(draft.sexo || '')
-              setCidadeNascimento(draft.cidadeNascimento || '')
-              setEstadoNascimento(draft.estadoNascimento || 'BA')
-              setNomeMae(draft.nomeMae || '')
-              setProfissaoMae(draft.profissaoMae || '')
-              setNomePai(draft.nomePai || '')
-              setProfissaoPai(draft.profissaoPai || '')
-              setTipoResponsavel(draft.tipoResponsavel || 'MAE')
-              setResponsavelOutroNome(draft.responsavelOutroNome || '')
-              setResponsavelOutroParentesco(draft.responsavelOutroParentesco || '')
-              setResponsavelOutroCpf(draft.responsavelOutroCpf || '')
-              setCep(draft.cep || '')
-              setRua(draft.rua || '')
-              setNumero(draft.numero || '')
-              setBairro(draft.bairro || '')
-              setCidadeEndereco(draft.cidadeEndereco || 'Sapeaçu')
-              setUfEndereco(draft.ufEndereco || 'BA')
-              setEndereco(draft.endereco || '')
-              setLatitude(draft.latitude ?? -12.7299932)
-              setLongitude(draft.longitude ?? -39.1858195)
-              setZonaResidencial(draft.zonaResidencial || 'Urbana')
-              setContatoEmergencia(draft.contatoEmergencia || '')
-              setTelefoneEmergencia(draft.telefoneEmergencia || '')
-              if (draft.escolaAtendimentoId) setEscolaAtendimentoId(draft.escolaAtendimentoId)
-              setLocalizacaoAtendimento(draft.localizacaoAtendimento || 'Urbana')
-              setDataMatricula(draft.dataMatricula || getHojeBrasilia())
-              setTurnoAtendimento(draft.turnoAtendimento || 'Matutino')
-              setStatusMatricula(draft.statusMatricula || 'FILA_ESPERA')
-              setEscolaOrigemForaRede(Boolean(draft.escolaOrigemForaRede))
-              setEscolaOrigemNome(draft.escolaOrigemNome || '')
-              setEscolaOrigemMunicipio(draft.escolaOrigemMunicipio || '')
-              setEscolaOrigemUf(draft.escolaOrigemUf || 'BA')
-              setEscolaRegularId(draft.escolaRegularId || '')
-              setAnoEscolarizacao(draft.anoEscolarizacao || '')
-              setTurnoRegular(draft.turnoRegular || '')
-              setTurmaRegular(draft.turmaRegular || '')
-              setProfessorRegular(draft.professorRegular || '')
-              setGestorRegular(draft.gestorRegular || '')
-              setCidCodigo(draft.cidCodigo || '')
-              setOutrosTranstornos(draft.outrosTranstornos || '')
-              setObservacoes(draft.observacoes || '')
-              if (draft.deficiencias) setDeficiencias(draft.deficiencias)
-              if (draft.condicoesSaude) setCondicoesSaude(draft.condicoesSaude)
-              if (Array.isArray(draft.vinculosAEE)) setVinculosAEE(draft.vinculosAEE)
-
+              setSavedDraft(draft)
               const timeStr = draft.savedAt
                 ? new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date(draft.savedAt))
-                : 'recentemente'
-              setDraftRestoredTime(timeStr)
-              setLastSavedDraftAt(timeStr)
-              draftRestored = true
-              setTimeout(() => {
-                isRestoringDraftRef.current = false
-              }, 500)
+                : 'sessão anterior'
+              setDraftSavedAt(timeStr)
+            } else {
+              setSavedDraft(null)
+              setDraftSavedAt(null)
             }
+          } else {
+            setSavedDraft(null)
+            setDraftSavedAt(null)
           }
         }
       } catch (err) {
-        console.warn('[useMatriculaEmaee] Falha ao ler rascunho do localStorage:', err)
-      }
-
-      if (!draftRestored) {
-        // Reset limpo inicial para Nova Matrícula
-        handleResetForm(false)
+        console.warn('[useMatriculaEmaee] Falha ao verificar rascunho no localStorage:', err)
+        setSavedDraft(null)
+        setDraftSavedAt(null)
       }
     }
   }, [isOpen, props.matriculaEditar?.id])
@@ -1852,8 +1869,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setSearchTerm,
 
     // Rascunho Automático (Auto-Save)
-    draftRestoredTime,
+    savedDraft,
+    draftSavedAt,
+    draftApplied,
     lastSavedDraftAt,
+    handleApplyDraft,
     handleDiscardDraft,
     clearDraft,
 
