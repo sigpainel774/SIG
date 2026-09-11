@@ -19,6 +19,10 @@ const DEBOUNCE_MS = 10000 // 10 segundos
 // Prevenção de Loop Infinito (ES-1)
 let isLogging = false
 
+// Circuit Breaker contra tempestade de erros quando o banco estiver indisponível
+let circuitBreakerUntil = 0
+const CIRCUIT_BREAKER_COOLDOWN_MS = 30000 // 30 segundos de pausa se o banco falhar
+
 // Sanitização de dados sensíveis (ES-4)
 function sanitizeMetadata(metadata: any): any {
   if (!metadata) return metadata
@@ -54,14 +58,42 @@ function sanitizeMetadata(metadata: any): any {
   }
 }
 
+// Verifica se o erro é uma falha de infraestrutura/timeout do próprio Supabase
+function isInfraTimeoutError(message: string, errorCode?: string | null): boolean {
+  const text = `${message} ${errorCode || ''}`.toLowerCase()
+  return (
+    text.includes('pgrst002') ||
+    text.includes('statement timeout') ||
+    text.includes('upstream request timeout') ||
+    text.includes('service unavailable') ||
+    text.includes('gateway timeout') ||
+    text.includes('failed to fetch') ||
+    text.includes('networkerror') ||
+    errorCode === '503' ||
+    errorCode === '504' ||
+    errorCode === '57014'
+  )
+}
+
 export const sysLogger = {
   log: async (payload: LogPayload) => {
     if (isLogging) return // Previne loop infinito (ES-1)
     
+    const now = Date.now()
+    if (now < circuitBreakerUntil) {
+      // Circuit breaker ativo: banco inacessível recentemente, evita sobrecarga
+      return
+    }
+
+    // Se o próprio erro for de indisponibilidade/timeout do banco, não tente gravar no banco
+    if (isInfraTimeoutError(payload.message, payload.error_code)) {
+      console.warn('[sysLogger] Supabase offline/timeout detectado, suprimindo insert de log:', payload.message)
+      return
+    }
+
     // Hash simples para debounce
     const logHash = `${payload.context}_${payload.message}_${payload.error_code || ''}`
     const lastLogTime = logCache.get(logHash)
-    const now = Date.now()
     
     if (lastLogTime && (now - lastLogTime < DEBOUNCE_MS)) {
       return // Ignora se o mesmo erro aconteceu recentemente (ES-2)
@@ -113,9 +145,11 @@ export const sysLogger = {
         metadata: safeMetadata
       })
     } catch (err) {
+      // Ativa o circuit breaker por 30s para evitar flood em banco indisponível
+      circuitBreakerUntil = Date.now() + CIRCUIT_BREAKER_COOLDOWN_MS
       // Se falhar silenciosamente, ignoramos para não derrubar o frontend
       // Mas logamos nativamente sem passar pelo logger para evitar loops
-      console.warn('Failed to save to system_logs', err)
+      console.warn('Failed to save to system_logs (circuit breaker ativado):', err)
     } finally {
       isLogging = false
     }

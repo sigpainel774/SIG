@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 
 const LOCAL_STORAGE_KEY = 'sig_pwa_version'
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutos de cache em memória para evitar sobrecarga no banco
+let memoryConfigCache: { data: any; timestamp: number } | null = null
 
 export interface PwaUpdateInfo {
   showUpdateModal: boolean
@@ -31,11 +33,20 @@ export function usePwaUpdateWatcher(): PwaUpdateInfo {
 
   const checkVersion = useCallback(async () => {
     try {
-      const { data, error } = await (supabase.from('system_config' as any) as any)
-        .select('chave, valor, updated_at, updated_by, funcionarios(nome)')
-        .in('chave', ['pwa_version', 'pwa_update_message', 'pwa_stagger_seconds'])
+      const now = Date.now()
+      let data = memoryConfigCache && (now - memoryConfigCache.timestamp < CACHE_TTL_MS)
+        ? memoryConfigCache.data
+        : null
 
-      if (error || !data || !isMounted.current) return
+      if (!data) {
+        const { data: remoteData, error } = await (supabase.from('system_config' as any) as any)
+          .select('chave, valor, updated_at, updated_by, funcionarios(nome)')
+          .in('chave', ['pwa_version', 'pwa_update_message', 'pwa_stagger_seconds'])
+
+        if (error || !remoteData || !isMounted.current) return
+        data = remoteData
+        memoryConfigCache = { data: remoteData, timestamp: now }
+      }
 
       // Prevenção de loop de rebaixamento de versão: se a query retornou vazia
       // (ex: não autenticado no login e bloqueado por RLS), abortar a checagem.

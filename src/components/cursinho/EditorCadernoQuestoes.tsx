@@ -26,6 +26,8 @@ interface EditorCadernoQuestoesProps {
   qtdQuestoes?: number
 }
 
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
+
 /**
  * Converte o texto (seja Markdown ou HTML rico)
  * para HTML seguro pronto para renderização na pré-visualização e impressão em 2 colunas.
@@ -55,7 +57,7 @@ export function formatarTextoQuestoesParaHtml(rawText: string): string {
     text = text.split('\n').join('<br/>')
   }
 
-  return text
+  return sanitizeHtml(text)
 }
 
 export function EditorCadernoQuestoes({

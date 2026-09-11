@@ -18,7 +18,6 @@ import {
   ShieldAlert, 
   Calendar, 
   ChevronRight, 
-  Sparkles, 
   Activity, 
   FileText, 
   CheckCircle2, 
@@ -605,8 +604,8 @@ export default function RelatorioProdutividadeSecretarios({ selectedEscola: prop
       {/* Barra Superior com Controles de Exportação & Impressão */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-border">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> Gestão Macro de Pessoal
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">
+            Gestão Macro de Pessoal
           </span>
           <h2 className="text-xl font-bold text-foreground mt-0.5 flex items-center gap-2">
             <Award className="w-5 h-5 text-primary" />

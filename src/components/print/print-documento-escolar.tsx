@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import QRCode from 'qrcode'
 import { toast } from 'sonner'
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
 
 interface PrintDocumentoProps {
   aluno?: any
@@ -217,7 +218,7 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
           </div>
           <div
             className="oficio-print-body text-justify text-sm text-gray-900 leading-relaxed pt-1"
-            dangerouslySetInnerHTML={{ __html: htmlBody }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlBody) }}
           />
         </div>
       )
