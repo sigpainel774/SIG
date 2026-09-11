@@ -107,7 +107,7 @@ export function AlunosList({
                     fallback={aluno.nome.substring(0, 2).toUpperCase()}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
-                    <ZoomIn className="w-4 h-4 text-white drop-shadow" />
+                    <ZoomIn className="w-4 h-4 text-primary-foreground drop-shadow" />
                   </div>
                 </div>
 
@@ -136,8 +136,8 @@ export function AlunosList({
             {/* ── Detalhes do Aluno ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm font-normal text-muted-foreground">
               {aluno.numero_matricula && (
-                <div className="flex items-center gap-1.5 truncate text-purple-400 font-semibold">
-                  <Hash className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <div className="flex items-center gap-1.5 truncate text-violet-600 dark:text-violet-400 font-semibold">
+                  <Hash className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
                   <span className="truncate">Matrícula: {aluno.numero_matricula}</span>
                 </div>
               )}

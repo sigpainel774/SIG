@@ -40,8 +40,8 @@ export function SecaoIdentificacao() {
   return (
     <div className="space-y-6 py-2">
       {/* 1. Identificação Básica */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <User className="w-4 h-4 text-highlight" />
           Identificação Básica do Estudante
         </div>
@@ -55,7 +55,7 @@ export function SecaoIdentificacao() {
                 onChange={(e) => setNome(e.target.value)} 
                 onBlur={() => setNome(formatNameTitleCase(nome))}
                 placeholder="Nome do Aluno" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
                 required
               />
             </div>
@@ -63,7 +63,7 @@ export function SecaoIdentificacao() {
               <Label className="text-xs text-muted-foreground font-medium">Número de Matrícula</Label>
               <Input 
                 value={alunoEditar?.numero_matricula || 'Gerado ao salvar'} 
-                className="h-8 bg-[#181818] text-muted-foreground border-borderCustom cursor-not-allowed font-mono text-center font-bold text-xs" 
+                className="h-8 bg-input text-muted-foreground border-border cursor-not-allowed font-mono text-center font-bold text-xs" 
                 disabled
               />
             </div>
@@ -76,7 +76,7 @@ export function SecaoIdentificacao() {
                 type="date" 
                 value={nascimento} 
                 onChange={(e) => setNascimento(e.target.value)} 
-                className="h-8 bg-[#181818] border-borderCustom text-xs text-foreground" 
+                className="h-8 bg-input border-border text-xs text-foreground" 
               />
             </div>
             <div className="space-y-1">
@@ -85,7 +85,7 @@ export function SecaoIdentificacao() {
                 value={censo} 
                 onChange={(e) => setCenso(e.target.value)} 
                 placeholder="87426482" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -94,7 +94,7 @@ export function SecaoIdentificacao() {
                 {cpf.trim().length > 0 && (
                   <span 
                     data-status={isCpfValid ? 'valid' : 'invalid'}
-                    className={`text-[10px] font-semibold ${isCpfValid ? 'cpf-valid text-emerald-400' : 'text-rose-400'}`}
+                    className={`text-[10px] font-semibold ${isCpfValid ? 'cpf-valid text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                   >
                     {isCpfValid ? '✓ Válido' : '✕ Inválido'}
                   </span>
@@ -104,7 +104,7 @@ export function SecaoIdentificacao() {
                 value={cpf} 
                 onChange={(e) => setCpf(e.target.value)} 
                 placeholder="000.000.000-00" 
-                className={`h-8 bg-[#181818] border-borderCustom text-xs ${
+                className={`h-8 bg-input border-border text-xs ${
                   cpf.trim().length > 0 && !isCpfValid ? 'border-rose-500/60 focus:border-rose-500' : ''
                 }`} 
               />
@@ -115,10 +115,10 @@ export function SecaoIdentificacao() {
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Estado Civil</Label>
               <Select value={estadoCivil} onValueChange={(val) => setEstadoCivil(val || 'Solteiro')}>
-                <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectTrigger className="h-8 bg-input border-border text-xs">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                   <SelectItem value="Solteiro">Solteiro</SelectItem>
                   <SelectItem value="Casado">Casado</SelectItem>
                   <SelectItem value="Não declarado">Não declarado</SelectItem>
@@ -131,16 +131,16 @@ export function SecaoIdentificacao() {
                 value={telefone} 
                 onChange={(e) => setTelefone(e.target.value)} 
                 placeholder="(75) 99999-0000" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Cor / Raça</Label>
               <Select value={corRaca} onValueChange={(val) => setCorRaca(val || '')}>
-                <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectTrigger className="h-8 bg-input border-border text-xs">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                   <SelectItem value="Branca">Branca</SelectItem>
                   <SelectItem value="Preta">Preta</SelectItem>
                   <SelectItem value="Parda">Parda</SelectItem>
@@ -153,10 +153,10 @@ export function SecaoIdentificacao() {
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Sexo</Label>
               <Select value={sexo} onValueChange={(val) => setSexo(val || '')}>
-                <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectTrigger className="h-8 bg-input border-border text-xs">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                   <SelectItem value="Masculino">Masculino</SelectItem>
                   <SelectItem value="Feminino">Feminino</SelectItem>
                   <SelectItem value="Outro">Outro</SelectItem>
@@ -168,8 +168,8 @@ export function SecaoIdentificacao() {
       </div>
 
       {/* 2. Documentos Pessoais */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <FileText className="w-4 h-4 text-highlight" />
           Documentos & Registro Civil
         </div>
@@ -182,7 +182,7 @@ export function SecaoIdentificacao() {
                 value={rg} 
                 onChange={(e) => setRg(e.target.value)} 
                 placeholder="0908272363" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -191,7 +191,7 @@ export function SecaoIdentificacao() {
                 value={nis} 
                 onChange={(e) => setNis(e.target.value)} 
                 placeholder="817873766358" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -200,7 +200,7 @@ export function SecaoIdentificacao() {
                 value={sus} 
                 onChange={(e) => setSus(e.target.value)} 
                 placeholder="43287492838" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
@@ -211,7 +211,7 @@ export function SecaoIdentificacao() {
               value={certidao} 
               onChange={(e) => setCertidao(e.target.value)} 
               placeholder="82882728929824415" 
-              className="h-8 bg-[#181818] border-borderCustom text-xs" 
+              className="h-8 bg-input border-border text-xs" 
             />
           </div>
 
@@ -221,7 +221,7 @@ export function SecaoIdentificacao() {
               <Input 
                 value={nacionalidade} 
                 onChange={(e) => setNacionalidade(e.target.value)} 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -231,7 +231,7 @@ export function SecaoIdentificacao() {
                 onChange={(e) => setCidadeNasc(e.target.value)} 
                 onBlur={() => setCidadeNasc(formatNameTitleCase(cidadeNasc))}
                 placeholder="Salvador" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -241,7 +241,7 @@ export function SecaoIdentificacao() {
                 maxLength={2}
                 onChange={(e) => setUfNasc(e.target.value.toUpperCase())} 
                 placeholder="BA" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
@@ -249,8 +249,8 @@ export function SecaoIdentificacao() {
       </div>
 
       {/* 3. Filiação e Contato */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <Users className="w-4 h-4 text-highlight" />
           Filiação & Contatos dos Responsáveis
         </div>
@@ -264,7 +264,7 @@ export function SecaoIdentificacao() {
                 onChange={(e) => setMae(e.target.value)} 
                 onBlur={() => setMae(formatNameTitleCase(mae))}
                 placeholder="Nome Completo da Mãe" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -273,7 +273,7 @@ export function SecaoIdentificacao() {
                 value={telMae} 
                 onChange={(e) => setTelMae(e.target.value)} 
                 placeholder="(75) 98237-4736" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
@@ -286,7 +286,7 @@ export function SecaoIdentificacao() {
                 onChange={(e) => setPai(e.target.value)} 
                 onBlur={() => setPai(formatNameTitleCase(pai))}
                 placeholder="Nome Completo do Pai" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -295,7 +295,7 @@ export function SecaoIdentificacao() {
                 value={telPai} 
                 onChange={(e) => setTelPai(e.target.value)} 
                 placeholder="(75) 98882-7645" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>

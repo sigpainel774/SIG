@@ -62,20 +62,20 @@ export function SecaoSaude() {
   return (
     <div className="space-y-6 py-2">
       {/* 1. Transporte Escolar e Vacinação */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <Bus className="w-4 h-4 text-highlight" />
           Transporte Escolar & Imunização
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-[#181818] p-3.5 rounded-xl border border-borderCustom">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-muted/40 dark:bg-[#181818] p-3.5 rounded-xl border border-border">
           <div className="flex items-center gap-3">
             <input 
               type="checkbox" 
               id="chkTransporte" 
               checked={transporte} 
               onChange={(e) => setTransporte(e.target.checked)}
-              className="w-4 h-4 accent-[#3ea6ff] rounded border-borderCustom cursor-pointer"
+              className="w-4 h-4 accent-primary rounded border-border cursor-pointer"
             />
             <label htmlFor="chkTransporte" className="text-xs font-semibold text-foreground cursor-pointer">
               Utiliza Transporte Escolar Público?
@@ -89,7 +89,7 @@ export function SecaoSaude() {
                 value={rotaTransporte} 
                 onChange={(e) => setRotaTransporte(e.target.value)} 
                 placeholder="Ex: Rota 02 - Zona Rural" 
-                className="mt-1 h-8 bg-[#141416] border-borderCustom text-xs" 
+                className="mt-1 h-8 bg-input border-border text-xs" 
               />
             </div>
           )}
@@ -99,10 +99,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Situação Vacinal Geral</Label>
             <Select value={situacaoVacinal} onValueChange={(val) => setSituacaoVacinal(val || 'Em dia')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Em dia">Em dia</SelectItem>
                 <SelectItem value="Atrasada">Atrasada</SelectItem>
                 <SelectItem value="Não Vacinado">Não Vacinado</SelectItem>
@@ -117,7 +117,7 @@ export function SecaoSaude() {
                 value={motivoNaoVacinacaoGeral} 
                 onChange={(e) => setMotivoNaoVacinacaoGeral(e.target.value)} 
                 placeholder="Opção da família / Recomendação médica" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           )}
@@ -125,8 +125,8 @@ export function SecaoSaude() {
       </div>
 
       {/* 2. Ficha de Saúde e Anamnese */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <HeartPulse className="w-4 h-4 text-highlight" />
           Ficha de Saúde & Anamnese Clínica
         </div>
@@ -135,10 +135,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Diabetes</Label>
             <Select value={diabete} onValueChange={(val) => setDiabete(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -148,10 +148,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Convulsões / Epilepsia</Label>
             <Select value={convulsoes} onValueChange={(val) => setConvulsoes(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -161,10 +161,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Asma / Bronquite</Label>
             <Select value={asma} onValueChange={(val) => setAsma(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -174,10 +174,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Infecções Recorrentes</Label>
             <Select value={infeccoes} onValueChange={(val) => setInfeccoes(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -187,10 +187,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Restrição para Exercícios Físicos</Label>
             <Select value={restricaoExercicio} onValueChange={(val) => setRestricaoExercicio(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -200,10 +200,10 @@ export function SecaoSaude() {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground font-medium">Teve COVID-19?</Label>
             <Select value={covid} onValueChange={(val) => setCovid(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -212,14 +212,14 @@ export function SecaoSaude() {
         </div>
 
         {covid === 'Sim' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-muted/40 dark:bg-[#181818] rounded-xl border border-border">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Quando teve COVID-19?</Label>
               <Input 
                 value={covidQuando} 
                 onChange={(e) => setCovidQuando(e.target.value)} 
                 placeholder="Ex: Ano de 2021" 
-                className="h-8 bg-[#141416] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -228,20 +228,20 @@ export function SecaoSaude() {
                 value={situacaoVacinalCovid} 
                 onChange={(e) => setSituacaoVacinalCovid(e.target.value)} 
                 placeholder="Ex: 2 doses tomadas" 
-                className="h-8 bg-[#141416] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-3 bg-[#181818] rounded-xl border border-borderCustom space-y-2">
+          <div className="p-3 bg-muted/40 dark:bg-[#181818] rounded-xl border border-border space-y-2">
             <Label className="text-xs font-semibold text-foreground">Alergia a Medicamentos?</Label>
             <Select value={alergiaMed} onValueChange={(val) => setAlergiaMed(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#141416] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -251,18 +251,18 @@ export function SecaoSaude() {
                 value={alergiaMedQuais} 
                 onChange={(e) => setAlergiaMedQuais(e.target.value)} 
                 placeholder="Quais medicamentos?" 
-                className="h-8 bg-[#141416] border-borderCustom text-xs mt-2" 
+                className="h-8 bg-input border-border text-xs mt-2" 
               />
             )}
           </div>
 
-          <div className="p-3 bg-[#181818] rounded-xl border border-borderCustom space-y-2">
+          <div className="p-3 bg-muted/40 dark:bg-[#181818] rounded-xl border border-border space-y-2">
             <Label className="text-xs font-semibold text-foreground">Restrição Alimentar / Intolerância?</Label>
             <Select value={restricaoAlimentar} onValueChange={(val) => setRestricaoAlimentar(val || 'Não')}>
-              <SelectTrigger className="h-8 bg-[#141416] border-borderCustom text-xs">
+              <SelectTrigger className="h-8 bg-input border-border text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+              <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                 <SelectItem value="Não">Não</SelectItem>
                 <SelectItem value="Sim">Sim</SelectItem>
               </SelectContent>
@@ -272,7 +272,7 @@ export function SecaoSaude() {
                 value={restricaoAlimentarQuais} 
                 onChange={(e) => setRestricaoAlimentarQuais(e.target.value)} 
                 placeholder="Quais alimentos / intolerâncias?" 
-                className="h-8 bg-[#141416] border-borderCustom text-xs mt-2" 
+                className="h-8 bg-input border-border text-xs mt-2" 
               />
             )}
           </div>
@@ -284,14 +284,14 @@ export function SecaoSaude() {
             value={restricoesSaude} 
             onChange={(e) => setRestricoesSaude(e.target.value)} 
             placeholder="Ex: Utiliza medicação contínua, prótese, etc." 
-            className="h-8 bg-[#181818] border-borderCustom text-xs" 
+            className="h-8 bg-input border-border text-xs" 
           />
         </div>
       </div>
 
       {/* 3. Necessidades Educacionais Especiais (NEE) */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-3">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <ShieldAlert className="w-4 h-4 text-highlight" />
           Necessidades Educacionais Especiais (NEE)
         </div>
@@ -299,10 +299,10 @@ export function SecaoSaude() {
         <div className="w-64 space-y-1">
           <Label className="text-xs text-muted-foreground font-medium">Possui NEE?</Label>
           <Select value={nee} onValueChange={(val) => setNee(val || 'Não')}>
-            <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+            <SelectTrigger className="h-8 bg-input border-border text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+            <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
               <SelectItem value="Não">Não</SelectItem>
               <SelectItem value="Sim">Sim, indicar quais</SelectItem>
             </SelectContent>
@@ -310,17 +310,17 @@ export function SecaoSaude() {
         </div>
 
         {nee !== 'Não' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-muted/40 dark:bg-[#181818] rounded-xl border border-border">
             {OPCOES_NEE.map((opcao) => (
               <label 
                 key={opcao}
-                className="flex items-center gap-2 p-2 bg-[#141416] border border-borderCustom rounded-lg text-xs cursor-pointer hover:border-highlight transition-colors text-zinc-300"
+                className="flex items-center gap-2 p-2 bg-card border border-border rounded-lg text-xs cursor-pointer hover:border-primary transition-colors text-foreground"
               >
                 <input 
                   type="checkbox" 
                   checked={neeSelecionadas.includes(opcao)}
                   onChange={() => toggleArrayItem(neeSelecionadas, opcao, setNeeSelecionadas)}
-                  className="accent-[#3ea6ff]"
+                  className="accent-primary"
                 />
                 <span className="truncate">{opcao}</span>
               </label>
@@ -330,8 +330,8 @@ export function SecaoSaude() {
       </div>
 
       {/* 4. Deficiências */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-3">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <Activity className="w-4 h-4 text-highlight" />
           Deficiências Físicas, Sensoriais ou Intelectuais
         </div>
@@ -339,10 +339,10 @@ export function SecaoSaude() {
         <div className="w-64 space-y-1">
           <Label className="text-xs text-muted-foreground font-medium">Possui Deficiência Diagnosticada?</Label>
           <Select value={deficiencia} onValueChange={(val) => setDeficiencia(val || 'Não')}>
-            <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+            <SelectTrigger className="h-8 bg-input border-border text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+            <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
               <SelectItem value="Não">Não</SelectItem>
               <SelectItem value="Sim">Sim, indicar quais</SelectItem>
             </SelectContent>
@@ -350,17 +350,17 @@ export function SecaoSaude() {
         </div>
 
         {deficiencia !== 'Não' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-[#181818] rounded-xl border border-borderCustom">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-muted/40 dark:bg-[#181818] rounded-xl border border-border">
             {OPCOES_DEFICIENCIA.map((opcao) => (
               <label 
                 key={opcao}
-                className="flex items-center gap-2 p-2 bg-[#141416] border border-borderCustom rounded-lg text-xs cursor-pointer hover:border-highlight transition-colors text-zinc-300"
+                className="flex items-center gap-2 p-2 bg-card border border-border rounded-lg text-xs cursor-pointer hover:border-primary transition-colors text-foreground"
               >
                 <input 
                   type="checkbox" 
                   checked={deficienciasSelecionadas.includes(opcao)}
                   onChange={() => toggleArrayItem(deficienciasSelecionadas, opcao, setDeficienciasSelecionadas)}
-                  className="accent-[#3ea6ff]"
+                  className="accent-primary"
                 />
                 <span className="truncate">{opcao}</span>
               </label>

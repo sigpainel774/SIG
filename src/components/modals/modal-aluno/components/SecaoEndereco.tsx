@@ -28,8 +28,8 @@ export function SecaoEndereco() {
   return (
     <div className="space-y-6 py-2">
       {/* 1. Endereço Residencial Detalhado */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <MapPin className="w-4 h-4 text-highlight" />
           Endereço Residencial do Estudante
         </div>
@@ -43,7 +43,7 @@ export function SecaoEndereco() {
                 onChange={(e) => setRua(e.target.value)} 
                 onBlur={() => setRua(formatNameTitleCase(rua))}
                 placeholder="Ex: Rua do Brito" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
             <div className="space-y-1">
@@ -52,7 +52,7 @@ export function SecaoEndereco() {
                 value={numero} 
                 onChange={(e) => setNumero(e.target.value)} 
                 placeholder="78" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
@@ -72,7 +72,7 @@ export function SecaoEndereco() {
                   value={cep} 
                   onChange={(e) => setCep(e.target.value)} 
                   placeholder="00000-000" 
-                  className="h-8 bg-[#181818] border-borderCustom text-xs pr-8" 
+                  className="h-8 bg-input border-border text-xs pr-8" 
                 />
                 <button
                   type="button"
@@ -93,7 +93,7 @@ export function SecaoEndereco() {
                 onChange={(e) => setBairro(e.target.value)} 
                 onBlur={() => setBairro(formatNameTitleCase(bairro))}
                 placeholder="Brito" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
 
@@ -104,7 +104,7 @@ export function SecaoEndereco() {
                 onChange={(e) => setCidadeEnd(e.target.value)} 
                 onBlur={() => setCidadeEnd(formatNameTitleCase(cidadeEnd))}
                 placeholder="Sapeaçu" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
 
@@ -115,7 +115,7 @@ export function SecaoEndereco() {
                 maxLength={2}
                 onChange={(e) => setUfEnd(e.target.value.toUpperCase())} 
                 placeholder="BA" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs" 
+                className="h-8 bg-input border-border text-xs" 
               />
             </div>
           </div>
@@ -124,10 +124,10 @@ export function SecaoEndereco() {
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Localização da Residência</Label>
               <Select value={areaLocalizacao} onValueChange={(val) => setAreaLocalizacao(val || 'Urbana')}>
-                <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectTrigger className="h-8 bg-input border-border text-xs">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                   <SelectItem value="Urbana">Urbana</SelectItem>
                   <SelectItem value="Rural">Rural</SelectItem>
                 </SelectContent>
@@ -137,10 +137,10 @@ export function SecaoEndereco() {
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground font-medium">Área Diferenciada</Label>
               <Select value={areaDiferenciada} onValueChange={(val) => setAreaDiferenciada(val || 'Não está em área diferenciada')}>
-                <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+                <SelectTrigger className="h-8 bg-input border-border text-xs">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+                <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
                   <SelectItem value="Não está em área diferenciada">Não está em área diferenciada</SelectItem>
                   <SelectItem value="Área de assentamento">Área de assentamento</SelectItem>
                   <SelectItem value="Terra indígena">Terra indígena</SelectItem>
@@ -153,8 +153,8 @@ export function SecaoEndereco() {
       </div>
 
       {/* 2. Georreferenciamento & Mini Mapa */}
-      <div className="p-4 rounded-xl bg-background border border-borderCustom space-y-4">
-        <div className="flex items-center gap-2 pb-2.5 border-b border-borderCustom text-highlight font-bold text-xs uppercase tracking-wider">
+      <div className="p-4 rounded-xl bg-card border border-border space-y-4">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border text-highlight font-bold text-xs uppercase tracking-wider">
           <Navigation className="w-4 h-4 text-highlight" />
           Geolocalização Residencial
         </div>
@@ -169,7 +169,7 @@ export function SecaoEndereco() {
                 value={latitude !== null ? latitude : ''} 
                 onChange={(e) => setLatitude(e.target.value ? parseFloat(e.target.value) : null)} 
                 placeholder="-12.987654" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs font-mono" 
+                className="h-8 bg-input border-border text-xs font-mono" 
               />
             </div>
             <div className="space-y-1">
@@ -180,12 +180,12 @@ export function SecaoEndereco() {
                 value={longitude !== null ? longitude : ''} 
                 onChange={(e) => setLongitude(e.target.value ? parseFloat(e.target.value) : null)} 
                 placeholder="-38.123456" 
-                className="h-8 bg-[#181818] border-borderCustom text-xs font-mono" 
+                className="h-8 bg-input border-border text-xs font-mono" 
               />
             </div>
           </div>
 
-          <div className="h-44 w-full rounded-xl overflow-hidden border border-borderCustom">
+          <div className="h-44 w-full rounded-xl overflow-hidden border border-border">
             <MiniMapa 
               initialLat={latitude ?? undefined} 
               initialLng={longitude ?? undefined} 

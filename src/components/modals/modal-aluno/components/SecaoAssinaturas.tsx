@@ -56,10 +56,10 @@ export function SecaoAssinaturas() {
         <div className="w-64 space-y-1">
           <Label className="text-xs text-muted-foreground font-medium">Autoriza o uso de imagem e voz do estudante?</Label>
           <Select value={autorizaImagemVoz} onValueChange={(val) => setAutorizaImagemVoz(val || 'Não')}>
-            <SelectTrigger className="h-8 bg-[#181818] border-borderCustom text-xs">
+            <SelectTrigger className="h-8 bg-input border-border text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#181818] border-borderCustom text-foreground text-xs">
+            <SelectContent className="bg-popover border-border text-popover-foreground text-xs">
               <SelectItem value="Sim">Sim, autorizo</SelectItem>
               <SelectItem value="Não">Não, não autorizo</SelectItem>
             </SelectContent>
@@ -74,7 +74,7 @@ export function SecaoAssinaturas() {
           Captura de Assinaturas Digitais
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#181818] p-4 rounded-xl border border-borderCustom">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/40 dark:bg-[#181818] p-4 rounded-xl border border-border">
           {/* Assinatura do Responsável */}
           <div className="space-y-3">
             <SignaturePad
@@ -88,7 +88,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('resp')}
-                className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-8 rounded-xl flex items-center justify-center gap-1.5 font-medium cursor-pointer"
+                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-8 rounded-xl flex items-center justify-center gap-1.5 font-medium cursor-pointer"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular
@@ -110,7 +110,7 @@ export function SecaoAssinaturas() {
                 type="button"
                 variant="ghost"
                 onClick={() => iniciarAssinaturaCelular('func')}
-                className="w-full text-xs text-[#3ea6ff] border border-[#3ea6ff]/20 hover:bg-[#3ea6ff]/10 h-8 rounded-xl flex items-center justify-center gap-1.5 font-medium cursor-pointer"
+                className="w-full text-xs text-primary border border-primary/20 hover:bg-primary/10 h-8 rounded-xl flex items-center justify-center gap-1.5 font-medium cursor-pointer"
               >
                 <Smartphone className="w-3.5 h-3.5" />
                 Colher Assinatura pelo Celular

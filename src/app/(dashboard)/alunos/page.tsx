@@ -91,10 +91,10 @@ export default function AlunosPage() {
           <GraduationCap className="w-8 h-8" />
         </div>
         <div className="space-y-2 max-w-md">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             Área de Alunos do Professor
           </h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Esta funcionalidade está sendo customizada e atualmente está em
             desenvolvimento. Em breve você poderá gerenciar a lista de alunos de
             suas turmas e disciplinas.
@@ -102,7 +102,7 @@ export default function AlunosPage() {
         </div>
         <div className="pt-2">
           <Link href="/home">
-            <Button className="bg-[#185FA5] hover:bg-[#144f8a] text-white font-medium px-6 py-2.5 rounded-xl text-sm transition-all shadow-md cursor-pointer border-none">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2.5 rounded-xl text-sm transition-all shadow-md cursor-pointer border-none">
               Voltar ao Início
             </Button>
           </Link>

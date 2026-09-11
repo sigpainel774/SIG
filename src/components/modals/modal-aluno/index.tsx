@@ -90,7 +90,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             type="button"
             variant="outline"
             onClick={handleClose}
-            className="bg-[#1a1a1a] border-borderCustom text-white hover:bg-hoverCustom cursor-pointer text-xs h-9 px-4"
+            className="bg-background border-border text-foreground hover:bg-muted cursor-pointer text-xs h-9 px-4"
           >
             Cancelar
           </Button>
@@ -129,8 +129,8 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             <div className="flex items-start gap-2.5">
               <Lock className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <h4 className="text-xs font-bold text-white uppercase tracking-tight">Matrícula Assinada e Bloqueada</h4>
-                <p className="text-[11px] text-zinc-300 leading-normal">
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-tight">Matrícula Assinada e Bloqueada</h4>
+                <p className="text-[11px] text-muted-foreground leading-normal">
                   Este documento possui assinatura eletrônica registrada. Modificações só são permitidas com liberação formal do Diretor.
                 </p>
               </div>
@@ -139,7 +139,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             {!isEdicaoLiberada && (
               <div className="pt-2 border-t border-indigo-500/20 flex flex-col gap-2">
                 {solicitacaoPendente ? (
-                  <div className="text-[11px] text-zinc-300 bg-[#141416] p-2.5 rounded-lg border border-borderCustom flex items-center gap-2">
+                  <div className="text-[11px] text-muted-foreground bg-muted/50 dark:bg-[#141416] p-2.5 rounded-lg border border-border flex items-center gap-2">
                     <Loader2 className="w-3.5 h-3.5 text-highlight animate-spin shrink-0" />
                     <span>Solicitação de liberação pendente de aprovação do Diretor. Justificativa: <em>"{justificativaPendente}"</em></span>
                   </div>
@@ -155,13 +155,13 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                         Solicitar Liberação para Edição
                       </Button>
                     ) : (
-                      <div className="space-y-2 bg-[#141416] p-3 rounded-lg border border-borderCustom">
-                        <Label className="text-[10px] text-zinc-400 font-bold uppercase">Justificativa para Alteração</Label>
+                      <div className="space-y-2 bg-muted/50 dark:bg-[#141416] p-3 rounded-lg border border-border">
+                        <Label className="text-[10px] text-muted-foreground font-bold uppercase">Justificativa para Alteração</Label>
                         <textarea
                           value={justificativaSolicitacao}
                           onChange={(e) => setJustificativaSolicitacao(e.target.value)}
                           placeholder="Descreva detalhadamente o motivo pelo qual precisa alterar a ficha do aluno..."
-                          className="w-full bg-[#181818] border border-borderCustom rounded-lg p-2 text-xs text-foreground focus:border-highlight focus:outline-none min-h-[60px]"
+                          className="w-full bg-input border border-border rounded-lg p-2 text-xs text-foreground focus:border-highlight focus:outline-none min-h-[60px]"
                         />
                         <div className="flex gap-2 justify-end">
                           <Button
@@ -208,7 +208,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-center gap-1.5 shrink-0">
               <div className="relative">
-                <div className="w-16 h-20 rounded bg-[#1a1a2e] border-2 border-highlight/40 overflow-hidden flex items-center justify-center relative">
+                <div className="w-16 h-20 rounded bg-muted dark:bg-[#1a1a2e] border-2 border-primary/40 overflow-hidden flex items-center justify-center relative">
                   {isCompressingPhoto ? (
                     <div className="flex flex-col items-center justify-center p-1 text-center">
                       <Loader2 className="w-5 h-5 animate-spin text-highlight" />
@@ -217,7 +217,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                   ) : fotoUrl ? (
                     <img src={fotoUrl} alt="Foto Aluno" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-xs text-center text-zinc-500 font-bold">
+                    <span className="text-xs text-center text-muted-foreground font-bold">
                       FOTO 3x4
                     </span>
                   )}
@@ -258,7 +258,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
                 type="button"
                 disabled={isCompressingPhoto || isFichaBloqueada}
                 onClick={() => setScannerOpen(true)}
-                className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-md bg-[#1f1f23] hover:bg-highlight hover:text-background text-zinc-300 text-[10px] font-bold border border-borderCustom hover:border-highlight transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed w-full"
+                className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-[#1f1f23] hover:bg-highlight hover:text-background text-foreground text-[10px] font-bold border border-border hover:border-highlight transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed w-full"
                 title="Escanear foto 3x4 com a câmera do dispositivo"
               >
                 <ScanFace className="w-3 h-3" />
@@ -266,8 +266,8 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
               </button>
             </div>
 
-            <div className="text-[11px] text-zinc-400">
-              <p className="font-semibold text-zinc-300">Foto 3x4 do Aluno</p>
+            <div className="text-[11px] text-muted-foreground">
+              <p className="font-semibold text-foreground">Foto 3x4 do Aluno</p>
               <p>PNG/JPG/WebP/HEIC · até 20MB</p>
             </div>
           </div>
@@ -277,14 +277,14 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
             <p className="font-semibold text-highlight text-[10px] uppercase tracking-wider">Unidade & Turma Ativa</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
-                <span className="text-zinc-500 block">Unidade Escolar:</span>
-                <span className="font-medium text-zinc-200 truncate block">
+                <span className="text-muted-foreground block">Unidade Escolar:</span>
+                <span className="font-medium text-foreground truncate block">
                   {escolaSelecionadaObj?.nome || 'Selecione na aba Matrícula'}
                 </span>
               </div>
               <div>
-                <span className="text-zinc-500 block">Turma Atual:</span>
-                <span className="font-medium text-zinc-200">
+                <span className="text-muted-foreground block">Turma Atual:</span>
+                <span className="font-medium text-foreground">
                   {turmaSelecionadaObj ? `${turmaSelecionadaObj.nome} (${turmaSelecionadaObj.ano_letivo})` : 'Não enturmado'}
                 </span>
               </div>
@@ -321,7 +321,7 @@ function ModalAlunoContent({ activeOpen, handleOpenChange }: { activeOpen: boole
 
           {/* QRCode de Assinatura Mobile */}
           {celularSigningCode && (
-            <div className="border border-borderCustom bg-[#141416] p-4 rounded-xl max-w-sm mx-auto flex flex-col items-center text-center space-y-4 shadow-lg print:hidden mt-6">
+            <div className="border border-border bg-card dark:bg-[#141416] p-4 rounded-xl max-w-sm mx-auto flex flex-col items-center text-center space-y-4 shadow-lg print:hidden mt-6">
               <div className="flex items-center gap-2 text-xs text-highlight font-bold">
                 <Smartphone className="w-4 h-4" />
                 <span>Assinatura via Celular Ativa</span>
