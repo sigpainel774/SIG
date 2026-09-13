@@ -101,19 +101,56 @@ export async function GET(request: NextRequest) {
     const funcionarioId = searchParams.get('funcionario_id')
     const mode = searchParams.get('mode')
 
-    // 0. Modo Sessões Ativas Ao Vivo
+    // 0. Modo Sessões Ativas Ao Vivo (Modelo Econômico via user_presence)
     if (mode === 'active') {
-      const recentThreshold = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+      const activeThreshold = new Date(Date.now() - 3 * 60 * 1000).toISOString() // 3 minutos de timeout
       
+      // 1. Tentar ler da tabela otimizada de presença
+      const { data: presenceList, error: presErr } = await (supabaseAdmin as any)
+        .from('user_presence')
+        .select('*')
+        .gte('last_seen_at', activeThreshold)
+        .order('last_seen_at', { ascending: false })
+
+      if (!presErr && presenceList && presenceList.length > 0) {
+        const formatted = presenceList.map((p: any) => ({
+          session_id: p.user_id,
+          user_id: p.user_id,
+          funcionario_id: p.funcionario_id,
+          funcionario_nome: p.funcionario_nome || 'Servidor Online',
+          funcionario_email: p.funcionario_email || '-',
+          funcionario_cargo: p.funcionario_cargo || 'Servidor',
+          escola_nome: p.escola_nome || 'Rede Municipal',
+          foto_url: p.foto_url || null,
+          created_at: p.created_at,
+          refreshed_at: p.last_seen_at,
+          current_pathname: p.current_pathname || '/',
+          total_active_seconds_today: Math.max(10, Math.round((new Date().getTime() - new Date(p.created_at).getTime()) / 1000)),
+          ip: null,
+          user_agent: null,
+          last_interaction_at: new Date(p.last_seen_at).getTime(),
+          last_action_desc: p.last_action || 'Navegando no SIG',
+          active_modal: p.active_modal ? { isOpen: true, title: p.active_modal } : null,
+          is_actively_using: p.is_actively_using ?? true,
+          is_tab_focused: p.is_tab_focused ?? true,
+          rtt: p.rtt || 45,
+          downlink: p.downlink || 10,
+          effective_type: p.effective_type || '4g',
+        }))
+
+        return NextResponse.json({ active_sessions: formatted })
+      }
+
+      // 2. Fallback defensivo para session_events caso user_presence ainda esteja sendo populado
+      const recentThreshold = new Date(Date.now() - 10 * 60 * 1000).toISOString()
       const { data: recentEvents } = await (supabaseAdmin as any)
         .from('session_events')
         .select('session_id, funcionario_id, escola_id, event_type, event_data, created_at')
         .gte('created_at', recentThreshold)
         .order('created_at', { ascending: false })
-        .limit(600)
+        .limit(300)
 
       if (recentEvents && recentEvents.length > 0) {
-        // Coletar IDs de funcionários para buscar nomes
         const funcIds = Array.from(new Set(recentEvents.map((e: any) => e.funcionario_id).filter(Boolean)))
         const escolaIds = Array.from(new Set(recentEvents.map((e: any) => e.escola_id).filter(Boolean)))
 

@@ -155,6 +155,7 @@ export default function ProfissionaisAEEPage() {
             setModalVincularOpen(v)
             if (!v) carregarProfissionais()
           }}
+          profissionais={profissionaisAEE}
           profissionalId={profSelecionado.id}
           profissionalNome={profSelecionado.nome}
           profissionalCargo={profSelecionado.cargo ?? 'Especialista AEE'}

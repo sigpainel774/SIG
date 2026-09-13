@@ -15,8 +15,8 @@ export interface ReplayEventItem {
     pathname?: string
     search_params?: string
     page_title?: string
-    x_pct?: number // 0 a 100% da largura da tela
-    y_pct?: number // 0 a 100% da altura da tela
+    x_pct?: number
+    y_pct?: number
     viewport_w?: number
     viewport_h?: number
     target_tag?: string
@@ -59,7 +59,6 @@ function getNetworkDetails(): { rtt: number; downlink: number; effective_type: s
   const downlink = conn?.downlink ?? 10
   const effective_type = conn?.effectiveType ?? '4g'
 
-  // Estimativa baseada em RTT e throughput
   let loss = 0
   if (rtt > 300) loss += 8
   if (rtt > 600) loss += 15
@@ -92,19 +91,16 @@ export function useSessionReplay() {
   const funcionarioEmailRef = useRef<string>(funcionario?.email ?? '')
   const fotoUrlRef = useRef<string | null>(funcionario?.foto_url ?? null)
   const escolaIdRef = useRef<string | null>(escolaAtivaId ?? null)
-  const escolaNomeRef = useRef<string>('')
+  const escolaNomeRef = useRef<string>('Rede Municipal')
   const currentPathRef = useRef<string>(pathname || '/')
   const currentSearchRef = useRef<string>('')
   const sessionStartTimeRef = useRef<number>(Date.now())
   const activeModalTitleRef = useRef<string | null>(null)
 
-  const channelRef = useRef<any>(null)
-  const presenceChannelRef = useRef<any>(null)
-  const isChannelSubscribedRef = useRef<boolean>(false)
-  const pendingBroadcastsRef = useRef<ReplayEventItem[]>([])
   const queueRef = useRef<ReplayEventItem[]>([])
   const lastInteractionAtRef = useRef<number>(Date.now())
   const lastActionDescRef = useRef<string>('Navegação no sistema')
+  const lastPingSentAtRef = useRef<number>(0)
   const isMounted = useRef<boolean>(true)
   const isHandlingErrorRef = useRef<boolean>(false)
 
@@ -117,47 +113,69 @@ export function useSessionReplay() {
     escolaIdRef.current = escolaAtivaId ?? null
   }, [funcionario, escolaAtivaId])
 
-  // Atualizar estado de presença em tempo real
-  const updatePresenceState = useCallback((actionDesc?: string) => {
+  // Disparo de Ping Econômico HTTP para /api/presence/ping
+  const sendPresencePing = useCallback(async (actionDesc?: string, isOffline?: boolean) => {
+    if (typeof window === 'undefined') return
+
     if (actionDesc) {
       lastActionDescRef.current = actionDesc
       lastInteractionAtRef.current = Date.now()
     }
-    if (!presenceChannelRef.current || !userAuthIdRef.current) return
+
+    const now = Date.now()
+    // Throttling: não envia pings com intervalo menor que 10 segundos (exceto se for offline ou troca de tela)
+    if (!isOffline && !actionDesc?.startsWith('Navegou') && now - lastPingSentAtRef.current < 10000) {
+      return
+    }
+    lastPingSentAtRef.current = now
 
     const isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
     const hasFocus = typeof document !== 'undefined' ? (document.hasFocus ? document.hasFocus() : true) : true
     const isTabFocused = isVisible && hasFocus
-    const now = Date.now()
     const secondsSinceInteraction = Math.floor((now - lastInteractionAtRef.current) / 1000)
     const isActivelyUsing = isTabFocused && secondsSinceInteraction <= 45
 
     const net = getNetworkDetails()
 
-    presenceChannelRef.current.track({
-      session_id: activeSessionIdRef.current || userAuthIdRef.current,
+    const payload = {
       user_id: userAuthIdRef.current,
       funcionario_id: funcionarioIdRef.current,
       funcionario_nome: funcionarioNomeRef.current,
-      funcionario_email: funcionarioEmailRef.current,
       funcionario_cargo: funcionarioCargoRef.current,
+      funcionario_email: funcionarioEmailRef.current,
       foto_url: fotoUrlRef.current,
+      escola_id: escolaIdRef.current,
       escola_nome: escolaNomeRef.current || 'Rede Municipal',
       current_pathname: currentPathRef.current || '/',
-      online_at: new Date().toISOString(),
-      last_interaction_at: lastInteractionAtRef.current,
-      last_action_desc: lastActionDescRef.current,
-      active_modal: activeModalTitleRef.current ? { isOpen: true, title: activeModalTitleRef.current } : null,
+      last_action: lastActionDescRef.current,
+      active_modal: activeModalTitleRef.current,
       is_actively_using: isActivelyUsing,
       is_tab_focused: isTabFocused,
       rtt: net.rtt,
       downlink: net.downlink,
       effective_type: net.effective_type,
-      active_time_seconds: Math.floor((now - sessionStartTimeRef.current) / 1000),
-    }).catch(() => {})
+      is_offline: Boolean(isOffline),
+    }
+
+    if (isOffline && navigator.sendBeacon) {
+      try {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+        navigator.sendBeacon('/api/presence/ping', blob)
+        return
+      } catch {}
+    }
+
+    try {
+      fetch('/api/presence/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {})
+    } catch {}
   }, [])
 
-  // Despachar evento para o canal Realtime e enfileirar para persistência
+  // Despachar evento para persistência histórica (apenas se gravação ativada ou se for erro)
   const dispatchEvent = useCallback((event: Omit<ReplayEventItem, 'session_id' | 'funcionario_id' | 'escola_id'>) => {
     const sid = activeSessionIdRef.current || userAuthIdRef.current || 'anonymous'
 
@@ -176,78 +194,33 @@ export function useSessionReplay() {
       },
     }
 
-    // 1. Enviar broadcast em tempo real (ou enfileirar se canal ainda estiver conectando)
-    if (isChannelSubscribedRef.current && channelRef.current) {
-      try {
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'event',
-          payload: fullItem,
-        })
-      } catch {
-        // Falha suave no broadcast
-      }
-    } else {
-      // Guarda no buffer temporário para descarregar assim que conectar
-      pendingBroadcastsRef.current.push(fullItem)
-      if (pendingBroadcastsRef.current.length > 50) {
-        pendingBroadcastsRef.current.shift()
-      }
-    }
-
-    // 2. Colocar na fila de persistência histórica apenas se gravação estiver ativa ou se for erro
     const isRecordingEnabled = typeof window !== 'undefined' && (
       (window as any).__SIG_RECORD_SESSION__ === true ||
       window.localStorage?.getItem('sig_record_session') === '1' ||
       event.event_type === 'error'
     )
+
     if (isRecordingEnabled) {
       queueRef.current.push(fullItem)
     }
   }, [])
 
-  // Enviar lote para a API de persistência histórica
+  // Enviar lote de erros / gravação histórica
   const flushQueue = useCallback(async () => {
     if (queueRef.current.length === 0) return
     const batch = [...queueRef.current]
     queueRef.current = []
 
     try {
-      const res = await fetch('/api/admin/session-events', {
+      await fetch('/api/admin/session-events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ events: batch }),
       })
-      if (!res.ok) {
-        // Ignorar falha transitória
-      }
-    } catch {
-      // Ignorar falha de rede transitória
-    }
+    } catch {}
   }, [])
 
-  // Descarregar buffer de broadcasts pendentes
-  const flushPendingBroadcasts = useCallback(() => {
-    if (pendingBroadcastsRef.current.length === 0) return
-    const pending = [...pendingBroadcastsRef.current]
-    pendingBroadcastsRef.current = []
-
-    pending.forEach((item) => {
-      if (channelRef.current) {
-        try {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'event',
-            payload: item,
-          })
-        } catch {
-          // Falha suave no broadcast
-        }
-      }
-    })
-  }, [])
-
-  // 1. Inicializar sessão, Realtime Presence e Canal Broadcast
+  // 1. Inicializar sessão do usuário
   useEffect(() => {
     async function initSession() {
       try {
@@ -257,89 +230,8 @@ export function useSessionReplay() {
           activeSessionIdRef.current = sid
           userAuthIdRef.current = session.user.id
 
-          const net = getNetworkDetails()
-
-          // A. Canal Realtime Presence Global para identificar quem está ao vivo no SIG
-          const presenceChannel = supabase.channel('sig_live_presence', {
-            config: { presence: { key: session.user.id } },
-          })
-
-          presenceChannel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-              try {
-                await presenceChannel.track({
-                  session_id: sid,
-                  user_id: session.user.id,
-                  funcionario_id: funcionarioIdRef.current,
-                  funcionario_nome: funcionarioNomeRef.current,
-                  funcionario_email: funcionarioEmailRef.current,
-                  funcionario_cargo: funcionarioCargoRef.current,
-                  foto_url: fotoUrlRef.current,
-                  escola_nome: escolaNomeRef.current || 'Rede Municipal',
-                  current_pathname: currentPathRef.current || '/',
-                  online_at: new Date().toISOString(),
-                  last_interaction_at: lastInteractionAtRef.current,
-                  last_action_desc: 'Entrou no sistema',
-                  active_modal: activeModalTitleRef.current ? { isOpen: true, title: activeModalTitleRef.current } : null,
-                  is_actively_using: true,
-                  is_tab_focused: true,
-                  rtt: net.rtt,
-                  downlink: net.downlink,
-                  effective_type: net.effective_type,
-                  active_time_seconds: 0,
-                })
-              } catch (trackErr) {
-                console.warn('[useSessionReplay] Erro ao registrar presença:', trackErr)
-              }
-            }
-          })
-          presenceChannelRef.current = presenceChannel
-
-          // B. Canal realtime broadcast unificado (por user.id ou sid)
-          const channelKey = session.user.id || sid
-          const channelName = `session_replay:${channelKey}`
-          const channel = supabase.channel(channelName, {
-            config: { broadcast: { self: false } },
-          })
-
-          channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              isChannelSubscribedRef.current = true
-              flushPendingBroadcasts()
-
-              // Dispara evento inicial de presença/heartbeat imediatamente
-              dispatchEvent({
-                event_type: 'heartbeat',
-                event_data: {
-                  pathname: currentPathRef.current,
-                  page_title: typeof document !== 'undefined' ? document.title : '',
-                  rtt: net.rtt,
-                  downlink: net.downlink,
-                  effective_type: net.effective_type,
-                  packet_loss_estimate_pct: net.packet_loss_estimate_pct,
-                  active_time_seconds: 0,
-                  timestamp: Date.now(),
-                },
-              })
-              flushQueue()
-            }
-          })
-          channelRef.current = channel
-
-          // Disparar navegação inicial garantida
-          dispatchEvent({
-            event_type: 'navigation',
-            event_data: {
-              pathname: currentPathRef.current,
-              search_params: currentSearchRef.current,
-              page_title: typeof document !== 'undefined' ? document.title : currentPathRef.current,
-              rtt: net.rtt,
-              downlink: net.downlink,
-              effective_type: net.effective_type,
-              packet_loss_estimate_pct: net.packet_loss_estimate_pct,
-              timestamp: Date.now(),
-            },
-          })
+          // Disparar ping inicial de presença HTTP
+          sendPresencePing('Entrou no sistema')
         }
       } catch (err) {
         console.warn('[useSessionReplay] Erro ao carregar sessão:', err)
@@ -347,66 +239,39 @@ export function useSessionReplay() {
     }
 
     initSession()
+  }, [supabase, sendPresencePing])
 
-    return () => {
-      isChannelSubscribedRef.current = false
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-      if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current)
-        presenceChannelRef.current = null
-      }
-    }
-  }, [supabase, dispatchEvent, flushQueue, flushPendingBroadcasts])
-
-  // Heartbeat periódico (a cada 15s) para atualizar presença e manter vivo no banco
+  // 2. Heartbeat periódico inteligente (a cada 60s) via HTTP
   useEffect(() => {
     const heartbeatInterval = setInterval(() => {
       if (!isMounted.current || typeof document === 'undefined') return
       if (document.visibilityState === 'visible') {
-        const net = getNetworkDetails()
-        dispatchEvent({
-          event_type: 'heartbeat',
-          event_data: {
-            pathname: currentPathRef.current,
-            page_title: document.title,
-            rtt: net.rtt,
-            downlink: net.downlink,
-            effective_type: net.effective_type,
-            packet_loss_estimate_pct: net.packet_loss_estimate_pct,
-            timestamp: Date.now(),
-          },
-        })
-
-        updatePresenceState()
+        sendPresencePing()
       }
-    }, 15000)
+    }, 60000)
 
     return () => clearInterval(heartbeatInterval)
-  }, [dispatchEvent, updatePresenceState])
+  }, [sendPresencePing])
 
-  // Timer periódico de gravação a cada 4 segundos
+  // 3. Timer periódico de gravação a cada 5 segundos (apenas se houver eventos em fila)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isMounted.current) {
+      if (isMounted.current && queueRef.current.length > 0) {
         flushQueue()
       }
-    }, 4000)
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [flushQueue])
 
-  // 2. Listener de Navegação (Pathname e URL)
+  // 4. Listener de Navegação (Pathname e URL)
   useEffect(() => {
     currentPathRef.current = pathname || '/'
     if (typeof window !== 'undefined') {
       currentSearchRef.current = window.location.search || ''
     }
 
-    const net = getNetworkDetails()
-    updatePresenceState(`Navegou para ${pathname || '/'}`)
+    sendPresencePing(`Navegou para ${pathname || '/'}`)
 
     dispatchEvent({
       event_type: 'navigation',
@@ -414,16 +279,12 @@ export function useSessionReplay() {
         pathname: pathname || '/',
         search_params: currentSearchRef.current,
         page_title: typeof document !== 'undefined' ? document.title : pathname,
-        rtt: net.rtt,
-        downlink: net.downlink,
-        effective_type: net.effective_type,
-        packet_loss_estimate_pct: net.packet_loss_estimate_pct,
         timestamp: Date.now(),
       },
     })
-  }, [pathname, dispatchEvent, updatePresenceState])
+  }, [pathname, dispatchEvent, sendPresencePing])
 
-  // 3. Detecção Automática de Modais e Diálogos via MutationObserver
+  // 5. Detecção Automática de Modais e Diálogos via MutationObserver
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
 
@@ -433,13 +294,11 @@ export function useSessionReplay() {
     const checkModalState = () => {
       if (!isMounted.current) return
 
-      // Procura elementos com role="dialog", role="alertdialog" ou data-state="open"
       const openDialog = document.querySelector(
         '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], dialog[open], .modal.open, [data-dialog-open="true"]'
       ) || document.querySelector('[role="dialog"], [role="alertdialog"]')
 
       if (openDialog) {
-        // Extrair título do modal
         const titleElem = openDialog.querySelector(
           '[data-slot="dialog-title"], [class*="dialog-title"], [class*="DialogTitle"], [class*="modal-title"], h1, h2, h3, h4'
         )
@@ -456,7 +315,7 @@ export function useSessionReplay() {
           lastKnownModalId = modalId
           activeModalTitleRef.current = modalTitle
 
-          updatePresenceState(`Abriu modal "${modalTitle}"`)
+          sendPresencePing(`Abriu modal "${modalTitle}"`)
 
           dispatchEvent({
             event_type: 'modal_open',
@@ -468,12 +327,11 @@ export function useSessionReplay() {
           })
         }
       } else if (lastKnownModalId !== null) {
-        // Modal foi fechado
         const closedTitle = activeModalTitleRef.current || 'Modal'
         lastKnownModalId = null
         activeModalTitleRef.current = null
 
-        updatePresenceState(`Fechou modal "${closedTitle}"`)
+        sendPresencePing(`Fechou modal "${closedTitle}"`)
 
         dispatchEvent({
           event_type: 'modal_close',
@@ -497,72 +355,43 @@ export function useSessionReplay() {
       attributeFilter: ['data-state', 'open', 'class', 'style', 'aria-hidden'],
     })
 
-    // Checagem inicial
     checkModalState()
 
     return () => {
       if (modalDebounceTimer) clearTimeout(modalDebounceTimer)
       observer.disconnect()
     }
-  }, [dispatchEvent, updatePresenceState])
+  }, [dispatchEvent, sendPresencePing])
 
-  // 4. Captura de Cliques, Foco, Digitação em Campos e Erros
+  // 6. Captura de Ações e Erros
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
 
-    // A. Cliques e Toques
+    // Cliques
     const handleClick = (e: MouseEvent | TouchEvent) => {
-      let clientX = 0
-      let clientY = 0
-
-      if ('touches' in e && e.touches.length > 0) {
-        clientX = e.touches[0].clientX
-        clientY = e.touches[0].clientY
-      } else if ('clientX' in e) {
-        clientX = (e as MouseEvent).clientX
-        clientY = (e as MouseEvent).clientY
-      }
-
-      const vw = window.innerWidth || 1
-      const vh = window.innerHeight || 1
-      const xPct = Math.round((clientX / vw) * 10000) / 100
-      const yPct = Math.round((clientY / vh) * 10000) / 100
-
+      lastInteractionAtRef.current = Date.now()
       const target = e.target as HTMLElement | null
       const targetTag = target?.tagName || 'UNKNOWN'
       const targetText = sanitizeText(target?.innerText || target?.getAttribute('aria-label') || target?.getAttribute('title') || target?.getAttribute('placeholder'))
 
       let shortSelector = targetTag.toLowerCase()
       if (target?.id) shortSelector += `#${target.id}`
-      else if (target?.className && typeof target.className === 'string') {
-        const firstClass = target.className.split(' ')[0]
-        if (firstClass && !firstClass.includes(':')) shortSelector += `.${firstClass}`
-      }
 
-      const net = getNetworkDetails()
       const clickDesc = targetText ? `Clicou em "${targetText}"` : `Clicou em <${targetTag.toLowerCase()}>`
-      updatePresenceState(clickDesc)
+      lastActionDescRef.current = clickDesc
 
       dispatchEvent({
         event_type: 'click',
         event_data: {
-          x_pct: xPct,
-          y_pct: yPct,
-          viewport_w: vw,
-          viewport_h: vh,
           target_tag: targetTag,
           target_text: targetText,
           target_selector: shortSelector,
-          rtt: net.rtt,
-          downlink: net.downlink,
-          effective_type: net.effective_type,
-          packet_loss_estimate_pct: net.packet_loss_estimate_pct,
           timestamp: Date.now(),
         },
       })
     }
 
-    // B. Foco e Blur em Campos (HTML Nativo e Radix/Shadcn)
+    // Foco em Campos
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement | null
       if (!target) return
@@ -580,40 +409,10 @@ export function useSessionReplay() {
       ) {
         const inputElem = target as HTMLInputElement
         const fieldName = inputElem.name || inputElem.id || inputElem.getAttribute('placeholder') || inputElem.getAttribute('aria-label') || 'Campo Formulário'
-        const fieldType = inputElem.type || role || tagName.toLowerCase()
-
-        updatePresenceState(`Editando campo "${fieldName}"`)
+        lastActionDescRef.current = `Editando campo "${sanitizeText(fieldName)}"`
 
         dispatchEvent({
           event_type: 'input_focus',
-          event_data: {
-            field_name: sanitizeText(fieldName),
-            field_type: fieldType,
-            timestamp: Date.now(),
-          },
-        })
-      }
-    }
-
-    const handleFocusOut = (e: FocusEvent) => {
-      const target = e.target as HTMLElement | null
-      if (!target) return
-      const tagName = target.tagName
-      const role = target.getAttribute('role')
-
-      if (
-        tagName === 'INPUT' ||
-        tagName === 'SELECT' ||
-        tagName === 'TEXTAREA' ||
-        role === 'combobox' ||
-        role === 'textbox' ||
-        role === 'searchbox'
-      ) {
-        const inputElem = target as HTMLInputElement
-        const fieldName = inputElem.name || inputElem.id || inputElem.getAttribute('placeholder') || inputElem.getAttribute('aria-label') || 'Campo Formulário'
-
-        dispatchEvent({
-          event_type: 'input_blur',
           event_data: {
             field_name: sanitizeText(fieldName),
             field_type: inputElem.type || role || tagName.toLowerCase(),
@@ -623,35 +422,7 @@ export function useSessionReplay() {
       }
     }
 
-    // C. Digitação em Campos (com debounce e proteção de privacidade)
-    let typingDebounceTimer: ReturnType<typeof setTimeout> | null = null
-    const handleInput = (e: Event) => {
-      const target = e.target as HTMLElement | null
-      if (!target) return
-      const tagName = target.tagName
-      if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
-        const inputElem = target as HTMLInputElement
-        const fieldName = inputElem.name || inputElem.id || inputElem.getAttribute('placeholder') || inputElem.getAttribute('aria-label') || 'Campo'
-        const isPassword = inputElem.type === 'password'
-        const charCount = isPassword ? 0 : (inputElem.value?.length || 0)
-
-        if (typingDebounceTimer) clearTimeout(typingDebounceTimer)
-        typingDebounceTimer = setTimeout(() => {
-          if (!isMounted.current) return
-          dispatchEvent({
-            event_type: 'input_change',
-            event_data: {
-              field_name: sanitizeText(fieldName),
-              field_type: inputElem.type || tagName.toLowerCase(),
-              character_count: charCount,
-              timestamp: Date.now(),
-            },
-          })
-        }, 400)
-      }
-    }
-
-    // D. Captura de Erros Não Tratados e Rejeições de Promises
+    // Erros Não Tratados
     const handleError = (e: ErrorEvent) => {
       dispatchEvent({
         event_type: 'error',
@@ -674,7 +445,7 @@ export function useSessionReplay() {
       })
     }
 
-    // E. Interceptação Segura de console.error (com proteção contra recursão infinita)
+    // Interceptação Segura de console.error
     const originalConsoleError = console.error
     console.error = (...args: any[]) => {
       originalConsoleError.apply(console, args)
@@ -687,7 +458,6 @@ export function useSessionReplay() {
           .map((a) => (typeof a === 'string' ? a : a?.message || (typeof a === 'object' ? JSON.stringify(a) : String(a))))
           .join(' ')
 
-        // Ignorar logs internos do próprio sistema de telemetria ou warnings Supabase conhecidos
         if (
           !msg.includes('[useSessionReplay]') &&
           !msg.includes('[ModalSessionReplay]') &&
@@ -703,77 +473,47 @@ export function useSessionReplay() {
           })
         }
       } catch {
-        // Falha suave
       } finally {
         isHandlingErrorRef.current = false
       }
     }
 
-    // F. Detecção de foco/visibilidade da aba
     const handleVisibility = () => {
-      updatePresenceState(document.visibilityState === 'visible' ? 'Retornou para a aba' : 'Minimizou a aba')
-    }
-
-    // G. Detecção de navegação via popstate / hashchange
-    const handlePopState = () => {
-      if (typeof window !== 'undefined') {
-        const currentLoc = window.location.pathname
-        currentPathRef.current = currentLoc
-        currentSearchRef.current = window.location.search || ''
-
-        dispatchEvent({
-          event_type: 'navigation',
-          event_data: {
-            pathname: currentLoc,
-            search_params: currentSearchRef.current,
-            page_title: document.title,
-            timestamp: Date.now(),
-          },
-        })
+      if (document.visibilityState === 'visible') {
+        sendPresencePing('Retornou para a aba')
       }
     }
 
     document.addEventListener('click', handleClick, { passive: true, capture: true })
     document.addEventListener('touchstart', handleClick, { passive: true, capture: true })
     document.addEventListener('focusin', handleFocusIn, { passive: true, capture: true })
-    document.addEventListener('focusout', handleFocusOut, { passive: true, capture: true })
-    document.addEventListener('input', handleInput, { passive: true, capture: true })
     document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
-    window.addEventListener('popstate', handlePopState)
 
     return () => {
       console.error = originalConsoleError
-      if (typingDebounceTimer) clearTimeout(typingDebounceTimer)
       document.removeEventListener('click', handleClick, { capture: true })
       document.removeEventListener('touchstart', handleClick, { capture: true })
       document.removeEventListener('focusin', handleFocusIn, { capture: true })
-      document.removeEventListener('focusout', handleFocusOut, { capture: true })
-      document.removeEventListener('input', handleInput, { capture: true })
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('error', handleError)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-      window.removeEventListener('popstate', handlePopState)
     }
-  }, [dispatchEvent, updatePresenceState])
+  }, [dispatchEvent, sendPresencePing])
 
-  // 5. Enviar eventos pendentes no encerramento da página (unload)
+  // 7. Enviar desconexão e eventos pendentes no encerramento da página (beforeunload)
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const handleBeforeUnload = () => {
-      if (queueRef.current.length === 0) return
-      const batch = [...queueRef.current]
-      queueRef.current = []
+      sendPresencePing('Saiu do sistema', true)
 
-      if (navigator.sendBeacon) {
+      if (queueRef.current.length > 0 && navigator.sendBeacon) {
         try {
-          const blob = new Blob([JSON.stringify({ events: batch })], { type: 'application/json' })
+          const blob = new Blob([JSON.stringify({ events: queueRef.current })], { type: 'application/json' })
           navigator.sendBeacon('/api/admin/session-events', blob)
-        } catch {
-          // Ignorar erro de beacon
-        }
+        } catch {}
       }
     }
 
@@ -781,8 +521,7 @@ export function useSessionReplay() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [])
+  }, [sendPresencePing])
 
   return null
 }
-

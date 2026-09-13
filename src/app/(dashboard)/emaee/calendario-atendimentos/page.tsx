@@ -1155,11 +1155,23 @@ export default function CalendarioAtendimentosPage() {
         <ModalAssociarAlunoAEE
           open={modalVincularOpen}
           onOpenChange={setModalVincularOpen}
-          profissionalId={profParaVincular?.id || (profissionais[0]?.id ?? '')}
-          profissionalNome={
-            profParaVincular?.nome || (profissionais[0]?.nome ?? 'Profissional AEE')
+          profissionais={profissionais}
+          profissionalId={
+            profParaVincular?.id ||
+            (filtroProfissional !== 'todos' ? filtroProfissional : (profissionais[0]?.id ?? ''))
           }
-          profissionalCargo={profParaVincular?.cargo || (profissionais[0]?.cargo ?? 'Especialista')}
+          profissionalNome={
+            profParaVincular?.nome ||
+            (filtroProfissional !== 'todos'
+              ? profissionais.find((p) => p.id === filtroProfissional)?.nome
+              : (profissionais[0]?.nome ?? 'Profissional AEE'))
+          }
+          profissionalCargo={
+            profParaVincular?.cargo ||
+            (filtroProfissional !== 'todos'
+              ? profissionais.find((p) => p.id === filtroProfissional)?.cargo
+              : (profissionais[0]?.cargo ?? 'Especialista'))
+          }
           escolaEmaeeId={escolaEmaeeId || ''}
           onSuccess={carregarDados}
         />
@@ -1231,7 +1243,12 @@ export default function CalendarioAtendimentosPage() {
             type="button"
             size="sm"
             onClick={() => {
-              setProfParaVincular(profissionais[0] || null)
+              const profInicial =
+                (filtroProfissional !== 'todos' &&
+                  profissionais.find((p) => p.id === filtroProfissional)) ||
+                profissionais[0] ||
+                null
+              setProfParaVincular(profInicial)
               setModalVincularOpen(true)
             }}
             disabled={profissionais.length === 0}
@@ -1524,7 +1541,12 @@ export default function CalendarioAtendimentosPage() {
           <Button
             size="sm"
             onClick={() => {
-              setProfParaVincular(profissionais[0] || null)
+              const profInicial =
+                (filtroProfissional !== 'todos' &&
+                  profissionais.find((p) => p.id === filtroProfissional)) ||
+                profissionais[0] ||
+                null
+              setProfParaVincular(profInicial)
               setModalVincularOpen(true)
             }}
             disabled={profissionais.length === 0}
