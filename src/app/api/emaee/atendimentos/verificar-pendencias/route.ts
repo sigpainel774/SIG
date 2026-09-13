@@ -128,8 +128,11 @@ export async function POST(req: NextRequest) {
 
     if (secretariasData) {
       secretariasData.forEach((f: any) => {
-        const c = (f.cargo || '').toLowerCase()
-        if (c.includes('secretar') || c.includes('diretor') || c.includes('coordenad')) {
+        const c = (f.cargo || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+        if (c.includes('secretar') || c.includes('diretor') || c.includes('coordenad') || c.includes('gestor')) {
           if (f.auth_user_id) {
             userIdsParaNotificar.add(f.auth_user_id)
           }
