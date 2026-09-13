@@ -285,6 +285,13 @@ export function ModalDetalhesSecretaria({
                       src={`${secretaria.logo_url}?t=${sessionTimestamp}`}
                       alt={secretaria.nome}
                       className="w-full h-full object-contain p-1"
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                        if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                          target.src = fallback
+                        }
+                      }}
                     />
                   ) : isSaude ? (
                     <Stethoscope className="w-6 h-6 text-rose-500" />

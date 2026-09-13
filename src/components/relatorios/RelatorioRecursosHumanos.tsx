@@ -73,7 +73,7 @@ export default function RelatorioRecursosHumanos() {
   }, [isNivel1, acessos]);
 
   const escolasPermitidas = useMemo(() => {
-    const escolasOficiais = escolas.filter((e) => !e.is_teste);
+    const escolasOficiais = escolas.filter((e) => !e.is_teste && e.tipo !== 'SECRETARIA');
     if (isSuperAdmin) return escolasOficiais;
 
     if (isNivel1) {
@@ -172,8 +172,11 @@ export default function RelatorioRecursosHumanos() {
 
     try {
       // 1. RPC de Resumo e Distribuição
+      const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null;
+      const effectiveEscolaId = (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') ? filtroEscolaId : undefined;
+
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_relatorio_servidores', {
-        p_escola_id: filtroEscolaId || undefined,
+        p_escola_id: effectiveEscolaId,
         p_cargo: filtroCargo || undefined,
         p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
         p_vinculo_tipo: filtroVinculo === 'Todos' ? undefined : filtroVinculo,

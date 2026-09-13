@@ -497,7 +497,21 @@ export default function HomePage() {
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center bg-white p-2 border border-borderCustom shrink-0 group-hover:scale-105 transition-transform">
                       {secretaria.logo_url ? (
-                        <img src={secretaria.logo_url} alt={secretaria.nome} loading="lazy" decoding="async" className="w-full h-full object-contain" />
+                        <img
+                          src={secretaria.logo_url}
+                          alt={secretaria.nome}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            const isSaude = /sa[uú]de/i.test(secretaria.nome)
+                            const target = e.currentTarget
+                            const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                            if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                              target.src = fallback
+                            }
+                          }}
+                        />
                       ) : (
                         <Building2 className="w-7 h-7 text-sky-500" />
                       )}
@@ -545,6 +559,14 @@ export default function HomePage() {
                       loading="lazy"
                       decoding="async"
                       className="w-full h-full object-contain p-1"
+                      onError={(e) => {
+                        const isSaude = /sa[uú]de/i.test(selectedSecretaria.nome)
+                        const target = e.currentTarget
+                        const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                        if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                          target.src = fallback
+                        }
+                      }}
                     />
                   ) : (
                     <Building2 className="w-8 h-8 text-sky-400" />
@@ -727,7 +749,21 @@ export default function HomePage() {
               <span className="text-muted-foreground">/</span>
               <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                 {selectedSecretaria.logo_url ? (
-                  <img src={selectedSecretaria.logo_url} alt={selectedSecretaria.nome} loading="lazy" decoding="async" className="w-7 h-7 object-contain rounded-lg bg-white p-0.5" />
+                  <img
+                    src={selectedSecretaria.logo_url}
+                    alt={selectedSecretaria.nome}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-7 h-7 object-contain rounded-lg bg-white p-0.5"
+                    onError={(e) => {
+                      const isSaude = /sa[uú]de/i.test(selectedSecretaria.nome)
+                      const target = e.currentTarget
+                      const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                      if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                        target.src = fallback
+                      }
+                    }}
+                  />
                 ) : (
                   <Building2 className="w-6 h-6 text-sky-400" />
                 )}

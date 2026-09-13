@@ -173,6 +173,16 @@ export function Header() {
               src={selectedEscola?.logo_url || selectedSecretaria?.logo_url || ''}
               alt={selectedEscola?.nome || selectedSecretaria?.nome || 'Logo'}
               className="w-7 h-7 rounded-lg object-contain shrink-0 border border-borderCustom p-0.5 bg-surface-1"
+              onError={(e) => {
+                const target = e.currentTarget
+                if (selectedSecretaria) {
+                  const isSaude = /sa[uú]de/i.test(selectedSecretaria.nome)
+                  const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                  if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                    target.src = fallback
+                  }
+                }
+              }}
             />
           ) : (
             <School className="w-5 h-5 text-[#185FA5] dark:text-[#3ea6ff] shrink-0" />

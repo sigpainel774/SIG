@@ -1897,6 +1897,76 @@ export type Database = {
           },
         ]
       }
+      emaee_atendimentos_registros: {
+        Row: {
+          aluno_nao_compareceu: boolean | null
+          created_at: string | null
+          data_atendimento: string
+          escola_id: string | null
+          id: string
+          motivo_recusa_falta: string | null
+          observacoes: string | null
+          registrado_em: string | null
+          registrado_por: string | null
+          registrado_por_nome: string | null
+          status: string
+          updated_at: string | null
+          vinculo_id: string
+        }
+        Insert: {
+          aluno_nao_compareceu?: boolean | null
+          created_at?: string | null
+          data_atendimento: string
+          escola_id?: string | null
+          id?: string
+          motivo_recusa_falta?: string | null
+          observacoes?: string | null
+          registrado_em?: string | null
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+          status: string
+          updated_at?: string | null
+          vinculo_id: string
+        }
+        Update: {
+          aluno_nao_compareceu?: boolean | null
+          created_at?: string | null
+          data_atendimento?: string
+          escola_id?: string | null
+          id?: string
+          motivo_recusa_falta?: string | null
+          observacoes?: string | null
+          registrado_em?: string | null
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+          status?: string
+          updated_at?: string | null
+          vinculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emaee_atendimentos_registros_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_atendimentos_registros_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emaee_atendimentos_registros_vinculo_id_fkey"
+            columns: ["vinculo_id"]
+            isOneToOne: false
+            referencedRelation: "emaee_especialidades_vinculadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emaee_especialidades_vinculadas: {
         Row: {
           ativo: boolean | null
@@ -6269,6 +6339,13 @@ export type Database = {
       tem_permissao: {
         Args: { p_escola_id?: string; p_permissao: string }
         Returns: boolean
+      }
+      verificar_e_notificar_atendimentos_emaee_pendentes: {
+        Args: {
+          p_escola_id: string
+          p_data_referencia?: string
+        }
+        Returns: Json
       }
       verificar_pendencias_pontuacao_trimestre: {
         Args: { p_escola_id: string; p_professor_id?: string }

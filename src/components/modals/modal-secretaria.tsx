@@ -49,28 +49,27 @@ export function ModalSecretaria({ open, onOpenChange, secretariaToEdit, onSucces
   const uploadLogo = async (file: File): Promise<string | null> => {
     const supabase = createClient()
     const sanitizedFileName = file.name.replace(/[^\w.-]/g, '_')
-    // Tentaremos usar o bucket 'arquivos'. Se falhar, tentaremos outro comum.
-    const filePath = `logos/sec_${Date.now()}_${sanitizedFileName}`
+    const filePath = `sec_${Date.now()}_${sanitizedFileName}`
 
     const { error: uploadError } = await supabase.storage
-      .from('arquivos') // Tenta bucket arquivos
+      .from('logos')
       .upload(filePath, file, { upsert: true })
 
     if (uploadError) {
-      console.warn('Erro ao subir para arquivos, tentando alunos-anexos...', uploadError)
+      console.warn('Erro ao subir para logos, tentando logos-escolas...', uploadError)
       const { error: fallbackError } = await supabase.storage
-        .from('alunos-anexos')
+        .from('logos-escolas')
         .upload(filePath, file, { upsert: true })
       
       if (fallbackError) {
         throw new Error('Falha no upload do logo. Verifique os buckets do Storage.')
       }
 
-      const { data } = supabase.storage.from('alunos-anexos').getPublicUrl(filePath)
+      const { data } = supabase.storage.from('logos-escolas').getPublicUrl(filePath)
       return data.publicUrl
     }
 
-    const { data } = supabase.storage.from('arquivos').getPublicUrl(filePath)
+    const { data } = supabase.storage.from('logos').getPublicUrl(filePath)
     return data.publicUrl
   }
 

@@ -1,34 +1,48 @@
 'use client'
 
-import React, { useEffect, useState, useMemo, useRef } from 'react'
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { 
-  Calendar as CalendarIcon, 
-  ArrowLeft, 
-  UserPlus, 
-  Search, 
-  Clock, 
-  User, 
-  Heart, 
-  Trash2, 
-  ExternalLink, 
-  Printer, 
-  Sparkles, 
-  CalendarDays, 
-  List, 
-  LayoutGrid, 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle2, 
+import {
+  Calendar as CalendarIcon,
+  ArrowLeft,
+  UserPlus,
+  Search,
+  Clock,
+  User,
+  Heart,
+  Trash2,
+  ExternalLink,
+  Printer,
+  Sparkles,
+  CalendarDays,
+  List,
+  LayoutGrid,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   Filter,
-  Users
+  Users,
+  Check,
+  X,
+  FileText,
+  CalendarRange,
+  Info,
+  CalendarCheck,
+  CalendarX,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IconTile } from '@/components/ui/icon-tile'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { StandardTable } from '@/components/ui/table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
@@ -45,7 +59,7 @@ const DIAS_SEMANA_NOMES: Record<number, string> = {
   4: 'Quinta-feira',
   5: 'Sexta-feira',
   6: 'Sábado',
-  7: 'Domingo'
+  7: 'Domingo',
 }
 
 const DIAS_SEMANA_CURTOS: Record<number, string> = {
@@ -55,13 +69,74 @@ const DIAS_SEMANA_CURTOS: Record<number, string> = {
   4: 'Qui',
   5: 'Sex',
   6: 'Sáb',
-  7: 'Dom'
+  7: 'Dom',
 }
 
 const MESES_NOMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ]
+
+// ============================================================================
+// Utilitários de Data e Semanas do Ano
+// ============================================================================
+
+/** Retorna a Segunda-feira da semana de uma data de referência (às 00:00:00) */
+function getSegundaFeira(dataRef: Date): Date {
+  const d = new Date(dataRef.getFullYear(), dataRef.getMonth(), dataRef.getDate())
+  const diaJs = d.getDay() // 0=Dom, 1=Seg, ..., 6=Sab
+  const offset = diaJs === 0 ? -6 : 1 - diaJs
+  d.setDate(d.getDate() + offset)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+/** Formata data para YYYY-MM-DD */
+function formatarDataIso(d: Date): string {
+  const ano = d.getFullYear()
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
+
+/** Formata data para DD/MM */
+function formatarDataCurta(d: Date): string {
+  const dia = String(d.getDate()).padStart(2, '0')
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dia}/${mes}`
+}
+
+/** Formata data para DD/MM/YYYY */
+function formatarDataCompleta(d: Date): string {
+  const dia = String(d.getDate()).padStart(2, '0')
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const ano = d.getFullYear()
+  return `${dia}/${mes}/${ano}`
+}
+
+/** Retorna o número da semana ISO do ano e o ano correspondente */
+function getNumeroSemanaAno(data: Date): { semana: number; ano: number } {
+  const target = new Date(data.valueOf())
+  const dayNumber = (data.getDay() + 6) % 7
+  target.setDate(target.getDate() - dayNumber + 3)
+  const firstThursday = target.valueOf()
+  target.setMonth(0, 1)
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7))
+  }
+  const semana = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000)
+  return { semana, ano: new Date(firstThursday).getFullYear() }
+}
 
 export default function CalendarioAtendimentosPage() {
   const { selectedEscola } = useSchoolStore()
@@ -73,18 +148,28 @@ export default function CalendarioAtendimentosPage() {
   const [profissionais, setProfissionais] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Controle de Navegação de Semanas do Ano
+  const hoje = useMemo(() => new Date(), [])
+  const [dataSemanaBase, setDataSemanaBase] = useState<Date>(() => getSegundaFeira(new Date()))
+
+  // Mapa de Registros de Presença/Status da Semana: Key: `${vinculo_id}_${data_iso}`
+  const [registrosSemana, setRegistrosSemana] = useState<Record<string, any>>({})
+  const [loadingRegistros, setLoadingRegistros] = useState(false)
+
   // Filtros
   const [termoBusca, setTermoBusca] = useState('')
   const [filtroProfissional, setFiltroProfissional] = useState<string>('todos')
   const [filtroEspecialidade, setFiltroEspecialidade] = useState<string>('todos')
   const [filtroDiaSemana, setFiltroDiaSemana] = useState<string>('todos')
   const [filtroTurno, setFiltroTurno] = useState<string>('todos') // todos | matutino | vespertino
+  const [filtroStatusPresenca, setFiltroStatusPresenca] = useState<string>('todos') // todos | realizado | nao_realizado | pendente
 
   // Modos de visualização: 'grade' | 'calendario' | 'tabela'
-  const [modoVisualizacao, setModoVisualizacao] = useState<'grade' | 'calendario' | 'tabela'>('grade')
+  const [modoVisualizacao, setModoVisualizacao] = useState<'grade' | 'calendario' | 'tabela'>(
+    'grade',
+  )
 
   // Controle de Calendário Mensal
-  const hoje = useMemo(() => new Date(), [])
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
   const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth()) // 0-11
   const [diaSelecionadoData, setDiaSelecionadoData] = useState<Date | null>(null)
@@ -92,8 +177,20 @@ export default function CalendarioAtendimentosPage() {
   // Modais
   const [modalVincularOpen, setModalVincularOpen] = useState(false)
   const [profParaVincular, setProfParaVincular] = useState<any>(null)
+
+  // Modal de Detalhes e Registro de Presença
   const [modalDetalhesOpen, setModalDetalhesOpen] = useState(false)
   const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<any>(null)
+  const [dataAtendimentoSelecionada, setDataAtendimentoSelecionada] = useState<Date | null>(null)
+
+  // Estados do Formulário de Registro dentro do Modal
+  const [statusForm, setStatusForm] = useState<'realizado' | 'nao_realizado' | 'pendente'>(
+    'pendente',
+  )
+  const [alunoNaoCompareceuForm, setAlunoNaoCompareceuForm] = useState<boolean>(false)
+  const [motivoRecusaForm, setMotivoRecusaForm] = useState<string>('')
+  const [observacoesForm, setObservacoesForm] = useState<string>('')
+  const [salvandoRegistro, setSalvandoRegistro] = useState<boolean>(false)
 
   // Modal de Exclusão
   const [modalExcluirOpen, setModalExcluirOpen] = useState(false)
@@ -112,8 +209,65 @@ export default function CalendarioAtendimentosPage() {
     }
   }, [])
 
-  // Carregar todos os vínculos de especialidades da unidade EMAEE
-  const carregarDados = async () => {
+  // --------------------------------------------------------------------------
+  // Cálculo dos 5 Dias da Semana Atual (Segunda a Sexta)
+  // --------------------------------------------------------------------------
+  const diasDaSemanaObj = useMemo(() => {
+    const segunda = getSegundaFeira(dataSemanaBase)
+    const lista: {
+      diaSemana: number
+      data: Date
+      dataIso: string
+      dataCurta: string
+      isHoje: boolean
+    }[] = []
+
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(segunda)
+      d.setDate(segunda.getDate() + i)
+      const dataIso = formatarDataIso(d)
+      const isHoje = formatarDataIso(hoje) === dataIso
+      lista.push({
+        diaSemana: i + 1, // 1=Seg, 2=Ter, ..., 5=Sex
+        data: d,
+        dataIso,
+        dataCurta: formatarDataCurta(d),
+        isHoje,
+      })
+    }
+    return lista
+  }, [dataSemanaBase, hoje])
+
+  const semanaInfo = useMemo(() => {
+    const info = getNumeroSemanaAno(dataSemanaBase)
+    const segunda = diasDaSemanaObj[0]?.data || dataSemanaBase
+    const sexta = diasDaSemanaObj[4]?.data || dataSemanaBase
+    return {
+      semana: info.semana,
+      ano: info.ano,
+      dataInicioFormatada: formatarDataCurta(segunda),
+      dataFimFormatada: formatarDataCurta(sexta),
+      dataFimCompleta: formatarDataCompleta(sexta),
+    }
+  }, [dataSemanaBase, diasDaSemanaObj])
+
+  // Navegação de Semanas
+  const handleNavegarSemana = (direcao: 'anterior' | 'proxima') => {
+    setDataSemanaBase((prev) => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() + (direcao === 'anterior' ? -7 : 7))
+      return d
+    })
+  }
+
+  const handleIrSemanaAtual = () => {
+    setDataSemanaBase(getSegundaFeira(new Date()))
+  }
+
+  // --------------------------------------------------------------------------
+  // Carregar Vínculos e Profissionais da Unidade EMAEE
+  // --------------------------------------------------------------------------
+  const carregarDados = useCallback(async () => {
     if (!escolaEmaeeId) {
       if (isMounted.current) setLoading(false)
       return
@@ -171,12 +325,11 @@ export default function CalendarioAtendimentosPage() {
 
       if (espError) throw espError
 
-      // Filtra apenas as matrículas pertencentes à escola EMAEE atual
       const filtradosUnidade = (espData || []).filter(
-        (item: any) => item.emaee_matriculas?.escola_atendimento_id === escolaEmaeeId
+        (item: any) => item.emaee_matriculas?.escola_atendimento_id === escolaEmaeeId,
       )
 
-      // 2. Busca lista de profissionais AEE da unidade para preencher os seletores
+      // 2. Busca lista de profissionais AEE da unidade
       const { data: profData, error: profError } = await supabase
         .from('funcionarios')
         .select(`
@@ -207,11 +360,63 @@ export default function CalendarioAtendimentosPage() {
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }
+  }, [escolaEmaeeId, supabase])
+
+  // --------------------------------------------------------------------------
+  // Carregar Registros de Presença da Semana Visualizada
+  // --------------------------------------------------------------------------
+  const carregarRegistrosSemana = useCallback(async () => {
+    if (!escolaEmaeeId || diasDaSemanaObj.length === 0) return
+
+    setLoadingRegistros(true)
+    const dataInicioIso = diasDaSemanaObj[0].dataIso
+    const dataFimIso = diasDaSemanaObj[4].dataIso
+
+    try {
+      const res = await fetch(
+        `/api/emaee/atendimentos/registros?escolaId=${escolaEmaeeId}&dataInicio=${dataInicioIso}&dataFim=${dataFimIso}`,
+      )
+      if (!res.ok) throw new Error('Falha ao buscar registros')
+      const data = await res.json()
+
+      const map: Record<string, any> = {}
+      ;(data.registros || []).forEach((reg: any) => {
+        const key = `${reg.vinculo_id}_${reg.data_atendimento}`
+        map[key] = reg
+      })
+
+      if (isMounted.current) {
+        setRegistrosSemana(map)
+      }
+    } catch (err) {
+      console.warn('Aviso ao carregar registros de atendimento:', err)
+    } finally {
+      if (isMounted.current) setLoadingRegistros(false)
+    }
+  }, [escolaEmaeeId, diasDaSemanaObj])
+
+  // --------------------------------------------------------------------------
+  // Verificar e Notificar Pendências do Dia Anterior (Execução Automática)
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    if (!escolaEmaeeId) return
+    // Dispara a verificação em background de forma silenciosa e resiliente
+    fetch('/api/emaee/atendimentos/verificar-pendencias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ escolaId: escolaEmaeeId }),
+    })
+      .then((res) => res.json())
+      .catch((e) => console.warn('Aviso verificação pendências:', e))
+  }, [escolaEmaeeId])
 
   useEffect(() => {
     carregarDados()
-  }, [escolaEmaeeId])
+  }, [carregarDados])
+
+  useEffect(() => {
+    carregarRegistrosSemana()
+  }, [carregarRegistrosSemana])
 
   // Normalização de texto para busca dinâmica
   const normalizar = (str: string) =>
@@ -226,33 +431,47 @@ export default function CalendarioAtendimentosPage() {
     return h.slice(0, 5)
   }
 
-  // Obter nome de exibição da especialidade / cargo com fallback inteligente
+  // Obter nome de exibição da especialidade / cargo
   const getEspecialidadeNome = (item: any) => {
     if (!item) return 'AEE'
     const esp = item.especialidade
     if (esp && typeof esp === 'string' && esp.trim() && esp !== 'Outro' && esp !== 'Outros') {
       return esp.trim()
     }
-    if (item.especialidade_outros && typeof item.especialidade_outros === 'string' && item.especialidade_outros.trim()) {
+    if (
+      item.especialidade_outros &&
+      typeof item.especialidade_outros === 'string' &&
+      item.especialidade_outros.trim()
+    ) {
       return item.especialidade_outros.trim()
     }
     const cargo = item.funcionarios?.cargo
-    if (cargo && typeof cargo === 'string' && cargo.trim() && cargo !== 'Outro' && cargo !== 'Outros') {
+    if (
+      cargo &&
+      typeof cargo === 'string' &&
+      cargo.trim() &&
+      cargo !== 'Outro' &&
+      cargo !== 'Outros'
+    ) {
       return cargo.trim()
     }
     return esp || cargo || 'AEE'
   }
 
-  // Lista de especialidades / profissões únicas dos profissionais AEE ativos e atendimentos
+  // Lista de especialidades únicas
   const listaEspecialidades = useMemo(() => {
     const setEsp = new Set<string>()
-    // 1. Profissões / cargos dos profissionais AEE ativos na unidade EMAEE
     profissionais.forEach((p) => {
-      if (p.cargo && typeof p.cargo === 'string' && p.cargo.trim() && p.cargo !== 'Outro' && p.cargo !== 'Outros') {
+      if (
+        p.cargo &&
+        typeof p.cargo === 'string' &&
+        p.cargo.trim() &&
+        p.cargo !== 'Outro' &&
+        p.cargo !== 'Outros'
+      ) {
         setEsp.add(p.cargo.trim())
       }
     })
-    // 2. Especialidades ou cargos dos atendimentos já cadastrados
     vinculos.forEach((v) => {
       const espNome = getEspecialidadeNome(v)
       if (espNome && espNome !== 'AEE' && espNome !== 'Outro' && espNome !== 'Outros') {
@@ -269,7 +488,6 @@ export default function CalendarioAtendimentosPage() {
       const prof = v.funcionarios
       const termo = normalizar(termoBusca)
 
-      // Busca por nome do aluno, nome da mãe, matrícula ou profissional
       if (termo) {
         const nomeAluno = normalizar(aluno?.nome || '')
         const nomeMae = normalizar(aluno?.nome_mae || '')
@@ -283,28 +501,28 @@ export default function CalendarioAtendimentosPage() {
         if (!matchesTermo) return false
       }
 
-      // Filtro Profissional
       if (filtroProfissional !== 'todos' && v.profissional_id !== filtroProfissional) {
         return false
       }
 
-      // Filtro Especialidade / Profissão
       if (filtroEspecialidade !== 'todos') {
         const filtroNorm = normalizar(filtroEspecialidade)
         const espResolvidaNorm = normalizar(getEspecialidadeNome(v))
         const espNorm = normalizar(v.especialidade || '')
         const profCargoNorm = normalizar(prof?.cargo || '')
-        if (espResolvidaNorm !== filtroNorm && espNorm !== filtroNorm && profCargoNorm !== filtroNorm) {
+        if (
+          espResolvidaNorm !== filtroNorm &&
+          espNorm !== filtroNorm &&
+          profCargoNorm !== filtroNorm
+        ) {
           return false
         }
       }
 
-      // Filtro Dia da Semana
       if (filtroDiaSemana !== 'todos' && String(v.dia_semana) !== filtroDiaSemana) {
         return false
       }
 
-      // Filtro Turno
       if (filtroTurno !== 'todos') {
         const hInicio = v.horario_inicio || ''
         const isMatutino = hInicio < '12:00:00'
@@ -322,19 +540,28 @@ export default function CalendarioAtendimentosPage() {
     const profsSet = new Set(vinculos.map((v) => v.profissional_id))
     const alunosSet = new Set(vinculos.map((v) => v.emaee_matricula_id))
 
-    // Dia da semana de hoje (JS 0=Dom, 1=Seg... -> AEE: 1=Seg ... 5=Sex)
     const diaJs = hoje.getDay()
     const diaAeeHoje = diaJs === 0 ? 7 : diaJs
     const atendimentosHoje = vinculos.filter((v) => v.dia_semana === diaAeeHoje).length
+
+    // Contagem de realizados e não realizados na semana atual
+    let totalRealizadosSemana = 0
+    let totalNaoRealizadosSemana = 0
+    Object.values(registrosSemana).forEach((reg: any) => {
+      if (reg.status === 'realizado') totalRealizadosSemana++
+      if (reg.status === 'nao_realizado') totalNaoRealizadosSemana++
+    })
 
     return {
       totalSessoes,
       totalProfissionais: profsSet.size,
       totalAlunos: alunosSet.size,
       atendimentosHoje,
-      diaAeeHoje
+      diaAeeHoje,
+      totalRealizadosSemana,
+      totalNaoRealizadosSemana,
     }
-  }, [vinculos, hoje])
+  }, [vinculos, hoje, registrosSemana])
 
   // Cores por Especialidade
   const getColorByCargo = (cargo: string | null) => {
@@ -343,41 +570,41 @@ export default function CalendarioAtendimentosPage() {
       return {
         badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25',
         card: 'border-purple-500/25 bg-purple-500/[0.03] dark:bg-purple-500/10 hover:border-purple-500/50',
-        bar: 'bg-purple-500'
+        bar: 'bg-purple-500',
       }
     }
     if (c.includes('psicólogo') || c.includes('psicologa')) {
       return {
         badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/25',
         card: 'border-blue-500/25 bg-blue-500/[0.03] dark:bg-blue-500/10 hover:border-blue-500/50',
-        bar: 'bg-blue-500'
+        bar: 'bg-blue-500',
       }
     }
     if (c.includes('fono')) {
       return {
         badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
         card: 'border-emerald-500/25 bg-emerald-500/[0.03] dark:bg-emerald-500/10 hover:border-emerald-500/50',
-        bar: 'bg-emerald-500'
+        bar: 'bg-emerald-500',
       }
     }
     if (c.includes('psicopedagogo') || c.includes('psicopedagoga')) {
       return {
         badge: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/25',
         card: 'border-orange-500/25 bg-orange-500/[0.03] dark:bg-orange-500/10 hover:border-orange-500/50',
-        bar: 'bg-orange-500'
+        bar: 'bg-orange-500',
       }
     }
     if (c.includes('fisio')) {
       return {
         badge: 'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/25',
         card: 'border-pink-500/25 bg-pink-500/[0.03] dark:bg-pink-500/10 hover:border-pink-500/50',
-        bar: 'bg-pink-500'
+        bar: 'bg-pink-500',
       }
     }
     return {
       badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25',
       card: 'border-border bg-card hover:border-border/80',
-      bar: 'bg-amber-500'
+      bar: 'bg-amber-500',
     }
   }
 
@@ -392,7 +619,6 @@ export default function CalendarioAtendimentosPage() {
       }
     })
 
-    // Ordena cada dia por horário de início
     dias.forEach((d) => {
       agrupado[d].sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''))
     })
@@ -400,13 +626,103 @@ export default function CalendarioAtendimentosPage() {
     return agrupado
   }, [atendimentosFiltrados])
 
-  // Abertura de modal de detalhes
-  const handleVerDetalhes = (item: any) => {
+  // --------------------------------------------------------------------------
+  // Abertura do Modal com Registro da Sessão Específica
+  // --------------------------------------------------------------------------
+  const handleVerDetalhes = (item: any, dataSessao?: Date) => {
+    // Determinar a data exata da sessão
+    let dataReferencia: Date
+    if (dataSessao) {
+      dataReferencia = dataSessao
+    } else {
+      // Se não passada, calcula com base no dia_semana do atendimento na semana visualizada
+      const diaObj = diasDaSemanaObj.find((d) => d.diaSemana === item.dia_semana)
+      dataReferencia = diaObj?.data || new Date()
+    }
+
+    const dataIso = formatarDataIso(dataReferencia)
+    const key = `${item.id}_${dataIso}`
+    const regExistente = registrosSemana[key]
+
     setAtendimentoSelecionado(item)
+    setDataAtendimentoSelecionada(dataReferencia)
+
+    if (regExistente) {
+      setStatusForm(regExistente.status || 'pendente')
+      setAlunoNaoCompareceuForm(Boolean(regExistente.aluno_nao_compareceu))
+      setMotivoRecusaForm(regExistente.motivo_recusa_falta || '')
+      setObservacoesForm(regExistente.observacoes || '')
+    } else {
+      setStatusForm('pendente')
+      setAlunoNaoCompareceuForm(false)
+      setMotivoRecusaForm('')
+      setObservacoesForm('')
+    }
+
     setModalDetalhesOpen(true)
   }
 
-  // Abertura de modal de exclusão
+  // Salvar Registro de Presença / Atendimento
+  const handleSalvarRegistro = async () => {
+    if (!atendimentoSelecionado?.id || !dataAtendimentoSelecionada) return
+
+    // Validação de obrigatoriedade caso seja marcado como Não Realizado
+    if (statusForm === 'nao_realizado') {
+      const temMotivo = alunoNaoCompareceuForm || motivoRecusaForm.trim().length > 0
+      if (!temMotivo) {
+        toast.error(
+          'Informe obrigatoriamente se o aluno faltou ou descreva outras razões para a não realização.',
+        )
+        return
+      }
+    }
+
+    setSalvandoRegistro(true)
+    const dataIso = formatarDataIso(dataAtendimentoSelecionada)
+
+    try {
+      const res = await fetch('/api/emaee/atendimentos/registros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vinculo_id: atendimentoSelecionado.id,
+          escola_id: escolaEmaeeId,
+          data_atendimento: dataIso,
+          status: statusForm,
+          aluno_nao_compareceu: alunoNaoCompareceuForm,
+          motivo_recusa_falta: motivoRecusaForm,
+          observacoes: observacoesForm,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao salvar registro de atendimento')
+      }
+
+      const key = `${atendimentoSelecionado.id}_${dataIso}`
+      setRegistrosSemana((prev) => ({
+        ...prev,
+        [key]: data.registro,
+      }))
+
+      toast.success(
+        statusForm === 'realizado'
+          ? 'Atendimento registrado como REALIZADO!'
+          : statusForm === 'nao_realizado'
+            ? 'Atendimento registrado como NÃO REALIZADO com sucesso!'
+            : 'Status de atendimento atualizado.',
+      )
+      setModalDetalhesOpen(false)
+    } catch (err: any) {
+      console.error('Erro ao salvar registro:', err)
+      toast.error(err?.message || 'Erro ao salvar registro de atendimento.')
+    } finally {
+      setSalvandoRegistro(false)
+    }
+  }
+
+  // Modal de exclusão
   const handleConfirmarExcluir = (e: React.MouseEvent, item: any) => {
     e.stopPropagation()
     setAtendimentoParaExcluir(item)
@@ -441,32 +757,30 @@ export default function CalendarioAtendimentosPage() {
     const primeiroDia = new Date(anoSelecionado, mesSelecionado, 1)
     const ultimoDia = new Date(anoSelecionado, mesSelecionado + 1, 0)
     const totalDias = ultimoDia.getDate()
-    const offsetInicio = primeiroDia.getDay() // 0 = Domingo
+    const offsetInicio = primeiroDia.getDay()
 
     const dias = []
-    // Dias em branco antes do dia 1
     for (let i = 0; i < offsetInicio; i++) {
       dias.push(null)
     }
-    // Dias do mês
     for (let d = 1; d <= totalDias; d++) {
       const dataObj = new Date(anoSelecionado, mesSelecionado, d)
       const diaJs = dataObj.getDay()
       const diaAee = diaJs === 0 ? 7 : diaJs
 
-      // Atendimentos que ocorrem nesse dia da semana
       const sessoesNesteDia = atendimentosFiltrados.filter((v) => v.dia_semana === diaAee)
 
       dias.push({
         numero: d,
         data: dataObj,
         diaAee,
+        dataIso: formatarDataIso(dataObj),
         isHoje:
           dataObj.getDate() === hoje.getDate() &&
           dataObj.getMonth() === hoje.getMonth() &&
           dataObj.getFullYear() === hoje.getFullYear(),
         isFimDeSemana: diaJs === 0 || diaJs === 6,
-        sessoes: sessoesNesteDia
+        sessoes: sessoesNesteDia,
       })
     }
     return dias
@@ -492,15 +806,17 @@ export default function CalendarioAtendimentosPage() {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Modal de Detalhes do Atendimento */}
-      {modalDetalhesOpen && atendimentoSelecionado && (
+      {/* ==================================================================== */}
+      {/* Modal de Detalhes & Registro de Atendimento                          */}
+      {/* ==================================================================== */}
+      {modalDetalhesOpen && atendimentoSelecionado && dataAtendimentoSelecionada && (
         <StandardDialog
           open={modalDetalhesOpen}
           onOpenChange={setModalDetalhesOpen}
-          title="Detalhes do Atendimento AEE"
-          maxWidth="sm:max-w-[560px]"
+          title="Detalhes do Atendimento & Registro de Presença"
+          maxWidth="sm:max-w-[620px]"
           footer={
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full flex-wrap gap-2">
               <Link
                 href={`/emaee/pacientes/${atendimentoSelecionado.emaee_matricula_id}`}
                 className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-semibold"
@@ -508,19 +824,44 @@ export default function CalendarioAtendimentosPage() {
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Abrir Prontuário do Paciente</span>
               </Link>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setModalDetalhesOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-xs"
-              >
-                Fechar
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setModalDetalhesOpen(false)}
+                  disabled={salvandoRegistro}
+                  className="text-muted-foreground hover:text-foreground text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSalvarRegistro}
+                  disabled={salvandoRegistro}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl px-4 shadow-sm cursor-pointer"
+                >
+                  {salvandoRegistro ? 'Salvando Registro...' : 'Salvar Registro do Atendimento'}
+                </Button>
+              </div>
             </div>
           }
         >
-          <div className="space-y-4 py-1 text-xs">
-            {/* Bloco Aluno & Mãe */}
+          <div className="space-y-4 py-1 text-xs max-h-[75vh] overflow-y-auto pr-1">
+            {/* Tag da Data da Sessão Selecionada */}
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2 text-primary font-bold">
+                <CalendarRange className="w-4 h-4 shrink-0" />
+                <span>
+                  Sessão de {DIAS_SEMANA_NOMES[atendimentoSelecionado.dia_semana]},{' '}
+                  {formatarDataCompleta(dataAtendimentoSelecionada)}
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/20">
+                Semana {semanaInfo.semana}
+              </span>
+            </div>
+
+            {/* Bloco Estudante */}
             <div className="p-3.5 bg-secondary/30 border border-border rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -563,7 +904,7 @@ export default function CalendarioAtendimentosPage() {
                 Agendamento & Profissional AEE
               </span>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
                   {getAvatarUrl(atendimentoSelecionado.funcionarios) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -572,7 +913,7 @@ export default function CalendarioAtendimentosPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-5 h-5 text-muted-foreground" />
+                    <User className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -583,27 +924,175 @@ export default function CalendarioAtendimentosPage() {
                     {getEspecialidadeNome(atendimentoSelecionado)}
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/50 text-muted-foreground">
-                <div>
-                  <strong className="text-foreground/80 block">Dia da Semana:</strong>
-                  <span>{DIAS_SEMANA_NOMES[atendimentoSelecionado.dia_semana] ?? '-'}</span>
-                </div>
-                <div>
-                  <strong className="text-foreground/80 block">Horário:</strong>
-                  <span>
-                    {formatarHorario(atendimentoSelecionado.horario_inicio)}
-                    {atendimentoSelecionado.horario_fim
-                      ? ` às ${formatarHorario(atendimentoSelecionado.horario_fim)}`
-                      : ''}
+                <div className="text-right shrink-0 text-muted-foreground">
+                  <div className="text-[11px] font-bold text-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    <span>
+                      {formatarHorario(atendimentoSelecionado.horario_inicio)}
+                      {atendimentoSelecionado.horario_fim
+                        ? ` às ${formatarHorario(atendimentoSelecionado.horario_fim)}`
+                        : ''}
+                    </span>
+                  </div>
+                  <span className="text-[10px] capitalize">
+                    {atendimentoSelecionado.frequencia?.toLowerCase() ?? 'Semanal'}
                   </span>
                 </div>
-                <div>
-                  <strong className="text-foreground/80 block">Frequência:</strong>
-                  <span className="capitalize">{atendimentoSelecionado.frequencia?.toLowerCase() ?? 'Semanal'}</span>
-                </div>
               </div>
+            </div>
+
+            {/* ================================================================ */}
+            {/* SEÇÃO PRINCIPAL: REGISTRO SE HOUVE OU NÃO ATENDIMENTO            */}
+            {/* ================================================================ */}
+            <div className="p-4 bg-card border-2 border-primary/30 rounded-2xl space-y-4 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <CalendarCheck className="w-4 h-4 text-primary" />
+                    <span>Registro do Atendimento desta Data</span>
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Obrigatório registrar realização
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Marque se a sessão clínica foi efetivamente realizada ou registre o motivo da não
+                  realização.
+                </p>
+              </div>
+
+              {/* Botões Seletores de Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {/* Opção 1: Realizado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('realizado')
+                    setAlunoNaoCompareceuForm(false)
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'realizado'
+                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-300 ring-2 ring-emerald-500/30 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-emerald-500/40 hover:text-foreground'
+                  }`}
+                >
+                  <CheckCircle2
+                    className={`w-5 h-5 ${statusForm === 'realizado' ? 'text-emerald-500' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Atendimento Realizado</span>
+                  <span className="text-[9px] opacity-75 font-normal">Aluno presente</span>
+                </button>
+
+                {/* Opção 2: Não Realizado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('nao_realizado')
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'nao_realizado'
+                      ? 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-300 ring-2 ring-rose-500/30 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-rose-500/40 hover:text-foreground'
+                  }`}
+                >
+                  <XCircle
+                    className={`w-5 h-5 ${statusForm === 'nao_realizado' ? 'text-rose-500' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Não Realizado</span>
+                  <span className="text-[9px] opacity-75 font-normal">Falta / Não ocorreu</span>
+                </button>
+
+                {/* Opção 3: Pendente */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('pendente')
+                    setAlunoNaoCompareceuForm(false)
+                    setMotivoRecusaForm('')
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'pendente'
+                      ? 'bg-secondary border-primary/50 text-foreground ring-2 ring-primary/20 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
+                  }`}
+                >
+                  <Clock
+                    className={`w-5 h-5 ${statusForm === 'pendente' ? 'text-primary' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Pendente</span>
+                  <span className="text-[9px] opacity-75 font-normal">Aguardando registro</span>
+                </button>
+              </div>
+
+              {/* CAMPOS CONDICIONAIS SE NÃO REALIZADO */}
+              {statusForm === 'nao_realizado' && (
+                <div className="p-3.5 bg-rose-500/5 border border-rose-500/25 rounded-xl space-y-3 animate-in fade-in-50">
+                  <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Registro Obrigatório do Motivo da Não Realização</span>
+                  </div>
+
+                  {/* Checkbox Aluno Não Compareceu */}
+                  <label className="flex items-start gap-2.5 p-2.5 bg-background border border-border rounded-xl cursor-pointer hover:bg-secondary/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={alunoNaoCompareceuForm}
+                      onChange={(e) => setAlunoNaoCompareceuForm(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-foreground block">
+                        O aluno não compareceu ao atendimento (Falta)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Marque se a sessão não ocorreu devido à ausência injustificada ou falta do
+                        estudante.
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Outras razões / Justificativa detalhada */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+                      <span>Outras razões ou justificativa adicional:</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {alunoNaoCompareceuForm
+                          ? '(Opcional)'
+                          : '(Obrigatório se não marcar falta)'}
+                      </span>
+                    </Label>
+                    <textarea
+                      rows={3}
+                      value={motivoRecusaForm}
+                      onChange={(e) => setMotivoRecusaForm(e.target.value)}
+                      placeholder="Descreva o motivo (ex: atestado médico apresentado, profissional em capacitação, feriado local, solicitação do responsável)..."
+                      className="w-full bg-background border border-border text-foreground rounded-xl p-2.5 text-xs outline-none focus:border-rose-500 transition-colors placeholder:text-muted-foreground/60 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CAMPOS SE REALIZADO */}
+              {statusForm === 'realizado' && (
+                <div className="p-3.5 bg-emerald-500/5 border border-emerald-500/25 rounded-xl space-y-2 animate-in fade-in-50">
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Presença e Atendimento Confirmados</span>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">
+                      Observações rápidas da sessão (opcional):
+                    </Label>
+                    <textarea
+                      rows={2}
+                      value={observacoesForm}
+                      onChange={(e) => setObservacoesForm(e.target.value)}
+                      placeholder="Anotações preliminares sobre a sessão clínica..."
+                      className="w-full bg-background border border-border text-foreground rounded-xl p-2 text-xs outline-none focus:border-emerald-500 transition-colors placeholder:text-muted-foreground/60 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </StandardDialog>
@@ -653,7 +1142,9 @@ export default function CalendarioAtendimentosPage() {
             </p>
             <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-[11px] flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>Esta ação removerá o horário do calendário de atendimentos deste ano letivo.</span>
+              <span>
+                Esta ação removerá o horário do calendário de atendimentos deste ano letivo.
+              </span>
             </div>
           </div>
         </StandardDialog>
@@ -665,7 +1156,9 @@ export default function CalendarioAtendimentosPage() {
           open={modalVincularOpen}
           onOpenChange={setModalVincularOpen}
           profissionalId={profParaVincular?.id || (profissionais[0]?.id ?? '')}
-          profissionalNome={profParaVincular?.nome || (profissionais[0]?.nome ?? 'Profissional AEE')}
+          profissionalNome={
+            profParaVincular?.nome || (profissionais[0]?.nome ?? 'Profissional AEE')
+          }
           profissionalCargo={profParaVincular?.cargo || (profissionais[0]?.cargo ?? 'Especialista')}
           escolaEmaeeId={escolaEmaeeId || ''}
           onSuccess={carregarDados}
@@ -692,9 +1185,7 @@ export default function CalendarioAtendimentosPage() {
               : undefined
           }
           filtroDiaSemanaNome={
-            filtroDiaSemana !== 'todos'
-              ? DIAS_SEMANA_NOMES[Number(filtroDiaSemana)]
-              : undefined
+            filtroDiaSemana !== 'todos' ? DIAS_SEMANA_NOMES[Number(filtroDiaSemana)] : undefined
           }
           totalSessoes={kpis.totalSessoes}
           totalProfissionais={kpis.totalProfissionais}
@@ -707,7 +1198,11 @@ export default function CalendarioAtendimentosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Link href="/home">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
@@ -715,7 +1210,7 @@ export default function CalendarioAtendimentosPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Calendário de Atendimentos</h1>
             <p className="text-xs text-muted-foreground">
-              Escala anual de atendimentos multidisciplinares e vinculação de profissionais aos alunos
+              Escala semanal e anual de atendimentos multidisciplinares com registro de presença
             </p>
           </div>
         </div>
@@ -740,7 +1235,7 @@ export default function CalendarioAtendimentosPage() {
               setModalVincularOpen(true)
             }}
             disabled={profissionais.length === 0}
-            className="text-xs rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 shadow-sm"
+            className="text-xs rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 shadow-sm cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>+ Vincular Atendimento</span>
@@ -752,9 +1247,13 @@ export default function CalendarioAtendimentosPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-4 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-muted-foreground block">Atendimentos Semanais</span>
+            <span className="text-[11px] font-medium text-muted-foreground block">
+              Atendimentos Semanais
+            </span>
             <span className="text-2xl font-black text-foreground">{kpis.totalSessoes}</span>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">Sessões programadas</span>
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              Sessões programadas
+            </span>
           </div>
           <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
             <CalendarDays className="w-5 h-5" />
@@ -763,29 +1262,43 @@ export default function CalendarioAtendimentosPage() {
 
         <div className="p-4 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-muted-foreground block">Profissionais em Atendimento</span>
-            <span className="text-2xl font-black text-foreground">{kpis.totalProfissionais}</span>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">Especialistas com agenda</span>
+            <span className="text-[11px] font-medium text-muted-foreground block">
+              Realizados nesta Semana
+            </span>
+            <span className="text-2xl font-black text-emerald-500">
+              {kpis.totalRealizadosSemana}
+            </span>
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              Presenças confirmadas
+            </span>
           </div>
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-medium text-muted-foreground block">Alunos Assistidos</span>
-            <span className="text-2xl font-black text-foreground">{kpis.totalAlunos}</span>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">Prontuários com vínculo</span>
-          </div>
-          <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-            <Heart className="w-5 h-5" />
+          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
         <div className="p-4 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-muted-foreground block">Atendimentos Hoje</span>
+            <span className="text-[11px] font-medium text-muted-foreground block">
+              Não Realizados / Faltas
+            </span>
+            <span className="text-2xl font-black text-rose-500">
+              {kpis.totalNaoRealizadosSemana}
+            </span>
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              Com justificativa
+            </span>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+            <XCircle className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-medium text-muted-foreground block">
+              Atendimentos Hoje
+            </span>
             <span className="text-2xl font-black text-sky-400">{kpis.atendimentosHoje}</span>
             <span className="text-[10px] text-muted-foreground block mt-0.5">
               {DIAS_SEMANA_NOMES[kpis.diaAeeHoje] ?? 'Hoje'}
@@ -797,19 +1310,53 @@ export default function CalendarioAtendimentosPage() {
         </div>
       </div>
 
-      {/* Barra de Filtros e Alternador de Visão */}
+      {/* ==================================================================== */}
+      {/* BARRA DE NAVEGAÇÃO DE SEMANAS DO ANO (Destaque Superior)             */}
+      {/* ==================================================================== */}
       <div className="p-4 bg-card border border-border rounded-2xl shadow-sm space-y-3.5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Campo de Busca Rápida */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar por nome do aluno, nome da mãe ou profissional..."
-              value={termoBusca}
-              onChange={(e) => setTermoBusca(e.target.value)}
-              className="w-full bg-background border border-border text-foreground rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
-            />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border/60">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center bg-background border border-border rounded-xl p-0.5 shadow-2xs">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleNavegarSemana('anterior')}
+                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground"
+                title="Semana Anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleNavegarSemana('proxima')}
+                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground"
+                title="Próxima Semana"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black text-foreground">
+                Semana {semanaInfo.semana} de {semanaInfo.ano}
+              </span>
+              <span className="text-xs text-muted-foreground font-semibold px-2.5 py-0.5 rounded-full bg-secondary border border-border">
+                {semanaInfo.dataInicioFormatada} a {semanaInfo.dataFimFormatada}
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleIrSemanaAtual}
+              className="text-xs h-8 rounded-xl border-border bg-background hover:bg-secondary text-foreground font-medium"
+            >
+              Semana Atual
+            </Button>
           </div>
 
           {/* Alternador de Modo de Visualização */}
@@ -817,7 +1364,7 @@ export default function CalendarioAtendimentosPage() {
             <button
               type="button"
               onClick={() => setModoVisualizacao('grade')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 modoVisualizacao === 'grade'
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -830,7 +1377,7 @@ export default function CalendarioAtendimentosPage() {
             <button
               type="button"
               onClick={() => setModoVisualizacao('calendario')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 modoVisualizacao === 'calendario'
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -843,7 +1390,7 @@ export default function CalendarioAtendimentosPage() {
             <button
               type="button"
               onClick={() => setModoVisualizacao('tabela')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 modoVisualizacao === 'tabela'
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -855,11 +1402,37 @@ export default function CalendarioAtendimentosPage() {
           </div>
         </div>
 
-        {/* Dropdowns de Filtro Adicionais */}
+        {/* Barra de Busca e Filtros Rápidos */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por nome do aluno, nome da mãe ou profissional..."
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+              className="w-full bg-background border border-border text-foreground rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+              <span className="inline-block w-3 h-1 bg-emerald-500 rounded-full" /> Realizado
+              <span className="inline-block w-3 h-1 bg-rose-500 rounded-full ml-2" /> Não Realizado
+              <span className="inline-block w-3 h-1 bg-muted-foreground/40 rounded-full ml-2" />{' '}
+              Pendente
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdowns de Filtro */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-border/50">
           <div>
             <Label className="text-[11px] text-muted-foreground block mb-1">Profissional AEE</Label>
-            <Select value={filtroProfissional} onValueChange={(val) => setFiltroProfissional(val || 'todos')}>
+            <Select
+              value={filtroProfissional}
+              onValueChange={(val) => setFiltroProfissional(val || 'todos')}
+            >
               <SelectTrigger className="h-8 bg-background border-border text-foreground text-xs">
                 <SelectValue placeholder="Todos os Profissionais" />
               </SelectTrigger>
@@ -875,8 +1448,13 @@ export default function CalendarioAtendimentosPage() {
           </div>
 
           <div>
-            <Label className="text-[11px] text-muted-foreground block mb-1">Especialidade / Cargo</Label>
-            <Select value={filtroEspecialidade} onValueChange={(val) => setFiltroEspecialidade(val || 'todos')}>
+            <Label className="text-[11px] text-muted-foreground block mb-1">
+              Especialidade / Cargo
+            </Label>
+            <Select
+              value={filtroEspecialidade}
+              onValueChange={(val) => setFiltroEspecialidade(val || 'todos')}
+            >
               <SelectTrigger className="h-8 bg-background border-border text-foreground text-xs">
                 <SelectValue placeholder="Todas as Especialidades" />
               </SelectTrigger>
@@ -893,7 +1471,10 @@ export default function CalendarioAtendimentosPage() {
 
           <div>
             <Label className="text-[11px] text-muted-foreground block mb-1">Dia da Semana</Label>
-            <Select value={filtroDiaSemana} onValueChange={(val) => setFiltroDiaSemana(val || 'todos')}>
+            <Select
+              value={filtroDiaSemana}
+              onValueChange={(val) => setFiltroDiaSemana(val || 'todos')}
+            >
               <SelectTrigger className="h-8 bg-background border-border text-foreground text-xs">
                 <SelectValue placeholder="Todos os Dias" />
               </SelectTrigger>
@@ -909,7 +1490,9 @@ export default function CalendarioAtendimentosPage() {
           </div>
 
           <div>
-            <Label className="text-[11px] text-muted-foreground block mb-1">Turno do Atendimento</Label>
+            <Label className="text-[11px] text-muted-foreground block mb-1">
+              Turno do Atendimento
+            </Label>
             <Select value={filtroTurno} onValueChange={(val) => setFiltroTurno(val || 'todos')}>
               <SelectTrigger className="h-8 bg-background border-border text-foreground text-xs">
                 <SelectValue placeholder="Todos os Turnos" />
@@ -924,7 +1507,9 @@ export default function CalendarioAtendimentosPage() {
         </div>
       </div>
 
-      {/* Conteúdo Principal conforme Modo de Visualização */}
+      {/* ==================================================================== */}
+      {/* CONTEÚDO PRINCIPAL                                                   */}
+      {/* ==================================================================== */}
       {loading ? (
         <div className="flex items-center justify-center py-24 text-muted-foreground text-sm">
           Carregando calendário de atendimentos...
@@ -943,7 +1528,7 @@ export default function CalendarioAtendimentosPage() {
               setModalVincularOpen(true)
             }}
             disabled={profissionais.length === 0}
-            className="text-xs rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+            className="text-xs rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5 mr-1.5" />
             Criar Primeiro Vínculo
@@ -951,13 +1536,14 @@ export default function CalendarioAtendimentosPage() {
         </div>
       ) : (
         <>
-          {/* MODO 1: GRADE SEMANAL (Colunas de Segunda a Sexta) */}
+          {/* MODO 1: GRADE SEMANAL COM DATAS REAIS E BORDAS COLORIDAS */}
           {modoVisualizacao === 'grade' && (
             <div className="overflow-x-auto pb-4 -mx-1 px-1">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start min-w-[960px] xl:min-w-0">
-                {[1, 2, 3, 4, 5].map((diaNum) => {
+                {diasDaSemanaObj.map((diaObj) => {
+                  const diaNum = diaObj.diaSemana
                   const sessoes = gradePorDia[diaNum] || []
-                  const isHojeDia = kpis.diaAeeHoje === diaNum
+                  const isHojeDia = diaObj.isHoje
 
                   return (
                     <div
@@ -968,17 +1554,22 @@ export default function CalendarioAtendimentosPage() {
                           : 'border-border'
                       }`}
                     >
-                      {/* Cabeçalho do Dia */}
+                      {/* Cabeçalho do Dia com Data Real */}
                       <div className="flex items-center justify-between pb-2.5 border-b border-border">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-foreground text-xs">
-                            {DIAS_SEMANA_NOMES[diaNum]}
-                          </span>
-                          {isHojeDia && (
-                            <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
-                              Hoje
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-foreground text-xs">
+                              {DIAS_SEMANA_NOMES[diaNum]}
                             </span>
-                          )}
+                            {isHojeDia && (
+                              <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
+                                Hoje
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-semibold text-primary block mt-0.5">
+                            {diaObj.dataCurta}
+                          </span>
                         </div>
                         <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">
                           {sessoes.length} {sessoes.length === 1 ? 'sessão' : 'sessões'}
@@ -1001,14 +1592,31 @@ export default function CalendarioAtendimentosPage() {
                             const hInicio = formatarHorario(item.horario_inicio)
                             const hFim = formatarHorario(item.horario_fim)
 
+                            // Status do registro para esta data específica da semana
+                            const regKey = `${item.id}_${diaObj.dataIso}`
+                            const reg = registrosSemana[regKey]
+                            const status = reg?.status || 'pendente'
+
+                            // Classes de Borda Superior conforme especificação:
+                            // Verde: Houve atendimento
+                            // Vermelho: Não houve atendimento
+                            // Neutro: Pendente
+                            let borderTopClass = 'border-t border-t-border'
+                            if (status === 'realizado') {
+                              borderTopClass =
+                                'border-t-4 border-t-emerald-500 shadow-emerald-500/5'
+                            } else if (status === 'nao_realizado') {
+                              borderTopClass = 'border-t-4 border-t-rose-500 shadow-rose-500/5'
+                            }
+
                             return (
                               <div
                                 key={item.id}
-                                onClick={() => handleVerDetalhes(item)}
-                                className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] shadow-xs relative group overflow-hidden flex flex-col justify-between`}
+                                onClick={() => handleVerDetalhes(item, diaObj.data)}
+                                className={`p-3 rounded-xl border ${colors.card} ${borderTopClass} cursor-pointer transition-all hover:scale-[1.01] shadow-xs relative group overflow-hidden flex flex-col justify-between`}
                               >
                                 <div>
-                                  {/* Horário e Especialidade */}
+                                  {/* Topo: Horário e Badge de Status / Especialidade */}
                                   <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                                     <div className="flex items-center gap-1 text-[11px] font-bold text-foreground shrink-0">
                                       <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
@@ -1017,15 +1625,41 @@ export default function CalendarioAtendimentosPage() {
                                         {hFim ? ` - ${hFim}` : ''}
                                       </span>
                                     </div>
-                                    <span
-                                      className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[130px] leading-tight text-center ${colors.badge}`}
-                                      title={espNome}
-                                    >
-                                      {espNome}
-                                    </span>
+
+                                    {/* Indicador de Status de Presença */}
+                                    {status === 'realizado' ? (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                        <CheckCircle2 className="w-2.5 h-2.5" />
+                                        <span>Realizado</span>
+                                      </span>
+                                    ) : status === 'nao_realizado' ? (
+                                      <span
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1"
+                                        title={
+                                          reg?.motivo_recusa_falta ||
+                                          (reg?.aluno_nao_compareceu
+                                            ? 'Aluno não compareceu'
+                                            : 'Não realizado')
+                                        }
+                                      >
+                                        <XCircle className="w-2.5 h-2.5" />
+                                        <span>
+                                          {reg?.aluno_nao_compareceu
+                                            ? 'Falta Aluno'
+                                            : 'Não Realizado'}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[130px] leading-tight text-center ${colors.badge}`}
+                                        title={espNome}
+                                      >
+                                        {espNome}
+                                      </span>
+                                    )}
                                   </div>
 
-                                  {/* Aluno e Nome da Mãe */}
+                                  {/* Nome do Aluno e Nome da Mãe */}
                                   <div className="space-y-0.5 mb-2.5">
                                     <div
                                       className="font-bold text-foreground text-xs leading-snug break-words"
@@ -1040,6 +1674,11 @@ export default function CalendarioAtendimentosPage() {
                                       <span className="font-medium text-foreground/70">Mãe:</span>{' '}
                                       {aluno?.nome_mae ?? 'Não informada'}
                                     </div>
+                                    {status === 'nao_realizado' && reg?.motivo_recusa_falta && (
+                                      <div className="text-[9.5px] text-rose-500 font-medium italic truncate mt-1">
+                                        Obs: {reg.motivo_recusa_falta}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -1049,7 +1688,11 @@ export default function CalendarioAtendimentosPage() {
                                     <div className="h-6 w-6 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                       {avatarUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
+                                        <img
+                                          src={avatarUrl}
+                                          alt={prof?.nome || ''}
+                                          className="w-full h-full object-cover"
+                                        />
                                       ) : (
                                         <User className="w-3.5 h-3.5 text-muted-foreground" />
                                       )}
@@ -1090,7 +1733,6 @@ export default function CalendarioAtendimentosPage() {
           {/* MODO 2: CALENDÁRIO MENSAL / ANUAL */}
           {modoVisualizacao === 'calendario' && (
             <div className="space-y-4">
-              {/* Barra de Navegação do Mês */}
               <div className="flex items-center justify-between bg-card border border-border p-3.5 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2">
                   <Button
@@ -1134,7 +1776,6 @@ export default function CalendarioAtendimentosPage() {
 
               {/* Grade do Mês */}
               <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-                {/* Dias da semana cabeçalho */}
                 <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-muted-foreground pb-2 border-b border-border">
                   <span>Dom</span>
                   <span>Seg</span>
@@ -1145,11 +1786,15 @@ export default function CalendarioAtendimentosPage() {
                   <span>Sáb</span>
                 </div>
 
-                {/* Dias do mês */}
                 <div className="grid grid-cols-7 gap-2">
                   {diasDoMes.map((dia, idx) => {
                     if (!dia) {
-                      return <div key={`empty-${idx}`} className="h-24 rounded-xl bg-muted/20 border border-transparent" />
+                      return (
+                        <div
+                          key={`empty-${idx}`}
+                          className="h-24 rounded-xl bg-muted/20 border border-transparent"
+                        />
+                      )
                     }
 
                     const isSelected =
@@ -1166,10 +1811,10 @@ export default function CalendarioAtendimentosPage() {
                           dia.isHoje
                             ? 'border-sky-500 ring-1 ring-sky-500 bg-sky-500/5'
                             : isSelected
-                            ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
-                            : dia.isFimDeSemana
-                            ? 'border-border/40 bg-muted/20 text-muted-foreground/50'
-                            : 'border-border bg-background hover:border-primary/50'
+                              ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
+                              : dia.isFimDeSemana
+                                ? 'border-border/40 bg-muted/20 text-muted-foreground/50'
+                                : 'border-border bg-background hover:border-primary/50'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1182,7 +1827,7 @@ export default function CalendarioAtendimentosPage() {
                           </span>
                           {dia.sessoes.length > 0 && (
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
-                              {dia.sessoes.length} {dia.sessoes.length === 1 ? 'atend.' : 'atend.'}
+                              {dia.sessoes.length} atend.
                             </span>
                           )}
                         </div>
@@ -1194,7 +1839,8 @@ export default function CalendarioAtendimentosPage() {
                                 key={s.id}
                                 className="text-[9px] font-medium truncate bg-secondary/40 text-foreground px-1 py-0.5 rounded border border-border/50"
                               >
-                                {formatarHorario(s.horario_inicio)} - {s.emaee_matriculas?.alunos?.nome?.split(' ')[0]}
+                                {formatarHorario(s.horario_inicio)} -{' '}
+                                {s.emaee_matriculas?.alunos?.nome?.split(' ')[0]}
                               </div>
                             ))}
                             {dia.sessoes.length > 2 && (
@@ -1222,8 +1868,14 @@ export default function CalendarioAtendimentosPage() {
                       <CalendarDays className="w-4 h-4 text-primary" />
                       <span>
                         Atendimentos de {diaSelecionadoData.getDate()} de{' '}
-                        {MESES_NOMES[diaSelecionadoData.getMonth()]} de {diaSelecionadoData.getFullYear()} (
-                        {DIAS_SEMANA_NOMES[diaSelecionadoData.getDay() === 0 ? 7 : diaSelecionadoData.getDay()]})
+                        {MESES_NOMES[diaSelecionadoData.getMonth()]} de{' '}
+                        {diaSelecionadoData.getFullYear()} (
+                        {
+                          DIAS_SEMANA_NOMES[
+                            diaSelecionadoData.getDay() === 0 ? 7 : diaSelecionadoData.getDay()
+                          ]
+                        }
+                        )
                       </span>
                     </h3>
                     <Button
@@ -1240,7 +1892,9 @@ export default function CalendarioAtendimentosPage() {
                   {(() => {
                     const diaJs = diaSelecionadoData.getDay()
                     const diaAee = diaJs === 0 ? 7 : diaJs
-                    const sessoesDoDia = atendimentosFiltrados.filter((v) => v.dia_semana === diaAee)
+                    const sessoesDoDia = atendimentosFiltrados.filter(
+                      (v) => v.dia_semana === diaAee,
+                    )
 
                     if (sessoesDoDia.length === 0) {
                       return (
@@ -1258,33 +1912,61 @@ export default function CalendarioAtendimentosPage() {
                           const espNome = getEspecialidadeNome(item)
                           const colors = getColorByCargo(espNome)
                           const avatarUrl = getAvatarUrl(prof)
+                          const regKey = `${item.id}_${formatarDataIso(diaSelecionadoData)}`
+                          const reg = registrosSemana[regKey]
+                          const status = reg?.status || 'pendente'
+
+                          let borderTopClass = 'border-t border-t-border'
+                          if (status === 'realizado')
+                            borderTopClass = 'border-t-4 border-t-emerald-500'
+                          if (status === 'nao_realizado')
+                            borderTopClass = 'border-t-4 border-t-rose-500'
 
                           return (
                             <div
                               key={item.id}
-                              onClick={() => handleVerDetalhes(item)}
-                              className={`p-3 rounded-xl border ${colors.card} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden flex flex-col justify-between`}
+                              onClick={() => handleVerDetalhes(item, diaSelecionadoData)}
+                              className={`p-3 rounded-xl border ${colors.card} ${borderTopClass} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden flex flex-col justify-between`}
                             >
                               <div>
                                 <div className="flex flex-wrap items-center justify-between mb-2 gap-1.5 min-w-0">
                                   <span className="text-xs font-bold text-foreground flex items-center gap-1 shrink-0">
                                     <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                     {formatarHorario(item.horario_inicio)}
-                                    {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
+                                    {item.horario_fim
+                                      ? ` às ${formatarHorario(item.horario_fim)}`
+                                      : ''}
                                   </span>
-                                  <span
-                                    className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[140px] leading-tight text-center ${colors.badge}`}
-                                    title={espNome}
-                                  >
-                                    {espNome}
-                                  </span>
+                                  {status === 'realizado' ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
+                                      Realizado
+                                    </span>
+                                  ) : status === 'nao_realizado' ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+                                      Não Realizado
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[140px] leading-tight text-center ${colors.badge}`}
+                                      title={espNome}
+                                    >
+                                      {espNome}
+                                    </span>
+                                  )}
                                 </div>
 
-                                <div className="text-xs font-bold text-foreground break-words leading-snug" title={aluno?.nome}>
+                                <div
+                                  className="text-xs font-bold text-foreground break-words leading-snug"
+                                  title={aluno?.nome}
+                                >
                                   {aluno?.nome}
                                 </div>
-                                <div className="text-[11px] text-muted-foreground break-words leading-snug mt-0.5" title={aluno?.nome_mae}>
-                                  <span className="font-medium text-foreground/70">Mãe:</span> {aluno?.nome_mae ?? 'Não informada'}
+                                <div
+                                  className="text-[11px] text-muted-foreground break-words leading-snug mt-0.5"
+                                  title={aluno?.nome_mae}
+                                >
+                                  <span className="font-medium text-foreground/70">Mãe:</span>{' '}
+                                  {aluno?.nome_mae ?? 'Não informada'}
                                 </div>
                               </div>
 
@@ -1292,13 +1974,20 @@ export default function CalendarioAtendimentosPage() {
                                 <div className="h-6 w-6 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                   {avatarUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
+                                    <img
+                                      src={avatarUrl}
+                                      alt={prof?.nome || ''}
+                                      className="w-full h-full object-cover"
+                                    />
                                   ) : (
                                     <User className="w-3.5 h-3.5 text-muted-foreground" />
                                   )}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <span className="text-[11px] font-semibold text-foreground/90 leading-tight block break-words" title={prof?.nome}>
+                                  <span
+                                    className="text-[11px] font-semibold text-foreground/90 leading-tight block break-words"
+                                    title={prof?.nome}
+                                  >
                                     {prof?.nome}
                                   </span>
                                 </div>
@@ -1328,7 +2017,7 @@ export default function CalendarioAtendimentosPage() {
                       <span className="font-semibold text-xs text-foreground">
                         {DIAS_SEMANA_NOMES[item.dia_semana] ?? '-'}
                       </span>
-                    )
+                    ),
                   },
                   {
                     header: 'Horário',
@@ -1337,7 +2026,7 @@ export default function CalendarioAtendimentosPage() {
                         {formatarHorario(item.horario_inicio)}
                         {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
                       </span>
-                    )
+                    ),
                   },
                   {
                     header: 'Aluno',
@@ -1352,7 +2041,7 @@ export default function CalendarioAtendimentosPage() {
                           </div>
                         )}
                       </div>
-                    )
+                    ),
                   },
                   {
                     header: 'Nome da Mãe',
@@ -1360,7 +2049,7 @@ export default function CalendarioAtendimentosPage() {
                       <span className="text-xs text-muted-foreground">
                         {item.emaee_matriculas?.alunos?.nome_mae ?? 'Não informada'}
                       </span>
-                    )
+                    ),
                   },
                   {
                     header: 'Profissional AEE',
@@ -1372,26 +2061,53 @@ export default function CalendarioAtendimentosPage() {
                           <div className="h-6 w-6 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
                             {avatarUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={avatarUrl} alt={prof?.nome || ''} className="w-full h-full object-cover" />
+                              <img
+                                src={avatarUrl}
+                                alt={prof?.nome || ''}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <User className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-medium text-xs text-foreground truncate">{prof?.nome}</div>
-                            <div className="text-[10px] text-amber-500">{getEspecialidadeNome(item)}</div>
+                            <div className="font-medium text-xs text-foreground truncate">
+                              {prof?.nome}
+                            </div>
+                            <div className="text-[10px] text-amber-500">
+                              {getEspecialidadeNome(item)}
+                            </div>
                           </div>
                         </div>
                       )
-                    }
+                    },
                   },
                   {
-                    header: 'Frequência',
-                    accessor: (item) => (
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {item.frequencia?.toLowerCase() ?? 'Semanal'}
-                      </span>
-                    )
+                    header: 'Status na Semana',
+                    accessor: (item) => {
+                      const diaObj = diasDaSemanaObj.find((d) => d.diaSemana === item.dia_semana)
+                      const regKey = diaObj ? `${item.id}_${diaObj.dataIso}` : ''
+                      const reg = registrosSemana[regKey]
+                      const status = reg?.status || 'pendente'
+
+                      if (status === 'realizado') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Realizado</span>
+                          </span>
+                        )
+                      }
+                      if (status === 'nao_realizado') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                            <XCircle className="w-3 h-3" />
+                            <span>Não Realizado</span>
+                          </span>
+                        )
+                      }
+                      return <span className="text-[11px] text-muted-foreground">Pendente</span>
+                    },
                   },
                   {
                     header: 'Ações',
@@ -1403,9 +2119,9 @@ export default function CalendarioAtendimentosPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleVerDetalhes(item)}
-                          className="h-7 px-2 text-xs text-primary hover:bg-primary/10"
+                          className="h-7 px-2 text-xs text-primary hover:bg-primary/10 cursor-pointer"
                         >
-                          Ver Detalhes
+                          Ver Detalhes / Presença
                         </Button>
                         {isEditMode && (
                           <Button
@@ -1413,14 +2129,14 @@ export default function CalendarioAtendimentosPage() {
                             variant="ghost"
                             size="sm"
                             onClick={(e) => handleConfirmarExcluir(e, item)}
-                            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         )}
                       </div>
-                    )
-                  }
+                    ),
+                  },
                 ]}
               />
             </div>

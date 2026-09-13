@@ -180,8 +180,8 @@ export function ModalImprimirFichaFuncionario({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
   const isRootOrNivel1 = isAdminGlobalOrRoot() || (acessos && acessos.some((a: any) => a.nivel === 1 && a.ativo))
 
-  const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/logo-secretaria-educacao-2026.png`
-  const defaultSaudeLogoUrl = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785815672933_saude_oficial.png`
+  const defaultEducacaoLogoUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.png`
+  const defaultSaudeLogoUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-saude.png`
   const logoSecretariaUrl = isSaude ? defaultSaudeLogoUrl : defaultEducacaoLogoUrl
 
   const logoPrefeituraUrl = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png?t=${sessionTimestamp}`

@@ -102,7 +102,7 @@ export default function RelatorioServidores() {
   }, [isNivel1, acessos])
 
   const escolasPermitidas = useMemo(() => {
-    const escolasOficiais = escolas.filter(e => !e.is_teste)
+    const escolasOficiais = escolas.filter(e => !e.is_teste && e.tipo !== 'SECRETARIA')
     if (isSuperAdmin) return escolasOficiais
 
     if (isNivel1) {
@@ -225,7 +225,8 @@ export default function RelatorioServidores() {
         .eq('ativo', true)
         .is('funcionarios.deleted_at', null)
 
-      if (filtroEscolaId) {
+      const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null
+      if (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') {
         query = query.eq('escola_id', filtroEscolaId)
       }
 
@@ -344,8 +345,11 @@ export default function RelatorioServidores() {
     
     setIsLoading(true)
     try {
+      const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null
+      const effectiveEscolaId = (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') ? filtroEscolaId : undefined
+
       const { data, error } = await supabase.rpc('get_relatorio_servidores', {
-        p_escola_id: filtroEscolaId || undefined,
+        p_escola_id: effectiveEscolaId,
         p_cargo: filtroCargo || undefined,
         p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
         p_vinculo_tipo: filtroVinculo === 'Todos' ? undefined : filtroVinculo,
@@ -420,7 +424,8 @@ export default function RelatorioServidores() {
           .eq('ativo', true)
           .is('funcionarios.deleted_at', null)
 
-        if (filtroEscolaId) {
+        const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null
+        if (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') {
           query = query.eq('escola_id', filtroEscolaId)
         }
 

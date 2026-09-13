@@ -233,7 +233,7 @@ export default function PortalAlunoLoginPage() {
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement
               if (!target.src.includes('supabase.co')) {
-                target.src = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/alunos-anexos/logos/logo-secretaria-educacao-2026.png'
+                target.src = 'https://nijjizpcodnjhvqwjuso.supabase.co/storage/v1/object/public/logos/logo-secretaria.png'
               }
             }}
           />

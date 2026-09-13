@@ -162,8 +162,8 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
     // Preload de imagens
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
     const logoPrefeitura = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-    const logoEducacao = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
-    const logoSaude = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727067249_icone_saude_clean.png`
+    const logoEducacao = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.png`
+    const logoSaude = `${supabaseUrl}/storage/v1/object/public/logos/logo-saude.png`
     
     const logoSecretaria = isSaudeContext ? logoSaude : logoEducacao
     
@@ -428,8 +428,8 @@ export function PrintDocumentoEscolar({ aluno, docType, dadosOficio, tokenExiste
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nijjizpcodnjhvqwjuso.supabase.co'
   const logoPrefeitura = `${supabaseUrl}/storage/v1/object/public/logos/logo-prefeitura.png`
-  const logoEducacao = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727158753_educacao_final.png`
-  const logoSaude = `${supabaseUrl}/storage/v1/object/public/alunos-anexos/logos/sec_1785727067249_icone_saude_clean.png`
+  const logoEducacao = `${supabaseUrl}/storage/v1/object/public/logos/logo-secretaria.png`
+  const logoSaude = `${supabaseUrl}/storage/v1/object/public/logos/logo-saude.png`
   const logoSecretaria = isSaudeContext ? logoSaude : logoEducacao
   const watermarkLogo = escolaLogoUrl || logoSecretaria || logoPrefeitura
 

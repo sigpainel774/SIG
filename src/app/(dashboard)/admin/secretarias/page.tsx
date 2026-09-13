@@ -117,7 +117,19 @@ export default function AdminSecretariasPage() {
           className="w-10 h-10 rounded-md border border-[#27272a] bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
         >
           {sec.logo_url ? (
-            <img src={sec.logo_url} alt="Logo" className="w-full h-full object-contain p-1" />
+            <img
+              src={sec.logo_url}
+              alt="Logo"
+              className="w-full h-full object-contain p-1"
+              onError={(e) => {
+                const isSaude = /sa[uú]de/i.test(sec.nome)
+                const target = e.currentTarget
+                const fallback = isSaude ? '/img/logo-saude.png' : '/img/logo-secretaria.png'
+                if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                  target.src = fallback
+                }
+              }}
+            />
           ) : (
             <Building2 className="w-5 h-5 text-sky-400" />
           )}
