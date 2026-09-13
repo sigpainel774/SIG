@@ -66,7 +66,9 @@ const PALETTE_ESPECIALIDADES = [
 ]
 
 export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioEmaeeProps) {
-  const [anoLetivo, setAnoLetivo] = useState<number>(new Date().getFullYear())
+  const currentYear = new Date().getFullYear()
+  const anosDisponiveis = React.useMemo(() => [currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3], [currentYear])
+  const [anoLetivo, setAnoLetivo] = useState<number>(currentYear)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'epidemiologia' | 'especialidades' | 'origem' | 'logistica'>('epidemiologia')
@@ -225,9 +227,11 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
                 onChange={(e) => setAnoLetivo(Number(e.target.value))}
                 className="bg-transparent text-foreground font-semibold outline-none cursor-pointer"
               >
-                <option value={2026} className="bg-popover text-popover-foreground">Ano Letivo 2026</option>
-                <option value={2025} className="bg-popover text-popover-foreground">Ano Letivo 2025</option>
-                <option value={2024} className="bg-popover text-popover-foreground">Ano Letivo 2024</option>
+                {anosDisponiveis.map((ano) => (
+                  <option key={ano} value={ano} className="bg-popover text-popover-foreground">
+                    Ano Letivo {ano}
+                  </option>
+                ))}
               </select>
             </div>
 

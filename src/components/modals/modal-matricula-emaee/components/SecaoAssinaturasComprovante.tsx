@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SignaturePad } from '@/components/ui/SignaturePad'
-import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check, UserPlus, CalendarDays, Clock, Trash2, User } from 'lucide-react'
+import { FileText, ShieldCheck, Smartphone, QrCode, X, Key, Copy, Check, UserPlus, CalendarDays, Clock, Trash2, Pencil, User } from 'lucide-react'
 import { toast } from 'sonner'
 import { VinculoAEEConfig } from './ModalVincularProfissionalAlunoAEE'
 
@@ -31,6 +31,8 @@ export function SecaoAssinaturasComprovante() {
     // Especialistas e Vínculos AEE
     vinculosAEE,
     adicionarVinculoAEE,
+    editarVinculoAEE,
+    abrirModalNovoVinculo,
     removerVinculoAEE,
     modalVincularAEEOpen,
     setModalVincularAEEOpen,
@@ -101,7 +103,7 @@ export function SecaoAssinaturasComprovante() {
 
             <Button
               type="button"
-              onClick={() => setModalVincularAEEOpen(true)}
+              onClick={abrirModalNovoVinculo}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-8 px-3 gap-1.5 shrink-0 cursor-pointer border-none shadow-sm"
             >
               <UserPlus className="w-4 h-4" />
@@ -163,16 +165,29 @@ export function SecaoAssinaturasComprovante() {
                     </div>
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removerVinculoAEE(v.id || v.tempId)}
-                    className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0 rounded-lg"
-                    title="Remover atendimento deste profissional"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => editarVinculoAEE(v)}
+                      className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10 cursor-pointer rounded-lg transition-colors"
+                      title="Editar horário, dia ou frequência deste atendimento"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removerVinculoAEE(v.id || v.tempId)}
+                      className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0 rounded-lg transition-colors"
+                      title="Remover atendimento deste profissional"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -35,6 +35,7 @@ export interface VinculoAEEConfig {
   horarioFim: string
   isNovo?: boolean // Flag local para indicar inserção pendente
   isRemovido?: boolean // Flag local para indicar inativação pendente
+  isEditado?: boolean // Flag local para indicar alteração pendente
 }
 
 interface ModalVincularProfissionalAlunoAEEProps {
@@ -42,6 +43,8 @@ interface ModalVincularProfissionalAlunoAEEProps {
   onOpenChange: (open: boolean) => void
   vinculosExistentes: VinculoAEEConfig[]
   onAdicionarVinculo: (novoVinculo: VinculoAEEConfig) => void
+  vinculoParaEditar?: VinculoAEEConfig | null
+  onSalvarEdicao?: (vinculoEditado: VinculoAEEConfig) => void
   escolaEmaeeId?: string
 }
 
@@ -59,8 +62,11 @@ export function ModalVincularProfissionalAlunoAEE({
   onOpenChange,
   vinculosExistentes,
   onAdicionarVinculo,
+  vinculoParaEditar,
+  onSalvarEdicao,
   escolaEmaeeId
 }: ModalVincularProfissionalAlunoAEEProps) {
+  const isEditing = Boolean(vinculoParaEditar)
   const [etapa, setEtapa] = useState<'selecionar' | 'configurar'>('selecionar')
   const [profissionais, setProfissionais] = useState<ProfissionalAEEItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -84,19 +90,39 @@ export function ModalVincularProfissionalAlunoAEE({
     }
   }, [])
 
-  // Reset ao fechar/abrir
+  // Reset / Inicialização ao fechar/abrir
   useEffect(() => {
     if (open) {
-      setEtapa('selecionar')
-      setProfSelecionado(null)
-      setTermoBusca('')
-      setFrequencia('SEMANAL')
-      setDiaSemana(1)
-      setHorarioInicio('08:00')
-      setHorarioFim('09:00')
-      carregarProfissionaisAEE()
+      if (vinculoParaEditar) {
+        setEtapa('configurar')
+        setProfSelecionado({
+          id: vinculoParaEditar.profissionalId,
+          nome: vinculoParaEditar.profissionalNome,
+          cargo: vinculoParaEditar.profissionalCargo,
+          registro_profissional: null,
+          foto_url: vinculoParaEditar.profissionalFoto || null,
+          foto_avatar_path: null,
+          foto_visualizacao_path: null,
+          foto_updated_at: null,
+        })
+        setFrequencia(vinculoParaEditar.frequencia || 'SEMANAL')
+        setDiaSemana(vinculoParaEditar.diaSemana || 1)
+        setHorarioInicio(vinculoParaEditar.horarioInicio?.slice(0, 5) || '08:00')
+        setHorarioFim(vinculoParaEditar.horarioFim?.slice(0, 5) || '09:00')
+        setTermoBusca('')
+        carregarProfissionaisAEE()
+      } else {
+        setEtapa('selecionar')
+        setProfSelecionado(null)
+        setTermoBusca('')
+        setFrequencia('SEMANAL')
+        setDiaSemana(1)
+        setHorarioInicio('08:00')
+        setHorarioFim('09:00')
+        carregarProfissionaisAEE()
+      }
     }
-  }, [open, escolaEmaeeId])
+  }, [open, vinculoParaEditar, escolaEmaeeId])
 
   const carregarProfissionaisAEE = async () => {
     setLoading(true)
@@ -174,13 +200,20 @@ export function ModalVincularProfissionalAlunoAEE({
     }
 
     // Verificar se já existe vínculo igual (mesmo profissional, mesmo dia e mesmo horário)
-    const conflitoExistente = vinculosExistentes.some(
-      (v) =>
-        !v.isRemovido &&
+    const conflitoExistente = vinculosExistentes.some((v) => {
+      if (v.isRemovido) return false
+      // Se estiver editando, desconsidera o próprio registro sendo editado
+      if (vinculoParaEditar) {
+        const mesmoId = vinculoParaEditar.id && v.id === vinculoParaEditar.id
+        const mesmoTempId = vinculoParaEditar.tempId && v.tempId === vinculoParaEditar.tempId
+        if (mesmoId || mesmoTempId) return false
+      }
+      return (
         v.profissionalId === profSelecionado.id &&
         v.diaSemana === diaSemana &&
         v.horarioInicio === horarioInicio
-    )
+      )
+    })
 
     if (conflitoExistente) {
       toast.error('Já existe um atendimento agendado para este profissional no mesmo dia e horário.')
@@ -188,6 +221,25 @@ export function ModalVincularProfissionalAlunoAEE({
     }
 
     const avatarUrl = getAvatarUrl(profSelecionado) || profSelecionado.foto_url
+
+    if (vinculoParaEditar && onSalvarEdicao) {
+      const vinculoAtualizado: VinculoAEEConfig = {
+        ...vinculoParaEditar,
+        profissionalId: profSelecionado.id,
+        profissionalNome: profSelecionado.nome,
+        profissionalCargo: profSelecionado.cargo ?? 'Especialista AEE',
+        profissionalFoto: avatarUrl,
+        frequencia,
+        diaSemana,
+        horarioInicio,
+        horarioFim,
+        isEditado: true
+      }
+      onSalvarEdicao(vinculoAtualizado)
+      toast.success(`Atendimento de ${profSelecionado.nome} atualizado!`)
+      onOpenChange(false)
+      return
+    }
 
     const novoVinculo: VinculoAEEConfig = {
       tempId: crypto.randomUUID(),
@@ -214,12 +266,16 @@ export function ModalVincularProfissionalAlunoAEE({
       title={
         etapa === 'selecionar'
           ? 'Selecionar Especialista AEE — EMAEE'
-          : `Definir Atendimento: ${profSelecionado?.nome ?? ''}`
+          : isEditing
+            ? `Editar Atendimento: ${profSelecionado?.nome ?? ''}`
+            : `Definir Atendimento: ${profSelecionado?.nome ?? ''}`
       }
       description={
         etapa === 'selecionar'
           ? 'Escolha o profissional do corpo técnico do EMAEE para realizar o atendimento especializado do estudante.'
-          : 'Configure a frequência, o dia da semana e a faixa de horários do atendimento.'
+          : isEditing
+            ? 'Altere o dia da semana, faixa de horário ou frequência deste atendimento.'
+            : 'Configure a frequência, o dia da semana e a faixa de horários do atendimento.'
       }
       maxWidth="sm:max-w-xl"
     >
@@ -475,7 +531,7 @@ export function ModalVincularProfissionalAlunoAEE({
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-9 px-4 rounded-xl gap-1.5 shadow-sm cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                Confirmar Vínculo
+                {isEditing ? 'Salvar Alterações' : 'Confirmar Vínculo'}
               </Button>
             </div>
           </form>

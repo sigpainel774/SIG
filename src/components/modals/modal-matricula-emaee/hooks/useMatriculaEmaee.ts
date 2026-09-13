@@ -263,9 +263,31 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [vinculosAEE, setVinculosAEE] = useState<VinculoAEEConfig[]>([])
   const [vinculosRemovidos, setVinculosRemovidos] = useState<VinculoAEEConfig[]>([])
   const [modalVincularAEEOpen, setModalVincularAEEOpen] = useState(false)
+  const [vinculoParaEditar, setVinculoParaEditar] = useState<VinculoAEEConfig | null>(null)
 
   const adicionarVinculoAEE = (novoVinculo: VinculoAEEConfig) => {
     setVinculosAEE((prev) => [...prev, novoVinculo])
+  }
+
+  const editarVinculoAEE = (vinculo: VinculoAEEConfig) => {
+    setVinculoParaEditar(vinculo)
+    setModalVincularAEEOpen(true)
+  }
+
+  const abrirModalNovoVinculo = () => {
+    setVinculoParaEditar(null)
+    setModalVincularAEEOpen(true)
+  }
+
+  const atualizarVinculoAEE = (vinculoAtualizado: VinculoAEEConfig) => {
+    setVinculosAEE((prev) =>
+      prev.map((v) =>
+        (v.id && v.id === vinculoAtualizado.id) || (v.tempId && v.tempId === vinculoAtualizado.tempId)
+          ? vinculoAtualizado
+          : v
+      )
+    )
+    setVinculoParaEditar(null)
   }
 
   const removerVinculoAEE = (idOuTempId: string) => {
@@ -1454,7 +1476,24 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           }
         }
 
-        // 5. Inserir novos vínculos adicionados
+        // 5. Atualizar vínculos existentes que foram editados
+        const existentesParaAtualizar = vinculosAEE.filter((v): v is VinculoAEEConfig & { id: string } => Boolean(v.id && v.isEditado))
+        for (const vinc of existentesParaAtualizar) {
+          await supabase
+            .from('emaee_especialidades_vinculadas')
+            .update({
+              profissional_id: vinc.profissionalId,
+              especialidade: vinc.profissionalCargo || 'Especialista AEE',
+              frequencia: vinc.frequencia,
+              dia_semana: vinc.diaSemana,
+              horario_inicio: vinc.horarioInicio.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio,
+              horario_fim: vinc.horarioFim.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim,
+              ativo: true
+            })
+            .eq('id', vinc.id)
+        }
+
+        // 6. Inserir novos vínculos adicionados
         const novosParaInserir = vinculosAEE
           .filter(v => v.isNovo)
           .map(v => ({
@@ -1895,9 +1934,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     // Especialistas e Vínculos AEE
     vinculosAEE,
     adicionarVinculoAEE,
+    editarVinculoAEE,
+    abrirModalNovoVinculo,
+    atualizarVinculoAEE,
     removerVinculoAEE,
     modalVincularAEEOpen,
     setModalVincularAEEOpen,
+    vinculoParaEditar,
+    setVinculoParaEditar,
 
     // Identificação do Aluno
     nomeCompleto, setNomeCompleto,

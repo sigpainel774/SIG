@@ -42,6 +42,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     setModalVincularAEEOpen,
     vinculosAEE,
     adicionarVinculoAEE,
+    atualizarVinculoAEE,
+    vinculoParaEditar,
     escolaAtendimentoId
   } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
@@ -66,11 +68,13 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     }
   }
 
+  const anoAtual = new Date().getFullYear()
+
   return (
     <StandardDialog
       open={activeOpen}
       onOpenChange={handleOpenChange}
-      title={isEditMode ? "Editar Ficha de Matrícula AEE 2026 — SIG" : "Ficha de Matrícula AEE 2026 — SIG"}
+      title={isEditMode ? `Editar Ficha de Matrícula AEE ${anoAtual} — SIG` : `Ficha de Matrícula AEE ${anoAtual} — SIG`}
       maxWidth="max-w-[96vw] sm:max-w-[92vw] md:max-w-4xl lg:max-w-[1050px]"
       className="w-[96vw] sm:w-[92vw] md:w-full"
       footer={
@@ -128,7 +132,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
         {/* Cabeçalho da Página no Modal */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
           <div>
-            <p className="text-[11px] font-extrabold text-primary uppercase tracking-wider">EMAEE • Ano letivo 2026</p>
+            <p className="text-[11px] font-extrabold text-primary uppercase tracking-wider">EMAEE • Ano letivo {anoAtual}</p>
             <h1 className="text-xl font-bold text-foreground tracking-tight">
               {isEditMode ? 'Editar ficha de matrícula para AEE' : 'Ficha de matrícula para AEE'}
             </h1>
@@ -246,6 +250,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           onOpenChange={setModalVincularAEEOpen}
           vinculosExistentes={vinculosAEE}
           onAdicionarVinculo={adicionarVinculoAEE}
+          vinculoParaEditar={vinculoParaEditar}
+          onSalvarEdicao={atualizarVinculoAEE}
           escolaEmaeeId={escolaAtendimentoId}
         />
       )}

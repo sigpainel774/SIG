@@ -753,7 +753,7 @@ export default function RelatorioProdutividadeSecretarios({ selectedEscola: prop
               <option value="7dias">Últimos 7 dias</option>
               <option value="30dias">Últimos 30 dias</option>
               <option value="mes">Mês Atual</option>
-              <option value="ano">Ano Letivo 2026</option>
+              <option value="ano">Ano Letivo {new Date().getFullYear()}</option>
               <option value="custom">Personalizado</option>
             </select>
 

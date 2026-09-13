@@ -1,7 +1,10 @@
 <!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# This is NOT the Next.js you know (Proibição de Suposições)
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
+- **NÃO SUPOR CONVENÇÕES OU ARQUIVOS**: NUNCA presuma que o Next.js necessita de um arquivo (ex: `middleware.ts`, configs, wrappers) por hábito ou versões legadas. SEMPRE verifique primeiro os arquivos existentes no projeto (`ARCHITECTURE.md`, `src/proxy.ts`, etc.) para entender a estrutura já implementada.
+- **Evitar Duplicações e Conflitos**: Jamais crie arquivos duplicados ou pontes redundantes (como recriar `middleware.ts` quando já existe `proxy.ts`). Confirme sempre a estrutura antes de introduzir novos pontos de entrada.
 <!-- END:nextjs-agent-rules -->
 
 <!-- BEGIN:sig-design-preferences -->
