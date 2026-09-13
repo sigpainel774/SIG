@@ -99,7 +99,6 @@ export function useSessionReplay() {
   const activeModalTitleRef = useRef<string | null>(null)
 
   const channelRef = useRef<any>(null)
-  const userChannelRef = useRef<any>(null)
   const presenceChannelRef = useRef<any>(null)
   const isChannelSubscribedRef = useRef<boolean>(false)
   const pendingBroadcastsRef = useRef<ReplayEventItem[]>([])
@@ -178,28 +177,15 @@ export function useSessionReplay() {
     }
 
     // 1. Enviar broadcast em tempo real (ou enfileirar se canal ainda estiver conectando)
-    if (isChannelSubscribedRef.current) {
-      if (channelRef.current) {
-        try {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'event',
-            payload: fullItem,
-          })
-        } catch {
-          // Falha suave no broadcast primário
-        }
-      }
-      if (userChannelRef.current) {
-        try {
-          userChannelRef.current.send({
-            type: 'broadcast',
-            event: 'event',
-            payload: fullItem,
-          })
-        } catch {
-          // Falha suave no broadcast secundário
-        }
+    if (isChannelSubscribedRef.current && channelRef.current) {
+      try {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'event',
+          payload: fullItem,
+        })
+      } catch {
+        // Falha suave no broadcast
       }
     } else {
       // Guarda no buffer temporário para descarregar assim que conectar
@@ -248,18 +234,15 @@ export function useSessionReplay() {
 
     pending.forEach((item) => {
       if (channelRef.current) {
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'event',
-          payload: item,
-        })
-      }
-      if (userChannelRef.current) {
-        userChannelRef.current.send({
-          type: 'broadcast',
-          event: 'event',
-          payload: item,
-        })
+        try {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'event',
+            payload: item,
+          })
+        } catch {
+          // Falha suave no broadcast
+        }
       }
     })
   }, [])
@@ -312,8 +295,9 @@ export function useSessionReplay() {
           })
           presenceChannelRef.current = presenceChannel
 
-          // B. Canal realtime broadcast primário (por session_id)
-          const channelName = `session_replay:${sid}`
+          // B. Canal realtime broadcast unificado (por user.id ou sid)
+          const channelKey = session.user.id || sid
+          const channelName = `session_replay:${channelKey}`
           const channel = supabase.channel(channelName, {
             config: { broadcast: { self: false } },
           })
@@ -342,15 +326,6 @@ export function useSessionReplay() {
           })
           channelRef.current = channel
 
-          // C. Canal realtime broadcast secundário (por user_id) para garantir entrega garantida
-          if (session.user.id !== sid) {
-            const userChannel = supabase.channel(`session_replay:${session.user.id}`, {
-              config: { broadcast: { self: false } },
-            })
-            userChannel.subscribe()
-            userChannelRef.current = userChannel
-          }
-
           // Disparar navegação inicial garantida
           dispatchEvent({
             event_type: 'navigation',
@@ -377,12 +352,11 @@ export function useSessionReplay() {
       isChannelSubscribedRef.current = false
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
-      }
-      if (userChannelRef.current) {
-        supabase.removeChannel(userChannelRef.current)
+        channelRef.current = null
       }
       if (presenceChannelRef.current) {
         supabase.removeChannel(presenceChannelRef.current)
+        presenceChannelRef.current = null
       }
     }
   }, [supabase, dispatchEvent, flushQueue, flushPendingBroadcasts])

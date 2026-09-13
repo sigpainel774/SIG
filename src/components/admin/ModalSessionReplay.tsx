@@ -233,8 +233,8 @@ export function ModalSessionReplay({
 
     if (isLiveMode) {
       setIsPlaying(true)
-      const channelName = `session_replay:${session.sessionId}`
-      const baseUserId = session.sessionId.includes('_') ? session.sessionId.split('_')[0] : null
+      const targetUserId = session.sessionId.includes('_') ? session.sessionId.split('_')[0] : session.sessionId
+      const channelName = `session_replay:${targetUserId}`
       
       const channel = supabase.channel(channelName, {
         config: { broadcast: { self: true } },
@@ -323,23 +323,9 @@ export function ModalSessionReplay({
       }
 
       channel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
-      channelRef.current = channel
-
-      // Canal secundário pelo user_id para garantir recepção de broadcast
-      let secondaryChannel: any = null
-      if (baseUserId && baseUserId !== session.sessionId) {
-        secondaryChannel = supabase.channel(`session_replay:${baseUserId}`, {
-          config: { broadcast: { self: true } },
-        })
-        secondaryChannel.on('broadcast', { event: 'event' }, handleIncomingBroadcast).subscribe()
-        userChannelRef.current = secondaryChannel
-      }
 
       return () => {
         supabase.removeChannel(channel)
-        if (secondaryChannel) {
-          supabase.removeChannel(secondaryChannel)
-        }
       }
     } else {
       // Modo Playback Histórico
